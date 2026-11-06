@@ -3,7 +3,7 @@ import {test,type TestContext} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-import {createSourceFile,forEachChild,isCallExpression,isFunctionDeclaration,isIdentifier,isJsxSelfClosingElement,ScriptKind,ScriptTarget,type Node} from 'typescript';
+import {transpileModule,ModuleKind,JsxEmit,createSourceFile,forEachChild,isCallExpression,isFunctionDeclaration,isIdentifier,isJsxSelfClosingElement,ScriptKind,ScriptTarget,type Node} from 'typescript';
 import {h5ModuleUrl as moduleUrl,createH5PureModuleLoader} from './helpers/h5-pure-module-loader.mjs';
 import type {H5EntryBootstrap} from '../contracts/yxx_h5_entry_contracts.js';
 const sourceRoot=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
@@ -76,40 +76,83 @@ test('H5 maps WeCom Chinese variants to Simplified Chinese and honors explicit c
  assert.equal(preferences.clientTheme('wxwork',false),'light');
 });
 
-test('H5 English dates use explicit dd, Mon and preserve the hospital-local clock',async()=>{
- const {formatDate}=await import(await moduleUrl('lib/utils.ts')),value=Date.parse('2026-10-22T14:35:00+08:00');
- const clock=new Intl.DateTimeFormat('en',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value);
- assert.equal(formatDate(String(value),'en'),'22, Oct, '+clock);assert.equal(formatDate(String(value),'en',true),clock);
+test('H5 dates use Shanghai today, yesterday, same-year and cross-year forms',async t=>{
+ t.mock.method(Date,'now',()=>Date.parse('2026-11-06T00:01:00+08:00'));
+ const {formatDate}=await import(await moduleUrl('lib/utils.ts'));
+ const cases=[['2026-11-06T14:32:00+08:00','今天 14:32','Today, 2:32 PM'],['2026-11-05T16:45:00+08:00','昨天 16:45','Yesterday, 4:45 PM'],['2026-10-20T14:32:00+08:00','10/20 14:32','Oct 20, 2:32 PM'],['2025-10-20T14:32:00+08:00','2025/10/20 14:32','Oct 20, 2025, 2:32 PM']]as const;
+ for(const[instant,zh,en]of cases){const epoch=String(Date.parse(instant));assert.equal(formatDate(epoch,'zh-CN'),zh);assert.equal(formatDate(epoch,'en'),en);}
 });
 
-test('H5 English dates use every short month and a two-digit day',async()=>{
+test('H5 English dates use every short month followed by the local clock',async t=>{
+ t.mock.method(Date,'now',()=>Date.parse('2026-11-06T00:01:00+08:00'));
  const {formatDate}=await import(await moduleUrl('lib/utils.ts')),months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
- for(const[index,month]of months.entries()){
-  const value=Date.parse(`2026-${String(index+1).padStart(2,'0')}-03T09:05:00+08:00`),clock=new Intl.DateTimeFormat('en',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value);
-  assert.equal(formatDate(String(value),'en-GB'),`03, ${month}, ${clock}`);
- }
+ for(const[index,month]of months.entries())assert.equal(formatDate(String(Date.parse(`2026-${String(index+1).padStart(2,'0')}-03T09:05:00+08:00`)),'en-GB'),`${month} 3, 9:05 AM`);
 });
 
-test('H5 Chinese dates and both languages time-only output retain their original format',async()=>{
+test('H5 both languages time-only output retains its original format',async t=>{
+ t.mock.method(Date,'now',()=>Date.parse('2026-11-06T00:01:00+08:00'));
  const {formatDate}=await import(await moduleUrl('lib/utils.ts'));
  for(const language of ['zh-CN','zh-HK','zh-TW','en'])for(const instant of ['2026-10-22T00:05:00+08:00','2026-12-31T23:59:00+08:00']){
   const value=Date.parse(instant),locale=language.startsWith('zh')?'zh-CN':'en';
   assert.equal(formatDate(String(value),language,true),new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(value));
-  if(locale==='zh-CN')assert.equal(formatDate(String(value),language),new Intl.DateTimeFormat(locale,{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(value));
  }
 });
 
-test('H5 date display preserves Shanghai rollover and rejects unsafe or malformed epochs',async()=>{
+test('H5 dates preserve Shanghai day and year rollover and reject unsafe epochs',async t=>{
+ t.mock.method(Date,'now',()=>Date.parse('2027-01-01T00:01:00+08:00'));
  const {formatDate}=await import(await moduleUrl('lib/utils.ts'));
- assert.match(formatDate(String(Date.parse('2026-10-21T16:05:00Z')),'en'),/^22, Oct, /);assert.notEqual(formatDate('0','en'),'');
+ assert.equal(formatDate(String(Date.parse('2026-12-31T16:05:00Z')),'en'),'Today, 12:05 AM');
+ assert.equal(formatDate(String(Date.parse('2026-12-31T15:59:00Z')),'en'),'Yesterday, 11:59 PM');assert.notEqual(formatDate('0','en'),'');
  for(const invalid of [null,undefined,'','-1','1.2','not-a-date',' 1','Infinity','9007199254740992','8640000000000001'])for(const language of ['en','zh-CN'])assert.equal(formatDate(invalid,language),'');
+});
+
+test('H5 support phone formatting follows the supplied number and preserves other input',async()=>{
+ const {formatPhone,safePhone}=await import(await moduleUrl('lib/utils.ts'));
+ for(const[input,expected]of [['61318500','6131 8500'],['8765 4321','8765 4321'],['18117887318','181 1788 7318'],['13912345678','139 1234 5678'],['12345','12345'],['invalid phone','invalid phone']]as const)assert.equal(formatPhone(input),expected);
+ assert.equal(safePhone('invalid phone'),null);assert.equal(safePhone('87654321'),'tel:87654321');
+});
+
+test('H5 empty home renders current phone fixtures and a department entry without a department name',async()=>{
+ const compile=async(file:string)=>transpileModule(await readFile(resolve(sourceRoot,'app/h5/src',file),'utf8'),{fileName:file,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const loader=createH5PureModuleLoader({overrides:{'pages/Home.tsx':await compile('pages/Home.tsx'),'components/ui/primitives.ts':await compile('components/ui/primitives.tsx'),
+  'session.ts':"export const state={session:{recovery_scope:'synthetic',can_submit:true,h5:{can_view_department:true,support:{emergency_phone:'13912345678',service_phone:'87654321'}}}};export function useIdentity(){return state.session;}export function useSessionStatus(){return{membershipRevision:'synthetic',refresh:async()=>{}};}",
+  'navigation.ts':"export{Link}from'react-router';",'routing.ts':'export function preloadNavigation(){}',
+  'api/query.ts':"export function homeOptions(scope){return{queryKey:['home',scope],queryFn:async()=>[]};}export function departmentSummaryOptions(scope){return{queryKey:['department',scope],queryFn:async()=>({total:4,active_count:1})};}",
+  'hooks/useDisplayProfile.ts':'export function useDisplayProfile(){return{name:null,department:null};}',
+  'hooks/useGreeting.ts':"export function useGreeting(){return'greetingMorning';}",'components/ReportCard.ts':'export function ReportCard(){return null;}',
+  'components/Icon.ts':'export function Icon(){return null;}',
+  'components/Common.ts':'export function EmptyReports(){return null;}export function ErrorPanel(){return null;}export function Loading(){return null;}export function SelfCheck(){return null;}',
+  'home-render-test.ts':[
+   "import{createElement as h}from'react';import{renderToStaticMarkup}from'react-dom/server';import{MemoryRouter}from'react-router';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';",
+   "import Home from './pages/Home.tsx';import{I18nProvider}from'./i18n-react.ts';import i18n from'./i18n.ts';import{state}from'./session.ts';",
+   "const client=new QueryClient();client.setQueryData(['home','synthetic'],[]);client.setQueryData(['department','synthetic'],{total:4,active_count:1});",
+   "export async function renderHome(phone='87654321'){await i18n.changeLanguage('zh-CN');state.session.h5.support.service_phone=phone;return renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(MemoryRouter,null,h(Home)))));}export function close(){client.clear();}"
+  ].join('\n')
+ }});
+ const {renderHome,close}=await import(await loader.moduleUrl('home-render-test.ts'));
+ try{const html=await renderHome();assert.match(html,/139 1234 5678/);assert.match(html,/8765 4321/);assert.match(html,/href="tel:87654321"/);assert.match(html,/home-page home-empty/);assert.match(html,/<strong>科室工单<\/strong>/);assert.doesNotMatch(html,/null ·|ui-badge/);
+  const invalid=await renderHome('invalid phone');assert.match(invalid,/invalid phone/);assert.equal((invalid.match(/href="tel:/g)??[]).length,1);
+ }finally{close();}
+});
+
+test('H5 copies a full ticket number with clipboard and always cleans up fallback textareas',async t=>{
+ const {copyText}=await import(await moduleUrl('lib/utils.ts')),number='YXX-20261106-000001',originalNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator'),originalDocument=Object.getOwnPropertyDescriptor(globalThis,'document');
+ t.after(()=>{for(const[key,descriptor]of [['navigator',originalNavigator],['document',originalDocument]]as const){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}});
+ let copied='',created=0,removed=0,selected=0,range:number[]=[],result=true,throws=false;
+ const textarea={value:'',readOnly:false,style:{cssText:''},select(){selected++;},setSelectionRange(start:number,end:number){range=[start,end];},remove(){removed++;}};
+ Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement(tag:string){assert.equal(tag,'textarea');created++;return textarea;},body:{appendChild(value:unknown){assert.equal(value,textarea);}},execCommand(command:string){assert.equal(command,'copy');if(throws)throw Error('COPY_REJECTED');return result;}}});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{clipboard:{async writeText(text:string){copied=text;}}}});
+ assert.equal(await copyText(number),true);assert.equal(copied,number);assert.equal(created,0);
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{clipboard:{async writeText(){throw Error('CLIPBOARD_REJECTED');}}}});
+ assert.equal(await copyText(number),true);assert.equal(textarea.value,number);assert.equal(textarea.readOnly,true);assert.match(textarea.style.cssText,/font-size:16px/);assert.deepEqual(range,[0,number.length]);assert.equal(selected,1);assert.equal(removed,1);
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{}});result=false;assert.equal(await copyText(number),false);throws=true;assert.equal(await copyText(number),false);assert.equal(created,3);assert.equal(removed,created);
 });
 
 test('H5 ticket collection labels stay consistent without changing Chinese reporting or original-source wording',async()=>{
  const {en,zh}=await import(await moduleUrl('i18n.ts'));
  assert.equal(en.records,'My tickets');assert.equal(en.recent,'Recent tickets');
  for(const key of ['records','departmentStats','recent','emptyDescription','queryEmpty','readonly','viewReceipt','noDescription','webSource','emptyHistory','readFailure'])assert.doesNotMatch(en[key],/\breports\b/i,key);
- const chinese={records:'工单查询',departmentStats:'上报 {{total}} 件 · {{active}} 件处理中',recent:'最近报修工单',emptyDescription:'提交报修后，可在这里查看处理进度。',queryEmpty:'没有符合条件的工单',readonly:'当前报修入口为只读，可继续查看本人记录。',viewReceipt:'查看回执',noDescription:'现场材料报修',webSource:'网页报修',emptyHistory:'当前无进行中或待处理工单',readFailure:'暂时无法读取工单'};
+ const chinese={records:'我的工单',departmentStats:'上报 {{total}} 件 · {{active}} 件处理中',recent:'最近报修工单',emptyDescription:'提交报修后，可在这里查看处理进度。',queryEmpty:'没有符合条件的工单',readonly:'当前报修入口为只读，可继续查看本人记录。',viewReceipt:'查看回执',noDescription:'现场材料报修',webSource:'网页报修',emptyHistory:'当前无进行中或待处理工单',readFailure:'暂时无法读取工单'};
  for(const[key,value]of Object.entries(chinese))assert.equal(zh[key],value,key);
  assert.equal(en.botHistory,'Open original report');assert.equal(zh.botHistory,'查看原报修记录');assert.equal(en.heroCta,'Report an IT fault');assert.equal(zh.heroCta,'立即上报 IT 故障');
 });
@@ -127,7 +170,7 @@ test('H5 greeting periods translate with a member name in Simplified Chinese and
  }
 });
 
-test('H5 official compiled catalogs preserve all 444 bilingual messages and their interpolation',async t=>{
+test('H5 official compiled catalogs preserve all 456 bilingual messages and their interpolation',async t=>{
  const loader=createH5PureModuleLoader(),{compileH5Catalog}=await import(await loader.moduleUrl('../compile-i18n.ts')),{default:i18n}=await import(await loader.moduleUrl('i18n.ts')),language=i18n.language;
  const sources={translation:'i18n.ts',auth:'components/auth-messages.ts',command:'components/command-messages.ts',help:'components/help-messages.ts',voice:'components/voice-messages.ts'};let count=0;
  for(const[namespace,path]of Object.entries(sources)){
@@ -137,7 +180,7 @@ test('H5 official compiled catalogs preserve all 444 bilingual messages and thei
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,444);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 222 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,456);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 228 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
