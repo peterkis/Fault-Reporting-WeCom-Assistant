@@ -42,7 +42,7 @@ let connectLogin:((event:Electron.IpcMainInvokeEvent,value:unknown)=>void)=()=>{
 let recovery:RecoveryState=null,loginExpired=false,reconnect=()=>{};
 let context:DesktopContext={epoch:null,blocked:true,live:false,remindersAvailable:false};
 const notices=new Map<string,Notification>(),seen=new Map<string,number>();
-const state=():DesktopState=>({version:1,visible:!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
+const state=():DesktopState=>({version:1,visible:startup.phase==='released'&&!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:startup.phase==='released'&&!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
 const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:startup.phase!=='released',recovery:startup.phase==='released'?recovery:null,loginExpired,loginCompatibility:startup.phase==='released'&&startup.scene==='compatibility'});
 const startupState=():StartupState=>({version:1,generation:startup.generation,active:startup.active,releasing:startup.phase==='releasing',reducedMotion:process.argv.includes('--wecom-reduced-motion'),firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure});
 function focusContent(){const target=startupView?.webContents??content?.webContents;if(target&&!target.isDestroyed())target.focus();}

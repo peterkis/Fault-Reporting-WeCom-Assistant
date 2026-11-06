@@ -60,7 +60,7 @@ test('native startup gates real playback, isolates input, preserves prepared fra
       document.getElementById('under-cover').onclick=()=>window.clicks++;
       window.savedFrame=document.querySelector('iframe');window.savedFrameWindow=window.savedFrame.contentWindow;
       window.prepare=()=>{window.signalSent=true;return window.workbenchLogin.startup.prepared({version:1,panel:'created',backdrop:'fallback'}).then(value=>{if(value.presented)present();return value;});};
-      if(${JSON.stringify(mode)}!=='legacy'){window.workbenchLogin.startup.onPresented(present);void window.workbenchLogin.startup.connect();}
+      if(${JSON.stringify(mode)}!=='legacy'&&window.workbenchLogin?.startup){window.workbenchLogin.startup.onPresented(present);void window.workbenchLogin.startup.connect();}
       if(${JSON.stringify(mode)}==='early')void window.prepare();
       if(${JSON.stringify(mode)}==='visible'){
         const prepareWhenVisible=()=>{if(document.hidden||window.signalSent)return;window.preparedWhileVisible=true;void window.prepare();};
@@ -96,6 +96,19 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     assert.equal((await early.command('state') as {startupVisible:boolean}).startupVisible,false,'duplicate readiness cannot recreate the startup player');
     await early.command('navigate',origin+'/workbench/app/');await early.wait('evaluate','location.pathname==="/workbench/app/"');
     assert.equal(await early.command('evaluate','typeof window.workbenchLogin'),'undefined','non-login paths never acquire startup readiness');
+    await finish();
+
+    mode='manual';const cached=await launch('cached-business-under-cover');
+    await cached.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await cached.command('startup-evaluate','document.querySelector("video").pause();true');
+    mode='business';await cached.command('navigate',origin+'/workbench/app/');
+    await cached.wait('evaluate','typeof window.workbenchDesktop==="object"');
+    const covered=await cached.command('evaluate','window.workbenchDesktop.getState()') as {visible:boolean;focused:boolean};
+    assert.equal(covered.visible,false,'a cached business document beneath the video must not acquire business visibility');
+    assert.equal(covered.focused,false,'native window focus does not present a covered business document');
+    assert.equal((await cached.command('state') as {startupVisible:boolean}).startupVisible,true);
+    await cached.command('startup-evaluate','document.querySelector("video").play().then(()=>true)');await cached.waitReleased();
+    assert.equal(await cached.command('evaluate','window.workbenchDesktop.getState().then(state=>state.visible)'),true,'business visibility starts only after the native cover is released');
     await finish();
 
     mode='manual';const late=await launch('late');
