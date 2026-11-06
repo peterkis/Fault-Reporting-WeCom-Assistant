@@ -284,6 +284,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end('<!doctype html><title>合成登录测试起点</title>');
  })().catch(()=>{response.writeHead(500);response.end('SYNTHETIC_LOGIN_FIXTURE_FAILED');});});
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ const legacyProvider=createNeutralProviderFixture();
  let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
  try{
   const shell=await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.encoding-check',issuedEpochMs:0,expiresEpochMs:300_000,publicOrigin:origin});
@@ -320,7 +321,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.equal((await raw(environmentPath,'identity;q=0,br,gzip')).status,406);
   for(const suffix of ['.gz','.br','?raw=1'])assert.equal((await raw(environmentPath+suffix,'br,gzip')).status,400,'binary sidecars and query variants are never public paths');
   assert.equal((await raw('/workbench/desktop/assets/login-environment-v1-unmanifested.pmrem')).status,404);assert.equal((await raw('/workbench/desktop/assets/arbitrary.pmrem')).status,400,'the new binary extension never admits arbitrary assets');
-  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true,socketFactory:legacyProvider.socketFactory});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');
   const clickLogin=async(selector:string)=>{
@@ -331,7 +332,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   };
   await browser.command('Network.enable');
   // No synthetic credentials or QR requests leave this isolated browser.
-  await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
+  await legacyProvider.install(browser.command);
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   const loginHostScript=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__quitRequests=0;window.__paintedVersions=[];window.workbenchLogin={version:1,getAppVersion:async()=>"0.1.10-synthetic",quit:async()=>{window.__quitRequests++}};const originalFillText=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){if(String(text).startsWith("v0.1."))window.__paintedVersions.push(String(text));return originalFillText.call(this,text,...args);};'}) as {identifier:string};
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__backgroundSubmits=0;if(window.GPUQueue){const submit=GPUQueue.prototype.submit;GPUQueue.prototype.submit=function(...args){window.__backgroundSubmits++;return submit.apply(this,args);};}'});
@@ -509,8 +510,9 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("login-backdrop").childElementCount'),0,'missing WebGPU leaves the static background while the QR panel remains usable');
   assert.equal(await browser.evaluate('performance.getEntriesByType("resource").some(e=>e.name.includes("LoginBackdrop-"))'),false,'unsupported GPUs do not download the optional shader engine');
+  legacyProvider.assertHealthy();console.log('LOGIN_LEGACY_NEUTRAL_PROVIDER',JSON.stringify({...legacyProvider.receipt(),realQr:'NOT_REAL_QR'}));
  }catch(error){failure=error;if(browser)console.log('EMBEDDED_LOGIN_UI_DIAGNOSTIC',JSON.stringify(await browser.evaluate('({view:document.getElementById("desktop-login")?.dataset.view,frames:document.querySelectorAll("#wecom-panel iframe").length,canvas:document.querySelectorAll(".lanyard-canvas").length,status:document.getElementById("login-status")?.textContent})')));}
- finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+ finally{await closeBrowserTestResources([async()=>{try{await browser?.close();}finally{legacyProvider.dispose();}if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });
 
 // Only this owned browser selects the explicit manual reduced-motion fallback.
