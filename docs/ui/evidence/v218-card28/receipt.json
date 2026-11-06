@@ -8,35 +8,33 @@
   ],
   "screenshots": [
     {
-      "file": "docs/ui/evidence/v218-card28/list-1440-all.png",
+      "file": "list-1440-all.png",
       "width": 1440,
       "height": 1060,
-      "sha256": "e222c5934cab84f919b83394d4960848c3ae3949489647718be08f58b97ac775",
+      "sha256": "35ce6743f21b4d4ab4163b218295ea43ce834bb03b561b3ca6136a5973f67bf0",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1440-all.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-1920-all.png",
+      "file": "list-1920-all.png",
       "width": 1920,
       "height": 1060,
-      "sha256": "211781e1c01a9f5ecf859f3e564c416dc48862477076c7fb7cea2e6d9c1c2697",
+      "sha256": "4f6fafbd6b6ef87ebfd4dc79c6365a30ef2427fc65b2fcdfa91b34bda36d6b7c",
       "viewport": {
         "platform": "Win32",
         "width": 1920,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1920-all.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/group-x2.png",
+      "file": "group-x2.png",
       "width": 2248,
       "height": 116,
       "sha256": "d4b4b0e5b5d1ccd2ca5231970e26afe826efd06c1d1eca45e9d34ee484a74d86",
@@ -53,11 +51,10 @@
         "width": 1124,
         "height": 58,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\group-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/subgroup-x2.png",
+      "file": "subgroup-x2.png",
       "width": 2280,
       "height": 72,
       "sha256": "db3d2db5e79166f92885222bc93435b052521e5d1ccf64458a750a3c36cb1437",
@@ -74,11 +71,10 @@
         "width": 1140,
         "height": 36,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\subgroup-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/pending-heat-urge-x2.png",
+      "file": "pending-heat-urge-x2.png",
       "width": 2280,
       "height": 96,
       "sha256": "4d18f7fe6fbc54a9ee6daf01296f01f424efc469802e41e353ef70240ff19be5",
@@ -95,14 +91,13 @@
         "width": 1140,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\pending-heat-urge-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/closed-manual-x2.png",
+      "file": "closed-manual-x2.png",
       "width": 2280,
       "height": 96,
-      "sha256": "4e618c124e1e29de5acf7f829a7405daf7af4aa61686a9e6a7bc2ee01159c121",
+      "sha256": "8fb8c178722ae2acd54545332e118d836d9516848413ce624a20a291d6fcfec5",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
@@ -116,14 +111,13 @@
         "width": 1140,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\closed-manual-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/closed-system-x2.png",
+      "file": "closed-system-x2.png",
       "width": 2280,
       "height": 96,
-      "sha256": "ad1989caf9cd01f09291f5e7a855eab8f1a21ad930b0b4481554bfa3589b0bb1",
+      "sha256": "f16106e99fcc7e03df4e1d2f259f94650e34e24e041f22360da9287086b43f8c",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
@@ -137,14 +131,13 @@
         "width": 1140,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\closed-system-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/closed-duplicate-x2.png",
+      "file": "closed-duplicate-x2.png",
       "width": 2280,
       "height": 96,
-      "sha256": "1767ee09da5d7286f8b5fd40234c23144c82e026d83001974e2c44966621f77a",
+      "sha256": "de0174d52b81fef7e9fa93429d88690c28a85a8580f2602bb7600a7ffcec9bec",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
@@ -158,11 +151,10 @@
         "width": 1140,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\closed-duplicate-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/hover-claim-x2.png",
+      "file": "hover-claim-x2.png",
       "width": 2248,
       "height": 96,
       "sha256": "15c27635b3f1fcf5b16d0076347979d39269e647af365ae3f45e274829c06e02",
@@ -179,11 +171,10 @@
         "width": 1124,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\hover-claim-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/selected-x2.png",
+      "file": "selected-x2.png",
       "width": 2248,
       "height": 96,
       "sha256": "c378a09fbd084fa0198dd066dbc558f4d4a01d67a1a2e3f7d50d8af7e9640a06",
@@ -200,81 +191,75 @@
         "width": 1124,
         "height": 48,
         "scale": 2
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\selected-x2.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-1440-dismissed.png",
+      "file": "list-1440-dismissed.png",
       "width": 1440,
       "height": 1060,
-      "sha256": "de43446ef3ef9254be80b0deb55deb1b518f413895f1961c5d2c937cc016c07c",
+      "sha256": "46dc052e5470327c6faa01bd705901d26a3049f6312c12851d22b252aab34ee9",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1440-dismissed.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-1920-dismissed.png",
+      "file": "list-1920-dismissed.png",
       "width": 1920,
       "height": 1060,
-      "sha256": "303970f62c515db2a2d116a0de32fcb245b7931cbd8a55df04d3e9bba8304abb",
+      "sha256": "dd9225ffca6faca020c3a6e232e99f8291139541a9c7b7f4ede0615ef234590b",
       "viewport": {
         "platform": "Win32",
         "width": 1920,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1920-dismissed.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-1440-search.png",
+      "file": "list-1440-search.png",
       "width": 1440,
       "height": 1060,
-      "sha256": "672f0b731a32d4524b8ad7c8514c8be94aa3c878bfe849b7abfaaee372f51dbb",
+      "sha256": "5da1033adb0dedd97481cf441a2fda5790bf299e6f5d16d5c9e68c9a02f24fb2",
       "viewport": {
         "platform": "Win32",
         "width": 1440,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1440-search.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-1920-search.png",
+      "file": "list-1920-search.png",
       "width": 1920,
       "height": 1060,
-      "sha256": "cd018023c17a60bfbf8d706b48ffc5386424cc648c6c53f4a891f1f010168fe9",
+      "sha256": "8cebf842789908d88023dbd0280859c6a564320bc86c838a44e8c91719d2c607",
       "viewport": {
         "platform": "Win32",
         "width": 1920,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-1920-search.png"
+      }
     },
     {
-      "file": "docs/ui/evidence/v218-card28/list-900-scroll.png",
+      "file": "list-900-scroll.png",
       "width": 900,
       "height": 1060,
-      "sha256": "53f4e3d19683d500583aeeffc19dcbcdc65f8404d0c92cc240437ec81d9b523e",
+      "sha256": "8595c238e68c20a9fb4fc9c4f3fc3d0c455a62c7c0a794ac07d4f439848d8344",
       "viewport": {
         "platform": "Win32",
         "width": 900,
         "height": 1060,
         "dpr": 1,
         "zoom": 1
-      },
-      "source_file": "D:\\CodexTemp\\pc-admin-v218-card28\\card28-list-c9CCyy\\list-900-scroll.png"
+      }
     }
   ],
-  "candidate": "review-02",
-  "candidate_input_hash": "c1fe6787178a861e775360cd7498f616b5fd34caafb3cf71ae5f3f3ef57e9bd3",
-  "source_receipt": "D:\\CodexEvidence\\pc-admin-card28-publish-20261106\\reviewed-ui-source-receipt.json"
+  "candidate": "codex-02",
+  "candidate_input_hash": "432eb7342bcb8823fed0f51a19dbc7a5906d08b9da5432a99549d4c088da317b",
+  "source_receipt": "D:/CodexEvidence/pc-admin-card28-publish-20261106/codex-ui-source-receipt.json"
 }

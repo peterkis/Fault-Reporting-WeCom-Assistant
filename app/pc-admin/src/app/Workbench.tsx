@@ -286,7 +286,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     for(const [key,value]of searchParameters(criteria))next.set(key,value);next.set('search','1');commitConditions(next);
   };
   const leaveSearch=()=>{const next=new URLSearchParams(params),keep=new Set(['range','scope',...(range==='custom'?['closed_from','closed_to']:[])]);for(const key of SEARCH_KEYS)if(!keep.has(key))next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');commitConditions(next);};
-  const closureKind=parsed.criteria?.closure_kind??'all';
+  const closureKind=searchMode?(parsed.criteria?.closure_kind??'all'):'all';
   const applyClosureKind=(value:string)=>{
     if(navigationBlocked)return;
     const next=new URLSearchParams(params);for(const key of ['cursor','limit'])next.delete(key);

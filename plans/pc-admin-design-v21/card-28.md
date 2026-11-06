@@ -165,3 +165,21 @@ review-02构建/strict/Stylelint/设计变量及制品检查PASS；注册浏览�
 ROOT-CI01补充：实际PR路径计划为database lane、60个入口，包含两份被本卡同步过的T41测试；它们原有的无条件D盘临时根约束同样不适用Ubuntu。保留Windows的原D盘断言，同时所有平台新增临时根必须绝对路径的约束，沿原helper的owned-temp/进程/连接清理，不放宽任何业务/传输/刷新断言。本地真实Windows4项通过；Ubuntu结果等待当前PR CI。
 
 当前截图/metrics/receipt已替换为审查修复review-02的Windows原图15张，旧图/初审源码ZIP/首轮失败原件外部保留；仅测试宿主修补不更改图的候选绑定。跨平台修补构建/strict及制品检查原件为build-portability-01/types-portability-01/artifact-portability-01。后续提交/推送/PR/Codex与CI/合并/main快进/清理，以GitHub当前完整head与外部发布根的原生回执为准，未提前记录为已通过或已合并。
+
+
+### 首轮PR反馈（保留原失败）
+
+PR #158初始head5b387554已真实触发Codex。首轮pr-plan在42252183052因本文件D盘Markdown链接超出仓库失败，后续应用lane未执行；已仅把该链接改为本机路径文字，提交0d35de8f，实际base/head --check-docs本地通过。日志原件保留，不把后继当首轮PASS。
+
+Codex对5b387554提出1项P2（PRRT_kwDOT_VkOc60mAES）：当保存的URL含search=1/closure_kind而现有搜索能力关闭，普通board查询已回退，但列表/子组/详情仍受旧closure_kind隐藏。接受此意见，仅让同一closureKind在searchMode=false时生效为all；查询、权限和状态值不动。新增真实关闭搜索能力fixture，以两个保存值验证三阶段、两个已处理子组、没有隐藏筛选说明/入口、详情已加载总数及零search请求/业务POST/核心状态事件守恒。复验及后继CI单独记录。
+
+
+本地Codex修复定向运行中，新增search-disabled场景通过（三阶段3/4/9、总16、两个保存值、零search/POST），原主场景在完成→关闭的返回邻项等待超时；失败实际落在完成区前一项，表明只等history URL先提交后点击了React尚未更新的旧previous处理器。补等待当前kind/id、已加载位置及编号共同提交，不改严格邻项期望。0d35de8f的pr-plan已成功，Linux pr-database首例则在分组展开过程中More的真实命中等待超时；补等待该分组原生动画完成后再调用原click helper，不加固定sleep/不虚拟click/不放宽30秒或240秒预算。两个失败/TAP/截图与CI原日志分别保留。
+
+### Codex修复的本地复验
+
+候选codex-02在已发布0d35de8f上含未提交修补，输入指纹 `432eb7342bcb8823fed0f51a19dbc7a5906d08b9da5432a99549d4c088da317b`，manifest `81328e0b3bd55b05d1e71c2592c4bebd2f0ff16821937dd286d83d2c3aebac66`。build-codex-02、types-codex-02（Stylelint/变量/strict/负向类型）、artifact-codex-02均PASS；ESLint沿先前既有features范围0告警结果，本轮未改features源码。
+
+codex-fix-diagnostic-02中两项Card28定向用例2/2 PASS；同候选完整注册UI/设计基础2入口94/94 PASS（真实Windows浏览器18、基础76），FAIL/CANCEL/SKIP/TODO均0，回执为外部发布根tests-codex-fix-ui/summary.json。原两份T41的4/4及早前456分批结果保留原候选身份，不重复累计。15张提交内图来自codex-02定向PASS，逐图SHA/PNG尺寸/Win32/DPR1/zoom1与receipt一致；receipt保留实际输入指纹，未冒充后继提交身份。
+
+独立Spec有限复核确认Codex P2源码闭合；独立Standards再核等待修补，原355条assert全部保留、删除0，当前373条，原240000ms预算未变。报告spec-codex-fix与standards-readiness保留“运行待Root”原观察状态，本段另提供实际运行收口。远端Codex当前head复审、Ubuntu CI、合并和清理仍以随后原生回执为准；本地通过不提前记为远端成功。

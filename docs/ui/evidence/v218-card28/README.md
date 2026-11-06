@@ -1,6 +1,6 @@
 # 卡28 Windows 截图与实测
 
-基线 `728d9d9fa95edf7e911b8bd51891df5e802296a7`，独立worktree的审查修复候选review-02。Windows系统Chrome、DPR1、visualViewport.scale=1；主图高度1060px。2倍局部使用原DPR1的Page截图clip.scale=2，坐标含页面scrollX/Y；PNG宽高、哈希均已核对。原图不是CSS缩放或图像重采样。
+基线 `728d9d9fa95edf7e911b8bd51891df5e802296a7`，独立worktree的Codex修复候选codex-02（输入指纹见receipt）。Windows系统Chrome、DPR1、visualViewport.scale=1；主图高度1060px。2倍局部使用原DPR1的Page截图clip.scale=2，坐标含页面scrollX/Y；PNG宽高、哈希均已核对。原图不是CSS缩放或图像重采样。
 
 [机器实测](metrics.json) · [截图尺寸/环境/SHA-256回执](receipt.json) · [本卡执行记录](../../../../plans/pc-admin-design-v21/card-28.md)。
 
@@ -52,11 +52,11 @@
 
 最终图另覆盖无Ticket的已完成受理（success）与受理失败（danger），状态值来自本地合成数据库的既有字段。
 
-早期布局、裁图偏移和失败原件保留于 `D:/CodexEvidence/pc-admin-card28/attempt-01/` 至 `attempt-03/`。当前目录15图均来自审查修复候选review-02的新Card28 PASS；不以旧图补本候选验收。Electron、现场、CI、full/certify、部署及真实发送未运行。
+早期布局、裁图偏移和失败原件保留于 `D:/CodexEvidence/pc-admin-card28/attempt-01/` 至 `attempt-03/`。当前目录15图均来自Codex修复候选codex-02的新Card28定向PASS（两例）；不以旧图补本候选验收。Electron、现场、full/certify、部署及真实发送未运行；PR CI单独按当前提交记录。
 
 
 ## 审查修复复验
 
-初审原件已保留在外部发布根的review-initial-source.zip与review-diagnostic-01-evidence。当前15图及metrics/receipt来自注册Card12入口的93项复验中Card28场景，增加真实SSE连接和导航冻结、父阶段先折叠再筛选、1280实际窄容器横滚、编号格真实hover/click、8汉字完整两行姓名。1280与900的容器宽/滚距及冻结列坐标均在metrics.containerWidths，截图仍按原任务15图交付。
+初审原件已保留在外部发布根的review-initial-source.zip与review-diagnostic-01-evidence。当前15图及metrics/receipt来自注册Card12入口的Card28定向场景，含真实SSE连接和导航冻结、父阶段先折叠再筛选、1280实际窄容器横滚、编号格真实hover/click、8汉字完整两行姓名；新增搜索能力关闭时旧结束筛选链接回退的第二例同次通过。1280与900的容器宽/滚距及冻结列坐标均在metrics.containerWidths，截图仍按原任务15图交付。
 
 新源码层级：首列10、原row-link透明命中11、原领取slot/kbd12、表头40；新姓名样本完整显示8字、font13px/头像20px/姓名框40px/行44px。业务POST仍为0。后续仅将两份T41测试的D盘物理宿主断言限定Windows并在所有平台检查临时根绝对路径；应用输出逐字节等价证明单独保存，不更改这些图的原候选身份。
