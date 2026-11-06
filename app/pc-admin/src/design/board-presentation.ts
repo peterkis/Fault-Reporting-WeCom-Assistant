@@ -16,7 +16,7 @@ export function matchesBoardSummary(item: WorkbenchCard, filter: BoardSummaryFil
     case 'mine': return item.attention?.related_reasons.includes('HANDLING') === true;
     case 'today': {
       const completed = instant(item.completed_at);
-      if (item.column !== 'closed' || !Number.isFinite(completed) || completed > now) return false;
+      if (item.column !== 'closed' || item.closure?.kind !== 'COMPLETED' || !Number.isFinite(completed) || completed > now) return false;
       return new Date(completed + 8 * 3_600_000).toISOString().slice(0, 10)
         === new Date(now + 8 * 3_600_000).toISOString().slice(0, 10);
     }
@@ -26,7 +26,7 @@ export function matchesBoardSummary(item: WorkbenchCard, filter: BoardSummaryFil
 /** Local presentation only; input order, server cursors and business DTOs remain intact. */
 export function sortBoardItems(items: readonly WorkbenchCard[], column: BoardColumn, sort: BoardSort): WorkbenchCard[] {
   if (column === 'active') return [...items];
-  const time = (item: WorkbenchCard) => instant(column === 'closed' ? item.completed_at : item.created_at);
+  const time = (item: WorkbenchCard) => instant(column === 'closed' ? item.closure?.kind === 'DISMISSED' ? item.closure.closed_at : item.completed_at : item.created_at);
   return [...items].sort((a, b) => {
     const left = time(a), right = time(b);
     if (!Number.isFinite(left)) return Number.isFinite(right) ? 1 : 0;

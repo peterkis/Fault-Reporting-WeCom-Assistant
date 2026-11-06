@@ -11,12 +11,12 @@ T42 [合法动作与原表单路由](board-legal-actions-design.md)已完成本�
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |
 | `GET /api/lifecycle/bootstrap` | 无 query | 内部 principal_id,display_name,roles 等，见 [工单](tickets.md) |
-| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|closed`；range 默认 recent：`recent\|all\|cancelled\|custom`；custom 必须同时提供 `closed_from`、`closed_to`（`YYYY-MM-DD`，含起止两天）；cursor?；limit 默认50/最大100；仅 `workbenchFollowEnabled=true` 接纳 scope=`team\|related`、默认team，见下文当前验证状态 | BoardPage |
+| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|closed`；range 默认 recent：`recent\|all\|custom`；custom 必须同时提供 `closed_from`、`closed_to`（`YYYY-MM-DD`，含起止两天）；cursor?；limit 默认50/最大100；仅 `workbenchFollowEnabled=true` 接纳 scope=`team\|related`、默认team，见下文当前验证状态 | BoardPage |
 | `GET /api/workbench/items/{kind}/{id}` | kind=`ticket\|review\|intake`，id UUID；cursor?；limit 默认50/最大100 | WorkbenchDetail |
 
 仅允许表内query，重复参数也拒绝。board列表cursor绑定principal、当前授权范围、column/range/时间窗口；责任查询能力开启时另绑定team/related，切换范围或能力须重置。关注开关false时所有显式scope均拒绝；日期范围与关注开关独立。detail cursor绑定kind/id/at/record_id，访问仍每次授权。权限过滤先于LIMIT；不能用intake卡片旁路读到不可见工单。
 
-`custom` 的日期按北京时间自然日解释，服务器验证真实日历日期及起止顺序，并返回开始日零时至结束日次日零时的半开窗口。结束日期须早于 `9999-12-31`，以保证次日上界仍符合四位年份时间合同。非 custom 不接纳这两个日期参数。仅第三列的已完结记录应用该窗口，未完成事项和 RESOLVED 待确认事项继续保留。第三列默认同时纳入完成和关闭，包括 CANCELLED；已关闭按可证明的关闭时刻筛选，缺时间仅在 all 可见，原 cancelled 专项仍只选 CANCELLED 且不加日期限制。自定义分页游标使用 v2 并绑定开始和结束边界，修改任一日期后旧游标拒绝；原预设游标保持 v1。高级搜索仍只支持三种预设，并独立支持 closure_kind 筛选。
+`custom` 的日期按北京时间自然日解释，服务器验证真实日历日期及起止顺序，并返回开始日零时至结束日次日零时的半开窗口。结束日期须早于 `9999-12-31`，以保证次日上界仍符合四位年份时间合同。非 custom 不接纳这两个日期参数。仅第三列的已完结记录应用该窗口，未完成事项和 RESOLVED 待确认事项继续保留。第三列默认同时纳入完成和关闭，包括 CANCELLED；已关闭按可证明的关闭时刻筛选，缺时间仅在 all 可见。自定义分页游标使用 v2 并绑定开始和结束边界，修改任一日期后旧游标拒绝；原预设游标保持 v1。高级搜索同样支持 recent / all / custom及日期对，并可组合closure_kind筛选；详细输入、闭合校验和游标规则见[搜索接口](search-source-forward.md#卡27b-b5日期组合2026-11-06)。
 
 完整 DTO：[types](../../../contracts/web01_workbench_contracts.d.ts)。字段如下：
 
@@ -37,7 +37,7 @@ source_label提供统一来源显示，source_group提供管理员登记群名�
 
 原因只读已有事实；纯空白内部说明或人员名投影为 null，原记录不改。reason_note 仅在当前账号原可读时给出，Intake 的任意自由文本不外扩。人工 Intake 用匹配 Review.resolved_at；自动后续分类仅记录旧输入时间、无法证明实际关闭时刻时 closed_at=null，不能用 updated_at 推断；严格证明初始创建即 IGNORED 时用该创建事实的 created_at。duplicate_of 当前无原单事实为 null；DISMISSED 无恢复，can_restore=false，完成 Ticket 的原 reopen 权限独立判断。
 
-group_counts 使用当前获权完整匹配集合，分页前计算；不能以 items.length 替代。最终同一 SQL 同时保留原身份/角色/会话/对象 READ 终检，并复核当前有序页、排序键及 limit+1 后续页标志；等待期间新增/移出匹配事项或排序边界变化时返回 `409 P2_016_VERSION_CONFLICT`，不返回混合快照，调用方刷新重读。默认没有 include_* / closure_groups 兼容参数；当前严格解析与后端同批更新。UI 分组及 cancelled 移除属于 27B。
+group_counts 使用当前获权完整匹配集合，分页前计算；不能以 items.length 替代。最终同一 SQL 同时保留原身份/角色/会话/对象 READ 终检，并复核当前有序页、排序键及 limit+1 后续页标志；等待期间新增/移出匹配事项或排序边界变化时返回 `409 P2_016_VERSION_CONFLICT`，不返回混合快照，调用方刷新重读。默认没有 include_* / closure_groups 兼容参数；当前严格解析与后端同批更新。卡27B 实现前端分组，移除 cancelled 参数值；旧值请求返回400。
 
 `reported_at` 只增加在详情响应，表示原始报修首次进入系统的时间，按既有北京时间合同格式化。聊天来源取原始报修消息的接收时间，H5 取初次 SUBMIT 的接收时间，人工代录取首次登记时间；补充材料和重开不改变该值。遵守原来源读取条件、撤销状态及保留期，来源不可读取或无法确定时为 null；旧响应缺少字段时客户端显示“未记录”，不以工单 created_at 或当前已加载记录的最早时间代替。不扩展看板/搜索 DTO，不新增持久化事实或迁移。
 

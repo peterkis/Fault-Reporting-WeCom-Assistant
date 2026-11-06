@@ -15,6 +15,8 @@
 .ds-board-group+.ds-board-group {margin-top: var(--space-3);}
 .ds-board-group .ds-board-group-trigger {display: flex; align-items: center; justify-content: flex-start; gap: var(--space-1-5); width: 100%; min-height: var(--control-h-sm); padding: var(--space-1) var(--space-1) var(--space-2); background: transparent; border: 0; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs); font-weight: var(--fw-medium);}
 .ds-board-group-count {font-variant-numeric:var(--font-numeric-variant);}
+.ds-board-group-note {margin-left:auto;color:var(--text-tertiary);font-weight:var(--fw-regular);white-space:nowrap;}
+.ds-board-column.closed .ds-completed-drop-zone {min-height:var(--space-10);}
 .ds-board-group [data-slot=disclosure-body] {padding: 0;}
 .ds-board-column .empty {margin: 0; padding: var(--space-6) var(--space-3); border: 1px dashed var(--border-default); border-radius: var(--radius-md); color: var(--text-secondary); font-size: var(--fs-sm); line-height: var(--lh-sm); overflow-wrap: anywhere; text-align: center;}
 .ds-board-column .column-cards {min-width: 0;}

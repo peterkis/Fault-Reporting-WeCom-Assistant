@@ -133,7 +133,7 @@ function decodeCard(value:unknown):WorkbenchCard {
 }
 function decodePage(value:unknown):BoardPage {
   const v=object(value),r=object(v.range);
-  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all','cancelled','custom'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
+  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all','custom'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
   const column=v.column as BoardColumn,items=v.items.map(decodeCard);if(items.some(item=>item.column!==column))throw new ApiError(502,'INVALID_RESPONSE');
   let counts:BoardPage['group_counts'];
   if(column==='closed'){
@@ -149,6 +149,10 @@ function decodeSearchPage(value:unknown,expected:WorkbenchSearchCriteria):Workbe
   Object.keys(range).length!==4||!['mode','from','until','timezone'].every(key=>Object.hasOwn(range,key))||range.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
  let criteria:WorkbenchSearchCriteria;try{criteria=normalizeSearchCriteria(page.criteria);}catch{throw new ApiError(502,'INVALID_RESPONSE');}
  if(searchCriteriaKey(criteria)!==searchCriteriaKey(expected)||page.column!==criteria.column||range.mode!==criteria.range)throw new ApiError(502,'INVALID_RESPONSE');
+ if(criteria.range==='custom'){
+  const until=new Date(Date.parse(criteria.closed_to+'T00:00:00Z')+86_400_000).toISOString().slice(0,10)+' 00:00:00';
+  if(range.from!==criteria.closed_from+' 00:00:00'||range.until!==until)throw new ApiError(502,'INVALID_RESPONSE');
+ }
  const allowed=['kind','id','intake_id','number','title','status','column','priority','source','source_label','source_group','location','reporter_name','reporter_department','reporter_profile','assignee_name','review_reason','created_at','updated_at','completed_at','closure','attention','supplement_follow_up','follow_up_schedule','web_report_urge'];
  const items=page.items.map(value=>{
   const item=object(value);if(Object.keys(item).some(key=>!allowed.includes(key)))throw new ApiError(502,'INVALID_RESPONSE');return decodeCard(item);

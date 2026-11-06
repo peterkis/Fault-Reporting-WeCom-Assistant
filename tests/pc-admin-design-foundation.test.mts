@@ -164,11 +164,15 @@ const {matchesBoardSummary,sortBoardItems}: {
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
   return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,closure:null,...overrides};
 }
-test('Card 27A audit: the existing today summary includes dismissed cards with a same-day completed_at',()=>{
+const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
+test('Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at',()=>{
   const now=Date.parse('2026-11-06T12:00:00+08:00');
-  for(const status of ['CLOSED','CANCELLED','DUPLICATE_LINKED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00'}),'today',now),true,status+'（合成）');
-  assert.equal(matchesBoardSummary(boardCard({status:'IGNORED',column:'closed',completed_at:null}),'today',now),false);
+  for(const status of ['CLOSED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
+  for(const status of ['CANCELLED','DUPLICATE_LINKED','IGNORED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='IGNORED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
+  assert.equal(matchesBoardSummary(boardCard({status:'IGNORED',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
+  assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:'2026-11-06 08:00:00',closure:null}),'today',now),false);
 });
+
 test('R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets',async()=>{
   const {avatarInitial}:{avatarInitial:(name:string)=>string}=await import(await designModule('components/Avatar/avatarInitial'));
   for(const [name,initial] of [['张三（合成）','三'],['李四(外包)','四'],['王五（合成）（外包）','五'],['（合成）','合'],['Peter','P'],['peter (实习)','P'],['  赵六  ','六'],['','—'],[' () （） ','—'],['张😀（合成）','😀']])assert.equal(avatarInitial(name??''),initial,name);
@@ -202,7 +206,7 @@ test('board mine requires the caller-only HANDLING relation, never names, follow
 });
 test('board today follows Shanghai midnight and completion time rather than activity time',()=>{
   for(const [completed,expected] of [['2026-11-01 23:59:59',false],['2026-11-02 00:00:00',true],['2026-11-02 10:00:00',true],['2026-11-02 10:00:01',false]] as const){
-    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed}),'today',now),expected);
+    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed,closure:completedClosure}),'today',now),expected);
   }
   assert.equal(matchesBoardSummary(boardCard({column:'active',completed_at:'2026-11-02 00:00:00'}),'today',now),false);
   assert.equal(matchesBoardSummary(boardCard({column:'closed'}),'today',now),false);
@@ -279,4 +283,13 @@ test('Card 20 T3 semantic colors reference the primitive palette and retire the 
   assert.doesNotMatch(semantic,/#(?:[\da-f]{3}){1,2}\b/iu);
   assert.doesNotMatch(css,/--(?:bg-board|bg-column|gray-board|gray-column)\s*:/u);
   assert.match(css,/--scrollbar-size:\s*8px/u);
+});
+
+
+test('Card 27B dismissed sort uses proven closed_at and keeps unknown time last',()=>{
+  const manual=boardCard({id:'manual',column:'closed',completed_at:'2020-01-01 00:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 09:00:00'}});
+  const system=boardCard({id:'system',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 08:00:00'}});
+  const unknown=boardCard({id:'unknown',column:'closed',completed_at:'2026-11-06 10:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:null}});
+  assert.deepEqual(sortBoardItems([unknown,system,manual],'closed','newest').map(item=>item.id),['manual','system','unknown']);
+  assert.deepEqual(sortBoardItems([unknown,manual,system],'closed','oldest').map(item=>item.id),['system','manual','unknown']);
 });

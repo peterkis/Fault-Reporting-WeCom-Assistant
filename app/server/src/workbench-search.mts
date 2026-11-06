@@ -150,7 +150,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     OR ($5='active' AND status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'))
     OR ($5='closed' AND status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')))
    AND (status NOT IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')
-    OR CASE WHEN $6::text='all' THEN TRUE WHEN $6='cancelled' THEN status='CANCELLED' ELSE
+    OR CASE WHEN $6::text='all' THEN TRUE ELSE
       (status='RESOLVED' OR COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp>=$7::timestamp
        AND COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp<$8::timestamp) END)
    AND ($9::text='team' OR handling OR communication OR following)
@@ -181,8 +181,13 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     const p=await query.principal(authContext,tx),scope=ticketPredicateP2016(p),bound=binding(authContext,p);await ready(tx,c);
     const session=sessionPredicate(authContext,p),valid=(await tx.query<{valid:boolean}>('SELECT '+session.sql+' AS valid',session.values)).rows[0];
     if(valid?.valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
-    const window=(await tx.query<Window>(`SELECT to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
-      to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`)).rows[0];if(!window)failP2016('ACTION_FAILED',503);
+    // The shared normalizer validates the calendar pair. Reuse the board's
+    // inclusive civil-date convention without another database round trip.
+    const window=c.range==='custom'
+     ?(await tx.query<Window>(`SELECT to_char($1::date,'YYYY-MM-DD HH24:MI:SS') AS "from",
+       to_char($2::date+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`,[c.closed_from,c.closed_to])).rows[0]
+     :(await tx.query<Window>(`SELECT to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
+       to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`)).rows[0];if(!window)failP2016('ACTION_FAILED',503);
     if(cursor&&(cursor.binding!==bound||cursor.criteria!==criteria||cursor.from!==window.from||cursor.until!==window.until))failP2016('CURSOR_INVALID');
     const optional=(await tx.query<{web:boolean}>(`SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web`)).rows[0];
     if(features.supplements&&!await supplementFollowUpSchemaReady(tx))failP2016('DISABLED',503);

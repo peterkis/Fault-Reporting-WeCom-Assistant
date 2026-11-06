@@ -1,0 +1,386 @@
+{
+  "windows": [
+    {
+      "preset": "today",
+      "kind": "dismissed",
+      "from": "2026-11-06",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "today",
+      "kind": "completed",
+      "from": "2026-11-06",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160"
+      ]
+    },
+    {
+      "preset": "today",
+      "kind": "all",
+      "from": "2026-11-06",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "week",
+      "kind": "dismissed",
+      "from": "2026-10-31",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-22d5-7c5b-b809-02a252713820",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "week",
+      "kind": "completed",
+      "from": "2026-10-31",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160"
+      ]
+    },
+    {
+      "preset": "week",
+      "kind": "all",
+      "from": "2026-10-31",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-22d5-7c5b-b809-02a252713820",
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "month",
+      "kind": "dismissed",
+      "from": "2026-11-01",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-22d5-7c5b-b809-02a252713820",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "month",
+      "kind": "completed",
+      "from": "2026-11-01",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160"
+      ]
+    },
+    {
+      "preset": "month",
+      "kind": "all",
+      "from": "2026-11-01",
+      "to": "2026-11-06",
+      "ids": [
+        "01a1b03e-2244-7647-b8e4-ce5bc07fc2b8",
+        "01a1b03e-2280-779c-848d-c76943cee357",
+        "01a1b03e-22d5-7c5b-b809-02a252713820",
+        "01a1b03e-23cd-7aac-ac1f-c0100602fdaa",
+        "01a1b03e-23fc-7c6c-8c7e-82a984c9e6fc",
+        "01a1b03e-2422-7854-aff3-c557f57c81c7",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160",
+        "01a1b03e-2531-7456-bd8d-58f91137487d"
+      ]
+    },
+    {
+      "preset": "custom",
+      "kind": "dismissed",
+      "from": "2026-11-05",
+      "to": "2026-11-05",
+      "ids": [
+        "01a1b03e-22d5-7c5b-b809-02a252713820"
+      ]
+    },
+    {
+      "preset": "custom",
+      "kind": "completed",
+      "from": "2026-11-05",
+      "to": "2026-11-05",
+      "ids": [
+        "01a1b03e-2450-7a13-b533-26ca5de5c160"
+      ]
+    },
+    {
+      "preset": "custom",
+      "kind": "all",
+      "from": "2026-11-05",
+      "to": "2026-11-05",
+      "ids": [
+        "01a1b03e-22d5-7c5b-b809-02a252713820",
+        "01a1b03e-2450-7a13-b533-26ca5de5c160"
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "name": "list-today-dismissed",
+      "width": 1440,
+      "toolbar": {
+        "left": 272,
+        "right": 1408,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1042.59375,
+        "right": 1408,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 895.59375,
+        "right": 1030.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1440,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-today-dismissed",
+      "width": 1920,
+      "toolbar": {
+        "left": 272,
+        "right": 1648,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1282.59375,
+        "right": 1648,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 1135.59375,
+        "right": 1270.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1920,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-week-dismissed",
+      "width": 1440,
+      "toolbar": {
+        "left": 272,
+        "right": 1400,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1034.59375,
+        "right": 1400,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 887.59375,
+        "right": 1022.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1432,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-week-dismissed",
+      "width": 1920,
+      "toolbar": {
+        "left": 272,
+        "right": 1648,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1282.59375,
+        "right": 1648,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 1135.59375,
+        "right": 1270.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1912,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-month-dismissed",
+      "width": 1440,
+      "toolbar": {
+        "left": 272,
+        "right": 1400,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1034.59375,
+        "right": 1400,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 887.59375,
+        "right": 1022.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1432,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-month-dismissed",
+      "width": 1920,
+      "toolbar": {
+        "left": 272,
+        "right": 1648,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1282.59375,
+        "right": 1648,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 1135.59375,
+        "right": 1270.59375,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1912,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-custom-dismissed",
+      "width": 1440,
+      "toolbar": {
+        "left": 272,
+        "right": 1408,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 997.953125,
+        "right": 1408,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 850.953125,
+        "right": 985.953125,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1440,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    },
+    {
+      "name": "list-custom-dismissed",
+      "width": 1920,
+      "toolbar": {
+        "left": 272,
+        "right": 1648,
+        "top": 165,
+        "bottom": 233
+      },
+      "dates": {
+        "left": 1237.953125,
+        "right": 1648,
+        "top": 183,
+        "bottom": 215
+      },
+      "chip": {
+        "left": 1090.953125,
+        "right": 1225.953125,
+        "top": 183,
+        "bottom": 215
+      },
+      "scrollWidth": 1920,
+      "platform": "Win32",
+      "dpr": 1,
+      "zoom": 1
+    }
+  ],
+  "searchRequests": 19,
+  "businessPosts": [],
+  "reloadAndViewPreserved": true,
+  "leaveSearchPreservedDates": true,
+  "clearDateRemovedPair": true,
+  "searchPaths": [
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-11-06&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=completed&closed_from=2026-11-06&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-06&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-10-31&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-10-31&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=completed&closed_from=2026-10-31&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-10-31&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-01&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-11-01&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=completed&closed_from=2026-11-01&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-01&closed_to=2026-11-06&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=completed&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=%EF%BC%88%E5%90%88%E6%88%90%EF%BC%89&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=%EF%BC%88%E5%90%88%E6%88%90%EF%BC%89&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=%EF%BC%88%E5%90%88%E6%88%90%EF%BC%89&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-11-05&closed_to=2026-11-05&limit=50",
+    "/api/workbench/search?q=&column=all&range=all&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&limit=50"
+  ]
+}

@@ -296,7 +296,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       const column=input.column??'pending',mode=input.range??'recent';
       const boardScope=input.scope??'team';
       if((boardScope!=='team'&&boardScope!=='related')||(!workbenchFollowEnabled&&input.scope!=null))failP2016();
-      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','cancelled','custom'].includes(mode))failP2016();
+      if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','custom'].includes(mode))failP2016();
       const selectedColumn=column as BoardColumn,selectedRange=mode as BoardCompletionRange,custom=selectedRange==='custom';
       const window=await range(selectedRange,input.closedFrom,input.closedTo),limit=limitP2016(input.limit??'50');
       const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from',...(custom?['until']:[]),'at','kind','id','order_group']):null;
@@ -306,7 +306,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       const at=page?localP2016(page.at):null,id=page?uuidP2016(page.id):null;
       if(page&&(typeof page.kind!=='string'||!['ticket','review','intake'].includes(page.kind)))failP2016('CURSOR_INVALID');
       if(page&&page.order_group!==0&&page.order_group!==1)failP2016('CURSOR_INVALID');
-      const states=STATUS_COLUMNS[selectedColumn].filter(state=>selectedColumn!=='closed'||selectedRange!=='cancelled'||state==='CANCELLED');
+      const states=STATUS_COLUMNS[selectedColumn];
       if(follow&&!await follow.ready())failP2016('DISABLED',503);
       const related=boardScope==='related'?` AND (${RELATED_CARD_SQL}${follow?` OR ${FOLLOW_CARD_SQL}`:''})`:'';
       const closedAt=`COALESCE(completed_at,closure_evidence->>'closed_at')`;

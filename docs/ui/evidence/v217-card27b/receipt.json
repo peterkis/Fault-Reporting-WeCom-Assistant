@@ -1,0 +1,155 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "candidate_input_hash": "8844ccf054df413ceb2419f9d392b3d4029d319eeaa71a8c7f88f5a85a79a31b",
+  "screenshots": [
+    {
+      "file": "board-1440-dismissed-folded.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "6e353b7f03a53c5c1c89a01af4cde1fe2ea55fd7703b9ea8317b9bfcdf58ab59",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\board-1440-dismissed-folded.png"
+    },
+    {
+      "file": "board-1920-dismissed-folded.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "389bb051421be68b5d4f22e20e5aec18dc0bf29c88f9b60776af7f04fbb17a6a",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1920,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\board-1920-dismissed-folded.png"
+    },
+    {
+      "file": "board-1440-dismissed-expanded.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "319d90b709217ed6b552676c93d7f880a8048e47440889982ef2c80557f07ae0",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\board-1440-dismissed-expanded.png"
+    },
+    {
+      "file": "board-1920-dismissed-expanded.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "943b37125cdbdc4ff19094c5a4ea863d21a1f3a605a5c828fc96e3f5795503d0",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1920,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\board-1920-dismissed-expanded.png"
+    },
+    {
+      "file": "dismissed-manual-x2.png",
+      "width": 732,
+      "height": 276,
+      "sha256": "8d952c2d6d1f4d01c6b7df58ecfe469dbf983d9018512649be545fd1b1070743",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 2,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 1034,
+        "y": 883,
+        "width": 366,
+        "height": 138,
+        "scale": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\dismissed-manual-x2.png"
+    },
+    {
+      "file": "dismissed-system-x2.png",
+      "width": 736,
+      "height": 276,
+      "sha256": "42c4f37ede4f23aa10b508581e55decc4ab29bc422f163e179c253cb3f25d426",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 2,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 1040,
+        "y": 1013,
+        "width": 368,
+        "height": 138,
+        "scale": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\dismissed-system-x2.png"
+    },
+    {
+      "file": "dismissed-duplicate-x2.png",
+      "width": 736,
+      "height": 276,
+      "sha256": "94bc820475e4596d17eefafc8c9ea9f4a7f1f34f81b655d2f70c9992cd1c0b5c",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 2,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 1040,
+        "y": 753,
+        "width": 368,
+        "height": 138,
+        "scale": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\dismissed-duplicate-x2.png"
+    },
+    {
+      "file": "drawer-closure-record.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "f223f50a7ce7c37947c8b3998688decd95247fe1b5b9a34bdfa8999e3e478dcd",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\drawer-closure-record.png"
+    },
+    {
+      "file": "list-dismissed.png",
+      "width": 1440,
+      "height": 1145,
+      "sha256": "c6a0440faff36deefbe4d742fce9b31f6e3d9e94ca1753724513d211520d0de1",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-20261106\\card27b-board-ZfQGOz\\list-dismissed.png"
+    }
+  ],
+  "manifest_sha256": "e85f8b45580e9226ea5dec4cc68c231424ba611dc457bee9717620920967d830",
+  "representation": "LOCAL_UNCOMMITTED_WIP"
+}

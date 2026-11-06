@@ -7,13 +7,15 @@ import {useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
 import {api,statusLabels} from '../../api/client';
-import type {Principal,WorkbenchCard,CompletionRange} from '../../api/client';
+import type {Principal,WorkbenchCard,BoardCompletionRange} from '../../api/client';
 import {parseSearchRequest,searchCriteriaKey,searchParameters,SEARCH_STATUSES,SEARCH_SOURCES,hasSearchCriteria} from '../../../../../shared/workbench-search-contracts.mjs';
 import type {WorkbenchSearchCriteria} from '../../../../../contracts/workbench_search_contracts';
 import './search.css';
 
+const viewKeys=['range','scope','closed_from','closed_to','closure_kind'] as const;
+const conditionsKey=(criteria:WorkbenchSearchCriteria)=>{const params=searchParameters(criteria);for(const key of viewKeys)params.delete(key);return params.toString();};
 const sourceLabels:Record<string,string>={WECOM_DIRECT:'Bot 私聊',WECOM_GROUP:'群聊报修',WEB_REQUEST:'医小修网页',MANUAL_PHONE:'电话代录',MANUAL_ON_SITE:'现场代录'};
-export function criteriaFromUrl(params:URLSearchParams,range:CompletionRange,scope:'team'|'related'){
+export function criteriaFromUrl(params:URLSearchParams,range:BoardCompletionRange,scope:'team'|'related'){
  if(params.has('cursor')||params.has('limit'))return {criteria:null,error:'搜索地址中的分页参数无效，请重新提交搜索条件。'};
  const input=new URLSearchParams(),navigation=new Set(['view','detail','search']);
  for(const [key,value]of params)if(!navigation.has(key))input.append(key,value);
@@ -36,29 +38,29 @@ export function useWorkbenchSearch(principal:Principal,criteria:WorkbenchSearchC
  },[client,key,principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,roles,enabled]);
  return {...query,restart:()=>client.resetQueries({queryKey,exact:true},{cancelRefetch:true})};
 }
-interface Props {principal:Principal;criteria:WorkbenchSearchCriteria|null;blocked:boolean;active:boolean;loaded:WorkbenchCard[];
+interface Props {principal:Principal;criteria:WorkbenchSearchCriteria|null;blocked:boolean;busy?:boolean;active:boolean;loaded:WorkbenchCard[];
  onApply:(criteria:WorkbenchSearchCriteria)=>void;onLeave:()=>void}
-export function SearchControls({principal,criteria,blocked,active,loaded,onApply,onLeave}:Props){
+export function SearchControls({principal,criteria,blocked,busy=false,active,loaded,onApply,onLeave}:Props){
  const fallback=parseSearchRequest(new URLSearchParams()).criteria,key=criteria?searchCriteriaKey(criteria):'invalid';
  const [draft,setDraft]=useState(()=>searchParameters(criteria??fallback)),[error,setError]=useState<string|null>(null);
  const previous=useRef(criteria);
  useEffect(()=>{
   if(criteria){
-   const before=previous.current,onlyScope=before!==null&&searchCriteriaKey({...before,range:'all',scope:'team'})===searchCriteriaKey({...criteria,range:'all',scope:'team'});
-   setDraft(current=>{if(!onlyScope)return searchParameters(criteria);const next=new URLSearchParams(current);next.set('range',criteria.range);next.set('scope',criteria.scope);return next;});
+   const before=previous.current,onlyView=before!==null&&conditionsKey(before)===conditionsKey(criteria);
+   setDraft(current=>{if(!onlyView)return searchParameters(criteria);const next=new URLSearchParams(current),committed=searchParameters(criteria);for(const key of viewKeys){const value=committed.get(key);if(value===null)next.delete(key);else next.set(key,value);}return next;});
    setError(null);
   }
   previous.current=criteria;
  },[key]);
  const set=(name:string,value:string)=>setDraft(current=>{const next=new URLSearchParams(current);if(value==='')next.delete(name);else next.set(name,value);return next;});
  const submit=(event:FormEvent<HTMLFormElement>)=>{
-  event.preventDefault();
+  event.preventDefault();if(busy)return;
   try{const next=parseSearchRequest(draft).criteria;setError(null);onApply(next);}catch{setError('条件格式不正确；搜索文字最多128个字符，细分状态最多8项。');}
  };
  const groups=[...new Map(loaded.flatMap(item=>item.source_group?[[item.source_group.ref,item.source_group] as const]:[])).values()];
- return <HForm className="workbench-search" aria-label="搜索全部获权事项" onSubmit={submit}><HFieldset disabled={blocked}><div className="search-main"><HLabel>编号、描述、报修时资料或位置
+ return <HForm className="workbench-search" aria-label="搜索全部获权事项" aria-busy={busy} onSubmit={submit}><HFieldset disabled={blocked}><div className="search-main"><HLabel>编号、描述、报修时资料或位置
    <HInput name="q" value={draft.get('q')??''} maxLength={256} onChange={event=>set('q',event.target.value)} placeholder="搜索工单号、标题、报修人" autoComplete="off"/></HLabel>
-   <HButton type="submit" tone="secondary">搜索全部</HButton>{active?<HButton type="button" onClick={onLeave} tone="secondary">结束搜索</HButton>:null}</div><WorkbenchDisclosure title={<span className="ds-search-options" title="搜索选项" ref={node=>{const trigger=node?.closest('button');trigger?.setAttribute('aria-label','搜索选项');trigger?.setAttribute('title','搜索选项');}}><SlidersHorizontal aria-hidden="true"/><span className="sr-only">搜索选项</span></span>}><div className="search-filters">
+   <HButton type="submit" isDisabled={busy} tone="secondary">搜索全部</HButton>{active?<HButton type="button" isDisabled={busy} onClick={onLeave} tone="secondary">结束搜索</HButton>:null}</div><WorkbenchDisclosure title={<span className="ds-search-options" title="搜索选项" ref={node=>{const trigger=node?.closest('button');trigger?.setAttribute('aria-label','搜索选项');trigger?.setAttribute('title','搜索选项');}}><SlidersHorizontal aria-hidden="true"/><span className="sr-only">搜索选项</span></span>}><div className="search-filters">
     <WorkbenchSelect label={<>事项阶段</>} name="column" value={draft.get('column')??'all'} onChange={event=>set('column',event)} isDisabled={(blocked)}><ListBox.Item id="all" textValue={"全部阶段"}>全部阶段<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="pending" textValue={"待受理"}>待受理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="active" textValue={"处理中"}>处理中<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="closed" textValue={"已处理"}>已处理<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <WorkbenchSelect label={<>责任关系</>} name="responsibility" value={draft.get('responsibility')??'any'} onChange={event=>set('responsibility',event)} isDisabled={(blocked)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="handling" textValue={"由我处理"}>由我处理<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="communication" textValue={"由我沟通"}>由我沟通<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="following" isDisabled={!principal.workbench_follow_enabled} textValue={"我已关注"}>我已关注<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="unassigned" textValue={"尚无处理人"}>尚无处理人<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <HLabel>处理组标识<HInput name="resolver_team_id" value={draft.get('resolver_team_id')??''} onChange={event=>set('resolver_team_id',event.target.value)} placeholder="已知处理组标识" autoComplete="off"/></HLabel>

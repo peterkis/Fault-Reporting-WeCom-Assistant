@@ -48,3 +48,30 @@
 .ds-ticket-body .shared-follow-up-summary strong {order: 1; flex: none; font-weight: var(--fw-medium);}
 .ds-ticket-body .shared-follow-up-summary.is-due strong {color: var(--tone-attention-fg);}
 .ds-ticket-deadline>svg {stroke-width: 1.75;}
+
+.ds-ticket-card.ticket-card[data-closure-kind=DISMISSED] {background: var(--bg-subtle); box-shadow: var(--shadow-dismissed);}
+.ds-ticket-card.ticket-card[data-closure-kind=DISMISSED][data-ring] {outline-color: transparent;}
+.ds-ticket-dismissed-body .card-top {color: var(--text-tertiary);}
+.ds-ticket-dismissed-body h3 {font-weight: var(--fw-medium); color: var(--text-secondary);}
+.ds-ticket-dismissed-body .ds-ticket-category {filter: grayscale(1); opacity: .55;}
+.ds-ticket-dismissed-body .ds-ticket-closed {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-tertiary); font-family: var(--font-sans);}
+.ds-ticket-closed>svg {width: var(--space-3); height: var(--space-3); flex: none; stroke-width: 1.75;}
+.ds-ticket-dismissed-body .card-footer {flex-wrap: wrap; gap: var(--space-1) var(--space-2);}
+.ds-ticket-dismissed-body .card-tags {flex: 1 1 auto;}
+.ds-ticket-dismissed-body .ds-ticket-closer {display: inline-flex; align-items: center; justify-content: flex-end; flex: 0 1 auto; max-width: 100%; gap: var(--space-1); margin-left: auto; color: var(--text-tertiary);}
+.ds-ticket-closer .owner-name {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-ticket-close-method {flex: none; white-space: nowrap;}
+.ds-closure-number {font-family: var(--font-mono);}
+.ds-closure-properties .ds-closure-note {grid-column: 1 / -1;}
+.ds-closure-properties .ds-closure-note dd {white-space: pre-wrap;}
+.ds-closure-reason-options {display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-1); min-width: 0; margin: 0; padding: 0; border: 0;}
+.ds-closure-reason-options .ds-closure-reason-option {position: relative; display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--bg-canvas); color: var(--text-primary); font-size: var(--fs-sm); line-height: var(--lh-sm); cursor: pointer;}
+.ds-closure-reason-option:hover {background: var(--bg-subtle);}
+.ds-closure-reason-option:has(input:checked) {background: var(--brand-subtle);}
+.ds-closure-reason-option:has(input:focus-visible) {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-closure-reason-indicator {display: inline-grid; place-items: center; width: var(--space-4); height: var(--space-4); flex: none; border: 1px solid var(--border-default); border-radius: var(--radius-full); background: var(--bg-canvas);}
+.ds-closure-reason-indicator::before {content: ''; width: var(--space-2); height: var(--space-2); border-radius: var(--radius-full); background: transparent;}
+.ds-closure-reason-option input:checked+.ds-closure-reason-indicator {border-color: var(--brand);}
+.ds-closure-reason-option input:checked+.ds-closure-reason-indicator::before {background: var(--brand);}
+.ds-closure-reason-options:disabled .ds-closure-reason-option {cursor: default; color: var(--text-tertiary);}
+.ds-closure-reason-options:disabled .ds-closure-reason-indicator {background: var(--bg-subtle);}

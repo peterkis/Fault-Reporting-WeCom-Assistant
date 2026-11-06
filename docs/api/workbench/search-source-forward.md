@@ -1,5 +1,7 @@
 # T41 全部获权事项检索与组合筛选
 
+2026-11-06卡27B B5扩展：搜索现在支持recent / all / custom，可将今天、近7天、本月、手填日期与结束方式组合；custom使用闭合的日期对及原游标身份。见[日期合同](#卡27b-b5日期组合2026-11-06)和[当前执行记录](../../../plans/pc-admin-design-v21/card-27b.md)。下列2026-10-15计数和固定候选继续保留原历史范围，不作为本次验证结果。
+
 ## 2026-10-15 当前实现与本地验证
 
 状态：LOCAL_VERIFIED_PENDING_PARENT_ACCEPTANCE。搜索已接入 W 宿主和正式 React 管理端，`workbenchSearchEnabled` 默认 `false`；bootstrap 通过 `workbench_search_enabled` 声明当前能力。当前部署未据此启用。原生 #96、来源 WBINT-14／A14、父验收和不同 merger 由父任务收口。
@@ -21,13 +23,14 @@
 
 ### 输入与组合含义
 
-GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选增加 closure_kind；外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
+GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选增加 closure_kind；range=custom 时另须包含 closed_from / closed_to；外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
 
 | criteria 字段 | 类型／约束／GET 缺省 |
 | --- | --- |
 | `q` | 字符串，trim 后最多 128 个 Unicode 码点，缺省空串。按编号、描述、当前可读且留存的报修时资料／位置作不区分大小写的字面子串匹配，`%`／`_` 不变成通配符。 |
 | `column` | `all / pending / active / closed`；缺省 `all`。 |
-| `range` | `recent / all / cancelled`；缺省 `all`。 |
+| `range` | `recent / all / custom`；缺省 `all`。recent为近两天，custom为明确的北京时间自然日范围。 |
+| `closed_from` / `closed_to` | 仅custom必须同时提供，格式YYYY-MM-DD；真实日历日期且年份≥1、起日≤止日、止日<9999-12-31。非custom出现任一键即拒绝，空值/null/重复键也拒绝。 |
 | `closure_kind` | 可选 `completed / dismissed`，缺省不增加 criteria 键；只筛第三列状态，pending/active 保留其它条件的原结果。空值、重复值及其它枚举值拒绝。 |
 | `scope` | `team / related`；缺省 `team`，related 使用当前真实处理／沟通／显式关注关系。 |
 | `responsibility` | `any / handling / communication / following / unassigned`；缺省 `any`。 |
@@ -41,9 +44,9 @@ GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选
 
 外层 `cursor` 缺省 `null`，非空时最多 2048 字符；`limit` 缺省 50，范围 1..100。同一数组内部取并集，不同条件取交集。某条件依赖的原开关／Schema 关闭或不可用时返回错误，不把漏掉的来源冒认为完整结果。
 
-响应恰含 `items / next_cursor / column / range / criteria`。`items` 沿当前安全 WorkbenchCard，kind 为 `ticket / review / intake`，每卡必有 closure（非第三列为 null，第三列沿 [结束方式合同](board.md#结束方式与分组计数卡-27a)）；可附原 attention／supplement_follow_up／follow_up_schedule／reporter_profile／web_report_urge 及既有 reporter_department。service/stage_entered_at 仍不在搜索形状。每页不超过 limit，无匹配时空数组、next_cursor 为 null。range 包含 mode、from、until、`Asia/Shanghai`，from／until 是原近期本地窗口，`all` 不因此缩小获权集合。搜索不返回看板的 group_counts，也没有 total、hidden_count、内部匹配片段或未经 READ 的材料。
+响应恰含 `items / next_cursor / column / range / criteria`。`items` 沿当前安全 WorkbenchCard，kind 为 `ticket / review / intake`，每卡必有 closure（非第三列为 null，第三列沿 [结束方式合同](board.md#结束方式与分组计数卡-27a)）；可附原 attention／supplement_follow_up／follow_up_schedule／reporter_profile／web_report_urge 及既有 reporter_department。service/stage_entered_at 仍不在搜索形状。每页不超过 limit，无匹配时空数组、next_cursor 为 null。range 包含 mode、from、until、`Asia/Shanghai`，custom的from为起日零时、until为止日次日零时，组成包含所选结束日的半开窗口；recent/all保留原近期窗口元数据，all不因此缩小获权集合。搜索不返回看板的 group_counts，也没有 total、hidden_count、内部匹配片段或未经 READ 的材料。
 
-第三列默认同时纳入 COMPLETED 与 DISMISSED，包括 CANCELLED；cancelled 预设暂保留且只选取消。已关闭按可证明的关闭时间进入近期范围，未知时间只在 all 可见（取消仍可走 cancelled）；不存在 include_* / closure_groups 新兼容开关。closure_kind 与其它条件取交集，加入 criteria 和游标身份。所有时间、缺事实处理、内部原因读取权与 can_restore 语义沿 ADR-0055，不增加写入能力。
+第三列默认同时纳入 COMPLETED 与 DISMISSED，包括 CANCELLED。已关闭按可证明的关闭时间进入近期范围，未知时间只在 all 可见；不存在 include_* / closure_groups 新兼容开关。closure_kind 与其它条件取交集；custom日期对加入规范criteria和游标身份。今天、近7天、本月由前端换算明确的起止日期，同一参数支持手填范围，不在客户端筛已加载页代替完整查询。所有时间、缺事实处理、内部原因读取权与 can_restore 语义沿 ADR-0055，不增加写入能力。
 
 合成请求：
 
@@ -66,11 +69,25 @@ GET /api/workbench/search?q=printer&column=all&range=all&scope=team&limit=50
 }
 ```
 
+### 卡27B B5日期组合（2026-11-06）
+
+合成GET示例：
+
+```http
+GET /api/workbench/search?column=closed&range=custom&closed_from=2026-11-01&closed_to=2026-11-06&closure_kind=dismissed&limit=50
+```
+
+对应POST把range、closed_from、closed_to、closure_kind放在原criteria中，外层仍只有criteria/cursor/limit。GET与POST使用同一normalize与日历/顺序守卫；当前请求与响应Schema、DTS、PC解码层同步支持custom。标准Schema约束形状、条件必填和日期格式；真实日历及跨字段顺序还须运行时校验，沿原local_date扩展约定。
+
+服务端复用现有单条窗口SQL，以参数计算止日次日零时，不增加每页往返、不改变2000ms局部statement_timeout。原v1搜索游标已经包含criteria哈希及from/until，custom无需放宽签名或升级版本；旧recent/all不增加日期criteria键，旧请求形状保持。换日期/范围/结束方式后旧游标拒绝400，应清游标从首页重读。
+
+日期只限制已处理状态，pending/active仍保留原结果；RESOLVED待确认的既有例外不变，无法证明关闭时间的DISMISSED仅all可见。closure_kind与q、来源、责任等条件共同生效，当前READ、留存、最终权限/安全投影终检保持。默认开关、无命令写入和有界读取POST的Origin/CSRF要求不变。
+
 ### 当前权限、留存和稳定分页
 
 SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排序和 LIMIT。同 Ticket 的 Review 不重复；原详情仍可 READ、无 Ticket 且留存的 COMPLETED／IGNORED Intake 默认纳入相同 canonical 关系，不再靠 manualReview 字段选择协商。原活动看板的成员条件不变。资料来自原事实和报修时快照，不逐卡查询第三方目录；可读 Ticket 不使其已到期 Journey／材料重新可见。
 
-游标由当前 App 临时 HMAC 签名，绑定 principal、真实 session、完整当前角色／团队、规范 criteria、时间窗口及 kind／id／排序锚。更换条件、主体、session、权限、日期窗口，或锚已失权／到期／不再匹配时拒绝游标，须从首页明确重读；App 重启也会令旧签名失效。不允许用客户端传入的搜索页面 cursor／limit 作为导航条件。
+游标由当前 App 临时 HMAC 签名，绑定 principal、真实 session、完整当前角色／团队、规范 criteria、时间窗口及 kind／id／排序锚。更换条件（含任一custom日期或closure_kind）、主体、session、权限、日期窗口，或锚已失权／到期／不再匹配时拒绝游标，须从首页明确重读；App 重启也会令旧签名失效。不允许用客户端传入的搜索页面 cursor／limit 作为导航条件。
 
 搜索连接在安全卡片投影之前释放。最后一个只读 SQL statement 同时重核实际 ACTIVE 会话及其绝对／idle／physical expiry、原 principal_role／team_member 当前完整集合、锚与完整安全投影输入摘要。等待期间 logout、离组或材料到期时拒绝整页，不能返回早先保存的姓名／来源等安全字段。真实 Cookie logout／物理到期、最后 readiness 等待中的唯一团队资格撤销、多卡片等待材料到期及 pool=1 已在隔离 HTTP 用例验证。
 
@@ -93,6 +110,8 @@ SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排
 T38 周期刷新不自动重搜已加载搜索页，也不把其错误变成全局 offline。实际实时 hint 取消当前主体所有搜索读，包含 data 尚为 undefined 的首次／重置 pending 请求，并清结果、提示人工重读；当前身份／角色变化和 401／403 仍沿原清理。迟到旧响应不得写回。真实双页 55 秒验证仅发出 2 次搜索，仍可实际点击原合法人工命令；128 emoji 条件的下一页通过 POST，保留原 2048 字节 URL 上限。
 
 全 App 同时最多 1 次搜索；每 principal 每 60 秒 20 次；限流表最多 256 项／TTL60 秒。新主查询及末次核验各在局部只读事务设置 statement_timeout=2000ms；这不是整个 HTTP 延迟上限。原池总预算≤8、fixture≤4、单 App／Worker、Gateway 单活、SSE32 保持。隔离 pool=1／500 Source Intake＋2000 条材料的 PG18 实测计划 Limit2、15.986ms、无 temp spill；仅说明该本地规模，无生产容量推论。无数据库变更、无新增 SQL 迁移或索引、无第二 Ticket／事件／Owner 事实源。
+
+卡27B审查后继：前端以条件切换的同步锁及在途搜索状态协调同一页面的请求入口，暂禁用日期/kind/scope、刷新、提交和结束搜索，q草稿仍可编辑。客户端取消fetch不代表服务端SQL已停止，不借此提前发起下一搜索；原服务端限额和错误恢复合同保持。该前端状态不授予额外READ或写权限，不改变多页面/外部调用仍需遵守的App预算。
 
 将 `workbenchSearchEnabled=false` 即关闭搜索 HTTP／UI，回到原分页看板／列表，不改业务事实或草稿。未执行真实 WeCom／Provider／OAuth／外发／部署／full／certify／Gate。Node24.18.0 的 strict、各实际一次构建／制品和分段测试见执行记录；原 PG／浏览器已精确释放，此后只进行静态归档和文档。浏览器证据使用正式 bundle、原 PG 与 loopback HTTP；网络延迟／失败为明确受控输入，不证明真实现场或生产／临床可用。
 

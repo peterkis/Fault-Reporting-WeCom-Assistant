@@ -1,0 +1,24 @@
+{
+  "purpose": "B2 CircleX 12px computed geometry, absent from the original screenshot sampler",
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "icon": {
+    "width": 12,
+    "height": 12,
+    "cssWidth": "12px",
+    "cssHeight": "12px"
+  },
+  "background": "rgb(247, 247, 245)",
+  "viewport": {
+    "platform": "Win32",
+    "width": 1440,
+    "height": 1060,
+    "dpr": 1,
+    "zoom": 1
+  },
+  "owned": {
+    "processes": 0,
+    "profiles": 0,
+    "commandTimers": 0,
+    "sockets": 0
+  }
+}

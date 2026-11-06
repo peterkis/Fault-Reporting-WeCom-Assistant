@@ -50,7 +50,6 @@
           "enum": [
             "recent",
             "all",
-            "cancelled",
             "custom"
           ]
         },
