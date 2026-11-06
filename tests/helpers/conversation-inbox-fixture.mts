@@ -167,3 +167,24 @@ export async function seedCard25bConversation(f:T22Fixture){
   const [twelve,two,five,assigned]=contacts;assert.ok(twelve&&two&&five&&assigned);
   return {twelve,two,five,assigned,epoch};
 }
+
+/** Card26: the existing grouped messages, associated ticket and real release command. */
+export async function seedCard26Conversation(f:T22Fixture){
+  const data=await seedCard23Conversation(f),principal=f.principals[0];assert.ok(principal);
+  const clock=(await f.pool.query<{at:string}>("SELECT to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS at")).rows[0];assert.ok(clock);
+  const epoch=Date.parse(clock.at.replace(' ','T')+'+08:00'),local=(minutes:number)=>new Date(epoch-minutes*60000+28800000).toISOString().slice(0,19).replace('T',' ');
+  await f.pool.query('UPDATE conversation.session SET started_at=$2::timestamp WHERE id=$1::uuid',[data.session.id,local(480)]);
+  // Existing messages already appended current realtime events. Release monotonically,
+  // then arrange the synthetic read timestamp just like the fixture's message dates.
+  await inboxControlAt(f.pool,data.session.id,principal.id,'RELEASE',clock.at);
+  await f.pool.query('UPDATE conversation.assignment SET released_at=$2::timestamp WHERE session_id=$1::uuid',[data.session.id,local(300)]);
+  // Nine visible group origins exercise the existing eight-source lower-bound presentation.
+  for(let index=0;index<8;index++){
+    const contact=await addInboxSession(f.pool,{reporter:data.session.reporter,group:'v26-synthetic-source-'+index,text:'同一报修人的独立服务主题 '+(index+1)+'（合成）'});
+    await attachInboxJourney(f.pool,contact,{name:'欧阳慧敏（合成）',department:'心血管内科第二病区护士站（合成）'});
+  }
+  const direct=await addInboxSession(f.pool,{reporter:'v26-synthetic-direct',group:null,text:'私聊确认打印机位置（合成）'});
+  await attachInboxJourney(f.pool,direct,{name:'周宁（合成）',department:'门诊护士站（合成）'});
+  await f.runtime.coordinator.runOnce();
+  return {...data,direct};
+}

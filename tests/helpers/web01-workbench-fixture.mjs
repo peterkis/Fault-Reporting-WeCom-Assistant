@@ -94,7 +94,7 @@ export async function withWeb01Fixture(run,{precisionV212=false,serviceCatalog=/
       // Card 20: opt-in synthetic evidence; ordinary business fixtures retain their original facts.
       const title=originalTitle+(precisionV212?'（合成）':''),location=originalLocation+(precisionV212?'（合成）':'');
       const status=precisionV212&&[1,2].includes(index)?'IN_PROGRESS':originalStatus;
-      const serviceCode=precisionV212?['PRINT.PRINTER_DEVICE','NETWORK.ENDPOINT_ACCESS','DIAG.IMAGING_VIEWER','CLINICAL.INPATIENT_WORKSTATION'][index]??null:null;
+      const serviceCode=precisionV212?['PRINT.PRINTER_DEVICE','NETWORK.ENDPOINT_ACCESS','DIAG.IMAGING_VIEWER','CLINICAL.INPATIENT_WORKSTATION',null,'NETWORK.ENDPOINT_ACCESS','DIAG.IMAGING_VIEWER',null,'DIAG.LAB_RESULT_VIEW','ENDPOINT.COMPUTER'][index]??null:null;
       const text=title+'。全新合成开发材料，请协助排查。';
       const intake=(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled)&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location,serviceCode}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;

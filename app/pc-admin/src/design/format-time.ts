@@ -22,7 +22,7 @@ export function formatWaitingTime(local: string | null | undefined, nowMs: numbe
   const startIso = local.replace(' ', 'T') + '+08:00', startMs = Date.parse(startIso);
   if (!Number.isFinite(startMs) || !Number.isFinite(nowMs) || startMs > nowMs || new Date(startMs + 28_800_000).toISOString().slice(0,19) !== local.replace(' ', 'T')) return null;
   const heat = heatOf(startIso, nowMs), minutes = Math.floor((nowMs - startMs) / 60_000);
-  return {label: (heat?.label ?? minutes + ' 分钟').replace(/^超时 /u, ''), tone: heat?.tone === 'attention' || heat?.tone === 'danger' ? heat.tone : 'neutral'};
+  return {label: (heat?.label ?? (minutes === 0 ? '刚刚' : minutes + ' 分钟')).replace(/^超时 /u, ''), tone: heat?.tone === 'attention' || heat?.tone === 'danger' ? heat.tone : 'neutral'};
 }
 
 /** Shared presentation-only minute clock; subscribing never invalidates or fetches data. */
