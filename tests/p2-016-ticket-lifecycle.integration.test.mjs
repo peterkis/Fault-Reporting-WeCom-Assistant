@@ -1,3 +1,4 @@
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
@@ -38,12 +39,12 @@ async function fixture(pool) {
   const query=createP2016TicketQuery({pool,enabled:true});
   return {admin,other,handler,outsider,ticket,session,query,control,facade:createP2016TicketCommandFacade({pool,enabled:true,controlService:control,query})};
 }
-const command=(ticket,action,extra={})=>({action,ticket_id:ticket.id,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:'SYNTHETIC_TEST',...extra});
+const command=(ticket,action,extra={})=>({action,ticket_id:ticket.id,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:action==='cancel'?'OTHER':'SYNTHETIC_TEST',...(action==='cancel'?{note:'取消原因（合成）'}:{}),...extra});
 
 test('P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility',async()=>{
   assert.ok(databaseUrl,'database required');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'p2016cmd',run:async({pool,databaseUrl:isolated})=>{
-    await applyThrough030({pool,databaseUrl:isolated});await migrateP2016({databaseUrl:isolated});
+    await applyThrough030({pool,databaseUrl:isolated});await migrateP2016({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});
     const f=await fixture(pool),authContext={principal_id:f.admin.id};
     let ticket=await f.ticket();
     const once=command(ticket,'accept');

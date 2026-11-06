@@ -118,7 +118,7 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash
     }
     const targetHash = textHashP2016(request.target_id);
     if((request.message.content as { transport?: unknown } | null)?.transport==='WECOM_GROUP_WEBHOOK')return closureSender?closureSender.send(request as CommunicationSenderRequest):rejected('P2_016_WEBHOOK_ROUTE_MISSING');
-    const sender = createP2016WeComSender({ gateway:gateway as SenderBase['gateway'], enabled, cardEnabled, reporterAccess:reporterAccess as SenderBase['reporterAccess'], origin:origin as string, allowedHosts, allowLocalHttp,linkMode,
+    const sender = createP2016WeComSender({ closureNotifications:{pool:pool as PostgresTransaction},gateway:gateway as SenderBase['gateway'], enabled, cardEnabled, reporterAccess:reporterAccess as SenderBase['reporterAccess'], origin:origin as string, allowedHosts, allowLocalHttp,linkMode,
       allowedTargetHashes: [...new Set([...allowedTargetHashes, targetHash])] });
     return sender.send(request as CommunicationSenderRequest);
   });

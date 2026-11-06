@@ -15,9 +15,6 @@ import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<void>,directory:ManualReporterDirectoryOptions,memberOptions:Pick<P2016RuntimeOptions,'reporterOrigin'|'reporterMemberEntry'|'identityMapping'|'wecomWebOAuth'|'yxxSelfService'|'appNotifications'|'botReporterFeedbackEnabled'>={}){
  await withWeb01Fixture(async(f:T11Fixture)=>{
   await f.runtime.stop();
-  await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});
-  await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
-  if(memberOptions.botReporterFeedbackEnabled){await migrateTicketReopenRounds({databaseUrl:f.databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl:f.databaseUrl,mode:'apply'});}
   const runtime=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],
    flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:false,
    ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,
@@ -29,5 +26,9 @@ export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<voi
    const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);
    await run({...f,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{ticketSelfHandlingEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,manualProjection:true});
+ },{ticketSelfHandlingEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});
+  await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
+  if(memberOptions.botReporterFeedbackEnabled){await migrateTicketReopenRounds({databaseUrl:databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl:databaseUrl,mode:'apply'});}
+ }});
 }

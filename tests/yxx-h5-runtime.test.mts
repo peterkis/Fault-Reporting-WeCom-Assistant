@@ -12,49 +12,69 @@ import type {H5MediaPrivateStore} from '../contracts/yxx_h5_media_contracts.js';
 import {createSourceFile,createPrinter,factory,isImportDeclaration,ScriptKind,ScriptTarget} from 'typescript';
 import {createHash} from 'node:crypto';
 import {yxxIdentityConfigHash} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {requireServiceClosureSchema,SERVICE_CLOSURE_MIGRATION_ID} from '../app/server/scripts/service-closure-migrate.mjs';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
   YIXIAOXIU_H5_FFMPEG_PATH:join(tmpdir(),'ffmpeg.exe'),YIXIAOXIU_H5_FFPROBE_PATH:join(tmpdir(),'ffprobe.exe')};
 const pool=()=>createPostgresPool({connectionString:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_h5_no_connection',max:1,connectionTimeoutMillis:100});
 
-/** Exercise the compiled role's public main while replacing only process/Worker launch leaves. */
-async function workerBeforeReady(h5:NodeJS.ProcessEnv){
-  const roleUrl=new URL('../app/server/scripts/human-workbench-role.mjs',import.meta.url);
-  const data=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
-  const processUrl=data('export default {env:globalThis.process.env,argv:[],send(){return true},once(){},exit(){throw Error("UNEXPECTED_PROCESS_EXIT")}};');
-  const launchUrl=data('export function runWorker(options){return options} export function runApp(){throw Error("UNEXPECTED_APP_START")} export function runGateway(){throw Error("UNEXPECTED_GATEWAY_START")}');
+interface SchemaRow {migration_id:string;checksum_sha256?:string;record?:boolean;termination?:boolean}
+interface SchemaDatabase {query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:SchemaRow[]}>}
+const moduleData=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
+/** Preserve compiled business imports; replace only named process/DB launch leaves. */
+async function importRole(moduleName:string,overrides:Readonly<Record<string,string>>,processUrl:string){
+  const roleUrl=new URL('../app/server/scripts/'+moduleName+'.mjs',import.meta.url);
   const source=createSourceFile(roleUrl.pathname,await readFile(roleUrl,'utf8'),ScriptTarget.ES2022,true,ScriptKind.JS);
   const statements=source.statements.map(statement=>{
     if(!isImportDeclaration(statement)||!('text' in statement.moduleSpecifier)||typeof statement.moduleSpecifier.text!=='string')return statement;
     const specifier=statement.moduleSpecifier.text;
-    const target=specifier==='./p2-g1-process-role.mjs'?launchUrl:specifier.startsWith('.')?new URL(specifier,roleUrl).href:specifier;
+    const target=overrides[specifier]??(specifier.startsWith('.')?new URL(specifier,roleUrl).href:specifier);
     return factory.updateImportDeclaration(statement,statement.modifiers,statement.importClause,factory.createStringLiteral(target),statement.attributes);
   });
-  const module:unknown=await import(data('import process from '+JSON.stringify(processUrl)+';\n'+createPrinter().printFile(factory.updateSourceFile(source,statements))));
+  const module:unknown=await import(moduleData('import process from '+JSON.stringify(processUrl)+';\n'+createPrinter().printFile(factory.updateSourceFile(source,statements))));
+  return module;
+}
+/** Exercise current roles' public main; the actual beforeReady guard remains real. */
+async function roleBeforeReady(moduleName:'human-workbench-role'|'p2-016-process-role',role:'worker'|'gateway',environment:NodeJS.ProcessEnv){
+  const processUrl=moduleData('export default {env:globalThis.process.env,argv:[],send(){return true},once(){},exit(){throw Error("UNEXPECTED_PROCESS_EXIT")}};');
+  const launchUrl=moduleData('export function runWorker(options){return options} export function runApp(){throw Error("UNEXPECTED_APP_START")} export function runGateway(options){return options}');
+  const module=await importRole(moduleName,{'./p2-g1-process-role.mjs':launchUrl},processUrl);
   assert.ok(module&&typeof module==='object'&&'main' in module&&typeof module.main==='function');
-  const environment:NodeJS.ProcessEnv={WORKBENCH_RUNTIME_PROFILE:'human-v1',WORKBENCH_ROLE_SETTINGS:JSON.stringify({role:'WORKER',transportEnabled:false,botId:'synthetic-worker-bot'}),
-    PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-worker-identity-key',P2_016_REPORTER_HMAC_SECRET:'synthetic-worker-reporter-secret'.repeat(2),...h5};
-  const names=[...new Set([...Object.keys(environment),...Object.keys(h5Env),'YIXIAOXIU_H5_PERFORMANCE_ENABLED','YIXIAOXIU_H5_PROGRESS_ENABLED','YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT','APP_SECRET','WECOM_BOT_SECRET'])];
+  const names=[...new Set([...Object.keys(environment),...Object.keys(h5Env),'YIXIAOXIU_H5_PERFORMANCE_ENABLED','YIXIAOXIU_H5_PROGRESS_ENABLED','YIXIAOXIU_H5_PREVIOUS_STATIC_ROOT','APP_SECRET','WECOM_BOT_SECRET','THIRD_STAFF_DIRECTORY_ENABLED','P2_G1_GATEWAY_ENABLED','P2_G1_SENDER_ENABLED'])];
   const original=new Map(names.map(name=>[name,process.env[name]]));
   let options:unknown;
   try{
     for(const name of names){const value=environment[name];if(value===undefined)delete process.env[name];else process.env[name]=value;}
-    options=await Reflect.apply(module.main,undefined,[['--role=worker']]);
+    options=await Reflect.apply(module.main,undefined,[['--role='+role],{fetchImpl:async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');},clientFactory:()=>{throw Error('UNEXPECTED_GATEWAY_START');}}]);
   }finally{for(const [name,value]of original){if(value===undefined)delete process.env[name];else process.env[name]=value;}}
   assert.ok(options&&typeof options==='object'&&'beforeReady' in options&&typeof options.beforeReady==='function');
   const beforeReady=options.beforeReady;
-  return async(database:{query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:{migration_id:string}[]}>})=>{await Reflect.apply(beforeReady,undefined,[{pool:database}]);};
+  return async(database:SchemaDatabase)=>{
+    const saved=new Map(names.map(name=>[name,process.env[name]]));
+    try{for(const name of names){const value=environment[name];if(value===undefined)delete process.env[name];else process.env[name]=value;}await Reflect.apply(beforeReady,undefined,[{pool:database}]);}
+    finally{for(const [name,value]of saved){if(value===undefined)delete process.env[name];else process.env[name]=value;}}
+  };
 }
-
-function schemaPool(migrations:ReadonlySet<string>){
+async function workerBeforeReady(h5:NodeJS.ProcessEnv){
+  return roleBeforeReady('human-workbench-role','worker',{WORKBENCH_RUNTIME_PROFILE:'human-v1',WORKBENCH_ROLE_SETTINGS:JSON.stringify({role:'WORKER',transportEnabled:false,botId:'synthetic-worker-bot'}),
+    PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-worker-identity-key',P2_016_REPORTER_HMAC_SECRET:'synthetic-worker-reporter-secret'.repeat(2),...h5});
+}
+function schemaPool(migrations:ReadonlySet<string>,catalog:{record?:boolean;termination?:boolean;checksum?:string}={}){
   const queried:string[][]=[];
   return {queried,query:async(sql:string,values?:readonly unknown[])=>{
+    if(values?.[0]===SERVICE_CLOSURE_MIGRATION_ID){
+      assert.match(sql,/^SELECT checksum_sha256,/u);assert.match(sql,/to_regclass\('pilot_ticket\.closure_record'\)/u);
+      queried.push([SERVICE_CLOSURE_MIGRATION_ID]);
+      const checksum=createHash('sha256').update(await readFile(new URL('../database/migrations/071_unified_service_closure.sql',import.meta.url))).digest('hex');
+      const rows:SchemaRow[]=migrations.has(SERVICE_CLOSURE_MIGRATION_ID)?[{migration_id:SERVICE_CLOSURE_MIGRATION_ID,checksum_sha256:catalog.checksum??checksum,record:catalog.record??true,termination:catalog.termination??true}]:[];
+      return {rowCount:rows.length,rows};
+    }
     assert.match(sql,/^SELECT migration_id FROM platform\.schema_migration WHERE migration_id\s*(?:IN|=\s*ANY)/u);
     const parameter=values?.[0];
     const required=Array.isArray(parameter)?parameter.map(value=>{assert.equal(typeof value,'string');return String(value);}):[...sql.matchAll(/'(\d{3}_[a-z0-9_]+)'/gu)].map(match=>match[1]??'');
     assert.ok(required.length>0);queried.push(required);
-    const rows=required.filter(id=>migrations.has(id)).map(migration_id=>({migration_id}));return {rowCount:rows.length,rows};
+    const rows:SchemaRow[]=required.filter(id=>migrations.has(id)).map(migration_id=>({migration_id}));return {rowCount:rows.length,rows};
   }};
 }
 
@@ -92,10 +112,10 @@ test('performance Worker refuses readiness before 066 and accepts the same datab
   const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
   try{
     const ready=await workerBeforeReady({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'});
-    const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+    const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
     await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});
     migrations.add('066_yixiaoxiu_h5_media_previews');await ready(database);
-    assert.deepEqual(database.queried,[['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews']]);
+    assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews']]);
     assert.equal(fetch.mock.callCount(),0);
   }finally{fetch.mock.restore();}
 });
@@ -105,8 +125,8 @@ test('nonperformance Worker keeps the 064/065 requirement without requiring 066'
   try{
     for(const performance of [undefined,'false']){
       const ready=await workerBeforeReady({...h5Env,...(performance===undefined?{}:{YIXIAOXIU_H5_PERFORMANCE_ENABLED:performance})});
-      const migrations=new Set(['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
-      await ready(database);assert.deepEqual(database.queried,[['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']]);
+      const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+      await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']]);
       for(const missing of ['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']){
         migrations.delete(missing);await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});migrations.add(missing);
       }
@@ -117,7 +137,59 @@ test('nonperformance Worker keeps the 064/065 requirement without requiring 066'
 
 test('disabled H5 Worker readiness does not query schema or call a Provider',async()=>{
   const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
-  try{const ready=await workerBeforeReady({}),database=schemaPool(new Set());await ready(database);assert.deepEqual(database.queried,[]);assert.equal(fetch.mock.callCount(),0);}finally{fetch.mock.restore();}
+  // U3/U4 closure is a current runtime dependency even when optional H5 is off.
+  try{const ready=await workerBeforeReady({}),database=schemaPool(new Set([SERVICE_CLOSURE_MIGRATION_ID]));await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID]]);assert.equal(fetch.mock.callCount(),0);}finally{fetch.mock.restore();}
+});
+
+test('current Human and P2016 Worker/Gateway require 071 before startup even with H5 disabled',async()=>{
+  const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
+  const directory=await mkdtemp(join(tmpdir(),'closure-current-role-startup-'));
+  try{
+    const f=workbenchTestSettings(directory),configuration=readHumanWorkbenchConfiguration(f.env,{isolatedBoundaries:true});assert.ok(configuration.enabled);
+    const gatewayEnvironment={...workbenchRoleEnvironment(configuration,'GATEWAY'),PILOT_DATABASE_URL:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_closure_startup'};
+    const guards=[await workerBeforeReady({}),await roleBeforeReady('human-workbench-role','gateway',gatewayEnvironment),
+      await roleBeforeReady('p2-016-process-role','worker',{}),await roleBeforeReady('p2-016-process-role','gateway',{})];
+    for(const guard of guards){
+      const migrations=new Set<string>(),database=schemaPool(migrations);
+      await assert.rejects(guard(database),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
+      migrations.add(SERVICE_CLOSURE_MIGRATION_ID);await guard(database);
+      for(const catalog of [{record:false},{termination:false},{checksum:'0'.repeat(64)}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
+      assert.ok(database.queried.every(ids=>ids.length===1&&ids[0]===SERVICE_CLOSURE_MIGRATION_ID),'disabled H5 does not gain any optional schema dependency');
+    }
+    await assert.rejects(requireServiceClosureSchema({pool:{query:async()=>{throw Error('SYNTHETIC_DATABASE_UNAVAILABLE');}}}),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
+    assert.equal(fetch.mock.callCount(),0);
+  }finally{fetch.mock.restore();await rm(directory,{recursive:true,force:true});}
+});
+
+test('Gateway awaits its explicit schema guard before constructing intake or starting SDK and releases a rejected pool',async()=>{
+  const key='__closureStartupGatewayProbe_'+String(Date.now()),trace:string[]=[],messages:Record<string,unknown>[]=[],listeners=new Map<string,(value:unknown)=>unknown>();
+  let stopped=()=>{},poolEnds=0;
+  const stoppedPromise=new Promise<void>(resolve=>{stopped=resolve;});
+  const migrations=new Set<string>(),database=schemaPool(migrations);
+  const fakePool={...database,end:async()=>{poolEnds++;trace.push('pool-end');}};
+  const fakeProcess={env:{PILOT_DATABASE_URL:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_gateway_startup',P2_G1_GATEWAY_ENABLED:'true',P2_G1_SENDER_ENABLED:'false',PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-startup-identity-key',WECOM_BOT_ID:'synthetic-bot',WECOM_BOT_SECRET:'synthetic-secret',WECOM_WS_URL:'wss://synthetic.invalid'},argv:[],
+    send:(value:Record<string,unknown>)=>{messages.push(value);if(value.type==='role-stopped')stopped();return true;},on:(name:string,handler:(value:unknown)=>unknown)=>{listeners.set(name,handler);},once:()=>{},exit:()=>{}};
+  Reflect.set(globalThis,key,{pool:fakePool,process:fakeProcess});
+  const state='globalThis['+JSON.stringify(key)+']';
+  const processUrl=moduleData('export default '+state+'.process;');
+  const poolUrl=moduleData('export function createPostgresPool(){return '+state+'.pool;}');
+  const metricsUrl=moduleData('export const P2_G1_PROCESS_ROLES=["APP","WORKER","GATEWAY"];export function createP2G1ProcessMetrics(){return {sample(){return {}},close(){}};}');
+  try{
+    const module=await importRole('p2-g1-process-role',{'../src/platform/postgres-pool.mjs':poolUrl,'../src/p2-g1-process-metrics.mjs':metricsUrl},processUrl);
+    assert.ok(module&&typeof module==='object'&&'runGateway' in module&&typeof module.runGateway==='function');
+    const options={beforeReady:async(input:Parameters<typeof requireServiceClosureSchema>[0])=>{trace.push('guard');await requireServiceClosureSchema(input);trace.push('guard-passed');},
+      intakeFactory:()=>{trace.push('intake');return {accept:async()=>({ok:true})};},
+      gatewayFactory:()=>{trace.push('gateway');return {start:async()=>{trace.push('sdk-start');},stop:async()=>{trace.push('sdk-stop');},getStatus:()=>({enabled:true,started:true,authenticated:true,reconnect_total:0})};},
+      senderFactory:()=>({send:async()=>{throw Error('UNEXPECTED_SEND');}})};
+    await assert.rejects(Reflect.apply(module.runGateway,undefined,[options]),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
+    assert.deepEqual(trace,['guard','pool-end']);assert.equal(messages.length,0);assert.equal(poolEnds,1);
+    trace.length=0;migrations.add(SERVICE_CLOSURE_MIGRATION_ID);await Reflect.apply(module.runGateway,undefined,[options]);
+    assert.deepEqual(trace,['guard','guard-passed','intake','gateway','sdk-start']);assert.ok(messages.some(value=>value.type==='role-ready'&&value.role==='GATEWAY'));
+    const stop=listeners.get('message');assert.ok(stop);stop({type:'stop'});await stoppedPromise;assert.equal(poolEnds,2);
+  }finally{
+    const stop=listeners.get('message');if(stop&&poolEnds<2){stop({type:'stop'});await stoppedPromise;}
+    Reflect.deleteProperty(globalThis,key);
+  }
 });
 
 test('H5 runtime and CLI stay disabled by default and reject non-boolean enablement',()=>{
@@ -302,13 +374,14 @@ test('App H5 readiness requires the directory schema while a media-only Worker d
 
 test('H5-enabled P2016 readiness checks reminder tables even when follow-up actions are disabled',async()=>{
   const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-reminders-ready-'));
-  const scheduleId='049_workbench_follow_up_schedules',dueId='053_workbench_follow_up_due_signals';
+  const scheduleId='049_workbench_follow_up_schedules',dueId='053_workbench_follow_up_due_signals',closureId='071_unified_service_closure';
   const checksum=async(id:string)=>createHash('sha256').update(await readFile(new URL('../database/migrations/'+id+'.sql',import.meta.url))).digest('hex');
-  const checksums=new Map([[scheduleId,await checksum(scheduleId)],[dueId,await checksum(dueId)]]);
-  const migrations=new Set(['031_p2_016_ticket_lifecycle_workbench_notifications','033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check','036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']);
+  const checksums=new Map([[scheduleId,await checksum(scheduleId)],[dueId,await checksum(dueId)],[closureId,await checksum(closureId)]]);
+  const migrations=new Set(['031_p2_016_ticket_lifecycle_workbench_notifications','033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check','036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',closureId]);
   let validCatalog=true;const queriedIds:string[]=[];
   const query=mock.method(database,'query',async(sql:string,values?:readonly unknown[])=>{
     const id=values?.[0];
+    if(id===closureId){const rows=migrations.has(closureId)?[{checksum_sha256:checksums.get(closureId),record:true,termination:true}]:[];return {rows,rowCount:rows.length};}
     if(typeof id==='string'&&[scheduleId,dueId].includes(id)){
       queriedIds.push(id);const rows=migrations.has(id)?[{checksum_sha256:checksums.get(id),current_table:'pilot_ticket.follow_up_schedule',revision_table:'pilot_ticket.follow_up_schedule_revision',current_time_pair:true,revision_time_pair:true}]:[];
       return {rows,rowCount:rows.length};
@@ -337,6 +410,9 @@ test('H5-enabled P2016 readiness checks reminder tables even when follow-up acti
     const disabled=await runtime.ready();assert.equal(disabled.ok,true,'disabled H5 and disabled follow-up actions keep their previous schema requirements');
     assert.ok(disabled.checks&&typeof disabled.checks==='object');assert.equal('workbench_follow_up_schedules_schema' in disabled.checks,false);
     assert.equal(queriedIds.length,previousQueries);assert.equal(fetch.mock.callCount(),0);
+    migrations.delete(closureId);const missingClosure=await runtime.ready();assert.equal(missingClosure.ok,false,'the workbench cannot run the new closure contract without 071');
+    assert.ok(missingClosure.checks&&typeof missingClosure.checks==='object'&&'service_closure_schema' in missingClosure.checks);assert.equal(missingClosure.checks.service_closure_schema,false);
+    migrations.add(closureId);assert.equal((await runtime.ready()).ok,true);
   }finally{await runtime?.close();fetch.mock.restore();query.mock.restore();await database.end();await rm(directory,{recursive:true,force:true});}
 });
 

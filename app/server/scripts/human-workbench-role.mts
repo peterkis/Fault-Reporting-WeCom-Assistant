@@ -30,6 +30,7 @@ import {createWorkbenchBotMemberAdmission} from '../src/human-workbench-bot-memb
 import {createYxxH5Runtime,mediaVideoToolsReady} from '../src/yxx-h5-runtime.mjs';
 import {createWorkbenchReporterDirectory} from '../src/workbench-reporter-directory.mjs';
 import {createTicketReporterProfileWorker,ticketReporterProfilesSchemaReady} from '../src/ticket-reporter-profiles.mjs';
+import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -100,6 +101,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(role==='GATEWAY'){
  const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
  return runGateway({
+  beforeReady:requireServiceClosureSchema,
   intakeFactory:({pool})=>{
    const scope=memberAdmission?null:createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
@@ -110,7 +112,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
    }};
   },
   ...(boundaries.clientFactory?{gatewayFactory:options=>createP2G1WeComGateway({...options,clientFactory:boundaries.clientFactory})}:{}),
-  senderFactory:({pool,...options})=>createP2016WeComSender({...options,mvpPolicy:true,groupReplies:{pool,authorize:async basis=>memberAdmission?memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:basis.bot_id,sender_user_id:basis.reporter,chat_type:'group',chat_id:basis.group_id}):(s.groupTargetHashes??[]).includes(textHashP2016(basis.group_id))},cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
+  senderFactory:({pool,...options})=>createP2016WeComSender({...options,closureNotifications:{pool},mvpPolicy:true,groupReplies:{pool,authorize:async basis=>memberAdmission?memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:basis.bot_id,sender_user_id:basis.reporter,chat_type:'group',chat_id:basis.group_id}):(s.groupTargetHashes??[]).includes(textHashP2016(basis.group_id))},cardEnabled:true,linkMode:'MEMBER_REQUIRED',reporterAccess:access(pool),origin:s.reporterOrigin,allowedHosts,
    ...(memberAdmission?{qualifyBotNotificationRecipient:async(source:{botId:string;reporterUserId:string})=>memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:source.botId,sender_user_id:source.reporterUserId,chat_type:'single'})}:{}),
    groupRoundNotifications:{pool,mvpPolicy:true,routes:s.groupRoutes??[],resolveMentionUserId:async input=>{
     if(s.memberEntry.identityMode==='VERIFIED_APP_OPENID'&&memberAdmission)return await memberAdmission.qualifyDelivery({provider:'WECOM_AIBOT',bot_id:input.botId,sender_user_id:input.reporterUserId,chat_type:'group',chat_id:input.groupId})?input.reporterUserId:null;
@@ -128,6 +130,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   applicationScope:{corpId:s.reporterProfiles.corpId,agentId:s.reporterProfiles.agentId,scopeSecret:reporterHmacSecret}}):null;
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  return runWorker({deliveryAttemptAdmissionFactory:()=>createMvpNotificationAdmission(),reportCycleHealth:true,beforeReady:async({pool})=>{
+  await requireServiceClosureSchema({pool});
   if(s.actorAvatars?.rootRef&&!await actorAvatarSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:actor_avatar_cache');
   if(directory&&!await ticketReporterProfilesSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:ticket_reporter_profiles_schema');
   if(!h5Options.enabled)return;
@@ -148,10 +151,10 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
    const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
   const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
-  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await profiles?.runOnce();await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();await avatars?.runOnce().catch(()=>{});},close:async()=>{await avatars?.close();await h5.close();}};
+  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await notifications.projectPendingClosures({pool});await profiles?.runOnce();await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();await avatars?.runOnce().catch(()=>{});},close:async()=>{await avatars?.close();await h5.close();}};
  }});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(error=>{
- const message=error instanceof Error&&/^HUMAN_WORKBENCH_(?:CONFIG_INVALID|SCHEMA_REQUIRED):[A-Za-z0-9_.,]+$/u.test(error.message)?error.message:'HUMAN_WORKBENCH_ROLE_FAILED';
+ const message=error instanceof Error&&(/^HUMAN_WORKBENCH_(?:CONFIG_INVALID|SCHEMA_REQUIRED):[A-Za-z0-9_.,]+$/u.test(error.message)||error.message==='SERVICE_CLOSURE_SCHEMA_REQUIRED')?error.message:'HUMAN_WORKBENCH_ROLE_FAILED';
  process.send?.({type:'role-failed',role:process.argv[2]?.slice(7).toUpperCase(),error_code:message});process.exit(1);
 });

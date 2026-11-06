@@ -17,10 +17,11 @@ export interface WorkbenchServiceCatalog {
   schema_version: 1; catalog_version: string;
   categories: {category: string; category_name_zh: string; services: {service_code: string; name_zh: string}[]}[];
 }
-/** Read-only evidence from the existing lifecycle; no additional command or restoration right. */
+/** Read-only closure-record projection; command services enforce current restoration authority. */
 export interface WorkbenchClosure {
   kind: 'COMPLETED' | 'DISMISSED'; source: 'MANUAL' | 'SYSTEM' | null;
   reason_code: string | null; reason_label: string | null; reason_note: string | null;
+  secondary_reason:{code:string;label:string}|null;
   closed_by_display_name: string | null;
   /** Asia/Shanghai LocalDateTime, with the same second precision as the card timestamps. */
   closed_at: string | null;

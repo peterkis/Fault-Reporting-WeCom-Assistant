@@ -89,7 +89,7 @@ export const reviewApi={
   async resolve(reviewId:string,command:ReviewCommand,csrfToken:string|null,signal:AbortSignal):Promise<ReviewCommandResult>{
     try{
       const response=await fetch('/api/manual-reviews/'+encodeURIComponent(reviewId)+'/resolve',{method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
-        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command.resolution_code==='MARK_OUT_OF_SCOPE'?{...command,reason_code:'NOT_IT_SCOPE',secondary_reason_code:command.resolution_reason_code}:command)});
       if([401,403,404].includes(response.status))return await authorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const v=object(await response.json());

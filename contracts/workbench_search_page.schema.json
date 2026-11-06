@@ -232,7 +232,8 @@
                   "closed_by_display_name",
                   "closed_at",
                   "duplicate_of",
-                  "can_restore"
+                  "can_restore",
+                  "secondary_reason"
                 ],
                 "properties": {
                   "kind": {
@@ -334,8 +335,76 @@
                   },
                   "can_restore": {
                     "type": "boolean"
+                  },
+                  "secondary_reason": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "code",
+                          "label"
+                        ],
+                        "properties": {
+                          "code": {
+                            "enum": [
+                              "HUMAN_CONFIRMED",
+                              "INFORMATION_INSUFFICIENT",
+                              "BUSINESS_CONSULTATION_CONFIRMED",
+                              "ACKNOWLEDGED",
+                              "OUT_OF_SCOPE_CONFIRMED",
+                              "SERVICE_REQUEST_CONFIRMED",
+                              "INCIDENT_REVIEW_PENDING",
+                              "STALE_REVIEW_CANCELLED"
+                            ]
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        }
+                      }
+                    ]
                   }
-                }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "kind": {
+                          "const": "DISMISSED"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "reason_code": {
+                          "enum": [
+                            "FALSE_REPORT_OR_TEST",
+                            "DUPLICATE",
+                            "NOT_IT_SCOPE",
+                            "REPORTER_WITHDREW",
+                            "REPORTER_UNREACHABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "source": {
+                          "enum": [
+                            "MANUAL",
+                            "SYSTEM"
+                          ]
+                        },
+                        "closed_at": {
+                          "$ref": "./local_datetime.schema.json"
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             ]
           },

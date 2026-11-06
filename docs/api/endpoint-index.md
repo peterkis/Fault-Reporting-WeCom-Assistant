@@ -6,6 +6,20 @@
 
 H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用成员认证合同，不是新增宿主进程；实际装配见 [H5 V2](member/h5-v2.md#宿主认证和协商)。W 的工作人员权限与 M／F 的成员权限分别核验。
 
+
+## 卡 27C-A 关闭与恢复
+
+| 方法 | 完整路径 | 宿主 | 用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/cancel` | W | 六选一原因，开放状态人工关闭 | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/tickets/{ticketId}/restore` | W | 按关闭记录恢复前状态 / 负责人 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/tickets/{ticketId}/restore/commands/{commandId}` | W | 原用途、当前 READ 安全核对 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/closure-context` | W | 当前版本与关闭 / 恢复能力 | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/intakes/{intakeId}/close` | W | 关闭 Intake 及待判断 Review | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/intakes/{intakeId}/restore` | W | 恢复 Intake / Review / Journey | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/close/commands/{commandId}` | W | 原关闭命令安全核对 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/restore/commands/{commandId}` | W | 原恢复命令安全核对 | [关闭 / 恢复](workbench/closure.md) |
+
 ## T32 通知异常与 N3 关联来源（默认关闭）
 
 | 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |

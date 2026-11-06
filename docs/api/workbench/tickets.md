@@ -10,6 +10,8 @@ WBINT-T37 的[共享跟进安排合同](follow-up-schedules.md)完整业务仍�
 
 ## 查询
 
+关闭 / 恢复的前向合同见[统一关闭与恢复](closure.md)；旧取消范围、自由文本和权限描述由 ADR-0056 覆盖。
+
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
 | `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token:string|null`、`internal_beta:true,ai_enabled:false,manual_review_enabled:boolean,manual_review_draft_recovery_enabled:boolean,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,ticket_reopen_rounds_enabled:boolean,ticket_reopen_draft_recovery_enabled:boolean,ticket_conversation_self_handling_enabled:boolean,ticket_conversation_draft_recovery_enabled:boolean,ticket_staff_completion_enabled:boolean,draft_recovery_enabled:boolean,staff_completion_draft_recovery_enabled:boolean,logout_enabled:boolean`；另含 [授权实时能力](../platform/realtime.md#正式管理端接入wbint-t38) `realtime_sse_enabled,realtime_sse_available,sse_endpoint,expires_epoch_ms,authorization_revision`。新增宿主能力默认false；读取不要求独立CSRF cookie，写与退出仍需当前Origin/CSRF |

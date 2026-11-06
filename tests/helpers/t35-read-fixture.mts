@@ -10,8 +10,6 @@ export interface T35Fixture extends Base {firstCookie:string;secondCookie:string
 export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=true,migrate=true,waiting=false}:{enabled?:boolean;migrate?:boolean;waiting?:boolean}={}){
   return withWeb01Fixture(async(f:Base)=>{
     await f.runtime.stop();
-    if(waiting)await migrateTicketSelfHandling({databaseUrl:f.databaseUrl,mode:'apply'});
-    if(migrate)await migrateWorkbenchPersonalRead({databaseUrl:f.databaseUrl,mode:'apply'});
     const second=await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-1',displayName:'T35第二合成阅读者',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,second.id],externalSendEnabled:false,workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchConversationsEnabled:true,workbenchPersonalReadEnabled:enabled,ticketWaitingActionsEnabled:waiting});
     try{
@@ -22,5 +20,8 @@ export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=
       const post=(path:string,body:Record<string,unknown>,reader:0|1=0)=>fetch(f.origin+path,{method:'POST',headers:{cookie:reader===0?firstCookie:secondCookie,origin:f.origin,'content-type':'application/json','idempotency-key':String(body.client_command_id),'x-csrf-token':reader===0?csrfA:csrfB},body:JSON.stringify(body)});
       await run({...f,runtime,firstCookie,secondCookie,outsiderCookie,browserCookie:a,get,post});
     }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  },{workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true});
+  },{workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+    if(waiting)await migrateTicketSelfHandling({databaseUrl:databaseUrl,mode:'apply'});
+    if(migrate)await migrateWorkbenchPersonalRead({databaseUrl:databaseUrl,mode:'apply'});
+  }});
 }

@@ -156,6 +156,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     // The standalone command and Worker use the same control-before-intake lock order.
     if(mvpGroupReplies)await lockP2016Realtime(transaction);
     const intake = await loadIntake(transaction, intakeId, true);
+    // Check again under the authoritative Intake lock before any automatic work.
+    if(intake.status==='IGNORED')failP2015(P2_015_ERROR_CODES.versionConflict);
     const window = await loadWindow(transaction, intakeId);
     if(intake.source_chat_type==='group') {
       // A bot display-name mention is addressing metadata, not a fault claim.

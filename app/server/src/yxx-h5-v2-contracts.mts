@@ -40,5 +40,5 @@ export function parseH5PublicProgressInput(input:unknown):H5PublicProgressInput{
 }
 export function parseH5ReportFilters(input:H5ReportFilters={}):Required<H5ReportFilters>{
   const search=input.search===undefined?null:h5Text(input.search,100,true);
-  const status=input.status??null;if(status!==null&&!['OPEN','ACTIVE','COMPLETED'].includes(status))h5Fail();return {search,status};
+  const status=input.status??null;if(status!==null&&!['OPEN','ACTIVE','COMPLETED','CLOSED_OUT'].includes(status))h5Fail();return {search,status};
 }

@@ -50,6 +50,7 @@ export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | 
   if(!principal?.is_active)return false;
   if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(ticket.status??''))return false;
   if(action==='auto-close'||action==='complete')return false;
+  if(action==='cancel'||action==='restore')return principal.roles.some(role=>['ADMIN','DISPATCHER'].includes(role))||principal.roles.includes('HANDLER')&&principal.team_ids.includes(ticket.resolver_team_id);
   if(BROAD(principal))return true;
   if(!principal.roles.includes('HANDLER')||!principal.team_ids.includes(ticket.resolver_team_id))return false;
   if(action==='accept')return true;

@@ -10,6 +10,7 @@ import type {H5Media,H5ReportFilters,H5BootstrapExtension} from '../../../contra
 import type {H5EntryInput,H5EntryResponse,H5EntryDetail,H5EntryMedia,H5SupplementPage,H5DepartmentSummary} from '../../../contracts/yxx_h5_entry_contracts.js';
 import type {LocalDateTime,EpochMs,YxxSelfServiceBootstrap,YxxRequestDetail,YxxReportItem,YxxReportPage,YxxTimeline} from '../../../contracts/yxx_self_service_contracts.js';
 import {parseH5ReportFilters} from './yxx-h5-v2-contracts.mjs';
+import {REPORTER_CLOSURE_JOIN_SQL,REPORTER_CLOSURE_FIELDS_SQL,reporterClosureProjection} from './service-closure-records.mjs';
 import {h5RecentSql} from './yxx-h5-batch-sql.mjs';
 import {beginH5Read,checkH5Read,finishH5Read,createH5ReadBatch,type H5ReadBudget,type H5ReadLease} from './yxx-h5-read-batch.mjs';
 import {readH5EntryRow,h5SupplementPage,readH5Supplements,recheckH5EntryBinding,withH5TimelineBudget} from './yxx-h5-entry.mjs';
@@ -20,8 +21,8 @@ declare const cursorMember:unique symbol;
 export type YxxReportCursor<Member extends string=string> = string & {readonly [cursorMember]:Member};
 export interface YxxReportCursorPayload<Member extends string=string> {v:1;scope_hash:YxxMemberScope<Member>['scopeHash'];source:YxxMemberSource|null;source_corp_scope:string;source_app_scope:string;snapshot_epoch:string;created_at:string;kind_rank:number;immutable_id:string}
 interface ReportRow {kind:'WEB_REQUEST'|'BOT_TICKET';ref:string;created_at:string;kind_rank:number;immutable_id:string;status:string;input_revision:string;processed_revision:string;pilot_ticket_id:string|null;ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;safe_summary:string|null;safe_location:string|null;updated_at?:string}
-interface WebDetailRow {request_ref:string;input_revision:string;processed_revision:string;revoked_at:string|null;intake_no:string;status:string;pilot_ticket_id:string|null;created_at:string;updated_at:string;safe_description:unknown;safe_location:string|null;supplement_items:{input_revision:unknown;text:unknown}[];ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;safe_clarification?:null}
-interface BotTicketRow {public_ref:string;ticket_no:string;ticket_status:TicketStatus;created_at:string;ticket_updated_at:string;intake_retention:string}
+interface WebDetailRow {closure_public?:unknown;request_ref:string;input_revision:string;processed_revision:string;revoked_at:string|null;intake_no:string;status:string;pilot_ticket_id:string|null;created_at:string;updated_at:string;safe_description:unknown;safe_location:string|null;supplement_items:{input_revision:unknown;text:unknown}[];ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;safe_clarification?:null}
+interface BotTicketRow {closure_public?:unknown;public_ref:string;ticket_no:string;ticket_status:TicketStatus;created_at:string;ticket_updated_at:string;intake_retention:string}
 type CursorFields={v?:unknown;scope_hash?:unknown;source?:unknown;source_corp_scope?:unknown;source_app_scope?:unknown;snapshot_epoch?:unknown;created_at?:unknown;kind_rank?:unknown;immutable_id?:unknown};
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { textHashP2016, transactionP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
@@ -195,6 +196,7 @@ function safeWebDetail(row:WebDetailRow):YxxRequestDetail {
     display_status: webDisplayStatus(row),
     needs_action: safeNeedsAction(row),
     safe_description: safeDescription,
+    closure_text:reporterClosureProjection(row.closure_public,row.ticket_status??row.status),
     supplements: (Array.isArray(row.supplement_items) ? row.supplement_items : []).map((item) => ({
       input_revision: String(item.input_revision), text: typeof item.text === 'string' ? item.text : null,
     })),
@@ -287,7 +289,7 @@ async function listRows(transaction:PostgresTransaction,context:ActiveContext,se
     SELECT * FROM report_rows
      WHERE ($3::text IS NULL OR kind=CASE WHEN $3='WEB' THEN 'WEB_REQUEST' ELSE 'BOT_TICKET' END)
        AND ($13::text IS NULL OR strpos(lower(COALESCE(ticket_no,'')||' '||COALESCE(safe_summary,'')||' '||COALESCE(safe_location,'')),lower($13))>0)
-       AND ($14::text IS NULL OR CASE WHEN $14='COMPLETED' THEN ticket_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED')
+       AND ($14::text IS NULL OR CASE WHEN $14='COMPLETED' THEN ticket_status IN ('CLOSED','RESOLVED') WHEN $14='CLOSED_OUT' THEN ticket_status IN ('CANCELLED','DUPLICATE_LINKED')
          WHEN $14='ACTIVE' THEN ticket_status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR')
          ELSE ticket_status IS NULL OR ticket_status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
        AND created_at<=platform.local_from_epoch_ms($4::bigint)
@@ -356,7 +358,7 @@ export function createYxxSelfServiceQuery({
                          FROM intake.web_submission s
                         WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT'
                           AND s.retention_until>platform.local_now()),'[]'::jsonb) AS supplement_items,
-               t.ticket_no,t.status AS ticket_status,
+               t.ticket_no,t.status AS ticket_status,${REPORTER_CLOSURE_FIELDS_SQL},
                to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
                EXISTS (SELECT 1 FROM intake.manual_review_item r
                         WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review
@@ -368,6 +370,7 @@ export function createYxxSelfServiceQuery({
              ORDER BY s.input_revision LIMIT 1
           ) initial ON TRUE
           LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id
+          ${REPORTER_CLOSURE_JOIN_SQL}
           WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2
            AND b.source_corp_scope=$3 AND b.source_app_scope=$4
            AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
@@ -387,13 +390,14 @@ export function createYxxSelfServiceQuery({
     if (!owner) fail('YXX_NOT_FOUND', 404);
     return transactionP2016(pool, async (transaction) => {
       const q = await transaction.query<BotTicketRow>(`
-        SELECT r.public_ref,t.ticket_no,t.status AS ticket_status,
+        SELECT r.public_ref,t.ticket_no,t.status AS ticket_status,${REPORTER_CLOSURE_FIELDS_SQL},
                t.created_at,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
                i.retention_until_epoch_ms::text AS intake_retention,
                to_char(t.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at
           FROM pilot_ticket.reporter_public_ref r
           JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
           JOIN intake.service_intake i ON i.id=t.source_intake_id
+          ${REPORTER_CLOSURE_JOIN_SQL}
          WHERE r.public_ref=$1 AND r.status='ACTIVE'
            AND r.reporter_binding_hash=$2
            AND i.source_provider='WECOM_AIBOT' AND i.source_bot_id=$3
@@ -407,6 +411,7 @@ export function createYxxSelfServiceQuery({
       const row = (q.rows[0] as BotTicketRow);
       const created = localTime(row.created_at);
       return publicP2016({ kind: 'BOT_TICKET', ref: row.public_ref,
+        closure_text:reporterClosureProjection(row.closure_public,row.ticket_status),
         display_status: EXTERNAL_TICKET_STATUS[row.ticket_status as TicketStatus] ?? row.ticket_status,
         created_at: created, created_epoch_ms: String(shanghaiLocalToEpochMs(created)),
         ticket: { ticket_no: row.ticket_no, status: row.ticket_status, updated_at: String(row.ticket_updated_at) } });

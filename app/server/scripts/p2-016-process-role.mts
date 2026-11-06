@@ -16,6 +16,7 @@ import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { P2016_LIVE_FUSES,P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
 import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
+import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 
 const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET as string});
 export async function main(argv=process.argv.slice(2)){
@@ -39,15 +40,16 @@ export async function main(argv=process.argv.slice(2)){
     });
   }
   if(argv[0]==='--role=gateway')return runGateway({
+    beforeReady:requireServiceClosureSchema,
     intakeFactory:({pool,identityHashKey})=>{
       const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:(process.env.P2_016_TEST_USER_TARGET_HASHES as string).split(','),group_hashes:(process.env.P2_016_TEST_GROUP_TARGET_HASHES as string).split(',')});
       const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey:identityHashKey});
       return {accept:input=>scope.accepts((input as { message?: unknown }).message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false}})};
     },
-    senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,reporterAccess:access(pool),
+    senderFactory:({pool,...options})=>createP2016WeComSender({...options,closureNotifications:{pool},cardEnabled:true,reporterAccess:access(pool),
       origin:process.env.P2_016_REPORTER_ORIGIN as string,allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
-  return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>{
+  return runWorker({beforeReady:async input=>{await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);},extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});
     const realtime=createP2016RealtimeProjector({pool,enabled:true});
     const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string});
@@ -57,7 +59,7 @@ export async function main(argv=process.argv.slice(2)){
     const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
     return {runOnce:async()=>{
       await orchestrator.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});
-      await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();
+      await notifications.projectPendingClosures({pool});await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();
     }};
   }});
 }

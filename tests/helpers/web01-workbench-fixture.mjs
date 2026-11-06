@@ -1,5 +1,7 @@
 import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-migrate.mjs';
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
+import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
+import {insertClosureRecord,normalizeClosureInput,appendIntakeClosureEvent} from '../../app/server/src/service-closure-records.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
@@ -60,19 +62,25 @@ export async function seedCard27Board(f){
   ]){
     const original=f.tickets[index],id=original.ticket.id;ids[key]=id;
     const ticket=(await f.pool.query('UPDATE pilot_ticket.ticket SET status=$2,title=$3,version=version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *',
-      [id,status,{manual:'测试误报，人工核对关闭（合成）',duplicate:'打印故障重复报修（合成）',unknown:'旧记录缺少关闭证据（合成）',historical:'昨日人工取消事项（合成）'}[key]])).rows[0];
-    if(source){
+      [id,status,{manual:'测试误报，人工核对关闭（合成）',duplicate:'打印故障重复报修（合成）',unknown:'其他原因人工关闭（合成）',historical:'昨日人工取消事项（合成）'}[key]])).rows[0];
+    {
+      const actualSource=source??'PILOT_USER';
       const event=await appendTicketEvent({transaction:f.pool,ticket,eventType:status==='CANCELLED'?'ticket.cancelled':'ticket.duplicate_linked',
-        actor:{type:source,id:source==='PILOT_USER'?f.principals[0].id:null},oldStatus:original.ticket.status,
+        actor:{type:actualSource,id:actualSource==='PILOT_USER'?f.principals[0].id:null},oldStatus:original.ticket.status,
         internalNote:source==='PILOT_USER'?'与报修人核对为测试误报，保留内部关闭说明（合成）':null,externalNote:null,traceId:'card27b-'+key+'-synthetic'});
       await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at="+(old?"date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours'":"platform.local_now()")+' WHERE event_id=$1::uuid',[event.event_id]);
+      const input=normalizeClosureInput({reason_code:key==='duplicate'?'DUPLICATE':key==='manual'?'FALSE_REPORT_OR_TEST':key==='historical'?'REPORTER_WITHDREW':'OTHER',note:key==='unknown'?'其他关闭原因（合成）':key==='manual'?'与报修人核对为测试误报，保留内部关闭说明（合成）':null});
+      const record=await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:id,beforeStatus:original.ticket.status,beforeAssignee:original.ticket.assignee_id??null,beforeTeam:original.ticket.resolver_team_id??'PILOT_IT',beforeVersion:original.ticket.version,beforeSnapshot:{},actor:actualSource==='PILOT_USER'?f.principals[0].id:null,source:actualSource==='PILOT_USER'?'MANUAL':'SYSTEM',input,ticketEventId:event.event_id});
+      if(old)await f.pool.query("UPDATE pilot_ticket.closure_record SET closed_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[record.id]);
     }
   }
   for(const original of f.tickets.slice(9,13)){
     await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now() WHERE ticket_id=$1::uuid AND event_type IN ('ticket.closed','ticket.resolved')",[original.ticket.id]);
   }
-  const ignored=await seedPersistedIntake({pool:f.pool,text:'感谢消息经系统判定不受理（合成）',requestType:'CHATTER',status:'IGNORED'});ids.system=ignored.intakeId;
-  await f.pool.query("UPDATE intake.service_intake_event SET payload=jsonb_build_object('status','IGNORED') WHERE intake_id=$1::uuid AND event_type='intake.received'",[ignored.intakeId]);
+  const ignored=await seedPersistedIntake({pool:f.pool,text:'感谢消息经系统判定不受理（合成）',requestType:'CHATTER',status:'WAITING_DESCRIPTION'});ids.system=ignored.intakeId;
+  const ignoredRow=(await f.pool.query("UPDATE intake.service_intake SET status='IGNORED',version=version+1 WHERE id=$1::uuid RETURNING version",[ignored.intakeId])).rows[0];
+  const event=await appendIntakeClosureEvent(f.pool,{intakeId:ignored.intakeId,version:ignoredRow.version,type:'intake.closed',oldStatus:'WAITING_DESCRIPTION',newStatus:'IGNORED',actor:null,traceId:'card27c-system-synthetic'});
+  await insertClosureRecord({transaction:f.pool,subjectType:'INTAKE',subjectId:ignored.intakeId,beforeStatus:'WAITING_DESCRIPTION',beforeVersion:ignoredRow.version-1,beforeSnapshot:{request_type:'CHATTER',reviews:[],journeys:[]},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code:'ACKNOWLEDGED'}),intakeEventId:event});
   const dates=(await f.pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(platform.local_now()-interval '1 day','YYYY-MM-DD') AS yesterday")).rows[0];
   return {...ids,...dates};
 }
@@ -101,21 +109,25 @@ async function settleManualFixtureProjection(runtime){
   console.log('WBINT_T17_FIXTURE_BASELINE '+JSON.stringify({source_stream:channel.source_stream,scanned:channel.scanned,inserted:channel.inserted,replayed:channel.replayed,channel_failures:channel.failures.length,other_stream_failures:result.failures-channel.failures.length}));
 }
 // Actual Web source through the existing Store Port: there is no Bot inbox/thread to project into a Session.
-export async function seedWeb01NoConversationIntake({pool,text,location='合成位置',serviceCode=null}){
+export async function seedWeb01NoConversationIntake({pool,text,location='合成位置',serviceCode=/** @type {string|null} */(null)}){
   const scope={scopeHash:createHash('sha256').update('web01-only-'+randomUUID()).digest('hex'),sourceCorpScope:'web01-synthetic-corp',sourceAppScope:'web01-synthetic-app',proofRef:'web01-synthetic-proof'};
   const {receipt}=await createYxxSelfServiceStore({pool}).accept({scope,input:{schema_version:1,client_command_id:randomUUID(),description:text,location:{text:location,unknown:false},service_code:serviceCode,impact_scope:'SELF',reported_department_text:null,extension:null}});
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{precisionV212=false,serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((context:{pool:import('../../app/server/src/platform/postgres-pool.mjs').PostgresPool,databaseUrl:string})=>Promise<void>)|null} */(null),precisionV212=false,serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
-    if(ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
-    if(workbenchManualReportsEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});}
+    const handlingSchema=ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled;
+    if(handlingSchema||workbenchManualReportsEnabled||workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});}
+    if(handlingSchema&&installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});
+    if(workbenchManualReportsEnabled||workbenchFollowEnabled)await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});
     if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
-    if(workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
+    if(workbenchFollowEnabled){await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
+    await beforeClosureMigration?.({pool,databaseUrl});
+    await migrateServiceClosure({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});
