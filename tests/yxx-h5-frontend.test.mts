@@ -697,3 +697,27 @@ test('H5 voice failures have feature-localized safe messages for both supported 
  const loader=createH5PureModuleLoader();await import(await loader.moduleUrl('components/voice-messages.ts'));const {default:i18n}=await import(await loader.moduleUrl('i18n.ts'));
  for(const lng of ['zh-CN','en'])for(const key of ['captureHint','transcriptUnavailable','interrupted','preparing','previewStopFailed','tooShort','setupFailed','nativeStartFailed','browserUnavailable','browserDenied','browserFailed','finishFailed','uploadInvalid','uploadSignIn','uploadForbidden','uploadExpired','uploadBusy','uploadUnavailable','uploadNetwork','nativeUploadFailed','uploadFailed']){const value=i18n.t('voice:'+key,{lng});assert.notEqual(value,key);assert.notEqual(value,'voice:'+key);assert.doesNotMatch(value,/audio file|音频文件/u);if(lng==='zh-CN')assert.match(value,/\p{Script=Han}/u);}
 });
+
+async function routerPurityControls(){
+ const loader=createH5PureModuleLoader({overrides:{'router-purity-controls.ts':[
+  "import{rolldown}from'rolldown';import{createRequire}from'node:module';import{pathToFileURL}from'node:url';import{resolve}from'node:path';import{createElement as h}from'react';import{renderToStaticMarkup}from'react-dom/server';",
+  "import{annotateRouterComponents,routerComponentPurity}from'./tooling/router-component-purity.ts';export{annotateRouterComponents};",
+  `const root=${JSON.stringify(sourceRoot)},require=createRequire(pathToFileURL(resolve(root,'package.json'))),official=resolve(root,'node_modules/react-router/dist/production/index.mjs');`,
+  "export async function bundle(entry,transform){const build=await rolldown({cwd:root,input:'h5-router-purity-control',plugins:[{name:'h5-router-purity-control',resolveId(id){if(id==='h5-router-purity-control')return'\\0h5-router-purity-control';if(id==='react-router')return official;if(/^react(?:\\/|$)/.test(id))return{id:pathToFileURL(require.resolve(id)).href,external:true};},load(id){if(id==='\\0h5-router-purity-control')return entry;}},...(transform?[routerComponentPurity()]:[])]});try{const{output}=await build.generate({format:'esm'}),chunks=output.filter(item=>item.type==='chunk');if(chunks.length!==1)throw Error('H5_ROUTER_CONTROL_SINGLE_CHUNK_REQUIRED');return chunks[0].code;}finally{await build.close();}}",
+  "export async function render(code){const url='data:text/javascript;base64,'+Buffer.from(code).toString('base64'),bindings=await import(url),metadata={},markup={};for(const name of ['Link','NavLink','Form']){const component=bindings[name];metadata[name]={displayName:component.displayName,renderName:component.render.name,kind:String(component.$$typeof)};const element=name==='Form'?h(component,{method:'post',action:'/submit'},h('button',null,'Synthetic')):h(component,{to:name==='NavLink'?'/current':'/next'},'Synthetic'),router=bindings.createMemoryRouter([{path:'*',element}],{initialEntries:['/current']});try{markup[name]=renderToStaticMarkup(h(bindings.RouterProvider,{router}));}finally{router.dispose();}}return{metadata,markup};}"
+ ].join('\n')}});return import(await loader.moduleUrl('router-purity-controls.ts'));
+}
+
+test('H5 production router purity drops unused components and rejects changed or missing targets',async()=>{
+ const control=await routerPurityControls(),entry="import{HashRouter,useNavigationType}from'react-router';export{HashRouter,useNavigationType};",plain=await control.bundle(entry,false),optimized=await control.bundle(entry,true);
+ for(const name of ['Link','NavLink','Form']){const assignment=new RegExp('\\b'+name+'\\.displayName\\s*=\\s*["\\x27]'+name+'["\\x27]');assert.match(plain,assignment);assert.doesNotMatch(optimized,assignment);}
+ assert.match(plain,/function LinkWithRef/);assert.doesNotMatch(optimized,/function LinkWithRef/);assert.ok(optimized.length<plain.length);
+ const actual=await readFile(resolve(sourceRoot,'node_modules/react-router/dist/production/chunk-Q34X6AWR.mjs'),'utf8');assert.throws(()=>control.annotateRouterComponents(actual+'\n'),/H5_ROUTER_PURITY_INPUT_CHANGED/);
+ await assert.rejects(control.bundle('export const preserved=true;',true),/H5_ROUTER_PURITY_CHUNK_MISSING/);
+});
+
+test('H5 production router purity preserves used component metadata and real Link NavLink Form rendering',async()=>{
+ const control=await routerPurityControls(),entry="export{Link,NavLink,Form,createMemoryRouter,RouterProvider}from'react-router';",plain=await control.render(await control.bundle(entry,false)),optimized=await control.render(await control.bundle(entry,true));
+ assert.deepEqual(optimized,plain);for(const name of ['Link','NavLink','Form']){assert.equal(optimized.metadata[name].displayName,name);assert.equal(optimized.metadata[name].kind,'Symbol(react.forward_ref)');}assert.equal(optimized.metadata.Link.renderName,'LinkWithRef');assert.equal(optimized.metadata.NavLink.renderName,'NavLinkWithRef');
+ assert.match(optimized.markup.Link,/<a\b[^>]*href="\/next"/);assert.match(optimized.markup.NavLink,/aria-current="page"/);assert.match(optimized.markup.NavLink,/class="active"/);assert.match(optimized.markup.Form,/<form\b[^>]*method="post"/);assert.match(optimized.markup.Form,/<form\b[^>]*action="\/submit"/);
+});

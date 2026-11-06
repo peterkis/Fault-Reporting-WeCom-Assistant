@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { h5Catalogs } from './compile-i18n';
+import {routerComponentPurity} from './src/tooling/router-component-purity.ts';
 
 /** A classic, dependency-free script finishes theme selection before the first
  * paint. It must not be folded into the deferred React application entry. */
@@ -52,7 +53,7 @@ export default defineConfig(({command})=>({
   root: fileURLToPath(new URL('.', import.meta.url)),
   base: '/wecom/yixiaoxiu/',
   publicDir: false,
-  plugins: [react(), tailwindcss(), h5Catalogs(fileURLToPath(new URL('.', import.meta.url))), prepaint()],
+  plugins: [react(), tailwindcss(), h5Catalogs(fileURLToPath(new URL('.', import.meta.url))), routerComponentPurity(), prepaint()],
   // The pinned router package's ESM export targets its development tree, whose
   // ENABLE_DEV_WARNINGS constant stays true even in Vite production mode. Use
   // the same official package's production entry for builds; keep dev diagnostics.
