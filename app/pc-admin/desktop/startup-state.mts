@@ -46,7 +46,7 @@ export function transitionStartup(state:StartupModel,event:StartupEvent):Startup
       if(signal.type==='first-frame')next.firstFrame=true;
       else if(signal.type==='playing')next.video='playing';
       else if(signal.type==='waiting'||signal.type==='stalled')next.video='waiting';
-      else if(signal.type==='first-ended'&&state.active&&state.firstFrame&&state.video!=='pending')next.firstPlaybackComplete=true;
+      else if(signal.type==='first-cycle-complete'&&state.active&&state.firstFrame&&state.video!=='pending')next.firstPlaybackComplete=true;
     }
   }
   if(next.phase==='covering'&&next.active&&next.scene!=='loading'

@@ -5,7 +5,7 @@ export interface DesktopState {
 export const TITLEBAR_HEIGHT=40;
 export type ChromeAction='menu'|'minimize'|'maximize'|'close'|'reconnect';
 export type RecoveryState='offline'|'unavailable'|'reconnecting'|'failed'|null;
-export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean;appVersion:string;booting:boolean;recovery:RecoveryState;loginExpired:boolean;loginCompatibility:boolean}
+export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean;appVersion:string;booting:boolean;recovery:RecoveryState;loginExpired:boolean;loginCompatibility:boolean;reducedMotion:boolean}
 export interface ChromeBridge {state():Promise<ChromeState>;command(action:ChromeAction):Promise<void>;onState(callback:(state:ChromeState)=>void):()=>void}
 export function readChromeAction(value:unknown):ChromeAction {
   if(value==='menu'||value==='minimize'||value==='maximize'||value==='close'||value==='reconnect')return value;
@@ -19,7 +19,7 @@ export interface LoginBridge {
   version:1;getAppVersion():Promise<string>;quit():Promise<void>;
   startup?:{version:1;connect?():Promise<void>;prepared(value:LoginPrepared):Promise<{presented:boolean}>;onPresented(callback:()=>void):()=>void};
 }
-export type StartupFailure='media-error'|'play-rejected'|'first-frame-timeout'|'playback-stalled'|'overlay-load-failed'|'overlay-crashed';
+export type StartupFailure='frame-load-failed'|'frame-decode-failed'|'canvas-unavailable'|'first-frame-timeout'|'playback-stalled'|'overlay-load-failed'|'overlay-crashed';
 export interface StartupState {
   version:1;generation:number;active:boolean;releasing:boolean;reducedMotion:boolean;firstPlaybackComplete:boolean;
   scene:'loading'|'prepared'|'error'|'compatibility'|'other';failure:StartupFailure|null;
@@ -27,7 +27,8 @@ export interface StartupState {
 export type StartupSignal=
   | {version:1;type:'metadata';duration:number;width:number;height:number}
   | {version:1;type:'visibility';visible:boolean}
-  | {version:1;type:'first-frame'|'playing'|'waiting'|'stalled'|'first-ended'|'reduced-motion'}
+  | {version:1;type:'progress';drawCount:number}
+  | {version:1;type:'first-frame'|'playing'|'waiting'|'stalled'|'first-cycle-complete'|'reduced-motion'}
   | {version:1;type:'released';generation:number}
   | {version:1;type:'failed';reason:StartupFailure};
 export interface StartupBridge {state():Promise<StartupState>;onState(callback:(state:StartupState)=>void):()=>void;event(value:StartupSignal):Promise<void>}
@@ -62,16 +63,19 @@ export function readLoginLease(value:unknown):LoginLease {
 }
 export function readStartupSignal(value:unknown):StartupSignal {
   if(!value||typeof value!=='object'||!('type' in value))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+  if(value.type==='progress'){
+    const r=object(value,['version','type','drawCount']);
+    if(r.version!==1||typeof r.drawCount!=='number'||!Number.isSafeInteger(r.drawCount)||r.drawCount<1||r.drawCount>1_000_000_000)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'progress',drawCount:r.drawCount};
+  }
   if(value.type==='visibility'){
     const r=object(value,['version','type','visible']);if(r.version!==1||typeof r.visible!=='boolean')throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
     return {version:1,type:'visibility',visible:r.visible};
   }
   if(value.type==='metadata'){
     const r=object(value,['version','type','duration','width','height']);
-    if(r.version!==1||typeof r.duration!=='number'||!Number.isFinite(r.duration)||r.duration<=0||r.duration>30
-      ||typeof r.width!=='number'||!Number.isInteger(r.width)||r.width<1||r.width>4096
-      ||typeof r.height!=='number'||!Number.isInteger(r.height)||r.height<1||r.height>4096)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
-    return {version:1,type:'metadata',duration:r.duration,width:r.width,height:r.height};
+    if(r.version!==1||r.duration!==68/30||r.width!==540||r.height!==540)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'metadata',duration:68/30,width:540,height:540};
   }
   if(value.type==='released'){
     const r=object(value,['version','type','generation']);
@@ -80,12 +84,12 @@ export function readStartupSignal(value:unknown):StartupSignal {
   }
   if(value.type==='failed'){
     const r=object(value,['version','type','reason']);
-    const reasons:readonly unknown[]=['media-error','play-rejected','first-frame-timeout','playback-stalled','overlay-load-failed','overlay-crashed'];
+    const reasons:readonly unknown[]=['frame-load-failed','frame-decode-failed','canvas-unavailable','first-frame-timeout','playback-stalled','overlay-load-failed','overlay-crashed'];
     if(r.version!==1||!reasons.includes(r.reason))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
     return {version:1,type:'failed',reason:r.reason as StartupFailure};
   }
   const r=object(value,['version','type']);
-  if(r.version!==1||(r.type!=='first-frame'&&r.type!=='playing'&&r.type!=='waiting'&&r.type!=='stalled'&&r.type!=='first-ended'&&r.type!=='reduced-motion'))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+  if(r.version!==1||(r.type!=='first-frame'&&r.type!=='playing'&&r.type!=='waiting'&&r.type!=='stalled'&&r.type!=='first-cycle-complete'&&r.type!=='reduced-motion'))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
   return {version:1,type:r.type};
 }
 export function serverOrigin(value:unknown):string {

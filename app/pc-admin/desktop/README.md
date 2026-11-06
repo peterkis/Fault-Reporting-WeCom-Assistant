@@ -19,9 +19,9 @@ npm run desktop:package -- -ServerOrigin https://cd3120.mobimedical.cn
 
 `Setup` 根据 versions.json 准备官方校验过的便携 Node.js 和锁定的 Electron/electron-builder，使用根依赖和根锁文件。所有入口先检查 D 盘包含关系、重解析点及写权限，再设置当前进程的 npm/Electron/builder/Node 编译缓存、TEMP/TMP、Node PATH 和测试 profile，不改系统环境。工具、缓存、临时文件、编译和安装包均在忽略的 `.local/electron/`。现有根 node_modules 和 .build 仍在本项目 D 盘。
 
-`Build` 只从编译输出白名单准备 stage，不启动服务器。`Dev` 会实际访问指定服务器，使用前应确认访问范围。`Package` 生成 NSIS x64 安装包并验证 ASAR 恰好包含十九个宿主文件，含本地启动视频，拒绝夹带 root node_modules、服务端或私有配置；同时输出 desktop-build.json、源/包内视频 SHA-256 与安装器 SHA-256。测试驱动和源码映射不进入包。
+`Build` 只从编译输出白名单准备 stage，不启动服务器。`Dev` 会实际访问指定服务器，使用前应确认访问范围。`Package` 生成 NSIS x64 安装包，按精确白名单核验宿主、原片、帧清单和全部68帧，拒绝缺失、额外文件、root node_modules、服务端或私有配置；同时输出 desktop-build.json、源/包内媒体 SHA-256 与安装器 SHA-256。测试驱动、FFmpeg和源码映射不进入包。
 
-0.1.17 使用本地原始 MP4 覆盖视频，远端在真实布局下并行准备。正常路径等待真实完整首播及当前场景 prepared；后续循环可中途交接，二维码续期不重播。媒体故障、兼容和减少动态效果采用有诊断的有限回退。准备与实际呈现分离，具体状态机、安全和现场验证边界见[桌面登录导航](../../../docs/agents/desktop-login.md)。
+0.1.18 使用原片派生的540×540、30fps、68帧无损WebP与Canvas，在原可信本地覆盖层连续播放；只预解码当前及后两帧，交接后释放位图并销毁覆盖WebContents。远端在真实布局下并行准备，正常路径等待全部帧实际按序绘制完成及当前场景prepared；后续循环可中途交接，二维码续期不重播。默认完整动效，不因Windows系统减动设置跳过；仅显式`--wecom-reduced-motion`启用静态备用。可见但失焦仍继续准备/播放，最小化、隐藏、锁屏和休眠暂停后续播；旧页协商等待缩短至dom-ready后1秒，新页保留20秒故障预算。资源故障与兼容均有诊断和恢复入口。具体状态机、安全和现场验证边界见[桌面登录导航](../../../docs/agents/desktop-login.md)。
 
 开发/自动化 profile 由 `-Profile` 指定；运行包在开发机验收时也可设置绝对 D 盘 `WECOM_DESKTOP_DATA_ROOT`，主进程在 ready 前设置 userData/sessionData/temp/crashDumps/logs。同事正常安装使用 Windows 当前用户目录，不要求 D 盘。
 

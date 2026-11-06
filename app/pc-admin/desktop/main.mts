@@ -15,6 +15,8 @@ const directory=path.dirname(fileURLToPath(import.meta.url));
 const chromeUrl=new URL('./chrome.html',import.meta.url).href;
 const loginChromeUrl=new URL('./login-chrome.html',import.meta.url).href;
 const startupUrl=new URL('./startup.html',import.meta.url).href;
+const unavailableUrl=new URL('./unavailable.html',import.meta.url).href;
+const desktopMotion=motionPreference(process.argv),startupId=randomUUID(),startupStarted=performance.now();
 // A bounded presentation fallback; this never changes origin, identity or authentication rules.
 const defaultLoginEntry:LoginEntryPath=process.argv.includes('--wecom-login=official')?OFFICIAL_LOGIN_PATH:EMBEDDED_LOGIN_PATH;
 const configFile=path.join(directory,'desktop.config.json');
@@ -43,9 +45,9 @@ let recovery:RecoveryState=null,loginExpired=false,reconnect=()=>{};
 let context:DesktopContext={epoch:null,blocked:true,live:false,remindersAvailable:false};
 const notices=new Map<string,Notification>(),seen=new Map<string,number>();
 const state=():DesktopState=>({version:1,visible:startup.phase==='released'&&!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:startup.phase==='released'&&!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
-const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:startup.phase!=='released',recovery:startup.phase==='released'?recovery:null,loginExpired,loginCompatibility:startup.phase==='released'&&startup.scene==='compatibility'});
-const startupState=():StartupState=>({version:1,generation:startup.generation,active:startup.active,releasing:startup.phase==='releasing',reducedMotion:process.argv.includes('--wecom-reduced-motion'),firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure});
-const startupNativeActive=()=>!!window?.isVisible()&&!window.isMinimized()&&window.isFocused()&&!locked&&!suspended&&!quitting;
+const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:startup.phase!=='released',recovery:startup.phase==='released'?recovery:null,loginExpired,loginCompatibility:startup.phase==='released'&&startup.scene==='compatibility',reducedMotion:desktopMotion==='reduce'});
+const startupState=():StartupState=>({version:1,generation:startup.generation,active:startup.active,releasing:startup.phase==='releasing',reducedMotion:desktopMotion==='reduce',firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure});
+const startupNativeActive=()=>!!window?.isVisible()&&!window.isMinimized()&&!locked&&!suspended&&!quitting;
 function focusContent(){const target=startupView?.webContents??content?.webContents;if(target&&!target.isDestroyed())target.focus();}
 function clearNotices(){for(const notice of notices.values())notice.close();notices.clear();}
 function sendState(){
@@ -187,11 +189,42 @@ else{
   layout();window.on('resize',layout);
   const page=content.webContents;
   let lease:(LoginLease&{processId:number;routingId:number})|null=null;
-  let mediaWatchdog:ReturnType<typeof setInterval>|null=null,overlayDocumentVisible=true,mediaTicks=0,mediaTick=performance.now(),observedFrame=false;
+  let mediaWatchdog:ReturnType<typeof setInterval>|null=null,overlayDocumentVisible=true,mediaTicks=0,mediaTick=performance.now(),observedFrame=false,observedDrawCount=0;
   let sceneTimer:ReturnType<typeof setTimeout>|null=null,compatibilityTimer:ReturnType<typeof setTimeout>|null=null,releaseTimer:ReturnType<typeof setTimeout>|null=null;
-  let sceneBudget=20_000,compatibilityBudget=8_000,sceneClock=0,compatibilityClock=0,domReady=false,protocolConnected=false,diagnosticCount=0,sceneDocument='about:blank';
-  const traceStartup=(event:string)=>{if(diagnosticCount++>=160)return;try{const logs=app.getPath('logs');mkdirSync(logs,{recursive:true});appendFileSync(path.join(logs,'startup.jsonl'),JSON.stringify({at:Date.now(),event,generation:startup.generation,phase:startup.phase,video:startup.video,firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure})+'\n');}catch{/* Diagnostics must not prevent login recovery. */}};
-  const notifyPresented=()=>{if(lease&&!page.isDestroyed()&&embeddedLoginDocument(page.getURL(),config.serverOrigin))page.mainFrame.send('desktop-login:presentation',{generation:lease.generation,nonce:lease.nonce,presented:startup.phase==='released'});};
+  let sceneBudget=20_000,compatibilityBudget=1_000,sceneClock=0,compatibilityClock=0,domReady=false,protocolConnected=false,diagnosticCount=0,sceneDocument='about:blank';
+  let presentedGeneration=-1,nativeDiagnosticCount=0,lastNativeState='';
+  type DocumentStage='bootstrap'|'embedded-login'|'official-login'|'callback'|'business'|'local-error'|'other';
+  type DiagnosticEvent='start'|'navigation'|'dom-ready'|'overlay-dom-ready'|'connect'|'prepared'|'presented'|'first-frame'|'first-cycle-complete'|'metadata'|'playing'|'waiting'|'stalled'|'reduced-motion'|'native-state'|'scene'|'releasing'|'released'|'fault'|'compatibility-dom-ready-only'|'scene-timeout'|'content-bootstrap-failed'|'overlay-release-timeout';
+  const documentStage=():DocumentStage=>{
+    if(sceneDocument==='about:blank')return 'bootstrap';
+    if(sceneDocument===unavailableUrl||sceneDocument.startsWith(unavailableUrl+'#'))return 'local-error';
+    if(embeddedLoginDocument(sceneDocument,config.serverOrigin))return 'embedded-login';
+    if(businessDocument(sceneDocument,config.serverOrigin))return 'business';
+    if(loginEntryPath(sceneDocument,config.serverOrigin)===OFFICIAL_LOGIN_PATH)return 'official-login';
+    try{const url=new URL(sceneDocument);if(url.origin===config.serverOrigin&&url.pathname==='/workbench/callback')return 'callback';if(url.origin==='https://login.work.weixin.qq.com'&&allowedNavigation(sceneDocument,config.serverOrigin))return 'official-login';}catch{/* Only a fixed stage enters diagnostics. */}
+    return 'other';
+  };
+  const nativeSnapshot=()=>({visible:!!window?.isVisible(),minimized:!!window?.isMinimized(),focused:!!window?.isFocused(),locked,suspended,active:startup.active,startupVisible:!!startupView?.getVisible()});
+  const traceStartup=(event:DiagnosticEvent)=>{
+    if(diagnosticCount>=160)return;diagnosticCount++;
+    try{
+      const logs=app.getPath('logs');mkdirSync(logs,{recursive:true});
+      appendFileSync(path.join(logs,'startup.jsonl'),JSON.stringify({at:Date.now(),appVersion:app.getVersion(),startupId,elapsedMs:Math.round(performance.now()-startupStarted),event,documentStage:documentStage(),generation:startup.generation,phase:startup.phase,video:startup.video,firstFrame:startup.firstFrame,firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure,recovery,motion:desktopMotion,...nativeSnapshot()})+'\n');
+    }catch{/* Diagnostics must not prevent login recovery. */}
+  };
+  const traceNativeState=()=>{
+    if(startup.phase==='released')return;
+    const snapshot=JSON.stringify(nativeSnapshot());if(snapshot===lastNativeState)return;lastNativeState=snapshot;
+    // Keep focus changes useful without letting repeated window activity consume the stage log.
+    if(nativeDiagnosticCount>=24)return;nativeDiagnosticCount++;traceStartup('native-state');
+  };
+  const observedMediaSignals=new Set<StartupSignal['type']>();
+  const notifyPresented=()=>{
+    if(!lease||page.isDestroyed()||!embeddedLoginDocument(page.getURL(),config.serverOrigin))return;
+    page.mainFrame.send('desktop-login:presentation',{generation:lease.generation,nonce:lease.nonce,presented:startup.phase==='released'});
+    if(startup.phase==='released'&&presentedGeneration!==lease.generation){presentedGeneration=lease.generation;traceStartup('presented');}
+  };
+  traceStartup('start');traceNativeState();
   const stopSceneTimers=()=>{if(sceneTimer)clearTimeout(sceneTimer);if(compatibilityTimer)clearTimeout(compatibilityTimer);sceneTimer=null;compatibilityTimer=null;};
   const syncSceneTimers=()=>{
     const now=performance.now();
@@ -211,13 +244,28 @@ else{
   };
   updateStartup=event=>{
     const previous=startup;
+    if(event.type==='video'&&event.signal.type==='progress'){
+      // A slow but advancing source cycle is healthy. This bounded heartbeat
+      // only renews the no-progress fault budget; it never opens the handoff gate.
+      if(startup.active&&startupNativeActive()&&overlayDocumentVisible&&event.signal.drawCount>observedDrawCount){observedDrawCount=event.signal.drawCount;mediaTicks=0;mediaTick=performance.now();}
+      return;
+    }
     if(event.type==='active')mediaTick=performance.now();
     else if(startupNativeActive()!==startup.active){mediaTick=performance.now();startup=transitionStartup(startup,{type:'active',active:startupNativeActive()});}
     if(event.type==='video'&&event.signal.type==='visibility')overlayDocumentVisible=event.signal.visible;
     startup=transitionStartup(startup,event);
     if(previous.phase==='releasing'&&startup.phase!=='releasing'&&releaseTimer){clearTimeout(releaseTimer);releaseTimer=null;}
-    if(previous.phase!==startup.phase||previous.scene!==startup.scene||previous.video!==startup.video||previous.firstPlaybackComplete!==startup.firstPlaybackComplete)traceStartup(event.type==='video'?event.signal.type:event.type);
+    if(previous.generation!==startup.generation)traceStartup('navigation');
+    if(!previous.firstFrame&&startup.firstFrame)traceStartup('first-frame');
+    if(!previous.firstPlaybackComplete&&startup.firstPlaybackComplete)traceStartup('first-cycle-complete');
+    if(previous.failure!==startup.failure&&startup.failure)traceStartup('fault');
+    if(previous.video!==startup.video&&startup.video==='reduced-motion')traceStartup('reduced-motion');
+    if(previous.scene!==startup.scene)traceStartup(startup.scene==='prepared'?'prepared':'scene');
+    if(event.type==='video'&&(event.signal.type==='metadata'||event.signal.type==='playing'||event.signal.type==='waiting'||event.signal.type==='stalled')&&!observedMediaSignals.has(event.signal.type)){
+      observedMediaSignals.add(event.signal.type);traceStartup(event.signal.type);
+    }
     if(startup.phase==='releasing'&&previous.phase!=='releasing'){
+      traceStartup('releasing');
       layout();
       const generation=startup.generation;
       // A compositor/preload failure may prevent the fade receipt. This only
@@ -225,7 +273,7 @@ else{
       releaseTimer=setTimeout(()=>{releaseTimer=null;if(startup.phase==='releasing'&&startup.generation===generation){traceStartup('overlay-release-timeout');updateStartup({type:'video',signal:{version:1,type:'released',generation}});}},1200);releaseTimer.unref();
     }
     if(startup.phase==='released'&&previous.phase!=='released')releaseOverlay();
-    layout();if(event.type==='active'||event.type==='scene'||previous.active!==startup.active)syncSceneTimers();
+    layout();traceNativeState();if(event.type==='active'||event.type==='scene'||previous.active!==startup.active)syncSceneTimers();
     sendState();
   };
   const validateLease=(event:Electron.IpcMainInvokeEvent,value:unknown)=>{
@@ -233,10 +281,10 @@ else{
     const frame=event.senderFrame;
     if(!lease||!domReady||!frame||offered.generation!==startup.generation||offered.generation!==lease.generation||offered.nonce!==lease.nonce
       ||frame.processId!==lease.processId||frame.routingId!==lease.routingId)throw Error('DESKTOP_LOGIN_DOCUMENT_REJECTED');
-    protocolConnected=true;syncSceneTimers();
+    if(!protocolConnected){protocolConnected=true;traceStartup('connect');}syncSceneTimers();
     return offered.generation;
   };
-  connectLogin=(event,value)=>{validateLease(event,value);traceStartup('protocol-connected');};
+  connectLogin=(event,value)=>{validateLease(event,value);};
   prepareLogin=(event,value)=>{
     if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==2||!('lease' in value)||!('prepared' in value))throw Error('DESKTOP_LOGIN_PREPARED_INVALID');
     readLoginPrepared(value.prepared);const generation=validateLease(event,value.lease);
@@ -244,14 +292,14 @@ else{
     return {presented:startup.phase==='released'};
   };
   const nativeActivity=()=>{updateStartup({type:'active',active:startupNativeActive()});};
-  startupPage.on('dom-ready',()=>{startupView?.setBackgroundColor('#00000000');sendState();focusContent();});
+  startupPage.on('dom-ready',()=>{startupView?.setBackgroundColor('#00000000');traceStartup('overlay-dom-ready');sendState();focusContent();});
   const overlayFailed=(signal:StartupSignal)=>{updateStartup({type:'video',signal});if(startup.scene==='loading')beginRecovery(config.serverOrigin+activeLoginEntry,'unavailable');if(startup.phase==='releasing')updateStartup({type:'video',signal:{version:1,type:'released',generation:startup.generation}});};
   startupPage.on('did-fail-load',(_event,code,_description,_url,mainFrame)=>{if(mainFrame&&code!==-3)overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'});});
   startupPage.on('render-process-gone',()=>overlayFailed({version:1,type:'failed',reason:'overlay-crashed'}));
   startupPage.on('preload-error',()=>overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'}));
   startupPage.on('unresponsive',()=>overlayFailed({version:1,type:'failed',reason:'overlay-crashed'}));
   // Also diagnose a local script/preload that never started its own watchdog.
-  // Only observed visible ticks count; neither this clock nor the renderer clock
+  // Only observed visible ticks without drawing progress count; neither clock
   // can satisfy firstPlaybackComplete.
   mediaWatchdog=setInterval(()=>{
     const now=performance.now(),delta=Math.min(1000,Math.max(0,now-mediaTick));mediaTick=now;
@@ -343,7 +391,8 @@ else{
   });
   page.on('did-navigate-in-page',(_event,url,mainFrame)=>{if(mainFrame&&businessDocument(url,config.serverOrigin))lastDocument=recoveryTarget(url,config.serverOrigin,'GET',activeLoginEntry)??lastDocument;});
   page.on('dom-ready',()=>{
-    const url=page.getURL();if(rejectedDocument||url==='about:blank')return;
+    const url=page.getURL();if(rejectedDocument)return;
+    traceStartup('dom-ready');if(url==='about:blank')return;
     domReady=true;
     if(embeddedLoginDocument(url,config.serverOrigin)){
       // A main document has reconnected even though its scene may still need
@@ -355,12 +404,12 @@ else{
       // Later QR renewals and callbacks never recreate the startup view.
     }else{
       finishRecovery();content?.setVisible(true);
-      updateStartup({type:'scene',generation:startup.generation,scene:url===new URL('./unavailable.html',import.meta.url).href||url.startsWith(new URL('./unavailable.html',import.meta.url).href+'#')?'error':'other'});
+      updateStartup({type:'scene',generation:startup.generation,scene:url===unavailableUrl||url.startsWith(unavailableUrl+'#')?'error':'other'});
     }
     layout();sendState();
   });
   page.on('did-start-navigation',(_event,url,inPlace,mainFrame)=>{if(mainFrame&&!inPlace){
-    sceneDocument=url;lease=null;domReady=false;protocolConnected=false;stopSceneTimers();sceneBudget=20_000;compatibilityBudget=8_000;
+    sceneDocument=url;lease=null;domReady=false;protocolConnected=false;stopSceneTimers();sceneBudget=20_000;compatibilityBudget=1_000;
     if(url!=='about:blank'){updateStartup({type:'navigation',generation:startup.generation+1});syncSceneTimers();}
     if(loginEntryPath(url,config.serverOrigin)){loginPresentation=true;layout();}
     if(callbackDocument(url))stopLoginTimer();else if(embeddedLoginDocument(url,config.serverOrigin)||url===config.serverOrigin+OFFICIAL_LOGIN_PATH){stopLoginTimer();pendingLogin=false;}resetContext();
@@ -416,7 +465,7 @@ else{
       await page.loadURL('about:blank');
       if(!initializingContent||quitting||page.isDestroyed()||startup.generation!==0||page.getURL()!=='about:blank')return;
       page.debugger.attach('1.3');
-      await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:motionPreference(process.argv)}]});
+      await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:desktopMotion}]});
     })(),new Promise<never>((_resolve,reject)=>{initializationTimer=setTimeout(()=>reject(Error('DESKTOP_CONTENT_BOOTSTRAP_TIMEOUT')),10_000);initializationTimer.unref();})]);
   }catch{
     if(!quitting&&!page.isDestroyed()){page.stop();traceStartup('content-bootstrap-failed');initializingContent=false;layout();beginRecovery(config.serverOrigin+defaultLoginEntry,'unavailable');}

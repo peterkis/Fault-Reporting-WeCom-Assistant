@@ -4,6 +4,7 @@ const maximize=document.getElementById('maximize');
 function render(state:ChromeState){
   const version=document.querySelector('.surface-name');if(version)version.textContent='v'+state.appVersion;
   document.body.dataset.maximized=String(state.maximized);document.body.dataset.focused=String(state.focused);
+  document.body.dataset.reducedMotion=String(state.reducedMotion);
   document.body.dataset.booting=String(state.booting);
   document.querySelector('[data-startup]')?.toggleAttribute('hidden',!state.booting||!!state.recovery);
   document.querySelector('[data-recovery]')?.toggleAttribute('hidden',!state.recovery);

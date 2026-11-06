@@ -1,79 +1,114 @@
 import type {StartupBridge,StartupFailure,StartupSignal,StartupState} from './policy.mjs';
+import {createFramePlayback,FRAME_COUNT,FRAME_RATE} from './frame-playback.mjs';
+import type {FramePlaybackSnapshot} from './frame-playback.mjs';
 
 declare global {interface Window {desktopStartup:StartupBridge}}
-const video=document.getElementById('startup-video');
-if(!(video instanceof HTMLVideoElement))throw Error('STARTUP_VIDEO_DOCUMENT_INVALID');
+const canvas=document.getElementById('startup-canvas');
+if(!(canvas instanceof HTMLCanvasElement))throw Error('STARTUP_CANVAS_DOCUMENT_INVALID');
+let context:CanvasRenderingContext2D|null=null;
+try{context=canvas.getContext('2d',{alpha:false});}catch{/* Report the bounded canvas failure once the bridge is ready. */}
 const status=document.querySelector('.startup-status'),message=document.querySelector('[data-message]'),detail=document.querySelector('[data-detail]'),code=document.querySelector('[data-code]');
-let current:StartupState|null=null,disposed=false,failed:StartupFailure|null=null,firstEnded=false,firstFrame=false,reduced=false,released=false;
-let frameCallback:number|undefined,fadeDeadline:number|undefined,releasingGeneration:number|undefined;
-let waitingForPlay=false,playAttempt=0,lastTime=0,lastTick=performance.now(),withoutFrame=0,withoutProgress=0,resumeTime:number|null=null;
-const motion=matchMedia('(prefers-reduced-motion: reduce)');
-video.muted=true;
-// Only a genuine ended event may complete the normal first play. Fault clocks never do.
+let current:StartupState|null=null,disposed=false,failed:StartupFailure|null=null,firstFrame=false,reduced=false,released=false;
+let player:ReturnType<typeof createFramePlayback<ImageBitmap>>|null=null,staticFrame:ImageBitmap|null=null,staticRequested=false,staticDrawn=false;
+let raf=0,fadeDeadline:number|undefined,releasingGeneration:number|undefined,reportedCycle=0,metadata=false;
+let lastWatch=performance.now(),withoutFrame=0,withoutProgress=0,lastDrawCount=0,stalled=false;
+let lastHeartbeat=performance.now(),reportedDrawCount=0;
+let recorded:FramePlaybackSnapshot|null=null,recordedActive=false;
+const setData=(key:string,value:string)=>{if(document.body.dataset[key]!==value)document.body.dataset[key]=value;};
+for(const [key,value] of Object.entries({frameIndex:'-1',drawCount:'0',cycleCount:'0',activeMs:'0',firstCycleActiveMs:'',residentFrames:'0',residentFrameIndexes:'',inFlight:'0',decodingFrame:'',maxResidentFrames:'0',maxInFlight:'0'}))setData(key,value);
+class FrameFailure extends Error {constructor(readonly reason:'frame-load-failed'|'frame-decode-failed'|'canvas-unavailable'){super(reason);}}
 const emit=(value:StartupSignal)=>{if(!disposed)void window.desktopStartup.event(value).catch(()=>{});};
-const playable=()=>!!current?.active&&!current.releasing&&!document.hidden&&!failed&&!reduced&&!disposed;
+const playable=()=>!!current?.active&&!current.releasing&&!document.hidden&&!failed&&!disposed;
 const diagnostics=(reason:StartupFailure|'reduced-motion')=>{
   status?.removeAttribute('hidden');
-  if(message)message.textContent=reason==='reduced-motion'?'已减少启动动态效果':'启动视频暂时无法播放';
+  if(message)message.textContent=reason==='reduced-motion'?'已手动选择静态启动画面':'启动画面暂时无法播放';
   if(detail)detail.textContent=reason==='reduced-motion'?'正在准备登录界面。':'正在继续准备登录，稍后将显示登录页或连接恢复选项。';
-  if(code)code.textContent=reason==='reduced-motion'?'REDUCED_MOTION':('STARTUP_'+reason.replaceAll('-','_').toUpperCase());
+  if(code)code.textContent=reason==='reduced-motion'?'MANUAL_REDUCED_MOTION':('STARTUP_'+reason.replaceAll('-','_').toUpperCase());
 };
+const stopFrames=()=>{cancelAnimationFrame(raf);raf=0;player?.pause();if(player)record(player.snapshot(),true);setData('playback','paused');};
+const disposeFrames=()=>{stopFrames();player?.dispose();staticFrame?.close();staticFrame=null;};
 const fail=(reason:StartupFailure)=>{
   if(disposed||failed||current?.releasing)return;
-  failed=reason;video.pause();document.body.dataset.failed='true';document.body.dataset.startupFailure=reason;
+  failed=reason;disposeFrames();document.body.dataset.failed='true';document.body.dataset.startupFailure=reason;
   diagnostics(reason);emit({version:1,type:'failed',reason});
 };
-const play=()=>{
-  if(!playable()||waitingForPlay||!video.paused)return;
-  if(resumeTime!==null){video.currentTime=resumeTime;resumeTime=null;}
-  waitingForPlay=true;const attempt=++playAttempt;
-  void video.play().catch(()=>{if(attempt===playAttempt&&playable())fail('play-rejected');}).finally(()=>{if(attempt===playAttempt)waitingForPlay=false;});
+const loadFrame=async(index:number):Promise<ImageBitmap>=>{
+  const image=new Image();image.decoding='async';
+  try{
+    await new Promise<void>((resolve,reject)=>{
+      image.onload=()=>resolve();image.onerror=()=>reject(new FrameFailure('frame-load-failed'));
+      image.src='startup-frames/'+String(index).padStart(3,'0')+'.webp';
+    });
+    let bitmap:ImageBitmap;
+    try{await image.decode();bitmap=await createImageBitmap(image);}catch{throw new FrameFailure('frame-decode-failed');}
+    if(bitmap.width!==540||bitmap.height!==540){bitmap.close();throw new FrameFailure('frame-decode-failed');}
+    return bitmap;
+  }finally{image.onload=null;image.onerror=null;image.removeAttribute('src');}
 };
-const sync=()=>{
-  // Native active also accounts for Windows lock/suspend; Page Visibility alone does not.
-  lastTick=performance.now();lastTime=video.currentTime;
-  if(!playable()){playAttempt++;waitingForPlay=false;video.pause();return;}
-  play();
-};
+const draw=(frame:ImageBitmap)=>{try{if(!context||context.isContextLost())throw Error('CANVAS_UNAVAILABLE');context.drawImage(frame,0,0,540,540);}catch{throw new FrameFailure('canvas-unavailable');}};
 const showFirstFrame=()=>{
-  if(disposed||firstFrame||failed||reduced)return;
-  firstFrame=true;document.body.dataset.firstFrame='true';emit({version:1,type:'first-frame'});
+  if(firstFrame||disposed||failed)return;firstFrame=true;document.body.dataset.firstFrame='true';
+  if(!metadata){metadata=true;document.body.dataset.metadata='true';emit({version:1,type:'metadata',duration:FRAME_COUNT/FRAME_RATE,width:540,height:540});}
+  emit({version:1,type:'first-frame'});
 };
-video.addEventListener('loadedmetadata',()=>{
-  if(!Number.isFinite(video.duration)||video.duration<=0||video.videoWidth<=0||video.videoHeight<=0){fail('media-error');return;}
-  document.body.dataset.metadata='true';
-  emit({version:1,type:'metadata',duration:video.duration,width:video.videoWidth,height:video.videoHeight});
-});
-frameCallback=video.requestVideoFrameCallback(showFirstFrame);
-video.addEventListener('playing',()=>{document.body.dataset.playback='playing';withoutProgress=0;emit({version:1,type:'playing'});if(!playable())video.pause();});
-for(const type of ['waiting','stalled'] as const)video.addEventListener(type,()=>{document.body.dataset.playback=type;emit({version:1,type});});
-video.addEventListener('error',()=>{document.body.dataset.mediaError=String(video.error?.code??0);fail('media-error');});
-video.addEventListener('ended',()=>{
-  if(!playable()){
-    // An ended dispatch queued across hiding must not count as a visible complete play.
-    resumeTime=Math.max(0,Math.min(lastTime,video.duration-.15));return;
+const record=(snapshot:FramePlaybackSnapshot,force=false)=>{
+  const active=playable();
+  if(!force&&recorded&&recordedActive===active&&recorded.drawCount===snapshot.drawCount&&recorded.cycleCount===snapshot.cycleCount&&recorded.waiting===snapshot.waiting&&recorded.disposed===snapshot.disposed&&recorded.residentFrames.length===snapshot.residentFrames.length&&recorded.inFlight===snapshot.inFlight&&recorded.maxResidentFrames===snapshot.maxResidentFrames)return;
+  recorded=snapshot;recordedActive=active;
+  const values={frameIndex:String(snapshot.currentFrame),drawCount:String(snapshot.drawCount),cycleCount:String(snapshot.cycleCount),activeMs:String(snapshot.activeMs),firstCycleActiveMs:snapshot.firstCycleActiveMs===null?'':String(snapshot.firstCycleActiveMs),residentFrames:String(snapshot.residentFrames.length),residentFrameIndexes:snapshot.residentFrames.join(','),inFlight:String(snapshot.inFlight===null?0:1),decodingFrame:snapshot.inFlight===null?'':String(snapshot.inFlight),maxResidentFrames:String(snapshot.maxResidentFrames),maxInFlight:String(snapshot.maxInFlight),playback:!active||snapshot.disposed?'paused':snapshot.waiting||snapshot.currentFrame<0?'waiting':'playing'};
+  for(const [key,value] of Object.entries(values))setData(key,value);
+};
+const initialize=()=>{
+  if(!context){fail('canvas-unavailable');return;}
+  if(reduced){
+    if(staticRequested)return;staticRequested=true;
+    setData('inFlight','1');setData('decodingFrame','30');setData('maxInFlight','1');
+    void loadFrame(30).then(frame=>{setData('inFlight','0');setData('decodingFrame','');if(disposed||failed||current?.releasing){frame.close();return;}staticFrame=frame;setData('residentFrames','1');setData('residentFrameIndexes','30');setData('maxResidentFrames','1');sync();}).catch(error=>fail(error instanceof FrameFailure?error.reason:'frame-decode-failed'));
+  }else if(!player){
+    player=createFramePlayback({loadFrame,drawFrame:frame=>draw(frame),onSignal:signal=>{
+      if(signal==='first-frame')showFirstFrame();
+      else if(signal==='playing'){stalled=false;emit({version:1,type:'playing'});}
+      else if(signal==='waiting')emit({version:1,type:'waiting'});
+      // Cycle signals are sent after tick returns so current navigation receipts
+      // can be retried on a later genuine cycle if native visibility rejected one.
+    },onError:error=>fail(error instanceof FrameFailure?error.reason:'frame-decode-failed')});
+    record(player.snapshot());
   }
-  if(!firstEnded||!current?.firstPlaybackComplete){firstEnded=true;document.body.dataset.firstEnded='true';emit({version:1,type:'first-ended'});}
-  // loop=true suppresses ended. Keep this same element and manually continue it instead.
-  video.currentTime=0;lastTime=0;withoutProgress=0;play();
-});
+};
+const tick=(now:number)=>{
+  raf=0;if(!playable())return;
+  if(reduced){
+    if(staticFrame&&!staticDrawn){try{draw(staticFrame);}catch{fail('canvas-unavailable');return;}staticDrawn=true;showFirstFrame();document.body.dataset.frameIndex='30';document.body.dataset.drawCount='1';document.body.dataset.cycleCount='0';document.body.dataset.playback='paused';emit({version:1,type:'reduced-motion'});}
+    return;
+  }
+  if(player){
+    const snapshot=player.tick(now,true);record(snapshot);
+    if(!failed&&snapshot.cycleCount>reportedCycle){reportedCycle=snapshot.cycleCount;if(!current?.firstPlaybackComplete)emit({version:1,type:'first-cycle-complete'});}
+    if(snapshot.drawCount>lastDrawCount){withoutProgress=0;lastDrawCount=snapshot.drawCount;if(stalled){stalled=false;emit({version:1,type:'playing'});}}
+  }
+  if(playable())raf=requestAnimationFrame(tick);
+};
+function sync(){
+  lastWatch=performance.now();
+  if(!playable()){stopFrames();return;}
+  initialize();if(!failed&&!raf&&(!reduced||staticFrame&&!staticDrawn))raf=requestAnimationFrame(tick);
+}
 const release=(generation:number)=>{
   if(released||disposed||!current?.releasing||current.generation!==generation)return;released=true;
-  clearTimeout(fadeDeadline);video.pause();emit({version:1,type:'released',generation});
+  clearTimeout(fadeDeadline);stopFrames();emit({version:1,type:'released',generation});
 };
 document.body.addEventListener('transitionend',event=>{if(event.target===document.body&&event.propertyName==='opacity'&&releasingGeneration!==undefined&&Number(getComputedStyle(document.body).opacity)<.001)release(releasingGeneration);});
 const render=(state:StartupState)=>{
-  if(disposed)return;
-  current=state;
-  document.body.dataset.firstPlaybackComplete=String(state.firstPlaybackComplete);
-  if((state.reducedMotion||motion.matches)&&!reduced){reduced=true;video.pause();document.body.dataset.reducedMotion='true';diagnostics('reduced-motion');emit({version:1,type:'reduced-motion'});}
-  if(state.failure&&!failed){failed=state.failure;document.body.dataset.failed='true';document.body.dataset.startupFailure=state.failure;diagnostics(state.failure);}
+  if(disposed)return;current=state;document.body.dataset.firstPlaybackComplete=String(state.firstPlaybackComplete);
+  // Only the explicit desktop flag chooses a static frame. System media queries
+  // neither pause the default sequence nor bypass its complete first cycle.
+  if(state.reducedMotion&&!reduced){reduced=true;player?.dispose();player=null;stopFrames();document.body.dataset.reducedMotion='true';diagnostics('reduced-motion');}
+  if(state.failure&&!failed){failed=state.failure;disposeFrames();document.body.dataset.failed='true';document.body.dataset.startupFailure=state.failure;diagnostics(state.failure);}
   if(!state.releasing){clearTimeout(fadeDeadline);delete document.body.dataset.releasing;releasingGeneration=undefined;released=false;}
   if(state.releasing&&!document.body.dataset.releasing){
-    const generation=state.generation;releasingGeneration=generation;
-    document.body.dataset.releasing='true';video.pause();
-    if(reduced||matchMedia('(prefers-reduced-motion: reduce)').matches)release(generation);
-    // Only safeguards fade cleanup when a transition event is lost, never video completion.
+    const generation=state.generation;releasingGeneration=generation;document.body.dataset.releasing='true';stopFrames();
+    if(reduced)release(generation);
+    // A lost fade receipt can only clear an already-open gate; never complete frames.
     else fadeDeadline=window.setTimeout(()=>release(generation),320);
   }
   sync();
@@ -83,17 +118,16 @@ const unsubscribe=window.desktopStartup.onState(state=>{received=true;render(sta
 void window.desktopStartup.state().then(state=>{if(!received)render(state);}).catch(()=>fail('overlay-load-failed'));
 const visibilityChanged=()=>{emit({version:1,type:'visibility',visible:!document.hidden});sync();};
 document.addEventListener('visibilitychange',visibilityChanged);visibilityChanged();
-const motionChanged=()=>{if(current)render(current);};motion.addEventListener('change',motionChanged);
+const contextLost=()=>fail('canvas-unavailable');canvas.addEventListener('contextlost',contextLost);
 const watchdog=window.setInterval(()=>{
-  const now=performance.now(),delta=Math.min(1000,Math.max(0,now-lastTick));lastTick=now;
+  const now=performance.now(),delta=Math.min(1000,Math.max(0,now-lastWatch));lastWatch=now;
   if(!playable())return;
-  // Accumulate visible ticks so a suspended wall clock cannot be mistaken for a fault.
   if(!firstFrame)withoutFrame+=delta;
-  if(video.currentTime>lastTime+.001){withoutProgress=0;lastTime=video.currentTime;}else withoutProgress+=delta;
-  if(withoutFrame>=8000)fail('first-frame-timeout');else if(withoutProgress>=8000)fail('playback-stalled');
+  if(!reduced)withoutProgress+=delta;
+  if(!reduced&&lastDrawCount>reportedDrawCount&&now-lastHeartbeat>=1000){
+    reportedDrawCount=lastDrawCount;lastHeartbeat=now;emit({version:1,type:'progress',drawCount:lastDrawCount});
+  }
+  if(firstFrame&&!reduced&&!stalled&&withoutProgress>=2000){stalled=true;emit({version:1,type:'stalled'});}
+  if(withoutFrame>=8000)fail('first-frame-timeout');else if(!reduced&&withoutProgress>=8000)fail('playback-stalled');
 },250);
-window.addEventListener('pagehide',()=>{
-  disposed=true;video.pause();clearInterval(watchdog);clearTimeout(fadeDeadline);unsubscribe();document.removeEventListener('visibilitychange',visibilityChanged);
-  motion.removeEventListener('change',motionChanged);
-  if(frameCallback!==undefined)video.cancelVideoFrameCallback(frameCallback);
-},{once:true});
+window.addEventListener('pagehide',()=>{disposed=true;disposeFrames();clearInterval(watchdog);clearTimeout(fadeDeadline);unsubscribe();document.removeEventListener('visibilitychange',visibilityChanged);canvas.removeEventListener('contextlost',contextLost);},{once:true});

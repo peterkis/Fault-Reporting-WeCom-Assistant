@@ -81,7 +81,8 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  const processes:DesktopProcess[]=[],runId=randomUUID();
  try{
   const stage=path.join(root,'.local/electron/temp','process-stage-'+runId);mkdirSync(stage,{recursive:true});
-  for(const file of ['main.mjs','policy.mjs','startup-state.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
+  const startupFiles=['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4','startup-frames/manifest.json',...Array.from({length:68},(_,index)=>'startup-frames/'+String(index).padStart(3,'0')+'.webp')];
+  for(const file of startupFiles){const target=path.join(stage,file);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(root,'.local/electron/stage',file),target);}
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:tls.origin}));
   for(actor=0;actor<3;actor++){

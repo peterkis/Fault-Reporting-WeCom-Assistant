@@ -38,11 +38,11 @@ app.on('web-contents-created',(_event,contents)=>{
     contents.loadURL=(url,options)=>url==='about:blank'?new Promise<void>(()=>{}):load(url,options);
   }
   contents.on('did-start-navigation',(_event,url,_inPlace,mainFrame)=>{
-    if(!mainFrame||url!==startupUrl)return;
-    // Isolate normal-playback cases from the host's Windows/RDP motion setting.
-    // Production startup still honors the real system preference.
+    if(!mainFrame||url!==startupUrl||process.env.WECOM_DESKTOP_TEST_OS_REDUCE!=='true')return;
+    // A dedicated negative-input case supplies OS reduce. Ordinary startup cases
+    // retain the real host media preference so the test cannot conceal it.
     if(!contents.debugger.isAttached())contents.debugger.attach('1.3');
-    void contents.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:process.argv.includes('--wecom-reduced-motion')?'reduce':'no-preference'}]}).catch(()=>{});
+    void contents.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]}).catch(()=>{});
   });
   contents.on('destroyed',()=>trace('web-contents-destroyed'));
   contents.on('did-fail-load',(_event,code,_description,url)=>{diagnostics.push({event:'load-failed',code,path:new URL(url).pathname});});

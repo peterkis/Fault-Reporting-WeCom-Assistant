@@ -6,8 +6,9 @@
 
 | 目标 | 实现入口 | 对应验证 |
 | --- | --- | --- |
-| 本地启动视频与播放器故障 | [startup.html](../../app/pc-admin/desktop/startup.html)、[startup.mts](../../app/pc-admin/desktop/startup.mts)、[startup.css](../../app/pc-admin/desktop/startup.css) | [原生导航回归](../../app/pc-admin/desktop/navigation-errors.test.mts)中的真实解码与首屏断言 |
+| 本地启动帧动画与播放器故障 | [startup.html](../../app/pc-admin/desktop/startup.html)、[startup.mts](../../app/pc-admin/desktop/startup.mts)、[startup.css](../../app/pc-admin/desktop/startup.css) | [原生导航回归](../../app/pc-admin/desktop/navigation-errors.test.mts)中的真实图片解码、顺序绘制与首屏断言 |
 | 启动双条件与导航代际 | [startup-state.mts](../../app/pc-admin/desktop/startup-state.mts)、[主进程](../../app/pc-admin/desktop/main.mts) | [状态转换回归](../../app/pc-admin/desktop/startup-state.test.mts)及原生交接 |
+| 帧调度与有界解码池 | [frame-playback.mts](../../app/pc-admin/desktop/frame-playback.mts) | 全68帧顺序、末帧停留、暂停时钟、迟到解码与位图释放 |
 | 网页准备态、扫码场景整体出现 | [服务端HTML](../../app/server/src/workbench-embedded-login.mts)、[login.css](../../app/pc-admin/src/login/login.css)、[main.ts](../../app/pc-admin/src/login/main.ts) | [正式编译登录浏览器回归](../../tests/workbench-desktop-session.browser.test.mts) |
 | 工牌、官方面板与提示投影 | [Lanyard.tsx](../../app/pc-admin/src/login/Lanyard.tsx)、[Lanyard.css](../../app/pc-admin/src/login/Lanyard.css) | 同一活iframe、拖动/翻面/缩放回退和提示朝向 |
 | 背景生成器与帧率/像素预算 | [LoginBackdrop.tsx](../../app/pc-admin/src/login/LoginBackdrop.tsx)、[backdrop-renderer.ts](../../app/pc-admin/src/login/backdrop-renderer.ts) | 隐藏/离线暂停、销毁、背景提交与页面rAF分别测量 |
@@ -24,15 +25,15 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 首次about:blank目标初始化沿原不节流方式完成主进程私有媒体偏好设置，并有独立10秒故障期限；失败停止该次加载，进入现有可重试恢复，不让导航代际0无限等待。该空白文档阶段没有登录控件或业务能力，视频仍独立服从原生可见性；完成或失败即撤销初始化豁免。主进程与renderer的故障时钟均不能设置完整首播标记。
 
-启动状态分别记录当前导航代际、视频状态、首帧、`firstPlaybackComplete`、当前场景、窗口活动状态和`covering/releasing/released`阶段。正常交接须当前场景可呈现、窗口可见且未最小化/锁定/休眠、真实首遍`ended`三者同时成立。首遍先结束则手动续播；之后当前场景准备完成可在循环中途交接。播放器从创建到交接始终是同一个video，不在远端dom-ready重建。二维码续期、OAuth回调、页内导航、重试和二次启动唤醒均不重新要求首遍。新的完整文档导航只失效旧场景代际，保留已完成首播；旧代际ready或淡出完成不能交接新文档。
+启动状态分别记录当前导航代际、播放状态、首帧、`firstPlaybackComplete`、当前场景、窗口活动状态和`covering/releasing/released`阶段。0.1.18正常交接须当前场景可呈现、窗口可见且未最小化/锁定/休眠、真实首遍`first-cycle-complete`三者同时成立。首遍先结束则继续同一帧序列循环；之后当前场景准备完成可在循环中途交接。播放器从创建到交接始终是同一个Canvas实例，不在远端dom-ready重建。二维码续期、OAuth回调、页内导航、重试和二次启动唤醒均不重新要求首遍。新的完整文档导航只失效旧场景代际，保留已完成首播；旧代际ready或淡出完成不能交接新文档。
 
-本地video使用原始MP4、muted与playsinline，按原比例contain展示。没有loop属性，真实首遍ended标记完成后手动回到起点继续播放。loadedmetadata、首帧、playing、waiting、stalled、error、play拒绝及解码停滞分别可诊断。renderer和主进程分别按有效可见时间累计8秒故障预算；脚本/preload未启动或无响应也有主进程出口。故障定时器只进入异常回退，不设置播放完成。窗口隐藏、最小化、锁定、休眠时暂停，恢复后续播；遮挡产生的document.hidden另外暂停renderer故障钟，原生事件和页面可见性不能互相替代。关闭/收起立即走既有窗口与托盘生命周期。
+本地Canvas使用原片派生的540×540、30fps、68帧无损WebP，按原比例contain展示。只驻留当前和后两帧，并顺序执行一个解码任务，淘汰与销毁时释放ImageBitmap；不预解码整段、不用巨型图集、不启动MP4解码器回退。rAF只在帧变化或尺寸变化时绘制，首遍须全部68帧按序成功绘制，并在活跃绘制回调中确认末帧停留和源周期时长；资源不足时停留并延长，不跳帧追赶。首绘、playing、waiting、帧加载/解码失败、Canvas不可用和停滞分别可诊断。renderer和主进程分别按有效可见时间累计8秒故障预算；脚本/preload未启动或无响应也有主进程出口。故障定时器只进入异常回退，不设置播放完成。窗口隐藏、最小化、锁定、休眠时暂停，恢复后续播；document.hidden另外暂停renderer故障钟，原生事件和页面可见性不能互相替代。关闭/收起立即走既有窗口与托盘生命周期。
 
-视频异常保留明确原因并允许进入已准备的登录场景或现有可操作恢复界面。减少动态效果以独立`reduced-motion`降级退出播放约束，保留`firstPlaybackComplete=false`；验收分别记录系统偏好和显式应急选项。媒体错误、场景超时与正常播完分开报告。交接只发生一次，淡出后释放覆盖视图、媒体及其监听器，不常驻额外播放器进程。
+播放异常保留明确原因并允许进入已准备的登录场景或现有可操作恢复界面。所有桌面层默认完整动效，不因系统媒体查询自动减动；仅显式`--wecom-reduced-motion`使用静态备用并以独立`reduced-motion`退出播放约束，保留`firstPlaybackComplete=false`，不修改Windows全局设置。资源错误、场景超时与正常播完分开报告。交接只发生一次，淡出后释放覆盖视图、位图及其监听器，不常驻额外播放器进程。
 
 缓存会话若直接进入业务文档，覆盖期间的DesktopState.visible/focused仍为false，释放覆盖后才反映真实窗口状态。业务前端会使用该原生信号驱动“正在查看”、传输与阅读判断，不能把“窗口已显示”当成“被覆盖的业务内容已呈现”；准备信号仍不授予认证或业务权限。
 
-启动期间失去原生窗口焦点也保守暂停播放器、资源准备预算和节流豁免，重新聚焦再续播/交接。这避免准备阶段临时关闭节流使整窗Page Visibility变为“可见”后，在后台把视频算作已观看；媒体IPC和释放回执还会重新读取当下原生状态，不能只相信之前缓存的事件状态。
+0.1.18将启动可见性与焦点分开：可见但失焦仍播放、准备并交接，不暂停故障预算。最小化、隐藏、锁屏和挂起仍暂停；媒体IPC和释放回执重新读取当下原生状态，不能因临时关闭节流产生的合成Page Visibility而绕过这些条件。业务focused及覆盖期间visible=false不变，底层点击/Tab隔离保持。启动日志仅记录版本、启动标识、单调耗时、文档阶段、可见/焦点/电源布尔及关键转换，禁止记录OAuth query、Cookie或私有lease。
 
 ## 登录准备、呈现与兼容
 
@@ -40,7 +41,7 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 新桥接通过contextBridge只增加版本化的`workbenchLogin.startup.connect`、`prepared`和`onPresented`，不授予认证或业务权限。主进程核对所属WebContents、主框架、允许HTTPS origin、精确embedded登录path、消息形状和当前文档代际/私有nonce；拒绝子帧、非登录页、旧文档及畸形消息。主进程在当前文档dom-ready建立私有文档lease，preload在握手前排队。准备回执中的panel为`created/failed`，backdrop为`shader/fallback`。
 
-旧桌面客户端没有startup能力时，新网页保持原有自主展示。新客户端面对旧网页，在当前文档dom-ready后8秒有效可见时间内未协商connect或prepared，进入有日志的兼容回退；dom-ready在此路径不能证明场景或二维码完整。原生控制栏显示兼容提示，且仅在此模式开放原有“更多”固定恢复菜单，允许重试或使用官方登录页，即使远端脚本未运行也有恢复操作。已协商的新网页适用20秒有效可见资源预算，超时进入可操作恢复，不能被8秒旧页回退抢先呈现。预算使用单调时钟，授权callback与已交接的业务文档不受此资源期限中断。新网页遇到桥接拒绝或准备回执8秒未确认时恢复自主呈现；已确认prepared但presented=false可等待最小化期间首播续播。网络连接恢复与场景准备分别记录：embedded文档dom-ready停止网络重载循环，并保持覆盖下远端可见，资源准备仍须自己的条件。不能因一方未部署而无限循环视频。
+旧桌面客户端没有startup能力时，新网页保持原有自主展示。新客户端面对旧网页，在当前文档dom-ready后1秒有效可见时间内未协商connect或prepared，进入有日志的兼容回退；dom-ready在此路径不能证明场景或二维码完整。原生控制栏显示兼容提示，且仅在此模式开放原有“更多”固定恢复菜单，允许重试或使用官方登录页，即使远端脚本未运行也有恢复操作。已协商的新网页适用20秒有效可见资源预算，超时进入可操作恢复，不能被1秒旧页回退抢先呈现。预算使用单调时钟，授权callback与已交接的业务文档不受此资源期限中断。新网页遇到桥接拒绝或准备回执8秒未确认时恢复自主呈现；已确认prepared但presented=false可等待最小化期间首播续播。网络连接恢复与场景准备分别记录：embedded文档dom-ready停止网络重载循环，并保持覆盖下远端可见，资源准备仍须自己的条件。不能因一方未部署而无限循环启动动画。
 
 仓库使用的`@wecom/jssdk`版本以锁文件为准。[createWWLoginPanel官方合同](https://developer.work.weixin.qq.com/document/path/98622)中，返回实例只说明创建调用完成；SDK没有文档化的二维码渲染完成回调，iframe load也不证明二维码可用。`onLoginSuccess`是用户授权成功，继续既有code/state回调流程，不用于启动ready。同步初始化抛错和onLoginFail须呈现准确原因、重新获取和官方页恢复；跨域iframe内部状态不可读时，局部提示保持“等待企业微信面板”语义，不宣称扫码已验证。
 
@@ -48,13 +49,17 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 ## 媒体与打包边界
 
-原件为`glass-reveal-1x (5).mp4`，桌面内命名为[startup-video.mp4](../../app/pc-admin/desktop/startup-video.mp4)，350437字节，SHA-256为`0b52ad1a40dc473a6e6adce5b4ea2297f1ecf62ce73ec87e69d7e15eb5fea65b`。视频为972×972不透明浅灰背景，Electron实际解码边缘采样为`#e9e9eb`，展示上限360 CSS px且contain；不按透明素材处理，不默认转码。视频只进入桌面staging和ASAR，不加入远端登录静态资源目录。
+原件为`glass-reveal-1x (5).mp4`，桌面内命名为[startup-video.mp4](../../app/pc-admin/desktop/startup-video.mp4)，350437字节，SHA-256为`0b52ad1a40dc473a6e6adce5b4ea2297f1ecf62ce73ec87e69d7e15eb5fea65b`。原片为972×972不透明浅灰背景，Electron实际解码边缘采样为`#e9e9eb`，展示上限360 CSS px且contain。按用户确认的0.1.18方案，构建期派生68帧540×540无损WebP，保持30fps及源周期；原片仍保留且不参与运行时播放。清单记录工具、生成参数、源哈希及每帧哈希。播放器、原片和帧资源只进入桌面staging/ASAR，不加入远端登录静态资源目录；FFmpeg不进入安装包。
 
-同步维护desktop.ps1的源码/编译复制和builder清单、verify-package.mts的精确ASAR白名单、原生与Electron集成fixture的显式复制列表。源文件及ASAR内字节都核对固定哈希。正式包内播放须用该包的本地文件验证；源码浏览器播放通过不能替代安装包验证。本地CSP仅增加所需`media-src 'self'`；覆盖层维持sandbox/contextIsolation/webSecurity、禁用Node及导航/弹窗/权限限制。
+同步维护desktop.ps1的源码/编译复制和builder清单、verify-package.mts的精确ASAR白名单、原生与Electron集成fixture的显式复制列表。原片、帧清单、68张图片的源文件及ASAR内字节逐项核对哈希，拒绝缺失、额外文件和编译漂移。正式包内播放须用该包的本地资源验证；源码浏览器播放通过不能替代安装包验证。本地CSP仅允许所需`img-src 'self'`，不增加远程媒体、通用文件读取IPC或Node权限；覆盖层维持sandbox/contextIsolation/webSecurity及导航/弹窗/权限限制。
+
+需要重建派生素材时，先编译桌面工具，再调用[生成器](../../app/pc-admin/desktop/generate-startup-frames.mts)，显式传入`--ffmpeg`、`--ffprobe`和`--attachment`绝对路径。它只接受清单约定的9.0.2工具版本及固定原片哈希，核对附件与仓库原片后生成帧；普通构建只校验已有帧，不默认转码，不把开发工具打包。源哈希或资源清单不符必须停止接入。
+
+播放器最多每秒报告一次真实drawCount增长，主进程只以当前可见且单调增长的计数续期无进展故障预算，不写逐帧日志、不触发场景准备或首播完成。这允许低速但持续推进的首遍超过8秒，仍能检测脚本失联和真正卡死；心跳不能代替全部68帧与末帧停留的完成信号。
 
 ## 几何与准备态取样
 
-逻辑尺寸取`offsetWidth/offsetHeight`或对应CSS值，变换后的外接矩形用于居中/边界检查。视频记录实际videoWidth/videoHeight、展示尺寸、object-fit、首帧与当前时间；以真实画面判断主体完整与浅灰衔接。记录实际viewport、DPI和动画相位；截图文件名只是目标标签，不能替代运行时尺寸。
+逻辑尺寸取`offsetWidth/offsetHeight`或对应CSS值，变换后的外接矩形用于居中/边界检查。帧播放器记录源尺寸、Canvas内尺寸、展示尺寸、首绘、帧序号、循环次数及活跃首遍时长；以真实画面判断主体完整与浅灰衔接。记录实际viewport、DPI和动画相位；截图文件名只是目标标签，不能替代运行时尺寸。
 
 原生首屏可在合成首响应等待时取样。分别验证登录先准备、视频先结束、多次循环后中途准备、代际失效、异常降级和交接一次。网页用正式编译浏览器检查prepared/presented分离、SDK失败、静态背景及旧桥接兼容；阻断企业微信域名仍scene-ready只证明可呈现及降级，不证明二维码可扫码。原生宿主下挂起defer模块的历史探针曾得到超时/0×0视口，这类结果只记探针失败。先确认`document.readyState`、实际视口和可见性，再解释截图。
 
