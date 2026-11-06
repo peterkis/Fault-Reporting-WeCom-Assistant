@@ -112,7 +112,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
         const claim = await transaction.query(
           `SELECT current_intake.id::text FROM intake.service_intake current_intake WHERE current_intake.id=$1::uuid
             AND current_intake.status<>'IGNORED'
-            FOR UPDATE OF current_intake SKIP LOCKED`, [candidate.id],
+            FOR UPDATE SKIP LOCKED`, [candidate.id],
         );
         if (claim.rowCount !== 1) return null;
         return orchestrator.processInTransaction({ transaction, intakeId: candidate.id,

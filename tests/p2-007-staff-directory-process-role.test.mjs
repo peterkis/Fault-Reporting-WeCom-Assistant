@@ -1,7 +1,12 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 
-const pool = { query: async () => ({ rows: [], rowCount: 1 }), connect: async () => { throw new Error('unexpected database call'); } };
+const closureChecksum=createHash('sha256').update(readFileSync(new URL('../database/migrations/071_unified_service_closure.sql',import.meta.url))).digest('hex');
+const pool = { query: async (_sql,values=[]) => values[0]==='071_unified_service_closure'
+  ? {rows:[{checksum_sha256:closureChecksum,record:true,termination:true}],rowCount:1}
+  : { rows: [], rowCount: 1 }, connect: async () => { throw new Error('unexpected database call'); } };
 let appOptions, workerOptions;
 mock.module('../app/server/scripts/p2-g1-process-role.mjs', { namedExports: {
   runApp: options => options.runtimeFactory({ pool, publicOrigin: 'https://example.test' }),

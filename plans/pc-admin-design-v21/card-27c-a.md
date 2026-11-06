@@ -353,7 +353,7 @@ A6：已完成。声明/Schema/OpenAPI/API文档/ADR与执行记录同步；原�
 
 提交、推送、PR/Codex/CI、合并、main快进与本卡分支清理继续由Root按本次授权完成，最终实际对象与回执见PR及交付回复；本记录不授予真实通知、现场写库、部署或Gate。
 
-### 当前完整文件清单（94）
+### R8发布候选文件清单（94）
 
 - `adr/0056_unified_closure_reasons_notify_and_restore.md`
 - `app/h5/src/api/query.ts`
@@ -449,3 +449,55 @@ A6：已完成。声明/Schema/OpenAPI/API文档/ADR与执行记录同步；原�
 - `tests/yxx-h5-v2.integration.test.mts`
 - `tools/ts-migration/h5.test.mts`
 - `tools/ts-migration/resources.json`
+
+
+## PR159 原生CI补修 CI01
+
+发布 head 94d463c832390dbf98675ae39c786052b453628e 已推送并创建PR159，显式 @codex review 请求已发出。远端Codex返回 code-review usage limits，未执行审查，无实际代码结论；不计PASS。沿用户指定的code-review/OCR delegate与仓库回退规则，最终 Standards / Spec 已分别对该head/base caa4d98做独立核对，94路径、0剩余finding；原件 final-published-standards.md / final-published-spec.md，两个轴不混排。
+
+人员目录CI run 42291981006 在既有 t02-baseline 的 p2-007-staff-directory-process-role.test.mjs 失败：旧pool替身只有rowCount=1、rows=[]，不包含新增071所要求的真实SQL checksum与两表就绪行，SERVICE_CLOSURE_SCHEMA_REQUIRED在原目录断言前拒绝。原CI FAIL和后续未到达保留于ci-staff-failed-01.log / 原CI制品，不改CI选择器或生产守卫。
+
+CI01只在该已有测试替身模拟071已就绪，checksum从已有制品资源读取；原目录转发断言、两种launcher、enabled/disabled流程和live-fetch拒绝均保留。没有新的业务断言期望或生产代码变化。此前556项/截图保持其原候选身份；本次将构建后跑完整t02-baseline及适用检查，应用产物与原候选逐字节比较，不把测试替身差异伪装为整个旧候选重跑。
+
+| 旧替身期望 | 新替身期望 | 依据 |
+| --- | --- | --- |
+| current P2016 Worker beforeReady仅需旧目录036替身 | 同时模拟当前必需071 checksum+两表，旧目录036与角色拥有者断言保持 | U3/U4、A0/A1当前runtime依赖；R7，无旧业务断言修改 |
+
+该额外路径属于原允许的后端测试范围，当前PR文件数95。运行结果随后按实际回执收口。
+
+
+### CI02：保留原 safe-claim 校验与单表锁语义
+
+CI01本地完整t02-baseline到第12入口：80项、79PASS/1FAIL，后5入口NOT_RUN，原summary/TAP保留于ci01-t02-01。失败为 public P2-015 validator 的原 safe-claim 字面检查仅识别 FOR UPDATE SKIP LOCKED；本卡关闭后防重新处理的claim增加了单表别名限定 FOR UPDATE OF current_intake SKIP LOCKED，触发其“worker uses PostgreSQL safe claim”拒绝。
+
+不改校验器、不放宽旧门禁、不删断言。claim仍只FROM同一service_intake表，恢复原FOR UPDATE SKIP LOCKED写法；新IGNORED排除条件完整保留，两种写法在该单表语句锁定同一行。原业务状态、权限、SKIP LOCKED并发合同均不变。下一候选将完整复跑t02-baseline，并补跑关闭/恢复及自动关闭后不重新处置的原注册入口；源码/制品/结果另记，不改绑80项FAIL或之前556项的身份。
+
+这是一处已有安全校验的SQL写法对齐，无业务断言期望变更；对应U3/U6要求关闭后不再被自动工作器改回开放状态，原PostgreSQL安全claim底线保留。
+
+
+### CI03：补齐剩余两个当前Runtime夹具的071
+
+对t02尚未到达5入口的只读审查确认两处准备不足：p2-016-workbench-http第二场景和p2-016-live-cluster只到031，却启动当前Runtime并要求ready/批次投影或Worker/Gateway启动。各在已有migrateP2016后调用原migrateServiceClosure(mode=apply)，不改任何原断言、测试名、选择器、数据输入、通知或权限。
+
+其余worker-restart、worker单元与schema-contract未发现需要预改的内容，保持原样。独立审查与两文件原/新SHA在t02-tail-audit、patch-t02-tail；Root核原SHA后唯一应用。旧031/036目录和历史SQL校验器不修改；当前Runtime必需071对应U3/U4/U7、A1/A6，不是新业务状态或新Flag。
+
+CI02重建928/928语法与types门禁均PASS，原manifest/proof已另存；接下来单独验证CI03组合，当前PR改动97路径（新增的3份既有后端测试均属原允许范围）。
+
+
+### CI03最终本地收口
+
+CI03 build-ci03-01与types-ci03-01均PASS：928/928 Node语法、strict/negative/CSS/design变量/feature ESLint/PC-H5类型全部通过。完整t02-baseline为17入口98/98 PASS、0 FAIL/SKIP/取消/未到达；包含旧失败的目录角色与public validator、Worker重启、schema合同、真实HTTP和三进程零live SDK调用。ci03-risk-01另有核心74/74与Cookie ACK26/26，共100/100 PASS、0 FAIL/SKIP，覆盖新单表claim在关闭/恢复与Bot/Web不重新处置路径中的实际行为。
+
+本候选manifest=002ddba2e9990c160f9e77f05273cbc3214246614e879dca3465f88158c26d26，input_hash=7e57b9aa9947ee83746946a979917e105833e569347f86ac37bac40996a0ea75，原件manifest-ci03-final/proof-ci03-final。对R8的556项候选逐字节比较，变化只为Worker的锁写法mjs/map与3份测试文件；其它产物全部相同。旧556项与截图保留原manifest，本次98+100另列，不改绑。
+
+ci-delta-standards与ci-delta-spec分别只读审查5文件增量，0finding：单表锁等价、两处IGNORED防线保留、原validator未改、3份测试原正文/断言/输入/清理保留。旧94d完整审查与后继增量共同覆盖当前97路径；scope-ci03-audit已核24份原测试名称/属性选择器删除0，无依赖/生产UI差异。
+
+本轮仅临时重启自有127.0.0.1:55491隔离PG；早期启动协调器等待子进程，重启期间的辅助探测收到starting-up错误已保留，改为只等待pg_ctl主进程后再次确认原data_directory/port/listener正确，业务测试均在就绪后执行。原始业务/CI FAIL和NOT_RUN继续保留。
+
+最新文件清单为上节R8的94路径，加以下3份原有后端测试，共97；Worker和执行记录已在原清单：
+
+- `tests/p2-007-staff-directory-process-role.test.mjs`
+- `tests/p2-016-workbench-http.integration.test.mjs`
+- `tests/p2-016-live-cluster.integration.test.mjs`
+
+当前五文件CI修补已经本地复验通过，将追加提交至同一授权分支并更新PR159。远端Codex额度限制仍为未执行；只在新head适用原生CI与独立增量审查完成后合并，main快进、分支清理和最终运行状态以交付原生回执为准，不提前计PASS。
