@@ -1,4 +1,5 @@
-import {lazy,Suspense,useCallback,useDeferredValue,useEffect,useLayoutEffect,useMemo,useState,useSyncExternalStore,type ReactNode} from 'react';
+import {lazy,Suspense,useCallback,useDeferredValue,useEffect,useLayoutEffect,useMemo,useRef,useState,useSyncExternalStore,type ReactNode} from 'react';
+import {useNavigationType} from 'react-router';
 import {HashRouter,useLocation,Navigate,Routes,Route} from './navigation';
 import {useTranslation} from './i18n-react';
 import {SessionProvider,useSessionStatus,type SessionStatus} from './session';
@@ -25,10 +26,25 @@ function PagePresentation({route,scope,revision,onPresented,notice,reportsSearch
  return <Suspense fallback={null}>{route&&displayed?<Routes location={displayed.path}><Route path="*" element={<Shell>{notice}<PresentedPage route={displayed} identity={viewIdentity(scope,revision,displayed)} onPresented={onPresented} reportsSearch={reportsSearch}/></Shell>}/></Routes>:null}</Suspense>;
 }
 function Navigation({runtime,embedded}:{runtime:PageRuntime;embedded:boolean}){
- const location=useLocation(),snapshot=useSyncExternalStore(runtime.subscribe,runtime.getSnapshot,runtime.getSnapshot);
+ const location=useLocation(),navigationType=useNavigationType(),snapshot=useSyncExternalStore(runtime.subscribe,runtime.getSnapshot,runtime.getSnapshot);
  const route=useMemo(()=>describeRoute(location.pathname,location.search),[location.pathname,location.search]);
  const [presented,setPresented]=useState<string|null>(null),[authAttempt,setAuthAttempt]=useState<'idle'|'redirecting'|'blocked'>('idle');
  const onPresented=useCallback((identity:string)=>setPresented(identity),[]);
+ const scroll=useRef<{positions:Map<string,number>;key:string|null;identity:string|null;frame:number}>({positions:new Map(),key:null,identity:null,frame:0});
+ useLayoutEffect(()=>{
+  const state=scroll.current;if(state.frame){cancelAnimationFrame(state.frame);state.frame=0;}if(state.key!==null)state.positions.set(state.key,window.scrollY);
+ },[location.key]);
+ useLayoutEffect(()=>{
+  if(!snapshot.session||presented!==viewIdentity(snapshot.session.recovery_scope,snapshot.membershipRevision,route))return;
+  const state=scroll.current,identity=JSON.stringify([route.input.view,route.input.view==='request'?route.input.request_ref:null]);
+  if(state.frame){cancelAnimationFrame(state.frame);state.frame=0;}
+  if(state.identity!==identity)window.scrollTo(0,navigationType==='POP'?state.positions.get(location.key)??0:0);
+  state.key=location.key;state.identity=identity;state.positions.set(location.key,window.scrollY);
+ },[presented,location.key,navigationType,route,snapshot.session,snapshot.membershipRevision]);
+ useEffect(()=>{
+  const state=scroll.current,save=()=>{if(state.frame)return;const key=state.key;state.frame=requestAnimationFrame(()=>{state.frame=0;if(key!==null&&key===state.key)state.positions.set(key,window.scrollY);});};
+  window.addEventListener('scroll',save,{passive:true});return()=>{window.removeEventListener('scroll',save);if(state.frame)cancelAnimationFrame(state.frame);};
+ },[]);
  const returnTo=loginReturnPath(route);
  const automatic=embedded&&snapshot.expired&&!snapshot.recoveryBlocked&&!hasProtectedInput()&&canReconnectAutomatically()&&authAttempt!=='blocked';
  const silent=snapshot.expired&&(automatic||authAttempt==='redirecting');
@@ -54,6 +70,7 @@ function Navigation({runtime,embedded}:{runtime:PageRuntime;embedded:boolean}){
 }
 export default function App({runtime,embedded=true}:{runtime:PageRuntime;embedded?:boolean}){
  const{i18n}=useTranslation();
+ useLayoutEffect(()=>{const previous=history.scrollRestoration;history.scrollRestoration='manual';return()=>{history.scrollRestoration=previous;};},[]);
  useEffect(()=>followClientPreferences(language=>{if(i18n.language!==language)void i18n.changeLanguage(language);document.documentElement.lang=language;}),[i18n]);
  return <HashRouter><Navigation runtime={runtime} embedded={embedded}/></HashRouter>;
 }
