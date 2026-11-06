@@ -16,7 +16,7 @@ interface StartupFixture {
   diagnostics:()=>string;
   close:()=>Promise<void>;
 }
-async function launchStartupFixture(root:string,origin:string,spki:string,name:string,media:'normal'|'missing'|'rejected'|'script-failed'='normal',reduce=false):Promise<StartupFixture>{
+async function launchStartupFixture(root:string,origin:string,spki:string,name:string,media:'normal'|'missing'|'rejected'|'script-failed'|'bootstrap-stalled'='normal',reduce=false):Promise<StartupFixture>{
   const stage=path.join(root,'.local/electron/temp',name),profile=path.join(root,'.local/electron/profiles',name);
   mkdirSync(stage,{recursive:true});mkdirSync(profile,{recursive:true});
   for(const file of startupFiles)copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
@@ -30,6 +30,7 @@ async function launchStartupFixture(root:string,origin:string,spki:string,name:s
     writeFileSync(path.join(stage,'reject-play.mjs'),'HTMLMediaElement.prototype.play=()=>Promise.reject(new DOMException("Synthetic denied playback","NotAllowedError"));');
   }
   const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:profile,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
+  if(media==='bootstrap-stalled')env.WECOM_DESKTOP_TEST_BOOTSTRAP_STALL='true';
   const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage,'--disable-features=CalculateNativeWinOcclusion',...(reduce?['--wecom-reduced-motion']:[])],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
   child.stderr?.on('data',(chunk:Buffer)=>writeFileSync(path.join(profile,'process-stderr.log'),chunk,{flag:'a'}));
   let ready=false,next=1;const pending=new Map<number,{resolve:(value:unknown)=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>();
@@ -37,7 +38,7 @@ async function launchStartupFixture(root:string,origin:string,spki:string,name:s
   child.on('exit',()=>{for(const slot of pending.values()){clearTimeout(slot.timer);slot.reject(Error('STARTUP_FIXTURE_EXITED'));}pending.clear();});
   const command=(action:string,expression?:string):Promise<unknown>=>new Promise((resolve,reject)=>{const id=next++,timer=setTimeout(()=>{pending.delete(id);reject(Error('STARTUP_FIXTURE_COMMAND_TIMEOUT:'+action));},5000);pending.set(id,{resolve,reject,timer});child.send({id,action,expression});});
   const wait=async(surface:'evaluate'|'startup-evaluate'|'chrome-evaluate',expression:string,timeout=12_000)=>{const deadline=Date.now()+timeout;while(Date.now()<deadline){try{if(await command(surface,expression))return;}catch(error){if(!(error instanceof Error)||!/Render frame was disposed|frame was destroyed|Script failed to execute|TEST_STARTUP/u.test(error.message))throw error;}await delay(40);}throw Error('STARTUP_FIXTURE_CONDITION_TIMEOUT:'+surface+':'+expression);};
-  const waitReleased=async()=>{const deadline=Date.now()+12_000;while(Date.now()<deadline){if(!(await command('state') as {startupVisible:boolean}).startupVisible)return;await delay(40);}throw Error('STARTUP_FIXTURE_HANDOFF_TIMEOUT');};
+  const waitReleased=async()=>{const deadline=Date.now()+12_000;while(Date.now()<deadline){const state=await command('state') as {startupVisible:boolean;viewCount:number};if(!state.startupVisible&&state.viewCount===2)return;await delay(40);}throw Error('STARTUP_FIXTURE_HANDOFF_TIMEOUT');};
   const diagnostics=()=>{const file=path.join(profile,'logs/startup.jsonl');return existsSync(file)?readFileSync(file,'utf8'):'';};
   const close=async()=>{if(child.exitCode!==null)return;if(child.connected)child.disconnect();await new Promise<void>(resolve=>{const timer=setTimeout(()=>{child.kill();resolve();},5000);child.once('exit',()=>{clearTimeout(timer);resolve();});});};
   try{const deadline=Date.now()+10_000;while(!ready&&Date.now()<deadline){if(child.exitCode!==null)throw Error('STARTUP_FIXTURE_START_FAILED');await delay(25);}assert.ok(ready);return {command,wait,waitReleased,diagnostics,close};}catch(error){await close();throw error;}
@@ -59,7 +60,7 @@ test('native startup gates real playback, isolates input, preserves prepared fra
       document.getElementById('under-cover').onclick=()=>window.clicks++;
       window.savedFrame=document.querySelector('iframe');window.savedFrameWindow=window.savedFrame.contentWindow;
       window.prepare=()=>{window.signalSent=true;return window.workbenchLogin.startup.prepared({version:1,panel:'created',backdrop:'fallback'}).then(value=>{if(value.presented)present();return value;});};
-      if(${JSON.stringify(mode)}!=='legacy')window.workbenchLogin.startup.onPresented(present);
+      if(${JSON.stringify(mode)}!=='legacy'){window.workbenchLogin.startup.onPresented(present);void window.workbenchLogin.startup.connect();}
       if(${JSON.stringify(mode)}==='early')void window.prepare();
       if(${JSON.stringify(mode)}==='visible'){
         const prepareWhenVisible=()=>{if(document.hidden||window.signalSent)return;window.preparedWhileVisible=true;void window.prepare();};
@@ -69,7 +70,7 @@ test('native startup gates real playback, isolates input, preserves prepared fra
   });
   await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin='https://127.0.0.1:'+address.port;
   let fixture:StartupFixture|null=null;
-  const launch=async(name:string,media:'normal'|'missing'|'rejected'|'script-failed'='normal',reduce=false)=>{fixture=await launchStartupFixture(root,origin,spki,run+'-'+name,media,reduce);return fixture;};
+  const launch=async(name:string,media:'normal'|'missing'|'rejected'|'script-failed'|'bootstrap-stalled'='normal',reduce=false)=>{fixture=await launchStartupFixture(root,origin,spki,run+'-'+name,media,reduce);return fixture;};
   const finish=async()=>{await fixture?.close();fixture=null;};
   try{
     const early=await launch('early');
@@ -149,6 +150,13 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     await finish();
 
     mode='manual';
+    mode='early';const bootstrap=await launch('bootstrap-stalled','bootstrap-stalled');
+    await bootstrap.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await bootstrap.waitReleased();
+    assert.match(bootstrap.diagnostics(),/content-bootstrap-failed/u,'the empty target initialization has its own bounded diagnostic recovery');
+    await bootstrap.wait('evaluate','typeof window.prepare==="function"');
+    assert.equal((await bootstrap.command('state') as {startupVisible:boolean}).startupVisible,false,'a generation-zero bootstrap failure does not strand the continuous startup player');
+    await finish();mode='manual';
     for(const [name,media,expected] of [['invalid-media','missing','media-error'],['denied-play','rejected','play-rejected']] as const){
       const broken=await launch(name,media);
       await broken.wait('evaluate','typeof window.prepare==="function"');

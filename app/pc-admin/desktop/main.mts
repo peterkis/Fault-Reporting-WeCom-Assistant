@@ -152,7 +152,7 @@ else{
   window.webContents.on('will-attach-webview',event=>event.preventDefault());
   window.webContents.on('will-navigate',(event,url)=>{if(url!==chromeUrl)event.preventDefault();});
   window.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));window.webContents.session.setPermissionCheckHandler(()=>false);
-  content=new WebContentsView({webPreferences:{session:ownedSession,preload:path.join(directory,'preload.cjs'),additionalArguments:['--workbench-origin='+config.serverOrigin],sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,backgroundThrottling:true}});
+  content=new WebContentsView({webPreferences:{session:ownedSession,preload:path.join(directory,'preload.cjs'),additionalArguments:['--workbench-origin='+config.serverOrigin],sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,backgroundThrottling:false}});
   window.contentView.addChildView(content);
   loginChrome=new WebContentsView({webPreferences:{preload:path.join(directory,'chrome-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,webviewTag:false}});
   const loginChromePage=loginChrome.webContents;
@@ -173,13 +173,13 @@ else{
   startupPage.setWindowOpenHandler(()=>({action:'deny'}));startupPage.on('will-attach-webview',event=>event.preventDefault());
   startupPage.on('will-navigate',(event,url)=>{if(url!==startupUrl)event.preventDefault();});
   startupPage.on('will-redirect',(event,url)=>{if(url!==startupUrl)event.preventDefault();});
-  let loginPresentation=false;
+  let loginPresentation=false,initializingContent=true;
   const layout=()=>{if(window&&content){
     const {width,height}=window.getContentBounds(),top=loginPresentation?0:TITLEBAR_HEIGHT;
     // Electron 45 marks an otherwise-visible native child as document.hidden
     // under this cover (see the retained native visibility probe). Temporarily
     // allow preparation only while active and waiting for this login scene.
-    const preparing=!!startupView&&startup.active&&startup.phase==='covering'&&startup.scene==='loading'&&loginPresentation;
+    const preparing=initializingContent||!!startupView&&startup.active&&startup.phase==='covering'&&startup.scene==='loading'&&loginPresentation;
     content.webContents.setBackgroundThrottling((loginPresentation||startup.phase!=='released')&&!preparing);
     content.setBounds({x:0,y:top,width,height:Math.max(0,height-top)});loginChrome?.setBounds({x:0,y:0,width,height:TITLEBAR_HEIGHT});loginChrome?.setVisible(startup.phase!=='released'||loginPresentation&&content.getVisible());startupView?.setBounds({x:0,y:TITLEBAR_HEIGHT,width,height:Math.max(0,height-TITLEBAR_HEIGHT)});
   }};
@@ -402,9 +402,21 @@ else{
   void window.loadFile(path.join(directory,'chrome.html')).catch(()=>{});
   // Initialize only an empty owned target before applying the private presentation preference.
   // No debugging port or protocol capability is exposed to any renderer.
-  await page.loadURL('about:blank');
-  page.debugger.attach('1.3');
-  await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:motionPreference(process.argv)}]});
+  // The empty target also needs to finish initializing beneath a native cover.
+  // Keep the original unthrottled empty-document bootstrap, bounded separately
+  // so a failed target/debugger handshake cannot strand generation zero forever.
+  let initializationTimer:ReturnType<typeof setTimeout>|undefined;
+  try{
+    await Promise.race([(async()=>{
+      await page.loadURL('about:blank');
+      if(!initializingContent||quitting||page.isDestroyed()||startup.generation!==0||page.getURL()!=='about:blank')return;
+      page.debugger.attach('1.3');
+      await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:motionPreference(process.argv)}]});
+    })(),new Promise<never>((_resolve,reject)=>{initializationTimer=setTimeout(()=>reject(Error('DESKTOP_CONTENT_BOOTSTRAP_TIMEOUT')),10_000);initializationTimer.unref();})]);
+  }catch{
+    if(!quitting&&!page.isDestroyed()){page.stop();traceStartup('content-bootstrap-failed');initializingContent=false;layout();beginRecovery(config.serverOrigin+defaultLoginEntry,'unavailable');}
+    return;
+  }finally{clearTimeout(initializationTimer);initializingContent=false;layout();}
   login();
   }).catch(()=>{dialog.showErrorBox('医小修工作台','桌面程序初始化失败，请检查配置和数据目录。');app.exit(1);});
 }

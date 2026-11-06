@@ -33,6 +33,10 @@ app.once('ready',()=>{
   });
 });
 app.on('web-contents-created',(_event,contents)=>{
+  if(process.env.WECOM_DESKTOP_TEST_BOOTSTRAP_STALL==='true'){
+    const load=contents.loadURL.bind(contents);
+    contents.loadURL=(url,options)=>url==='about:blank'?new Promise<void>(()=>{}):load(url,options);
+  }
   contents.on('did-start-navigation',(_event,url,_inPlace,mainFrame)=>{
     if(!mainFrame||url!==startupUrl)return;
     // Isolate normal-playback cases from the host's Windows/RDP motion setting.
