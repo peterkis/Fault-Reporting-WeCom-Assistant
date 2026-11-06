@@ -239,10 +239,26 @@ test('Card 20 K3 K4 categories, spacing and clear filters use real synthetic pro
    await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
    const metrics=await b.evaluate("(()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {title:r('.ds-board-toolbar-top').top-r('.ds-board-page-header h1').bottom,tabs:r('.ds-board-toolbar-bottom').top-r('.ds-board-toolbar-top').bottom,board:r('.board').top-r('.ds-board-toolbar-bottom').bottom,background:getComputedStyle(document.querySelector('.board')).backgroundColor,metadata:[...document.querySelectorAll('.board .ds-ticket-metadata')].filter(e=>e.checkVisibility()).map(e=>e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom),overflow:document.documentElement.scrollWidth>innerWidth};})()");
    assert.ok(metrics&&typeof metrics==='object');const m=metrics as {title:number;tabs:number;board:number;background:string;metadata:number[];overflow:boolean};
-   for(const [actual,target] of [[m.title,12],[m.tabs,12],[m.board,16]] as const)assert.ok(Math.abs(actual-target)<=1,JSON.stringify({width,m}));
+   // The 36px icon determines the heading row; its centered 32px h1 is inset within that row.
+   const titleOffset=await b.evaluate("document.querySelector('.ds-board-page-header .ds-page-heading-line').getBoundingClientRect().bottom-document.querySelector('.ds-board-page-header h1').getBoundingClientRect().bottom") as number;
+   assert.ok(Number.isFinite(titleOffset)&&titleOffset>=0,JSON.stringify({width,titleOffset}));
+   console.log('CARD26_HEADER_ANCHOR '+JSON.stringify({width,titleTextGap:m.title,titleOffset,blockGap:m.title-titleOffset}));
+   for(const [actual,target] of [[m.title-titleOffset,12],[m.tabs,12],[m.board,16]] as const)assert.ok(Math.abs(actual-target)<=1,JSON.stringify({width,m}));
    assert.equal(m.background,'rgba(0, 0, 0, 0)');assert.equal(m.overflow,false);assert.ok(m.metadata.every(gap=>Math.abs(gap-8)<=1));
   }
   await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
+  // Card 26: use the existing Web fixture writes and real catalog projection for visual coverage.
+  await b.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
+  const card26=await b.evaluate("(()=>{const tiles=[...document.querySelectorAll('.board .ds-ticket-category')].filter(n=>{const r=n.getBoundingClientRect();return n.checkVisibility()&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;});return {platform:navigator.platform,width:innerWidth,height:innerHeight,scale:devicePixelRatio,viewportScale:visualViewport.scale,categories:tiles.map(n=>({category:n.dataset.category,color:getComputedStyle(n).backgroundColor})),lanes:[...document.querySelectorAll('.ds-board-column')].map(n=>{const s=getComputedStyle(n);return {outlineStyle:s.outlineStyle,outlineWidth:s.outlineWidth,shadow:s.boxShadow};})};})()") as {platform:string;width:number;height:number;scale:number;viewportScale:number;categories:{category:string;color:string}[];lanes:{outlineStyle:string;outlineWidth:string;shadow:string}[]};
+  assert.equal(card26.width,1440);assert.equal(card26.scale,1);assert.equal(card26.viewportScale,1);
+  assert.ok(new Set(card26.categories.filter(tile=>tile.category!=='unclassified').map(tile=>tile.category)).size>=4,JSON.stringify(card26.categories));
+  assert.ok(new Set(card26.categories.filter(tile=>tile.category!=='unclassified').map(tile=>tile.color)).size>=4,JSON.stringify(card26.categories));
+  assert.ok(card26.categories.some(tile=>tile.category==='unclassified'),'one unclassified tile remains visible');
+  assert.equal(card26.lanes.length,3);
+  for(const lane of card26.lanes){assert.equal(lane.outlineStyle,'none');assert.equal(lane.outlineWidth,'0px');assert.match(lane.shadow,/rgba\(55, 53, 47, 0\.05\)/u);assert.match(lane.shadow,/0px 0px 0px 1px inset/u);}
+  const card26Directory=process.env.CARD26_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card26-board-'));await mkdir(card26Directory,{recursive:true});
+  await captureCard22(b,card26Directory,'board-1440');await writeFile(join(card26Directory,'board-metrics.json'),JSON.stringify(card26,null,2));
+  console.log('CARD26_BOARD '+JSON.stringify({directory:card26Directory,...card26}));
   assert.match(String(await b.evaluate("document.querySelector('[data-summary-filter=all]').title")),/已加载 15 项；计数基于已加载数据/u);
   assert.equal(await b.evaluate("getComputedStyle(document.querySelector('.range-bar')).position"),'absolute');
   assert.equal(await b.evaluate("document.querySelector('.search-main input').placeholder"),'搜索工单号、标题、报修人');

@@ -44,9 +44,13 @@ for(const [name,local,clock,expected] of [
 test('V1 list and timeline dividers share Shanghai midnight',()=>assert.deepEqual(shanghaiDays(Date.parse('2026-11-04T16:00:30Z')),{today:'2026-11-05',yesterday:'2026-11-04'}));
 test('B3 waiting shares heat thresholds, Shanghai starts and whole-day labels',()=>{
   const start='2026-11-05 08:00:00',at=Date.parse('2026-11-05T08:00:00+08:00');
-  for(const [minutes,label,tone] of [[0,'0 分钟','neutral'],[4,'4 分钟','neutral'],[5,'5 分钟','neutral'],[12,'12 分钟','neutral'],[20,'20 分钟','neutral'],[59,'59 分钟','neutral'],[60,'1 小时','attention'],[120,'2 小时','attention'],[239,'3 小时','attention'],[240,'4 小时','danger'],[300,'5 小时','danger'],[1440,'1 天','danger'],[2880,'2 天','danger']] as const)assert.deepEqual(formatWaitingTime(start,at+minutes*60_000),{label,tone});
+  for(const [minutes,label,tone] of [[0,'刚刚','neutral'],[4,'4 分钟','neutral'],[5,'5 分钟','neutral'],[12,'12 分钟','neutral'],[20,'20 分钟','neutral'],[59,'59 分钟','neutral'],[60,'1 小时','attention'],[120,'2 小时','attention'],[239,'3 小时','attention'],[240,'4 小时','danger'],[300,'5 小时','danger'],[1440,'1 天','danger'],[2880,'2 天','danger']] as const)assert.deepEqual(formatWaitingTime(start,at+minutes*60_000),{label,tone});
   for(const local of [null,undefined,'','2026-02-30 08:00:00','2026-11-05T08:00:00Z','2026-11-05 08:01:00'])assert.equal(formatWaitingTime(local,at),null);
   assert.equal(formatWaitingTime(start,NaN),null);
+});
+for(const [seconds,label] of [[0,'刚刚'],[59,'刚刚'],[60,'1 分钟']] as const)test('D2 waiting label at '+seconds+' seconds',()=>{
+  const start='2026-11-06 08:00:00',at=Date.parse('2026-11-06T08:00:00+08:00');
+  assert.deepEqual(formatWaitingTime(start,at+seconds*1000),{label,tone:'neutral'});
 });
 test('B5 minute clock pauses while hidden, resumes immediately and owns no request timer',t=>{
   const doc=new class extends EventTarget{hidden=false;}(),timers=new Map<number,()=>void>(),ticks:number[]=[],delays:number[]=[];let serial=0,clock=1000;

@@ -1,0 +1,761 @@
+{
+  "scope": "LOCAL_SYNTHETIC_REAL_HTTP_PG",
+  "platform": "win32",
+  "corners": {
+    "incoming": [
+      "4px",
+      "12px",
+      "12px",
+      "12px"
+    ],
+    "rest": [
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ],
+    "outgoing": [
+      "12px",
+      "4px",
+      "12px",
+      "12px"
+    ],
+    "backgrounds": [
+      "rgb(241, 241, 239)",
+      "rgb(241, 241, 239)",
+      "rgb(238, 244, 253)"
+    ]
+  },
+  "alignment": {
+    "textLeft": 1153,
+    "cardLeft": 1153,
+    "paddingLeft": "0px"
+  },
+  "headerSamples": [
+    {
+      "width": 1360,
+      "scale": 1,
+      "dpr": 1,
+      "name": "报修人",
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "headerRect": {
+        "left": 592,
+        "right": 1056,
+        "top": 168,
+        "bottom": 228,
+        "width": 464,
+        "height": 60
+      },
+      "nameRect": {
+        "left": 648,
+        "right": 690,
+        "top": 177.5,
+        "bottom": 199.5,
+        "width": 42,
+        "height": 22
+      },
+      "lineRect": {
+        "left": 648,
+        "right": 765.90625,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 117.90625,
+        "height": 18
+      },
+      "channelRect": {
+        "left": 648,
+        "right": 765.90625,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 117.90625,
+        "height": 18
+      },
+      "pickerRect": {
+        "left": 777.90625,
+        "right": 996,
+        "top": 181.5,
+        "bottom": 213.5,
+        "width": 218.09375,
+        "height": 32
+      }
+    },
+    {
+      "width": 1366,
+      "scale": 1,
+      "dpr": 1,
+      "name": "报修人",
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "headerRect": {
+        "left": 592,
+        "right": 1062,
+        "top": 168,
+        "bottom": 228,
+        "width": 470,
+        "height": 60
+      },
+      "nameRect": {
+        "left": 648,
+        "right": 690,
+        "top": 177.5,
+        "bottom": 199.5,
+        "width": 42,
+        "height": 22
+      },
+      "lineRect": {
+        "left": 648,
+        "right": 765.90625,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 117.90625,
+        "height": 18
+      },
+      "channelRect": {
+        "left": 648,
+        "right": 765.90625,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 117.90625,
+        "height": 18
+      },
+      "pickerRect": {
+        "left": 777.90625,
+        "right": 1002,
+        "top": 181.5,
+        "bottom": 213.5,
+        "width": 224.09375,
+        "height": 32
+      }
+    },
+    {
+      "width": 1440,
+      "scale": 1,
+      "dpr": 1,
+      "name": "报修人",
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "headerRect": {
+        "left": 592,
+        "right": 1136,
+        "top": 168,
+        "bottom": 228,
+        "width": 544,
+        "height": 60
+      },
+      "nameRect": {
+        "left": 648,
+        "right": 690,
+        "top": 177.5,
+        "bottom": 199.5,
+        "width": 42,
+        "height": 22
+      },
+      "lineRect": {
+        "left": 648,
+        "right": 824,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 176,
+        "height": 18
+      },
+      "channelRect": {
+        "left": 648,
+        "right": 765.90625,
+        "top": 199.5,
+        "bottom": 217.5,
+        "width": 117.90625,
+        "height": 18
+      },
+      "pickerRect": {
+        "left": 836,
+        "right": 1076,
+        "top": 181.5,
+        "bottom": 213.5,
+        "width": 240,
+        "height": 32
+      }
+    }
+  ],
+  "samples": [
+    {
+      "width": 1440,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 720.09375,
+        "right": 878.5,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 890.5,
+        "right": 1107,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 608,
+        "right": 1120,
+        "top": 861,
+        "bottom": 910,
+        "width": 512,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 75,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1360,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 749,
+        "right": 907.40625,
+        "top": 842,
+        "bottom": 862,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 810.5,
+        "right": 1027,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 608,
+        "right": 1040,
+        "top": 833,
+        "bottom": 910,
+        "width": 432,
+        "height": 77
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": false,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 168,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1359,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 749,
+        "right": 907.40625,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 1073.5,
+        "right": 1290,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 608,
+        "right": 1303,
+        "top": 861,
+        "bottom": 910,
+        "width": 695,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": true,
+      "hintClient": 98,
+      "hintScroll": 98,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1280,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 741,
+        "right": 899.40625,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 1002.5,
+        "right": 1219,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 600,
+        "right": 1232,
+        "top": 861,
+        "bottom": 910,
+        "width": 632,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1100,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 652.09375,
+        "right": 810.5,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 822.5,
+        "right": 1039,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 600,
+        "right": 1052,
+        "top": 861,
+        "bottom": 910,
+        "width": 452,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 15,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 188,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1000,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 741,
+        "right": 899.40625,
+        "top": 842,
+        "bottom": 862,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 722.5,
+        "right": 939,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 600,
+        "right": 952,
+        "top": 833,
+        "bottom": 910,
+        "width": 352,
+        "height": 77
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": false,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 950,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 730.59375,
+        "right": 889,
+        "top": 842,
+        "bottom": 862,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 672.5,
+        "right": 889,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 600,
+        "right": 902,
+        "top": 833,
+        "bottom": 910,
+        "width": 302,
+        "height": 77
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": false,
+      "nameVisible": true,
+      "nameClient": 94,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 901,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 681.59375,
+        "right": 840,
+        "top": 842,
+        "bottom": 862,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 623.5,
+        "right": 840,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 600,
+        "right": 853,
+        "top": 833,
+        "bottom": 910,
+        "width": 253,
+        "height": 77
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": false,
+      "nameVisible": true,
+      "nameClient": 45,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": false,
+      "hintClient": 0,
+      "hintScroll": 0,
+      "pickerWidth": 209,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 900,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 157,
+        "right": 315.40625,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 646.5,
+        "right": 863,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 16,
+        "right": 876,
+        "top": 861,
+        "bottom": 910,
+        "width": 860,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": true,
+      "hintClient": 98,
+      "hintScroll": 98,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    },
+    {
+      "width": 1920,
+      "scale": 1,
+      "dpr": 1,
+      "status": "已等待 5 小时，尚无人接待",
+      "statusClient": 158,
+      "statusScroll": 158,
+      "statusInside": true,
+      "statusRect": {
+        "left": 749,
+        "right": 907.40625,
+        "top": 876,
+        "bottom": 896,
+        "width": 158.40625,
+        "height": 20
+      },
+      "actionsRect": {
+        "left": 1082.5,
+        "right": 1299,
+        "top": 870,
+        "bottom": 902,
+        "width": 216.5,
+        "height": 32
+      },
+      "bannerRect": {
+        "left": 608,
+        "right": 1312,
+        "top": 861,
+        "bottom": 910,
+        "width": 704,
+        "height": 49
+      },
+      "actionsInside": true,
+      "statusActionsOverlap": false,
+      "sameRow": true,
+      "nameVisible": true,
+      "nameClient": 104,
+      "nameScroll": 104,
+      "nameMax": "104px",
+      "hintVisible": true,
+      "hintClient": 98,
+      "hintScroll": 98,
+      "pickerWidth": 240,
+      "channel": "群来源 · 回复通过私聊",
+      "channelClient": 118,
+      "channelScroll": 118,
+      "channelInside": true,
+      "pageOverflow": false
+    }
+  ],
+  "zero_counts_omitted": true,
+  "source_lower_bound": "至少 8 个群",
+  "business_posts": 0,
+  "board": {
+    "directory": "D:\\\\tmp\\\\pc26-review-1106\\\\card26-board-tzqkZd",
+    "platform": "Win32",
+    "width": 1440,
+    "height": 1080,
+    "scale": 1,
+    "viewportScale": 1,
+    "categories": [
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      },
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      },
+      {
+        "category": "ENDPOINT_PRINT",
+        "color": "rgb(236, 238, 242)"
+      },
+      {
+        "category": "CLINICAL_CORE",
+        "color": "rgb(239, 233, 248)"
+      },
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      },
+      {
+        "category": "NETWORK_INFRASTRUCTURE",
+        "color": "rgb(227, 241, 248)"
+      },
+      {
+        "category": "DIAGNOSTIC",
+        "color": "rgb(225, 243, 239)"
+      },
+      {
+        "category": "NETWORK_INFRASTRUCTURE",
+        "color": "rgb(227, 241, 248)"
+      },
+      {
+        "category": "DIAGNOSTIC",
+        "color": "rgb(225, 243, 239)"
+      },
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      },
+      {
+        "category": "DIAGNOSTIC",
+        "color": "rgb(225, 243, 239)"
+      },
+      {
+        "category": "ENDPOINT_PRINT",
+        "color": "rgb(236, 238, 242)"
+      },
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      },
+      {
+        "category": "unclassified",
+        "color": "rgb(241, 241, 239)"
+      }
+    ],
+    "lanes": [
+      {
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "shadow": "rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"
+      },
+      {
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "shadow": "rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"
+      },
+      {
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "shadow": "rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"
+      }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-.ds-board-column.board-column {background: var(--column-lane); padding: var(--space-2); border-radius: var(--radius-lg); outline: 1px solid var(--lane-border); outline-offset: -1px;}
+.ds-board-column.board-column {background: var(--column-lane); padding: var(--space-2); border-radius: var(--radius-lg); outline: 0; box-shadow: var(--shadow-lane);}
 .ds-board-column.pending {--column-lane: var(--lane-intake); --column-accent: var(--stage-intake-accent); --column-bg: var(--stage-intake-bg); --column-fg: var(--stage-intake-fg);}
 .ds-board-column.active {--column-lane: var(--lane-active); --column-accent: var(--stage-active-accent); --column-bg: var(--stage-active-bg); --column-fg: var(--stage-active-fg);}
 .ds-board-column.closed {--column-lane: var(--lane-done); --column-accent: var(--stage-done-accent); --column-bg: var(--stage-done-bg); --column-fg: var(--stage-done-fg);}
