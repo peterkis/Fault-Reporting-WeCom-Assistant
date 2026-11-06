@@ -330,7 +330,9 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.equal(await browser.evaluate('sessionStorage.getItem("workbench-login-view")'),null,'the ambiguous legacy fallback preference is cleared once');
   if(await browser.evaluate('!!navigator.gpu')){
     const delayed=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'if(navigator.gpu){const adapter=navigator.gpu.requestAdapter.bind(navigator.gpu);navigator.gpu.requestAdapter=(...args)=>new Promise(resolve=>setTimeout(()=>resolve(adapter(...args)),12000));}'}) as {identifier:string};
-    await browser.command('Page.reload');await waitScene();
+    const delayedOrigin=Number(await browser.evaluate('performance.timeOrigin'));
+    await browser.command('Page.reload');
+    await browser.waitFor('performance.timeOrigin!=='+delayedOrigin+'&&document.body?.dataset.loginScene==="ready"');
     assert.equal(await browser.evaluate('document.body.dataset.backdrop'),'fallback','a slow GPU yields one coherent fallback scene within the startup bound');
     await browser.evaluate('window.__fallbackPanel=document.querySelector("#wecom-panel iframe")');
     await new Promise(resolve=>setTimeout(resolve,5500));
