@@ -189,3 +189,11 @@ codex-fix-diagnostic-02中两项Card28定向用例2/2 PASS；同候选完整注�
 远端Codex已对7cf15750157529f10c2661fbb0085b1c258cad34完成复审，summary完整SHA匹配、has_any_findings=false、has_unresolved_findings=false，原P2线程已回复并解决。随后OCR delegate严格增量复核发现测试P2 OCR-CF01：第二次Page.navigate后的相同数据条件可能在旧DOM提前满足。接受并仅加强测试：导航前记录timeOrigin，ready绑定当前closure_kind/search URL，第二个URL再要求新timeOrigin，同时保留原三组/计数/当前票行与所有后续断言。独立有限复核确认闭合；原94/94仍属codex-02，未重绑为新等待的结果。
 
 readiness-01构建输入 `b110b89780102c577933e28946691cdff4972bf7c1bd9dc8b47224e50ed79d5a`，manifest `760221929fed76ab92f7c34690cabe7942385e3f64019573b8e3d9c18cb7394d`；build/types（Stylelint/变量/strict/负向类型）/artifact全部PASS，新文档等待定向1/1 PASS（两个旧URL、3/4/9共16项、零search/POST）。661个应用emit输出逐字节不变（app318/h5109/shared3/web231，不含SourceMap），唯一编译差异为该测试mjs。因此不重复扩大本地94项，图仍绑定codex-02原输入；后继完整head交给实际PR路径CI及新Codex复审。首次输出比较将测试也算入应用而拒绝，预期测试差异和比较口径修正另存readiness-first-comparison-note/readiness-output-equivalence，不作为应用回归失败。
+
+### Linux T41来源群定位收口
+
+7cf15750的远端pr-database在run42256926098/job128026922638失败：60入口实际执行28（27 PASS/1 FAIL），185项184 PASS/1 FAIL，后32入口NOT_RUN；卡28/完整Card12的18例均已通过。失败为T41第二例compiled92的候选点击，helper61是初始可见/disabled等待，未到几何/命中检查。失败制品已核完整head/tree/dirty=false/输入432eb734，原TAP/summary与日志保留；该例没有失败DOM/截图，不能声称已观测实际取错的key。
+
+旧测试在来源群弹层刚打开时从整个document取首个role=option，前一事项阶段菜单的退场项构成强机制推断。仅将该测试收紧到来源群input的aria-controls所指当前listbox、等待aria-expanded/可见候选，再用限定listbox ID的selector走原真实click helper；增加64位来源群ref和selector类型断言。产品ComboBox/CSS/共享helper不改。独立复核保留23条旧assert、删除0、新增2，240000/120000ms超时未变；结论保留事实/推断边界，不把一次自然PASS当旧失败重现。
+
+group-01本地构建输入 `acf34b731e4e005c3096dabd8cdba86de341d65f6cc804bbbfa98976c86568fb`，manifest `ae8aed46f99f6e2cea9fdef9066c6c142cc28c70a8f293f26959ab36fa07fd64`。build/types（Stylelint/变量/strict/负向类型）/artifact全部PASS；注册T41 production单入口2/2 PASS，FAIL/CANCEL/SKIP/TODO均0。相对codex-02仍有661应用输出字节不变，只有Card12与T41两个测试mjs改变（SourceMap不比较）。94、1、2分别绑定各候选/范围，不合算为97；后继CI需由新完整head实际通过，原图继续保留codex-02身份。

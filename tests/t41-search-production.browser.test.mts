@@ -66,9 +66,10 @@ test('HeroUI search selectors keep multiple filters and a chosen or typed source
    assert.deepEqual(await browser.evaluate("[...document.querySelector('.workbench-select select[name=sources]').selectedOptions].map(item=>item.value).sort()"),['WECOM_DIRECT','WECOM_GROUP']);
    await chooseWorkbenchSelect(browser,'.workbench-select:has(select[name=column])','pending');
    await clickWorkbenchControl(browser,'.workbench-source-group [data-slot=combo-box-trigger]');
-   await browser.waitFor("document.querySelectorAll('[role=option]').length>0");
-   const group=await browser.evaluate("document.querySelector('[role=option]').getAttribute('data-key')");assert.equal(typeof group,'string');
-   await clickWorkbenchControl(browser,'[role=option][data-key='+JSON.stringify(group)+']');
+   await browser.waitFor("(()=>{const input=document.querySelector('.workbench-source-group input[role=combobox]'),list=document.getElementById(input?.getAttribute('aria-controls')??'');return input?.getAttribute('aria-expanded')==='true'&&list?.getAttribute('role')==='listbox'&&[...list.querySelectorAll('[role=option]')].some(option=>option.checkVisibility());})()");
+   const groupOption=object(await browser.evaluate("(()=>{const input=document.querySelector('.workbench-source-group input[role=combobox]'),list=document.getElementById(input.getAttribute('aria-controls')),option=[...list.querySelectorAll('[role=option]')].find(option=>option.checkVisibility()),key=option.getAttribute('data-key');return {key,selector:'#'+CSS.escape(list.id)+' [role=option][data-key='+JSON.stringify(key)+']'};})()")),group=groupOption.key;assert.equal(typeof group,'string');
+   assert.ok(typeof group==='string'&&/^[a-f0-9]{64}$/u.test(group),'choose an actual loaded source-group reference from its own listbox');assert.ok(typeof groupOption.selector==='string');
+   await clickWorkbenchControl(browser,groupOption.selector);
    assert.equal(await browser.evaluate("document.querySelector('.workbench-source-group input[role=combobox]').value"),group);
    const known='a'.repeat(64);
    await browser.evaluate("(()=>{const input=document.querySelector('.workbench-source-group input[role=combobox]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,"+JSON.stringify(known)+");input.dispatchEvent(new Event('input',{bubbles:true}));})()");
