@@ -87,7 +87,9 @@ test('board projection keeps SQL count bounded for 1, 10 and 50 cards and rechec
     let count=0,revokeAfterPage=false;
     pool.query=new Proxy(original,{apply(target,thisArg,args:unknown[]){
       count++;const result:unknown=Reflect.apply(target,thisArg,args);
-      if(revokeAfterPage&&typeof args[0]==='string'&&args[0].includes(', ordered AS')){
+      const sql=typeof args[0]==='string'?args[0]:'';
+      const initialPage=sql.includes(', ordered AS')||sql.includes('SELECT * FROM (SELECT *,')&&sql.includes('LIMIT $11');
+      if(revokeAfterPage&&initialPage){
         revokeAfterPage=false;
         return Promise.resolve(result).then(async value=>{
           await pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[principal.id]);

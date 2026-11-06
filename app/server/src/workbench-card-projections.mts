@@ -1,9 +1,43 @@
 import type {WorkbenchSessionPredicate} from './p2-016-workbench-wecom-auth.mjs';
 import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {WorkbenchCard, WorkbenchService, WorkbenchServiceCatalog} from '../../../contracts/web01_workbench_contracts.js';
+import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
+import {ticketActionAllowedP2016} from './p2-016-ticket-query.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {failP2016, localP2016} from './p2-016-domain-contracts.mjs';
+
+/** Existing terminal-event evidence, selected only through the canonical READ relation. */
+export interface ClosureEvidence {
+  source:'MANUAL'|'SYSTEM'|null; reason_code:string|null; reason_note:string|null;
+  closed_by_display_name:string|null; closed_at:string|null;
+  resolver_team_id?:string; assignee_id?:string|null;
+}
+const CLOSURE_REASONS:Readonly<Record<string,string>>=Object.freeze({
+  HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'描述不足，需要补充',
+  BUSINESS_CONSULTATION_CONFIRMED:'已核对为业务咨询',ACKNOWLEDGED:'确认收到',
+  OUT_OF_SCOPE_CONFIRMED:'已核对为范围外诉求',SERVICE_REQUEST_CONFIRMED:'已核对为服务请求',
+  INCIDENT_REVIEW_PENDING:'待公共故障审核',STALE_REVIEW_CANCELLED:'明确取消旧复核',
+});
+export function projectWorkbenchClosure(status:string,evidence:ClosureEvidence|null,canRestore=false):WorkbenchCard['closure'] {
+  const completed=['RESOLVED','CLOSED','COMPLETED'].includes(status),dismissed=['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status);
+  if(!completed&&!dismissed)return null;
+  const source=evidence?.source??null,reason=evidence?.reason_code;
+  // Legacy commands accept nonempty whitespace. It carries no displayable
+  // reason/name; retain the original Event while keeping the read DTO valid.
+  const note=evidence?.reason_note?.trim()?evidence.reason_note:null;
+  const actor=evidence?.closed_by_display_name?.trim()?evidence.closed_by_display_name:null;
+  const reasonCode=typeof reason==='string'&&Object.hasOwn(CLOSURE_REASONS,reason)?reason:null;
+  return {kind:completed?'COMPLETED':'DISMISSED',source,reason_code:reasonCode,
+    reason_label:reasonCode?CLOSURE_REASONS[reasonCode]??null:status==='CANCELLED'?'已取消':status==='DUPLICATE_LINKED'?'重复':status==='IGNORED'&&source==='SYSTEM'?'系统判定不受理':'已关闭',
+    reason_note:note,closed_by_display_name:source==='MANUAL'?actor:null,
+    closed_at:evidence?.closed_at==null?null:localP2016(evidence.closed_at),duplicate_of:null,
+    can_restore:completed&&['RESOLVED','CLOSED'].includes(status)&&canRestore};
+}
+export function workbenchCanRestore(kind:string,status:string,evidence:ClosureEvidence|null,principal?:WorkbenchPrincipal):boolean {
+  return kind==='ticket'&&['RESOLVED','CLOSED'].includes(status)&&typeof evidence?.resolver_team_id==='string'
+    &&ticketActionAllowedP2016(principal,{status,resolver_team_id:evidence.resolver_team_id,assignee_id:evidence.assignee_id??null},'reopen');
+}
 
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -86,11 +120,13 @@ export function projectWorkbenchService(evidence: readonly ServiceEvidence[], ca
 }
 
 interface ProjectionRow {kind:string;id:string;status:string;evidence:ServiceEvidence[];safety_signature:string}
-export interface WorkbenchReadAuthority {values:unknown[];roles:readonly string[];teams:readonly string[]}
+export interface WorkbenchReadAuthority {values:unknown[];roles:readonly string[];teams:readonly string[];principal?:WorkbenchPrincipal}
 export interface WorkbenchReadAccess {
   authority:()=>Promise<WorkbenchReadAuthority>;
   session?:(start:number)=>WorkbenchSessionPredicate;
   finalRouteCheck?:()=>Promise<void>;
+  /** Same final snapshot as card READ; parameters after the canonical first three. */
+  groupCounts?:{predicate:string;pageSql:string;values:unknown[];expectedPage:{kind:string;id:string;order_group:number;order_at:string}[];value:{completed:number;dismissed:number}|null};
 }
 interface ReadProof {principal_valid:boolean;scope_valid:boolean;session_valid:boolean}
 function proofColumns(roles:number,teams:number,session:string,principal=2):string {
@@ -118,7 +154,7 @@ export async function verifyWorkbenchReadAccess(pool:PostgresTransaction,access:
 }
 /** One page-wide source read, joined to the current authorized canonical relation. */
 export async function readWorkbenchCardProjections(pool:PostgresTransaction,authorizedCardsSql:string,access:WorkbenchReadAccess,items:WorkbenchCard[],catalog:ServiceCatalog|null,manualReportsEnabled:boolean,finalRouteCheck?:()=>Promise<void>):Promise<WorkbenchCard[]> {
-  if(!items.length){await verifyWorkbenchReadAccess(pool,access);return items;}
+  if(!items.length&&!access.groupCounts){await verifyWorkbenchReadAccess(pool,access);return items;}
   const schema=await pool.query<{web:boolean}>("SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web");
   const web=schema.rows[0]?.web===true;
   const webJoins=web?`LEFT JOIN intake.web_request_binding b ON b.intake_id=i.id AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
@@ -183,24 +219,42 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
   const result=await pool.query<ProjectionRow>(projectionSql+' SELECT * FROM projected_sources',[...currentAuthority.values,requested,manualReportsEnabled]);
   await access.finalRouteCheck?.();
   const current=await access.authority(),session=access.session?.(8)??{sql:'TRUE',values:[]};
+  const counts=access.groupCounts;
+  const pageParameters=(sql:string)=>sql.replace(/\$(\d+)/gu,(token,index:string)=>Number(index)<=3?token:'$'+(8+session.values.length+Number(index)-4));
+  const countsPredicate=counts?pageParameters(counts.predicate):null;
+  const expectedPageParameter=8+session.values.length+(counts?.values.length??0);
+  const countsSql=counts&&countsPredicate?`,(SELECT jsonb_build_object(
+    'completed',count(*) FILTER(WHERE status IN ('RESOLVED','CLOSED','COMPLETED'))::integer,
+    'dismissed',count(*) FILTER(WHERE status IN ('CANCELLED','DUPLICATE_LINKED','IGNORED'))::integer)
+    FROM cards WHERE ${countsPredicate}) AS group_counts,
+    COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',page.kind,'id',page.id,'order_group',page.order_group,'order_at',page.order_at)
+      ORDER BY page.order_group DESC,page.order_at DESC,page.kind DESC,page.id DESC)
+      FROM (${pageParameters(counts.pageSql)}) page),'[]'::jsonb)=$${expectedPageParameter}::jsonb AS page_matches`:'';
   // Current session, role/team snapshot and canonical item READ share the last
   // statement, after all source and detail-route waits. Nothing async follows.
-  const proof=(await pool.query<ReadProof&{items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string}[]}>(projectionSql+`
+  const proof=(await pool.query<ReadProof&{group_counts?:{completed:number;dismissed:number};page_matches?:boolean;items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string;closure_evidence:ClosureEvidence|null}[]}>(projectionSql+`
     SELECT ${proofColumns(6,7,session.sql)},COALESCE((SELECT jsonb_agg(jsonb_build_object(
-      'kind',c.kind,'id',c.id,'status',c.status,'safety_signature',c.safety_signature,'stage_entered_at',
+      'kind',c.kind,'id',c.id,'status',c.status,'safety_signature',c.safety_signature,'closure_evidence',selected.closure_evidence,'stage_entered_at',
       CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END))
-      FROM projected_sources c
+      FROM projected_sources c JOIN selected ON selected.kind=c.kind AND selected.id=c.id
       LEFT JOIN LATERAL(SELECT e.new_status,e.created_at FROM pilot_ticket.ticket_event e
         WHERE c.kind='ticket' AND e.ticket_id=c.id::uuid AND e.old_status IS DISTINCT FROM e.new_status
-        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items`,
-  [...current.values,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values])).rows[0];
+        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items${countsSql}`,
+  [...current.values,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values,...(counts?.values??[]),...(counts?[JSON.stringify(counts.expectedPage)]:[])])).rows[0];
   checkReadProof(proof);
   const visible=new Map(proof.items.map(row=>[row.kind+':'+row.id,row]));
   const byId=new Map(result.rows.map(row=>[row.kind+':'+row.id,row]));
-  return items.map(item=>{
+  const projected=items.map(item=>{
     const row=byId.get(item.kind+':'+item.id),live=visible.get(item.kind+':'+item.id);
     if(!row||!live)failP2016('NOT_FOUND',404);
     if(row.status!==item.status||live.status!==item.status)failP2016('VERSION_CONFLICT',409);
-    return {...item,service:row.safety_signature===live.safety_signature?projectWorkbenchService(row.evidence,catalog):null,stage_entered_at:live.stage_entered_at===null?null:localP2016(live.stage_entered_at)};
+    return {...item,closure:projectWorkbenchClosure(item.status,live.closure_evidence,workbenchCanRestore(item.kind,item.status,live.closure_evidence,current.principal)),
+      service:row.safety_signature===live.safety_signature?projectWorkbenchService(row.evidence,catalog):null,stage_entered_at:live.stage_entered_at===null?null:localP2016(live.stage_entered_at)};
   });
+  if(counts){
+    if(!proof.group_counts)failP2016('ACTION_FAILED',503);
+    if(proof.page_matches!==true)failP2016('VERSION_CONFLICT',409);
+    counts.value=proof.group_counts;
+  }
+  return projected;
 }

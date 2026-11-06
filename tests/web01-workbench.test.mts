@@ -3,13 +3,56 @@ import assert from 'node:assert/strict';
 import {boardColumn} from '../app/server/src/web01-workbench-query.mjs';
 import {sourceGroupNameCommand,sourceGroupSearch,sourceLabel} from '../app/server/src/workbench-source-groups.mjs';
 import {createServiceCatalog,loadServiceCatalog} from '../app/server/src/p2-007-service-catalog.mjs';
-import {projectWorkbenchCatalog,projectWorkbenchService} from '../app/server/src/workbench-card-projections.mjs';
-import type {ServiceEvidence} from '../app/server/src/workbench-card-projections.mjs';
+import {projectWorkbenchCatalog,projectWorkbenchService,projectWorkbenchClosure,workbenchCanRestore} from '../app/server/src/workbench-card-projections.mjs';
+import type {ServiceEvidence,ClosureEvidence} from '../app/server/src/workbench-card-projections.mjs';
 test('WEB01 grouping preserves terminal meaning and rejects unknown states',()=>{
   for(const state of ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'])assert.equal(boardColumn(state),'pending');
   for(const state of ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'])assert.equal(boardColumn(state),'active');
   for(const state of ['CLOSED','RESOLVED','CANCELLED','DUPLICATE_LINKED'])assert.equal(boardColumn(state),'closed');
   assert.throws(()=>boardColumn('fabricated'),{code:'P2_016_INPUT_INVALID'});
+});
+
+test('Card 27A closure maps all six states and both proven sources without inventing reasons or restore paths',()=>{
+  const at='2026-11-06 08:09:10';
+  for(const status of ['RESOLVED','CLOSED','COMPLETED','CANCELLED','DUPLICATE_LINKED','IGNORED'])for(const source of ['MANUAL','SYSTEM'] as const){
+    const evidence:ClosureEvidence={source,reason_code:'CANCELLED_BY_STAFF',reason_note:'既有内部原因（合成）',closed_by_display_name:'操作人（合成）',closed_at:at};
+    const closure=projectWorkbenchClosure(status,evidence,true);assert.ok(closure,status+' '+source);
+    const completed=['RESOLVED','CLOSED','COMPLETED'].includes(status);
+    assert.deepEqual(Object.keys(closure).sort(),['kind','source','reason_code','reason_label','reason_note','closed_by_display_name','closed_at','duplicate_of','can_restore'].sort());
+    assert.equal(closure.kind,completed?'COMPLETED':'DISMISSED');assert.equal(closure.source,source);assert.equal(closure.reason_code,null,'technical and arbitrary codes are not a closure-reason enum');
+    assert.equal(closure.reason_label,status==='CANCELLED'?'已取消':status==='DUPLICATE_LINKED'?'重复':status==='IGNORED'&&source==='SYSTEM'?'系统判定不受理':'已关闭');
+    assert.equal(closure.reason_note,'既有内部原因（合成）');assert.equal(closure.closed_by_display_name,source==='MANUAL'?'操作人（合成）':null);assert.equal(closure.closed_at,at);
+    assert.equal(closure.duplicate_of,null);assert.equal(closure.can_restore,status==='RESOLVED'||status==='CLOSED');
+  }
+  for(const status of ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'])assert.equal(projectWorkbenchClosure(status,null),null,status);
+  const unknown=projectWorkbenchClosure('IGNORED',null);assert.ok(unknown);
+  assert.deepEqual(unknown,{kind:'DISMISSED',source:null,reason_code:null,reason_label:'已关闭',reason_note:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false});
+  const manual:ClosureEvidence={source:'MANUAL',reason_code:'OUT_OF_SCOPE_CONFIRMED',reason_note:null,closed_by_display_name:'人工复核人（合成）',closed_at:at};
+  assert.equal(projectWorkbenchClosure('IGNORED',manual)?.reason_label,'已核对为范围外诉求');assert.equal(projectWorkbenchClosure('IGNORED',manual)?.reason_code,'OUT_OF_SCOPE_CONFIRMED');
+  assert.equal(projectWorkbenchClosure('COMPLETED',{...manual,reason_code:'ACKNOWLEDGED'})?.reason_label,'确认收到');
+  assert.equal(projectWorkbenchClosure('COMPLETED',{...manual,reason_code:'BUSINESS_CONSULTATION_CONFIRMED'})?.reason_label,'已核对为业务咨询');
+  const blank=projectWorkbenchClosure('IGNORED',{...manual,reason_note:' \n\t',closed_by_display_name:'  '});
+  assert.equal(blank?.reason_note,null);assert.equal(blank?.closed_by_display_name,null);assert.equal(blank?.source,'MANUAL');
+  assert.equal(projectWorkbenchClosure('IGNORED',{...manual,reason_note:'  说明（合成）  '})?.reason_note,'  说明（合成）  ','nonblank original text is not trimmed');
+  for(const [reason_code,reason_label] of Object.entries({HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'描述不足，需要补充',SERVICE_REQUEST_CONFIRMED:'已核对为服务请求',INCIDENT_REVIEW_PENDING:'待公共故障审核',STALE_REVIEW_CANCELLED:'明确取消旧复核'})){
+    const projected=projectWorkbenchClosure('IGNORED',{...manual,reason_code});assert.equal(projected?.reason_code,reason_code);assert.equal(projected?.reason_label,reason_label);
+  }
+  assert.throws(()=>projectWorkbenchClosure('CANCELLED',{...manual,closed_at:'2026-02-30 08:09:10'}),{code:'LOCAL_DATETIME_INVALID'});
+});
+
+test('Card 27A restore projection reuses the current Ticket action authority and never grants dismissed or Intake restoration',()=>{
+  const principal={principal_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',display_name:'处理人（合成）',roles:['HANDLER'],team_ids:['PILOT_IT'],is_active:true};
+  const evidence:ClosureEvidence={source:'MANUAL',reason_code:null,reason_note:null,closed_by_display_name:null,closed_at:null,resolver_team_id:'PILOT_IT',assignee_id:principal.principal_id};
+  for(const status of ['RESOLVED','CLOSED']){
+    assert.equal(workbenchCanRestore('ticket',status,evidence,principal),true);
+    assert.equal(workbenchCanRestore('ticket',status,{...evidence,assignee_id:null},principal),false);
+    assert.equal(workbenchCanRestore('ticket',status,evidence,{...principal,team_ids:[]}),false);
+    assert.equal(workbenchCanRestore('ticket',status,evidence,{...principal,is_active:false}),false);
+    assert.equal(workbenchCanRestore('ticket',status,evidence,{...principal,roles:['ADMIN'],team_ids:[]}),true);
+    assert.equal(workbenchCanRestore('ticket',status,null,principal),false);
+  }
+  for(const status of ['CANCELLED','DUPLICATE_LINKED','IGNORED','COMPLETED'])assert.equal(workbenchCanRestore('ticket',status,evidence,{...principal,roles:['ADMIN']}),false,status);
+  assert.equal(workbenchCanRestore('intake','COMPLETED',evidence,{...principal,roles:['ADMIN']}),false);
 });
 
 test('Card 11 service evidence preserves source priority without promoting a classification',()=>{

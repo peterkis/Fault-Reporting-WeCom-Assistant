@@ -10,6 +10,103 @@ info:
 servers:
   - url: /api
 paths:
+  /workbench/board:
+    get:
+      operationId: getWorkbenchBoardColumn
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: >
+        Current authorized canonical cards. Every card contains closure (null outside the closed column).
+        The closed column returns completed and dismissed states, including CANCELLED, by default;
+        group_counts counts the same authorized range before pagination. Dismissed range membership
+        uses a proven closure time; unknown times are excluded from dated windows. No include or closure-group compatibility parameter exists.
+        The temporary cancelled range still selects CANCELLED only. No business command is executed.
+      parameters:
+        - { name: column, in: query, schema: { type: string, enum: [pending, active, closed], default: pending } }
+        - { name: range, in: query, schema: { type: string, enum: [recent, all, cancelled, custom], default: recent } }
+        - { name: closed_from, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
+        - { name: closed_to, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
+        - { name: scope, in: query, description: Accepted only with the existing Follow capability enabled, schema: { type: string, enum: [team, related], default: team } }
+        - { name: cursor, in: query, schema: { type: string, minLength: 1, maxLength: 2048 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Canonical column page with no-store and current READ proof
+          content:
+            application/json:
+              schema: { $ref: './web01_workbench_board.schema.json' }
+        '400': { description: 'Invalid closed input, duplicate query or cursor binding' }
+        '401': { description: Current internal authentication required }
+        '403': { description: Inactive or unauthorized internal principal }
+        '409': { description: Current ordered page or pagination boundary changed during the read; refresh the query }
+        '503': { description: Workbench disabled or required source unavailable }
+  /workbench/search:
+    get:
+      operationId: searchWorkbenchCards
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: >
+        Existing current-authority search/list endpoint. Criteria and cursor retain their closed,
+        scope-bound semantics. Every card contains closure. closure_kind optionally restricts only
+        third-column states; pending and active state selection is unchanged. Omission returns both
+        completed and dismissed states, including CANCELLED. Requires the existing Search capability.
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 128, default: '' } }
+        - { name: column, in: query, schema: { type: string, enum: [all, pending, active, closed], default: all } }
+        - { name: range, in: query, schema: { type: string, enum: [recent, all, cancelled], default: all } }
+        - { name: scope, in: query, schema: { type: string, enum: [team, related], default: team } }
+        - { name: closure_kind, in: query, schema: { type: string, enum: [completed, dismissed] } }
+        - { name: responsibility, in: query, schema: { type: string, enum: [any, handling, communication, following, unassigned], default: any } }
+        - { name: resolver_team_id, in: query, schema: { type: string, pattern: '^[A-Z][A-Z0-9_]{1,63}$' } }
+        - { name: assignee_id, in: query, schema: { type: string, format: uuid } }
+        - { name: sources, in: query, description: Comma-separated values from the existing source enum, schema: { type: string } }
+        - { name: source_group_ref, in: query, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
+        - { name: statuses, in: query, description: Comma-separated values from the existing canonical status enum, schema: { type: string } }
+        - { name: supplement, in: query, schema: { type: string, enum: [any, pending, followed, none], default: any } }
+        - { name: schedule, in: query, schema: { type: string, enum: [any, active, due, none], default: any } }
+        - { name: cursor, in: query, schema: { type: string, minLength: 1, maxLength: 2048 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Authorized canonical search page, no-store
+          content:
+            application/json:
+              schema: { $ref: './workbench_search_page.schema.json' }
+        '400': { description: 'Invalid criteria, duplicate query or cursor binding' }
+        '401': { description: Current internal authentication required }
+        '403': { description: Unauthorized current principal or scope }
+        '404': { description: Existing Search capability disabled }
+        '429': { description: Existing bounded search rate exceeded }
+        '503': { description: Required source unavailable }
+    post:
+      operationId: searchWorkbenchCardsLongQuery
+      security: [{ InternalSession: [] }, { InternalBearer: [] }]
+      x-reject-unknown-query: true
+      description: Existing CSRF-protected long-query alternative with identical read-only criteria, including optional closure_kind.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [criteria, cursor, limit]
+              properties:
+                criteria: { $ref: './workbench_search_criteria.schema.json' }
+                cursor: { type: [string, 'null'], minLength: 1, maxLength: 2048 }
+                limit: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: Authorized canonical search page, no-store
+          content:
+            application/json:
+              schema: { $ref: './workbench_search_page.schema.json' }
+        '400': { description: Invalid closed JSON input or query }
+        '401': { description: Current internal authentication required }
+        '403': { description: 'Current scope, origin or CSRF validation failed' }
+        '404': { description: Existing Search capability disabled }
+        '429': { description: Existing bounded search rate exceeded }
+        '503': { description: Required source unavailable }
   /workbench/conversations/summary:
     get:
       operationId: getWorkbenchConversationInboxSummary

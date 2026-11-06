@@ -14,6 +14,8 @@ export interface WorkbenchSearchCriteria {
  readonly sources:ReadonlyArray<WorkbenchSearchSource>;readonly source_group_ref:string|null;
  readonly statuses:ReadonlyArray<WorkbenchSearchStatus>;readonly supplement:'any'|'pending'|'followed'|'none';
  readonly schedule:'any'|'active'|'due'|'none';
+ /** Optional restriction of third-column states; it does not filter pending or active states. */
+ readonly closure_kind?:'completed'|'dismissed';
 }
 export interface WorkbenchSearchRequest {readonly criteria:WorkbenchSearchCriteria;readonly cursor:string|null;readonly limit:number}
 export type WorkbenchSearchCard=Omit<WorkbenchCard,'service'|'stage_entered_at'>&{

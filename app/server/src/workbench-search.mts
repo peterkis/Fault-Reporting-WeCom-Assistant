@@ -124,8 +124,8 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
      CASE WHEN i.source_provider<>'STAFF_MANUAL_REPORT' OR ${manual?'TRUE':'FALSE'} THEN i.summary END,
      profile.value,web_text.value,${manualText})) AS search_text,
     CASE WHEN $5::text='all' THEN CASE WHEN cards.status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED') THEN 0 ELSE 1 END
-     ELSE CASE WHEN cards.completed_at IS NOT NULL THEN 1 ELSE 0 END END AS order_group,
-    CASE WHEN cards.completed_at IS NOT NULL THEN cards.completed_at ELSE cards.sort_at END AS order_at
+     ELSE CASE WHEN COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at') IS NOT NULL THEN 1 ELSE 0 END END AS order_group,
+    COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at',cards.sort_at) AS order_at
    FROM origins cards
    LEFT JOIN intake.service_intake i ON i.id=cards.origin_intake_id AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
    LEFT JOIN pilot_ticket.ticket handling ON cards.kind='ticket' AND handling.id=cards.id::uuid
@@ -150,9 +150,9 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     OR ($5='active' AND status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'))
     OR ($5='closed' AND status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')))
    AND (status NOT IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')
-    OR CASE WHEN $6::text='all' THEN TRUE WHEN $6='cancelled' THEN status='CANCELLED' ELSE status<>'CANCELLED' AND
-      (status='RESOLVED' OR COALESCE(completed_at,CASE WHEN kind='intake' AND status IN ('COMPLETED','IGNORED') THEN updated_at END)::timestamp>=$7::timestamp
-       AND COALESCE(completed_at,CASE WHEN kind='intake' AND status IN ('COMPLETED','IGNORED') THEN updated_at END)::timestamp<$8::timestamp) END)
+    OR CASE WHEN $6::text='all' THEN TRUE WHEN $6='cancelled' THEN status='CANCELLED' ELSE
+      (status='RESOLVED' OR COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp>=$7::timestamp
+       AND COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp<$8::timestamp) END)
    AND ($9::text='team' OR handling OR communication OR following)
    AND ($10::text='any' OR $10='handling' AND handling OR $10='communication' AND communication
     OR $10='following' AND following OR $10='unassigned' AND kind='ticket' AND handling_person IS NULL)
@@ -165,6 +165,9 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     $16='pending' AND pending_supplement OR $16='followed' AND material_count>0 AND NOT pending_supplement OR $16='none' AND material_count=0))
    AND ($17::text='any' OR kind='ticket' AND (
     $17='active' AND due_epoch_ms IS NOT NULL OR $17='due' AND due_epoch_ms<=platform.physical_epoch_ms() OR $17='none' AND due_epoch_ms IS NULL))
+   AND (status NOT IN ('RESOLVED','CLOSED','COMPLETED','CANCELLED','DUPLICATE_LINKED','IGNORED') OR $18::text IS NULL
+     OR $18='completed' AND status IN ('RESOLVED','CLOSED','COMPLETED')
+     OR $18='dismissed' AND status IN ('CANCELLED','DUPLICATE_LINKED','IGNORED'))
   )`;
  }
  return Object.freeze({async search({authContext,request}:{authContext:unknown;request:WorkbenchSearchRequest}):Promise<WorkbenchSearchPage>{
@@ -190,14 +193,14 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
      if(material.rowCount||c.sources.includes('WEB_REQUEST'))failP2016('DISABLED',503);
     }
     const relation=sql({web:optional?.web===true,manual:features.manual,supplements:features.supplements,schedules:features.schedules});
-    const values=[...scope.values,c.q,c.column,c.range,window.from,window.until,c.scope,c.responsibility,c.resolver_team_id,c.assignee_id,[...c.sources],c.source_group_ref,[...c.statuses],c.supplement,c.schedule];
+    const values=[...scope.values,c.q,c.column,c.range,window.from,window.until,c.scope,c.responsibility,c.resolver_team_id,c.assignee_id,[...c.sources],c.source_group_ref,[...c.statuses],c.supplement,c.schedule,c.closure_kind??null];
     if(cursor){
-     const anchor=await tx.query(relation+' SELECT 1 FROM matched WHERE kind=$18 AND id=$19 AND order_at=$20 AND order_group=$21',[...values,cursor.kind,cursor.id,cursor.at,cursor.order_group]);
+     const anchor=await tx.query(relation+' SELECT 1 FROM matched WHERE kind=$19 AND id=$20 AND order_at=$21 AND order_group=$22',[...values,cursor.kind,cursor.id,cursor.at,cursor.order_group]);
      if(anchor.rowCount!==1)failP2016('CURSOR_INVALID');
     }
     const result=await tx.query<SearchRow>(relation+` SELECT *,encode(sha256(convert_to(to_jsonb(matched)::text,'UTF8')),'hex') AS safety_signature FROM matched
-     WHERE ($18::text IS NULL OR (order_group,order_at,kind,id)<($19::integer,$18::text,$20::text,$21::text))
-     ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $22`,
+     WHERE ($19::text IS NULL OR (order_group,order_at,kind,id)<($20::integer,$19::text,$21::text,$22::text))
+     ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $23`,
      [...values,cursor?.at??null,cursor?.order_group??null,cursor?.kind??null,cursor?.id??null,limit+1]);
     return {selected:result.rows.slice(0,limit),relation,values,bound,window};
    });
