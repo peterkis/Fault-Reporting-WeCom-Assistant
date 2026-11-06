@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,isAbsolute} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT41RiskFixture,object} from './helpers/t41-search-risk-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
@@ -19,7 +19,8 @@ test('T41 production search keeps URL, board/list identity, independent input an
  await withT41RiskFixture(async f=>{
   const target=f.tickets[2];assert.ok(target);const original=await f.get('/api/tickets/'+target.ticket.id);assert.equal(original.status,200);
   const before=object(await original.json()),query='自助机读卡失败';
-  assert.match(tmpdir(),/^D:[\\/]/iu,'the owned browser/evidence runtime must use D temp');
+  assert.ok(isAbsolute(tmpdir()),'owned temporary root must be absolute');
+  if(process.platform==='win32')assert.match(tmpdir(),/^D:[\\/]/iu,'the owned browser/evidence runtime must use D temp');
   const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
   let browser:Browser|undefined,primary:unknown;
   try{
@@ -73,9 +74,11 @@ test('HeroUI search selectors keep multiple filters and a chosen or typed source
    await browser.evaluate("(()=>{const input=document.querySelector('.workbench-source-group input[role=combobox]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,"+JSON.stringify(known)+");input.dispatchEvent(new Event('input',{bubbles:true}));})()");
    await browser.evaluate("document.querySelector('.workbench-search').requestSubmit()");
    await browser.waitFor('new URLSearchParams(location.search).get("source_group_ref")==='+JSON.stringify(known));
-   // History commits before React's transition; assert against the committed search view.
-   await browser.waitFor("!document.querySelector('.processed-date-picker')&&Boolean(document.querySelector('.workbench-search'))");
-   assert.equal(await browser.evaluate("Boolean(document.querySelector('.processed-date-picker'))"),false,'search exposes only supported search filters');
+   // Card 27B B5 retains the shared date controller in the committed search view.
+   await browser.waitFor("Boolean(document.querySelector('.processed-date-picker'))&&document.querySelector('.workbench-search')?.getAttribute('aria-busy')==='false'");
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('.processed-date-picker'))"),true,'search retains the supported shared date controller');
+   assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('range')"),'all');
+   assert.equal(await browser.evaluate("new URLSearchParams(location.search).get('column')"),'pending');
    assert.deepEqual(await browser.evaluate('globalThis.__heroSearchWrites'),[]);
   }catch(error){primary=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);

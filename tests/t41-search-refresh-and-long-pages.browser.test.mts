@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,isAbsolute} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture,seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
 import {object} from './helpers/t41-search-risk-fixture.mjs';
@@ -25,7 +25,8 @@ async function settle(runtime:P2016EnabledRuntime){
  }assert.fail('bounded synthetic search fixture projection did not settle');
 }
 for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real production pages: '+scenario,{timeout:240000},async()=>{
- assert.match(tmpdir(),/^D:[\\/]/iu,'the owned TLS/browser fixture must use D temp before creating resources');
+ assert.ok(isAbsolute(tmpdir()),'owned temporary root must be absolute');
+ if(process.platform==='win32')assert.match(tmpdir(),/^D:[\\/]/iu,'the owned TLS/browser fixture must use D temp before creating resources');
  await withWeb01Fixture(async(f:Fixture)=>{
   const q=scenario==='unicode128'?'😀'.repeat(128):'T41_TWO_PAGE_SYNTHETIC',core=createPilotTicketCore({pool:f.pool});
   for(let index=0;index<51;index++){
@@ -47,7 +48,10 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
    await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'/',code:'Slash',windowsVirtualKeyCode:191});
    await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'/',code:'Slash',windowsVirtualKeyCode:191});
    await browser.waitFor('document.activeElement.matches(".workbench-search input[name=q]")');
-   await clickWorkbenchControl(browser,'.workbench-search button[type=submit]');
+   // The compact toolbar keeps submit visually hidden until keyboard focus;
+   // Enter on the focused input submits the same form through its native action.
+   await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',windowsVirtualKeyCode:13});
+   await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
    await browser.waitFor('Boolean(document.querySelector("form[aria-label=\\"搜索全部获权事项\\"] input[name=q]"))&&document.querySelector(".range-bar")?.textContent.includes("已加载 50 项")');
    seen.length=0;
    await browser.evaluate('(()=>{const input=document.querySelector("form[aria-label=\\"搜索全部获权事项\\"] input[name=q]");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(input,'+JSON.stringify(q)+');input.dispatchEvent(new Event("input",{bubbles:true}));})()');
@@ -74,7 +78,8 @@ for(const scenario of ['short-with-T38','unicode128'] as const)test('T41 real pr
     await browser.evaluate('document.querySelector("button[data-action=take-and-start]").click()');
     await browser.waitFor('document.querySelector(".detail-dialog")?.textContent.includes("处理中")');
    }
-   assert.match(tmpdir(),/^D:[\\/]/iu);const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
+   assert.ok(isAbsolute(tmpdir()),'owned temporary root must be absolute');
+  if(process.platform==='win32')assert.match(tmpdir(),/^D:[\\/]/iu);const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
    const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-board-1920.png');await writeFile(file,bytes);
    console.log('WEB01_BROWSER '+JSON.stringify({screenshots:[{file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')}]}));
   }catch(error){primary=error;}

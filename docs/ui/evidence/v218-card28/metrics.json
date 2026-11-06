@@ -1,0 +1,673 @@
+{
+  "dateAllSelected": true,
+  "groupControls": {
+    "width": 24,
+    "height": 24,
+    "icon": 14,
+    "moreSize": "12px",
+    "morePadding": "4px"
+  },
+  "initial": {
+    "columns": [
+      {
+        "text": "类别 · 编号",
+        "x": 272,
+        "y": 213,
+        "width": 192,
+        "height": 36,
+        "top": 213,
+        "right": 464,
+        "bottom": 249,
+        "left": 272,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "问题",
+        "x": 464,
+        "y": 213,
+        "width": 292,
+        "height": 36,
+        "top": 213,
+        "right": 756,
+        "bottom": 249,
+        "left": 464,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "状态",
+        "x": 756,
+        "y": 213,
+        "width": 108,
+        "height": 36,
+        "top": 213,
+        "right": 864,
+        "bottom": 249,
+        "left": 756,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "时效",
+        "x": 864,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 988,
+        "bottom": 249,
+        "left": 864,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "报修人 · 位置",
+        "x": 988,
+        "y": 213,
+        "width": 188,
+        "height": 36,
+        "top": 213,
+        "right": 1176,
+        "bottom": 249,
+        "left": 988,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "负责人",
+        "x": 1176,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 1300,
+        "bottom": 249,
+        "left": 1176,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "最新活动",
+        "x": 1300,
+        "y": 213,
+        "width": 92,
+        "height": 36,
+        "top": 213,
+        "right": 1392,
+        "bottom": 249,
+        "left": 1300,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      }
+    ],
+    "rowHeights": [
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44
+    ],
+    "stageHeight": 54,
+    "subgroupHeight": 32,
+    "stage": {
+      "x": 316,
+      "y": 269,
+      "width": 77,
+      "height": 26,
+      "top": 269,
+      "right": 393,
+      "bottom": 295,
+      "left": 316
+    },
+    "stageStyle": {
+      "height": "26px",
+      "color": "rgb(127, 95, 1)",
+      "background": "rgb(251, 243, 219)"
+    },
+    "toolbar": {
+      "x": 272,
+      "y": 165,
+      "width": 1128,
+      "height": 32,
+      "top": 165,
+      "right": 1400,
+      "bottom": 197,
+      "left": 272
+    },
+    "chipGap": 8,
+    "headers": 1,
+    "missing": false,
+    "leftEdges": [
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ]
+    ]
+  },
+  "longOwner": {
+    "text": "阿卜杜拉艾合买提",
+    "title": "阿卜杜拉艾合买提（合成）",
+    "width": 74,
+    "scrollWidth": 74,
+    "height": 40,
+    "scrollHeight": 40,
+    "font": "13px",
+    "avatar": 20,
+    "row": 44
+  },
+  "completedIntake": "success",
+  "failedIntake": "danger",
+  "heatTones": [
+    "neutral",
+    "attention",
+    "danger"
+  ],
+  "manual": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "system": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "duplicate": {
+    "height": 44,
+    "heat": false,
+    "filter": "grayscale(1)",
+    "opacity": "0.55"
+  },
+  "claimAction": "take-and-start",
+  "listOrder": [
+    {
+      "kind": "review",
+      "id": "01a1b19d-1e4e-7628-8495-daedaef6056e"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b19d-1ea4-7cb9-8d76-abc14ca8a163"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b19d-1e55-7f10-a08b-633c1139238c"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e9e-72fa-ab8d-ab30653da297"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e95-7734-a35e-77906a65fa80"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e8d-7136-9060-9f664aa6727f"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e83-7083-b2fa-9f42b4df8c5f"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1dba-7ef5-b862-3214e3a0b29a"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1dc9-736b-b7e0-ee03c581652a"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1dd8-7262-b0a8-6fc166164123"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1de3-78b9-aa09-d126d7480ded"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e14-7054-8dad-8ab95e586a00",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1e08-73b2-a0fa-870670c6b87c",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1dfa-72a7-b94f-a35e5f1561d4",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1dee-7177-842e-c9cf46278958",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b19d-1ea1-7a92-8a37-1d9ade8b9a05",
+      "closureKind": "COMPLETED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1da8-760a-a1a9-802c59450ec7",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1d6d-7d15-b92e-42b570ff41e3",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "intake",
+      "id": "01a1b19d-1e75-7d41-a642-dd14f36fb620",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1d54-7c16-afac-6bf5065284c0",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1d93-7c8c-be14-def27edfe9b5",
+      "closureKind": "DISMISSED"
+    },
+    {
+      "kind": "ticket",
+      "id": "01a1b19d-1d7e-7462-a8cf-04dbc76c7d97",
+      "closureKind": "DISMISSED"
+    }
+  ],
+  "selected": {
+    "height": 44,
+    "shadow": "rgb(37, 99, 201) 2px 0px 0px 0px inset, rgba(55, 53, 47, 0.09) 0px -1px 0px 0px inset",
+    "border": "0px",
+    "selected": true
+  },
+  "groupedNavigationWithRealtime": true,
+  "completedDismissedNavigationWithRealtime": true,
+  "boardStage": {
+    "height": "26px",
+    "color": "rgb(127, 95, 1)",
+    "background": "rgb(251, 243, 219)"
+  },
+  "closedCardHeight": {
+    "after": 96,
+    "withMetadata": 122,
+    "reduction": 26,
+    "comparison": "same-card metadata row restored only for measurement"
+  },
+  "preferenceRoundtrip": true,
+  "datePresetAndCustomSelected": true,
+  "filter-dismissed": {
+    "visible": [
+      "已处理"
+    ],
+    "stages": [
+      "已处理"
+    ],
+    "subgroups": [
+      "已关闭"
+    ]
+  },
+  "filteredParentExpanded": true,
+  "filter-completed": {
+    "visible": [
+      "已处理"
+    ],
+    "stages": [
+      "已处理"
+    ],
+    "subgroups": [
+      "已完成"
+    ]
+  },
+  "filter-all": {
+    "visible": [
+      "待受理",
+      "处理中",
+      "已处理"
+    ],
+    "stages": [
+      "待受理",
+      "处理中",
+      "已处理"
+    ],
+    "subgroups": [
+      "待判断",
+      "待接单",
+      "已完成",
+      "已关闭"
+    ]
+  },
+  "search": {
+    "columns": [
+      {
+        "text": "类别 · 编号",
+        "x": 272,
+        "y": 213,
+        "width": 192,
+        "height": 36,
+        "top": 213,
+        "right": 464,
+        "bottom": 249,
+        "left": 272,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "问题",
+        "x": 464,
+        "y": 213,
+        "width": 292,
+        "height": 36,
+        "top": 213,
+        "right": 756,
+        "bottom": 249,
+        "left": 464,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "状态",
+        "x": 756,
+        "y": 213,
+        "width": 108,
+        "height": 36,
+        "top": 213,
+        "right": 864,
+        "bottom": 249,
+        "left": 756,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "时效",
+        "x": 864,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 988,
+        "bottom": 249,
+        "left": 864,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "报修人 · 位置",
+        "x": 988,
+        "y": 213,
+        "width": 188,
+        "height": 36,
+        "top": 213,
+        "right": 1176,
+        "bottom": 249,
+        "left": 988,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "负责人",
+        "x": 1176,
+        "y": 213,
+        "width": 124,
+        "height": 36,
+        "top": 213,
+        "right": 1300,
+        "bottom": 249,
+        "left": 1176,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      },
+      {
+        "text": "最新活动",
+        "x": 1300,
+        "y": 213,
+        "width": 92,
+        "height": 36,
+        "top": 213,
+        "right": 1392,
+        "bottom": 249,
+        "left": 1300,
+        "background": "rgb(255, 255, 255)",
+        "position": "sticky"
+      }
+    ],
+    "rowHeights": [
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44
+    ],
+    "stageHeight": 54,
+    "subgroupHeight": 32,
+    "stage": {
+      "x": 316,
+      "y": 269,
+      "width": 77,
+      "height": 26,
+      "top": 269,
+      "right": 393,
+      "bottom": 295,
+      "left": 316
+    },
+    "stageStyle": {
+      "height": "26px",
+      "color": "rgb(127, 95, 1)",
+      "background": "rgb(251, 243, 219)"
+    },
+    "toolbar": {
+      "x": 272,
+      "y": 165,
+      "width": 1128,
+      "height": 32,
+      "top": 165,
+      "right": 1400,
+      "bottom": 197,
+      "left": 272
+    },
+    "chipGap": 8,
+    "headers": 1,
+    "missing": false,
+    "leftEdges": [
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ],
+      [
+        272,
+        464,
+        756,
+        864,
+        988,
+        1176,
+        1300
+      ]
+    ]
+  },
+  "searchClear": {
+    "icon": 16,
+    "top": 169,
+    "bottom": 193,
+    "inputTop": 165,
+    "inputBottom": 197
+  },
+  "containerWidths": [
+    {
+      "width": 1280,
+      "firstBefore": {
+        "x": 264,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 456,
+        "bottom": 379,
+        "left": 264
+      },
+      "firstAfter": {
+        "x": 264,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 456,
+        "bottom": 379,
+        "left": 264
+      },
+      "narrowHead": {
+        "x": 276,
+        "y": 269,
+        "width": 125.4375,
+        "height": 26,
+        "top": 269,
+        "right": 401.4375,
+        "bottom": 295,
+        "left": 276
+      },
+      "area": {
+        "client": 976,
+        "scroll": 1080,
+        "left": 104
+      }
+    },
+    {
+      "width": 900,
+      "firstBefore": {
+        "x": 16,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 208,
+        "bottom": 379,
+        "left": 16
+      },
+      "firstAfter": {
+        "x": 16,
+        "y": 335,
+        "width": 192,
+        "height": 44,
+        "top": 335,
+        "right": 208,
+        "bottom": 379,
+        "left": 16
+      },
+      "narrowHead": {
+        "x": 28,
+        "y": 269,
+        "width": 125.4375,
+        "height": 26,
+        "top": 269,
+        "right": 153.4375,
+        "bottom": 295,
+        "left": 28
+      },
+      "area": {
+        "client": 852,
+        "scroll": 1080,
+        "left": 180
+      }
+    }
+  ],
+  "narrow": {
+    "width": 900,
+    "firstBefore": {
+      "x": 16,
+      "y": 335,
+      "width": 192,
+      "height": 44,
+      "top": 335,
+      "right": 208,
+      "bottom": 379,
+      "left": 16
+    },
+    "firstAfter": {
+      "x": 16,
+      "y": 335,
+      "width": 192,
+      "height": 44,
+      "top": 335,
+      "right": 208,
+      "bottom": 379,
+      "left": 16
+    },
+    "narrowHead": {
+      "x": 28,
+      "y": 269,
+      "width": 125.4375,
+      "height": 26,
+      "top": 269,
+      "right": 153.4375,
+      "bottom": 295,
+      "left": 28
+    },
+    "area": {
+      "client": 852,
+      "scroll": 1080,
+      "left": 180
+    }
+  },
+  "stickyNumberPointer": true,
+  "emptyStages": 3,
+  "businessWrites": []
+}

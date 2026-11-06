@@ -21,11 +21,15 @@ export function TicketCategoryTile({service}:{service:WorkbenchCard['service']})
   const category=categoryOf(service?.category,service?.code),Icon=category.icon;
   return <span className="ds-ticket-category" data-category={service?.category??'unclassified'} title={category.label==='未分类'?'未分类':service?service.category_name_zh+' · '+service.name_zh:category.label} style={{background:category.bg,color:category.fg,border:category.border??undefined}}><Icon aria-hidden="true"/><span className="sr-only">{service?service.category_name_zh+' · '+service.name_zh:'未分类'}</span></span>;
 }
+export function TicketHeat({heat,heatStart}:{heat:Heat;heatStart?:string|null|undefined}){
+  return <Tag className="ds-ticket-heat" data-heat-tone={heat.tone} title={heatStart?'自 '+heatStart.slice(5,16)+' 起计时':undefined} tone={heat.tone}><Clock3 aria-hidden="true"/>{heat.label}</Tag>;
+}
+
 type BodyProps={number:string;title:string;metadata:ReactNode;tags:readonly CardTag[];owner:ReactNode;activity:ReactNode;followUp?:ReactNode;deadline?:{tone:'attention'|'danger';label:string};category?:ReactNode;heat?:Heat|null;heatStart?:string|null;completedAt?:string|null};
 export function TicketCardBody({number,title,metadata,tags,owner,activity,followUp,deadline,category,heat,heatStart,completedAt}:BodyProps){
   const {shown,hidden}=visibleCardTags(tags);
   return <div className={'ds-ticket-body'+(category?' has-category':'')}>
-    <div className="card-top"><span title={number}>{number}</span>{completedAt?<time className="ds-ticket-completed" dateTime={completedAt.replace(' ','T')+'+08:00'} title={completedAt+'（北京时间）'}><Check aria-hidden="true"/>{completedAt.slice(11,16)} 完成</time>:heat?<Tag className="ds-ticket-heat" data-heat-tone={heat.tone} title={heatStart?'自 '+heatStart.slice(5,16)+' 起计时':undefined} tone={heat.tone}><Clock3 aria-hidden="true"/>{heat.label}</Tag>:deadline?<span className="ds-ticket-deadline" data-tone={deadline.tone}><Clock3 aria-hidden="true"/>{deadline.label}</span>:null}{category}</div>
+    <div className="card-top"><span title={number}>{number}</span>{completedAt?<time className="ds-ticket-completed" dateTime={completedAt.replace(' ','T')+'+08:00'} title={completedAt+'（北京时间）'}><Check aria-hidden="true"/>{completedAt.slice(11,16)} 完成</time>:heat?<TicketHeat heat={heat} heatStart={heatStart}/>:deadline?<span className="ds-ticket-deadline" data-tone={deadline.tone}><Clock3 aria-hidden="true"/>{deadline.label}</span>:null}{category}</div>
     <h3 title={title}>{title||'待补充的问题描述'}</h3>
     <div className="ds-ticket-metadata">{metadata}</div>
     <footer className="card-footer"><div className="card-tags">{shown.map(tag=><Tag key={tag.key} tone={tag.tone} className={'status-chip '+(tag.className??'')} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} title={tag.title??tag.label}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:tag.icon==='clock'?<Clock3 aria-hidden="true"/>:null}<span>{tag.label}</span></Tag>)}{hidden.length?<Tag className={hidden.map(tag=>tag.className??'').join(' ')} {...(hidden.some(tag=>tag.key==='supplement')?{'data-supplement-follow-up-pending':'true'}:{})} title={hidden.map(tag=>tag.title??tag.label).join('；')} aria-label={'另有 '+hidden.length+' 项：'+hidden.map(tag=>tag.label).join('、')}>+{hidden.length}</Tag>:null}{followUp}</div><span className="ds-ticket-owner">{owner}</span>{activity}</footer>
@@ -40,14 +44,13 @@ export function ClosureReason({closure}:{closure:WorkbenchCard['closure']}){
   </Tag>;
 }
 
-export function DismissedTicketCardBody({item,now,metadata,followUp}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode}){
+export function DismissedTicketCardBody({item,now,followUp}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode}){
   const closure=item.closure;
   if(closure?.kind!=='DISMISSED')return null;
   const name=closure.closed_by_display_name;
   return <div className="ds-ticket-body ds-ticket-dismissed-body has-category">
     <div className="card-top"><span title={item.number}>{item.number}</span><span className="activity-time ds-ticket-closed" title={closure.closed_at?closure.closed_at+'（北京时间）':'关闭时间未记录'}><CircleX aria-hidden="true"/>{closure.closed_at?<time dateTime={closure.closed_at.replace(' ','T')+'+08:00'}>{formatListTime(closure.closed_at,now)} 关闭</time>:<span>时间未记录 关闭</span>}</span><TicketCategoryTile service={item.service}/></div>
     <h3 title={item.title}>{item.title||'待补充的问题描述'}</h3>
-    <div className="ds-ticket-metadata">{metadata}</div>
     <footer className="card-footer"><div className="card-tags"><ClosureReason closure={closure}/>{followUp}</div><span className="ds-ticket-owner ds-ticket-closer" data-closure-source={closure.source??'unknown'}>
       {closure.source==='SYSTEM'?<><Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/><span className="ds-ticket-close-method">系统判定</span></>:closure.source==='MANUAL'?<>{name?<><Avatar name={name} size={20} aria-hidden="true"/><span className="owner-name" title={name}>{name}</span><span aria-hidden="true"> · </span></>:null}<span className="ds-ticket-close-method">人工关闭</span></>:name?<span className="owner-name" title={name}>{name}</span>:null}
     </span></footer>
