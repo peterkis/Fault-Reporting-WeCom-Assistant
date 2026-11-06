@@ -11,6 +11,6 @@ export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>):'re
   if(item.display_status==='NOT_SERVICE')return 'notService';
   return 'received';
 }
-export function reportTone(state:ReturnType<typeof reportState>):'success'|'warning'|'purple'|'default' {
-  return state==='completed'?'success':state==='processing'?'warning':state==='queued'||state==='reopened'?'purple':'default';
+export function reportTone(state:ReturnType<typeof reportState>):'queued'|'processing'|'done'|'neutral'|'danger' {
+  return state==='processing'||state==='queued'?state:state==='completed'?'done':state==='reopened'?'queued':state==='notService'?'danger':'neutral';
 }

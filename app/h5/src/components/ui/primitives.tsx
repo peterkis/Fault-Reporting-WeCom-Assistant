@@ -12,8 +12,8 @@ export function CardTitle({className,...props}:React.ComponentProps<'h2'>){retur
 export function CardDescription({className,...props}:React.ComponentProps<'p'>){return <p data-slot="card-description" className={cn('ui-card-description',className)} {...props}/>;}
 export function CardContent({className,...props}:React.ComponentProps<'div'>){return <div data-slot="card-content" className={cn('ui-card-content',className)} {...props}/>;}
 export function CardFooter({className,...props}:React.ComponentProps<'div'>){return <div data-slot="card-footer" className={cn('ui-card-footer',className)} {...props}/>;}
-const badgeVariants=cva('ui-badge',{variants:{variant:{default:'badge-neutral',success:'badge-success',warning:'badge-warning',danger:'badge-danger',blue:'badge-blue',purple:'badge-purple'}},defaultVariants:{variant:'default'}});
-export function Badge({className,variant,...props}:React.ComponentProps<'span'>&VariantProps<typeof badgeVariants>){return <span data-slot="badge" className={cn(badgeVariants({variant}),className)} {...props}/>;}
+const badgeVariants=cva('ui-badge',{variants:{variant:{default:'badge-neutral',success:'badge-success',warning:'badge-warning',blue:'badge-blue',queued:'badge-status-queued',processing:'badge-status-processing',done:'badge-status-done',neutral:'badge-status-neutral',danger:'badge-status-danger'}}});
+export function Badge({className,variant='default',...props}:React.ComponentProps<'span'>&VariantProps<typeof badgeVariants>){return <span data-slot="badge" className={badgeVariants({variant,className})} {...props}/>;}
 export function Input({className,...props}:React.ComponentProps<'input'>){return <input data-slot="input" className={cn('ui-input',className)} {...props}/>;}
 export function Textarea({className,...props}:React.ComponentProps<'textarea'>){return <textarea data-slot="textarea" className={cn('ui-textarea',className)} {...props}/>;}
 export function FieldGroup({className,...props}:React.ComponentProps<'div'>){return <div data-slot="field-group" className={cn('ui-field-group',className)} {...props}/>;}
