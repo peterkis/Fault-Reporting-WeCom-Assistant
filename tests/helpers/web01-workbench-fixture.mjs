@@ -76,6 +76,49 @@ export async function seedCard27Board(f){
   const dates=(await f.pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(platform.local_now()-interval '1 day','YYYY-MM-DD') AS yesterday")).rows[0];
   return {...ids,...dates};
 }
+/** Card 28 uses the existing isolated SQL/Store writes and fixture response-end seam.
+ * duplicate_of is a contract-valid synthetic read projection, not a backend implementation.
+ */
+export async function seedCard28Board(f){
+  const closed=await seedCard27Board(f),pending=[],titles=['无线网络频繁掉线，需核对交换机上联与终端接入的完整路径及病区覆盖情况（合成）','护理工作站连接超时（合成）','影像调阅异常（合成）','打印队列等待受理（合成）'];
+  const longOwnerName='阿卜杜拉艾合买提（合成）',longOwner=f.tickets[5].ticket.id;
+  await f.pool.query('UPDATE pilot_ticket.pilot_principal SET display_name=$2 WHERE id=$1::uuid',[f.principals[2].id,longOwnerName]);
+  // Deterministic interleaving: a newer dismissal must follow completed rows in presentation.
+  await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-interval '10 minutes' WHERE ticket_id=$1::uuid AND event_type='ticket.closed'",[f.tickets[9].ticket.id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-interval '5 minutes' WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[closed.manual]);
+
+  const core=createPilotTicketCore({pool:f.pool});
+  for(const [index,minutes,service] of [[0,360,'NETWORK.ENDPOINT_ACCESS'],[1,90,'CLINICAL.INPATIENT_WORKSTATION'],[2,12,'DIAG.IMAGING_VIEWER'],[3,3,'PRINT.PRINTER_DEVICE']]){
+    const intake=await seedWeb01NoConversationIntake({pool:f.pool,text:titles[index],location:'合成位置（合成）',serviceCode:service});
+    const created=await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'card28-synthetic'});assert.ok(created.ticket);pending.push(created.ticket.id);
+    await f.pool.query("UPDATE pilot_ticket.ticket SET title=$2,created_at=platform.local_now()-($3::text||' minutes')::interval WHERE id=$1::uuid",[created.ticket.id,titles[index],minutes]);
+  }
+  const completedIntake=await seedPersistedIntake({pool:f.pool,text:'无工单受理事项已完成（合成）',requestType:'CHATTER',status:'COMPLETED'});
+  const failedIntake=await seedPersistedIntake({pool:f.pool,text:'受理处理失败待人工核对（合成）',status:'FAILED'});
+  for(const [id,status] of [[completedIntake.intakeId,'COMPLETED'],[failedIntake.intakeId,'FAILED']])await f.pool.query("UPDATE intake.service_intake_event SET payload=jsonb_build_object('status',$2::text) WHERE intake_id=$1::uuid AND event_type='intake.received'",[id,status]);
+  const duplicateWith=f.tickets[4].ticket.id;
+  const original=f.tickets[4].ticket;
+  const ticket=(await f.pool.query("UPDATE pilot_ticket.ticket SET status='DUPLICATE_LINKED',title='已关联原单的重复材料（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateWith])).rows[0];
+  await appendTicketEvent({transaction:f.pool,ticket,eventType:'ticket.duplicate_linked',actor:{type:'SYSTEM',id:null},oldStatus:original.status,internalNote:null,externalNote:null,traceId:'card28-duplicate-synthetic'});
+  const project=(request,response)=>{
+    if(request.method!=='GET'||!/^\/api\/workbench\/(?:board|search)\?/u.test(request.url??''))return;
+    const end=response.end.bind(response);
+    response.end=(...args)=>{
+      if(response.statusCode!==200||typeof args[0]!=='string')return end(...args);
+      const page=JSON.parse(args[0]);if(!Array.isArray(page.items))return end(...args);
+      page.items=page.items.map(item=>{
+        if(item.id===duplicateWith)return {...item,closure:{...item.closure,duplicate_of:{display_no:'TKT-20261106-0001（合成）'}}};
+        if(item.id===pending[0])return {...item,web_report_urge:{active:true,count:2,last_urged_at:item.updated_at}};
+        if(item.id===pending[1])return {...item,review_reason:'人工复核材料（合成）'};
+        if(item.id===pending[2])return {...item,reporter_name:null,location:null};
+        return item;
+      });
+      return end(JSON.stringify(page));
+    };
+  };
+  f.runtime.server.on('request',project);
+  return {...closed,pending,duplicateWith,longOwner,longOwnerName,completedIntake:completedIntake.intakeId,failedIntake:failedIntake.intakeId,restore:()=>f.runtime.server.off('request',project)};
+}
 const scenarios=[
  ['门诊二楼打印机无法打印处方','门诊二楼 · 203 诊室','QUEUED'],
  ['护士站登录护理系统提示连接超时','住院部 · 六楼护士站','NEW'],

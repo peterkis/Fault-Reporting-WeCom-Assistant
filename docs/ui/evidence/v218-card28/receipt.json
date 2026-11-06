@@ -1,0 +1,265 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_EXPLICIT_CARD28_SYNTHETIC_READ_FIELDS",
+  "syntheticFields": [
+    "duplicate_of display_no",
+    "web_report_urge",
+    "review_reason",
+    "reporter/location absent"
+  ],
+  "screenshots": [
+    {
+      "file": "list-1440-all.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "35ce6743f21b4d4ab4163b218295ea43ce834bb03b561b3ca6136a5973f67bf0",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-1920-all.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "4f6fafbd6b6ef87ebfd4dc79c6365a30ef2427fc65b2fcdfa91b34bda36d6b7c",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1920,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "group-x2.png",
+      "width": 2248,
+      "height": 116,
+      "sha256": "d4b4b0e5b5d1ccd2ca5231970e26afe826efd06c1d1eca45e9d34ee484a74d86",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 247,
+        "width": 1124,
+        "height": 58,
+        "scale": 2
+      }
+    },
+    {
+      "file": "subgroup-x2.png",
+      "width": 2280,
+      "height": 72,
+      "sha256": "db3d2db5e79166f92885222bc93435b052521e5d1ccf64458a750a3c36cb1437",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 301,
+        "width": 1140,
+        "height": 36,
+        "scale": 2
+      }
+    },
+    {
+      "file": "pending-heat-urge-x2.png",
+      "width": 2280,
+      "height": 96,
+      "sha256": "4d18f7fe6fbc54a9ee6daf01296f01f424efc469802e41e353ef70240ff19be5",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 599,
+        "width": 1140,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "closed-manual-x2.png",
+      "width": 2280,
+      "height": 96,
+      "sha256": "8fb8c178722ae2acd54545332e118d836d9516848413ce624a20a291d6fcfec5",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 859,
+        "width": 1140,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "closed-system-x2.png",
+      "width": 2280,
+      "height": 96,
+      "sha256": "f16106e99fcc7e03df4e1d2f259f94650e34e24e041f22360da9287086b43f8c",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 815,
+        "width": 1140,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "closed-duplicate-x2.png",
+      "width": 2280,
+      "height": 96,
+      "sha256": "de0174d52b81fef7e9fa93429d88690c28a85a8580f2602bb7600a7ffcec9bec",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 727,
+        "width": 1140,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "hover-claim-x2.png",
+      "width": 2248,
+      "height": 96,
+      "sha256": "15c27635b3f1fcf5b16d0076347979d39269e647af365ae3f45e274829c06e02",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 599,
+        "width": 1124,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "selected-x2.png",
+      "width": 2248,
+      "height": 96,
+      "sha256": "c378a09fbd084fa0198dd066dbc558f4d4a01d67a1a2e3f7d50d8af7e9640a06",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      },
+      "clip": {
+        "x": 270,
+        "y": 599,
+        "width": 1124,
+        "height": 48,
+        "scale": 2
+      }
+    },
+    {
+      "file": "list-1440-dismissed.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "46dc052e5470327c6faa01bd705901d26a3049f6312c12851d22b252aab34ee9",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-1920-dismissed.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "dd9225ffca6faca020c3a6e232e99f8291139541a9c7b7f4ede0615ef234590b",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1920,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-1440-search.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "5da1033adb0dedd97481cf441a2fda5790bf299e6f5d16d5c9e68c9a02f24fb2",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-1920-search.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "8cebf842789908d88023dbd0280859c6a564320bc86c838a44e8c91719d2c607",
+      "viewport": {
+        "platform": "Win32",
+        "width": 1920,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-900-scroll.png",
+      "width": 900,
+      "height": 1060,
+      "sha256": "8595c238e68c20a9fb4fc9c4f3fc3d0c455a62c7c0a794ac07d4f439848d8344",
+      "viewport": {
+        "platform": "Win32",
+        "width": 900,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1
+      }
+    }
+  ],
+  "candidate": "codex-02",
+  "candidate_input_hash": "432eb7342bcb8823fed0f51a19dbc7a5906d08b9da5432a99549d4c088da317b",
+  "source_receipt": "D:/CodexEvidence/pc-admin-card28-publish-20261106/codex-ui-source-receipt.json"
+}

@@ -20,6 +20,9 @@ async function seedClosingTimes(f:Fixture){
   for(const [id,at] of [[first.ticket.id,'2024-02-29 00:00:00'],[last.ticket.id,'2024-02-29 23:59:59'],[outside.ticket.id,'2024-03-01 00:00:00']]){
     await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.closed'",[id,at]);
   }
+  // Card 27's canonical closure evidence now also orders RESOLVED. Keep this
+  // date-independent pending-confirmation example deterministically before the window.
+  await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at='2024-02-28 12:00:00'::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.resolved'",[resolved.ticket.id]);
   return {first:first.ticket.id,last:last.ticket.id,outside:outside.ticket.id,resolved:resolved.ticket.id};
 }
 async function get(f:Fixture,query:string,reader=0){const cookie=f.cookies[reader];assert.ok(cookie);return fetch(f.origin+'/api/workbench/board?'+query,{headers:{cookie}});}
@@ -74,16 +77,16 @@ test('formal board applies a selected date range, preserves it across view, scop
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".workspace .workspace-footnote,.range-caption"))'),false);
     await capture('new-board-1920');
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("列表")).click()');
-    await browser.waitFor('new URLSearchParams(location.search).get("view")==="list"&&document.querySelectorAll(".list-group[aria-label=已处理] tbody tr").length===3');
+    await browser.waitFor('new URLSearchParams(location.search).get("view")==="list"&&document.querySelectorAll(".list-group[aria-label=已处理] tr.ds-work-row").length===3');
     const priorDocument=await browser.evaluate('performance.timeOrigin');assert.equal(typeof priorDocument,'number');await browser.command('Page.reload');
     await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&Boolean(document.querySelector('.processed-date-picker'))`);
     await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
-    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('closed_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tbody tr').length===3`);
+    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('closed_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tr.ds-work-row').length===3`);
     await browser.waitFor('document.querySelector("[data-action=related-scope]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-action=related-scope]');
     await browser.waitFor('new URLSearchParams(location.search).get("scope")==="related"&&document.querySelector(".scope-tabs [data-action=related-scope]").getAttribute("aria-pressed")==="true"');
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("closed_to")'),'2024-02-29');
     await browser.waitFor('document.querySelector("[data-summary-filter=all]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-summary-filter=all]');
-    await browser.waitFor('new URLSearchParams(location.search).get("scope")==="team"&&document.querySelectorAll(".list-group[aria-label=已处理] tbody tr").length===3');
+    await browser.waitFor('new URLSearchParams(location.search).get("scope")==="team"&&document.querySelectorAll(".list-group[aria-label=已处理] tr.ds-work-row").length===3');
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("看板")).click()');
     await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:960,deviceScaleFactor:1,mobile:false});
     await browser.waitFor('document.querySelectorAll(".board-column.closed .ticket-card").length===3');
