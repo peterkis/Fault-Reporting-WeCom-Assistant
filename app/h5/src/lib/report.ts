@@ -12,5 +12,5 @@ export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>):'re
   return 'received';
 }
 export function reportTone(state:ReturnType<typeof reportState>):'queued'|'processing'|'done'|'neutral'|'danger' {
-  return state==='completed'?'done':state==='processing'?'processing':state==='queued'||state==='reopened'?'queued':state==='notService'?'danger':'neutral';
+  return state==='processing'||state==='queued'?state:state==='completed'?'done':state==='reopened'?'queued':state==='notService'?'danger':'neutral';
 }
