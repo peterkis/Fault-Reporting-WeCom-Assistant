@@ -46,6 +46,36 @@ export async function seedCard22Board(f){
   }
   return ids;
 }
+/** Card 27B: closure presentation uses the existing synthetic writes and event helper.
+ * @returns {Promise<{manual:string,duplicate:string,unknown:string,historical:string,system:string,today:string,yesterday:string}>}
+ */
+export async function seedCard27Board(f){
+  /** @type {Record<string,string>} */
+  const ids={};
+  for(const [key,index,status,source,old] of [
+    ['manual',0,'CANCELLED','PILOT_USER',false],
+    ['duplicate',1,'DUPLICATE_LINKED','SYSTEM',false],
+    ['unknown',2,'CANCELLED',null,false],
+    ['historical',3,'CANCELLED','PILOT_USER',true],
+  ]){
+    const original=f.tickets[index],id=original.ticket.id;ids[key]=id;
+    const ticket=(await f.pool.query('UPDATE pilot_ticket.ticket SET status=$2,title=$3,version=version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *',
+      [id,status,{manual:'测试误报，人工核对关闭（合成）',duplicate:'打印故障重复报修（合成）',unknown:'旧记录缺少关闭证据（合成）',historical:'昨日人工取消事项（合成）'}[key]])).rows[0];
+    if(source){
+      const event=await appendTicketEvent({transaction:f.pool,ticket,eventType:status==='CANCELLED'?'ticket.cancelled':'ticket.duplicate_linked',
+        actor:{type:source,id:source==='PILOT_USER'?f.principals[0].id:null},oldStatus:original.ticket.status,
+        internalNote:source==='PILOT_USER'?'与报修人核对为测试误报，保留内部关闭说明（合成）':null,externalNote:null,traceId:'card27b-'+key+'-synthetic'});
+      await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at="+(old?"date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours'":"platform.local_now()")+' WHERE event_id=$1::uuid',[event.event_id]);
+    }
+  }
+  for(const original of f.tickets.slice(9,13)){
+    await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now() WHERE ticket_id=$1::uuid AND event_type IN ('ticket.closed','ticket.resolved')",[original.ticket.id]);
+  }
+  const ignored=await seedPersistedIntake({pool:f.pool,text:'感谢消息经系统判定不受理（合成）',requestType:'CHATTER',status:'IGNORED'});ids.system=ignored.intakeId;
+  await f.pool.query("UPDATE intake.service_intake_event SET payload=jsonb_build_object('status','IGNORED') WHERE intake_id=$1::uuid AND event_type='intake.received'",[ignored.intakeId]);
+  const dates=(await f.pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(platform.local_now()-interval '1 day','YYYY-MM-DD') AS yesterday")).rows[0];
+  return {...ids,...dates};
+}
 const scenarios=[
  ['门诊二楼打印机无法打印处方','门诊二楼 · 203 诊室','QUEUED'],
  ['护士站登录护理系统提示连接超时','住院部 · 六楼护士站','NEW'],

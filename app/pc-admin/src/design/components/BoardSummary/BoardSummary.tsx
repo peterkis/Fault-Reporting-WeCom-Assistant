@@ -50,7 +50,7 @@ export function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardC
   const week=new Date(Date.parse(day+'T00:00:00Z')-6*86_400_000).toISOString().slice(0,10),month=day.slice(0,8)+'01';
   const selected:Preset|'custom'=choice?.key===key&&(choice.preset==='custom'||range==='recent'||dates?.to===day)?choice.preset:range==='recent'?'recent':range==='custom'&&dates?.to===day?(dates.from===day?'today':dates.from===week?'week':dates.from===month?'month':'custom'):'custom';
   const customSelected=range==='custom'&&selected==='custom';
-  const caption=range==='all'?'全部日期':range==='cancelled'?'已取消':selected==='custom'&&dates?dates.from.slice(5).replace('-','/')+'–'+dates.to.slice(5).replace('-','/'):selected==='custom'?'自定义':dateLabels[selected];
+  const caption=range==='all'?'全部日期':selected==='custom'&&dates?dates.from.slice(5).replace('-','/')+'–'+dates.to.slice(5).replace('-','/'):selected==='custom'?'自定义':dateLabels[selected];
   const select=(preset:Preset)=>{if(blocked)return;if(panel.current)panel.current.open=false;const next=preset==='recent'?undefined:{from:preset==='today'?day:preset==='week'?week:month,to:day},mode=preset==='recent'?'recent':'custom';setChoice({key:dateKey(mode,next),preset});onApply(mode,next);};
   const presets=(compact=false)=>(Object.keys(dateLabels) as Preset[]).map(key=><Button key={key} tone="ghost" data-date-preset={key} data-compact={compact?'true':undefined} aria-pressed={selected===key} isDisabled={blocked} onPress={()=>select(key)}>{dateLabels[key]}</Button>);
   return <div className="ds-board-dates" title="日期仅影响已处理列，未完成事项不限日期">

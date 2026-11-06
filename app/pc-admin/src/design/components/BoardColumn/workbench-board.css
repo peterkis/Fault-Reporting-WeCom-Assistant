@@ -23,6 +23,10 @@
 .column-end {text-align: center;padding: var(--space-2) var(--space-1);color: var(--text-secondary);font-size: var(--fs-xs); }
 .list-group + .list-group {margin-top: var(--space-3); }
 .list-group .column-heading {padding: var(--space-5) var(--space-3) var(--space-1-5); }
+.work-table [data-closure-kind=DISMISSED],.work-table [data-closure-kind=DISMISSED] :is(td,.row-link,.activity-time) {color:var(--text-secondary);}
+.work-table .ds-list-closure-reason {width:calc(var(--space-16) * 2 + var(--space-8));max-width:calc(var(--space-16) * 2 + var(--space-8));}
+.work-table .ds-list-closure-reason>span {display:block;max-width:calc(var(--space-16) * 2 + var(--space-8));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.work-table .ds-list-closure-reason [data-closure-reason] {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 @media (max-width:900px) {
 .board {grid-template-columns: minmax(0,1fr); }
 .range-bar label {margin-left: 0; }

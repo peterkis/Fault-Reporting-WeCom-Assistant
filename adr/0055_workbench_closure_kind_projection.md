@@ -8,6 +8,23 @@ Status: **Accepted for the authorized local read projection; 写入侧原因与�
 
 第三列「已处理」混合了完成与关闭，且默认排除已取消工单。按用户确认，保留三列，提供「已完成」「已关闭」分组的读取事实，界面由 27B 实现。沿用 [ADR-0052](0052_workbench_service_and_stage_read_projections.md) 的最终 READ 证明和 [ADR-0053](0053_mvp_delivery_and_test_policy.md) 的风险验证。对本投影直接更新合同与前端解析，不沿用 [ADR-0054](0054_conversation_inbox_counts_and_waiting_since.md) 的 opt-in 字段协商。
 
+## 27B 前向说明（2026-11-06，本地实施范围）
+
+### B5日期扩展的后继授权
+
+用户在首轮本地交付后明确授权扩展今天、近7天、本月及自定义与结束方式组合，并补齐后端、合同和接口文档。以下首轮“custom组合停止”保留历史含义，由此后继覆盖：搜索支持recent / all / custom，custom的criteria必须同时含closed_from / closed_to，非custom拒绝这两个键，旧recent/all响应不新增日期键。日期采用原上海自然日合同，起止合法且有序，结束日小于9999-12-31，查询上界为结束次日零时。
+
+沿原READ、只读事务、2000ms局部SQL预算、排序和分页Port；日期与结束方式一同参与规范criteria哈希和窗口绑定，不新增写入侧或兼容开关。原游标已有criteria哈希和from/until，无需放宽旧守卫或升级业务状态。具体实施和新候选验证在卡27B执行记录后继单独记账，不把原61入口444项及截图改绑至新输入。S1–S4写入侧停止线不变。
+
+### 首轮交付时的范围（保留原候选记录）
+
+卡26与27A已由GitHub确认合并为PR #153 / #154，本卡起点为main `4a279a2a42c8eec84a97c6191f2d18da4836df30`。上文“暂不合并”及下文K1代码位置、27A临时范围和旧统计描述保留原核对时点；当前27B实施与实际验证见[执行记录](../plans/pc-admin-design-v21/card-27b.md)，不据此授予提交、发布、部署或业务Gate。
+
+- 按本次明确授权移除 `cancelled` 范围值。看板接纳 recent / all / custom，搜索接纳 recent / all；旧值请求拒绝400。CANCELLED状态继续作为DISMISSED正常参与原日期与READ查询，不删除或改名业务状态。未知关闭时刻仅在all中展示。
+- PC第三列按COMPLETED / DISMISSED分组，完整普通看板计数使用group_counts；搜索及本地展示筛选继续明确已加载范围。PC「今日完成」仅认COMPLETED且completed_at为上海同日、非未来；H5与未来月报待决不在本卡修改。
+- 列表的closure_kind继续沿27A合同，只筛第三列、保留其它条件和游标身份。当前搜索不支持custom日期，因此今天／近7天／本月／手填日期与结束方式的组合停止待确认；界面在这些范围禁用该Chip并说明，不通过筛选已加载分页替代完整查询，不扩大后端合同。
+- S1–S4写入侧边界保持。原型里的完整原因、原单关联和恢复是设计方向，不能视为现有写命令。取消仍用自由文本，既有范围外复核的八个原因仅变更呈现；DISMISSED.can_restore=false时不显示恢复，不补写未知事实。
+
 ## K1 现状核对
 
 代码位置以本地候选为准；未改写的命令位置也对应上述基线。合成验证沿既有 `withWeb01Fixture` / Seed / DecisionPort / appendTicketEvent，原始回执见执行记录。

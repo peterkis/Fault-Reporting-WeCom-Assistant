@@ -23,7 +23,6 @@ export function ProcessedDatePicker({range,dates,now,blocked,onApply}:{range:Boa
       </RangeCalendar></DateRangePicker.Popover>
       <Button slot={null} variant="secondary" size="sm" aria-label="应用已处理日期" isDisabled={blocked||isInvalid||!valid} onPress={()=>{if(!blocked&&!isInvalid&&valid&&value)onApply('custom',{from:value.start.toString(),to:value.end.toString()});}}>应用</Button>
     </>}</DateRangePicker>
-    {range==='cancelled'?<span className="processed-date-note">仅显示已取消事项</span>:null}
     {range!=='all'||value?<Button variant="ghost" size="sm" aria-label="清除已处理日期和取消筛选" isDisabled={blocked} onPress={()=>{setValue(null);onApply('all');}}>清除</Button>:<span className="processed-date-note">全部日期</span>}
   </div>;
 }

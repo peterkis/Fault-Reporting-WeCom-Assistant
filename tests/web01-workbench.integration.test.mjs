@@ -51,8 +51,9 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const cancelled=await fetch(origin+'/api/tickets/'+tickets[0].ticket.id+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'WEB01_SYNTHETIC_CANCEL'})});
     assert.equal(cancelled.status,200,await cancelled.clone().text());
     assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.some(i=>i.id===tickets[0].ticket.id&&i.status==='CANCELLED'));
-    const cancellationView=await read('/api/workbench/board?column=closed&range=cancelled');
-    assert.equal(cancellationView.items.length,1);assert.equal(cancellationView.items[0].status,'CANCELLED');
+    const cancellationView=(await read('/api/workbench/board?column=closed&range=all')).items.filter(item=>item.status==='CANCELLED');
+    assert.equal(cancellationView.length,1);assert.equal(cancellationView[0].status,'CANCELLED');
+    assert.equal((await get('/api/workbench/board?column=closed&range=cancelled')).status,400,'the removed cancelled range is rejected');
     const separateReview=pending.items.find(i=>i.kind==='review');
     await pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$1::uuid WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$2::uuid)',[tickets[5].ticket.id,separateReview.id]);
     assert.ok((await read('/api/workbench/board?column=active')).items.find(i=>i.id===tickets[5].ticket.id).review_reason);
@@ -448,7 +449,9 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     assert.deepEqual(paged.map(item=>item.kind+':'+item.id),all.items.map(item=>item.kind+':'+item.id));
     assert.equal(new Set(paged.map(item=>item.kind+':'+item.id)).size,paged.length);
     const empty=await read('/api/workbench/board?column=closed&range=all',1);assert.deepEqual(empty.items,[]);assert.deepEqual(empty.group_counts,{completed:0,dismissed:0});
-    const legacyCancelled=await read('/api/workbench/board?column=closed&range=cancelled');assert.deepEqual(legacyCancelled.items.map(item=>item.id),[cancelledId]);assert.deepEqual(legacyCancelled.group_counts,{completed:0,dismissed:1});
+    assert.equal((await get('/api/workbench/board?column=closed&range=cancelled')).status,400,'the removed board mode is rejected instead of silently changing the date range');
+    assert.equal((await get('/api/workbench/search?column=closed&range=cancelled')).status,400,'the removed list mode is rejected');
+    const cancelledOnly=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=CANCELLED');assert.deepEqual(cancelledOnly.items.map(item=>item.id),[cancelledId]);assert.ok(cancelledOnly.items.every(item=>item.closure.kind==='DISMISSED'));
 
     const day=(await pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(date_trunc('day',platform.local_now()),'YYYY-MM-DD HH24:MI:SS') AS start")).rows[0];
     await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,day.start]);

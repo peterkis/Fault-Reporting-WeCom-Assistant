@@ -1,4 +1,4 @@
-import type {BoardColumn,CompletionRange,WorkbenchCard} from './web01_workbench_contracts.js';
+import type {BoardColumn,BoardCompletionRange,WorkbenchCard} from './web01_workbench_contracts.js';
 import type {SharedFollowUpActive} from './workbench_follow_up_schedule_contracts.js';
 import type {WorkbenchFollowAttention} from './workbench_item_follow_contracts.js';
 
@@ -9,13 +9,15 @@ export type WorkbenchSearchSource='WECOM_DIRECT'|'WECOM_GROUP'|'WEB_REQUEST'|'MA
 export type WorkbenchSearchStatus='NEW'|'QUEUED'|'ACCEPTED'|'REOPENED'|'IN_PROGRESS'|'WAITING_REQUESTER'|'WAITING_VENDOR'|
  'RESOLVED'|'CLOSED'|'CANCELLED'|'DUPLICATE_LINKED'|'PENDING'|'RECEIVED'|'WAITING_DESCRIPTION'|'WAITING_TRIAGE'|'FAILED'|'COMPLETED'|'IGNORED';
 export interface WorkbenchSearchCriteria {
- readonly q:string;readonly column:WorkbenchSearchColumn;readonly range:CompletionRange;readonly scope:'team'|'related';
+ readonly q:string;readonly column:WorkbenchSearchColumn;readonly range:BoardCompletionRange;readonly scope:'team'|'related';
  readonly responsibility:WorkbenchSearchResponsibility;readonly resolver_team_id:string|null;readonly assignee_id:string|null;
  readonly sources:ReadonlyArray<WorkbenchSearchSource>;readonly source_group_ref:string|null;
  readonly statuses:ReadonlyArray<WorkbenchSearchStatus>;readonly supplement:'any'|'pending'|'followed'|'none';
  readonly schedule:'any'|'active'|'due'|'none';
  /** Optional restriction of third-column states; it does not filter pending or active states. */
  readonly closure_kind?:'completed'|'dismissed';
+ /** Only range=custom: inclusive real Shanghai dates, closed_from<=closed_to<9999-12-31. */
+ readonly closed_from?:string;readonly closed_to?:string;
 }
 export interface WorkbenchSearchRequest {readonly criteria:WorkbenchSearchCriteria;readonly cursor:string|null;readonly limit:number}
 export type WorkbenchSearchCard=Omit<WorkbenchCard,'service'|'stage_entered_at'>&{
@@ -26,7 +28,7 @@ export type WorkbenchSearchCard=Omit<WorkbenchCard,'service'|'stage_entered_at'>
 export interface WorkbenchSearchPage {
  readonly items:ReadonlyArray<WorkbenchSearchCard>;readonly next_cursor:string|null;
  readonly column:WorkbenchSearchColumn;
- readonly range:Readonly<{mode:CompletionRange;from:string;until:string;timezone:'Asia/Shanghai'}>;
+ readonly range:Readonly<{mode:BoardCompletionRange;from:string;until:string;timezone:'Asia/Shanghai'}>;
  readonly criteria:WorkbenchSearchCriteria;
 }
 /** Planned HTTP error names; SEARCH_RATE_LIMITED is not registered in a running host yet. */

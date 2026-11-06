@@ -524,7 +524,7 @@
           "enum": [
             "recent",
             "all",
-            "cancelled"
+            "custom"
           ]
         },
         "from": {
@@ -541,5 +541,97 @@
     "criteria": {
       "$ref": "workbench_search_criteria.schema.json"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "criteria": {
+            "properties": {
+              "range": {
+                "const": "recent"
+              }
+            },
+            "required": [
+              "range"
+            ]
+          }
+        },
+        "required": [
+          "criteria"
+        ]
+      },
+      "then": {
+        "properties": {
+          "range": {
+            "properties": {
+              "mode": {
+                "const": "recent"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "criteria": {
+            "properties": {
+              "range": {
+                "const": "all"
+              }
+            },
+            "required": [
+              "range"
+            ]
+          }
+        },
+        "required": [
+          "criteria"
+        ]
+      },
+      "then": {
+        "properties": {
+          "range": {
+            "properties": {
+              "mode": {
+                "const": "all"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "criteria": {
+            "properties": {
+              "range": {
+                "const": "custom"
+              }
+            },
+            "required": [
+              "range"
+            ]
+          }
+        },
+        "required": [
+          "criteria"
+        ]
+      },
+      "then": {
+        "properties": {
+          "range": {
+            "properties": {
+              "mode": {
+                "const": "custom"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

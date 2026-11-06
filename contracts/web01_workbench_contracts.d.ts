@@ -1,5 +1,5 @@
 export type BoardColumn = 'pending' | 'active' | 'closed';
-export type CompletionRange = 'recent' | 'all' | 'cancelled';
+export type CompletionRange = 'recent' | 'all';
 export type BoardCompletionRange = CompletionRange | 'custom';
 export type WorkbenchKind = 'ticket' | 'review' | 'intake';
 export interface SourceGroupDisplay {

@@ -36,7 +36,7 @@
       "enum": [
         "recent",
         "all",
-        "cancelled"
+        "custom"
       ]
     },
     "scope": {
@@ -150,6 +150,69 @@
         "dismissed"
       ],
       "description": "Optional restriction of third-column states only; pending and active states retain their existing selection."
+    },
+    "closed_from": {
+      "allOf": [
+        {
+          "$ref": "local_date.schema.json"
+        },
+        {
+          "type": "string",
+          "pattern": "^(?!0000-)"
+        }
+      ],
+      "description": "Only with custom range. Inclusive Shanghai date; runtime validates the real calendar and date order."
+    },
+    "closed_to": {
+      "allOf": [
+        {
+          "$ref": "local_date.schema.json"
+        },
+        {
+          "type": "string",
+          "pattern": "^(?!0000-)(?!9999-12-31$)"
+        }
+      ],
+      "description": "Only with custom range. Inclusive Shanghai date below 9999-12-31 so the exclusive next-day bound stays four-digit."
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "range": {
+            "const": "custom"
+          }
+        },
+        "required": [
+          "range"
+        ]
+      },
+      "then": {
+        "required": [
+          "closed_from",
+          "closed_to"
+        ]
+      },
+      "else": {
+        "properties": {
+          "q": {},
+          "column": {},
+          "range": {},
+          "scope": {},
+          "responsibility": {},
+          "resolver_team_id": {},
+          "assignee_id": {},
+          "sources": {},
+          "source_group_ref": {},
+          "statuses": {},
+          "supplement": {},
+          "schedule": {},
+          "closure_kind": {}
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "x-date-order-validation-required": "For custom range, closed_from <= closed_to; shared runtime calendar guards enforce this cross-field rule."
 }
