@@ -183,7 +183,7 @@ try{
     panelState='created';root.dataset.loginPanel='created';
     // The SDK exposes no QR-rendered callback. An iframe, including its load event,
     // only proves panel creation; it does not prove a visible or scannable QR code.
-    status.textContent='如未显示二维码，请重新获取，或使用官方登录页。';
+    status.textContent=temporaryFallback==='asset-failed'?'工牌画面未能加载，已切换平面扫码。如未显示二维码，请重新获取，或使用官方登录页。':'如未显示二维码，请重新获取，或使用官方登录页。';
   }
 }catch{
   panelFailed();

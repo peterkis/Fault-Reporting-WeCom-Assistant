@@ -274,3 +274,52 @@ test('a quantized 60Hz pure clock keeps 30fps phase without repeated 50/16ms dra
     assert.ok(typeof p95==='number'&&p95<=34,'the quantized module clock must avoid repeated 50/16ms pairs; native product gates are tested separately');
   }finally{playback.dispose();}
 });
+
+
+test('a recorded native RAF clock keeps equal normal deadlines without accepting a real shortfall',async()=>{
+  const {createFramePlayback}=await import('./frame-playback.mjs');
+  // Native cold I02 relative stamps, recording SHA-256 353f661ca01f76f68c99119bf2a12685e57517b6d05cb3c34dc34b14b17471f1.
+  // Begin at its actual first draw: the only decoder wait was before that draw.
+  // This replay is a clock regression, not a substitute for native performance.
+  const stamps=[
+    269.1,285.8,302.4,319.1,335.9,352.4,369.2,385.8,402.6,419.1,435.8,453,
+    469.1,485.7,502.4,519.1,535.8,552.5,569.2,585.7,602.5,619.1,636,652.4,
+    669.1,685.8,702.5,719.1,752.5,769.2,902.5,919.1,935.9,1102.5,1119.2,1135.8,
+    1152.5,1219.3,1235.8,1252.8,1269.1,1285.9,1302.5,1319.8,1335.8,1352.5,1369.2,1385.9,
+    1402.6,1419.2,1435.9,1452.6,1469.4,1485.9,1502.6,1519.3,1535.7,1552.6,1569.4,1585.8,
+    1602.6,1619.2,1635.9,1652.5,1669.1,1685.8,1702.4,1719.1,1735.8,1752.4,1769.1,1785.8,
+    1802.7,1819.2,1835.8,1852.5,1869.2,1885.9,1902.7,1919.3,1935.9,1952.7,1969.3,1985.8,
+    2002.6,2019.2,2036,2052.5,2069.4,2085.7,2102.6,2119.8,2135.9,2152.6,2169.3,2185.9,
+    2202.6,2219.1,2235.9,2252.6,2269.2,2285.8,2302.6,2319.5,2335.9,2352.5,2369.3,2386,
+    2402.6,2419.5,2435.9,2452.5,2469.2,2485.9,2502.4,2519,2535.9,2552.5,2569.1,2585.8,
+    2602.5,2619.1,2636,2652.4,2669.7,2685.7,2703.2,2719.7,2735.8,2752.5,2769.1,2785.8,
+    2802.4,2819.1,2835.8,
+  ];
+  const drawn:{index:number;at:number}[]=[],cycles:{at:number;lastDrawAt:number;count:number}[]=[];
+  const checkpoints=new Map<number,number>();let now=0;
+  const playback=createFramePlayback({
+    loadFrame:async(index:number)=>({index,close(){}}),
+    drawFrame:(frame,index)=>{assert.equal(frame.index,index);drawn.push({index,at:now});},
+    onSignal:signal=>{if(signal==='first-cycle-complete'){const last=drawn.at(-1);assert.ok(last);cycles.push({at:now,lastDrawAt:last.at,count:drawn.length});}},
+  });
+  try{
+    for(const stamp of stamps){
+      for(let turn=0;turn<12;turn++)await Promise.resolve();
+      const previousDrawCount=drawn.length;now=stamp;const state=playback.tick(stamp,true);
+      checkpoints.set(stamp,state.currentFrame);
+      assert.ok(drawn.length-previousDrawCount<=1,'a large recorded RAF gap cannot skip source frames or draw twice');
+      assert.ok(state.maxResidentFrames<=3);assert.ok(state.maxInFlight<=1);
+      assert.ok(state.residentFrames.length+(state.inFlight===null?0:1)<=3);
+    }
+    assert.equal(checkpoints.get(2085.7),45,'a genuine 0.066ms shortfall after the existing 0.2ms allowance still waits');
+    assert.equal(checkpoints.get(2219.1),50,'the existing 0.2ms normal allowance includes its mathematical equality boundary');
+    assert.equal(checkpoints.get(2619.1),62,'accumulated binary rounding must not add a second whole RAF delay');
+    assert.deepEqual(drawn.slice(0,68).map(value=>value.index),Array.from({length:68},(_unused,index)=>index));
+    assert.deepEqual(drawn.map(value=>value.index),Array.from({length:drawn.length},(_unused,index)=>index%68));
+    assert.equal(cycles.length,1);const completed=cycles[0],first=drawn[0];assert.ok(completed&&first);
+    assert.equal(completed.count,68,'the complete-cycle signal follows all 68 original source draws');
+    assert.ok(completed.at-completed.lastDrawAt+0.000001>=1000/30,'normal deadline rounding never changes the strict final dwell');
+    assert.ok(completed.at-first.at>=68000/30,'no floating-point fix can shorten the complete visible source period');
+    assert.ok((playback.snapshot().firstCycleActiveMs??0)>=68000/30);
+  }finally{playback.dispose();}
+});

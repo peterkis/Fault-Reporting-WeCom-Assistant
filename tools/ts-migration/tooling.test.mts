@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync,spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, lstatSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -9,7 +9,7 @@ import { build,buildSyntaxEvidence } from './build.mjs';
 import { verifyArtifact,runtimeOutputInventory } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles,runNode,git as runGit,hash,record } from './common.mjs';
 import {checkCompiledSyntax} from './syntax-check.mjs';
-import {typecheckWeb} from './web.mjs';
+import {typecheckWeb,finalizeDesktopLogin} from './web.mjs';
 import {ownedSpawnSync} from './owned-process.mjs';
 import {cssGate} from './gate.mjs';
 
@@ -437,5 +437,57 @@ test('direct syntax API excludes parse coverage and preserves actual execution c
  }finally{
   if(prior===undefined)delete process.env.NODE_V8_COVERAGE;else process.env.NODE_V8_COVERAGE=prior;
   assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-direct-syntax-coverage-'));rmSync(root,{recursive:true,force:true});
+ }
+});
+
+
+test('desktop login environment finalizer binds one identity payload and rejects missing extra sidecar or drifted assets',()=>{
+ const parent=realpathSync(tmpdir()),root=mkdtempSync(path.join(parent,'login-env-'));
+ const sourceRelative='app/pc-admin/src/login/assets',source=path.join(root,sourceRelative);
+ const asset='assets/login-environment-v1-Fixture.pmrem',payloadName='login-environment-v1.pmrem',metadataName='login-environment-v1.manifest.json';
+ const expectedHash='dfe29d470a36a2cb171559d79437ad2ab95478d7a94a42037188c6f0005bec3b';
+ const sourcePayload=path.join(original,sourceRelative,payloadName),sourceMetadata=path.join(original,sourceRelative,metadataName);
+ const metadataFile=path.join(source,metadataName);
+ const fixture=(name:string)=>{
+  const output=path.join(root,name);mkdirSync(path.join(output,'.vite'),{recursive:true});mkdirSync(path.join(output,'assets'));
+  copyFileSync(sourceMetadata,metadataFile);copyFileSync(path.join(source,payloadName),path.join(output,asset));
+  writeFileSync(path.join(output,'assets/login-Fixture.js'),'export const loginFixture=true;\n');
+  writeFileSync(path.join(output,'.vite/manifest.json'),JSON.stringify({'src/login/main.ts':{file:'assets/login-Fixture.js',isEntry:true,assets:[asset]}})+'\n');
+  return output;
+ };
+ const changeMetadata=(change:(metadata:Record<string,unknown>)=>void)=>{
+  const parsed:unknown=JSON.parse(readFileSync(metadataFile,'utf8')),metadata=record(parsed);change(metadata);writeFileSync(metadataFile,JSON.stringify(metadata)+'\n');
+ };
+ try{
+  mkdirSync(source,{recursive:true});copyFileSync(path.join(original,'package-lock.json'),path.join(root,'package-lock.json'));copyFileSync(sourcePayload,path.join(source,payloadName));
+  const payload=readFileSync(path.join(source,payloadName));assert.equal(payload.length,880178);assert.equal(hash(payload),expectedHash);
+  const output=fixture('valid');finalizeDesktopLogin(root,output);
+  assert.equal(hash(readFileSync(path.join(output,asset))),expectedHash);
+  const parsed:unknown=JSON.parse(readFileSync(path.join(output,'.vite/manifest.json'),'utf8'));
+  const representations=record(record(parsed)['src/login/main.ts']).loginRepresentations;
+  assert.ok(Array.isArray(representations));const entries=representations.map((entry:unknown)=>record(entry));
+  assert.deepEqual(entries.filter(entry=>entry.source===asset),[{file:asset,source:asset,encoding:'identity',bytes:880178,sha256:expectedHash}]);
+  assert.deepEqual(entries.filter(entry=>entry.source==='assets/login-Fixture.js').map(entry=>entry.encoding).sort(),['br','gzip','identity']);
+  assert.deepEqual(readdirSync(path.join(output,'assets')).sort(),[asset.slice(7),'login-Fixture.js','login-Fixture.js.br','login-Fixture.js.gz'].sort());
+  let totalBytes=0;for(const entry of entries){const bytes=entry.bytes;assert.ok(typeof bytes==='number'&&bytes>=0&&bytes<=4*1024*1024);totalBytes+=bytes;}assert.ok(totalBytes<=16*1024*1024);
+  const cases:ReadonlyArray<{name:string;mutate:(output:string)=>void;error:RegExp}>=[
+   {name:'missing',mutate:out=>rmSync(path.join(out,asset)),error:/^DESKTOP_LOGIN_ENVIRONMENT_MISSING$/u},
+   {name:'extra',mutate:out=>copyFileSync(path.join(source,payloadName),path.join(out,'assets/login-environment-v1-Extra.pmrem')),error:/^DESKTOP_LOGIN_ENVIRONMENT_LIMIT$/u},
+   {name:'sidecar',mutate:out=>writeFileSync(path.join(out,asset+'.gz'),'unexpected sidecar'),error:/^DESKTOP_LOGIN_BUILD_OUTPUT_INVALID$/u},
+   {name:'bytes',mutate:out=>{const damaged=Buffer.from(payload);damaged.writeUInt8(damaged.readUInt8(0)^1,0);writeFileSync(path.join(out,asset),damaged);},error:/^DESKTOP_LOGIN_ENVIRONMENT_PAYLOAD_DRIFT$/u},
+   {name:'metadata',mutate:()=>changeMetadata(metadata=>{record(metadata.decoded).width=1;}),error:/^DESKTOP_LOGIN_ENVIRONMENT_METADATA_INVALID$/u},
+   {name:'version',mutate:()=>changeMetadata(metadata=>{metadata.version=2;}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u},
+   {name:'three',mutate:()=>changeMetadata(metadata=>{record(metadata.engine).version='0.186.2';}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u},
+   {name:'recipe',mutate:()=>changeMetadata(metadata=>{record(metadata.generator).buildEnvironmentBodySha256='0'.repeat(64);}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u}
+  ];
+  for(const scenario of cases){const out=fixture(scenario.name);scenario.mutate(out);assert.throws(()=>finalizeDesktopLogin(root,out),error=>error instanceof Error&&scenario.error.test(error.message),scenario.name);}
+ }finally{
+  assert.equal(path.dirname(root),parent);assert.ok(path.basename(root).startsWith('login-env-'));
+  // Refuse cleanup if this owned tree acquired any symlink/junction or escaped its canonical parent.
+  const inspect=(directory:string):void=>{
+   assert.equal(lstatSync(directory).isSymbolicLink(),false);assert.equal(realpathSync(directory),path.resolve(directory));
+   for(const name of readdirSync(directory)){const file=path.join(directory,name),stat=lstatSync(file);assert.equal(stat.isSymbolicLink(),false);if(stat.isDirectory())inspect(file);else assert.ok(stat.isFile());}
+  };
+  inspect(root);rmSync(root,{recursive:true,force:true});
  }
 });

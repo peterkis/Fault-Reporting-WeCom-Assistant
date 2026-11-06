@@ -27,7 +27,7 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 启动状态分别记录当前导航代际、播放状态、首帧、`firstPlaybackComplete`、当前场景、窗口活动状态和`covering/releasing/released`阶段。0.1.18正常交接须当前场景可呈现、窗口可见且未最小化/锁定/休眠、真实首遍`first-cycle-complete`三者同时成立。首遍先结束则继续同一帧序列循环；之后当前场景准备完成可在循环中途交接。播放器从创建到交接始终是同一个Canvas实例，不在远端dom-ready重建。二维码续期、OAuth回调、页内导航、重试和二次启动唤醒均不重新要求首遍。新的完整文档导航只失效旧场景代际，保留已完成首播；旧代际ready或淡出完成不能交接新文档。
 
-本地Canvas使用原片派生的540×540、30fps、68帧无损WebP，按原比例contain展示。只驻留当前和后两帧，并顺序执行一个解码任务，淘汰与销毁时释放ImageBitmap；不预解码整段、不用巨型图集、不启动MP4解码器回退。rAF只在帧变化或尺寸变化时绘制，首遍须全部68帧按序成功绘制，并在活跃绘制回调中确认末帧停留和源周期时长；资源不足时停留并延长，不跳帧追赶。首绘、playing、waiting、帧加载/解码失败、Canvas不可用和停滞分别可诊断。renderer和主进程分别按有效可见时间累计8秒故障预算；脚本/preload未启动或无响应也有主进程出口。故障定时器只进入异常回退，不设置播放完成。窗口隐藏、最小化、锁定、休眠时暂停，恢复后续播；document.hidden另外暂停renderer故障钟，原生事件和页面可见性不能互相替代。关闭/收起立即走既有窗口与托盘生命周期。
+本地Canvas使用原片派生的540×540、30fps、68帧无损WebP，按原比例contain展示。只驻留当前和后两帧，并顺序执行一个解码任务；`image.decode()`后直接绘制同一HTMLImageElement，避免再创建一份ImageBitmap。帧句柄close幂等清除src和回调，淘汰、失败、销毁及迟到解码均释放其拥有的图片引用；Chromium缓存的实际释放仍以进程测量为准。不预解码整段、不用巨型图集、不启动MP4解码器回退。rAF只在帧变化或尺寸变化时绘制，首遍须全部68帧按序成功绘制，并在活跃绘制回调中确认末帧停留和源周期时长；资源不足时停留并延长，不跳帧追赶。首绘、playing、waiting、帧加载/解码失败、Canvas不可用和停滞分别可诊断。renderer和主进程分别按有效可见时间累计8秒故障预算；脚本/preload未启动或无响应也有主进程出口。故障定时器只进入异常回退，不设置播放完成。窗口隐藏、最小化、锁定、休眠时暂停，恢复后续播；document.hidden另外暂停renderer故障钟，原生事件和页面可见性不能互相替代。关闭/收起立即走既有窗口与托盘生命周期。
 
 播放异常保留明确原因并允许进入已准备的登录场景或现有可操作恢复界面。所有桌面层默认完整动效，不因系统媒体查询自动减动；仅显式`--wecom-reduced-motion`使用静态备用并以独立`reduced-motion`退出播放约束，保留`firstPlaybackComplete=false`，不修改Windows全局设置。资源错误、场景超时与正常播完分开报告。交接只发生一次，淡出后释放覆盖视图、位图及其监听器，不常驻额外播放器进程。
 
@@ -39,7 +39,11 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 显式减动备用模式的工牌采用直接操纵：静止时只按需重绘，拖动时跟手，松手立即按已选正反面挂稳，点击即时翻面；隐藏或取消抓取后也挂稳，恢复只重绘静态姿态。迟到版本、纹理及窗口尺寸仍须产生真实重绘，静态尺寸变化不能把背面强制翻回正面或重建iframe。此备用分支不等待物理自然收敛，不以定时器强停运动；默认完整动效继续原物理与入场规则。
 
-挂绳GPU准备保留shader诊断，但不在首次使用时同步等待编译结果。支持`KHR_parallel_shader_compile`时，先对同一PMREM实例及相同环境参数做compile-only预遍历，非阻塞等待程序完成，再执行真实环境生成；主场景在最终环境、灯光、材料、纹理和窗口尺寸配置后同样预编译。只有后续实际WebGL/CSS3D首帧成功、host连接且context/生命周期仍有效时，才调用原onFrontReady创建官方面板。预遍历及编译Promise不能单独当作scene-ready。无扩展时保持原同步行为，不自动减动；异常、15秒回退和取消会终止轮询并释放临时目标，且在program销毁前显式标记删除尚未首用的shader句柄。Renderer状态按每个同步pass分别恢复，不能跨await用旧快照覆盖窗口resize。
+挂绳使用从原固定八平面灯光、256 cubeSize、0.035 sigma生成的环境贴图缓存，保留原材质、几何、纹理和最终实际首绘。缓存为880178字节gzip应用数据，解压后6291456字节768×1024 RGBA半浮点位串；并非图片降采样。读取仅限同源固定构建URL，拒绝重定向、非200、错误MIME、HTTP Content-Encoding、超限及压缩/原始双哈希不符；Three版本或recipe变化必须重烘焙。原生解压不可用、资源错误沿原asset-failed切换全新平面扫码意图并给出原因，不在finally伪造成功。CPU数据、DataTexture和WebGL对象沿同一生命周期释放；清理时先解绑renderer状态再销毁，不能把库级共享DFG_LUT误认作应用贴图泄漏。
+
+主场景保留shader诊断及`KHR_parallel_shader_compile`取消等待；完成最终参数的compile与完成状态确认后，在任何真实纹理上传/绘制前通过公开program接口缓存uniform/attribute反射，避免首用查询排在GPU工作之后。只有实际WebGL/CSS3D首帧成功、host连接且context/生命周期仍有效时，才调用原onFrontReady创建官方面板。无扩展保留同步兼容路径；原15秒回退、context loss和取消规则不变。
+
+固定Shaders 4.0.5背景在锁帧和实际尺寸准备后，通过公开TypeGPU pipeline.initAsync调用真实native异步编译。同步构建探针暂时观察root factory，原receiver、descriptor和返回pipeline保持；factory在任何await前恢复。一次MessageChannel task让同步WGSL准备离开sizing rAF的微任务阶段，不承诺该时刻已经完成屏幕呈现。pending探针不算ready；原core成功绘制完整三层后才自然onReady，30fps和550000像素预算不变。探针可能产生库的pending诊断，不能吞掉其他shader错误。此适配依赖锁定版本的调用顺序，升级须重验；后台/离线/尺寸改变会重新核验，取消、8秒背景回退与销毁阻止迟到提交。原生编译任务本身不可取消，不能声称卸载瞬间驱动缓存已全部释放。
 
 启动速度与稳态资源测量分开：性能夹具人为挂起首响应10秒、首帧后采样，不能用来推断点击到登录时延。时延对照必须包含建立工作树之前的旧客户端+旧页面，首响应不延迟，从进程spawn开始分别记录窗口、GET、DOM、prepared、真实首遍、presented及可见页面；fresh profile与同origin/profile热缓存单列。正常视频路径仍至少播放完整一遍，不能用缩短时长或补帧伪造消除GPU空档。
 
@@ -65,7 +69,9 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 仅这个小Canvas以`alpha:false, willReadFrequently:true`请求软件backing，不关闭整个Electron窗口的GPU能力。原生对照中，三槽位图即使全部正确close，默认加速Canvas仍产生较大的GPU进程私有内存增量；软件backing候选须重新测CPU与卡顿，不能把JS池上限当作Chromium缓存上限。该选项是实现提示，其他硬件的收益不作预先保证；接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)。
 
-rAF时间戳存在有限精度。正常换帧deadline允许0.2ms量化容差，并保留提前绘制后的微小负相位，避免把约33.3ms误判成不足一帧而形成50/16ms交替；这不放宽末帧实际驻留或首遍源最短时长。暂停、解码等待与长回调间隔仍不产生快进债。纯时钟仿真用于回归量化问题，不能替代真实原生绘制间隔测量。
+rAF时间戳存在有限精度。正常换帧deadline允许0.2ms量化容差，并以1纳秒算术裕量包含二进制舍入后的相等边界；保留提前绘制后的微小负相位，避免把约33.3ms误判成不足一帧而形成50/16ms交替。这不扩大0.2ms展示容差，不放宽末帧实际驻留或首遍源最短时长。暂停、解码等待与长回调间隔仍不产生快进债。实际native时钟回放覆盖相等边界与真实不足，不能替代原生绘制间隔测量。诊断DOM只在绘制/播放状态变化时发布，预解码完成不重复写13个属性；测试同时读取单调峰值，不能因少一次DOM发布漏检三帧/单任务限制。
+
+性能样本须检查profile路径。Windows本轮长路径已真实导致DawnGraphiteCache打开失败；短profile仅修正测试环境，不能据此抹去旧卡顿。采样进度输出会增加同机应用活动，安静输出到原件的附加控制与旧轮次分别记账，不扣observer成本。固定CSS/MP4/Canvas三组、相同Electron/窗口/场景、至少三轮交替；控制等待与正常准备/交接分开测量，保留所有超100ms停顿和原门槛FAIL。功能fixture使用明确无二维码的neutral provider Document隔离背景结果，受控SDK失败与真实扫码分别记录。
 
 ## 几何与准备态取样
 

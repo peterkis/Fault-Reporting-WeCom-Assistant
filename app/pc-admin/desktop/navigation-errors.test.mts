@@ -24,7 +24,7 @@ function installFrameProbe(stage:string,fault:FrameFault='normal'){
     window.__startupFrameObservations=[];window.__observedStartupCycles=0;window.__maxResidentFrames=0;window.__maxInFlight=0;
     new MutationObserver(()=>{const data=document.body.dataset,index=Number(data.frameIndex),observations=window.__startupFrameObservations;
       if(Number.isInteger(index)&&index>=0&&observations.at(-1)?.index!==index)observations.push({index,at:performance.now(),activeMs:Number(data.activeMs)});
-      window.__observedStartupCycles=Math.max(window.__observedStartupCycles,Number(data.cycleCount)||0);window.__maxResidentFrames=Math.max(window.__maxResidentFrames,Number(data.residentFrames)||0);window.__maxInFlight=Math.max(window.__maxInFlight,Number(data.inFlight)||0);
+      window.__observedStartupCycles=Math.max(window.__observedStartupCycles,Number(data.cycleCount)||0);window.__maxResidentFrames=Math.max(window.__maxResidentFrames,Number(data.residentFrames)||0,Number(data.maxResidentFrames)||0);window.__maxInFlight=Math.max(window.__maxInFlight,Number(data.inFlight)||0,Number(data.maxInFlight)||0);
     }).observe(document.body,{attributes:true});
     ${fault==='canvas-unavailable'?'HTMLCanvasElement.prototype.getContext=()=>null;':''}
     ${fault==='decode-failed'?'HTMLImageElement.prototype.decode=()=>Promise.reject(new DOMException("Synthetic bitmap decode failure","EncodingError"));':''}

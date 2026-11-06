@@ -53,7 +53,9 @@ export function createFramePlayback<T extends Frame>(options:FramePlaybackOption
     if(delta>=FRAME_DURATION_MS*2||waiting)budgetMs=Math.min(budgetMs,FRAME_DURATION_MS);
     // rAF timestamps can be quantized to 0.1ms; this tolerance applies only to
     // normal deadlines, leaving the final dwell and source-duration checks strict.
-    if(currentFrame>=0&&budgetMs+0.2<FRAME_DURATION_MS)return snapshot();
+    // A nanosecond arithmetic margin includes equality despite binary rounding;
+    // it does not change the existing 0.2ms presentation allowance.
+    if(currentFrame>=0&&budgetMs+0.2+0.000001<FRAME_DURATION_MS)return snapshot();
     if(currentFrame===FRAME_COUNT-1&&!cycleSettled){
       if(heldMs+0.000001<FRAME_DURATION_MS||!firstCycleComplete&&activeMs<CYCLE_DURATION_MS)return snapshot();
       cycleSettled=true;cycleCount++;

@@ -1,11 +1,50 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {copyFile,lstat,mkdir,mkdtemp,readFile,realpath,rm,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
 import {createServer,request as nativeRequest} from 'node:http';
-import {brotliDecompressSync,gunzipSync} from 'node:zlib';
+import {brotliCompressSync,brotliDecompressSync,gunzipSync,gzipSync} from 'node:zlib';
 import {setTimeout as delay} from 'node:timers/promises';
 import {renderEmbeddedLogin,embeddedLoginHeaders,serveEmbeddedLoginAsset} from '../app/server/src/workbench-embedded-login.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
-import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,loginReducedManualScript,readReducedManualSnapshot,type LoginGpuFaultSnapshot,type ReducedManualSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
+import {createNeutralProviderFixture,backdropPipelineScript,readBackdropPipelineSnapshot,type BackdropPipelineSnapshot,type BackdropPipelineMode} from './helpers/desktop-login-backdrop-pipeline-fixture.mjs';
+import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,loginReducedManualScript,readReducedManualSnapshot,loginEnvironmentFaultModes,loginEnvironmentFaultScript,readLoginEnvironmentFaultSnapshot,type LoginEnvironmentFaultSnapshot,type LoginGpuFaultSnapshot,type ReducedManualSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
+
+test('compiled embedded login rejects altered binary representations and retains original resource budgets',{timeout:30_000},async context=>{
+ const parent=path.resolve('.local/electron/temp');await mkdir(parent,{recursive:true});
+ const cases=['valid','unknown-binary','two-environments','environment-encoding','missing-environment','length-drift','hash-drift','asset-budget','total-budget','code-budget','font-budget'] as const;
+ for(const mode of cases)await context.test(mode,async()=>{
+  const owned=await mkdtemp(path.join(parent,'desktop-env-assets-'));
+  try{
+   const moduleRoot=path.join(owned,'app/server/src'),assetRoot=path.join(owned,'web/desktop-login');await mkdir(moduleRoot,{recursive:true});await mkdir(path.join(assetRoot,'.vite'),{recursive:true});await mkdir(path.join(assetRoot,'assets'),{recursive:true});
+   for(const file of ['workbench-embedded-login.mjs','static-encoding.mjs']){const source=new URL('../app/server/src/'+file,import.meta.url),destination=path.join(moduleRoot,file);await copyFile(source,destination);assert.deepEqual(await readFile(destination),await readFile(source),'the fixture executes unchanged compiled server bytes');}
+   const files=new Map<string,Buffer>(),representations:{file:string;source:string;encoding:'identity'|'gzip'|'br';bytes:number;sha256:string}[]=[];
+   const put=(file:string,body:Buffer,compress=false)=>{files.set(file,body);representations.push({file,source:file,encoding:'identity',bytes:body.length,sha256:createHash('sha256').update(body).digest('hex')});if(compress)for(const [encoding,suffix,value]of [['gzip','.gz',gzipSync(body)],['br','.br',brotliCompressSync(body)]] as const){files.set(file+suffix,value);representations.push({file:file+suffix,source:file,encoding,bytes:value.length,sha256:createHash('sha256').update(value).digest('hex')});}};
+   const dependentImports:string[]=[];const environment='assets/login-environment-v1-Cache123.pmrem',entry={file:'assets/login-Ab123.js',isEntry:true,assets:[environment],imports:dependentImports,loginRepresentations:representations};const manifest:Record<string,unknown>={'src/login/main.ts':entry};
+   put(entry.file,Buffer.from('export const fixture="SYNTHETIC_EMBEDDED_LOGIN_ASSET";'),true);put(environment,Buffer.from('SYNTHETIC_IDENTITY_GZIP_PAYLOAD'));
+   const env=representations.find(item=>item.source===environment);assert.ok(env);
+   if(mode==='unknown-binary'){entry.assets.push('assets/arbitrary.pmrem');put('assets/arbitrary.pmrem',Buffer.from('PRIVATE_UNSUPPORTED_BINARY'));}
+   if(mode==='two-environments'){entry.assets.push('assets/login-environment-v1-Cache456.pmrem');put('assets/login-environment-v1-Cache456.pmrem',Buffer.from('SECOND_ENVIRONMENT'));}
+   if(mode==='environment-encoding'){env.encoding='gzip';env.file=environment+'.gz';files.set(env.file,files.get(environment)??Buffer.alloc(0));}
+   if(mode==='missing-environment')representations.splice(representations.indexOf(env),1);
+   if(mode==='length-drift')files.set(environment,Buffer.concat([files.get(environment)??Buffer.alloc(0),Buffer.from([0])]));
+   if(mode==='hash-drift')files.set(environment,Buffer.alloc(env.bytes,1));
+   if(mode==='asset-budget')env.bytes=4*1024*1024+1;
+   if(mode==='total-budget'||mode==='font-budget')for(let index=0;index<(mode==='total-budget'?9:129);index++){const file='assets/noto-sans-sc-'+index+'-wght-normal-Font'+index+'.woff2';entry.assets.push(file);put(file,Buffer.alloc(mode==='total-budget'?2*1024*1024:4,index));}
+   if(mode==='code-budget')for(let index=0;index<32;index++){const key='src/extra-'+index+'.ts',file='assets/extra-'+index+'-Extra123.js';entry.imports.push(key);manifest[key]={file};put(file,Buffer.from('export const extra='+index+';'),true);}
+   for(const [file,body]of files)await writeFile(path.join(assetRoot,file),body);
+   await writeFile(path.join(assetRoot,'.vite/manifest.json'),JSON.stringify(manifest));await writeFile(path.join(assetRoot,'asset-inventory.json'),JSON.stringify(['.vite/manifest.json',...files.keys()]));
+   const copied:typeof import('../app/server/src/workbench-embedded-login.mjs')=await import(pathToFileURL(path.join(moduleRoot,'workbench-embedded-login.mjs')).href);
+   const result=()=>copied.renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.asset-inventory',issuedEpochMs:0,expiresEpochMs:300_000,publicOrigin:'https://synthetic.invalid'});
+   if(mode==='valid')assert.match(await result(),/<script type="module" src="\/workbench\/desktop\/assets\/login-Ab123\.js"/u);
+   else{const expected={'unknown-binary':'LOGIN_FONT_INVALID','two-environments':'LOGIN_ENVIRONMENT_LIMIT','environment-encoding':'LOGIN_REPRESENTATION_ENCODING_INVALID','missing-environment':'LOGIN_REPRESENTATIONS_INVALID','length-drift':'LOGIN_REPRESENTATION_DRIFT','hash-drift':'LOGIN_REPRESENTATION_DRIFT','asset-budget':'LOGIN_REPRESENTATION_INVALID','total-budget':'LOGIN_REPRESENTATION_DRIFT','code-budget':'LOGIN_ASSET_LIMIT','font-budget':'LOGIN_ASSET_LIMIT'}[mode];await assert.rejects(result(),{message:expected});}
+  }finally{
+   assert.equal(path.dirname(owned),parent);assert.match(path.basename(owned),/^desktop-env-assets-[A-Za-z0-9]+$/u);assert.equal((await lstat(owned)).isSymbolicLink(),false);assert.equal(path.dirname(await realpath(owned)),await realpath(parent));await rm(owned,{recursive:true,force:true});
+  }
+ });
+});
 
 test('compiled login prepares once under the native cover, presents the same iframe and exposes initializer/compatibility recovery',{timeout:90_000},async()=>{
  let origin='',generation=0;
@@ -86,9 +125,9 @@ for(const mode of loginGpuFaultModes)test('compiled login GPU preparation '+mode
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:loginGpuFaultScript(mode)});
   await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
   if(mode==='abort'){
-   await browser.waitFor('window.__loginGpuFault?.completionQueries>=2&&window.__loginGpuFault.framebuffersCreated>=2');
+   await browser.waitFor('window.__loginGpuFault?.completionQueries>=2&&window.__loginGpuFault.environmentDigestSettled===2');
    const before=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
-   assert.equal(before.khrAvailable,true,'async cancellation must reach the actual KHR capability');assert.equal(before.iframeCreates,0);assert.equal(before.preparedCalls.length,0);
+   assert.equal(before.khrAvailable,true,'async cancellation must reach the actual KHR capability');assert.equal(before.environmentObjectsCreated,1);assert.equal(before.environmentObjectsDisposed,0);assert.equal(before.environmentCpuBytes,6291456);assert.equal(before.environmentCpuHalfWords,3145728);assert.equal(before.environmentUploads,0,'compile-only has not used a native environment texture yet');assert.equal(before.iframeCreates,0);assert.equal(before.preparedCalls.length,0);
    // Observe cleanup in the live document, then independently navigate to verify
    // a trusted pagehide and idempotent disposal. Neither action reports prepared.
    await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));");
@@ -98,7 +137,7 @@ for(const mode of loginGpuFaultModes)test('compiled login GPU preparation '+mode
    assertLoginGpuFaultReleased(settled);assert.equal(settled.iframeCreates,0);assert.equal(settled.preparedCalls.length,0);
    await browser.command('Page.navigate',{url:origin+'/done'});await browser.waitFor('location.pathname==="/done"');
    for(let i=0;i<20&&!proofs.some(value=>value.trustedPagehide);i++)await delay(25);
-   assert.ok(proofs.some(value=>value.trustedPagehide&&value.targetFramebuffersLive===0&&value.pendingPollTimers===0),'actual navigation confirms the cancelled scene stayed disposed');
+   assert.ok(proofs.some(value=>value.trustedPagehide&&value.prototypeRestored&&value.environmentObjectsDisposed===1&&value.environmentCpuBytes===0&&value.managedTexturesLive===0&&value.targetFramebuffersLive===0&&value.pendingPollTimers===0),'actual navigation confirms the cancelled scene stayed disposed');
    console.log('LOGIN_GPU_PREPARATION_FAULT',JSON.stringify({mode,before,after,settled,proofs}));
   }else{
    await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.querySelector("#wecom-panel iframe")');
@@ -134,6 +173,102 @@ for(const mode of loginGpuFaultModes)test('compiled login GPU preparation '+mode
  }finally{
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);
  }
+});
+
+// Asset faults are independent of the original five shader/lifecycle modes.
+// The provider is still blocked; these assertions say nothing about QR rendering.
+for(const mode of loginEnvironmentFaultModes)test('compiled login environment asset '+mode,{timeout:90_000},async()=>{
+ const inventory:unknown=JSON.parse(await readFile(new URL('../web/desktop-login/asset-inventory.json',import.meta.url),'utf8'));assert.ok(Array.isArray(inventory));
+ const environments=inventory.filter((value:unknown):value is string=>typeof value==='string'&&/^assets\/login-environment-v1-[A-Za-z0-9_-]+\.pmrem$/u.test(value));assert.equal(environments.length,1);const environmentFile=environments[0];assert.ok(environmentFile);
+ const payload=await readFile(new URL('../web/desktop-login/'+environmentFile,import.meta.url));assert.equal(payload.length,880178);
+ const assetPath='/workbench/desktop/'+environmentFile;
+ let origin='',generation=0,assetRequests=0,cancelledResponses=0,fixtureFailure:unknown;const proofs:LoginGpuFaultSnapshot[]=[],environmentProofs:LoginEnvironmentFaultSnapshot[]=[];
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);
+  if(['/gpu-proof','/environment-proof'].includes(url.pathname)&&request.method==='POST'){
+   const chunks:Buffer[]=[];let bytes=0;for await(const part of request){const chunk:unknown=part;assert.ok(Buffer.isBuffer(chunk));bytes+=chunk.length;assert.ok(bytes<16_000);chunks.push(chunk);}const value:unknown=JSON.parse(Buffer.concat(chunks).toString());
+   if(url.pathname==='/gpu-proof')proofs.push(readLoginGpuFaultSnapshot(value));else environmentProofs.push(readLoginEnvironmentFaultSnapshot(value));response.writeHead(204);response.end();return;
+  }
+  if(url.pathname===assetPath){
+   assetRequests++;
+   if(mode==='missing'){response.writeHead(404,{'content-type':'text/plain'});response.end('SYNTHETIC_ENVIRONMENT_MISSING');return;}
+   if(mode==='mime'){response.writeHead(200,{'content-type':'text/plain','content-length':String(payload.length)});response.end(payload);return;}
+   if(mode==='encoding'){response.writeHead(200,{'content-type':'application/octet-stream','content-encoding':'gzip','content-length':String(payload.length)});response.end(payload);return;}
+   if(mode==='corrupt'){const corrupt=Buffer.from(payload),index=Math.floor(corrupt.length/2),byte=corrupt[index];assert.equal(typeof byte,'number');corrupt[index]=(byte??0)^1;response.writeHead(200,{'content-type':'application/octet-stream','content-length':String(corrupt.length)});response.end(corrupt);return;}
+   if(mode==='truncated'){response.writeHead(200,{'content-type':'application/octet-stream','content-length':String(payload.length-8)});response.end(payload.subarray(0,-8));return;}
+   if(mode==='compressed-overflow'){response.writeHead(200,{'content-type':'application/octet-stream'});response.end(Buffer.concat([payload,Buffer.from([0]) ]));return;}
+   if(mode==='abort-read'){response.once('close',()=>{if(!response.writableFinished)cancelledResponses++;});response.writeHead(200,{'content-type':'application/octet-stream','content-length':String(payload.length)});response.write(payload.subarray(0,128));return;}
+  }
+  if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.environment-fault-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;}
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Synthetic environment fault</title>');
+ })().catch(error=>{fixtureFailure??=error;if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_ENVIRONMENT_FAULT_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:loginEnvironmentFaultScript(mode)});await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  if(mode==='abort-read'||mode==='abort-hash'){
+   await browser.waitFor(mode==='abort-read'?'window.__loginEnvironmentFault?.compressedReadBytes===128&&window.__loginEnvironmentFault.activeReads===1':'window.__loginEnvironmentFault?.rawHashNativeFinished===1&&typeof window.__loginEnvironmentFault.releaseHash==="function"');
+   const before=readLoginEnvironmentFaultSnapshot(await browser.evaluate('window.__loginEnvironmentFault.snapshot()'));const beforeGpu=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
+   assert.equal(before.fetches,1);assert.equal(beforeGpu.environmentObjectsCreated,0);assert.equal(beforeGpu.environmentTexturesCreated,0);assert.equal(beforeGpu.iframeCreates,0);assert.equal(beforeGpu.preparedCalls.length,0);
+   if(mode==='abort-hash'){assert.equal(before.rawReadBytes,6291456);assert.equal(beforeGpu.environmentDigestSettled,2);}
+   await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));window.__loginEnvironmentFault.releaseHash?.()");
+   await browser.waitFor('window.__loginEnvironmentFault.activeReads===0&&window.__loginEnvironmentFault.fetchAbortSignals===1&&window.__loginGpuFault.snapshot().prototypeRestored');
+   const after=readLoginEnvironmentFaultSnapshot(await browser.evaluate('window.__loginEnvironmentFault.snapshot()'));await delay(100);const settled=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));
+   if(mode==='abort-read')assert.ok(after.readerCancelCalls>before.readerCancelCalls,'abort cancels the actually pending HTTP stream reader');else{assert.equal(before.activeReads,0);assert.equal(after.hasReleaseHash,false);assert.equal(after.rawHashNativeFinished,1,'a late native hash completes once after disposal');}assert.equal(settled.environmentObjectsCreated,0,'late stream/hash completion after cancellation never constructs the texture');assert.equal(settled.managedTexturesLive,0);assert.equal(settled.programsCreated,0);assert.equal(settled.shadersCreated,0);assert.equal(settled.pendingPollTimers,0);assert.equal(settled.iframeCreates,0);assert.equal(settled.preparedCalls.length,0);
+   if(mode==='abort-read'){for(let index=0;index<20&&cancelledResponses===0;index++)await delay(25);assert.equal(cancelledResponses,1,'the server sees the held HTTP body cancelled');}
+   await browser.command('Page.navigate',{url:origin+'/done'});await browser.waitFor('location.pathname==="/done"');assert.equal(generation,1,'cancelled documents do not create a recovery intent or panel');
+   console.log('LOGIN_ENVIRONMENT_ASSET_ABORT',JSON.stringify({mode,before,beforeGpu,after,settled,assetRequests,cancelledResponses}));
+  }else{
+   await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.querySelector("#wecom-panel iframe")&&document.getElementById("desktop-login")?.dataset.view==="flat"');
+   const prepared=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));assert.equal(generation,2,'bad environment assets recover with a fresh complete flat login intent');assert.equal(prepared.fallback,'asset-failed');assert.equal(prepared.iframeCreates,1);assert.equal(prepared.iframeCount,1);assert.equal(prepared.preparedCalls.length,1);
+   for(let index=0;index<30&&(!proofs.length||!environmentProofs.length);index++)await delay(25);const prior=proofs.find(value=>value.framebuffersCreated>0);assert.ok(prior);const assetProof=environmentProofs.find(value=>value.failure!==null);assert.ok(assetProof,'the failed document supplies the exact diagnostic reason');
+   const expected={missing:'http-status',mime:'mime',encoding:'content-encoding',corrupt:'compressed-integrity',truncated:'compressed-length','compressed-overflow':'compressed-length','decompression-failed':'decompression-failed','raw-overflow':'raw-length','raw-integrity':'raw-integrity','no-decompression':'decompression-unavailable','no-hash':'hash-unavailable'}[mode];assert.equal(assetProof.failure,expected,'the failed document reports the exact closed environment diagnostic');
+   assert.equal(prior.environmentObjectsCreated,0);assert.equal(prior.environmentCpuBytes,0);assert.equal(prior.environmentTexturesCreated,0);assert.equal(prior.managedTexturesLive,0);assert.equal(prior.programsCreated,0);assert.equal(prior.shadersCreated,0);assert.equal(prior.pendingPollTimers,0);assert.equal(prior.targetFramebuffersCreated,0);assert.equal(prior.scratchFramebuffersCreated,3);assert.equal(prior.iframeCreates,0);assert.equal(prior.preparedCalls.length,0);assert.equal(prior.prototypeRestored,true);
+   assert.equal(assetProof.fetches,mode==='no-decompression'?0:1);assert.equal(assetRequests,mode==='no-decompression'?0:1);
+   if(mode==='corrupt'){assert.equal(assetProof.decompressors,0);assert.equal(assetProof.rawReadBytes,0,'the compressed integrity guard rejects corruption before a decoder starts');}
+   if(mode==='compressed-overflow')assert.equal(assetProof.compressedReadBytes,880179,'streamed input exceeds the fixed bound without relying on a content-length header');
+   if(mode==='raw-overflow'){assert.equal(assetProof.decompressors,1);assert.equal(assetProof.rawReadBytes,6291457,'the actual native decoded stream plus injected byte reaches the fixed-size output guard');assert.equal(assetProof.rawHashStarted,0);}
+   if(mode==='raw-integrity'){assert.equal(assetProof.decompressors,1);assert.equal(assetProof.rawReadBytes,6291456);assert.equal(assetProof.rawHashNativeFinished,1);}
+   await browser.evaluate('window.__loginGpuFaultIframe=document.querySelector("#wecom-panel iframe");window.__loginGpuFault.present();window.__loginGpuFault.present()');await browser.waitFor('document.body.dataset.loginScene==="ready"');const presented=readLoginGpuFaultSnapshot(await browser.evaluate('({...window.__loginGpuFault.snapshot(),sameIframe:window.__loginGpuFaultIframe===document.querySelector("#wecom-panel iframe"),retryEnabled:!document.getElementById("retry-login").disabled})'));assert.equal(presented.sameIframe,true);assert.equal(presented.iframeCreates,1);assert.equal(presented.iframeCount,1);assert.equal(presented.preparedCalls.length,1);assert.equal(presented.retryEnabled,true);
+   await browser.waitFor('(()=>{const status=document.getElementById("login-status"),button=document.getElementById("retry-login"),link=document.querySelector(".login-panel-recovery a");if(!status||!button||!link)return false;const s=getComputedStyle(status),r=status.getBoundingClientRect(),b=button.getBoundingClientRect(),l=link.getBoundingClientRect();return status.textContent.includes("工牌画面未能加载，已切换平面扫码")&&s.display!=="none"&&s.visibility==="visible"&&r.width>0&&r.height>0&&!status.closest("[inert]")&&!button.disabled&&b.width>0&&b.height>0&&document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)===button&&link.getAttribute("href")==="/workbench/desktop"&&l.width>0&&l.height>0;})()');
+   assert.equal(await browser.evaluate('document.getElementById("login-status").textContent'),'工牌画面未能加载，已切换平面扫码。如未显示二维码，请重新获取，或使用官方登录页。','asset recovery shows an accurate reason without claiming the provider QR is ready');
+   console.log('LOGIN_ENVIRONMENT_ASSET_FAULT',JSON.stringify({mode,prior,assetProof,prepared,presented,assetRequests}));
+  }
+  if(fixtureFailure)throw fixtureFailure;
+ }catch(error){failure=error;let current:unknown=null;try{current=await browser?.evaluate('({gpu:window.__loginGpuFault?.snapshot(),asset:window.__loginEnvironmentFault?.snapshot()})');}catch{}console.log('LOGIN_ENVIRONMENT_ASSET_FAULT_FAILURE',JSON.stringify({mode,generation,proofs,environmentProofs,assetRequests,current}));}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
+test('compiled login releases the exact first-used environment texture and its CPU pixels without replacing the presented iframe',{timeout:90_000},async()=>{
+ let origin='',generation=0,fixtureFailure:unknown;const proofs:LoginGpuFaultSnapshot[]=[];
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);
+  if(url.pathname==='/gpu-proof'&&request.method==='POST'){const chunks:Buffer[]=[];let bytes=0;for await(const part of request){const chunk:unknown=part;assert.ok(Buffer.isBuffer(chunk));bytes+=chunk.length;assert.ok(bytes<16_000);chunks.push(chunk);}proofs.push(readLoginGpuFaultSnapshot(JSON.parse(Buffer.concat(chunks).toString()) as unknown));response.writeHead(204);response.end();return;}
+  if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.environment-first-use-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;}
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Synthetic environment first use</title>');
+ })().catch(error=>{fixtureFailure??=error;if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_ENVIRONMENT_FIRST_USE_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:loginGpuFaultScript('normal')});await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.querySelector("#wecom-panel iframe")');
+  const before=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));assert.equal(before.view,'lanyard');assert.equal(generation,1);assert.equal(before.khrAvailable,true);assert.ok(before.completionQueries>0);assert.ok(before.draws>0);
+  assert.equal(before.environmentObjectsCreated,1);assert.equal(before.environmentObjectsDisposed,0);assert.equal(before.environmentCpuBytes,6291456);assert.equal(before.environmentCpuHalfWords,3145728);assert.equal(before.environmentTexturesCreated,1);assert.equal(before.environmentTexturesLive,1);assert.equal(before.environmentUploads,1,'the exact 768x1024 HALF_FLOAT payload was uploaded by real GL');assert.equal(before.nativeEnvironmentTexturesChecked,1);assert.equal(before.nativeEnvironmentTexturesLive,1,'native GL positively validates the uploaded texture handle');assert.equal(before.targetFramebuffersCreated,0);assert.equal(before.applicationTexturesCreated,6);assert.equal(before.applicationTexturesDeleted,0);assert.equal(before.nativeApplicationTexturesLive,6);assert.equal(before.dfgTexturesCreated,1);assert.equal(before.dfgTextureBytes,1024);assert.equal(before.dfgCpuObjects,1);assert.equal(before.nativeDfgTexturesLive,1);assert.equal(before.contextDefaultTexturesCreated,4);
+  await browser.evaluate('window.__loginGpuFaultIframe=document.querySelector("#wecom-panel iframe");window.__loginGpuFault.present();window.__loginGpuFault.present()');await browser.waitFor('document.body.dataset.loginScene==="ready"');
+  assert.equal(await browser.evaluate('window.__loginGpuFaultIframe===document.querySelector("#wecom-panel iframe")&&window.__loginGpuFault.iframeCreates===1'),true);
+  await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}))");
+  await browser.waitFor('window.__loginGpuFault.snapshot().environmentObjectsDisposed===1&&window.__loginGpuFault.snapshot().prototypeRestored');
+  const released=readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'));assertLoginGpuFaultReleased(released);assert.equal(released.environmentTexturesCreated,1);assert.equal(released.environmentTexturesDeleted,1);assert.equal(released.nativeEnvironmentTexturesLive,0);
+  const draws=released.draws;await delay(100);assert.equal((readLoginGpuFaultSnapshot(await browser.evaluate('window.__loginGpuFault.snapshot()'))).draws,draws,'disposed animation and native texture never draw again');
+  await browser.command('Page.navigate',{url:origin+'/done'});await browser.waitFor('location.pathname==="/done"');for(let index=0;index<20&&!proofs.some(value=>value.trustedPagehide);index++)await delay(25);assert.ok(proofs.some(value=>value.trustedPagehide&&value.prototypeRestored&&value.environmentTexturesDeleted===1&&value.nativeEnvironmentTexturesLive===0));
+  console.log('LOGIN_ENVIRONMENT_FIRST_USE',JSON.stringify({before,released,proofs}));if(fixtureFailure)throw fixtureFailure;
+ }catch(error){failure=error;}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });
 
 test('compiled embedded login keeps one iframe during badge interaction and renews on view or scale fallback',{timeout:120_000},async()=>{
@@ -173,6 +308,18 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   const fontHead=await raw(fontPath,'br,gzip','HEAD');assert.equal(fontHead.status,200);assert.equal(fontHead.body.length,0);assert.equal(fontHead.headers['content-length'],String(font.body.length));
   assert.equal((await raw(fontPath,'identity;q=0,br,gzip')).status,406);assert.equal((await raw('/workbench/desktop/assets/inter-latin-wght-normal-unmanifested.woff2')).status,404);
   assert.equal((await raw(fontPath+'?raw=1')).status,400);assert.equal((await raw(fontPath+'.br')).status,400);
+  const artifactInventory:unknown=JSON.parse(await readFile(new URL('../web/desktop-login/asset-inventory.json',import.meta.url),'utf8'));
+  assert.ok(Array.isArray(artifactInventory)&&artifactInventory.every((value:unknown)=>typeof value==='string'));
+  const environmentFiles=artifactInventory.filter((value:unknown):value is string=>typeof value==='string'&&/^assets\/login-environment-v1-[A-Za-z0-9_-]+\.pmrem$/u.test(value));
+  assert.equal(environmentFiles.length,1,'only one versioned environment payload belongs to the compiled login inventory');const environmentFile=environmentFiles[0];assert.ok(environmentFile);
+  const environmentPath='/workbench/desktop/'+environmentFile;
+  const environment=await raw(environmentPath,'br,gzip');assert.equal(environment.status,200);assert.equal(environment.headers['content-type'],'application/octet-stream');assert.equal(environment.headers['content-encoding'],undefined,'the gzip payload is HTTP identity to avoid Fetch double decoding');assert.equal(environment.body.length,880178);assert.equal(environment.headers['content-length'],String(environment.body.length));
+  assert.equal(createHash('sha256').update(environment.body).digest('hex'),'dfe29d470a36a2cb171559d79437ad2ab95478d7a94a42037188c6f0005bec3b');
+  const environmentRaw=gunzipSync(environment.body,{maxOutputLength:6291456});assert.equal(environmentRaw.length,6291456);assert.equal(createHash('sha256').update(environmentRaw).digest('hex'),'fd1d0fbaf0ebf04caa87c7f365de90e975372ac1fa7842c79616de3fc8e657ab');
+  const environmentHead=await raw(environmentPath,'br,gzip','HEAD');assert.equal(environmentHead.status,200);assert.equal(environmentHead.body.length,0);assert.equal(environmentHead.headers['content-length'],String(environment.body.length));assert.equal(environmentHead.headers['content-encoding'],undefined);
+  assert.equal((await raw(environmentPath,'identity;q=0,br,gzip')).status,406);
+  for(const suffix of ['.gz','.br','?raw=1'])assert.equal((await raw(environmentPath+suffix,'br,gzip')).status,400,'binary sidecars and query variants are never public paths');
+  assert.equal((await raw('/workbench/desktop/assets/login-environment-v1-unmanifested.pmrem')).status,404);assert.equal((await raw('/workbench/desktop/assets/arbitrary.pmrem')).status,400,'the new binary extension never admits arbitrary assets');
   browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');
@@ -440,4 +587,87 @@ test('explicit reduced-motion fallback draws on demand and uses direct drag, sta
   failure=error;let state:unknown=null;try{state=await browser?.evaluate('window.__demand?.snapshot?.()??null');}catch{/* The failed document may have navigated. */}
   console.log('LOGIN_REDUCED_MANUAL_FAILURE',JSON.stringify({observations,generation,state}));
  }finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
+// The WebGPU calls below are real. Only their Promise delivery is held/rejected
+// in the named faults. Provider networking remains blocked; QR is NOT_RUN.
+for(const scenario of ['native first frame','pipeline failure recovery','pending visibility and resize','pending document teardown'] as const)test('compiled login async backdrop '+scenario,{timeout:90_000},async()=>{
+ const initialMode:BackdropPipelineMode=scenario==='pipeline failure recovery'?'reject':scenario==='pending visibility and resize'?'lifecycle':scenario==='pending document teardown'?'destroy':'normal';
+ let origin='',generation=0,fixtureFailure:unknown;const proofs:BackdropPipelineSnapshot[]=[];
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);
+  if(url.pathname==='/backdrop-pipeline-proof'&&request.method==='POST'){
+   const chunks:Buffer[]=[];let bytes=0;for await(const part of request){const chunk:unknown=part;assert.ok(Buffer.isBuffer(chunk));bytes+=chunk.length;assert.ok(bytes<24_576);chunks.push(chunk);}proofs.push(readBackdropPipelineSnapshot(JSON.parse(Buffer.concat(chunks).toString()) as unknown));response.writeHead(204);response.end();return;
+  }
+  if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.backdrop-pipeline-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;}
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Synthetic backdrop pipeline test</title>');
+ })().catch(error=>{fixtureFailure??=error;if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_BACKDROP_PIPELINE_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ const provider=createNeutralProviderFixture();
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true,socketFactory:provider.socketFactory});assert.ok(browser);const currentBrowser=browser;
+  const snapshot=async()=>readBackdropPipelineSnapshot(await currentBrowser.evaluate('window.__backdropPipeline.snapshot()'));
+  const savedIframe=async()=>{await currentBrowser.waitFor('Boolean(document.querySelector("#wecom-panel iframe"))');await currentBrowser.evaluate('window.__backdropPipeline.savedIframe??=document.querySelector("#wecom-panel iframe")');};
+  const present=async()=>{await savedIframe();await currentBrowser.evaluate('window.__backdropPipeline.present();window.__backdropPipeline.present()');await currentBrowser.waitFor('document.body?.dataset.loginScene==="ready"');const value=await snapshot();assert.equal(value.sameIframe,true);assert.equal(value.iframeCreates,1);assert.equal(value.iframeCount,1);assert.equal(value.prepared.length,1);return value;};
+  const pending=async()=>{await currentBrowser.waitFor('window.__backdropPipeline?.available&&window.__backdropPipeline.asyncRequests>0&&window.__backdropPipeline.nativeFulfilled>0&&window.__backdropPipeline.pendingReturned>0');await savedIframe();const value=await snapshot();assert.equal(value.available,true,'this group needs actual native WebGPU');assert.ok(value.asyncRequests>0);assert.equal(value.returnedFulfilled,0);assert.equal(value.submits,0,'the pending first probe never submits a GPU frame');assert.equal(value.submitsWhilePending,0);assert.equal(value.shaderTransitions,0);assert.equal(value.prepared.length,0);return value;};
+  await browser.command('Network.enable');await provider.install(browser.command);await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:backdropPipelineScript(initialMode)});await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  if(scenario==='native first frame'){
+   const before=await pending();await browser.evaluate('window.__backdropPipeline.releaseAll()');await browser.waitFor('document.body?.dataset.backdrop==="shader"&&document.body.dataset.loginScene==="prepared"');
+   const prepared=await snapshot();assert.equal(prepared.syncRequests,0,'normal background pipeline creation uses the native asynchronous API');assert.equal(prepared.pendingReturned,0);assert.equal(prepared.asyncRejected,0);assert.ok(prepared.submits>0);assert.equal(prepared.submitsWhilePending,0);assert.ok(prepared.firstSubmitSequence>prepared.lastAsyncReturnSequence);assert.equal(prepared.shaderTransitions,1);assert.deepEqual(prepared.prepared,[{version:1,panel:'created',backdrop:'shader'}]);assert.equal(prepared.sameIframe,true);assert.ok(prepared.maxSubmittedPixels>0&&prepared.maxSubmittedPixels<=550_000);
+   await present();await delay(3200);const start=await snapshot(),sampleStart=performance.now();await delay(2200);const sampled=await snapshot(),frequency=(sampled.submits-start.submits)*1000/(performance.now()-sampleStart);assert.ok(frequency>=20&&frequency<=35,'the original 30fps background cap remains: '+frequency);assert.ok(sampled.maxSubmittedPixels<=550_000);assert.equal(sampled.shaderTransitions,1);assert.equal(sampled.prepared.length,1);assert.equal(sampled.sameIframe,true);assert.equal(generation,1);
+   console.log('LOGIN_BACKDROP_ASYNC_NATIVE',JSON.stringify({before,prepared,sampled,frequency}));
+  }else if(scenario==='pipeline failure recovery'){
+   for(const mode of ['reject','held'] as const){
+    if(mode==='held'){const priorOrigin=Number(await browser.evaluate('performance.timeOrigin'));await browser.evaluate('sessionStorage.setItem("backdrop-pipeline-test-mode","held")');await browser.command('Page.reload');await browser.waitFor('performance.timeOrigin!=='+priorOrigin+'&&window.__backdropPipeline?.mode==="held"');await pending();}
+    await browser.waitFor('document.body?.dataset.backdrop==="fallback"&&document.body.dataset.loginScene==="prepared"');await savedIframe();const fallback=await snapshot();assert.equal(fallback.available,true);assert.ok(fallback.asyncRequests>0);assert.equal(fallback.shaderTransitions,0);assert.equal(fallback.fallbackTransitions,1);assert.deepEqual(fallback.prepared,[{version:1,panel:'created',backdrop:'fallback'}]);assert.equal(fallback.reason,mode==='held'?'timeout':'pipeline-async-failed');
+    if(mode==='held')assert.ok(fallback.elapsedMs>=8000,'held compilation exits through the existing eight-second background deadline');else assert.ok(fallback.asyncRejected>0);
+    await browser.evaluate('window.__backdropPipeline.releaseAll();window.__backdropPipeline.twoFrames()');await delay(150);const late=await snapshot();assert.equal(late.backdrop,'fallback');assert.equal(late.shaderTransitions,0);assert.equal(late.submits,0);assert.equal(late.prepared.length,1);assert.equal(late.sameIframe,true);assert.equal(late.iframeCreates,1);assert.equal(await browser.evaluate('document.getElementById("login-backdrop").childElementCount'),0,'late native pipeline completion never remounts a timed-out background');const presented=await present();assert.equal(presented.reason,fallback.reason);console.log('LOGIN_BACKDROP_ASYNC_FALLBACK',JSON.stringify({mode,fallback,late,presented}));
+   }
+   assert.equal(generation,2,'only the explicit full-page reload creates another login intent');
+  }else if(scenario==='pending visibility and resize'){
+   const before=await pending();await browser.evaluate('window.__backdropPipeline.setHidden(true)');await browser.command('Emulation.setDeviceMetricsOverride',{width:1100,height:820,deviceScaleFactor:1,mobile:false});await browser.evaluate('window.__backdropPipeline.releaseAll();window.__backdropPipeline.twoFrames()');await browser.waitFor('window.__backdropPipeline.pendingReturned===0');const hidden=await snapshot();assert.equal(hidden.hidden,true);assert.equal(hidden.submits,0);assert.equal(hidden.shaderTransitions,0);assert.equal(hidden.prepared.length,0);assert.equal(hidden.sameIframe,true);
+   await browser.evaluate('window.__backdropPipeline.setOnline(false);window.__backdropPipeline.setHidden(false)');await browser.command('Emulation.setDeviceMetricsOverride',{width:1000,height:760,deviceScaleFactor:1,mobile:false});await browser.evaluate('window.__backdropPipeline.twoFrames()');const offline=await snapshot();assert.equal(offline.hidden,false);assert.equal(offline.online,false);assert.equal(offline.submits,0);assert.equal(offline.shaderTransitions,0);assert.equal(offline.prepared.length,0);assert.equal(offline.sameIframe,true);
+   await browser.evaluate('window.__backdropPipeline.setOnline(true)');await browser.waitFor('document.body?.dataset.backdrop==="shader"&&document.body.dataset.loginScene==="prepared"');const resumed=await snapshot();assert.equal(resumed.syncRequests,0);assert.equal(resumed.shaderTransitions,1);assert.equal(resumed.prepared.length,1);assert.equal(resumed.sameIframe,true);assert.ok(resumed.canvasWidth*resumed.canvasHeight<=550_000);assert.ok(Math.abs(resumed.canvasWidth/resumed.canvasHeight-1000/760)<.01,'the first real draw uses the latest resized viewport, not the pre-compile dimensions');assert.ok(resumed.maxSubmittedPixels<=550_000);await present();assert.equal(generation,1);console.log('LOGIN_BACKDROP_ASYNC_LIFECYCLE',JSON.stringify({before,hidden,offline,resumed}));
+  }else{
+   const before=await pending();await browser.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));window.__backdropPipeline.releaseAll();window.__backdropPipeline.twoFrames()");await browser.waitFor('window.__backdropPipeline.pendingReturned===0');await browser.evaluate('window.__backdropPipeline.twoFrames()');const disposed=await snapshot();assert.equal(disposed.pageHidden,true);assert.equal(disposed.submits,0);assert.equal(disposed.submitsAfterPagehide,0);assert.equal(disposed.shaderTransitions,0);assert.equal(disposed.prepared.length,0);assert.equal(disposed.iframeCreates,before.iframeCreates);assert.equal(disposed.rafPending,0,'page teardown leaves no continuing production RAF work after pending callbacks drain');
+   await browser.command('Page.navigate',{url:origin+'/done'});await browser.waitFor('location.pathname==="/done"');assert.equal(generation,1);console.log('LOGIN_BACKDROP_ASYNC_DESTROY',JSON.stringify({before,disposed,proofs}));
+  }
+  provider.assertHealthy();console.log('LOGIN_NEUTRAL_PROVIDER_FIXTURE',JSON.stringify(provider.receipt()));if(fixtureFailure)throw fixtureFailure;
+ }catch(error){failure=error;let state:unknown=null;try{state=await browser?.evaluate('window.__backdropPipeline?.snapshot?.()??null');}catch{}console.log('LOGIN_BACKDROP_ASYNC_FAILURE',JSON.stringify({scenario,generation,state,proofs}));}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();provider.dispose();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
+
+// This is an explicit public SDK-message simulation from the owned test page.
+// It does not represent a real provider callback or user authorization.
+test('compiled login SDK onLoginFail exposes an actionable error and renews only on explicit retry',{timeout:90_000},async()=>{
+ let origin='',generation=0,fixtureFailure:unknown;const provider=createNeutralProviderFixture();
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/backdrop-pipeline-proof'){response.writeHead(204);response.end();return;}
+  if(url.pathname==='/workbench/desktop/embedded'){generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.sdk-provider-fail-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;}
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><title>Synthetic SDK callback test</title>');
+ })().catch(error=>{fixtureFailure??=error;if(!response.headersSent)response.writeHead(500);response.end('SYNTHETIC_SDK_CALLBACK_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true,socketFactory:provider.socketFactory});assert.ok(browser);await browser.command('Network.enable');await provider.install(browser.command);await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:backdropPipelineScript('normal')});await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  await browser.waitFor('document.getElementById("desktop-login")?.dataset.loginPanel==="created"&&document.querySelector("#wecom-panel iframe")&&window.__backdropPipeline?.pendingReturned>0');
+  await browser.evaluate('window.__backdropPipeline.savedIframe=document.querySelector("#wecom-panel iframe")');
+  await browser.evaluate(`(()=>{const frame=document.querySelector('#wecom-panel iframe');const data=JSON.stringify({type:'ww-iframe-handle:call',args:{type:'call',name:'onLoginFail',payload:{errCode:'SYNTHETIC_PROVIDER_FAILURE'}}});window.dispatchEvent(new MessageEvent('message',{origin:'https://untrusted.invalid',source:frame.contentWindow,data}));window.dispatchEvent(new MessageEvent('message',{origin:'https://login.work.weixin.qq.com',source:window,data}));})()`);
+  assert.equal(await browser.evaluate('document.getElementById("desktop-login").dataset.loginPanel'),'created','the actual SDK rejects wrong-origin and wrong-source callback messages');
+  await browser.evaluate(`(()=>{const frame=document.querySelector('#wecom-panel iframe');window.dispatchEvent(new MessageEvent('message',{origin:'https://login.work.weixin.qq.com',source:frame.contentWindow,data:JSON.stringify({type:'ww-iframe-handle:call',args:{type:'call',name:'onLoginFail',payload:{errCode:'SYNTHETIC_PROVIDER_FAILURE'}}})}));})()`);
+  await browser.waitFor('document.getElementById("desktop-login")?.dataset.loginPanel==="failed"');await browser.evaluate('window.__backdropPipeline.releaseAll()');await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.body.dataset.backdrop==="shader"');
+  const prepared=readBackdropPipelineSnapshot(await browser.evaluate('window.__backdropPipeline.snapshot()'));assert.deepEqual(prepared.prepared,[{version:1,panel:'failed',backdrop:'shader'}]);assert.equal(prepared.sameIframe,true);assert.equal(prepared.iframeCreates,1);assert.equal(prepared.iframeCount,1);assert.equal(generation,1);assert.equal(await browser.evaluate('Boolean(document.querySelector("#wecom-panel .login-panel-failure"))'),false,'callback failure does not pretend the initializer threw or replace its live iframe');
+  await browser.evaluate('window.__backdropPipeline.present();window.__backdropPipeline.present()');await browser.waitFor('document.body?.dataset.loginScene==="ready"');
+  assert.equal(await browser.evaluate('document.getElementById("login-status").textContent'),'企业微信登录面板未能加载，请重新获取二维码，或使用官方登录页。');
+  await browser.waitFor('(()=>{const status=document.getElementById("login-status"),button=document.getElementById("retry-login"),link=document.querySelector(".login-panel-recovery a");if(!status||!button||!link)return false;const style=getComputedStyle(status),r=status.getBoundingClientRect(),b=button.getBoundingClientRect(),l=link.getBoundingClientRect();return !status.closest("[inert]")&&style.display!=="none"&&style.visibility==="visible"&&r.width>0&&r.height>0&&!button.disabled&&b.width>0&&b.height>0&&document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)===button&&link.getAttribute("href")==="/workbench/desktop"&&l.width>0&&l.height>0;})()');
+  const current=readBackdropPipelineSnapshot(await browser.evaluate('window.__backdropPipeline.snapshot()'));assert.equal(current.sameIframe,true);assert.equal(current.prepared.length,1);assert.equal(current.iframeCreates,1);
+  const previousOrigin=Number(await browser.evaluate('performance.timeOrigin'));const point:unknown=await browser.evaluate('(()=>{const r=document.getElementById("retry-login").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()');assert.ok(point&&typeof point==='object'&&'x'in point&&'y'in point&&typeof point.x==='number'&&typeof point.y==='number');
+  for(const type of ['mousePressed','mouseReleased'])await browser.command('Input.dispatchMouseEvent',{type,x:point.x,y:point.y,button:'left',clickCount:1});await browser.waitFor('performance.timeOrigin!=='+previousOrigin+'&&document.getElementById("desktop-login")?.dataset.loginPanel==="created"&&document.querySelector("#wecom-panel iframe")');assert.equal(generation,2,'only the actionable explicit retry renews the complete login intent');
+  provider.assertHealthy();console.log('LOGIN_SDK_ON_LOGIN_FAIL',JSON.stringify({kind:'SIMULATED_PUBLIC_SDK_MESSAGE_NOT_REAL_PROVIDER',prepared,current,provider:provider.receipt(),retryGeneration:generation}));if(fixtureFailure)throw fixtureFailure;
+ }catch(error){failure=error;let state:unknown=null;try{state=await browser?.evaluate('({pipeline:window.__backdropPipeline?.snapshot(),panel:document.getElementById("desktop-login")?.dataset.loginPanel,status:document.getElementById("login-status")?.textContent,retryDisabled:document.getElementById("retry-login")?.disabled})');}catch{}console.log('LOGIN_SDK_ON_LOGIN_FAIL_FAILURE',JSON.stringify({generation,state}));}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();provider.dispose();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import * as THREE from 'three';
+import {prepareLoginEnvironment,disposeLoginEnvironment,LoginEnvironmentAssetFailure} from './login-environment';
 
 import './Lanyard.css';
 
@@ -50,7 +51,7 @@ export interface LanyardProps {
   viewportFrame?: HTMLElement;
   onFrontReady?: () => void;
   /** Parent chooses a fresh flat-page login; no loaded iframe is moved for fallback. */
-  onFallback?: (reason: 'webgl-unavailable' | 'context-lost') => void;
+  onFallback?: (reason: 'webgl-unavailable' | 'context-lost' | 'asset-failed') => void;
 }
 
 type Settings = Required<Omit<LanyardProps,
@@ -494,120 +495,6 @@ const waitForCompiledPrograms = (renderer: THREE.WebGLRenderer, signal: AbortSig
   });
 };
 
-const buildEnvironment = async (
-  renderer: THREE.WebGLRenderer,
-  signal: AbortSignal,
-  retain: (target: THREE.WebGLRenderTarget) => void
-): Promise<void> => {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0.035, 0.035, 0.04);
-  const geometry = new THREE.PlaneGeometry(1, 1);
-  const materials: THREE.MeshBasicMaterial[] = [];
-  const panel = (intensity: number, position: [number, number, number], scale: [number, number], rotation = 0) => {
-    const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(intensity, intensity, intensity),
-      side: THREE.DoubleSide
-    });
-    materials.push(material);
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(...position);
-    mesh.scale.set(scale[0], scale[1], 1);
-    mesh.lookAt(0, 0, 0);
-    mesh.rotateZ(rotation);
-    scene.add(mesh);
-  };
-  panel(2.6, [0, 4.5, 8], [9, 4]);
-  panel(6, [-5.5, 0.5, 7], [0.9, 14]);
-  panel(4, [5, -0.5, 8], [0.6, 14]);
-  panel(3.5, [0, -1, 9], [24, 0.35], Math.PI / 3);
-  panel(2.5, [1, 2.5, 9], [24, 0.2], Math.PI / 3);
-  panel(1.4, [0, 6, -6], [12, 4]);
-  panel(0.5, [0, -7, 1], [16, 6]);
-  panel(0.9, [8, 0, -2], [4, 10]);
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  let temporary: THREE.WebGLRenderTarget | null = null;
-  let released = false;
-  const release = () => {
-    if (released) return;
-    released = true;
-    temporary?.dispose(); temporary = null;
-    releaseProgramShaders(renderer);
-    pmrem.dispose();
-    geometry.dispose();
-    materials.forEach(material => material.dispose());
-  };
-  // The abort listener is registered before the poll listener. Cleanup therefore
-  // releases this helper's GPU resources synchronously before renderer.dispose().
-  signal.addEventListener('abort', release, {once: true});
-  const generate = (compileOnly: boolean): THREE.WebGLRenderTarget => {
-    // Each pass restores synchronously, never across the shader-poll await.
-    const render = renderer.render;
-    const setTarget = renderer.setRenderTarget;
-    const target = renderer.getRenderTarget();
-    const cubeFace = renderer.getActiveCubeFace();
-    const mip = renderer.getActiveMipmapLevel();
-    const xr = renderer.xr.enabled;
-    const tone = renderer.toneMapping;
-    const clear = renderer.autoClear;
-    const background = scene.background;
-    const viewport = renderer.getViewport(new THREE.Vector4());
-    const scissor = renderer.getScissor(new THREE.Vector4());
-    const scissorTest = renderer.getScissorTest();
-    const clearColor = renderer.getClearColor(new THREE.Color());
-    const clearAlpha = renderer.getClearAlpha();
-    const output = new Set<NonNullable<Parameters<THREE.WebGLRenderer['setRenderTarget']>[0]>>();
-    let completed = false;
-    try {
-      renderer.setRenderTarget = (next, face, level) => {
-        // This renderer does not use reversed depth. The first non-null target
-        // is this pass's output; retain before delegate in case binding throws.
-        if (next && next !== target && output.size === 0) output.add(next);
-        setTarget.call(renderer, next, face, level);
-      };
-      if (compileOnly) renderer.render = (object, camera) => { renderer.compile(object, camera); };
-      const result = pmrem.fromScene(scene, 0.035);
-      completed = true;
-      return result;
-    } finally {
-      renderer.render = render;
-      renderer.setRenderTarget = setTarget;
-      renderer.xr.enabled = xr;
-      renderer.toneMapping = tone;
-      renderer.autoClear = clear;
-      scene.background = background;
-      try {
-        renderer.setViewport(viewport);
-        renderer.setScissor(scissor);
-        renderer.setScissorTest(scissorTest);
-        renderer.setClearColor(clearColor, clearAlpha);
-      } finally {
-        renderer.setRenderTarget(target, cubeFace, mip);
-        if (!completed) output.forEach(value => value.dispose());
-      }
-    }
-  };
-  try {
-    assertGpuPreparationActive(renderer, signal);
-    if (renderer.getContext().getExtension('KHR_parallel_shader_compile')) {
-      // Public traversal covers background, room, blur and GGX programs.
-      // The compile-only target is never used as prepared imagery.
-      temporary = generate(true);
-      await waitForCompiledPrograms(renderer, signal);
-      assertGpuPreparationActive(renderer, signal);
-      temporary.dispose(); temporary = null;
-    }
-    // Identical default 256px PMREM and sigma, with the same generator/materials.
-    // On platforms without KHR this is the original synchronous generation path.
-    const target = generate(false);
-    try {
-      assertGpuPreparationActive(renderer, signal);
-      retain(target);
-    } catch (error) { target.dispose(); throw error; }
-  } finally {
-    signal.removeEventListener('abort', release);
-    release();
-  }
-};
 
 const makeCanvasTexture = (canvas: HTMLCanvasElement, anisotropy: number) => {
   const texture = new THREE.CanvasTexture(canvas);
@@ -1114,7 +1001,7 @@ const Lanyard = ({
     const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     const scene = new THREE.Scene();
     const preparation = new AbortController();
-    let environment: THREE.WebGLRenderTarget | null = null;
+    let environment: THREE.DataTexture | null = null;
     let gpuReady = false;
     const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -1874,14 +1761,16 @@ const Lanyard = ({
       [bodyMesh, frontMesh, backMesh, ring, clampMesh, eyelet, band].forEach(mesh => mesh.geometry?.dispose());
       [frontMaterial, backMaterial, edgeMaterial, metalMaterial, bandMaterial].forEach(material => material.dispose());
       [frontTexture, backTexture, strapTexture, grain, weave].forEach(texture => texture.dispose());
-      environment?.dispose(); environment = null;
+      const oldEnvironment=environment;environment=null;scene.environment=null;
+      if(oldEnvironment)disposeLoginEnvironment(oldEnvironment);
+      if (!renderer.getContext().isContextLost()) renderer.resetState();
       renderer.dispose();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
     const initialize = async () => {
-      await buildEnvironment(renderer, preparation.signal, target => {
-        environment = target;
-        scene.environment = target.texture;
+      await prepareLoginEnvironment(preparation.signal,()=>assertGpuPreparationActive(renderer,preparation.signal),texture=>{
+        environment=texture;
+        scene.environment=texture;
       });
       if (!alive || failed || preparation.signal.aborted) return;
       const parallel = renderer.getContext().getExtension('KHR_parallel_shader_compile');
@@ -1896,6 +1785,12 @@ const Lanyard = ({
           await waitForCompiledPrograms(renderer, preparation.signal);
           assertGpuPreparationActive(renderer, preparation.signal);
         } while (settings !== settingsRef.current);
+        for (const program of renderer.info.programs ?? []) {
+          assertGpuPreparationActive(renderer, preparation.signal);
+          program.getUniforms();
+          program.getAttributes();
+        }
+        assertGpuPreparationActive(renderer, preparation.signal);
       }
       if (!alive || failed || preparation.signal.aborted) return;
       gpuReady = true;
@@ -1906,9 +1801,11 @@ const Lanyard = ({
     void initialize().catch(error => {
       if (!alive || preparation.signal.aborted) return;
       const contextLost = renderer.getContext().isContextLost();
-      container.dataset.gpuPreparationFailure = error instanceof Error && error.message === 'LANYARD_SHADER_LINK_FAILED' ? 'shader-link-failed' : contextLost ? 'context-lost' : 'initialization-failed';
+      const assetFailure=error instanceof LoginEnvironmentAssetFailure;
+      container.dataset.gpuPreparationFailure=contextLost?'context-lost':assetFailure?error.reason:error instanceof Error&&error.message==='LANYARD_SHADER_LINK_FAILED'?'shader-link-failed':'initialization-failed';
+      if(assetFailure&&!contextLost)console.error('Lanyard environment asset unavailable:',error.message);
       disposeScene();
-      callbacksRef.current.onFallback?.(contextLost ? 'context-lost' : 'webgl-unavailable');
+      callbacksRef.current.onFallback?.(contextLost?'context-lost':assetFailure?'asset-failed':'webgl-unavailable');
     });
     return disposeScene;
   }, [frontElement, frontHint, viewportFrame]);

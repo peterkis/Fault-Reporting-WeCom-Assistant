@@ -2,6 +2,8 @@ import type {StartupBridge,StartupFailure,StartupSignal,StartupState} from './po
 import {createFramePlayback,FRAME_COUNT,FRAME_RATE} from './frame-playback.mjs';
 import type {FramePlaybackSnapshot} from './frame-playback.mjs';
 
+interface DecodedImageFrame {readonly image:HTMLImageElement;close():void}
+
 declare global {interface Window {desktopStartup:StartupBridge}}
 const canvas=document.getElementById('startup-canvas');
 if(!(canvas instanceof HTMLCanvasElement))throw Error('STARTUP_CANVAS_DOCUMENT_INVALID');
@@ -11,7 +13,7 @@ let context:CanvasRenderingContext2D|null=null;
 try{context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});}catch{/* Report the bounded canvas failure once the bridge is ready. */}
 const status=document.querySelector('.startup-status'),message=document.querySelector('[data-message]'),detail=document.querySelector('[data-detail]'),code=document.querySelector('[data-code]');
 let current:StartupState|null=null,disposed=false,failed:StartupFailure|null=null,firstFrame=false,reduced=false,released=false;
-let player:ReturnType<typeof createFramePlayback<ImageBitmap>>|null=null,staticFrame:ImageBitmap|null=null,staticRequested=false,staticDrawn=false;
+let player:ReturnType<typeof createFramePlayback<DecodedImageFrame>>|null=null,staticFrame:DecodedImageFrame|null=null,staticRequested=false,staticDrawn=false;
 let raf=0,fadeDeadline:number|undefined,releasingGeneration:number|undefined,reportedCycle=0,metadata=false;
 let lastWatch=performance.now(),withoutFrame=0,withoutProgress=0,lastDrawCount=0,stalled=false;
 let lastHeartbeat=performance.now(),reportedDrawCount=0;
@@ -34,20 +36,25 @@ const fail=(reason:StartupFailure)=>{
   failed=reason;disposeFrames();document.body.dataset.failed='true';document.body.dataset.startupFailure=reason;
   diagnostics(reason);emit({version:1,type:'failed',reason});
 };
-const loadFrame=async(index:number):Promise<ImageBitmap>=>{
+const loadFrame=async(index:number):Promise<DecodedImageFrame>=>{
   const image=new Image();image.decoding='async';
+  let closed=false;
+  const frame:DecodedImageFrame={image,close(){
+    if(closed)return;closed=true;
+    image.onload=null;image.onerror=null;image.removeAttribute('src');
+  }};
   try{
     await new Promise<void>((resolve,reject)=>{
       image.onload=()=>resolve();image.onerror=()=>reject(new FrameFailure('frame-load-failed'));
       image.src='startup-frames/'+String(index).padStart(3,'0')+'.webp';
     });
-    let bitmap:ImageBitmap;
-    try{await image.decode();bitmap=await createImageBitmap(image);}catch{throw new FrameFailure('frame-decode-failed');}
-    if(bitmap.width!==540||bitmap.height!==540){bitmap.close();throw new FrameFailure('frame-decode-failed');}
-    return bitmap;
-  }finally{image.onload=null;image.onerror=null;image.removeAttribute('src');}
+    try{await image.decode();}catch{throw new FrameFailure('frame-decode-failed');}
+    if(image.naturalWidth!==540||image.naturalHeight!==540)throw new FrameFailure('frame-decode-failed');
+    return frame;
+  }catch(error){frame.close();throw error;}
+  finally{image.onload=null;image.onerror=null;}
 };
-const draw=(frame:ImageBitmap)=>{try{if(!context||context.isContextLost())throw Error('CANVAS_UNAVAILABLE');context.drawImage(frame,0,0,540,540);}catch{throw new FrameFailure('canvas-unavailable');}};
+const draw=(frame:DecodedImageFrame)=>{try{if(!context||context.isContextLost())throw Error('CANVAS_UNAVAILABLE');context.drawImage(frame.image,0,0,540,540);}catch{throw new FrameFailure('canvas-unavailable');}};
 const showFirstFrame=()=>{
   if(firstFrame||disposed||failed)return;firstFrame=true;document.body.dataset.firstFrame='true';
   if(!metadata){metadata=true;document.body.dataset.metadata='true';emit({version:1,type:'metadata',duration:FRAME_COUNT/FRAME_RATE,width:540,height:540});}
@@ -55,7 +62,7 @@ const showFirstFrame=()=>{
 };
 const record=(snapshot:FramePlaybackSnapshot,force=false)=>{
   const active=playable();
-  if(!force&&recorded&&recordedActive===active&&recorded.drawCount===snapshot.drawCount&&recorded.cycleCount===snapshot.cycleCount&&recorded.waiting===snapshot.waiting&&recorded.disposed===snapshot.disposed&&recorded.residentFrames.length===snapshot.residentFrames.length&&recorded.inFlight===snapshot.inFlight&&recorded.maxResidentFrames===snapshot.maxResidentFrames)return;
+  if(!force&&recorded&&recordedActive===active&&recorded.drawCount===snapshot.drawCount&&recorded.cycleCount===snapshot.cycleCount&&recorded.waiting===snapshot.waiting&&recorded.disposed===snapshot.disposed)return;
   recorded=snapshot;recordedActive=active;
   const values={frameIndex:String(snapshot.currentFrame),drawCount:String(snapshot.drawCount),cycleCount:String(snapshot.cycleCount),activeMs:String(snapshot.activeMs),firstCycleActiveMs:snapshot.firstCycleActiveMs===null?'':String(snapshot.firstCycleActiveMs),residentFrames:String(snapshot.residentFrames.length),residentFrameIndexes:snapshot.residentFrames.join(','),inFlight:String(snapshot.inFlight===null?0:1),decodingFrame:snapshot.inFlight===null?'':String(snapshot.inFlight),maxResidentFrames:String(snapshot.maxResidentFrames),maxInFlight:String(snapshot.maxInFlight),playback:!active||snapshot.disposed?'paused':snapshot.waiting||snapshot.currentFrame<0?'waiting':'playing'};
   for(const [key,value] of Object.entries(values))setData(key,value);

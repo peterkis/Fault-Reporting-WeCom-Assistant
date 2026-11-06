@@ -1,9 +1,10 @@
 import path from 'node:path';
 import {writeFileSync,readFileSync,existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {brotliCompressSync,constants,gzipSync} from 'node:zlib';
+import {brotliCompressSync,constants,gzipSync,gunzipSync} from 'node:zlib';
 import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles,h5StartupMetrics} from './common.mjs';
 type WebProject = 'app/pc-admin' | 'app/h5';
+const ENV_ASSET=/^assets\/login-environment-v1-[A-Za-z0-9_-]+\.pmrem$/u;
 function typecheckProject(root:string,relative:WebProject):void {
   const project=path.join(root,relative),code=relative==='app/h5'?'H5':'WEB01';
   const declared=record(JSON.parse(readFileSync(safeFile(project,'package.json'),'utf8')) as unknown);
@@ -52,15 +53,37 @@ export function buildWeb(root:string):void {
   if(existsSync(loginConfig)){
     const loginOutput=path.join(controlledBuildRoot(root),'emit/web/desktop-login');
     runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--config',loginConfig,'--outDir',loginOutput,'--emptyOutDir']);
-    const loginFiles=outputFiles(loginOutput);
-    if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2)$/u.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
-    const manifest=record(JSON.parse(readFileSync(safeFile(loginOutput,'.vite/manifest.json'),'utf8')) as unknown);
-    record(manifest['src/login/main.ts']).loginRepresentations=emitRepresentations(loginOutput,loginFiles.filter(file=>file.startsWith('assets/')));
-    writeFileSync(path.join(loginOutput,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
-    writeFileSync(path.join(loginOutput,'asset-inventory.json'),JSON.stringify(outputFiles(loginOutput))+'\n');
-    writeFileSync(path.join(loginOutput,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
+    finalizeDesktopLogin(root,loginOutput);
   }
   emitH5(root);
+}
+/** Shared by the ordinary web build and the isolated desktop-login producer. */
+export function finalizeDesktopLogin(root:string,loginOutput:string):void {
+  const loginFiles=outputFiles(loginOutput);
+  if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2)$/u.test(file)&&!ENV_ASSET.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
+  const environments=loginFiles.filter(file=>ENV_ASSET.test(file));
+  if(environments.length===0)throw Error('DESKTOP_LOGIN_ENVIRONMENT_MISSING');
+  if(environments.length>1)throw Error('DESKTOP_LOGIN_ENVIRONMENT_LIMIT');
+  const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
+  if(environments.length===1){
+    const environment=environments[0];if(!environment)throw Error('DESKTOP_LOGIN_ENVIRONMENT_MISSING');
+    const metadata=record(JSON.parse(readFileSync(safeFile(root,'app/pc-admin/src/login/assets/login-environment-v1.manifest.json'),'utf8')) as unknown);
+    const engine=record(metadata.engine),generator=record(metadata.generator),payload=record(metadata.payload),decoded=record(metadata.decoded),texture=record(metadata.texture);
+    const lockedThree=record(record(lock.packages)['node_modules/three']);
+    if(metadata.schemaVersion!==1||metadata.version!==1||engine.package!=='three'||engine.version!=='0.186.1'||engine.revision!=='186'||lockedThree.version!==engine.version||generator.commit!=='e9892ba81bf17072b4694e89a1372323e2a9e14c'||generator.buildEnvironmentBodySha256!=='bbf4d4f516f6afd54b609ebb19ecfccb9321e3d8ce0a6f9d3f383ad4298f94ea'||generator.cubeSize!==256||generator.sigma!==0.035)throw Error('DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED');
+    if(payload.sourceFile!=='login-environment-v1.pmrem'||payload.bytes!==880178||payload.sha256!=='dfe29d470a36a2cb171559d79437ad2ab95478d7a94a42037188c6f0005bec3b'||payload.mime!=='application/octet-stream'||payload.representation!=='identity'||payload.httpContentEncoding!==null||payload.sidecars!==false||decoded.bytes!==6291456||decoded.sha256!=='fd1d0fbaf0ebf04caa87c7f365de90e975372ac1fa7842c79616de3fc8e657ab'||decoded.width!==768||decoded.height!==1024||decoded.channels!==4||decoded.element!=='uint16-half-float-bits'||decoded.byteOrder!=='little-endian')throw Error('DESKTOP_LOGIN_ENVIRONMENT_METADATA_INVALID');
+    const expected={class:'DataTexture',format:'RGBAFormat',type:'HalfFloatType',mapping:'CubeUVReflectionMapping',colorSpace:'srgb-linear',minFilter:'LinearFilter',magFilter:'LinearFilter',wrapS:'ClampToEdgeWrapping',wrapT:'ClampToEdgeWrapping',generateMipmaps:false,mipmaps:[],flipY:false,internalFormat:null,anisotropy:1,premultiplyAlpha:false,unpackAlignment:4,needsUpdate:true,renderTargetFlagOverride:false};
+    if(Object.entries(expected).some(([key,value])=>JSON.stringify(texture[key])!==JSON.stringify(value)))throw Error('DESKTOP_LOGIN_ENVIRONMENT_METADATA_INVALID');
+    const bytes=readFileSync(safeFile(loginOutput,environment));
+    if(bytes.length!==payload.bytes||hash(bytes)!==payload.sha256)throw Error('DESKTOP_LOGIN_ENVIRONMENT_PAYLOAD_DRIFT');
+    const raw=gunzipSync(bytes,{maxOutputLength:6291456});
+    if(raw.length!==decoded.bytes||hash(raw)!==decoded.sha256)throw Error('DESKTOP_LOGIN_ENVIRONMENT_RAW_DRIFT');
+  }
+  const manifest=record(JSON.parse(readFileSync(safeFile(loginOutput,'.vite/manifest.json'),'utf8')) as unknown);
+  record(manifest['src/login/main.ts']).loginRepresentations=emitRepresentations(loginOutput,loginFiles.filter(file=>file.startsWith('assets/')));
+  writeFileSync(path.join(loginOutput,'.vite/manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+  writeFileSync(path.join(loginOutput,'asset-inventory.json'),JSON.stringify(outputFiles(loginOutput))+'\n');
+  writeFileSync(path.join(loginOutput,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
 }
 function emitRepresentations(output:string,sources:string[]){
   const representations=[];

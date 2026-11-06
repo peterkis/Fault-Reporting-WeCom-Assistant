@@ -9,6 +9,7 @@ const ASSET_PREFIX='/workbench/desktop/assets/';
 const ENTRY='src/login/main.ts';
 const ASSET=/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css)$/u;
 const FONT_ASSET=/^assets\/(?:inter-latin|jetbrains-mono-latin|noto-sans-sc-\d+)-wght-normal-[A-Za-z0-9_-]+\.woff2$/u;
+const ENV_ASSET=/^assets\/login-environment-v1-[A-Za-z0-9_-]+\.pmrem$/u;
 const ROOT=new URL('../../../web/desktop-login/',import.meta.url);
 const CSP="default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-src https://login.work.weixin.qq.com; img-src 'self' data:; font-src 'self'";
 // CSS minification removes comments, so the distributed document retains this notice.
@@ -54,22 +55,24 @@ function assets():Promise<LoginAssets>{
       }
       const fonts=item.assets;
       if(fonts!==undefined){
-        if(!Array.isArray(fonts)||!fonts.every((value:unknown)=>typeof value==='string'&&FONT_ASSET.test(value)&&inventory.includes(value)))throw Error('LOGIN_FONT_INVALID');
+        if(!Array.isArray(fonts)||!fonts.every((value:unknown)=>typeof value==='string'&&(FONT_ASSET.test(value)||ENV_ASSET.test(value))&&inventory.includes(value)))throw Error('LOGIN_FONT_INVALID');
         for(const file of fonts)allowed.add(file);
       }
     };
     visit(ENTRY);const entry=record(manifest[ENTRY]).file;if(typeof entry!=='string')throw Error('LOGIN_ASSET_ENTRY_INVALID');
     const fontCount=[...allowed].filter(file=>FONT_ASSET.test(file)).length;
+    const environmentCount=[...allowed].filter(file=>ENV_ASSET.test(file)).length;
+    if(environmentCount>1)throw Error('LOGIN_ENVIRONMENT_LIMIT');
     // Keep the original code/style bound; CJK unicode-range faces have a separate finite budget.
     if(allowed.size-fontCount>32||fontCount>128)throw Error('LOGIN_ASSET_LIMIT');
     const declared=record(manifest[ENTRY]).loginRepresentations;
-    if(!Array.isArray(declared)||declared.length!==(allowed.size-fontCount)*3+fontCount)throw Error('LOGIN_REPRESENTATIONS_INVALID');
+    if(!Array.isArray(declared)||declared.length!==(allowed.size-fontCount-environmentCount)*3+fontCount+environmentCount)throw Error('LOGIN_REPRESENTATIONS_INVALID');
     const metadata=new Map<string,{source:string;encoding:StaticEncoding;bytes:number;sha256:string}>();
     for(const value of declared){
       const {file,source,encoding,bytes,sha256}=record(value);
       if(typeof source!=='string'||!allowed.has(source)||typeof file!=='string'||metadata.has(file)||typeof bytes!=='number'||!Number.isSafeInteger(bytes)||bytes<0||bytes>MAX_ASSET_BYTES||typeof sha256!=='string'||!/^[a-f0-9]{64}$/u.test(sha256))throw Error('LOGIN_REPRESENTATION_INVALID');
       if(encoding!=='identity'&&encoding!=='gzip'&&encoding!=='br')throw Error('LOGIN_REPRESENTATION_ENCODING_INVALID');
-      if(FONT_ASSET.test(source)&&encoding!=='identity')throw Error('LOGIN_REPRESENTATION_ENCODING_INVALID');
+      if((FONT_ASSET.test(source)||ENV_ASSET.test(source))&&encoding!=='identity')throw Error('LOGIN_REPRESENTATION_ENCODING_INVALID');
       if(file!==source+(encoding==='identity'?'':encoding==='gzip'?'.gz':'.br')||!inventory.includes(file))throw Error('LOGIN_REPRESENTATION_PATH_INVALID');
       metadata.set(file,{source,encoding,bytes,sha256});
     }
@@ -84,7 +87,7 @@ function assets():Promise<LoginAssets>{
     const representations=new Map<string,ReadonlyMap<StaticEncoding,LoginRepresentation>>();
     for(const source of allowed){
       const identity=await verified(source,source,'identity'),variants=new Map<StaticEncoding,LoginRepresentation>([['identity',{encoding:'identity',body:identity}]]);
-      if(FONT_ASSET.test(source)){representations.set(source,variants);continue;}
+      if(FONT_ASSET.test(source)||ENV_ASSET.test(source)){representations.set(source,variants);continue;}
       for(const encoding of ['gzip','br'] as const){
         const body=await verified(source+(encoding==='gzip'?'.gz':'.br'),source,encoding);
         const decoded=encoding==='gzip'?gunzipSync(body,{maxOutputLength:MAX_ASSET_BYTES}):brotliDecompressSync(body,{maxOutputLength:MAX_ASSET_BYTES});
@@ -115,7 +118,7 @@ export const embeddedLoginHeaders=()=>({'content-type':'text/html; charset=utf-8
 export async function serveEmbeddedLoginAsset(request:Pick<IncomingMessage,'method'|'headers'>,response:ServerResponse,url:URL):Promise<boolean>{
   if(!url.pathname.startsWith(ASSET_PREFIX))return false;
   const relative='assets/'+url.pathname.slice(ASSET_PREFIX.length);
-  if(!['GET','HEAD'].includes(request.method??'')||url.search||!ASSET.test(relative)&&!FONT_ASSET.test(relative)){
+  if(!['GET','HEAD'].includes(request.method??'')||url.search||!ASSET.test(relative)&&!FONT_ASSET.test(relative)&&!ENV_ASSET.test(relative)){
     response.writeHead(400,{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'});response.end('无效的登录资源请求');return true;
   }
   const files=await assets();
@@ -124,5 +127,5 @@ export async function serveEmbeddedLoginAsset(request:Pick<IncomingMessage,'meth
   const header=request.headers['accept-encoding'],selected=negotiateStaticEncoding(Array.isArray(header)?header.join(','):header,available);
   if(!selected){response.writeHead(406,{'content-type':'text/plain; charset=utf-8','cache-control':'no-store','vary':'Accept-Encoding'});response.end('没有可接受的登录资源编码');return true;}
   const {body,encoding}=selected;
-  response.writeHead(200,{'content-type':FONT_ASSET.test(relative)?'font/woff2':relative.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','content-length':String(body.length),'cache-control':'public, max-age=31536000, immutable','x-content-type-options':'nosniff','vary':'Accept-Encoding',...(encoding==='identity'?{}:{'content-encoding':encoding})});response.end(request.method==='HEAD'?undefined:body);return true;
+  response.writeHead(200,{'content-type':ENV_ASSET.test(relative)?'application/octet-stream':FONT_ASSET.test(relative)?'font/woff2':relative.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','content-length':String(body.length),'cache-control':'public, max-age=31536000, immutable','x-content-type-options':'nosniff','vary':'Accept-Encoding',...(encoding==='identity'?{}:{'content-encoding':encoding})});response.end(request.method==='HEAD'?undefined:body);return true;
 }
