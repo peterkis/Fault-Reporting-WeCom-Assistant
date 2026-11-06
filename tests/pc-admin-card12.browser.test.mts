@@ -121,8 +121,9 @@ test('Card 28 saved closure filters fall back to all ordinary stages when search
   const pages=await Promise.all(['pending','active','closed'].map(async column=>{const r=await fetch(f.origin+'/api/workbench/board?column='+column+'&range=all',{headers:{cookie:f.cookies[0]??''}});assert.equal(r.status,200);const p=object(await r.json());assert.ok(Array.isArray(p.items));return {column,count:p.items.length};})),total=pages.reduce((n,p)=>n+p.count,0);
   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?view=list&range=all&search=1&closure_kind=dismissed',width:1440,height:1060,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
   for(const kind of ['dismissed','completed']){
+   const previousDocument=kind==='completed'?await b.evaluate('performance.timeOrigin'):undefined;
    if(kind==='completed')await b.command('Page.navigate',{url:f.origin+'/workbench/app/?view=list&range=all&search=1&closure_kind='+kind});
-   await b.waitFor(`document.querySelectorAll('.list-group').length===3&&document.querySelector('.list-group[aria-label=已处理] .ds-list-stage-count')?.textContent==='9'&&document.querySelector('.ds-work-row[data-item-id="${ticket.ticket.id}"]')!==null`);
+   await b.waitFor(`new URL(location.href).searchParams.get('closure_kind')===${JSON.stringify(kind)}&&new URL(location.href).searchParams.get('search')==='1'&&${previousDocument===undefined?'true':`performance.timeOrigin!==${JSON.stringify(previousDocument)}`}&&document.querySelectorAll('.list-group').length===3&&document.querySelector('.list-group[aria-label=已处理] .ds-list-stage-count')?.textContent==='9'&&document.querySelector('.ds-work-row[data-item-id="${ticket.ticket.id}"]')!==null`);
    assert.deepEqual(await b.evaluate("[...document.querySelectorAll('.list-group')].map(n=>n.getAttribute('aria-label'))"),['待受理','处理中','已处理']);
    assert.deepEqual(await b.evaluate("[...document.querySelectorAll('.ds-list-subgroup')].map(n=>n.dataset.boardGroup)"),['待判断','待接单','已完成','已关闭']);
    assert.equal(await b.evaluate("Boolean(document.querySelector('.workbench-search,[data-field-label=结束方式],.ds-list-note'))"),false);

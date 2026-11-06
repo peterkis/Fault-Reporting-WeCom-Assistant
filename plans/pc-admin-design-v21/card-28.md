@@ -183,3 +183,9 @@ Codex对5b387554提出1项P2（PRRT_kwDOT_VkOc60mAES）：当保存的URL含sear
 codex-fix-diagnostic-02中两项Card28定向用例2/2 PASS；同候选完整注册UI/设计基础2入口94/94 PASS（真实Windows浏览器18、基础76），FAIL/CANCEL/SKIP/TODO均0，回执为外部发布根tests-codex-fix-ui/summary.json。原两份T41的4/4及早前456分批结果保留原候选身份，不重复累计。15张提交内图来自codex-02定向PASS，逐图SHA/PNG尺寸/Win32/DPR1/zoom1与receipt一致；receipt保留实际输入指纹，未冒充后继提交身份。
 
 独立Spec有限复核确认Codex P2源码闭合；独立Standards再核等待修补，原355条assert全部保留、删除0，当前373条，原240000ms预算未变。报告spec-codex-fix与standards-readiness保留“运行待Root”原观察状态，本段另提供实际运行收口。远端Codex当前head复审、Ubuntu CI、合并和清理仍以随后原生回执为准；本地通过不提前记为远端成功。
+
+### 最后一次独立增量复核
+
+远端Codex已对7cf15750157529f10c2661fbb0085b1c258cad34完成复审，summary完整SHA匹配、has_any_findings=false、has_unresolved_findings=false，原P2线程已回复并解决。随后OCR delegate严格增量复核发现测试P2 OCR-CF01：第二次Page.navigate后的相同数据条件可能在旧DOM提前满足。接受并仅加强测试：导航前记录timeOrigin，ready绑定当前closure_kind/search URL，第二个URL再要求新timeOrigin，同时保留原三组/计数/当前票行与所有后续断言。独立有限复核确认闭合；原94/94仍属codex-02，未重绑为新等待的结果。
+
+readiness-01构建输入 `b110b89780102c577933e28946691cdff4972bf7c1bd9dc8b47224e50ed79d5a`，manifest `760221929fed76ab92f7c34690cabe7942385e3f64019573b8e3d9c18cb7394d`；build/types（Stylelint/变量/strict/负向类型）/artifact全部PASS，新文档等待定向1/1 PASS（两个旧URL、3/4/9共16项、零search/POST）。661个应用emit输出逐字节不变（app318/h5109/shared3/web231，不含SourceMap），唯一编译差异为该测试mjs。因此不重复扩大本地94项，图仍绑定codex-02原输入；后继完整head交给实际PR路径CI及新Codex复审。首次输出比较将测试也算入应用而拒绝，预期测试差异和比较口径修正另存readiness-first-comparison-note/readiness-output-equivalence，不作为应用回归失败。
