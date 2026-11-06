@@ -51,7 +51,7 @@ test('native startup gates real playback, isolates input, preserves prepared fra
   execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(tlsDirectory,'key.pem'),'-out',path.join(tlsDirectory,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
   const cert=readFileSync(path.join(tlsDirectory,'cert.pem')),key=readFileSync(path.join(tlsDirectory,'key.pem'));
   const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
-  let mode:'early'|'manual'|'legacy'|'visible'='early';
+  let mode:'early'|'manual'|'legacy'|'visible'|'business'='early';
   const server=createServer({key,cert},(_request,response)=>{
     response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});
     response.end(`<!doctype html><body data-fixture="${mode}"><button id="under-cover" style="position:fixed;left:calc(50% - 50px);top:calc(50% - 20px);width:100px;height:40px">合成登录操作</button><iframe src="about:blank"></iframe><script>
