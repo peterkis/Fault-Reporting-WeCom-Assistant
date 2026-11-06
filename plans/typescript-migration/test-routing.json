@@ -6877,6 +6877,24 @@
       "path": "tests/workbench-desktop-session.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
+      "requires_database": false,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/workbench-desktop-session-auth.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/workbench-desktop-session-logout.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
       "requires_database": true,
       "requires_browser": true,
       "requires_powershell": false,
