@@ -721,3 +721,26 @@ test('H5 production router purity preserves used component metadata and real Lin
  assert.deepEqual(optimized,plain);for(const name of ['Link','NavLink','Form']){assert.equal(optimized.metadata[name].displayName,name);assert.equal(optimized.metadata[name].kind,'Symbol(react.forward_ref)');}assert.equal(optimized.metadata.Link.renderName,'LinkWithRef');assert.equal(optimized.metadata.NavLink.renderName,'NavLinkWithRef');
  assert.match(optimized.markup.Link,/<a\b[^>]*href="\/next"/);assert.match(optimized.markup.NavLink,/aria-current="page"/);assert.match(optimized.markup.NavLink,/class="active"/);assert.match(optimized.markup.Form,/<form\b[^>]*method="post"/);assert.match(optimized.markup.Form,/<form\b[^>]*action="\/submit"/);
 });
+
+
+test('H5 detail ETA follows the canonical queued DTO and excludes terminal states',async()=>{
+ const compile=async(file:string)=>transpileModule(await readFile(resolve(sourceRoot,'app/h5/src',file),'utf8'),{fileName:file,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
+ const loader=createH5PureModuleLoader({overrides:{'pages/Detail.tsx':await compile('pages/Detail.tsx')+'\nexport{DetailTimeline};','components/ui/primitives.ts':await compile('components/ui/primitives.tsx'),
+  'navigation.ts':'export function useParams(){return{};}',
+  'api/client.ts':'export const api={};export class ApiError extends Error{}',
+  'api/query.ts':"export function detailOptions(){}export function supplementsOptions(){}export function firstPage(){}export async function refreshRequest(){}export const queryKeys={timelineSection:()=>['timeline-section']};export function timelineOptions(){return{queryKey:['timeline'],queryFn:async()=>({items:[],next_cursor:null}),initialPageParam:null,getNextPageParam:()=>undefined,initialData:{pages:[{items:[],next_cursor:null}],pageParams:[null]}};}",
+  'session.ts':"export function useIdentity(){return{recovery_scope:'synthetic'};}export function useSession(){}export function useSessionStatus(){}",
+  'hooks/useCommand.ts':'export function useCommand(){}export function useCommandActions(){}export function useCommandSnapshot(){}',
+  'hooks/detail-command-receipt.ts':'export function detailReceipt(){}',
+  'components/Materials.ts':'export function Material(){return null;}export function MaterialsProvider({children}){return children;}',
+  'components/Common.ts':'export function ErrorPanel(){return null;}export function Loading(){return null;}export function RecoveryNotice(){return null;}',
+  'components/LazyPanelBoundary.ts':'export function LazyPanelBoundary({children}){return children;}',
+  'components/DetailDialogs.ts':'export default function DetailDialogs(){return null;}',
+  'components/Icon.ts':'export function Icon(){return null;}',
+  'eta-render-test.ts':[
+   "import{createElement as h}from'react';import{renderToStaticMarkup}from'react-dom/server';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import{DetailTimeline}from'./pages/Detail.tsx';import{reportState}from'./lib/report.ts';import{I18nProvider}from'./i18n-react.ts';import i18n from'./i18n.ts';",
+   "export async function render(status){await i18n.changeLanguage('zh-CN');const client=new QueryClient(),value={display_status:'TICKET_CREATED',ticket:{ticket_no:'SYNTHETIC',status}},state=reportState(value),progress={summary:'Synthetic public progress',updated_epoch_ms:'1792641600000',estimated_epoch_ms:'1792642500000'};try{return{state,html:renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(DetailTimeline,{requestRef:'11111111111111111111111111111111',progress,state}))))};}finally{client.clear();}}"
+  ].join('\n')
+ }}),{render}=await import(await loader.moduleUrl('eta-render-test.ts'));
+ for(const[status,visible]of [['QUEUED',true],['NEW',true],['OPEN',true],['ACCEPTED',true],['IN_PROGRESS',true],['REOPENED',true],['RESOLVED',false],['CLOSED',false],['CANCELLED',false]]as const){const view=await render(status);assert.equal(view.html.includes('预计修复时间'),visible,status);if(status==='QUEUED')assert.equal(view.state,'queued');}
+});
