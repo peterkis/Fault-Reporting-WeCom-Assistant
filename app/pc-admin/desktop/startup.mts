@@ -6,7 +6,9 @@ declare global {interface Window {desktopStartup:StartupBridge}}
 const canvas=document.getElementById('startup-canvas');
 if(!(canvas instanceof HTMLCanvasElement))throw Error('STARTUP_CANVAS_DOCUMENT_INVALID');
 let context:CanvasRenderingContext2D|null=null;
-try{context=canvas.getContext('2d',{alpha:false});}catch{/* Report the bounded canvas failure once the bridge is ready. */}
+// Prefer software backing for this small surface: the native Windows comparison
+// found a large accelerated-canvas cache despite closing every owned bitmap.
+try{context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});}catch{/* Report the bounded canvas failure once the bridge is ready. */}
 const status=document.querySelector('.startup-status'),message=document.querySelector('[data-message]'),detail=document.querySelector('[data-detail]'),code=document.querySelector('[data-code]');
 let current:StartupState|null=null,disposed=false,failed:StartupFailure|null=null,firstFrame=false,reduced=false,released=false;
 let player:ReturnType<typeof createFramePlayback<ImageBitmap>>|null=null,staticFrame:ImageBitmap|null=null,staticRequested=false,staticDrawn=false;

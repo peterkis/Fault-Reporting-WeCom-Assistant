@@ -57,6 +57,10 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 播放器最多每秒报告一次真实drawCount增长，主进程只以当前可见且单调增长的计数续期无进展故障预算，不写逐帧日志、不触发场景准备或首播完成。这允许低速但持续推进的首遍超过8秒，仍能检测脚本失联和真正卡死；心跳不能代替全部68帧与末帧停留的完成信号。
 
+仅这个小Canvas以`alpha:false, willReadFrequently:true`请求软件backing，不关闭整个Electron窗口的GPU能力。原生对照中，三槽位图即使全部正确close，默认加速Canvas仍产生较大的GPU进程私有内存增量；软件backing候选须重新测CPU与卡顿，不能把JS池上限当作Chromium缓存上限。该选项是实现提示，其他硬件的收益不作预先保证；接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)。
+
+rAF时间戳存在有限精度。正常换帧deadline允许0.2ms量化容差，并保留提前绘制后的微小负相位，避免把约33.3ms误判成不足一帧而形成50/16ms交替；这不放宽末帧实际驻留或首遍源最短时长。暂停、解码等待与长回调间隔仍不产生快进债。纯时钟仿真用于回归量化问题，不能替代真实原生绘制间隔测量。
+
 ## 几何与准备态取样
 
 逻辑尺寸取`offsetWidth/offsetHeight`或对应CSS值，变换后的外接矩形用于居中/边界检查。帧播放器记录源尺寸、Canvas内尺寸、展示尺寸、首绘、帧序号、循环次数及活跃首遍时长；以真实画面判断主体完整与浅灰衔接。记录实际viewport、DPI和动画相位；截图文件名只是目标标签，不能替代运行时尺寸。

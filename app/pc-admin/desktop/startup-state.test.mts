@@ -247,3 +247,30 @@ test('decode and draw failures stop completion and report the original failure o
     assert.ok(frames.every(frame=>frame.closes===1));
   }
 });
+
+test('a quantized 60Hz pure clock keeps 30fps phase without repeated 50/16ms draw pairs',async()=>{
+  const {createFramePlayback}=await import('./frame-playback.mjs');
+  const draws:{index:number;at:number}[]=[];
+  let now=0;
+  const playback=createFramePlayback({loadFrame:async(index:number)=>({index,close(){}}),drawFrame:(frame,index)=>{assert.equal(frame.index,index);draws.push({index,at:now});}});
+  try{
+    // This deterministic module clock is not native rendering or performance acceptance.
+    for(let tick=0;tick<=600;tick++){
+      for(let turn=0;turn<12;turn++)await Promise.resolve();
+      now=Math.round(tick*1000/60*10)/10;
+      const count=draws.length;playback.tick(now,true);
+      assert.ok(draws.length-count<=1,'timestamp tolerance cannot draw multiple source frames in one callback');
+    }
+    assert.equal(draws.length,301,'ten seconds plus the initial draw retain the intended source cadence');
+    assert.deepEqual(draws.map(draw=>draw.index),Array.from({length:301},(_unused,index)=>index%68),'every original source frame remains in sequence');
+    assert.ok((playback.snapshot().firstCycleActiveMs??0)>=68000/30,'the timestamp tolerance cannot shorten the complete first cycle');
+    const intervals=draws.slice(1).map((draw,index)=>{
+      const previous=draws[index];assert.ok(previous);
+      const interval=draw.at-previous.at;
+      if(previous.index===67)assert.ok(interval+0.000001>=1000/30,'the final frame keeps its strict visible dwell');
+      return interval;
+    }).sort((left,right)=>left-right);
+    const p95=intervals[Math.ceil(intervals.length*.95)-1];
+    assert.ok(typeof p95==='number'&&p95<=34,'the quantized module clock must avoid repeated 50/16ms pairs; native product gates are tested separately');
+  }finally{playback.dispose();}
+});

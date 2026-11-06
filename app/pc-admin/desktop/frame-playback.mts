@@ -51,7 +51,9 @@ export function createFramePlayback<T extends Frame>(options:FramePlaybackOption
     // Keep the small steady-state rAF phase remainder. A decoder wait, pause or
     // long callback gap must never leave a debt that races through later frames.
     if(delta>=FRAME_DURATION_MS*2||waiting)budgetMs=Math.min(budgetMs,FRAME_DURATION_MS);
-    if(currentFrame>=0&&budgetMs+0.000001<FRAME_DURATION_MS)return snapshot();
+    // rAF timestamps can be quantized to 0.1ms; this tolerance applies only to
+    // normal deadlines, leaving the final dwell and source-duration checks strict.
+    if(currentFrame>=0&&budgetMs+0.2<FRAME_DURATION_MS)return snapshot();
     if(currentFrame===FRAME_COUNT-1&&!cycleSettled){
       if(heldMs+0.000001<FRAME_DURATION_MS||!firstCycleComplete&&activeMs<CYCLE_DURATION_MS)return snapshot();
       cycleSettled=true;cycleCount++;
@@ -60,7 +62,7 @@ export function createFramePlayback<T extends Frame>(options:FramePlaybackOption
     const next=(currentFrame+1)%FRAME_COUNT,frame=frames.get(next);
     if(!frame){budgetMs=Math.min(budgetMs,FRAME_DURATION_MS);if(!waiting){waiting=true;playing=false;options.onSignal?.('waiting');}pump();return snapshot();}
     try{options.drawFrame(frame,next);}catch(error){fail(error);return snapshot();}
-    const previous=currentFrame;currentFrame=next;drawCount++;heldMs=0;budgetMs=waiting||previous<0?0:Math.max(0,budgetMs-FRAME_DURATION_MS);cycleSettled=false;
+    const previous=currentFrame;currentFrame=next;drawCount++;heldMs=0;budgetMs=waiting||previous<0?0:budgetMs-FRAME_DURATION_MS;cycleSettled=false;
     if(previous>=0){const old=frames.get(previous);if(old)close(old);frames.delete(previous);}
     if(drawCount===1)options.onSignal?.('first-frame');
     waiting=false;if(!playing){playing=true;options.onSignal?.('playing');}
