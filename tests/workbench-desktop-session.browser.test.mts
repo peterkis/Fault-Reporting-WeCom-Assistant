@@ -15,6 +15,57 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 
 const draftCounts=`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations']),a=tx.objectStore('drafts').count(),b=tx.objectStore('operations').count();tx.oncomplete=()=>{db.close();resolve({drafts:a.result,operations:b.result});};};})`;
 
+test('compiled login prepares once under the native cover, presents the same iframe and exposes initializer/compatibility recovery',{timeout:90_000},async()=>{
+ let origin='',generation=0;
+ const server=createServer((request,response)=>{void(async()=>{
+  const url=new URL(request.url??'/',origin);if(await serveEmbeddedLoginAsset(request,response,url))return;
+  if(url.pathname==='/workbench/desktop/embedded'){
+   generation++;const now=Date.now();response.writeHead(200,embeddedLoginHeaders());response.end(await renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.preparation-'+generation,issuedEpochMs:now,expiresEpochMs:now+300_000,publicOrigin:origin}));return;
+  }
+  response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end('<!doctype html><title>合成准备态测试起点</title>');
+ })().catch(()=>{response.writeHead(500);response.end('SYNTHETIC_LOGIN_FIXTURE_FAILED');});});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
+ let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
+ try{
+  browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
+  await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
+  await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`
+   Object.defineProperty(navigator,'gpu',{configurable:true,value:undefined});
+   window.__preparedCalls=[];window.__present=null;
+   const mode=sessionStorage.getItem('startup-test-mode')||'held';
+   window.workbenchLogin={version:1,getAppVersion:async()=>'0.1.16-synthetic',quit:async()=>{},startup:{version:1,
+    prepared:async value=>{window.__preparedCalls.push(value);if(mode==='rejected')throw Error('SYNTHETIC_BRIDGE_REJECTED');if(mode==='timeout')return new Promise(()=>{});return {presented:false};},
+    onPresented:callback=>{window.__present=callback;return()=>{window.__present=null;};}
+   }};
+   if(mode==='initializer-failed'){const original=document.createElement.bind(document);document.createElement=function(name,...args){if(String(name).toLowerCase()==='iframe')throw Error('SYNTHETIC_SDK_INITIALIZATION_FAILURE');return original(name,...args);};}
+  `});
+  await browser.command('Page.navigate',{url:origin+'/workbench/desktop/embedded'});
+  await browser.waitFor('document.body?.dataset.loginScene==="prepared"&&document.querySelector("#wecom-panel iframe")');
+  assert.deepEqual(await browser.evaluate('window.__preparedCalls'),[{version:1,panel:'created',backdrop:'fallback'}],'prepared describes only observable local scene and SDK creation');
+  assert.equal(await browser.evaluate('(()=>{const shell=document.getElementById("desktop-login");return shell.inert&&document.querySelector(".login-options").inert&&document.querySelector(".lanyard")?.dataset.openingReady!=="true"&&getComputedStyle(document.querySelector(".login-response")).animationPlayState==="paused"&&getComputedStyle(document.querySelector(".login-preparing")).display==="none";})()'),true,'the prepared scene has no second spinner or early entrance and remains inert');
+  // Cross the acknowledgement deadline after an explicit accepted-but-not-presented
+  // response, as when the native first playback is paused by a hidden window.
+  await new Promise(resolve=>setTimeout(resolve,8200));
+  assert.equal(await browser.evaluate('document.body.dataset.loginScene'),'prepared','an acknowledged native wait never starts the entrance on a wall-clock deadline');
+  await browser.evaluate('window.__preparedIframe=document.querySelector("#wecom-panel iframe");window.__present();window.__present()');
+  await browser.waitFor('document.body?.dataset.loginScene==="ready"&&document.querySelector(".lanyard")?.dataset.openingReady==="true"');
+  assert.equal(await browser.evaluate('window.__preparedIframe===document.querySelector("#wecom-panel iframe")&&!document.getElementById("desktop-login").inert'),true,'presentation preserves the live SDK iframe and restores interactions');
+  assert.equal(await browser.evaluate('window.__preparedCalls.length'),1,'duplicate presentation never re-reports or remounts the scene');
+  for(const mode of ['rejected','timeout','initializer-failed'] as const){
+   const previous=Number(await browser.evaluate('performance.timeOrigin'));await browser.evaluate('sessionStorage.setItem("startup-test-mode",'+JSON.stringify(mode)+')');await browser.command('Page.reload');
+   await browser.waitFor('performance.timeOrigin!=='+previous+'&&document.body?.dataset.loginScene==='+JSON.stringify(mode==='initializer-failed'?'prepared':'ready'));
+   if(mode==='initializer-failed'){
+    assert.deepEqual(await browser.evaluate('window.__preparedCalls'),[{version:1,panel:'failed',backdrop:'fallback'}]);
+    await browser.evaluate('window.__present()');await browser.waitFor('document.body.dataset.loginScene==="ready"');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector("#wecom-panel .login-panel-failure"))&&document.querySelectorAll("#wecom-panel iframe").length===0&&document.getElementById("login-status").textContent.includes("未能加载")'),true,'an SDK initializer exception presents a reason inside the card');
+    assert.equal(await browser.evaluate('(()=>{const button=document.getElementById("retry-login"),r=button.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===button;})()'),true,'direct recovery remains clickable outside the projected card');
+   }else assert.equal(await browser.evaluate('document.body.dataset.startupCompatibility'),'bridge-'+(mode==='timeout'?'timeout':'rejected'),'a missing or rejected bridge acknowledgement has a bounded compatibility fallback');
+  }
+ }catch(error){failure=error;}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
+});
+
 test('compiled embedded login keeps one iframe during badge interaction and renews on view or scale fallback',{timeout:120_000},async()=>{
  let generation=0,origin='';
  const server=createServer((request,response)=>{void(async()=>{
@@ -72,7 +123,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.waitFor('document.querySelector(".lanyard-front #wecom-panel iframe")&&document.querySelector("#desktop-login")?.dataset.view==="lanyard"');
   await waitScene();
   assert.equal(generation,1);assert.equal(await browser.evaluate('document.querySelectorAll("#wecom-panel iframe").length'),1);
-  assert.deepEqual(await browser.evaluate('window.__preparingLoader'),{width:50,height:50,centered:true,border:'8px',color:'rgb(81, 75, 130)',duration:'0.8s, 1.6s',animation:'l20-1, l20-2',direction:'alternate, normal',timing:'linear, linear',label:'Loading login page',text:''},'remote preparation matches the native user-supplied spinner');
+  assert.deepEqual(await browser.evaluate('window.__preparingLoader'),{width:50,height:50,centered:true,border:'8px',color:'rgb(81, 75, 130)',duration:'0.8s, 1.6s',animation:'l20-1, l20-2',direction:'alternate, normal',timing:'linear, linear',label:'Loading login page',text:''},'old clients retain the remote preparation spinner until the scene can appear');
   assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".login-preparing")).display'),'none','the loader retires when the complete login scene appears');
   assert.equal(await browser.evaluate('(()=>{const e=document.getElementById("login-backdrop"),r=e.getBoundingClientRect();return e.inert&&e.getAttribute("aria-hidden")==="true"&&getComputedStyle(e).pointerEvents==="none"&&r.width>=innerWidth&&r.height>=innerHeight;})()'),true,'the hero covers the viewport without intercepting login controls');
   assert.deepEqual(await browser.evaluate('window.__sceneAppearance.visibility'),['visible','visible','visible','visible'],'title, background, card and footer first appear in one scene');

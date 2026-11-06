@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; media-src 'self'"><title>医小修 · 准备登录</title><link rel="stylesheet" href="startup.css"></head>
+<body>
+  <main class="startup" aria-label="正在准备登录">
+    <video id="startup-video" src="startup-video.mp4" preload="auto" muted playsinline tabindex="-1" aria-hidden="true"></video>
+    <div class="startup-status" role="status" aria-live="polite" hidden>
+      <p data-message></p>
+      <p class="startup-detail" data-detail></p>
+      <code data-code></code>
+    </div>
+  </main>
+  <script type="module" src="startup.mjs"></script>
+</body></html>

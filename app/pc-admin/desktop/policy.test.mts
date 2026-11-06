@@ -1,7 +1,26 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {allowedNavigation,allowedAttachmentDownload,businessDocument,embeddedLoginDocument,recoveryTarget,connectionFailure,EMBEDDED_LOGIN_PATH,navigationFailure,loginRefreshDelay,readConfig,readContext,readReminder,readChromeAction,motionPreference} from './policy.mjs';
+import {allowedNavigation,allowedAttachmentDownload,businessDocument,embeddedLoginDocument,recoveryTarget,connectionFailure,EMBEDDED_LOGIN_PATH,navigationFailure,loginRefreshDelay,readConfig,readContext,readReminder,readChromeAction,motionPreference,readLoginPrepared,readLoginLease,readStartupSignal} from './policy.mjs';
 const origin='https://workbench.test',epoch='11111111-1111-4111-8111-111111111111';
+
+test('login preparation and its private document lease accept only the bounded presentation contract',()=>{
+  const prepared={version:1,panel:'created',backdrop:'shader'};
+  assert.deepEqual(readLoginPrepared(prepared),prepared);
+  assert.deepEqual(readLoginPrepared({version:1,panel:'failed',backdrop:'fallback'}),{version:1,panel:'failed',backdrop:'fallback'});
+  for(const input of [null,[],{}, {...prepared,version:2},{...prepared,panel:'qr-ready'},{...prepared,backdrop:'pending'},{...prepared,authenticated:true},{...prepared,token:'private'}])assert.throws(()=>readLoginPrepared(input));
+  const lease={generation:3,nonce:epoch};assert.deepEqual(readLoginLease(lease),lease);
+  for(const input of [null,{...lease,generation:0},{...lease,generation:1.5},{...lease,generation:Number.MAX_SAFE_INTEGER+1},{...lease,nonce:'old-document'},{...lease,origin}])assert.throws(()=>readLoginLease(input));
+  for(const url of [origin+'/workbench/desktop/embedded?mode=x',origin+'/workbench/desktop/embedded#scene',origin+'/workbench/callback',origin+'/workbench/app/','https://evil.test/workbench/desktop/embedded'])assert.equal(embeddedLoginDocument(url,origin),false);
+});
+
+test('startup media IPC rejects malformed and unbounded messages',()=>{
+  const metadata={version:1,type:'metadata',duration:2.266667,width:972,height:972};
+  assert.deepEqual(readStartupSignal(metadata),metadata);
+  for(const type of ['first-frame','playing','waiting','stalled','first-ended','reduced-motion'])assert.deepEqual(readStartupSignal({version:1,type}),{version:1,type});
+  assert.deepEqual(readStartupSignal({version:1,type:'released',generation:4}),{version:1,type:'released',generation:4});
+  for(const reason of ['media-error','play-rejected','first-frame-timeout','playback-stalled','overlay-load-failed','overlay-crashed'])assert.deepEqual(readStartupSignal({version:1,type:'failed',reason}),{version:1,type:'failed',reason});
+  for(const input of [null,[],{}, {version:2,type:'playing'},{version:1,type:'complete'},{version:1,type:'first-ended',elapsed:2267},{version:1,type:'failed',reason:'untrusted-error'},{version:1,type:'released',generation:-1},{version:1,type:'released',generation:1.5},{...metadata,duration:0},{...metadata,duration:Infinity},{...metadata,duration:31},{...metadata,width:0},{...metadata,height:4097},{...metadata,width:972.5}])assert.throws(()=>readStartupSignal(input));
+});
 test('full motion is the default and reduced motion requires the explicit emergency option',()=>{
  assert.equal(motionPreference([]),'no-preference');assert.equal(motionPreference(['--wecom-login=official']),'no-preference');
  assert.equal(motionPreference(['--wecom-reduced-motion']),'reduce');assert.equal(motionPreference(['--wecom-reduced-motion=false']),'no-preference');

@@ -1,5 +1,5 @@
 // Test-only Electron entry. Explicitly excluded from the staging/package allowlist.
-import {app,BrowserWindow,WebContentsView,Notification,session,powerMonitor,dialog,Menu,net} from 'electron';
+import {app,BrowserWindow,WebContentsView,Notification,session,powerMonitor,dialog,Menu,net,webContents} from 'electron';
 import {createHash,createPublicKey} from 'node:crypto';
 import {writeFileSync,appendFileSync,mkdirSync,readFileSync} from 'node:fs';
 import path from 'node:path';
@@ -10,6 +10,7 @@ import './main.mjs';
 const stage=process.env.WECOM_DESKTOP_TEST_STAGE,spki=process.env.WECOM_DESKTOP_TEST_SPKI;
 if(!process.send||!stage||!spki||!path.resolve(stage).startsWith(path.resolve('.local/electron')+path.sep))throw Error('DESKTOP_TEST_CONTEXT_REQUIRED');
 const loginControlsUrl=pathToFileURL(path.join(stage,'login-chrome.html')).href;
+const startupUrl=pathToFileURL(path.join(stage,'startup.html')).href;
 const notices:Notification[]=[];
 const actualIsOnline=net.isOnline.bind(net);
 const downloads:{allowed:boolean;name:string;state?:string;sha256?:string;bytes?:number;dialogTitle?:string}[]=[];let downloadObserver=false;
@@ -32,6 +33,13 @@ app.once('ready',()=>{
   });
 });
 app.on('web-contents-created',(_event,contents)=>{
+  contents.on('did-start-navigation',(_event,url,_inPlace,mainFrame)=>{
+    if(!mainFrame||url!==startupUrl)return;
+    // Isolate normal-playback cases from the host's Windows/RDP motion setting.
+    // Production startup still honors the real system preference.
+    if(!contents.debugger.isAttached())contents.debugger.attach('1.3');
+    void contents.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:process.argv.includes('--wecom-reduced-motion')?'reduce':'no-preference'}]}).catch(()=>{});
+  });
   contents.on('destroyed',()=>trace('web-contents-destroyed'));
   contents.on('did-fail-load',(_event,code,_description,url)=>{diagnostics.push({event:'load-failed',code,path:new URL(url).pathname});});
   contents.on('console-message',(_event,_level,message)=>{if(diagnostics.length<40)diagnostics.push({event:'console',message:message.slice(0,1000)});});
@@ -46,6 +54,7 @@ process.on('message',async(value:unknown)=>{
     const view=window.contentView.children.find((child):child is WebContentsView=>child instanceof WebContentsView&&child.webContents!==window.webContents);
     const page=view?.webContents??window.webContents;
     const loginControls=window.contentView.children.find((child):child is WebContentsView=>child instanceof WebContentsView&&child.webContents.getURL()===loginControlsUrl);
+    const startup=window.contentView.children.find((child):child is WebContentsView=>child instanceof WebContentsView&&child.webContents.getURL()===startupUrl);
     let result:unknown;
     switch(command.action){
       case 'arm-downloads':{
@@ -63,9 +72,21 @@ process.on('message',async(value:unknown)=>{
       case 'evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await page.executeJavaScript(command.expression,true);break;
       case 'chrome-evaluate':if(typeof command.expression!=='string')throw Error('TEST_EXPRESSION_REQUIRED');result=await window.webContents.executeJavaScript(command.expression,true);break;
       case 'login-chrome-evaluate':if(typeof command.expression!=='string'||!loginControls)throw Error('TEST_LOGIN_CHROME_REQUIRED');result=await loginControls.webContents.executeJavaScript(command.expression,true);break;
+      case 'startup-evaluate':if(typeof command.expression!=='string'||!startup)throw Error('TEST_STARTUP_REQUIRED');result=await startup.webContents.executeJavaScript(command.expression,true);break;
+      case 'startup-crash':if(!startup)throw Error('TEST_STARTUP_REQUIRED');startup.webContents.forcefullyCrashRenderer();result=true;break;
+      case 'startup-visibility':if(!startup||!['true','false'].includes(String(command.expression)))throw Error('TEST_STARTUP_REQUIRED');startup.setVisible(command.expression==='true');result=true;break;
+      case 'tab':{const focused=webContents.getFocusedWebContents()??window.webContents;focused.sendInputEvent({type:'keyDown',keyCode:'Tab'});focused.sendInputEvent({type:'keyUp',keyCode:'Tab'});result=true;break;}
+      case 'click':{
+        const point:unknown=JSON.parse(String(command.expression));
+        if(!point||typeof point!=='object'||!('x' in point)||!('y' in point)||typeof point.x!=='number'||typeof point.y!=='number'||!Number.isInteger(point.x)||!Number.isInteger(point.y))throw Error('TEST_POINT_INVALID');
+        let target=window.webContents,x=point.x,y=point.y;
+        for(const child of [...window.contentView.children].reverse()){if(!(child instanceof WebContentsView)||!child.getVisible())continue;const bounds=child.getBounds();if(x>=bounds.x&&y>=bounds.y&&x<bounds.x+bounds.width&&y<bounds.y+bounds.height){target=child.webContents;x-=bounds.x;y-=bounds.y;break;}}
+        target.sendInputEvent({type:'mouseDown',x,y,button:'left',clickCount:1});target.sendInputEvent({type:'mouseUp',x,y,button:'left',clickCount:1});result=true;break;
+      }
+      case 'metrics':result=app.getAppMetrics();break;
       case 'navigate':if(typeof command.expression!=='string'||!/^https:\/\/127\.0\.0\.1:\d+\/workbench\//u.test(command.expression))throw Error('TEST_LOOPBACK_URL_REQUIRED');void page.loadURL(command.expression).catch(()=>{});result=true;break;
       case 'hide':window.hide();result=true;break;
-      case 'show':window.show();window.focus();page.focus();result=true;break;
+      case 'show':if(window.isMinimized())window.restore();window.show();window.focus();(startup?.webContents??page).focus();result=true;break;
       case 'resize':{const size:unknown=JSON.parse(String(command.expression));if(!Array.isArray(size)||size.length!==2||size.some(v=>!Number.isInteger(v)||v<650||v>2000))throw Error('TEST_SIZE_INVALID');window.setSize(size[0],size[1]);result=true;break;}
       case 'attempt-quit':app.quit();result=true;break;
       case 'lock':powerMonitor.emit('lock-screen');result=true;break;
@@ -84,7 +105,7 @@ process.on('message',async(value:unknown)=>{
       case 'notification-click':notices.at(-1)?.emit('click');result=notices.length;break;
       case 'second-instance':result=await new Promise<number|null>((resolve,reject)=>{const child=spawn(process.execPath,[path.join(stage,'main.mjs')],{env:process.env,windowsHide:true,stdio:'ignore'});const timer=setTimeout(()=>{child.kill();reject(Error('SECOND_INSTANCE_TIMEOUT'));},10000);child.once('exit',code=>{clearTimeout(timer);resolve(code);});child.once('error',error=>{clearTimeout(timer);reject(error);});});break;
       case 'screenshot':{window.show();window.focus();const image=await window.capturePage(undefined,{stayAwake:true});const target=path.join(process.env.WECOM_DESKTOP_DATA_ROOT!,'formal-workbench.png');writeFileSync(target,image.toPNG());result=target;break;}
-      case 'state':result={url:page.getURL().split('?')[0],chromeUrl:window.webContents.getURL(),windows:BrowserWindow.getAllWindows().length,visible:window.isVisible(),minimized:window.isMinimized(),maximized:window.isMaximized(),windowBounds:window.getBounds(),contentSize:window.getContentSize(),viewBounds:view?.getBounds(),viewVisible:view?.getVisible(),loginControlsVisible:loginControls?.getVisible()??false,loginControlsBounds:loginControls?.getBounds(),nativeMenuRemoved:Menu.getApplicationMenu()===null&&!window.isMenuBarVisible(),dialogs,notifications:notices.length,paths:{userData:app.getPath('userData'),sessionData:app.getPath('sessionData'),temp:app.getPath('temp')}};break;
+      case 'state':result={url:page.getURL().split('?')[0],chromeUrl:window.webContents.getURL(),windows:BrowserWindow.getAllWindows().length,visible:window.isVisible(),minimized:window.isMinimized(),maximized:window.isMaximized(),windowBounds:window.getBounds(),contentSize:window.getContentSize(),viewBounds:view?.getBounds(),viewVisible:view?.getVisible(),loginControlsVisible:loginControls?.getVisible()??false,loginControlsBounds:loginControls?.getBounds(),startupVisible:startup?.getVisible()??false,startupBounds:startup?.getBounds(),startupUrl:startup?.webContents.getURL()??null,viewCount:window.contentView.children.length,focusedURL:webContents.getFocusedWebContents()?.getURL()??null,nativeMenuRemoved:Menu.getApplicationMenu()===null&&!window.isMenuBarVisible(),dialogs,notifications:notices.length,paths:{userData:app.getPath('userData'),sessionData:app.getPath('sessionData'),temp:app.getPath('temp')}};break;
       case 'quit':page.close({waitForBeforeUnload:true});result=true;break;
       default:throw Error('TEST_ACTION_UNKNOWN');
     }

@@ -81,7 +81,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  const processes:DesktopProcess[]=[],runId=randomUUID();
  try{
   const stage=path.join(root,'.local/electron/temp','process-stage-'+runId);mkdirSync(stage,{recursive:true});
-  for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
+  for(const file of ['main.mjs','policy.mjs','startup-state.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:tls.origin}));
   for(actor=0;actor<3;actor++){
