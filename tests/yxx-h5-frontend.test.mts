@@ -180,7 +180,7 @@ test('H5 official compiled catalogs preserve all 456 bilingual messages and thei
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,456);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 228 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,468);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 234 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
@@ -725,7 +725,7 @@ test('H5 production router purity preserves used component metadata and real Lin
 
 test('H5 detail ETA follows the canonical queued DTO and excludes terminal states',async()=>{
  const compile=async(file:string)=>transpileModule(await readFile(resolve(sourceRoot,'app/h5/src',file),'utf8'),{fileName:file,compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:JsxEmit.ReactJSX,verbatimModuleSyntax:true}}).outputText;
- const loader=createH5PureModuleLoader({overrides:{'pages/Detail.tsx':await compile('pages/Detail.tsx')+'\nexport{DetailTimeline};','components/ui/primitives.ts':await compile('components/ui/primitives.tsx'),
+ const loader=createH5PureModuleLoader({overrides:{'pages/Detail.tsx':await compile('pages/Detail.tsx')+'\nexport{DetailTimeline,Overview,detailActionVisibility};','components/ui/primitives.ts':await compile('components/ui/primitives.tsx'),
   'navigation.ts':'export function useParams(){return{};}',
   'api/client.ts':'export const api={};export class ApiError extends Error{}',
   'api/query.ts':"export function detailOptions(){}export function supplementsOptions(){}export function firstPage(){}export async function refreshRequest(){}export const queryKeys={timelineSection:()=>['timeline-section']};export function timelineOptions(){return{queryKey:['timeline'],queryFn:async()=>({items:[],next_cursor:null}),initialPageParam:null,getNextPageParam:()=>undefined,initialData:{pages:[{items:[],next_cursor:null}],pageParams:[null]}};}",
@@ -738,9 +738,19 @@ test('H5 detail ETA follows the canonical queued DTO and excludes terminal state
   'components/DetailDialogs.ts':'export default function DetailDialogs(){return null;}',
   'components/Icon.ts':'export function Icon(){return null;}',
   'eta-render-test.ts':[
-   "import{createElement as h}from'react';import{renderToStaticMarkup}from'react-dom/server';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import{DetailTimeline}from'./pages/Detail.tsx';import{reportState}from'./lib/report.ts';import{I18nProvider}from'./i18n-react.ts';import i18n from'./i18n.ts';",
-   "export async function render(status){await i18n.changeLanguage('zh-CN');const client=new QueryClient(),value={display_status:'TICKET_CREATED',ticket:{ticket_no:'SYNTHETIC',status}},state=reportState(value),progress={summary:'Synthetic public progress',updated_epoch_ms:'1792641600000',estimated_epoch_ms:'1792642500000'};try{return{state,html:renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(DetailTimeline,{requestRef:'11111111111111111111111111111111',progress,state}))))};}finally{client.clear();}}"
+   "import{createElement as h}from'react';import{renderToStaticMarkup}from'react-dom/server';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import{DetailTimeline,Overview,detailActionVisibility}from'./pages/Detail.tsx';import{reportState}from'./lib/report.ts';import{I18nProvider}from'./i18n-react.ts';import i18n from'./i18n.ts';",
+   "export async function renderClosure(status,language,text){await i18n.changeLanguage(language);const value={display_status:status===null?'NOT_SERVICE':'TICKET_CREATED',ticket:status===null?null:{ticket_no:'SYNTHETIC',status},intake_no:'SYNTHETIC-INTAKE',safe_description:'报修（合成）',created_epoch_ms:'1792641600000',closure_text:text,note:'INTERNAL_NOTE（合成）',can_supplement:true,h5:{intent:'FAULT',ticket_version:1,evaluation:{rating:null,can_evaluate:false}}};return{html:renderToStaticMarkup(h(I18nProvider,null,h(Overview,{value}))),actions:detailActionVisibility(value,true)};}export async function render(status){await i18n.changeLanguage('zh-CN');const client=new QueryClient(),value={display_status:'TICKET_CREATED',ticket:{ticket_no:'SYNTHETIC',status}},state=reportState(value),progress={summary:'Synthetic public progress',updated_epoch_ms:'1792641600000',estimated_epoch_ms:'1792642500000'};try{return{state,html:renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(DetailTimeline,{requestRef:'11111111111111111111111111111111',progress,state}))))};}finally{client.clear();}}"
   ].join('\n')
- }}),{render}=await import(await loader.moduleUrl('eta-render-test.ts'));
- for(const[status,visible]of [['QUEUED',true],['NEW',true],['OPEN',true],['ACCEPTED',true],['IN_PROGRESS',true],['REOPENED',true],['RESOLVED',false],['CLOSED',false],['CANCELLED',false]]as const){const view=await render(status);assert.equal(view.html.includes('预计修复时间'),visible,status);if(status==='QUEUED')assert.equal(view.state,'queued');}
+ }}),{render,renderClosure}=await import(await loader.moduleUrl('eta-render-test.ts'));
+ for(const[status,visible]of [['QUEUED',true],['NEW',true],['OPEN',true],['ACCEPTED',true],['IN_PROGRESS',true],['REOPENED',true],['RESOLVED',false],['CLOSED',false],['CANCELLED',false],['DUPLICATE_LINKED',false]]as const){const view=await render(status);assert.equal(view.html.includes('预计修复时间'),visible,status);if(status==='QUEUED')assert.equal(view.state,'queued');}
+ for(const status of ['CANCELLED','DUPLICATE_LINKED',null])for(const language of ['zh-CN','en']){
+  const view=await renderClosure(status,language,'已按您的要求撤销本次报修。');assert.match(view.html,/data-h5-closure-text/);assert.ok(view.html.includes(language==='en'?'Closed':'已关闭'));assert.ok(view.html.includes('已按您的要求撤销本次报修。'));assert.doesNotMatch(view.html,/INTERNAL_NOTE/);assert.deepEqual(view.actions,{supplement:false,urge:false,evaluation:false,feedback:false});
+  const generic=await renderClosure(status,language,'已关闭');assert.doesNotMatch(generic.html,/data-h5-closure-text/);assert.ok(generic.html.includes(language==='en'?'Closed':'已关闭'));
+  for(const absent of [null,undefined])assert.doesNotMatch((await renderClosure(status,language,absent)).html,/data-h5-closure-text|INTERNAL_NOTE/);
+  const escaped=await renderClosure(status,language,'<img src=x onerror=alert(1)>');assert.match(escaped.html,/&lt;img/);assert.doesNotMatch(escaped.html,/<img src=x/);
+ }
+ const {reportState,reportTone}=await import(await moduleUrl('lib/report.ts'));
+ for(const status of ['CANCELLED','DUPLICATE_LINKED']){assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'closed');assert.equal(reportTone('closed'),'neutral');}
+ assert.equal(reportState({ticket:null,display_status:'NOT_SERVICE',closure_text:null}),'notService');
+ for(const status of ['CLOSED','RESOLVED'])assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'completed');
 });

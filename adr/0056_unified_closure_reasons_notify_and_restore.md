@@ -134,3 +134,8 @@ Ticket 人工关闭事件沿用 `ticket.cancelled`；新增 `ticket.restored` �
 071 给同一 ledger 增加直接 Intake 主体关联，不要求把个人已读/关注功能变成关闭的前置。现有 061 / Follow 收据守卫继续比较完整旧 inventory；只在 071 的 SQL checksum、专用 UUID 列、精确 FK 和资源 CHECK 均匹配已观察的 PG18 结构时，将本迁移的三项已知扩展投影回原 inventory。资源 CHECK 的六个前后 hash 对来自 BASE / MANUAL / INTAKE / BOT × 061 前后的八次隔离 schema-only 准备；不是业务验收或 Gate。
 
 其它列、约束、索引、触发器及未知 CHECK 仍进入原严格 digest；不放宽旧校验、不改旧 SQL。夹具通过既有迁移 Port 在 071 前完成适用的前序迁移，不在启动宿主后倒序重放旧迁移，也不伪造 migration marker。
+
+
+## 2026-11-07 Bot / Grant H5 详情前向接入
+
+用户授权更新旧 Bot / Grant 详情对应的 H5 接口和页面。既有 Reporter READ 接口同步扩展 status / closure_text，复用当前安全关闭投影和 H5 状态展示。保留原 publicRef 链接、成员与 Grant 授权语义，Grant 查询后复核绑定会话。页面与解析、Schema、声明在同次交付更新。该增量不新增关闭命令或数据库迁移，执行与验证见卡 27C-H 的后继记录。

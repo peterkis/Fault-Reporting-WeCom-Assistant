@@ -1,3 +1,6 @@
+import type {PostgresTransaction,PostgresQueryRow} from '../app/server/src/platform/postgres-pool.mjs';
+import {createP2016ReporterTimeline} from '../app/server/src/p2-016-reporter-timeline.mjs';
+import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
@@ -211,6 +214,53 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
         await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:t.id,beforeStatus:current.status,beforeAssignee:current.assignee_id,beforeTeam:current.resolver_team_id,beforeVersion:current.version,beforeSnapshot:{},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'DUPLICATE'}),ticketEventId:event.event_id});
       }
       closureCases.push({ref:receipt.request_ref,id:t.id,status});
+    }
+    for(const item of closureCases){
+      let authorizationChecks=0;
+      const reporterScope={ticket_id:item.id,session_id:null,public_ref:item.ref,public_ref_id:item.ref};
+      const grantReader=createP2016ReporterTimeline({pool:f.pool,enabled:true,access:{authenticate:async()=>{
+        authorizationChecks++;return reporterScope;
+      }}});
+      const view=await grantReader.detail({sessionToken:'绑定会话（合成）',publicRef:item.ref});
+      await assertP2016Schema('p2_016_reporter_ticket_view',view);
+      assert.equal(view.status,item.status);assert.equal(authorizationChecks,2);
+      assert.equal(view.closure_text!==null,['CANCELLED','DUPLICATE_LINKED'].includes(item.status));
+      assert.equal(JSON.stringify(view).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
+      if(item.status==='CANCELLED'){
+        let revocationChecks=0;
+        const revokedReader=createP2016ReporterTimeline({pool:f.pool,enabled:true,access:{authenticate:async()=>{
+          if(++revocationChecks===2)throw Object.assign(new Error('绑定会话已撤销（合成）'),{code:'P2_016_REPORTER_UNAUTHENTICATED'});
+          return reporterScope;
+        }}});
+        await assert.rejects(revokedReader.detail({sessionToken:'撤销会话（合成）',publicRef:item.ref}),{code:'P2_016_REPORTER_UNAUTHENTICATED'});
+        assert.equal(revocationChecks,2);
+
+        for(const reclose of [false,true]){
+          let interleaved=false;
+          const racingPool:PostgresTransaction={async query<R extends PostgresQueryRow>(sql:string,values?:unknown[]){
+            const result=await f.pool.query<R>(sql,values);
+            if(!interleaved&&sql.startsWith('SELECT ticket_no,request_type,status,version,created_at,updated_at FROM')){
+              interleaved=true;
+              const current=await http.detail(item.id);
+              assert.equal((await http.post(item.id,'restore',{client_command_id:randomUUID(),reason_code:'RESTORE_CLOSED',expected_version:current.version})).status,200);
+              if(reclose){
+                const restored=await http.detail(item.id);
+                assert.equal((await http.post(item.id,'cancel',{client_command_id:randomUUID(),expected_version:restored.version,reason_code:'REPORTER_WITHDREW',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
+              }
+            }
+            return result;
+          }};
+          const racingReader=createP2016ReporterTimeline({pool:racingPool,enabled:true,access:{authenticate:async()=>reporterScope}});
+          const fresh=await racingReader.detail({sessionToken:'并发会话（合成）',publicRef:item.ref});
+          const actual=await http.detail(item.id);
+          assert.equal(interleaved,true);assert.equal(fresh.status,actual.status);assert.equal(fresh.version,actual.version);
+          assert.equal(fresh.closure_text,reclose?'已按您的要求撤销本次报修。':null);
+          assert.equal(JSON.stringify(fresh).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
+          if(reclose)assert.equal((await http.post(item.id,'restore',{client_command_id:randomUUID(),reason_code:'RESTORE_CLOSED',expected_version:actual.version})).status,200);
+          const open=await http.detail(item.id);
+          assert.equal((await http.post(item.id,'cancel',{client_command_id:randomUUID(),expected_version:open.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
+        }
+      }
     }
     const completed=await query.list({request:req,v2:true,status:'COMPLETED'}),closedOut=await query.list({request:req,v2:true,status:'CLOSED_OUT'});
     assert.deepEqual(completed.items.map(x=>x.ticket?.status).sort(),['CLOSED','RESOLVED']);assert.deepEqual(closedOut.items.map(x=>x.ticket?.status).sort(),['CANCELLED','DUPLICATE_LINKED']);
