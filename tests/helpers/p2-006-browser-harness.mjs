@@ -73,19 +73,12 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
-  const linuxGraphics = graphics && process.platform === 'linux';
   const windowsSoftwareGraphics = graphics && process.platform === 'win32' && process.env.TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS === '1';
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
-    // Linux CI has no hardware adapter. Use Chromium's software graphics
-    // backend for the browser tests that exercise actual WebGL/WebGPU commands.
-    ...(linuxGraphics?[
-      '--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader',
-      '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
-      '--webgl-antialiasing-mode=none',
-      '--enable-logging=stderr',
-    ]:windowsSoftwareGraphics?[
+    // Hosted Windows uses WARP for WebGL and SwiftShader for WebGPU.
+    ...(windowsSoftwareGraphics?[
       '--use-gl=angle','--use-angle=d3d11-warp','--use-webgpu-adapter=swiftshader','--disable-gpu-compositing',
       '--enable-unsafe-swiftshader','--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
@@ -99,7 +92,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
       const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
       ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
-    }else child=spawn(executable,args,{stdio:graphics?['ignore','ignore','pipe']:'ignore',windowsHide:true});
+    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true});
   }catch(error){
     await closeBrowserTestResources([async()=>{
       const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
@@ -108,17 +101,6 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     throw error;
   }
   let socket=null,sequence=0,closePromise=null,launchError=null;
-  let graphicsErrors=0;
-  child.stderr?.on('data',chunk=>{
-    for(const [pattern,kind] of [[/GPU process exited|GPU process crash/u,'gpu-process-exit'],[/Context lost|context lost/u,'context-lost'],[/out of memory|Out of memory/u,'out-of-memory'],[/Failed to initialize/u,'initialization-failed']]){
-      if(graphicsErrors<12&&pattern.test(String(chunk))){graphicsErrors++;console.error('P2_006_BROWSER_GRAPHICS_CONTEXT',kind);}
-    }
-    for(const match of String(chunk).matchAll(/(?:ERROR|FATAL):([a-z0-9_]+\.cc):(\d+)\]/giu)){
-      if(graphicsErrors>=24)break;
-      if(!/gpu|dawn|vulkan|gl_context|shared_image|command_buffer/u.test(match[1]))continue;
-      graphicsErrors++;console.error('P2_006_BROWSER_GRAPHICS_SOURCE',match[1],match[2]);
-    }
-  });
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
   const pending=new Map();
   const ownedResourceState=()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,

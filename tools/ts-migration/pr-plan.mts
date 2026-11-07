@@ -10,6 +10,11 @@ type History={path:string;risk:string;applicable:boolean;disposition:string;repl
 export type Policy={schema_version:1;profiles:Record<string,Profile>;rules:{pattern:string;profiles:string[];reason:string}[];fallback:string[];history:History[]};
 export type Change={status:string;paths:string[]};
 export type Plan={base:string;head:string;changes:Change[];profiles:string[];reasons:{path:string;profiles:string[];reason:string}[];selection:Selection;selections:string[];tools:string[];build:boolean;requirements:Requirements;lane:'docs'|'no-database'|'database';not_selected:{profile:string;reason:string}[];history:{path:string;status:string;reason:string}[]};
+
+export function isWindowsDesktopGraphics(entryPath:string):boolean {
+  return entryPath==='tests/workbench-desktop-session.browser.test.mts'
+    ||entryPath==='tests/workbench-desktop-session.gpu.browser.test.mts';
+}
 function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw Error('PR_POLICY_OBJECT');return value as Record<string,unknown>;}
 function strings(value:unknown):string[]{if(!Array.isArray(value)||!value.every((v:unknown)=>typeof v==='string'&&v.length>0)||new Set(value).size!==value.length)throw Error('PR_POLICY_STRINGS');return value;}
 export function parsePolicy(input:unknown):Policy{
@@ -72,6 +77,7 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
   const sorted=[...entries.values()].sort((a,b)=>a.path.localeCompare(b.path,'en'));
   for(const e of sorted){requirements.database ||= e.requires_database;requirements.browser ||= e.requires_browser;requirements.pyyaml ||= e.requires_pyyaml;requirements.ffmpeg ||= e.requires_ffmpeg===true;requirements.windows ||= e.requires_powershell;}
   if(sorted.some(e=>e.path==='tests/pc-admin-electron.browser.test.mts')&&!requirements.windows)throw Error('PR_NATIVE_RESOURCE_REQUIRED');
+  if(sorted.some(e=>isWindowsDesktopGraphics(e.path)))requirements.windows=true;
   if(sorted.length&&!build)throw Error('PR_ENTRIES_REQUIRE_BUILD');
   if(build&&!sorted.length)throw Error('PR_EMPTY_EXECUTION');
   return {base,head,changes,profiles:[...selected].sort(),reasons,selection:{entries:sorted,flags:[],label:'pr-impact'},selections:[...selections].sort(),tools:[...tools].sort(),build,requirements,lane:!build?'docs':requirements.database?'database':'no-database',
@@ -90,7 +96,7 @@ export async function createPlan(root:string,base:string,head='HEAD'):Promise<Pl
 async function run(root:string,plan:Plan,reportDir:string):Promise<void>{
   const {runSelection}=await import('./run-tests.mjs');
   // The caller has built once; runSelection retains exact artifact/host/flags/cleanup checks.
-  const entries=plan.selection.entries.filter(e=>e.path!=='tests/pc-admin-electron.browser.test.mts');
+  const entries=plan.selection.entries.filter(e=>e.path!=='tests/pc-admin-electron.browser.test.mts'&&!isWindowsDesktopGraphics(e.path));
   if(entries.length)runSelection(root,{...plan.selection,entries},{reportDir});
   if(plan.tools.length){const result=spawnSync(process.execPath,['--test','--test-reporter=tap','--test-concurrency=1',...plan.tools.map(p=>path.join(root,'.build/tools',path.basename(p).replace(/\.mts$/u,'.mjs')))],{cwd:root,stdio:'inherit',windowsHide:true});if(result.error||result.status!==0)throw Error('PR_TOOL_TESTS_FAILED');}
 }

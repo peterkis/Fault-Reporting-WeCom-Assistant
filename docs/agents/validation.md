@@ -8,6 +8,8 @@
 
 文档路径只准备严格工具和文档检查，不做应用构建、PG、浏览器或媒体准备。代码/策略路径执行 strict、一次统一应用构建、相关工具/业务与制品校验；PG、浏览器、PyYAML、ffmpeg 从选中入口推导，工具/构建特殊依赖显式登记。构建后用 `runSelection` API 执行去重并集，避免 run-tests CLI 再构建；host、flags、超时、隔离和清理合同保持。Windows 原生由桌面边界或入口需求追加。CI 汇总必须确认计划及所选路径成功；意外跳过、取消、未完成、失败均拒绝。
 
+普通 PR 的 Linux 任务保留服务端、数据库与通用浏览器回归。桌面登录的 `workbench-desktop-session.browser.test.mts` 和 `workbench-desktop-session.gpu.browser.test.mts` 保留在计划中，由 Windows 任务执行原有场景及断言，并上传入口、逐例和系统版本回执。Windows 原生启动、登录交接、集成与打包仍由 Windows 任务验证。发布前分别在 Win10、Win11 目标机验收安装、启动和登录。Windows Server runner 的结果单列。
+
 历史来源与差异保护仍由 SS009 单一 Linux PR job 执行。完整 current 回归为手动 full；当前严格 readiness 与固定历史证明分别为独立 workflow 的手动 certify，不自动运行或成为普通 PR 前置。
 
 下文“预检后执行严格 ready”适用于固定历史复现和发布认证，不是普通迁移 PR 的日常要求。认证器、候选指纹、历史证据、SQL、业务状态、默认 Feature Flag 和生产授权保持原约束。P00 只创建 PR，不运行 full/certify、不自动合并或推进后续阶段；不修改分支保护或 ruleset。

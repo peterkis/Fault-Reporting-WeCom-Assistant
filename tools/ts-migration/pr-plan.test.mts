@@ -4,7 +4,7 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {mkdtempSync,readFileSync,rmSync,writeFileSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {diff,parseDiff,parsePolicy,planChanges} from './pr-plan.mjs';
+import {diff,isWindowsDesktopGraphics,parseDiff,parsePolicy,planChanges} from './pr-plan.mjs';
 import {loadRoutes} from './routing.mjs';
 import {sourceRoot,record} from './common.mjs';
 
@@ -124,6 +124,10 @@ test('resource preparation and builds stay on mutually exclusive actual workflow
   assert.equal([...code.matchAll(/npm run migration:build/gu)].length,1);assert.doesNotMatch(code,/run-tests\.mjs|--require-ready/u);assert.match(code,/pr-plan\.mjs.*--run/u);assert.match(code,/verify-artifact\.mjs/u);
   for(const resource of ['browser','pyyaml','ffmpeg'])assert.ok(steps.some(s=>String(record(s).if??'').includes('inputs.'+resource+" == 'true'")));
   const native=plan('app/pc-admin/desktop/policy.mts');assert.equal(native.requirements.windows,true);
+  assert.deepEqual(native.selection.entries.filter(entry=>isWindowsDesktopGraphics(entry.path)).map(entry=>entry.path),[
+    'tests/workbench-desktop-session.browser.test.mts','tests/workbench-desktop-session.gpu.browser.test.mts',
+  ]);
+  assert.equal(isWindowsDesktopGraphics('tests/workbench-desktop-session-auth.browser.test.mts'),false);
   const unsafe=policy(),desktop=unsafe.profiles['desktop'];assert.ok(desktop);desktop.windows=false;assert.throws(()=>planChanges(unsafe,routes,[{status:'M',paths:['app/pc-admin/desktop/policy.mts']}]),/NATIVE_RESOURCE_REQUIRED/u);
   const nativeSteps=record(jobs['pr-windows']).steps;assert.ok(Array.isArray(nativeSteps));
   const nativeValidation=nativeSteps.map(record).find(s=>s.name==='One native candidate build and existing process validation');assert.ok(nativeValidation);const validationCommands=String(nativeValidation.run);const stageAt=validationCommands.indexOf('npm run desktop:build'),policyAt=validationCommands.indexOf('npm run desktop:test'),integrationAt=validationCommands.indexOf('npm run desktop:integration');assert.ok(stageAt>=0&&stageAt<policyAt&&policyAt<integrationAt,'the clean native fixture needs the staged shell and icons before policy/navigation tests');
