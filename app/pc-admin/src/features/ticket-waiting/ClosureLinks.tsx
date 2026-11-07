@@ -27,18 +27,26 @@ export function ClosureOriginalLink({number}:{number:string}){
  return <><Button tone="ghost" className="ds-closure-original" data-action="open-closure-original" isDisabled={busy||blocked} aria-label={'打开原单 '+number} onPress={()=>{void open();}}>{number}</Button>{message?<span role="status">{message}</span>:null}</>;
 }
 
-/** Card 29 K3: typing searches after 250ms through the existing visible-ticket search; the original's ticket number is submitted. */
+/** Card 29 K3: typing searches after 250ms through the existing visible-ticket search; the original's ticket number is submitted.
+ * Search shares a per-principal request budget with ordinary search, so lookups start at three characters and a complete
+ * earlier result set is narrowed locally instead of spending another request. */
+const minimumOriginalQuery=3;
 export function ClosureTicketSearch({principal,subjectId,selected,disabled,onSelect}:{principal:Principal;subjectId:string;selected:string;disabled:boolean;onSelect:(number:string)=>void}){
  const [query,setQuery]=useState(''),[items,setItems]=useState<ClosureSearchItem[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[title,setTitle]=useState<{number:string;title:string}|null>(null),request=useRef<AbortController|null>(null);
+ const complete=useRef<{q:string;items:ClosureSearchItem[]}|null>(null);
  useEffect(()=>()=>request.current?.abort(),[]);
  useEffect(()=>{
   request.current?.abort();request.current=null;setBusy(false);setItems([]);setMessage('');
   const q=query.trim();if(!q||selected)return;
+  if(q.length<minimumOriginalQuery){setMessage('输入至少 '+minimumOriginalQuery+' 个字符后搜索');return;}
+  const show=(found:ClosureSearchItem[])=>{setItems(found);if(!found.length)setMessage('没有找到可关联的工单');};
+  const cached=complete.current;
+  if(cached&&q.includes(cached.q)){const needle=q.toLowerCase();show(cached.items.filter(item=>item.number.toLowerCase().includes(needle)||item.title.toLowerCase().includes(needle)));return;}
   const timer=window.setTimeout(()=>{
    const controller=new AbortController(),current=captureWorkbenchRead(controller.signal);request.current=controller;setBusy(true);
    void api.search(closureSearchCriteria(q),null,controller.signal,principal.csrf_token).then(result=>{current();
     const found=result.items.filter(item=>item.kind==='ticket'&&item.id!==subjectId&&externalTicketNumber(item.number)).map(item=>({id:item.id,number:item.number,title:item.title,service:item.service??null,column:item.column}));
-    setItems(found);if(!found.length)setMessage('没有找到可关联的工单');
+    complete.current=result.next_cursor===null?{q,items:found}:null;show(found);
    }).catch((error:unknown)=>{if(!controller.signal.aborted)setMessage(errorMessage(error));}).finally(()=>{if(request.current===controller){request.current=null;setBusy(false);}});
   },250);
   return()=>window.clearTimeout(timer);

@@ -96,7 +96,8 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  const history=useQuery({queryKey:['closure-history',principal.principal_id,s.kind,s.id,principal.authorization_revision],queryFn:({signal})=>closureApi.history(s.kind,s.id,null,signal),enabled:action==='restore',retry:false,gcTime:0});
  // The target is captured while visible: after a committed restore the refreshed history no longer has one.
  const shownTarget=useRef<'pending'|'active'|null>(null);if(history.data?.restore_target)shownTarget.current=history.data.restore_target.column;
- const restoreColumn=()=>(history.data?.restore_target?.column??shownTarget.current)==='active'?'处理中':s.kind==='ticket'?'待接单':'待判断';
+ // Recovering after a lost response mounts with no target; the confirmed current item then says where it is.
+ const restoreColumn=()=>{const column=history.data?.restore_target?.column??shownTarget.current??(item.column==='closed'?null:item.column);return column==='active'?'处理中':column==='pending'?(s.kind==='ticket'?'待接单':'待判断'):'关闭前所在列';};
  const clear=()=>{request.current?.abort();request.current=null;setValue(emptyClosureForm);setPending(null);setBusy(false);};
  const denied=(error:unknown)=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){clear();if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearClosureRead(client,principal.principal_id,s.kind,s.id,error).then(()=>clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error));onClose();return true;}return false;};
  const draft=useAuthorizedDraft<ClosureFormValue,Pending>({scope,enabled:raw,writeEnabled:raw&&context.data?.allowed===true,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:emptyClosureForm,hasInput:form=>Boolean(form.reason||form.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeDraft,commandId:command=>command.client_command_id,
