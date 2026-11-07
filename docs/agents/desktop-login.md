@@ -73,7 +73,7 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 播放器最多每秒报告一次真实drawCount增长，主进程只以当前可见且单调增长的计数续期无进展故障预算，不写逐帧日志、不触发场景准备或首播完成。这允许低速但持续推进的首遍超过8秒，仍能检测脚本失联和真正卡死；心跳不能代替全部68帧与末帧停留的完成信号。
 
-仅这个小Canvas以`alpha:false, willReadFrequently:true`请求软件backing，不关闭整个Electron窗口的GPU能力。原生对照中，三槽位图即使全部正确close，默认加速Canvas仍产生较大的GPU进程私有内存增量；软件backing候选须重新测CPU与卡顿，不能把JS池上限当作Chromium缓存上限。该选项是实现提示，其他硬件的收益不作预先保证；接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)。
+仅这个小Canvas以`alpha:false, willReadFrequently:true, desynchronized:true`请求软件backing及低延迟绘制，不关闭整个Electron窗口的GPU能力。原生对照中，三槽位图即使全部正确close，默认加速Canvas仍产生较大的GPU进程私有内存增量；软件backing候选须重新测CPU与卡顿，不能把JS池上限当作Chromium缓存上限。2026-11-07同源三配对诊断中，原同步绘制的p95为119/92.5/64.5ms，加入desynchronized提示后为34.1/34.0/34.5ms；实际context属性、完整68帧、源周期及末帧停留均独立核验。这只支持采用最小提示，不能替代普通构建性能验收或屏幕扫描级撕裂验证。每帧仍一次绘制完整原图，不改变播放器时钟、GPU准备并行性、像素、窗口或释放条件。两个选项都是实现提示，须读回实际context属性；其他硬件收益不作预先保证。接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)与[Chrome低延迟Canvas说明](https://developer.chrome.com/blog/desynchronized/)。
 
 rAF时间戳存在有限精度。正常换帧deadline允许0.2ms量化容差，并以1纳秒算术裕量包含二进制舍入后的相等边界；保留提前绘制后的微小负相位，避免把约33.3ms误判成不足一帧而形成50/16ms交替。这不扩大0.2ms展示容差，不放宽末帧实际驻留或首遍源最短时长。暂停、解码等待与长回调间隔仍不产生快进债。实际native时钟回放覆盖相等边界与真实不足，不能替代原生绘制间隔测量。诊断DOM只在绘制/播放状态变化时发布，预解码完成不重复写13个属性；测试同时读取单调峰值，不能因少一次DOM发布漏检三帧/单任务限制。
 
