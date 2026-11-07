@@ -62,7 +62,7 @@ test('Reporter browser retries incomplete ETag render after transient timeline f
       for(const state of ['CANCELLED','DUPLICATE_LINKED','CLOSED','RESOLVED','QUEUED','WAITING_REQUESTER','WAITING_VENDOR']){
         ticketStatus=state;closureText=state==='CANCELLED'?'已关闭':state==='DUPLICATE_LINKED'?'公开重复说明（合成）':null;version++;
         await browser.evaluate('window.pollReporter()');
-        const view=await browser.evaluate("({state:document.querySelector('#state').textContent,tone:document.querySelector('#state').className,theme:document.documentElement.dataset.theme,closure:document.querySelector('#closure-text').textContent,hidden:document.querySelector('#closure-text').hidden,body:document.querySelector('#ticket').textContent})");
+        const view=await browser.evaluate("({state:document.querySelector('#state').textContent,tone:document.querySelector('#state').className,theme:document.documentElement.dataset.theme,closure:document.querySelector('#closure-text').textContent,hidden:document.querySelector('#closure-text').hidden,body:document.querySelector('#ticket').textContent,closedMark:!!document.querySelector('#state>[data-h5-status-icon=\"closed\"]'),noteAfterTimes:!!(document.querySelector('#times').compareDocumentPosition(document.querySelector('#closure-text'))&Node.DOCUMENT_POSITION_FOLLOWING)})");
         if(state==='WAITING_VENDOR')assert.equal(view.state,mode.lang==='en'?'Awaiting vendor':'等待厂商');
         if(state==='WAITING_REQUESTER')assert.equal(view.state,mode.lang==='en'?'Awaiting details':'待补充资料');
         if(['CANCELLED','DUPLICATE_LINKED'].includes(state)){assert.equal(view.state,mode.closed);assert.match(view.tone,/\bbadge-status-neutral\b/);}
@@ -71,6 +71,7 @@ test('Reporter browser retries incomplete ETag render after transient timeline f
           assert.match(view.tone,/\bbadge-status-done\b/);
         }
         assert.equal(view.theme,mode.theme);
+        assert.equal(view.closedMark,['CANCELLED','DUPLICATE_LINKED'].includes(state));assert.equal(view.noteAfterTimes,true,'closure note sits at the bottom of the header card');
         assert.equal(view.hidden,state!=='DUPLICATE_LINKED');assert.equal(view.closure,state==='DUPLICATE_LINKED'?'公开重复说明（合成）':'');
         assert.equal(view.body.includes('内部说明（合成）'),false);
       }

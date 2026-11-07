@@ -1,9 +1,36 @@
 import type {YxxTimelineEvent} from '../../../../contracts/yxx_self_service_contracts.js';
 const eventLabels:Record<string,string>={REQUEST_ACCEPTED:'received',SUPPLEMENT_ACCEPTED:'eventSupplement',WAITING_FOR_DETAILS:'waiting',UNDER_REVIEW:'review',TICKET_CREATED:'eventCreated',TICKET_UPDATED:'eventUpdated',NOT_SERVICE:'notService',PROCESSING:'processing'};
 const tiedStageOrder:ReadonlyMap<string,number>=new Map([['REQUEST_ACCEPTED',0],['TICKET_CREATED',1],['PROCESSING',2]]);
+const closedOut:ReadonlySet<string>=new Set(['CANCELLED','DUPLICATE_LINKED']);
+const terminal:ReadonlySet<string>=new Set(['CLOSED','RESOLVED','CANCELLED','DUPLICATE_LINKED']);
+export type TimelinePresentation={titleKey:string|null;summary:string;summaryKey?:string};
 /** Titles use known external event kinds; the external safe summary remains the narrative. */
-export function timelinePresentation(event:YxxTimelineEvent):{titleKey:string|null;summary:string}{
+export function timelinePresentation(event:YxxTimelineEvent):TimelinePresentation{
  return {titleKey:eventLabels[event.event_type]??null,summary:event.summary};
+}
+/** Reporter-visible closure explanation. False report / test closures carry only the
+ * generic status text, which the status badge already shows. Internal notes never reach H5. */
+export function reporterClosureNote(text:string|null|undefined):string|null{
+ return text&&text!=='已关闭'?text:null;
+}
+function closesReport(event:YxxTimelineEvent){return event.event_type==='TICKET_UPDATED'&&closedOut.has(event.ticket?.status??'');}
+/**
+ * Presentation for latest-first loaded events. A Ticket update into a closed-out status
+ * reads as "report closed"; the newest one carries the current reporter-visible note and
+ * every other one the neutral default. A Ticket update leaving that status for an active
+ * one directly after it, within the loaded facts, reads as "accepted again". Facts are not
+ * reordered or invented; unloaded pages keep the generic presentation.
+ */
+export function timelinePresentations(events:readonly YxxTimelineEvent[],closureNote:string|null=null):TimelinePresentation[]{
+ const views=events.map(timelinePresentation),newest=events.findIndex(closesReport);
+ let previousClosed=false;
+ for(let index=events.length-1;index>=0;index--){
+  const event=events[index];if(!event)continue;
+  if(closesReport(event)){views[index]=index===newest&&closureNote?{titleKey:'eventClosed',summary:closureNote}:{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'};previousClosed=true;continue;}
+  if(previousClosed&&event.event_type==='TICKET_UPDATED'&&event.ticket&&!terminal.has(event.ticket.status))views[index]={titleKey:'eventRestored',summary:''};
+  previousClosed=false;
+ }
+ return views;
 }
 export function latestFirst(events:readonly YxxTimelineEvent[]):YxxTimelineEvent[]{
  const ordered=[...events].sort((left,right)=>Number(right.occurred_epoch_ms)-Number(left.occurred_epoch_ms));

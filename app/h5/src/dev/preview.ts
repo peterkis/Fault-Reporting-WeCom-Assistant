@@ -16,7 +16,8 @@ const boot:Bootstrap={authenticated:true,identity_mode:'MEMBER_SELF_SERVICE',rea
 const closureCases=[
  {ref:'44444444444444444444444444444444',status:'CANCELLED',summary:'窗口打印异常（合成）',text:'已按您的要求撤销本次报修。'},
  {ref:'55555555555555555555555555555555',status:'DUPLICATE_LINKED',summary:'门诊网络异常（合成）',text:'您的报修与已有报修重复，我们会在原报修中继续跟进。'},
- {ref:'66666666666666666666666666666666',status:'CANCELLED',summary:'设备连通性检查（合成）',text:'已关闭'}
+ {ref:'66666666666666666666666666666666',status:'CANCELLED',summary:'设备连通性检查（合成）',text:'已关闭'},
+ {ref:'77777777777777777777777777777777',status:'CANCELLED',summary:'门禁卡读卡器失灵（合成）',text:'您反映的问题不属于信息科受理范围，建议联系相关部门处理。'}
 ];
 const fakeDate=(value:string)=>value as ReportItem['created_at'];
 function fixtureItems():ReportItem[]{return[
@@ -39,7 +40,9 @@ export async function installPreview(){
  const reservations=new Map<string,unknown>();
  const reportPage=(url:URL)=>{const q=url.searchParams.get('search')?.toLowerCase(),status=url.searchParams.get('status'),source=url.searchParams.get('source');return{items:items.filter(item=>(!q||(item.safe_summary??'').toLowerCase().includes(q)||item.ticket?.ticket_no.toLowerCase().includes(q))&&(!source||(source==='WEB'&&item.kind==='WEB_REQUEST'||source==='BOT'&&item.kind==='BOT_TICKET'))&&(!status||(status==='COMPLETED'?['CLOSED','RESOLVED'].includes(item.ticket?.status??''):status==='CLOSED_OUT'?['CANCELLED','DUPLICATE_LINKED'].includes(item.ticket?.status??''):status==='OPEN'?item.ticket?.status==='OPEN':item.ticket?.status==='IN_PROGRESS'))),next_cursor:null};};
  const departmentPage=()=>({items:items.map(item=>({ticket_no:item.ticket?.ticket_no,service_category:item.service_category??null,status:item.ticket?.status,public_progress:item.h5?.public_progress??null,created_at:local})),total:4,active_count:1,next_cursor:null});
- const timelinePage=(detail:RequestDetail)=>({items:detail.closure_text?[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'已关闭',ticket:detail.ticket}]:[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'REQUEST_ACCEPTED',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
+ const closureEvent=(status:string,epoch:string,detail:RequestDetail)=>({event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:epoch,summary:'工单状态已更新',ticket:detail.ticket&&{...detail.ticket,status}});
+ const closureTimeline=(detail:RequestDetail)=>[closureEvent(detail.ticket?.status??'CANCELLED',now,detail),...(detail.request_ref.startsWith('5')?[closureEvent('IN_PROGRESS',String(Number(now)-6*60_000),detail),closureEvent('CANCELLED',String(Number(now)-12*60_000),detail)]:[]),{event_type:'TICKET_CREATED',occurred_at:local,occurred_epoch_ms:created,summary:'工单已创建',ticket:detail.ticket}];
+ const timelinePage=(detail:RequestDetail)=>({items:detail.closure_text?closureTimeline(detail):[{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:now,summary:'工程师到场检修中',ticket:detail.ticket},{event_type:'TICKET_UPDATED',occurred_at:local,occurred_epoch_ms:String(Number(now)-8*60_000),summary:'工程师已接单',ticket:detail.ticket},{event_type:'REQUEST_ACCEPTED',occurred_at:local,occurred_epoch_ms:created,summary:'报修已受理',ticket:detail.ticket}],next_cursor:null});
  class PreviewXHR{
   status=0;responseText='';withCredentials=false;upload:{onprogress:((event:ProgressEvent)=>void)|null}={onprogress:null};onload:(()=>void)|null=null;onerror:(()=>void)|null=null;onabort:(()=>void)|null=null;private timer:number|null=null;private url='';
   open(_method:string,url:string){this.url=url;}setRequestHeader(_name:string,_value:string){}
