@@ -54,7 +54,7 @@ macOS 本机，Node 24.18.0，PG 18.6，Chrome。全部在已提交 HEAD 上构�
   - 50–51：`web01-workbench.integration` 首次 1 FAIL（27A 已关闭看板 500，与在场无关），单独复跑 17/17 PASS，记为间歇。
   - 52–64：`yxx-h5-flow.integration`、`yxx-h5-media.integration`、`yxx-h5-media` 共 9 FAIL（`YXX_MEDIA_STORAGE_UNAVAILABLE` / `YXX_MEDIA_CONVERSION_UNAVAILABLE`），在未修改的 `origin/main` 构建上逐一复现相同失败，属本机环境既有问题；其余全部 PASS。
   - 新增 3 个入口（批量服务、批量 HTTP+PG、提示节流）与 presence 全部入口 PASS（含 lifecycle 浏览器）。
-- 工具测试：backend-layout、check-agent-docs、design-system PASS；h5（8 FAIL，H5_BUILD_OUTPUT_INVALID）、hosts（5 FAIL，WEB01_BUILD_OUTPUT_INVALID）、pr-plan（2 FAIL，`spawnSync python ENOENT`）、tooling（多项）FAIL，本机缺 python/PyYAML 等；main 上复现仍在进行，未完成核对，依 CI 结果为准。
+- 工具测试：backend-layout、check-agent-docs、design-system PASS；h5（8 FAIL，H5_BUILD_OUTPUT_INVALID）、hosts（5 FAIL，WEB01_BUILD_OUTPUT_INVALID）、pr-plan（2 FAIL，`spawnSync python ENOENT`）、tooling（2 FAIL）在未修改的 `origin/main` 构建上以相同用例、相同数量复现，属本机环境（无 python/PyYAML 等）既有问题，以 CI 为准。
 - `npm run docs:agents:check`：PASS。Stylelint/ESLint：本卡无样式改动，未单独运行。
 
 ## 自检
