@@ -53,7 +53,7 @@ export function mountReporterController(entry:ReporterEntry,t:Translator):()=>vo
   const state=reportState({display_status:'TICKET_CREATED',ticket:{ticket_no:text(value.ticket_no),status:text(value.status)}});
   element('title',HTMLElement).textContent=t(value.title==='信息服务申请'?'serviceRequestTitle':'faultReportTitle');
   element('number',HTMLElement).textContent=text(value.ticket_no);
-  const badge=element('state',HTMLElement);badge.textContent=t(state);badge.className='ui-badge badge-status-'+reportTone(state);
+  const badge=element('state',HTMLElement);badge.textContent=t(state);badge.className='ui-badge badge-status-'+reportTone(state);if(state==='closed'){const mark=document.createElement('span');mark.className='status-icon-closed';mark.setAttribute('aria-hidden','true');mark.dataset.h5StatusIcon='closed';badge.prepend(mark);}
   const closure=element('closure-text',HTMLElement);closure.textContent=typeof value.closure_text==='string'&&value.closure_text!=='已关闭'?value.closure_text:'';closure.hidden=!closure.textContent;
   element('times',HTMLElement).replaceChildren(line('dt',t('created')),line('dd',text(value.created_at)),line('dt',t('reporterUpdated')),line('dd',text(value.updated_at)));
   element('reporter-guidance',HTMLElement).textContent=t(value.guidance==='如未解决，请联系工作人员补充情况。'?'manualReporterGuidance':'botReporterGuidance');
