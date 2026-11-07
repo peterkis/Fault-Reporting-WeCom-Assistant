@@ -15,6 +15,7 @@ import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 
 interface DesktopProcess {child:ChildProcess;command:(action:string,expression?:string)=>Promise<unknown>;evaluate:(expression:string)=>Promise<unknown>;wait:(expression:string)=>Promise<void>;close:()=>Promise<void>}
 async function launchDesktop(root:string,stage:string,spki:string,name:string):Promise<DesktopProcess>{
@@ -42,6 +43,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  assert.ok(existsSync(path.join(root,'.local/electron/stage/main.mjs')),'desktop Build must prepare an allowlisted stage');
  const authMigration={databaseUrl:f.databaseUrl,mode:'apply'};
  await migrateWorkbenchAuth(authMigration);
+ await migrateServiceClosure({databaseUrl:f.databaseUrl,mode:'apply'});
  const access=createPilotAccessService({pool:f.pool}),principals:string[]=[];
  for(let i=0;i<3;i++)principals.push((await access.upsertPrincipal({wecomUserId:'desktop-staff-'+i,displayName:'桌面合成人员'+i,roles:['DISPATCHER','HANDLER'],resolverTeamIds:['PILOT_IT']})).id);
  let actor=0,auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined,runtime:P2016EnabledRuntime|undefined;

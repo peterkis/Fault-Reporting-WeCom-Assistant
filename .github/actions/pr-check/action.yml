@@ -40,6 +40,10 @@ runs:
       set -euo pipefail
       BROWSER_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
       test -x "$BROWSER_PATH"
+      if ! compgen -G '/usr/share/vulkan/icd.d/lvp_icd*.json' >/dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers
+      fi
       echo "TS_MIGRATION_BROWSER_EXECUTABLE=$BROWSER_PATH" >> "$GITHUB_ENV"
   - name: Prepare selected media tools
     if: ${{ inputs.ffmpeg == 'true' }}

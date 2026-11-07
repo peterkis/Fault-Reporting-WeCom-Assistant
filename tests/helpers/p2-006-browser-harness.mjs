@@ -73,14 +73,16 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
+  const linuxGraphics = graphics && process.platform === 'linux';
+  const lavapipe = linuxGraphics && ['/usr/share/vulkan/icd.d/lvp_icd.x86_64.json', '/usr/share/vulkan/icd.d/lvp_icd.json'].find(file => existsSync(file));
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
     // Linux CI has no hardware adapter. Use Chromium's software graphics
     // backend for the browser tests that exercise actual WebGL/WebGPU commands.
-    ...(graphics&&process.platform==='linux'?[
-      '--use-angle=swiftshader','--disable-gpu-compositing',
-      '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
+    ...(linuxGraphics?[
+      ...(lavapipe ? ['--use-angle=vulkan', '--enable-features=Vulkan', '--disable-vulkan-surface'] : ['--use-angle=swiftshader', '--use-webgpu-adapter=swiftshader']),
+      '--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
@@ -92,7 +94,9 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
       const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
       ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
-    }else child=spawn(executable,args,{stdio:graphics?['ignore','ignore','pipe']:'ignore',windowsHide:true});
+    }else child=spawn(executable,args,{stdio:graphics?['ignore','ignore','pipe']:'ignore',windowsHide:true,
+      ...(lavapipe ? {env: {...process.env, VK_DRIVER_FILES: lavapipe}} : {}),
+    });
   }catch(error){
     await closeBrowserTestResources([async()=>{
       const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
