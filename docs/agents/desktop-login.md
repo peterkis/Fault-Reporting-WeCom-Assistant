@@ -45,7 +45,9 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 固定Shaders 4.0.5背景沿库原有同步管线准备，完整三层、30fps和550000像素预算不变；只把真实首帧作为onReady。曾采用的native异步pipeline探针虽有功能阳性，但普通候选对旧loader仍有暖启动残差，正常首遍draw门槛也失败；该实验的源码、测试与结果保留，不将API选择当作用户就绪合同。恢复原准备路径后，实际配对验收和生命周期回归分别执行，不靠跨批数字推定收益。
 
-背景在初始化前使用公开frame lock。真实隐藏、离线或窄屏到达时，未完成的初始化会取消本代；恢复后按最新尺寸重新准备背景，已创建的官方iframe和本地视频进度不变。已初始化代使用公开锁和stop阻断按需绘制，恢复后应用最新尺寸；正常active路径不增加等待或额外RAF。覆盖下旧代的ready hold与替换代首次准备分开，不能等待presented形成死锁。原三次device-loss恢复上限保留，隐藏取消不计作device loss。原生设备获取本身不可取消；迟到acquire后的abort检查必须先于canvas配置，旧cleanup只释放本代订阅，不销毁共享root或新canvas。
+背景在初始化前使用公开frame lock。真实隐藏、离线或窄屏到达时，未完成的初始化或管线准备会取消本代；恢复后按最新尺寸重新准备背景，已创建的官方iframe和本地视频进度不变。已准备代使用公开锁和stop阻断按需绘制。尺寸确认后先异步准备同一管线，再恢复原startAnimation，由成功的真实绘制产生onReady；准备Promise本身不能报告ready。覆盖下旧代的ready hold与替换代首次准备分开，不能等待presented形成死锁。原三次device-loss恢复上限保留，隐藏取消不计作device loss。原生设备/管线创建不可取消；迟到结果只能清理本代，不能绘制或释放新代资源。
+
+登录专用[构建适配](../../app/pc-admin/desktop-login-prepare-plugin.ts)仅由vite.login.config.ts注入，锁定Shaders 4.0.5及原core/std文件SHA，不修改共享node_modules。它为原PassManager和renderer增加版本1 prepareAsync：复用原composition/cache/pipeline，等待真实initAsync，不执行draw、markReady、渲染回调或帧统计。页面先检查能力，再准备和正常绘制，不使用会触发pending异常的渲染探针。版本/源码漂移、错误入口、重复或缺失变换必须拒绝构建；升级须重新核对适配，不能删除哈希检查。该入口仅支持已构建登录产物，直接加载未适配源码会明确缺少能力。新增插件是独立构建输入，原20项私有清单必须前向纳入为21项。真实编译错误保留日志与拒绝；渲染失败仍沿原连续5次上限恢复，测试在真实setPipeline后注入而非已弃用的同步创建调用，旧构造器计数与新渲染失败计数分开。
 
 公开锁会重置装饰性Blob背景的时钟，因此隐藏/离线恢复后背景可从起始相位继续；不宣称背景相位连续。本地68帧播放器继续当前帧，Lanyard姿态和官方iframe不由此模块重置。该语义不启用系统减动、不改变默认完整动效或降低画面标准。测试在真实GPUAdapter.requestDevice已经fulfil后暂缓同一device的交付，确保inactive和销毁断言确实跨过初始化await；同步/异步管线调用只记录实际，不伪造device或ready。精确“新代ready后旧cleanup才运行”的人为反序未覆盖时保持NOT_RUN。
 

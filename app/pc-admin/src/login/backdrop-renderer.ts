@@ -11,15 +11,23 @@ const layers:ReadonlyArray<{id:string;definition:GpuShaderDefinition;props:Recor
 /** The fixed login composition needs the core's per-renderer cap, which the JS wrapper omits. */
 export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnavailable}:{onReady:()=>void;onUnavailable:(reason:string)=>void}){
   type Renderer=ReturnType<typeof shaderRendererGPU>;
-  let current:Renderer|null=null,destroyed=false,failed=false,paused=false,ready=false,readyNotified=false;
+  type PreparedRenderer=Renderer&{desktopLoginPreparationVersion:1;prepareAsync():Promise<void>};
+  const hasPreparation=(value:Renderer):value is PreparedRenderer=>{
+    const version:unknown=Reflect.get(value,'desktopLoginPreparationVersion'),prepare:unknown=Reflect.get(value,'prepareAsync');
+    return version===1&&typeof prepare==='function';
+  };
+  let current:Renderer|null=null,destroyed=false,failed=false,paused=false,ready=false,readyNotified=false,preparing=false,sizeEpoch=0;
+  let preparation:AbortController|null=null;
   let dimensions:{width:number;height:number}|null=null,rebuilds=0,lastLossAt=0,nextBuildReason='init-failed';
+  const cancelPreparation=()=>{const previous=preparation;preparation=null;previous?.abort();};
   const active=()=>!document.hidden&&navigator.onLine&&matchMedia('(min-width: 801px)').matches;
   // A previous generation's covered ready scene may still hold animation paused.
   const canRun=()=>active()&&(!paused||!ready);
   const notifyReady=()=>{if(!destroyed&&!failed&&current&&ready&&!readyNotified&&active()){readyNotified=true;onReady();}};
   const suspend=()=>{
     const candidate=current;if(!candidate)return;
-    if(!active()&&!candidate.isInitialized()){
+    if(!active()&&(preparing||!candidate.isInitialized())){
+      cancelPreparation();preparing=false;
       current=null;ready=false;readyNotified=false;
       // Abort before acquireRoot resumes. The late await below releases only this candidate's lease.
       candidate.cleanup();return;
@@ -31,20 +39,48 @@ export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnava
   const activate=()=>{
     const candidate=current;if(destroyed||failed||!candidate||!candidate.isInitialized())return;
     if(!canRun()){suspend();return;}
+    if(preparing){notifyReady();return;}
     if(dimensions)candidate.resize(dimensions.width,dimensions.height);
     candidate.setFrameLocked(false);notifyReady();
     if(current===candidate&&canRun())candidate.startAnimation();else suspend();
   };
   const unavailable=(reason:string)=>{
-    if(destroyed||failed)return;failed=true;
+    if(destroyed||failed)return;failed=true;cancelPreparation();
     const previous=current;current=null;previous?.cleanup();onUnavailable(reason);
   };
   const build=async(errorReason:string)=>{
     nextBuildReason=errorReason;
     if(destroyed||failed||current||!active())return;
-    let renderer:Renderer|null=null;
+    let renderer:Renderer|null=null,controller:AbortController|null=null,completed=false;
+    const tasks:Promise<void>[]=[];
     try{
-      renderer=shaderRendererGPU();const candidate=renderer;current=candidate;ready=false;readyNotified=false;
+      renderer=shaderRendererGPU();const candidate=renderer;current=candidate;ready=false;readyNotified=false;preparing=true;
+      controller=new AbortController();preparation=controller;const signal=controller.signal;
+      const valid=()=>!signal.aborted&&!destroyed&&!failed&&current===candidate;
+      const waitPending=(pending:Promise<unknown>):Promise<boolean>=>new Promise((resolve,reject)=>{
+        let settled=false;
+        const finish=(ok:boolean)=>{if(settled)return;settled=true;signal.removeEventListener('abort',abort);resolve(ok);};
+        const abort=()=>finish(false);signal.addEventListener('abort',abort,{once:true});
+        void pending.then(()=>finish(valid()),error=>{if(!valid()){finish(false);return;}if(settled)return;settled=true;signal.removeEventListener('abort',abort);reject(error);});
+        if(!valid())abort();
+      });
+      let sizedEpoch=-1;
+      const waitForSizing=async()=>{
+        while(valid()&&active()){
+          if(sizedEpoch===sizeEpoch)return true;
+          const epoch=sizeEpoch;if(dimensions)candidate.resize(dimensions.width,dimensions.height);
+          // The core queues its real sizing callback first; this callback follows it.
+          const sized=await new Promise<boolean>(resolve=>{
+            let id=0,settled=false;
+            const finish=(ok:boolean)=>{if(settled)return;settled=true;if(id)cancelAnimationFrame(id);signal.removeEventListener('abort',abort);resolve(ok);};
+            const abort=()=>finish(false);signal.addEventListener('abort',abort,{once:true});
+            id=requestAnimationFrame(()=>finish(valid()&&active()&&epoch===sizeEpoch));
+            if(!valid()||!active())abort();
+          });
+          if(sized){sizedEpoch=epoch;return true;}
+        }
+        return false;
+      };
       candidate.setFrameLocked(true);
       candidate.setOnReady(()=>{
         if(destroyed||failed||current!==candidate)return;
@@ -55,15 +91,11 @@ export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnava
         if(destroyed||failed||current!==candidate)return;
         const now=Date.now();if(now-lastLossAt>60_000)rebuilds=0;lastLossAt=now;
         if(++rebuilds>3){unavailable('unrecoverable');return;}
-        current=null;candidate.cleanup();void build('rebuild_failed');
+        cancelPreparation();current=null;candidate.cleanup();void build('rebuild_failed');
       });
       await candidate.initialize({canvas,resizeTarget:canvas,colorSpace:'srgb',observeElement:false,enablePerformanceTracking:false});
-      if(destroyed||failed||current!==candidate){candidate.cleanup();return;}
-      if(!active()){current=null;candidate.cleanup();return;}
+      if(!valid()||!active())return;
       candidate.setFrameRateCap(30);
-      // Queue the core's real sizing callback before registration can request its first draw.
-      if(dimensions)candidate.resize(dimensions.width,dimensions.height);
-      candidate.setFrameLocked(false);
       candidate.registerNode('shader-root',rootPassthrough.fragment,null,null,{},rootPassthrough);
       for(const [renderOrder,layer]of layers.entries()){
         const supplied:Record<string,unknown>=layer.props;
@@ -71,18 +103,39 @@ export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnava
         const uniforms=createGpuUniformsMap(layer.definition,values,layer.id);
         candidate.registerNode(layer.id,layer.definition.fragment,'shader-root',{id:layer.id,renderOrder,blendMode:'normal',opacity:layer.opacity},uniforms,layer.definition);
       }
-      if(canRun())candidate.startAnimation();else suspend();
+      errorReason='pipeline-prepare-failed';
+      if(!hasPreparation(candidate))throw new Error('DESKTOP_LOGIN_PREPARE_CAPABILITY_MISSING');
+      for(;;){
+        if(!await waitForSizing()||!valid()||!active())return;
+        const epoch=sizeEpoch,pending=candidate.prepareAsync();tasks.push(pending);void pending.catch(()=>{});
+        if(!await waitPending(pending)||!valid()||!active())return;
+        if(epoch===sizeEpoch)break;
+      }
+      // Preparation never reports readiness. N3's normal loop owns first draw and its failure budget.
+      preparing=false;completed=true;activate();
     }catch{
       if(!destroyed&&!failed&&(renderer===null||current===renderer))unavailable(errorReason);
       else renderer?.cleanup();
+    }finally{
+      if(preparation===controller){preparation=null;preparing=false;}
+      controller?.abort();
+      if(!completed&&renderer){
+        const owned=renderer;
+        if(current===owned){current=null;ready=false;readyNotified=false;}
+        owned.cleanup();
+        // Native createRenderPipelineAsync is not abortable. Drop the obsolete generation again
+        // after it settles; no late callback can draw or release the new candidate's lease.
+        void Promise.allSettled(tasks).then(()=>{owned.cleanup();tasks.length=0;});
+      }
     }
   };
   void build('init-failed');
   return {
     resize(width:number,height:number){
+      if(!dimensions||dimensions.width!==width||dimensions.height!==height)sizeEpoch++;
       dimensions={width,height};if(destroyed||failed)return;
       if(!active()){suspend();return;}
-      if(current?.isInitialized()&&canRun())current.resize(width,height);
+      if(!preparing&&current?.isInitialized()&&canRun())current.resize(width,height);
     },
     pause(){
       paused=true;if(destroyed||failed)return;
@@ -90,6 +143,6 @@ export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnava
       if(!active())suspend();else if(!current)void build(nextBuildReason);else if(!ready)activate();else suspend();
     },
     resume(){paused=false;if(destroyed||failed)return;if(!current)void build(nextBuildReason);else activate();},
-    destroy(){if(destroyed)return;destroyed=true;const previous=current;current=null;previous?.cleanup();}
+    destroy(){if(destroyed)return;destroyed=true;cancelPreparation();const previous=current;current=null;previous?.cleanup();}
   };
 }

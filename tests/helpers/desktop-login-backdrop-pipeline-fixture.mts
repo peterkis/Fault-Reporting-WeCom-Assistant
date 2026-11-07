@@ -61,7 +61,7 @@ export function createNeutralProviderFixture(){
 
 export const backdropPipelineModes=['normal','reject','held','lifecycle','destroy'] as const;
 export type BackdropPipelineMode=typeof backdropPipelineModes[number];
-const numbers=['elapsedMs','adapterRequests','devices','asyncRequests','nativeFulfilled','returnedFulfilled','asyncRejected','pendingReturned','syncRequests','submits','submitsWhilePending','submitsAfterPagehide','shaderTransitions','fallbackTransitions','iframeCreates','iframeCount','rafRequested','rafCancelled','rafPending','rafAfterPagehide','canvasWidth','canvasHeight','maxSubmittedPixels','firstSubmitSequence','lastAsyncReturnSequence','deviceRequests','nativeDeviceFulfilled','pendingDeviceReturns','deviceReturns','deviceReleaseSequence','nativeCanvasConfigurations','syncRejected'] as const;
+const numbers=['elapsedMs','adapterRequests','devices','asyncRequests','nativeFulfilled','returnedFulfilled','asyncRejected','pendingReturned','syncRequests','submits','submitsWhilePending','submitsAfterPagehide','shaderTransitions','fallbackTransitions','iframeCreates','iframeCount','rafRequested','rafCancelled','rafPending','rafAfterPagehide','canvasWidth','canvasHeight','maxSubmittedPixels','firstSubmitSequence','lastAsyncReturnSequence','deviceRequests','nativeDeviceFulfilled','pendingDeviceReturns','deviceReturns','deviceReleaseSequence','nativeCanvasConfigurations','syncRejected','renderRejected'] as const;
 export type BackdropPipelineSnapshot=Record<typeof numbers[number],number>&{
  mode:BackdropPipelineMode;deviceHeld:boolean;available:boolean;pageHidden:boolean;hidden:boolean;online:boolean;
  backdrop:string|null;reason:string|null;scene:string|null;blob:string|null;
@@ -76,11 +76,11 @@ function isSnapshot(value:unknown):value is BackdropPipelineSnapshot{
 }
 export function readBackdropPipelineSnapshot(value:unknown):BackdropPipelineSnapshot{assert.ok(isSnapshot(value),'the native background observer supplies a bounded public snapshot');return value;}
 
-/** Observes public GPU APIs; only the named sync fault throws after real native creation. */
+/** Observes public GPU APIs; the named render fault throws only after a real native pipeline binding. */
 export function backdropPipelineScript(mode:BackdropPipelineMode):string{return PIPELINE_SCRIPT+'('+JSON.stringify(mode)+');';}
 const PIPELINE_SCRIPT=String.raw`(function installBackdropPipelineObserver(initialMode){
  const selected=sessionStorage.getItem('backdrop-pipeline-test-mode'),mode=['normal','reject','held','lifecycle','destroy'].includes(selected)?selected:initialMode;
- const p={mode,started:performance.now(),available:!!navigator.gpu&&typeof GPUDevice==='function'&&typeof GPUQueue==='function',adapterRequests:0,devices:[],asyncRequests:0,nativeFulfilled:0,returnedFulfilled:0,asyncRejected:0,pendingReturned:0,syncRequests:0,submits:0,submitsWhilePending:0,submitsAfterPagehide:0,shaderTransitions:0,fallbackTransitions:0,iframeCreates:0,prepared:[],events:[],sequence:0,deviceHeld:true,deviceReleases:[],deviceRequests:0,nativeDeviceFulfilled:0,pendingDeviceReturns:0,deviceReturns:0,deviceReleaseSequence:0,nativeCanvasConfigurations:0,syncRejected:0,pageHidden:false,rafRequested:0,rafCancelled:0,rafAfterPagehide:0,maxSubmittedPixels:0,firstSubmitSequence:0,lastAsyncReturnSequence:0,present:null,savedIframe:null};window.__backdropPipeline=p;
+ const p={mode,started:performance.now(),available:!!navigator.gpu&&typeof GPUDevice==='function'&&typeof GPUQueue==='function',adapterRequests:0,devices:[],asyncRequests:0,nativeFulfilled:0,returnedFulfilled:0,asyncRejected:0,pendingReturned:0,syncRequests:0,submits:0,submitsWhilePending:0,submitsAfterPagehide:0,shaderTransitions:0,fallbackTransitions:0,iframeCreates:0,prepared:[],events:[],sequence:0,deviceHeld:true,deviceReleases:[],deviceRequests:0,nativeDeviceFulfilled:0,pendingDeviceReturns:0,deviceReturns:0,deviceReleaseSequence:0,nativeCanvasConfigurations:0,syncRejected:0,renderRejected:0,pageHidden:false,rafRequested:0,rafCancelled:0,rafAfterPagehide:0,maxSubmittedPixels:0,firstSubmitSequence:0,lastAsyncReturnSequence:0,present:null,savedIframe:null};window.__backdropPipeline=p;
  const record=kind=>{const value={sequence:++p.sequence,kind,at:performance.now()-p.started};if(p.events.length<96)p.events.push(value);return value.sequence;};
  const nativeRaf=window.requestAnimationFrame.bind(window),nativeCancel=window.cancelAnimationFrame.bind(window),frames=new Set();
  window.requestAnimationFrame=function(callback){p.rafRequested++;let id=0;id=nativeRaf(function(now){frames.delete(id);if(p.pageHidden)p.rafAfterPagehide++;return Reflect.apply(callback,this,[now]);});frames.add(id);return id;};
@@ -98,7 +98,8 @@ const PIPELINE_SCRIPT=String.raw`(function installBackdropPipelineObserver(initi
   try{native=Reflect.apply(asyncFactory,this,args);}catch(error){p.pendingReturned--;p.asyncRejected++;record('async-rejected');throw error;}
   return native.then(pipeline=>{p.nativeFulfilled++;p.pendingReturned--;p.returnedFulfilled++;p.lastAsyncReturnSequence=record('async-returned');return pipeline;},error=>{p.pendingReturned--;p.asyncRejected++;record('async-rejected');throw error;});
  };
- const syncFactory=globalThis.GPUDevice?.prototype.createRenderPipeline;if(syncFactory)GPUDevice.prototype.createRenderPipeline=function(...args){p.syncRequests++;record('sync-request');const pipeline=Reflect.apply(syncFactory,this,args);if(mode==='reject'){p.syncRejected++;record('sync-rejected');throw Error('SYNTHETIC_NATIVE_RENDER_PIPELINE_FAILURE');}return pipeline;};
+ const syncFactory=globalThis.GPUDevice?.prototype.createRenderPipeline;if(syncFactory)GPUDevice.prototype.createRenderPipeline=function(...args){p.syncRequests++;record('sync-request');return Reflect.apply(syncFactory,this,args);};
+ const setPipeline=globalThis.GPURenderPassEncoder?.prototype.setPipeline;if(setPipeline)GPURenderPassEncoder.prototype.setPipeline=function(...args){const result=Reflect.apply(setPipeline,this,args);if(mode==='reject'){p.renderRejected++;record('render-rejected');throw Error('SYNTHETIC_NATIVE_RENDER_PIPELINE_FAILURE');}return result;};
  const submit=globalThis.GPUQueue?.prototype.submit;if(submit)GPUQueue.prototype.submit=function(...args){
   p.submits++;if(p.deviceHeld||p.pendingDeviceReturns>0)p.submitsWhilePending++;if(p.pageHidden)p.submitsAfterPagehide++;
   const canvas=document.querySelector('.login-blob');if(canvas)p.maxSubmittedPixels=Math.max(p.maxSubmittedPixels,canvas.width*canvas.height);
@@ -107,6 +108,57 @@ const PIPELINE_SCRIPT=String.raw`(function installBackdropPipelineObserver(initi
  const create=document.createElement.bind(document);document.createElement=function(name,...args){if(String(name).toLowerCase()==='iframe')p.iframeCreates++;return create(name,...args);};
  let lastBackdrop=null;const observer=new MutationObserver(()=>{const next=document.body?.dataset.backdrop??null;if(next===lastBackdrop)return;lastBackdrop=next;if(next==='shader'){p.shaderTransitions++;record('shader');}else if(next==='fallback'){p.fallbackTransitions++;record('fallback');}});observer.observe(document,{subtree:true,attributes:true,childList:true,attributeFilter:['data-backdrop']});
  window.workbenchLogin={version:1,getAppVersion:async()=>'0.1.18-backdrop-synthetic',quit:async()=>{},startup:{version:1,connect:async()=>{},prepared:async value=>{if(p.prepared.length<4)p.prepared.push(value);record('prepared');return{presented:false};},onPresented:callback=>{p.present=()=>{record('presented');callback();};return()=>{p.present=null;};}}};
- p.snapshot=()=>({mode:p.mode,deviceHeld:p.deviceHeld,deviceRequests:p.deviceRequests,nativeDeviceFulfilled:p.nativeDeviceFulfilled,pendingDeviceReturns:p.pendingDeviceReturns,deviceReturns:p.deviceReturns,deviceReleaseSequence:p.deviceReleaseSequence,nativeCanvasConfigurations:p.nativeCanvasConfigurations,syncRejected:p.syncRejected,available:p.available,elapsedMs:performance.now()-p.started,adapterRequests:p.adapterRequests,devices:p.devices.length,asyncRequests:p.asyncRequests,nativeFulfilled:p.nativeFulfilled,returnedFulfilled:p.returnedFulfilled,asyncRejected:p.asyncRejected,pendingReturned:p.pendingReturned,syncRequests:p.syncRequests,submits:p.submits,submitsWhilePending:p.submitsWhilePending,submitsAfterPagehide:p.submitsAfterPagehide,shaderTransitions:p.shaderTransitions,fallbackTransitions:p.fallbackTransitions,iframeCreates:p.iframeCreates,iframeCount:document.querySelectorAll('#wecom-panel iframe').length,prepared:p.prepared,events:p.events,pageHidden:p.pageHidden,hidden:document.hidden,online:navigator.onLine,rafRequested:p.rafRequested,rafCancelled:p.rafCancelled,rafPending:frames.size,rafAfterPagehide:p.rafAfterPagehide,canvasWidth:document.querySelector('.login-blob')?.width??0,canvasHeight:document.querySelector('.login-blob')?.height??0,maxSubmittedPixels:p.maxSubmittedPixels,firstSubmitSequence:p.firstSubmitSequence,lastAsyncReturnSequence:p.lastAsyncReturnSequence,backdrop:document.body?.dataset.backdrop??null,reason:document.body?.dataset.backdropReason??null,scene:document.body?.dataset.loginScene??null,blob:document.querySelector('[data-blob-state]')?.dataset.blobState??null,sameIframe:p.savedIframe!==null&&p.savedIframe===document.querySelector('#wecom-panel iframe')});
+ p.snapshot=()=>({mode:p.mode,deviceHeld:p.deviceHeld,deviceRequests:p.deviceRequests,nativeDeviceFulfilled:p.nativeDeviceFulfilled,pendingDeviceReturns:p.pendingDeviceReturns,deviceReturns:p.deviceReturns,deviceReleaseSequence:p.deviceReleaseSequence,nativeCanvasConfigurations:p.nativeCanvasConfigurations,syncRejected:p.syncRejected,renderRejected:p.renderRejected,available:p.available,elapsedMs:performance.now()-p.started,adapterRequests:p.adapterRequests,devices:p.devices.length,asyncRequests:p.asyncRequests,nativeFulfilled:p.nativeFulfilled,returnedFulfilled:p.returnedFulfilled,asyncRejected:p.asyncRejected,pendingReturned:p.pendingReturned,syncRequests:p.syncRequests,submits:p.submits,submitsWhilePending:p.submitsWhilePending,submitsAfterPagehide:p.submitsAfterPagehide,shaderTransitions:p.shaderTransitions,fallbackTransitions:p.fallbackTransitions,iframeCreates:p.iframeCreates,iframeCount:document.querySelectorAll('#wecom-panel iframe').length,prepared:p.prepared,events:p.events,pageHidden:p.pageHidden,hidden:document.hidden,online:navigator.onLine,rafRequested:p.rafRequested,rafCancelled:p.rafCancelled,rafPending:frames.size,rafAfterPagehide:p.rafAfterPagehide,canvasWidth:document.querySelector('.login-blob')?.width??0,canvasHeight:document.querySelector('.login-blob')?.height??0,maxSubmittedPixels:p.maxSubmittedPixels,firstSubmitSequence:p.firstSubmitSequence,lastAsyncReturnSequence:p.lastAsyncReturnSequence,backdrop:document.body?.dataset.backdrop??null,reason:document.body?.dataset.backdropReason??null,scene:document.body?.dataset.loginScene??null,blob:document.querySelector('[data-blob-state]')?.dataset.blobState??null,sameIframe:p.savedIframe!==null&&p.savedIframe===document.querySelector('#wecom-panel iframe')});
  window.addEventListener('pagehide',event=>{p.pageHidden=true;record('pagehide');queueMicrotask(()=>{try{navigator.sendBeacon('/backdrop-pipeline-proof',new Blob([JSON.stringify({...p.snapshot(),trustedPagehide:event.isTrusted})],{type:'application/json'}));}catch{}});});
 })`;
+
+
+const prepareSnapshotNumbers=['syncCalls','asyncCalls','nativeFulfilled','nativeRejected','pendingDelivery','delivered','submits','iframeCreates','iframeCount','canvasWidth','canvasHeight','maxSubmittedPixels','shaderTransitions'] as const;
+export type BackdropPrepareSnapshot=Record<typeof prepareSnapshotNumbers[number],number>&{
+ available:boolean;released:boolean;sameIframe:boolean;sameWindow:boolean;
+ releaseAt:number|null;firstSubmitAt:number|null;firstPreparedAt:number|null;
+ scene:string|null;backdrop:string|null;view:string|null;fallbackReason:string|null;panel:string|null;
+ prepared:unknown[];consoleErrors:unknown[];gpuErrors:unknown[];runtimeErrors:unknown[];
+};
+export function readBackdropPrepareSnapshot(value:unknown):BackdropPrepareSnapshot{
+ const valid=(input:unknown):input is BackdropPrepareSnapshot=>{
+  if(!input||typeof input!=='object'||Array.isArray(input))return false;const row:Record<string,unknown>={...input};
+  return prepareSnapshotNumbers.every(key=>typeof row[key]==='number'&&Number.isFinite(row[key])&&row[key]>=0)
+   &&['available','released','sameIframe','sameWindow'].every(key=>typeof row[key]==='boolean')
+   &&['releaseAt','firstSubmitAt','firstPreparedAt'].every(key=>row[key]===null||typeof row[key]==='number'&&Number.isFinite(row[key])&&row[key]>=0)
+   &&['scene','backdrop','view','fallbackReason','panel'].every(key=>row[key]===null||typeof row[key]==='string')
+   &&Array.isArray(row.prepared)&&row.prepared.length<=4
+   &&['consoleErrors','gpuErrors','runtimeErrors'].every(key=>Array.isArray(row[key])&&row[key].length<=32);
+ };
+ assert.ok(valid(value),'a bounded native asynchronous preparation snapshot is required');return value;
+}
+/** Holds delivery only after the real native pipeline Promise fulfills; errors still reach their original sinks. */
+export function backdropPrepareScript():string{return PREPARE_SCRIPT;}
+const PREPARE_SCRIPT=String.raw`(()=>{
+ if(window.top!==window)return;
+ const state={syncCalls:0,asyncCalls:0,nativeFulfilled:0,nativeRejected:0,pendingDelivery:0,delivered:0,released:false,releaseAt:null,submits:0,firstSubmitAt:null,iframeCreates:0,maxSubmittedPixels:0,shaderTransitions:0,prepared:[],consoleErrors:[],gpuErrors:[],runtimeErrors:[]},deliveries=[],callbacks=new Set();
+ const bounded=(list,value)=>{if(list.length<32)list.push(value);};
+ const nativeError=console.error;console.error=function(...args){bounded(state.consoleErrors,{at:performance.now(),kind:'console.error'});return Reflect.apply(nativeError,this,args);};
+ window.addEventListener('error',()=>bounded(state.runtimeErrors,{at:performance.now(),kind:'error'}));
+ window.addEventListener('unhandledrejection',()=>bounded(state.runtimeErrors,{at:performance.now(),kind:'unhandledrejection'}));
+ const deviceProto=globalThis.GPUDevice?.prototype,queueProto=globalThis.GPUQueue?.prototype,adapterProto=globalThis.GPUAdapter?.prototype;
+ const available=!!deviceProto&&!!queueProto&&!!adapterProto&&typeof deviceProto.createRenderPipelineAsync==='function';
+ if(available){
+  const sync=deviceProto.createRenderPipeline,async=deviceProto.createRenderPipelineAsync,submit=queueProto.submit,requestDevice=adapterProto.requestDevice;
+  deviceProto.createRenderPipeline=function(...args){state.syncCalls++;return Reflect.apply(sync,this,args);};
+  deviceProto.createRenderPipelineAsync=function(...args){state.asyncCalls++;return Reflect.apply(async,this,args).then(pipeline=>{
+   state.nativeFulfilled++;if(state.released){state.delivered++;return pipeline;}state.pendingDelivery++;
+   return new Promise(resolve=>deliveries.push(()=>{state.pendingDelivery--;state.delivered++;resolve(pipeline);}));
+  },error=>{state.nativeRejected++;throw error;});};
+  queueProto.submit=function(...args){const result=Reflect.apply(submit,this,args);state.submits++;state.firstSubmitAt??=performance.now();const canvas=document.querySelector('canvas.login-blob');if(canvas)state.maxSubmittedPixels=Math.max(state.maxSubmittedPixels,canvas.width*canvas.height);return result;};
+  adapterProto.requestDevice=function(...args){return Reflect.apply(requestDevice,this,args).then(device=>{device.addEventListener('uncapturederror',()=>bounded(state.gpuErrors,{at:performance.now(),kind:'uncapturederror'}));return device;});};
+ }
+ const create=document.createElement.bind(document);document.createElement=function(name,...args){if(String(name).toLowerCase()==='iframe')state.iframeCreates++;return create(name,...args);};
+ let previous=null;new MutationObserver(()=>{const value=document.body?.dataset.backdrop??null;if(value===previous)return;previous=value;if(value==='shader')state.shaderTransitions++;}).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['data-backdrop']});
+ Object.defineProperty(window,'workbenchLogin',{value:Object.freeze({version:1,getAppVersion:async()=>'0.1.18-prepare-synthetic',quit:async()=>{},startup:Object.freeze({version:1,connect:async()=>{},prepared:async value=>{if(state.prepared.length<4)state.prepared.push({at:performance.now(),value});return{presented:false};},onPresented:callback=>{callbacks.add(callback);return()=>callbacks.delete(callback);}})}),configurable:false,writable:false});
+ Object.defineProperty(window,'__backdropPrepare',{value:Object.freeze({
+  release:()=>{if(state.released)return;state.released=true;state.releaseAt=performance.now();for(const deliver of deliveries.splice(0))deliver();},
+  present:()=>{for(const callback of callbacks)callback();},
+  snapshot:()=>{const canvas=document.querySelector('canvas.login-blob'),panel=document.getElementById('desktop-login'),iframe=document.querySelector('#wecom-panel iframe');return structuredClone({...state,available,prepared:state.prepared.map(row=>row.value),firstPreparedAt:state.prepared[0]?.at??null,iframeCount:document.querySelectorAll('#wecom-panel iframe').length,canvasWidth:canvas?.width??0,canvasHeight:canvas?.height??0,scene:document.body?.dataset.loginScene??null,backdrop:document.body?.dataset.backdrop??null,view:panel?.dataset.view??null,fallbackReason:panel?.dataset.fallbackReason??null,panel:panel?.dataset.loginPanel??null,sameIframe:window.__prepareSavedIframe!==undefined&&window.__prepareSavedIframe===iframe,sameWindow:window.__prepareSavedWindow!==undefined&&window.__prepareSavedWindow===iframe?.contentWindow});}
+ }),configurable:false,writable:false});
+})();`;
