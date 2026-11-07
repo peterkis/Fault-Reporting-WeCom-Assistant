@@ -180,6 +180,7 @@ jobs:
       run: npm run desktop:package -- -ServerOrigin https://workbench.invalid.example
     - name: Run desktop login graphics entries on Windows
       env:
+        TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS: '1'
         EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
         EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
       shell: pwsh

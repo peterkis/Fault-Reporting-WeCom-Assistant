@@ -74,6 +74,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
   const linuxGraphics = graphics && process.platform === 'linux';
+  const windowsSoftwareGraphics = graphics && process.platform === 'win32' && process.env.TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS === '1';
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
@@ -84,6 +85,9 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
       '--webgl-antialiasing-mode=none',
       '--enable-logging=stderr',
+    ]:windowsSoftwareGraphics?[
+      '--use-gl=angle','--use-angle=d3d11-warp','--use-webgpu-adapter=swiftshader',
+      '--enable-unsafe-swiftshader','--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',

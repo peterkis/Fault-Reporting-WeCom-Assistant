@@ -121,6 +121,9 @@ export function testEnvironment(root: string, entries: Entry[], input: NodeJS.Pr
     result.PILOT_DATABASE_URL = raw;
   }
   if (input.TS_MIGRATION_BROWSER_EXECUTABLE) result.TS_MIGRATION_BROWSER_EXECUTABLE = input.TS_MIGRATION_BROWSER_EXECUTABLE;
+  if (process.platform === 'win32' && entries.some(entry => entry.requires_browser) && input.TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS === '1') {
+    result.TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS = '1';
+  }
   if(entries.some(entry=>entry.requires_ffmpeg)){
     for(const name of ['H5_MEDIA_FFMPEG','H5_MEDIA_FFPROBE'] as const){
       const value=input[name];if(!value||!path.isAbsolute(value)||/[\x00-\x1f\x7f]/u.test(value))throw new Error('MIGRATION_H5_MEDIA_TOOL_REQUIRED: '+name);
