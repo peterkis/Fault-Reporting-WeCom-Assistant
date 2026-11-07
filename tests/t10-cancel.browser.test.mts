@@ -39,6 +39,7 @@ test('Card 27C-B six closure reasons, original links, history and board/list res
    const open=async()=>{await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("document.querySelector('.detail-cancel-dialog')?.checkVisibility()===true");};
    const choose=async(reason:string)=>{await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value='+reason+']');await browser.waitFor(`document.querySelector('.detail-cancel-dialog input[value=${reason}]')?.checked===true`);};
    await open();assert.equal(await browser.evaluate("document.querySelectorAll('.detail-cancel-dialog fieldset[aria-label=关闭原因] input[type=radio]').length"),6);
+   await browser.waitFor("(()=>{const d=document.querySelector('.detail-cancel-dialog'),r=d?.querySelector('.ds-closure-reason-option');return d?.getBoundingClientRect().width===440&&r?.getBoundingClientRect().height===36;})()");
    const metrics=await browser.evaluate("(()=>{const d=document.querySelector('.detail-cancel-dialog'),s=getComputedStyle(d),r=d.querySelector('.ds-closure-reason-option').getBoundingClientRect();return {width:d.getBoundingClientRect().width,radius:s.borderRadius,padding:s.padding,row:r.height,dpr:devicePixelRatio,zoom:visualViewport.scale};})()");
    assert.deepEqual(metrics,{width:440,radius:'14px',padding:'20px',row:36,dpr:1,zoom:1});
    assert.equal(await browser.evaluate("document.querySelector('.ds-closure-notice').textContent.includes('进行中的跟进与提醒将一并终止')"),true);
