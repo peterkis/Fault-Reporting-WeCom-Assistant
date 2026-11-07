@@ -124,3 +124,13 @@
 .ds-next-step-icon>.ds-stage-glyph {width:var(--icon-lg);height:var(--icon-lg);}
 .ds-next-step-copy .ds-next-step-follow-up {display:block;margin-top:var(--space-0-5);font-size:var(--fs-xs);line-height:var(--lh-xs);font-weight:var(--fw-regular);color:var(--text-secondary);}
 .ds-detail [data-record-kind=report] .record-heading .record-action {flex:none;}
+
+/* Card 29 D1/D2: dismissed items use a gray 「已关闭」 badge and a neutral next-step card. */
+.ds-detail-state .ds-dismissed-pill {display:inline-flex;align-items:center;gap:var(--space-1);color:var(--text-secondary);}
+.ds-detail-state .ds-dismissed-pill>svg {width:var(--icon-sm);height:var(--icon-sm);flex:none;stroke-width:1.75;}
+.ds-next-step[data-dismissed=true] {background:var(--bg-subtle);box-shadow:inset 0 1px 0 var(--border-hair),inset 0 -1px 0 var(--border-hair);}
+.ds-next-step-icon.is-dismissed {width:calc(var(--space-6) + var(--space-1));height:calc(var(--space-6) + var(--space-1));border-radius:var(--radius-full);background:var(--bg-canvas);color:var(--text-secondary);}
+.ds-next-step-icon.is-dismissed>svg {width:var(--icon-md);height:var(--icon-md);stroke-width:1.75;}
+.ds-next-step[data-dismissed=true] .ds-next-step-kicker {display:block;margin-bottom:var(--space-0-5);font-size:var(--fs-xs);line-height:var(--lh-xs);font-weight:var(--fw-regular);color:var(--text-secondary);}
+.ds-next-step[data-dismissed=true] .ds-next-step-message {font-size:var(--fs-md);line-height:var(--lh-md);font-weight:var(--fw-semibold);}
+.ds-next-step .ds-closure-restore-inline svg {width:var(--icon-sm);height:var(--icon-sm);}

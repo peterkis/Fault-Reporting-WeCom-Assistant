@@ -17,22 +17,22 @@ export function useFeedbackState(initial=''){
   const update=useCallback((next:SetStateAction<string>)=>setValue(previous=>({text:typeof next==='function'?next(previous.text):next,revision:previous.revision+1})),[]);
   return [value.text,update,value.revision] as const;
 }
-interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'children'> {children:string|null|undefined;source:string;state?:string|undefined;enabled?:boolean|undefined;persistent?:boolean|undefined;revision?:number|undefined}
+interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'children'|'title'> {children:string|null|undefined;source:string;state?:string|undefined;enabled?:boolean|undefined;persistent?:boolean|undefined;revision?:number|undefined;/** Card 29 D4: an outcome title replacing the purpose label. */title?:string|undefined}
 
 /** Presentation only: a close button never settles, retries or discards an operation. */
-export function ToastFeedback({children,source,state,enabled=true,persistent=false,revision,role,'aria-live':live,...attributes}:FeedbackProps){
+export function ToastFeedback({children,source,state,enabled=true,persistent=false,revision,role,title,'aria-live':live,...attributes}:FeedbackProps){
   const id=useId(),latest=useRef(attributes);latest.current=attributes;
   useEffect(()=>{
     if(!enabled||!children){toast.remove(id);return;}
     const unknown=state==='unknown',loading=loadingStates.has(state??''),success=successStates.has(state??''),error=!unknown&&(role==='alert'||errorStates.has(state??''));
     const show=()=>{
-      const content=<div {...latest.current} className={'workbench-toast-content '+(latest.current.className??'')} data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{labels[source]??'操作提示'}</strong><span>{children}</span></div>;
+      const content=<div {...latest.current} className={'workbench-toast-content '+(latest.current.className??'')} data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{title??labels[source]??'操作提示'}</strong><span>{children}</span></div>;
       const options={id,duration:unknown||persistent||loading?Infinity:success?4500:error?8500:6000,removeDelay:180,className:unknown?'is-warning':'',ariaProps:{role:error?'alert' as const:'status' as const,'aria-live':live??(error?'assertive' as const:'polite' as const)}};
       if(loading)toast.loading(content,options);else if(success)toast.success(content,options);else if(error)toast.error(content,options);else toast(content,options);
     };
     if(loading){toast.remove(id);const timer=window.setTimeout(show,200);return()=>window.clearTimeout(timer);}
     show();
-  },[children,source,state,enabled,persistent,revision,role,live,id]);
+  },[children,source,state,enabled,persistent,revision,role,title,live,id]);
   useEffect(()=>()=>{toast.remove(id);},[id]);
   return null;
 }

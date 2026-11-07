@@ -16,7 +16,7 @@ interface FacadeOptions { currentSessionPredicate?:ReturnType<typeof createWeCom
 
 import { createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery,ticketActionAllowedP2016,ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
-import {normalizeClosureInput} from './service-closure-records.mjs';
+import {normalizeClosingInput} from './service-closure-records.mjs';
 import {assertEpochMsString} from './platform/time-contract.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { lockP2016Realtime } from './p2-016-realtime-appender.mjs';
@@ -35,7 +35,7 @@ export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
     expected_version:versionP2016(v.expected_version),reason_code:codeP2016(v.reason_code)};
   if(v.action==='cancel'){
     if(v.external_visible!==undefined)failP2016();
-    Object.assign(result,normalizeClosureInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]]))));
+    Object.assign(result,normalizeClosingInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]]))));
   }else{
     if(v.note!==undefined&&(typeof v.note!=='string'||!v.note.length||v.note.length>2000))failP2016();
     if(['secondary_reason_code','duplicate_of_ref','notify_reporter'].some(key=>Object.hasOwn(v,key)))failP2016();

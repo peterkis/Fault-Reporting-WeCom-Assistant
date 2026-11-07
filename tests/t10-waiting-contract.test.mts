@@ -9,6 +9,7 @@ import type {ClosureHistoryPage} from '../contracts/unified_closure_contracts.js
 import {test} from 'node:test';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {normalizeP2016TicketCommand} from '../app/server/src/p2-016-ticket-command-facade.mjs';
+import {normalizeClosingInput,normalizeClosureInput} from '../app/server/src/service-closure-records.mjs';
 import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
 async function closureBrowserDecoder(){
@@ -41,8 +42,20 @@ test('four waiting command routes retain closed human internal reason, exact sca
 test('Card 27C-A enum and closure Schema enforce six reasons, secondary reasons, optional duplicate references and the fixed notification matrix',async()=>{
  const base={client_command_id:randomUUID(),expected_version:1};
  for(const reason_code of ['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER']){
-  const value={...base,reason_code,...(reason_code==='OTHER'?{note:'其他原因（合成）'}:{}),...(reason_code==='NOT_IT_SCOPE'?{secondary_reason_code:'ACKNOWLEDGED'}:{})};
+  const value={...base,reason_code,...(reason_code==='OTHER'?{note:'其他原因（合成）'}:{}),...(reason_code==='NOT_IT_SCOPE'?{secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED'}:{})};
   await assertP2016Schema('unified_closure_command',value);assert.equal(normalizeP2016TicketCommand({...value,action:'cancel',ticket_id:randomUUID()}).reason_code,reason_code);
+ }
+ // Card 29 K1: closing as 「非 IT 范围」 accepts only three situations; the other five manual-review reasons are rejected on the close path.
+ for(const secondary_reason_code of ['BUSINESS_CONSULTATION_CONFIRMED','OUT_OF_SCOPE_CONFIRMED','SERVICE_REQUEST_CONFIRMED']){
+  const value={...base,reason_code:'NOT_IT_SCOPE',secondary_reason_code};
+  await assertP2016Schema('unified_closure_command',value);await assertP2016Schema('unified_intake_closure_command',value);
+  assert.equal(normalizeP2016TicketCommand({...value,action:'cancel',ticket_id:randomUUID()}).secondary_reason_code,secondary_reason_code);assert.equal(normalizeClosingInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code}).secondary_reason_code,secondary_reason_code);
+ }
+ for(const secondary_reason_code of ['HUMAN_CONFIRMED','INFORMATION_INSUFFICIENT','ACKNOWLEDGED','INCIDENT_REVIEW_PENDING','STALE_REVIEW_CANCELLED']){
+  const value={...base,reason_code:'NOT_IT_SCOPE',secondary_reason_code};
+  await assert.rejects(assertP2016Schema('unified_closure_command',value));await assert.rejects(assertP2016Schema('unified_intake_closure_command',value));
+  assert.throws(()=>normalizeP2016TicketCommand({...value,action:'cancel',ticket_id:randomUUID()}));assert.throws(()=>normalizeClosingInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code}));
+  assert.equal(normalizeClosureInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code}).secondary_reason_code,secondary_reason_code,'stored and system closures keep the complete reason set');
  }
  for(const change of [{reason_code:'ARBITRARY_CODE'},{reason_code:'OTHER',note:' \t '},{reason_code:'NOT_IT_SCOPE'},{reason_code:'NOT_IT_SCOPE',secondary_reason_code:'UNLISTED'},{reason_code:'FALSE_REPORT_OR_TEST',notify_reporter:true},{reason_code:'DUPLICATE',notify_reporter:false},{reason_code:'REPORTER_WITHDREW',duplicate_of_ref:'IT-20261106-0001'}]){
   await assert.rejects(assertP2016Schema('unified_closure_command',{...base,...change}));assert.throws(()=>normalizeP2016TicketCommand({...base,...change,action:'cancel',ticket_id:randomUUID()}));

@@ -11,7 +11,7 @@ import type {createP2016TicketNotificationProjector} from './p2-016-ticket-notif
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import {exactP2016,uuidP2016,versionP2016,failP2016,guardP2016,transactionP2016,codeP2016} from './p2-016-domain-contracts.mjs';
-import {normalizeClosureInput,intakeClosureSnapshot,insertClosureRecord,currentClosure,markClosureRestored,appendIntakeClosureEvent} from './service-closure-records.mjs';
+import {normalizeClosingInput,intakeClosureSnapshot,insertClosureRecord,currentClosure,markClosureRestored,appendIntakeClosureEvent} from './service-closure-records.mjs';
 interface IntakeRow {id:string;status:string;version:number;request_type:string;pilot_ticket_id:string|null;linked_ticket:boolean}
 export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,notifications,reviews,currentSessionPredicate}:{currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtime:Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'review'>;notifications:Pick<ReturnType<typeof createP2016TicketNotificationProjector>,'projectClosure'>;reviews:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'resolveManualReviewInTransaction'>}){
  const ledger=createP2016CommandLedger({pool});
@@ -110,7 +110,7 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
    guardP2016(enabled);const id=uuidP2016(intakeId),v=exactP2016(body,restoring?['client_command_id','expected_version','reason_code']:['client_command_id','expected_version','reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter','expected_review_version','expected_material_basis'],['client_command_id','expected_version','reason_code']);
    if(v.expected_review_version!==undefined&&(typeof v.expected_review_version!=='string'||!/^[1-9][0-9]{0,18}$/u.test(v.expected_review_version)||BigInt(v.expected_review_version)>9223372036854775807n))failP2016();
    if(v.expected_material_basis!==undefined&&(typeof v.expected_material_basis!=='string'||!/^[a-f0-9]{64}$/u.test(v.expected_material_basis)))failP2016();
-   const closure=restoring?null:normalizeClosureInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]])));
+   const closure=restoring?null:normalizeClosingInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]])));
    if(restoring&&v.reason_code!=='RESTORE_CLOSED')failP2016();
    const command={...v,client_command_id:uuidP2016(v.client_command_id),expected_version:versionP2016(v.expected_version),source_intake_id:id,action:restoring?'INTAKE_RESTORE':'INTAKE_CLOSE'};
    return ledger.execute({command,receiptType:restoring?'WORKBENCH_INTAKE_RESTORE':'WORKBENCH_INTAKE_CLOSE',authorize:async tx=>{await authorize(authContext,id,tx);await realtime.lock(tx);return authorize(authContext,id,tx);},

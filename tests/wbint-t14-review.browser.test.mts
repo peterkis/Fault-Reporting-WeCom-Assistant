@@ -42,23 +42,24 @@ test('Card 27B existing out-of-scope reasons use pointer and keyboard radios wit
       await reload(browser);await browser.evaluate(traceClosure);await openWorkbenchStep(browser,'[data-review-id]');await clickWorkbenchControl(browser,'.workbench-select[data-field-label=复核结论] [data-slot=select-trigger]');await clickWorkbenchControl(browser,'[role=option][data-key=MARK_OUT_OF_SCOPE]');await browser.waitFor("document.querySelector('.detail-cancel-dialog input[value=NOT_IT_SCOPE]')?.checked===true&&document.querySelector('.detail-cancel-dialog textarea')?.value==='切换入口保留说明（合成）'");
       await clickWorkbenchControl(browser,'[data-action=discard-cancel-draft]');await browser.waitFor("document.querySelector('.detail-cancel-dialog textarea')?.value===''&&!document.querySelector('.detail-cancel-dialog fieldset[aria-label=关闭原因] input:checked')");await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=NOT_IT_SCOPE]');
 
-      const expected=[['HUMAN_CONFIRMED','人工核对确认'],['INFORMATION_INSUFFICIENT','描述不足，需要补充'],['BUSINESS_CONSULTATION_CONFIRMED','已核对为业务咨询'],['ACKNOWLEDGED','确认收到'],['OUT_OF_SCOPE_CONFIRMED','已核对为范围外诉求'],['SERVICE_REQUEST_CONFIRMED','已核对为服务请求'],['INCIDENT_REVIEW_PENDING','待公共故障审核'],['STALE_REVIEW_CANCELLED','明确取消旧复核']];
-      const secondary='.detail-cancel-dialog fieldset[aria-label=二级原因]';
+      // Card 29 K1: the close dialog offers only the three 「非 IT 范围」 situations; the review workspace keeps its own reasons.
+      const expected=[['BUSINESS_CONSULTATION_CONFIRMED','业务咨询 · 不是故障，只需解答'],['OUT_OF_SCOPE_CONFIRMED','其他部门职责 · 后勤、设备、医务等'],['SERVICE_REQUEST_CONFIRMED','服务请求 · 需走申请流程']];
+      const secondary='.detail-cancel-dialog fieldset[aria-label=具体情况]';
       assert.deepEqual(await browser.evaluate(`[...document.querySelectorAll(${JSON.stringify(secondary+' input[type=radio]')})].map(n=>[n.value,n.closest('label').textContent])`),expected);
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(secondary+' input:checked')})`),null);
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=复核原因] select')!==null"),true,'the original reason selector and attributes remain mounted');
       await clickWorkbenchControl(browser,secondary+' input[value=BUSINESS_CONSULTATION_CONFIRMED]');
       await browser.evaluate(`document.querySelector(${JSON.stringify(secondary+' input:checked')}).focus()`);
       await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowDown',code:'ArrowDown'});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowDown',code:'ArrowDown'});
-      await browser.waitFor(`document.querySelector(${JSON.stringify(secondary+' input:checked')}).value==='ACKNOWLEDGED'`);
-      assert.equal(await browser.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(secondary+' input[value=ACKNOWLEDGED]')})`),true,'native radio keyboard navigation retains focus on its selected reason');
-      await clickWorkbenchControl(browser,secondary+' input[value=HUMAN_CONFIRMED]');
+      await browser.waitFor(`document.querySelector(${JSON.stringify(secondary+' input:checked')}).value==='OUT_OF_SCOPE_CONFIRMED'`);
+      assert.equal(await browser.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(secondary+' input[value=OUT_OF_SCOPE_CONFIRMED]')})`),true,'native radio keyboard navigation retains focus on its selected reason');
+      await clickWorkbenchControl(browser,secondary+' input[value=SERVICE_REQUEST_CONFIRMED]');
       await browser.waitFor("document.querySelector('.detail-cancel-dialog button[type=submit]')?.disabled===false");
       assert.deepEqual(await browser.evaluate('globalThis.__card27ReviewCommands'),[],'changing the reason never submits');
       await clickWorkbenchControl(browser,'.detail-cancel-dialog button[type=submit]');await browser.waitFor('globalThis.__card27ReviewResponses.length===1&&globalThis.__card27ReviewResponses[0]===200');
       const sent=await browser.evaluate('globalThis.__card27ReviewCommands') as {body:{client_command_id:string;expected_version:number;expected_review_version:string;expected_material_basis:string;reason_code:string;secondary_reason_code:string;notify_reporter:boolean};ifMatch:string;idempotency:string}[];assert.equal(sent.length,1);const command=sent[0];assert.ok(command);
       assert.match(command.body.client_command_id,/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
-      assert.deepEqual(command.body,{client_command_id:command.body.client_command_id,expected_version:closureBefore.version,expected_review_version:original.row_version,expected_material_basis:original.material_basis.current_hash,reason_code:'NOT_IT_SCOPE',secondary_reason_code:'HUMAN_CONFIRMED',notify_reporter:true});
+      assert.deepEqual(command.body,{client_command_id:command.body.client_command_id,expected_version:closureBefore.version,expected_review_version:original.row_version,expected_material_basis:original.material_basis.current_hash,reason_code:'NOT_IT_SCOPE',secondary_reason_code:'SERVICE_REQUEST_CONFIRMED',notify_reporter:true});
       assert.equal(command.ifMatch,'"'+closureBefore.version+'"');assert.equal(command.idempotency,command.body.client_command_id);
       const currentResponse=await get('/api/manual-reviews/'+selected.id);assert.equal(currentResponse.status,200);const current=await currentResponse.json() as {status:string;safe_result:unknown;allowed_resolutions:unknown[]};assert.equal(current.status,'RESOLVED');assert.deepEqual(current.safe_result,original.safe_result);assert.deepEqual(current.allowed_resolutions,[]);
       const intake=(await pool.query<{status:string;pilot_ticket_id:string|null}>('SELECT status,pilot_ticket_id::text FROM intake.service_intake WHERE id=$1::uuid',[selected.intake_id])).rows[0];assert.deepEqual(intake,{status:'IGNORED',pilot_ticket_id:null});

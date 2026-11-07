@@ -85,3 +85,9 @@
   .work-table.ds-work-table :is(.ds-list-stage,.ds-list-subgroup)>th {overflow:visible;}
   .ds-work-table .ds-list-stage .column-heading,.ds-work-table .ds-list-subgroup .ds-board-group-trigger.button {position:sticky;left:var(--space-3);width:max-content;}
 }
+
+/* Card 29 L2/L3/L4. */
+.ds-list-owner>.ds-list-owner-name {display:block;max-height:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-line-clamp:unset;}
+.work-table.ds-work-table :is(.ds-list-stage,.ds-list-note,.ds-list-feedback,.ds-list-more,.ds-list-empty),.work-table.ds-work-table tbody :is(.ds-list-stage,.ds-list-note,.ds-list-feedback,.ds-list-more,.ds-list-empty):hover {background:var(--bg-canvas);}
+.ds-work-table .ds-list-more .button[data-tone] .ds-button-label {display:inline-flex;align-items:center;gap:var(--space-1);}
+.ds-work-table .ds-list-more .button[data-tone] svg {width:var(--icon-sm);height:var(--icon-sm);}

@@ -1,0 +1,61 @@
+{
+  "directory": "/Users/petervans/Projects/ticket/docs/ui/evidence/v220-card29/closure",
+  "environment": {
+    "platform": "darwin",
+    "dpr": 1,
+    "zoom": 1
+  },
+  "metrics": {
+    "width": 440,
+    "radius": "14px",
+    "padding": "20px",
+    "row": 36,
+    "dpr": 1,
+    "zoom": 1
+  },
+  "shots": [
+    {
+      "file": "03-other.png",
+      "sha256": "d4489d8298dce3995c3e89f8d3e77032603a6b3ec4370c1246b746aa43613749",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "02-not-it.png",
+      "sha256": "9ac0e4d2af3c4a03c6a3167e3f9a467467f2eb88a75d18a36b29e04399136a0e",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "01-duplicate-dropdown.png",
+      "sha256": "90cd0cb5b1cd1fbb08a2ceebc071bde55dc04e812c6a485295c2e6f2d5073fc9",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "01-duplicate.png",
+      "sha256": "bc6ccf14de0252cc9f5a04fb07f4c7b9c740eaf51afbfcb1720ddb1bbb0fb145",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "04-restore-confirm.png",
+      "sha256": "45cd49cab6f0f74648bd095f3487b3fc5fc44d7a2bb7e1264836f27048d79248",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "05-restored-highlight.png",
+      "sha256": "0a963e3c9496ca875feb3d7e295bd32bc2ae7616f5ebc34ff4090a6488561b52",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "06-history.png",
+      "sha256": "8932f402cc76b2119f911ddd8105ca404d416f7aae05d8df32a0e288acd766a5",
+      "width": 1440,
+      "height": 1400
+    }
+  ],
+  "real_sends": 0
+}

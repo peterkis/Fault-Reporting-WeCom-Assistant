@@ -4,7 +4,7 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
-import {Lock} from 'lucide-react';
+import {Lock,RefreshCw} from 'lucide-react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
@@ -52,7 +52,7 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const checkReceipt=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId:draft.operationId,signal:controller.signal});};
   if(context.isPending)return <p role="status">正在读取工单动作与版本…</p>;
-  if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p>{actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost">刷新可用操作</HButton>,actionsTarget):null}</section>;
+  if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p>{actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost"><RefreshCw aria-hidden="true"/>刷新可用操作</HButton>,actionsTarget):null}</section>;
   if(!context.data)return <p role="status">正在重新核验工单动作…</p>;
   const allowed=context.data.allowed_actions.includes('add-note');
   const routineDraft=!note&&!pending&&!draft.operationId&&(draft.message===''||draft.message==='草稿仅在当前浏览器恢复，最长24小时。');
@@ -64,7 +64,7 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
       {state==='unknown'&&pending?<HButton type="button" data-action="check-internal-note" onClick={()=>send(pending,true)} tone="secondary">核对保存结果</HButton>:null}
       {!pending&&draft.operationId?<HButton type="button" data-action="check-expired-note" isDisabled={state==='submitting'||state==='checking'} onClick={checkReceipt} tone="secondary">核对上次操作</HButton>:null}
       {draft.enabled&&Boolean(note)?<HButton type="button" data-action="discard-note-draft" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void draft.discard();}} tone="secondary">丢弃草稿内容</HButton>:null}
-      {!blocked&&actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost">刷新可用操作</HButton>,actionsTarget):null}</div></HForm>:<p>当前没有内部备注写入权限。</p>}
+      {!blocked&&actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost"><RefreshCw aria-hidden="true"/>刷新可用操作</HButton>,actionsTarget):null}</div></HForm>:<p>当前没有内部备注写入权限。</p>}
     {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-notes" state={state} className="ticket-note-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
   </div></section>;
 }

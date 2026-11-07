@@ -20,7 +20,8 @@ export interface WorkbenchSearchCriteria {
  readonly closed_from?:string;readonly closed_to?:string;
 }
 export interface WorkbenchSearchRequest {readonly criteria:WorkbenchSearchCriteria;readonly cursor:string|null;readonly limit:number}
-export type WorkbenchSearchCard=Omit<WorkbenchCard,'service'|'stage_entered_at'>&{
+/** Card 29 L6: search items carry the same optional service and stage timing projection as board cards. */
+export type WorkbenchSearchCard=WorkbenchCard&{
  readonly attention?:WorkbenchFollowAttention;
  readonly supplement_follow_up?:Readonly<{has_pending_supplements:boolean}>;
  readonly follow_up_schedule?:SharedFollowUpActive|null;

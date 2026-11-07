@@ -1,7 +1,7 @@
 import {RestoreClosedItem,useClosureHighlight} from '../../../features/ticket-waiting/ClosureActions';
 import {useState} from 'react';
 import type {ReactNode} from 'react';
-import {Bell,Bot,Check,ChevronDown,ChevronRight,CircleX,Pause,User} from 'lucide-react';
+import {Bell,Bot,Check,ChevronDown,ChevronRight,ChevronUp,CircleX,Pause,User} from 'lucide-react';
 import type {BoardColumn,WorkbenchCard} from '../../../api/client';
 import {cardHeat,cardHeatStart} from '../../heat';
 import {formatListTime,formatWaitingTime} from '../../format-time';
@@ -61,14 +61,14 @@ function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTim
     <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}</span></div></td>
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
-    <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name??<span className="ds-list-missing">—</span>}<span className="ds-list-separator"> · </span>{location??<span className="ds-list-missing">—</span>}</span></>:<span className="ds-list-missing">—</span>}</span></td>
+    <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name}{name&&location?<span className="ds-list-separator"> · </span>:null}{location}</span></>:<span className="ds-list-missing">—</span>}</span></td>
     <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
     <td><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time></td>
   </tr>;
 }
 function ListRows({items,expanded,id,...props}:Omit<Props,'groups'|'principalId'|'closureKind'>&{items:WorkbenchCard[];expanded:boolean;id:string}){
   const [all,setAll]=useState(false),visible=all?items:items.slice(0,3);
-  return <><tr hidden={!expanded||items.length>0} id={id+'-empty'} className="ds-list-empty"><td colSpan={7}>暂无事项</td></tr>{visible.map(item=><WorkRow key={item.kind+':'+item.id} {...props} item={item} hidden={!expanded}/>)}{items.length>3?<tr hidden={!expanded} id={id+'-more'} className="ds-list-more"><td colSpan={7}><Button tone="ghost" data-action="expand-column" aria-expanded={all} aria-controls={items.map(item=>'list-item-'+item.kind+'-'+item.id).join(' ')} onPress={()=>setAll(value=>!value)}>{all?'收起':'显示剩余 '+(items.length-3)+' 项'}</Button></td></tr>:null}</>;
+  return <><tr hidden={!expanded||items.length>0} id={id+'-empty'} className="ds-list-empty"><td colSpan={7}>暂无事项</td></tr>{visible.map(item=><WorkRow key={item.kind+':'+item.id} {...props} item={item} hidden={!expanded}/>)}{items.length>3?<tr hidden={!expanded} id={id+'-more'} className="ds-list-more"><td colSpan={7}><Button tone="ghost" data-action="expand-column" aria-expanded={all} aria-controls={items.map(item=>'list-item-'+item.kind+'-'+item.id).join(' ')} onPress={()=>setAll(value=>!value)}>{all?<><ChevronUp aria-hidden="true"/>收起</>:'显示剩余 '+(items.length-3)+' 项'}</Button></td></tr>:null}</>;
 }
 function Subgroup({label,items,preferenceKey,defaultExpanded=true,forced=false,note,...props}:Omit<Props,'groups'|'principalId'|'closureKind'>&{label:string;items:WorkbenchCard[];preferenceKey:string;defaultExpanded?:boolean;forced?:boolean;note?:string}){
   const [expanded,toggle]=useFold(preferenceKey,forced||defaultExpanded,forced),id='list-subgroup-'+preferenceKey.split(':').at(-1);

@@ -408,6 +408,63 @@
               }
             ]
           },
+          "service": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "name_zh",
+                  "category",
+                  "category_name_zh",
+                  "source"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "name_zh": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "category_name_zh": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "source": {
+                    "enum": [
+                      "MANUAL_CONFIRMED",
+                      "REPORTER_EXPLICIT",
+                      "RULE_DETERMINISTIC"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "stage_entered_at": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "local_datetime.schema.json"
+              }
+            ]
+          },
           "reporter_department": {
             "oneOf": [
               {
