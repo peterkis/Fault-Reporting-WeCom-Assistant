@@ -33,13 +33,20 @@ runs:
   - if: ${{ inputs.pyyaml == 'true' }}
     run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     shell: bash
-  - name: Resolve required system browser
+  - name: Prepare pinned Chrome for browser tests
     if: ${{ inputs.browser == 'true' }}
     shell: bash
     run: |
       set -euo pipefail
-      BROWSER_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+      browser_version=144.0.7559.59
+      browser_dir="$RUNNER_TEMP/pr-chrome"
+      mkdir -p "$browser_dir"
+      curl --fail --location --retry 3 --output "$browser_dir/chrome.zip" \
+        "https://storage.googleapis.com/chrome-for-testing-public/$browser_version/linux64/chrome-linux64.zip"
+      unzip -q "$browser_dir/chrome.zip" -d "$browser_dir"
+      BROWSER_PATH="$browser_dir/chrome-linux64/chrome"
       test -x "$BROWSER_PATH"
+      "$BROWSER_PATH" --version | grep -F "$browser_version"
       echo "TS_MIGRATION_BROWSER_EXECUTABLE=$BROWSER_PATH" >> "$GITHUB_ENV"
   - name: Prepare selected media tools
     if: ${{ inputs.ffmpeg == 'true' }}

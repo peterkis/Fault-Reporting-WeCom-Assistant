@@ -80,8 +80,8 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     // Linux CI has no hardware adapter. Use Chromium's software graphics
     // backend for the browser tests that exercise actual WebGL/WebGPU commands.
     ...(linuxGraphics?[
-      '--use-gl=angle','--use-angle=swiftshader-webgl','--enable-unsafe-swiftshader',
-      '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu','--disable-gpu-watchdog',
+      '--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader',
+      '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
       '--enable-logging=stderr',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
