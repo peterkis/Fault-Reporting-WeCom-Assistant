@@ -86,7 +86,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       '--webgl-antialiasing-mode=none',
       '--enable-logging=stderr',
     ]:windowsSoftwareGraphics?[
-      '--use-gl=angle','--use-angle=swiftshader','--use-webgpu-adapter=swiftshader',
+      '--use-gl=angle','--use-angle=d3d11-warp','--use-webgpu-adapter=swiftshader','--disable-gpu-compositing',
       '--enable-unsafe-swiftshader','--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),

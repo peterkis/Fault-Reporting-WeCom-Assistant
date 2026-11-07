@@ -190,7 +190,15 @@ test('native startup gates real playback, isolates input, preserves prepared fra
   const cert=readFileSync(path.join(tlsDirectory,'cert.pem')),key=readFileSync(path.join(tlsDirectory,'key.pem'));
   const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
   let mode:'early'|'manual'|'legacy'|'visible'|'business'='early';
-  const server=createServer({key,cert},(_request,response)=>{
+  let coveredCallbackRequests=0,coveredCallbackAborted=false;
+  let releaseCoveredCallback: (()=>void)|undefined;
+  const server=createServer({key,cert},(request,response)=>{
+    if(new URL(request.url??'/','https://127.0.0.1').pathname==='/workbench/callback'){
+      coveredCallbackRequests++;
+      response.once('close',()=>{if(!response.writableEnded)coveredCallbackAborted=true;});
+      releaseCoveredCallback=()=>{response.writeHead(302,{location:'/workbench/app/'});response.end();};
+      return;
+    }
     response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});
     response.end(`<!doctype html><body data-fixture="${mode}"><button id="under-cover" style="position:fixed;left:calc(50% - 50px);top:calc(50% - 20px);width:100px;height:40px">合成登录操作</button><iframe src="about:blank"></iframe><script>
       window.documentId=crypto.randomUUID();window.clicks=0;window.presentations=0;
@@ -239,6 +247,22 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     assert.equal((await early.command('state') as {startupVisible:boolean}).startupVisible,false,'duplicate readiness cannot recreate the startup player');
     await early.command('navigate',origin+'/workbench/app/');await early.wait('evaluate','location.pathname==="/workbench/app/"');
     assert.equal(await early.command('evaluate','typeof window.workbenchLogin'),'undefined','non-login paths never acquire startup readiness');
+    await finish();
+
+    mode='manual';const callback=await launch('covered-oauth-callback');
+    await callback.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await callback.command('navigate',origin+'/workbench/callback?code=synthetic&state=synthetic');
+    const callbackDeadline=Date.now()+3000;
+    while(!releaseCoveredCallback&&Date.now()<callbackDeadline)await delay(25);
+    assert.ok(releaseCoveredCallback,'the synthetic authorization request reached the server');
+    assert.equal((await callback.command('state') as {startupVisible:boolean}).startupVisible,true);
+    await delay(20_500);
+    assert.equal(coveredCallbackRequests,1,'covered authorization is issued once');
+    assert.equal(coveredCallbackAborted,false,'the scene preparation deadline does not cancel in-flight authorization');
+    assert.doesNotMatch(callback.diagnostics(),/"event":"scene-timeout"/u);
+    mode='business';releaseCoveredCallback();
+    await callback.wait('evaluate','location.pathname==="/workbench/app/"');
+    await callback.waitReleased();
     await finish();
 
     mode='manual';const cached=await launch('cached-business-under-cover');

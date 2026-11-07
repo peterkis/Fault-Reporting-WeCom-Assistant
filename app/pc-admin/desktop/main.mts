@@ -231,6 +231,8 @@ else{
     if(sceneTimer){clearTimeout(sceneTimer);sceneBudget=Math.max(1,sceneBudget-(now-sceneClock));sceneTimer=null;}
     if(compatibilityTimer){clearTimeout(compatibilityTimer);compatibilityBudget=Math.max(1,compatibilityBudget-(now-compatibilityClock));compatibilityTimer=null;}
     if(!startup.active||startup.scene!=='loading'||!startup.generation||quitting)return;
+    // OAuth authorization is in flight. The login scene budget must not abort it.
+    if(documentStage()==='callback')return;
     if(startup.phase==='released'&&!embeddedLoginDocument(sceneDocument,config.serverOrigin))return;
     const generation=startup.generation;
     sceneClock=now;sceneTimer=setTimeout(()=>{sceneTimer=null;if(generation!==startup.generation||startup.scene!=='loading')return;traceStartup('scene-timeout');page.stop();beginRecovery(recoveryTarget(page.getURL(),config.serverOrigin,'GET',activeLoginEntry)??config.serverOrigin+activeLoginEntry,net.isOnline()?'unavailable':'offline');},sceneBudget);sceneTimer.unref();
