@@ -3,11 +3,393 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:https';
 import {createHash,createPublicKey,randomUUID} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
-import {mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync} from 'node:fs';
+import {mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync,rmSync} from 'node:fs';
 import path from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
-test('real Electron navigation recovers offline/crashes and keeps authentication/window guards',{timeout:90000,skip:process.platform!=='win32'},async()=>{
+const frameFiles=['startup-frames/manifest.json',...Array.from({length:68},(_,index)=>'startup-frames/'+String(index).padStart(3,'0')+'.webp')];
+const startupFiles=['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4',...frameFiles];
+type FrameFault='normal'|'missing'|'decode-failed'|'canvas-unavailable'|'script-failed'|'bootstrap-stalled'|'os-reduce'|'slow-progress';
+const copyStartup=(root:string,stage:string)=>{
+  for(const file of startupFiles){const target=path.join(stage,file);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(root,'.local/electron/stage',file),target);}
+  for(const file of ['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs','startup.mjs','startup-preload.cjs']){
+    const compiled=path.join(root,'.local/electron/compiled',file),target=path.join(stage,file);
+    copyFileSync(compiled,target);
+    assert.deepEqual(readFileSync(target),readFileSync(compiled),'startup fixture uses current compiled bytes for '+file);
+  }
+};
+function installFrameProbe(stage:string,fault:FrameFault='normal'){
+  const html=path.join(stage,'startup.html');
+  writeFileSync(html,readFileSync(html,'utf8').replace('<script type="module" src="startup.mjs">','<script src="frame-probe.mjs"></script><script type="module" src="startup.mjs">'));
+  // These controls live only in owned fixtures. Production exposes neither a
+  // pause API nor the test's mutable observers; rAF blocking exercises its watchdog.
+  writeFileSync(path.join(stage,'frame-probe.mjs'),`(()=>{
+    const request=window.requestAnimationFrame.bind(window),cancel=window.cancelAnimationFrame.bind(window),held=new Map();let paused=false;
+    window.requestAnimationFrame=callback=>{const id=request(now=>{if(paused)held.set(id,callback);else callback(now);});return id;};
+    window.cancelAnimationFrame=id=>{held.delete(id);cancel(id);};
+    window.__pauseStartupFrames=()=>{paused=true;};window.__resumeStartupFrames=()=>{paused=false;const callbacks=[...held.values()];held.clear();for(const callback of callbacks)window.requestAnimationFrame(callback);};
+    window.__startupFrameObservations=[];window.__observedStartupCycles=0;window.__maxResidentFrames=0;window.__maxInFlight=0;
+    const displayCanvas=document.getElementById('startup-canvas');
+    const framesUrl=new URL('startup-frames/',document.baseURI).href;
+    const prototype=CanvasRenderingContext2D.prototype;
+    const originalDraw=prototype.drawImage,originalRead=prototype.getImageData,originalPut=prototype.putImageData;
+    const scratchFrame=new WeakMap(),imageDataFrame=new WeakMap();
+    const nativeFrames={observations:[],displayWrites:0,scratchDraws:0,scratchReads:0,unprovenDisplayWrites:0,videoFrameCopies:0,videoCopyBuffers:0,videoDisplayImages:0,videoCopiesInFlight:0,maxVideoCopiesInFlight:0,invalidVideoCopies:0,staleVideoCopies:0};
+    window.__startupNativeFrames=nativeFrames;
+    const detachedScratch=context=>context.canvas instanceof HTMLCanvasElement&&context.canvas!==displayCanvas&&!context.canvas.isConnected&&context.canvas.width===540&&context.canvas.height===540;
+    const fullDraw=args=>args.length===5&&args[1]===0&&args[2]===0&&args[3]===540&&args[4]===540;
+    const sourceIndex=image=>{
+      if(!(image instanceof HTMLImageElement)||image.naturalWidth!==540||image.naturalHeight!==540)return null;
+      const url=image.currentSrc||image.src;
+      if(!url.startsWith(framesUrl))return null;
+      const match=/^([0-9]{3})[.]webp$/u.exec(url.slice(framesUrl.length));
+      const index=match?Number(match[1]):-1;
+      return index>=0&&index<68?index:null;
+    };
+    const recordDisplay=(method,index,copyGeneration=null)=>{
+      nativeFrames.displayWrites++;
+      if(index===null){nativeFrames.unprovenDisplayWrites++;return;}
+      if(nativeFrames.observations.length<160)nativeFrames.observations.push({method,index,at:performance.now(),copyGeneration});
+    };
+    prototype.drawImage=function(...args){
+      scratchFrame.delete(this);
+      const result=Reflect.apply(originalDraw,this,args);
+      const index=fullDraw(args)?sourceIndex(args[0]):null;
+      if(this.canvas===displayCanvas)recordDisplay('drawImage',index);
+      else if(index!==null&&detachedScratch(this)){scratchFrame.set(this,index);nativeFrames.scratchDraws++;}
+      return result;
+    };
+    prototype.getImageData=function(...args){
+      const index=scratchFrame.get(this);scratchFrame.delete(this);
+      const pixels=Reflect.apply(originalRead,this,args);
+      const settings=args[4];
+      if(index!==undefined&&detachedScratch(this)&&args.length===5&&args[0]===0&&args[1]===0&&args[2]===540&&args[3]===540&&settings?.colorSpace==='srgb'&&settings?.pixelFormat==='rgba-unorm8'&&pixels instanceof ImageData&&pixels.width===540&&pixels.height===540&&pixels.colorSpace==='srgb'&&pixels.data instanceof Uint8ClampedArray&&pixels.data.length===540*540*4){
+        imageDataFrame.set(pixels,index);nativeFrames.scratchReads++;
+      }
+      return pixels;
+    };
+    const videoFrameIndex=new WeakMap(),copyByBuffer=new WeakMap();
+    const knownCopyBuffers=new WeakSet(),knownVideoDisplayImages=new WeakSet();
+    const frameBytes=540*540*4;
+    let nextCopyGeneration=0;
+    const fullPixelArray=data=>data instanceof Uint8ClampedArray&&data.byteOffset===0&&data.byteLength===frameBytes&&data.buffer instanceof ArrayBuffer&&data.buffer.byteLength===frameBytes;
+    const fullPlane=planes=>Array.isArray(planes)&&planes.length===1&&planes[0]?.offset===0&&planes[0]?.stride===2160;
+    const fullCopyOptions=options=>{
+      const rect=options?.rect;
+      return options?.format==='RGBA'&&options.colorSpace==='srgb'&&rect?.x===0&&rect.y===0&&rect.width===540&&rect.height===540&&fullPlane(options.layout);
+    };
+    if(typeof VideoFrame==='function'&&typeof VideoFrame.prototype.copyTo==='function'){
+      const NativeVideoFrame=VideoFrame,originalCopy=NativeVideoFrame.prototype.copyTo;
+      window.VideoFrame=new Proxy(NativeVideoFrame,{construct(target,args,newTarget){
+        const frame=Reflect.construct(target,args,newTarget);
+        const index=sourceIndex(args[0]);
+        if(index!==null)videoFrameIndex.set(frame,index);
+        return frame;
+      }});
+      NativeVideoFrame.prototype.copyTo=function(...args){
+        const target=args[0];
+        const backing=target instanceof ArrayBuffer?target:ArrayBuffer.isView(target)?target.buffer:null;
+        const buffer=backing instanceof ArrayBuffer?backing:null;
+        const index=videoFrameIndex.get(this);
+        const full=buffer!==null&&index!==undefined&&fullPixelArray(target)&&fullCopyOptions(args[1])&&this.codedWidth===540&&this.codedHeight===540&&this.displayWidth===540&&this.displayHeight===540;
+        const copy={generation:++nextCopyGeneration,index:null,invalidated:false};
+        if(buffer){
+          copyByBuffer.set(buffer,copy);
+          if(!knownCopyBuffers.has(buffer)){knownCopyBuffers.add(buffer);nativeFrames.videoCopyBuffers++;}
+        }
+        nativeFrames.videoCopiesInFlight++;
+        nativeFrames.maxVideoCopiesInFlight=Math.max(nativeFrames.maxVideoCopiesInFlight,nativeFrames.videoCopiesInFlight);
+        const finish=(success,planes)=>{
+          nativeFrames.videoCopiesInFlight--;
+          if(buffer){
+            const latest=copyByBuffer.get(buffer);
+            if(latest!==copy){
+              nativeFrames.staleVideoCopies++;
+              if(latest){latest.invalidated=true;latest.index=null;}
+              return;
+            }
+          }
+          if(success&&full&&!copy.invalidated&&fullPixelArray(target)&&fullPlane(planes)){
+            copy.index=index;nativeFrames.videoFrameCopies++;
+          }else nativeFrames.invalidVideoCopies++;
+        };
+        let pendingCopy;
+        try{pendingCopy=Reflect.apply(originalCopy,this,args);}
+        catch(error){finish(false,null);throw error;}
+        // Observe the native settlement before callers resume from the original Promise.
+        void pendingCopy.then(planes=>finish(true,planes),()=>finish(false,null));
+        return pendingCopy;
+      };
+    }
+    prototype.putImageData=function(...args){
+      scratchFrame.delete(this);
+      const result=Reflect.apply(originalPut,this,args);
+      if(this.canvas===displayCanvas){
+        const pixels=args[0];
+        let index=null,copyGeneration=null;
+        if(args.length===3&&args[1]===0&&args[2]===0&&pixels instanceof ImageData){
+          const copy=copyByBuffer.get(pixels.data.buffer);
+          if(copy){
+            if(!copy.invalidated&&copy.index!==null&&pixels.width===540&&pixels.height===540&&pixels.colorSpace==='srgb'&&fullPixelArray(pixels.data)){
+              index=copy.index;copyGeneration=copy.generation;
+              if(!knownVideoDisplayImages.has(pixels)){knownVideoDisplayImages.add(pixels);nativeFrames.videoDisplayImages++;}
+            }
+          }else index=imageDataFrame.get(pixels)??null;
+        }
+        recordDisplay('putImageData',index,copyGeneration);
+      }
+      return result;
+    };
+    new MutationObserver(()=>{const data=document.body.dataset,index=Number(data.frameIndex),observations=window.__startupFrameObservations;
+      if(Number.isInteger(index)&&index>=0&&observations.at(-1)?.index!==index)observations.push({index,at:performance.now(),activeMs:Number(data.activeMs)});
+      window.__observedStartupCycles=Math.max(window.__observedStartupCycles,Number(data.cycleCount)||0);window.__maxResidentFrames=Math.max(window.__maxResidentFrames,Number(data.residentFrames)||0,Number(data.maxResidentFrames)||0);window.__maxInFlight=Math.max(window.__maxInFlight,Number(data.inFlight)||0,Number(data.maxInFlight)||0);
+    }).observe(document.body,{attributes:true});
+    ${fault==='canvas-unavailable'?'HTMLCanvasElement.prototype.getContext=()=>null;':''}
+    ${fault==='decode-failed'?'HTMLImageElement.prototype.decode=()=>Promise.reject(new DOMException("Synthetic bitmap decode failure","EncodingError"));':''}
+    ${fault==='slow-progress'?'const decode=HTMLImageElement.prototype.decode;HTMLImageElement.prototype.decode=function(){return new Promise(resolve=>setTimeout(resolve,150)).then(()=>Reflect.apply(decode,this,[]));};':''}
+  })();`);
+}
+
+interface StartupFixture {
+  command:(action:string,expression?:string)=>Promise<unknown>;
+  wait:(surface:'evaluate'|'startup-evaluate'|'chrome-evaluate',expression:string,timeout?:number)=>Promise<void>;
+  waitReleased:()=>Promise<void>;
+  diagnostics:()=>string;
+  close:()=>Promise<void>;
+}
+async function launchStartupFixture(root:string,origin:string,spki:string,name:string,media:FrameFault='normal',reduce=false):Promise<StartupFixture>{
+  const stage=path.join(root,'.local/electron/temp',name),profile=path.join(root,'.local/electron/profiles',name);
+  mkdirSync(stage,{recursive:true});mkdirSync(profile,{recursive:true});
+  copyStartup(root,stage);installFrameProbe(stage,media);
+  copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
+  const info=JSON.parse(readFileSync(path.join(stage,'package.json'),'utf8'));info.main='process-driver.mjs';writeFileSync(path.join(stage,'package.json'),JSON.stringify(info));
+  writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:origin}));
+  if(media==='missing')rmSync(path.join(stage,'startup-frames/000.webp'));
+  if(media==='script-failed')writeFileSync(path.join(stage,'startup.mjs'),'const invalidStartupModule = ; // Deliberate test-only parse failure.');
+  const env:NodeJS.ProcessEnv={...process.env,WECOM_DESKTOP_DATA_ROOT:profile,WECOM_DESKTOP_TEST_STAGE:stage,WECOM_DESKTOP_TEST_SPKI:spki};delete env.ELECTRON_RUN_AS_NODE;
+  if(media==='bootstrap-stalled')env.WECOM_DESKTOP_TEST_BOOTSTRAP_STALL='true';
+  if(media==='os-reduce')env.WECOM_DESKTOP_TEST_OS_REDUCE='true';
+  const child=spawn(path.join(root,'node_modules/electron/dist/electron.exe'),[stage,'--disable-features=CalculateNativeWinOcclusion',...(reduce?['--wecom-reduced-motion']:[])],{cwd:root,env,windowsHide:false,stdio:['ignore','ignore','pipe','ipc']});
+  child.stderr?.on('data',(chunk:Buffer)=>writeFileSync(path.join(profile,'process-stderr.log'),chunk,{flag:'a'}));
+  let ready=false,next=1;const pending=new Map<number,{resolve:(value:unknown)=>void;reject:(error:Error)=>void;timer:NodeJS.Timeout}>();
+  child.on('message',(value:unknown)=>{if(!value||typeof value!=='object')return;const message=value as Record<string,unknown>;if(message.ready===true){ready=true;return;}if(typeof message.id!=='number')return;const slot=pending.get(message.id);if(!slot)return;clearTimeout(slot.timer);pending.delete(message.id);if(message.ok)slot.resolve(message.result);else slot.reject(Error(String(message.error)));});
+  child.on('exit',()=>{for(const slot of pending.values()){clearTimeout(slot.timer);slot.reject(Error('STARTUP_FIXTURE_EXITED'));}pending.clear();});
+  const command=(action:string,expression?:string):Promise<unknown>=>new Promise((resolve,reject)=>{const id=next++,timer=setTimeout(()=>{pending.delete(id);reject(Error('STARTUP_FIXTURE_COMMAND_TIMEOUT:'+action));},5000);pending.set(id,{resolve,reject,timer});child.send({id,action,expression});});
+  const wait=async(surface:'evaluate'|'startup-evaluate'|'chrome-evaluate',expression:string,timeout=12_000)=>{const deadline=Date.now()+timeout;while(Date.now()<deadline){try{if(await command(surface,expression))return;}catch(error){if(!(error instanceof Error)||!/Render frame was disposed|frame was destroyed|Script failed to execute|TEST_STARTUP/u.test(error.message))throw error;}await delay(40);}throw Error('STARTUP_FIXTURE_CONDITION_TIMEOUT:'+surface+':'+expression);};
+  const waitReleased=async()=>{const deadline=Date.now()+12_000;while(Date.now()<deadline){const state=await command('state') as {startupVisible:boolean;viewCount:number};if(!state.startupVisible&&state.viewCount===2)return;await delay(40);}throw Error('STARTUP_FIXTURE_HANDOFF_TIMEOUT');};
+  const diagnostics=()=>{const file=path.join(profile,'logs/startup.jsonl');return existsSync(file)?readFileSync(file,'utf8'):'';};
+  const close=async()=>{if(child.exitCode!==null)return;if(child.connected)child.disconnect();await new Promise<void>(resolve=>{const timer=setTimeout(()=>{child.kill();resolve();},5000);child.once('exit',()=>{clearTimeout(timer);resolve();});});};
+  try{const deadline=Date.now()+10_000;while(!ready&&Date.now()<deadline){if(child.exitCode!==null)throw Error('STARTUP_FIXTURE_START_FAILED');await delay(25);}assert.ok(ready);return {command,wait,waitReleased,diagnostics,close};}catch(error){await close();throw error;}
+}
+
+test('native startup gates real playback, isolates input, preserves prepared frames and exits bounded failures',{timeout:180000,skip:process.platform!=='win32'},async()=>{
+  const root=process.cwd(),run='startup-'+randomUUID(),tlsDirectory=path.join(root,'.local/electron/temp',run+'-tls');
+  mkdirSync(tlsDirectory,{recursive:true});
+  const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);assert.ok(openssl);
+  execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(tlsDirectory,'key.pem'),'-out',path.join(tlsDirectory,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore',windowsHide:true});
+  const cert=readFileSync(path.join(tlsDirectory,'cert.pem')),key=readFileSync(path.join(tlsDirectory,'key.pem'));
+  const spki=createHash('sha256').update(createPublicKey(cert).export({type:'spki',format:'der'})).digest('base64');
+  let mode:'early'|'manual'|'legacy'|'visible'|'business'='early';
+  let coveredCallbackRequests=0,coveredCallbackAborted=false;
+  let releaseCoveredCallback: (()=>void)|undefined;
+  const server=createServer({key,cert},(request,response)=>{
+    if(new URL(request.url??'/','https://127.0.0.1').pathname==='/workbench/callback'){
+      coveredCallbackRequests++;
+      response.once('close',()=>{if(!response.writableEnded)coveredCallbackAborted=true;});
+      releaseCoveredCallback=()=>{response.writeHead(302,{location:'/workbench/app/'});response.end();};
+      return;
+    }
+    response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});
+    response.end(`<!doctype html><body data-fixture="${mode}"><button id="under-cover" style="position:fixed;left:calc(50% - 50px);top:calc(50% - 20px);width:100px;height:40px">合成登录操作</button><iframe src="about:blank"></iframe><script>
+      window.documentId=crypto.randomUUID();window.clicks=0;window.presentations=0;
+      const present=()=>{if(document.body.dataset.presented==='true')return;window.presentations++;document.body.dataset.presented='true';};
+      document.getElementById('under-cover').onclick=()=>window.clicks++;
+      window.savedFrame=document.querySelector('iframe');window.savedFrameWindow=window.savedFrame.contentWindow;
+      window.prepare=()=>{window.signalSent=true;return window.workbenchLogin.startup.prepared({version:1,panel:'created',backdrop:'fallback'}).then(value=>{if(value.presented)present();return value;});};
+      if(${JSON.stringify(mode)}!=='legacy'&&window.workbenchLogin?.startup){window.workbenchLogin.startup.onPresented(present);void window.workbenchLogin.startup.connect();}
+      if(${JSON.stringify(mode)}==='early')void window.prepare();
+      if(${JSON.stringify(mode)}==='visible'){
+        const prepareWhenVisible=()=>{if(document.hidden||window.signalSent)return;window.preparedWhileVisible=true;void window.prepare();};
+        document.addEventListener('visibilitychange',prepareWhenVisible);requestAnimationFrame(prepareWhenVisible);
+      }
+    </script></body>`);
+  });
+  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin='https://127.0.0.1:'+address.port;
+  let fixture:StartupFixture|null=null;
+  const launch=async(name:string,media:FrameFault='normal',reduce=false)=>{fixture=await launchStartupFixture(root,origin,spki,run+'-'+name,media,reduce);return fixture;};
+  const finish=async()=>{await fixture?.close();fixture=null;};
+  try{
+    const early=await launch('early');
+    await early.wait('evaluate','window.signalSent===true');
+    await early.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.scene==="prepared")');
+    assert.equal(await early.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false,'fast login preparation cannot bypass the first real playback');
+    assert.equal((await early.command('state') as {startupVisible:boolean}).startupVisible,true);
+    assert.equal(await early.command('evaluate','window.presentations'),0,'prepared login animations have not been presented in the background');
+    assert.equal(await early.command('evaluate','typeof document.querySelector("iframe").contentWindow.workbenchLogin'),'undefined','child frames do not acquire even the presentation-only login bridge');
+    await early.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await early.command('blur');
+    const blurredDraws=await early.command('startup-evaluate','Number(document.body.dataset.drawCount)');await delay(150);
+    assert.ok(Number(await early.command('startup-evaluate','document.body.dataset.drawCount'))>Number(blurredDraws),'a visible unfocused window continues the same frame sequence');
+    await early.command('show');await early.wait('startup-evaluate','document.body.dataset.playback==="playing"');
+    await early.command('chrome-evaluate','document.getElementById("close").click()');
+    assert.equal((await early.command('state') as {visible:boolean}).visible,false,'close-to-tray responds immediately without waiting for startup completion');
+    await early.wait('startup-evaluate','document.body.dataset.playback==="paused"');
+    await early.command('show');
+    await early.command('tab');
+    assert.notEqual((await early.command('state') as {focusedURL:string}).focusedURL,origin+'/workbench/desktop/embedded','Tab stays outside the covered login WebContents');
+    const dimensions=await early.command('state') as {contentSize:number[]};
+    await early.command('click',JSON.stringify({x:Math.floor((dimensions.contentSize[0]??0)/2),y:Math.floor((dimensions.contentSize[1]??0)/2)}));
+    assert.equal(await early.command('evaluate','window.clicks'),0,'native overlay hit testing stops clicks on login controls');
+    await early.waitReleased();await early.wait('evaluate','document.body.dataset.presented==="true"');
+    assert.equal(await early.command('evaluate','window.presentations'),1,'one prepared scene receives exactly one presentation notification');
+    assert.equal(await early.command('evaluate','window.savedFrame===document.querySelector("iframe")&&window.savedFrameWindow===document.querySelector("iframe").contentWindow'),true,'handoff retains the same already-created iframe and browsing context');
+    await early.command('evaluate','window.prepare()');
+    assert.equal((await early.command('state') as {startupVisible:boolean}).startupVisible,false,'duplicate readiness cannot recreate the startup player');
+    await early.command('navigate',origin+'/workbench/app/');await early.wait('evaluate','location.pathname==="/workbench/app/"');
+    assert.equal(await early.command('evaluate','typeof window.workbenchLogin'),'undefined','non-login paths never acquire startup readiness');
+    await finish();
+
+    mode='manual';const callback=await launch('covered-oauth-callback');
+    await callback.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await callback.command('navigate',origin+'/workbench/callback?code=synthetic&state=synthetic');
+    const callbackDeadline=Date.now()+3000;
+    while(!releaseCoveredCallback&&Date.now()<callbackDeadline)await delay(25);
+    assert.ok(releaseCoveredCallback,'the synthetic authorization request reached the server');
+    assert.equal((await callback.command('state') as {startupVisible:boolean}).startupVisible,true);
+    await delay(20_500);
+    assert.equal(coveredCallbackRequests,1,'covered authorization is issued once');
+    assert.equal(coveredCallbackAborted,false,'the scene preparation deadline does not cancel in-flight authorization');
+    assert.doesNotMatch(callback.diagnostics(),/"event":"scene-timeout"/u);
+    mode='business';releaseCoveredCallback();
+    await callback.wait('evaluate','location.pathname==="/workbench/app/"');
+    await callback.waitReleased();
+    await finish();
+
+    mode='manual';const cached=await launch('cached-business-under-cover');
+    await cached.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await cached.command('startup-evaluate','window.__pauseStartupFrames();true');
+    mode='business';await cached.command('navigate',origin+'/workbench/app/');
+    await cached.wait('evaluate','typeof window.workbenchDesktop==="object"');
+    const covered=await cached.command('evaluate','window.workbenchDesktop.getState()') as {visible:boolean;focused:boolean};
+    assert.equal(covered.visible,false,'a cached business document beneath the local cover must not acquire business visibility');
+    assert.equal(covered.focused,false,'native window focus does not present a covered business document');
+    assert.equal((await cached.command('state') as {startupVisible:boolean}).startupVisible,true);
+    await cached.command('startup-evaluate','window.__resumeStartupFrames();true');await cached.waitReleased();
+    assert.equal(await cached.command('evaluate','window.workbenchDesktop.getState().then(state=>state.visible)'),true,'business visibility starts only after the native cover is released');
+    await finish();
+
+    mode='manual';const late=await launch('late');
+    await late.wait('evaluate','typeof window.prepare==="function"');
+    await late.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)');
+    const oldDocument=await late.command('evaluate','window.documentId');
+    await late.command('evaluate','void window.prepare();location.assign("/workbench/desktop/embedded");true');
+    await late.wait('evaluate','window.documentId!=='+JSON.stringify(oldDocument)+'&&typeof window.prepare==="function"');
+    assert.equal(await late.command('startup-evaluate','window.desktopStartup.state().then(state=>state.scene)'), 'loading','a readiness race from the old document cannot prepare the replacement navigation');
+    assert.equal((await late.command('state') as {startupVisible:boolean}).startupVisible,true);
+    await late.wait('startup-evaluate','Number(document.body.dataset.frameIndex)>9&&Number(document.body.dataset.frameIndex)<37');
+    const beforeReady=Date.now();await late.command('evaluate','window.prepare()');await late.waitReleased();
+    assert.ok(Date.now()-beforeReady<1000,'a prepared scene during a later loop releases without waiting for that loop to end');
+    assert.equal(await late.command('evaluate','window.savedFrame===document.querySelector("iframe")&&window.savedFrameWindow===document.querySelector("iframe").contentWindow'),true);
+    assert.equal(await late.command('evaluate','window.presentations'),1);
+    await finish();
+
+    mode='manual';const legacy=await launch('legacy');
+    await legacy.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)');
+    mode='legacy';await legacy.command('navigate',origin+'/workbench/desktop/embedded');
+    await legacy.wait('evaluate','document.body.dataset.fixture==="legacy"');
+    assert.equal(await legacy.command('startup-evaluate','window.desktopStartup.state().then(state=>state.scene)'), 'loading','DOM readiness alone is not prepared scene readiness');
+    const compatibilityStarted=Date.now();
+    await legacy.waitReleased();
+    assert.ok(Date.now()-compatibilityStarted<3000,'an old server gets the 1 second compatibility path rather than the retired 8 second wait');
+    assert.match(legacy.diagnostics(),/compatibility-dom-ready-only/u,'DOM-only compatibility remains distinguishable from explicit prepared');
+    assert.equal(await legacy.command('login-chrome-evaluate','!document.querySelector("[data-compatibility-notice]").hidden&&!document.getElementById("menu").hidden'),true,'a DOM-only compatibility handoff retains a visible explanation and native recovery menu');
+    assert.equal((await legacy.command('state') as {viewVisible:boolean}).viewVisible,true,'the old-server combination has a bounded compatibility path');
+    await finish();
+
+    mode='early';const noScript=await launch('startup-script-failed','script-failed');
+    await noScript.wait('evaluate','window.signalSent===true');
+    assert.equal(await noScript.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false);
+    await noScript.waitReleased();
+    assert.equal(await noScript.command('evaluate','window.presentations'),1,'a broken overlay module cannot permanently block a prepared login');
+    assert.match(noScript.diagnostics(),/"failure":"first-frame-timeout"/u,'the main-process visible watchdog diagnoses a renderer that never started playback');
+    assert.doesNotMatch(noScript.diagnostics(),/"firstPlaybackComplete":true/u,'watchdog recovery does not fabricate a completed playback');
+    await finish();
+
+    mode='manual';const recovered=await launch('retry-before-first-end');
+    await recovered.wait('evaluate','typeof window.prepare==="function"');
+    await recovered.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    // Keep the normal first viewing incomplete while recovery creates its replacement document.
+    await recovered.command('startup-evaluate','window.__pauseStartupFrames();true');
+    const failedDocument=await recovered.command('evaluate','window.documentId');
+    await recovered.command('network-failure','-105');
+    assert.equal(await recovered.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false);
+    mode='visible';await recovered.command('chrome-evaluate','window.desktopChrome.command("reconnect")');
+    await recovered.wait('evaluate','window.documentId!=='+JSON.stringify(failedDocument)+'&&window.preparedWhileVisible===true');
+    await recovered.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.scene==="prepared")');
+    assert.equal((await recovered.command('state') as {viewVisible:boolean}).viewVisible,true,'a retry restores the remote view beneath the native cover before waiting for visibility-dependent resources');
+    assert.equal((await recovered.command('state') as {startupVisible:boolean}).startupVisible,true,'the replacement login prepares while the original incomplete startup is still covered');
+    await recovered.command('startup-evaluate','window.__resumeStartupFrames();true');await recovered.waitReleased();
+    assert.equal(await recovered.command('evaluate','window.presentations'),1,'the recovered visible scene receives the eventual presentation');
+    await finish();
+
+    mode='manual';
+    mode='early';const bootstrap=await launch('bootstrap-stalled','bootstrap-stalled');
+    await bootstrap.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await bootstrap.waitReleased();
+    assert.match(bootstrap.diagnostics(),/content-bootstrap-failed/u,'the empty target initialization has its own bounded diagnostic recovery');
+    await bootstrap.wait('evaluate','typeof window.prepare==="function"');
+    assert.equal((await bootstrap.command('state') as {startupVisible:boolean}).startupVisible,false,'a generation-zero bootstrap failure does not strand the continuous startup player');
+    await finish();mode='manual';
+    for(const [name,media,expected] of [['missing-frame','missing','frame-load-failed'],['invalid-frame','decode-failed','frame-decode-failed'],['no-canvas','canvas-unavailable','canvas-unavailable']] as const){
+      const broken=await launch(name,media);
+      await broken.wait('evaluate','typeof window.prepare==="function"');
+      await broken.wait('startup-evaluate','document.body.dataset.startupFailure==='+JSON.stringify(expected));
+      assert.equal(await broken.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false,'media exceptions do not claim normal playback completion');
+      await broken.command('evaluate','window.prepare()');await broken.waitReleased();
+      assert.equal(await broken.command('evaluate','window.presentations'),1,'media failure allows an actionable prepared login');
+      await finish();
+    }
+    const stalled=await launch('stalled');
+    await stalled.wait('evaluate','typeof window.prepare==="function"');
+    await stalled.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await stalled.command('startup-evaluate','window.__pauseStartupFrames();true');
+    await stalled.wait('startup-evaluate','document.body.dataset.startupFailure==="playback-stalled"');
+    assert.equal(await stalled.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false,'the stall watchdog diagnoses failure without fabricating a complete frame cycle');
+    await stalled.command('evaluate','window.prepare()');await stalled.waitReleased();await finish();
+
+    const reduced=await launch('reduced-motion','normal',true);
+    await reduced.wait('evaluate','typeof window.prepare==="function"');
+    await reduced.wait('startup-evaluate','document.body.dataset.reducedMotion==="true"');
+    assert.equal(await reduced.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false,'reduced motion is an explicit bypass, not a completed viewing');
+    assert.equal(await reduced.command('startup-evaluate','document.body.dataset.frameIndex'),'30','the manual emergency option displays the chosen source frame');
+    assert.deepEqual(await reduced.command('startup-evaluate','window.__startupNativeFrames.observations.map(frame=>[frame.method,frame.index])'),[['putImageData',30]],'the manual still uses one proven native display write for source frame 30');
+    assert.equal(await reduced.command('startup-evaluate','window.__startupNativeFrames.observations[0]?.copyGeneration>0'),true,'the manual still comes from a completed native VideoFrame copy');
+    await reduced.command('evaluate','window.prepare()');await reduced.waitReleased();await finish();
+    const systemReduced=await launch('system-reduced-motion-input','os-reduce');
+    await systemReduced.wait('evaluate','typeof window.prepare==="function"');
+    await systemReduced.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    assert.equal(await systemReduced.command('startup-evaluate','matchMedia("(prefers-reduced-motion: reduce)").matches'),true,'the negative input reaches the actual overlay document');
+    await systemReduced.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)');
+    assert.equal(await systemReduced.command('startup-evaluate','document.body.dataset.reducedMotion==="true"'),false,'OS reduce does not replace normal source-frame playback');
+    assert.doesNotMatch(systemReduced.diagnostics(),/"video":"reduced-motion"/u);
+    await systemReduced.command('evaluate','window.prepare()');await systemReduced.waitReleased();await finish();
+    const slow=await launch('slow-progress','slow-progress');
+    await slow.wait('evaluate','typeof window.prepare==="function"');
+    await slow.wait('startup-evaluate','document.body.dataset.firstFrame==="true"');
+    await slow.wait('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)',20_000);
+    assert.ok(Number(await slow.command('startup-evaluate','document.body.dataset.firstCycleActiveMs'))>8000,'the genuine 150 ms per-frame decode delay makes this full source cycle longer than the stall window');
+    assert.equal(await slow.command('startup-evaluate','document.body.dataset.startupFailure??null'),null,'continuing draw progress is not a stalled-player failure');
+    assert.doesNotMatch(slow.diagnostics(),/"failure":"(?:playback-stalled|first-frame-timeout)"/u);
+    assert.deepEqual(await slow.command('startup-evaluate','window.__startupFrameObservations.slice(0,68).map(frame=>frame.index)'),Array.from({length:68},(_,index)=>index),'slow decoding still renders every real source frame in order');
+    assert.deepEqual(await slow.command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,68).map(frame=>[frame.method,frame.index])'),Array.from({length:68},(_,index)=>['putImageData',index]),'slow decoding submits all 68 proven native display writes in order');
+    assert.equal(await slow.command('startup-evaluate','window.__startupNativeFrames.unprovenDisplayWrites'),0,'slow decoding never counts an unproven display write');
+    assert.equal(await slow.command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,68).every(frame=>frame.copyGeneration>0)&&window.__startupNativeFrames.maxVideoCopiesInFlight===1&&window.__startupNativeFrames.videoCopyBuffers<=3'),true,'slow native copies preserve source generations and the bounded pool');
+    await slow.command('evaluate','window.prepare()');await slow.waitReleased();await finish();
+    console.log('DESKTOP_STARTUP_MATRIX '+JSON.stringify({early_prepared:true,later_loop_handoff:true,iframe_retained:true,input_isolated:true,legacy_server_one_second_fallback:true,overlay_module_failure:true,retry_visible_before_first_end:true,frame_load_error:true,frame_decode_error:true,canvas_error:true,stall_watchdog:true,slow_progress_survives_stall_window:true,manual_reduced_motion:true,system_reduce_ignored:true,visible_unfocused_playback:true,real_wecom_qr:'NOT_RUN',physical_power_events:'NOT_RUN'}));
+  }finally{await finish();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
+});
+
+test('real Electron navigation recovers offline/crashes and keeps authentication/window guards',{timeout:120000,skip:process.platform!=='win32'},async()=>{
   const root=process.cwd(),id=randomUUID(),stage=path.join(root,'.local/electron/temp','navigation-'+id),profile=path.join(root,'.local/electron/profiles','navigation-'+id);
   mkdirSync(stage,{recursive:true});mkdirSync(profile,{recursive:true});
   const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);
@@ -44,8 +426,8 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     response.end(status===200?'<!doctype html><title>管理端</title><main>可用管理端</main>':JSON.stringify({error:{code:status===404?'WORKBENCH_NOT_FOUND':'WORKBENCH_UNAVAILABLE',retryable:false}}));
   });
   await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin='https://127.0.0.1:'+address.port;
-  for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
-  for(const file of ['main.mjs','policy.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs']){copyFileSync(path.join(root,'.local/electron/compiled',file),path.join(stage,file));assert.deepEqual(readFileSync(path.join(stage,file)),readFileSync(path.join(root,'.local/electron/compiled',file)));}
+  copyStartup(root,stage);installFrameProbe(stage);
+  for(const file of ['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs','startup.mjs','startup-preload.cjs']){copyFileSync(path.join(root,'.local/electron/compiled',file),path.join(stage,file));assert.deepEqual(readFileSync(path.join(stage,file)),readFileSync(path.join(root,'.local/electron/compiled',file)));}
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   const packageInfo=JSON.parse(readFileSync(path.join(stage,'package.json'),'utf8'));packageInfo.main='process-driver.mjs';writeFileSync(path.join(stage,'package.json'),JSON.stringify(packageInfo));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:origin}));
@@ -61,6 +443,7 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
   const command=(action:string,expression?:string):Promise<unknown>=>new Promise((resolve,reject)=>{const id=next++,timer=setTimeout(()=>{pending.delete(id);reject(Error('TEST_COMMAND_TIMEOUT'));},5000);pending.set(id,{resolve,reject,timer});child.send({id,action,expression});});
   const wait=async(expression:string)=>{const deadline=Date.now()+6000;while(Date.now()<deadline){try{if(await command('evaluate',expression))return;}catch(error){if(!(error instanceof Error)||!/Render frame was disposed|frame was destroyed|Script failed to execute/u.test(error.message))throw error;}await delay(50);}throw Error('EXPECTED_FRIENDLY_HTTP_ERROR_NOT_RENDERED');};
   const waitChrome=async(expression:string)=>{const deadline=Date.now()+6000;while(Date.now()<deadline){if(await command('chrome-evaluate',expression))return;await delay(50);}throw Error('EXPECTED_LOCAL_RECOVERY_NOT_RENDERED');};
+  const waitStartup=async(expression:string)=>{const deadline=Date.now()+8000;while(Date.now()<deadline){if(await command('startup-evaluate',expression))return;await delay(50);}throw Error('EXPECTED_STARTUP_FRAME_STATE_NOT_RENDERED');};
   try{
     const deadline=Date.now()+10000;while(!ready&&Date.now()<deadline)await delay(50);assert.ok(ready);
     assert.equal(await command('chrome-evaluate','document.querySelector(".titlebar")!==null'),true);
@@ -69,18 +452,45 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     const showDeadline=Date.now()+5000;
     while(!(await command('state') as {visible:boolean}).visible&&Date.now()<showDeadline)await delay(50);
     assert.equal((await command('state') as {visible:boolean}).visible,true,'the local startup window must become visible without waiting for a remote response');
-    assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,false,'the unpainted remote view must not cover local startup content while the server is pending');
-    assert.equal(await command('chrome-evaluate','document.querySelector("[data-startup]")?.getBoundingClientRect().height>0'),true,'local startup content must be visible before the first response');
+    assert.equal((await command('state') as {startupVisible:boolean}).startupVisible,true,'a trusted native child view covers remote loading before the first response');
+    assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,true,'remote login stays visible beneath the cover so its preparation can make progress');
+    const startupBounds=await command('state') as {startupBounds:{x:number;y:number;width:number;height:number};contentSize:number[];windowBounds:{width:number;height:number}};
+    const {width, height} = startupBounds.windowBounds;
+    assert.deepEqual({width, height}, await command('reference-window-size'), 'startup keeps the existing main window size under the same display constraints');
+    assert.equal(startupBounds.startupBounds.x,0);assert.equal(startupBounds.startupBounds.y,40);
+    assert.equal(startupBounds.startupBounds.width,startupBounds.contentSize[0]);assert.equal(startupBounds.startupBounds.height,(startupBounds.contentSize[1]??0)-40);
+    await waitStartup('document.body.dataset.firstFrame==="true"');
+    assert.deepEqual(await command('startup-evaluate','(()=>{const c=document.getElementById("startup-canvas"),s=getComputedStyle(c),attributes=c.getContext("2d").getContextAttributes();return {width:c.width,height:c.height,software:attributes.willReadFrequently,desynchronized:attributes.desynchronized,videos:document.querySelectorAll("video").length,fit:s.objectFit,local:location.protocol,noNode:typeof require+":"+typeof process};})()'),{width:540,height:540,software:false,desynchronized:true,videos:0,fit:'contain',local:'file:',noNode:'undefined:undefined'},'the original artwork uses the expected low-latency display canvas and local source');
     const startupImage=await command('screenshot');assert.ok(typeof startupImage==='string'&&startupImage.startsWith(profile+path.sep));
-    console.log('DESKTOP_STARTUP '+JSON.stringify({local_visible_before_response:true,remote_hidden:true,screenshot:{file:startupImage,sha256:createHash('sha256').update(readFileSync(startupImage)).digest('hex')}}));
+    console.log('DESKTOP_STARTUP '+JSON.stringify({local_visible_before_response:true,remote_visible_under_native_cover:true,frame_manifest_sha256:createHash('sha256').update(readFileSync(path.join(stage,'startup-frames/manifest.json'))).digest('hex'),screenshot:{file:startupImage,sha256:createHash('sha256').update(readFileSync(startupImage)).digest('hex')}}));
     assert.equal(await command('chrome-evaluate','document.querySelector(".startup-columns,.startup-card,.startup-line")===null'),true,'before authentication the native startup surface must not impersonate the ticket workbench');
     assert.equal(await command('chrome-evaluate','document.body.dataset.booting'),'true');
-    assert.deepEqual(await command('chrome-evaluate','(()=>{const e=document.querySelector("[data-startup] .loader"),r=e.getBoundingClientRect(),s=getComputedStyle(e);return {width:e.offsetWidth,height:e.offsetHeight,centered:Math.abs(r.x+r.width/2-innerWidth/2)<1&&Math.abs(r.y+r.height/2-innerHeight/2)<1,border:s.borderTopWidth,color:s.borderTopColor,duration:s.animationDuration,animation:s.animationName,direction:s.animationDirection,timing:s.animationTimingFunction,label:e.parentElement.getAttribute("aria-label"),text:e.textContent};})()'),{width:50,height:50,centered:true,border:'8px',color:'rgb(81, 75, 130)',duration:'0.8s, 1.6s',animation:'l20-1, l20-2',direction:'alternate, normal',timing:'linear, linear',label:'Loading login page',text:''},'startup uses the centered user-supplied spinner without loading words');
+    assert.equal(await command('chrome-evaluate','document.querySelector(".loader")===null'),true,'the parent chrome no longer renders a second CSS spinner');
     assert.equal(await command('chrome-evaluate','Array.from(document.querySelectorAll(".window-actions button")).filter(button=>button.getBoundingClientRect().width>0).length'),3,'startup exposes window controls without the workbench menu');
+    await command('chrome-evaluate','document.getElementById("minimize").click()');
+    await waitStartup('document.body.dataset.playback==="paused"');
+    const minimizedDraws=await command('startup-evaluate','document.body.dataset.drawCount');await delay(350);
+    assert.equal(await command('startup-evaluate','document.body.dataset.drawCount'),minimizedDraws,'minimizing pauses the same continuous frame scheduler');
+    await command('show');await waitStartup('document.body.dataset.playback==="playing"');
+    for(const [pause,resume] of [['lock','unlock'],['suspend','resume-after-idle']] as const){
+      await command(pause);await waitStartup('document.body.dataset.playback==="paused"');
+      const pausedDraws=await command('startup-evaluate','document.body.dataset.drawCount');await delay(250);
+      assert.equal(await command('startup-evaluate','document.body.dataset.drawCount'),pausedDraws,'native '+pause+' pauses frames rather than advancing a wall-clock completion');
+      await command(resume,resume==='resume-after-idle'?'360000':undefined);await waitStartup('document.body.dataset.playback==="playing"');
+    }
+    await waitStartup('window.__observedStartupCycles>=2');
+    assert.deepEqual(await command('startup-evaluate','window.__startupFrameObservations.slice(0,68).map(frame=>frame.index)'),Array.from({length:68},(_,index)=>index),'the real renderer presents every source frame before looping');
+    assert.deepEqual(await command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,136).map(frame=>[frame.method,frame.index])'),Array.from({length:136},(_,index)=>['putImageData',index%68]),'both cycles submit the exact source order to the display canvas');
+    assert.equal(await command('startup-evaluate','(()=>{const probe=window.__startupNativeFrames;return probe.unprovenDisplayWrites===0&&probe.invalidVideoCopies===0&&probe.staleVideoCopies===0&&probe.videoFrameCopies>=136&&probe.maxVideoCopiesInFlight===1&&probe.videoCopyBuffers<=3&&probe.videoDisplayImages<=3&&probe.observations.slice(0,136).every(frame=>frame.copyGeneration>0);})()'),true,'each F display write uses a completed full copy generation within three buffers and one native copy task');
+    assert.ok(Number(await command('startup-evaluate','document.body.dataset.firstCycleActiveMs'))>=2266.666,'the renderer holds the final frame and a full 68/30 second visible cycle');
+    assert.equal(await command('startup-evaluate','window.__maxResidentFrames<=3&&window.__maxInFlight<=1'),true,'real canvas decode residency and concurrency remain bounded');
+    assert.equal(await command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),true,'only a fully presented source-frame cycle establishes the normal first playback');
+    assert.equal((await command('state') as {startupVisible:boolean}).startupVisible,true,'multiple completed loops retain the cover while the current remote scene is loading');
     releaseStartup();
     await wait('document.body?.innerText.includes("服务器尚未提供桌面入口")');
+    await waitChrome('document.body.dataset.booting==="false"');
     assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,true,'the first rendered document replaces startup content');
-    assert.equal(await command('chrome-evaluate','document.querySelector("[data-startup]").hidden'),true,'the first remote document retires the native startup surface');
+    assert.equal((await command('state') as {startupVisible:boolean}).startupVisible,false,'the actionable HTTP error retires the completed startup player');
     assert.equal(await command('evaluate','document.body.innerText.includes("WORKBENCH_NOT_FOUND")'),false);
     for(const [code,expected] of [[503,'服务暂时不可用'],[403,'当前账号无法进入工作台'],[200,'可用管理端']] as const){
       status=code;await command('navigate',origin+'/workbench/desktop');await wait('document.body?.innerText.includes('+JSON.stringify(expected)+')');
@@ -104,14 +514,17 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     assert.equal(loginLayout.viewBounds.y,0,'embedded login starts at the window edge without the titlebar strip');
     assert.equal(loginLayout.viewBounds.height,loginLayout.contentSize[1]);
     assert.equal(loginLayout.loginControlsVisible,true,'transparent window controls remain available over login');
-    assert.equal(await command('login-chrome-evaluate','document.querySelectorAll(".window-actions button").length'),3);
-    assert.equal(await command('login-chrome-evaluate','document.querySelector("#menu,.identity,[data-startup]")===null'),true,'login has no application menu or title strip content');
+    assert.equal(await command('login-chrome-evaluate','Array.from(document.querySelectorAll(".window-actions button")).filter(button=>!button.hidden).length'),3);
+    assert.equal(await command('login-chrome-evaluate','document.querySelector(".identity,[data-startup]")===null&&document.getElementById("menu").hidden'),true,'normal login has no visible application menu or title strip content');
     assert.equal(await command('login-chrome-evaluate','getComputedStyle(document.body).backgroundColor'),'rgba(0, 0, 0, 0)');
     assert.equal(await command('login-chrome-evaluate','window.desktopChrome.command("menu").then(()=>false,()=>true)'),true,'login controls cannot open the application menu');
     assert.equal(await command('login-chrome-evaluate','window.desktopChrome.command("reconnect").then(()=>false,()=>true)'),true,'transparent login controls do not acquire the local recovery action');
     assert.equal(await command('evaluate','typeof window.desktopChrome'),'undefined','remote login does not acquire window commands');
     assert.equal(await command('evaluate','typeof window.workbenchDesktop'),'undefined','embedded login has no business IPC');
-    assert.equal(await command('evaluate','Object.keys(window.workbenchLogin).sort().join(":")'),'getAppVersion:quit:version','login exposes only its bounded display/lifecycle methods');
+    assert.equal(await command('evaluate','Object.keys(window.workbenchLogin).sort().join(":")'),'getAppVersion:quit:startup:version','login adds only its bounded presentation bridge');
+    assert.equal(await command('evaluate','Object.keys(window.workbenchLogin.startup).sort().join(":")'),'connect:onPresented:prepared:version');
+    assert.equal(await command('evaluate','window.workbenchLogin.startup.prepared({version:1,panel:"created",backdrop:"fallback"}).then(value=>value.presented)'),true,'a login reached after handoff is already presented without replaying startup');
+    assert.equal(await command('evaluate','window.workbenchLogin.startup.prepared({version:1,panel:"qr-ready",backdrop:"fallback"}).then(()=>false,()=>true)'),true,'malformed readiness is rejected across the actual IPC boundary');
     assert.equal(await command('evaluate','window.workbenchLogin.getAppVersion()'),packageInfo.version,'login metadata is the actual package version');
     assert.equal(await command('evaluate','matchMedia("(prefers-reduced-motion: reduce)").matches'),false,'the content window defaults to full motion');
     assert.equal(await command('evaluate','typeof document.querySelector("iframe").contentWindow.workbenchLogin'),'undefined','child frames do not receive the login bridge');

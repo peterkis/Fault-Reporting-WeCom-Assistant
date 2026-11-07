@@ -19,7 +19,13 @@ npm run desktop:package -- -ServerOrigin https://cd3120.mobimedical.cn
 
 `Setup` 根据 versions.json 准备官方校验过的便携 Node.js 和锁定的 Electron/electron-builder，使用根依赖和根锁文件。所有入口先检查 D 盘包含关系、重解析点及写权限，再设置当前进程的 npm/Electron/builder/Node 编译缓存、TEMP/TMP、Node PATH 和测试 profile，不改系统环境。工具、缓存、临时文件、编译和安装包均在忽略的 `.local/electron/`。现有根 node_modules 和 .build 仍在本项目 D 盘。
 
-`Build` 只从编译输出白名单准备 stage，不启动服务器。`Dev` 会实际访问指定服务器，使用前应确认访问范围。`Package` 生成 NSIS x64 安装包并验证 ASAR 恰好包含十三个宿主文件，拒绝夹带 root node_modules、服务端或私有配置；同时输出 desktop-build.json 与 SHA-256。测试驱动和源码映射不进入包。
+`Build` 只从编译输出白名单准备 stage，不启动服务器。`Dev` 会实际访问指定服务器，使用前应确认访问范围。`Package` 生成 NSIS x64 安装包，按精确白名单核验宿主、原片、帧清单和全部68帧，拒绝缺失、额外文件、root node_modules、服务端或私有配置；同时输出 desktop-build.json、源/包内媒体 SHA-256 与安装器 SHA-256。测试驱动、FFmpeg和源码映射不进入包。
+
+0.1.18 使用原片派生的540×540、30fps、68帧无损WebP与Canvas，在原可信本地覆盖层连续播放；只预解码当前及后两帧，直接绘制decoded HTML图片，不额外复制ImageBitmap，交接后释放图片句柄并销毁覆盖WebContents。远端在真实布局下并行准备，正常路径等待全部帧实际按序绘制完成及当前场景prepared；后续循环可中途交接，二维码续期不重播。默认完整动效，不因Windows系统减动设置跳过；仅显式`--wecom-reduced-motion`启用静态备用。可见但失焦仍继续准备/播放，最小化、隐藏、锁屏和休眠暂停后续播；旧页协商等待缩短至dom-ready后1秒，新页保留20秒故障预算。资源故障与兼容均有诊断和恢复入口。具体状态机、安全和现场验证边界见[桌面登录导航](../../../docs/agents/desktop-login.md)。
+
+登录网页用固定原灯光生成的完整半浮点环境缓存替代现场PMREM，锁定Three版本/recipe，校验压缩与解压双哈希。挂绳在首用GPU工作前完成shader反射缓存；背景通过登录专用、版本与源码SHA锁定的构建适配，异步准备同一原生GPU管线，再沿原动画循环完成真实首绘与ready。准备不绘制、不提前ready，也不制造pending渲染异常；隐藏时取消本代，迟到结果不影响新代。保留原三层、尺寸、画质、诊断和连续5次渲染失败恢复，未降低帧率或像素预算。适配不修改共享node_modules，来源漂移时拒绝构建。装饰性背景暂停恢复可重置相位，视频帧进度、工牌姿态及官方iframe保持。缓存缺失/损坏可见降级到原平面扫码，不能呈现空白卡片。环境数据是远端登录构建资产；原MP4与68帧仍仅在桌面包。客户端安装与登录网页资源发布分别生效，网页修复需单独发布；构建和本地验证不构成部署授权。
+
+仅手动启用减动备用时，静止工牌按需重绘；拖动跟手、松手挂稳、点击即时翻面，隐藏或取消后保持已选正反面，版本与尺寸更新仍可显示。默认完整动效保留原物理效果。
 
 开发/自动化 profile 由 `-Profile` 指定；运行包在开发机验收时也可设置绝对 D 盘 `WECOM_DESKTOP_DATA_ROOT`，主进程在 ready 前设置 userData/sessionData/temp/crashDumps/logs。同事正常安装使用 Windows 当前用户目录，不要求 D 盘。
 
@@ -53,7 +59,7 @@ $env:PILOT_DATABASE_URL = '<owned-loopback-test-database>'
 npm run desktop:integration
 ```
 
-集成测试使用真实员工会话、正式编译页面、真实业务 HTTP/PG 和三个独立 Electron profile；仅企业微信 Provider 是合成边界。TLS 仅在测试驱动中按本次自签证书 SPKI 精确接受，不修改系统证书库或生产证书策略。正常 full 中该测试明确 SKIP，须使用上述 Windows 专用入口实际运行，不能把 SKIP 当成功。测试驱动在退出时断开自有进程并清理合成数据库。
+集成测试使用三客户端、三合成身份的员工会话、正式编译页面及真实 HTTP/PG；企业微信Provider仍是合成边界。一个集成场景通过不表示三个真实用户或真实手机扫码已验收。TLS 仅在测试驱动中按本次自签证书 SPKI 精确接受，不修改系统证书库或生产证书策略。正常 full 中该测试明确 SKIP，须使用上述 Windows 专用入口实际运行，不能把 SKIP 当成功。测试驱动在退出时断开自有进程并清理合成数据库。
 
 实体通知中心、真实扫码、Windows 10/11 两种目标电脑和实际企业微信送达各自单列，自动触发通知 click 事件不代表人工点击或实机送达。
 
@@ -90,3 +96,5 @@ npm run desktop:integration
 0.1.15将上述两处西瓜loader替换为Uiverse kennyotsu的纵向滚动文字效果：固定“loading”，循环“login / QR code / badge / WeCom”，Arial优先且固定/滚动文字均为400常规字重，使用宣传文案小圆点相同的蓝、红、黄、绿，4秒无缝循环、上下淡出及轻微回弹。准备完成立即交接，不为播放动画延迟登录。网页准备态通过服务器更新生效；本地首屏需要升级0.1.15，见[滚动文字加载记录](../../../plans/pc-admin-electron/word-loader-2026-10-31.md)（含本轮既有原生窗口恢复回归测试失败的验证限制）。
 
 0.1.16按用户提供的完整CSS，将上述两处滚动文字替换为50×50、8px紫色圆环spinner，使用0.8秒裁切往返与1.6秒翻转旋转组合；没有可见加载文字。就绪后立即退场并停止动画。网页准备态通过服务更新，本地首屏需升级0.1.16，见[spinner记录](../../../plans/pc-admin-electron/spinner-loader-2026-10-31.md)。
+
+2026-11-07收口采用原生VideoFrame.copyTo与三个复用RGBA槽，显示保持同540×540源像素、全68帧和原窗口尺寸；网页设备准备仍独立于客户端包生效，未部署的网页变更不会因重装客户端而自动生效。用户选择停止继续性能调优并做必要验证后交付：CPU比率117.6371%仍未达到110%门槛，组合normal/warm未执行，不宣称全部性能门禁通过。原件、历史失败与旧0.1.17/0.1.18包继续保留，具体候选/包哈希和已执行范围见本轮交付回执。

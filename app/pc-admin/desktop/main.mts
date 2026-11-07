@@ -1,14 +1,22 @@
 import {app,BrowserWindow,WebContentsView,Menu,Tray,Notification,dialog,ipcMain,powerMonitor,session,nativeTheme,net} from 'electron';
-import {mkdirSync,readFileSync,statSync,lstatSync,existsSync} from 'node:fs';
+import {mkdirSync,readFileSync,statSync,lstatSync,existsSync,appendFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {randomUUID} from 'node:crypto';
 import {allowedNavigation,allowedAttachmentDownload,businessDocument,embeddedLoginDocument,loginEntryPath,recoveryTarget,connectionFailure,EMBEDDED_LOGIN_PATH,OFFICIAL_LOGIN_PATH,navigationFailure,loginRefreshDelay,readConfig,readContext,readReminder,readChromeAction,motionPreference,TITLEBAR_HEIGHT} from './policy.mjs';
 import type {LoginEntryPath} from './policy.mjs';
 import type {DesktopContext,DesktopState,ChromeState,RecoveryState} from './policy.mjs';
+import {readLoginPrepared,readLoginLease,readStartupSignal} from './policy.mjs';
+import type {LoginLease,StartupState,StartupSignal} from './policy.mjs';
+import {initialStartup,transitionStartup} from './startup-state.mjs';
+import type {StartupEvent} from './startup-state.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url));
 const chromeUrl=new URL('./chrome.html',import.meta.url).href;
 const loginChromeUrl=new URL('./login-chrome.html',import.meta.url).href;
+const startupUrl=new URL('./startup.html',import.meta.url).href;
+const unavailableUrl=new URL('./unavailable.html',import.meta.url).href;
+const desktopMotion=motionPreference(process.argv),startupId=randomUUID(),startupStarted=performance.now();
 // A bounded presentation fallback; this never changes origin, identity or authentication rules.
 const defaultLoginEntry:LoginEntryPath=process.argv.includes('--wecom-login=official')?OFFICIAL_LOGIN_PATH:EMBEDDED_LOGIN_PATH;
 const configFile=path.join(directory,'desktop.config.json');
@@ -30,19 +38,26 @@ app.setAppUserModelId('cn.mobimedical.yixiaoxiu.workbench');
 app.commandLine.appendSwitch('disk-cache-size',String(128*1024*1024));
 let window:BrowserWindow|null=null,tray:Tray|null=null,quitting=false,locked=false,suspended=false,enabled=false,revision=0;
 let content:WebContentsView|null=null,loginChrome:WebContentsView|null=null,applicationMenu:Menu|null=null,menuOpen=false;
+let startupView:WebContentsView|null=null,startup=initialStartup();
+let updateStartup:((event:StartupEvent)=>void)=()=>{},prepareLogin:((event:Electron.IpcMainInvokeEvent,value:unknown)=>{presented:boolean})=()=>{throw Error('DESKTOP_LOGIN_NOT_STARTED');};
+let connectLogin:((event:Electron.IpcMainInvokeEvent,value:unknown)=>void)=()=>{throw Error('DESKTOP_LOGIN_NOT_STARTED');};
 let recovery:RecoveryState=null,loginExpired=false,reconnect=()=>{};
 let context:DesktopContext={epoch:null,blocked:true,live:false,remindersAvailable:false};
 const notices=new Map<string,Notification>(),seen=new Map<string,number>();
-const state=():DesktopState=>({version:1,visible:!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
-const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:!content?.getVisible(),recovery,loginExpired});
+const state=():DesktopState=>({version:1,visible:startup.phase==='released'&&!!window?.isVisible()&&!window.isMinimized()&&!recovery,focused:startup.phase==='released'&&!!window?.isFocused()&&!recovery,locked,suspended,remindersEnabled:enabled,revision});
+const chromeState=():ChromeState=>({maximized:!!window?.isMaximized(),focused:!!window?.isFocused(),menuOpen,appVersion:app.getVersion(),booting:startup.phase!=='released',recovery:startup.phase==='released'?recovery:null,loginExpired,loginCompatibility:startup.phase==='released'&&startup.scene==='compatibility',reducedMotion:desktopMotion==='reduce'});
+const startupState=():StartupState=>({version:1,generation:startup.generation,active:startup.active,releasing:startup.phase==='releasing',reducedMotion:desktopMotion==='reduce',firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure});
+const startupNativeActive=()=>!!window?.isVisible()&&!window.isMinimized()&&!locked&&!suspended&&!quitting;
+function focusContent(){const target=startupView?.webContents??content?.webContents;if(target&&!target.isDestroyed())target.focus();}
 function clearNotices(){for(const notice of notices.values())notice.close();notices.clear();}
 function sendState(){
   if(!window||window.isDestroyed())return;
   if(content&&!content.webContents.isDestroyed()&&!content.webContents.isCrashed()&&businessDocument(content.webContents.getURL(),config.serverOrigin))content.webContents.send('desktop:state',state());
   if(!window.webContents.isDestroyed()&&window.webContents.getURL()===chromeUrl)window.webContents.send('chrome:state',chromeState());
   if(loginChrome&&!loginChrome.webContents.isDestroyed()&&loginChrome.webContents.getURL()===loginChromeUrl)loginChrome.webContents.send('chrome:state',{...chromeState(),menuOpen:false});
+  if(startupView&&!startupView.webContents.isDestroyed()&&startupView.webContents.getURL()===startupUrl)startupView.webContents.send('startup:state',startupState());
 }
-function show(){if(!window)return;if(window.isMinimized())window.restore();window.show();window.focus();content?.webContents.focus();}
+function show(){if(!window)return;if(window.isMinimized())window.restore();window.show();window.focus();focusContent();}
 function resetContext(){context={epoch:null,blocked:true,live:false,remindersAvailable:false};enabled=false;seen.clear();clearNotices();refreshTray();sendState();}
 function refreshTray(){tray?.setContextMenu(Menu.buildFromTemplate([
   {label:'打开工作台',click:show},
@@ -65,7 +80,7 @@ function zoom(delta:number|null){const target=content?.webContents;if(target&&!t
 function edit(action:'undo'|'redo'|'cut'|'copy'|'paste'|'selectAll'){const target=content?.webContents;if(target&&!target.isDestroyed()){target.focus();target[action]();}}
 function openMenu(){
   if(!window||!applicationMenu||menuOpen)return;menuOpen=true;sendState();
-  applicationMenu.popup({window,x:Math.max(0,window.getContentBounds().width-246),y:TITLEBAR_HEIGHT,callback:()=>{menuOpen=false;sendState();if(!quitting&&window?.isVisible()&&content&&!content.webContents.isDestroyed())content.webContents.focus();}});
+  applicationMenu.popup({window,x:Math.max(0,window.getContentBounds().width-246),y:TITLEBAR_HEIGHT,callback:()=>{menuOpen=false;sendState();if(!quitting&&window?.isVisible())focusContent();}});
 }
 function admit(event:Electron.IpcMainInvokeEvent){
   if(!content||event.sender!==content.webContents||event.senderFrame!==content.webContents.mainFrame||!businessDocument(event.senderFrame.url,config.serverOrigin))throw Error('DESKTOP_SENDER_REJECTED');
@@ -80,10 +95,18 @@ function admitChrome(event:Electron.IpcMainInvokeEvent):'standard'|'login'{
   throw Error('DESKTOP_CHROME_SENDER_REJECTED');
 }
 ipcMain.handle('chrome:state',event=>{admitChrome(event);return chromeState();});
-ipcMain.handle('chrome:command',(event,value:unknown)=>{const sender=admitChrome(event),action=readChromeAction(value);if(sender==='login'&&(action==='menu'||action==='reconnect'))throw Error('DESKTOP_CHROME_ACTION_REJECTED');switch(action){case 'reconnect':reconnect();break;case 'menu':openMenu();break;case 'minimize':window?.minimize();break;case 'maximize':if(window?.isMaximized())window.unmaximize();else window?.maximize();break;case 'close':window?.close();break;}});
+ipcMain.handle('chrome:command',(event,value:unknown)=>{const sender=admitChrome(event),action=readChromeAction(value);if(sender==='login'&&(action==='reconnect'||action==='menu'&&!chromeState().loginCompatibility))throw Error('DESKTOP_CHROME_ACTION_REJECTED');switch(action){case 'reconnect':reconnect();break;case 'menu':openMenu();break;case 'minimize':window?.minimize();break;case 'maximize':if(window?.isMaximized())window.unmaximize();else window?.maximize();break;case 'close':window?.close();break;}});
 ipcMain.handle('desktop:state',event=>{admit(event);return state();});
 ipcMain.handle('desktop-login:version',event=>{admitLogin(event);return app.getVersion();});
 ipcMain.handle('desktop-login:quit',event=>{admitLogin(event);requestQuit();});
+ipcMain.handle('desktop-login:prepared',(event,value:unknown)=>{admitLogin(event);return prepareLogin(event,value);});
+ipcMain.handle('desktop-login:connect',(event,value:unknown)=>{admitLogin(event);connectLogin(event,value);});
+function admitStartup(event:Electron.IpcMainInvokeEvent){
+  const page=startupView?.webContents;
+  if(!page||page.isDestroyed()||event.sender!==page||event.senderFrame!==page.mainFrame||event.senderFrame.url!==startupUrl)throw Error('DESKTOP_STARTUP_SENDER_REJECTED');
+}
+ipcMain.handle('startup:state',event=>{admitStartup(event);return startupState();});
+ipcMain.handle('startup:event',(event,value:unknown)=>{admitStartup(event);updateStartup({type:'video',signal:readStartupSignal(value)});});
 ipcMain.handle('desktop:context',(event,value:unknown)=>{
   admit(event);const next=readContext(value);
   if(next.epoch!==context.epoch){enabled=false;seen.clear();clearNotices();revision++;}
@@ -143,12 +166,151 @@ else{
   loginChromePage.once('destroyed',()=>{loginChrome=null;});
   void loginChromePage.loadURL(loginChromeUrl).catch(()=>{});
   content.setBackgroundColor('#ffffff');
-  // Keep the local startup surface visible while the first remote document is pending.
-  content.setVisible(false);
-  let loginPresentation=false;
-  const layout=()=>{if(window&&content){const {width,height}=window.getContentBounds(),top=loginPresentation?0:TITLEBAR_HEIGHT;content.webContents.setBackgroundThrottling(loginPresentation);content.setBounds({x:0,y:top,width,height:Math.max(0,height-top)});loginChrome?.setBounds({x:0,y:0,width,height:TITLEBAR_HEIGHT});loginChrome?.setVisible(loginPresentation&&content.getVisible());}};
+  // Prepare at final bounds without hiding the owned remote view. Native
+  // occlusion needs the bounded visibility exception documented in layout().
+  // Native child views paint above BrowserWindow; a second trusted view covers it.
+  content.setVisible(true);
+  startupView=new WebContentsView({webPreferences:{preload:path.join(directory,'startup-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true,allowRunningInsecureContent:false,webviewTag:false,backgroundThrottling:true}});
+  const startupPage=startupView.webContents;
+  startupView.setBackgroundColor('#e9e9eb');window.contentView.addChildView(startupView);
+  startupPage.setWindowOpenHandler(()=>({action:'deny'}));startupPage.on('will-attach-webview',event=>event.preventDefault());
+  startupPage.on('will-navigate',(event,url)=>{if(url!==startupUrl)event.preventDefault();});
+  startupPage.on('will-redirect',(event,url)=>{if(url!==startupUrl)event.preventDefault();});
+  let loginPresentation=false,initializingContent=true;
+  const layout=()=>{if(window&&content){
+    const {width,height}=window.getContentBounds(),top=loginPresentation?0:TITLEBAR_HEIGHT;
+    // Electron 45 marks an otherwise-visible native child as document.hidden
+    // under this cover (see the retained native visibility probe). Temporarily
+    // allow preparation only while active and waiting for this login scene.
+    const preparing=initializingContent||!!startupView&&startup.active&&startup.phase==='covering'&&startup.scene==='loading'&&loginPresentation;
+    content.webContents.setBackgroundThrottling((loginPresentation||startup.phase!=='released')&&!preparing);
+    content.setBounds({x:0,y:top,width,height:Math.max(0,height-top)});loginChrome?.setBounds({x:0,y:0,width,height:TITLEBAR_HEIGHT});loginChrome?.setVisible(startup.phase!=='released'||loginPresentation&&content.getVisible());startupView?.setBounds({x:0,y:TITLEBAR_HEIGHT,width,height:Math.max(0,height-TITLEBAR_HEIGHT)});
+  }};
   layout();window.on('resize',layout);
   const page=content.webContents;
+  let lease:(LoginLease&{processId:number;routingId:number})|null=null;
+  let mediaWatchdog:ReturnType<typeof setInterval>|null=null,overlayDocumentVisible=true,mediaTicks=0,mediaTick=performance.now(),observedFrame=false,observedDrawCount=0;
+  let sceneTimer:ReturnType<typeof setTimeout>|null=null,compatibilityTimer:ReturnType<typeof setTimeout>|null=null,releaseTimer:ReturnType<typeof setTimeout>|null=null;
+  let sceneBudget=20_000,compatibilityBudget=1_000,sceneClock=0,compatibilityClock=0,domReady=false,protocolConnected=false,diagnosticCount=0,sceneDocument='about:blank';
+  let presentedGeneration=-1,nativeDiagnosticCount=0,lastNativeState='';
+  type DocumentStage='bootstrap'|'embedded-login'|'official-login'|'callback'|'business'|'local-error'|'other';
+  type DiagnosticEvent='start'|'navigation'|'dom-ready'|'overlay-dom-ready'|'connect'|'prepared'|'presented'|'first-frame'|'first-cycle-complete'|'metadata'|'playing'|'waiting'|'stalled'|'reduced-motion'|'native-state'|'scene'|'releasing'|'released'|'fault'|'compatibility-dom-ready-only'|'scene-timeout'|'content-bootstrap-failed'|'overlay-release-timeout';
+  const documentStage=():DocumentStage=>{
+    if(sceneDocument==='about:blank')return 'bootstrap';
+    if(sceneDocument===unavailableUrl||sceneDocument.startsWith(unavailableUrl+'#'))return 'local-error';
+    if(embeddedLoginDocument(sceneDocument,config.serverOrigin))return 'embedded-login';
+    if(businessDocument(sceneDocument,config.serverOrigin))return 'business';
+    if(loginEntryPath(sceneDocument,config.serverOrigin)===OFFICIAL_LOGIN_PATH)return 'official-login';
+    try{const url=new URL(sceneDocument);if(url.origin===config.serverOrigin&&url.pathname==='/workbench/callback')return 'callback';if(url.origin==='https://login.work.weixin.qq.com'&&allowedNavigation(sceneDocument,config.serverOrigin))return 'official-login';}catch{/* Only a fixed stage enters diagnostics. */}
+    return 'other';
+  };
+  const nativeSnapshot=()=>({visible:!!window?.isVisible(),minimized:!!window?.isMinimized(),focused:!!window?.isFocused(),locked,suspended,active:startup.active,startupVisible:!!startupView?.getVisible()});
+  const traceStartup=(event:DiagnosticEvent)=>{
+    if(diagnosticCount>=160)return;diagnosticCount++;
+    try{
+      const logs=app.getPath('logs');mkdirSync(logs,{recursive:true});
+      appendFileSync(path.join(logs,'startup.jsonl'),JSON.stringify({at:Date.now(),appVersion:app.getVersion(),startupId,elapsedMs:Math.round(performance.now()-startupStarted),event,documentStage:documentStage(),generation:startup.generation,phase:startup.phase,video:startup.video,firstFrame:startup.firstFrame,firstPlaybackComplete:startup.firstPlaybackComplete,scene:startup.scene,failure:startup.failure,recovery,motion:desktopMotion,...nativeSnapshot()})+'\n');
+    }catch{/* Diagnostics must not prevent login recovery. */}
+  };
+  const traceNativeState=()=>{
+    if(startup.phase==='released')return;
+    const snapshot=JSON.stringify(nativeSnapshot());if(snapshot===lastNativeState)return;lastNativeState=snapshot;
+    // Keep focus changes useful without letting repeated window activity consume the stage log.
+    if(nativeDiagnosticCount>=24)return;nativeDiagnosticCount++;traceStartup('native-state');
+  };
+  const observedMediaSignals=new Set<StartupSignal['type']>();
+  const notifyPresented=()=>{
+    if(!lease||page.isDestroyed()||!embeddedLoginDocument(page.getURL(),config.serverOrigin))return;
+    page.mainFrame.send('desktop-login:presentation',{generation:lease.generation,nonce:lease.nonce,presented:startup.phase==='released'});
+    if(startup.phase==='released'&&presentedGeneration!==lease.generation){presentedGeneration=lease.generation;traceStartup('presented');}
+  };
+  traceStartup('start');traceNativeState();
+  const stopSceneTimers=()=>{if(sceneTimer)clearTimeout(sceneTimer);if(compatibilityTimer)clearTimeout(compatibilityTimer);sceneTimer=null;compatibilityTimer=null;};
+  const syncSceneTimers=()=>{
+    const now=performance.now();
+    if(sceneTimer){clearTimeout(sceneTimer);sceneBudget=Math.max(1,sceneBudget-(now-sceneClock));sceneTimer=null;}
+    if(compatibilityTimer){clearTimeout(compatibilityTimer);compatibilityBudget=Math.max(1,compatibilityBudget-(now-compatibilityClock));compatibilityTimer=null;}
+    if(!startup.active||startup.scene!=='loading'||!startup.generation||quitting)return;
+    // OAuth authorization is in flight. The login scene budget must not abort it.
+    if(documentStage()==='callback')return;
+    if(startup.phase==='released'&&!embeddedLoginDocument(sceneDocument,config.serverOrigin))return;
+    const generation=startup.generation;
+    sceneClock=now;sceneTimer=setTimeout(()=>{sceneTimer=null;if(generation!==startup.generation||startup.scene!=='loading')return;traceStartup('scene-timeout');page.stop();beginRecovery(recoveryTarget(page.getURL(),config.serverOrigin,'GET',activeLoginEntry)??config.serverOrigin+activeLoginEntry,net.isOnline()?'unavailable':'offline');},sceneBudget);sceneTimer.unref();
+    if(domReady&&!protocolConnected){compatibilityClock=now;compatibilityTimer=setTimeout(()=>{compatibilityTimer=null;if(generation!==startup.generation||startup.scene!=='loading')return;traceStartup('compatibility-dom-ready-only');finishRecovery();content?.setVisible(true);updateStartup({type:'scene',generation,scene:'compatibility'});},compatibilityBudget);compatibilityTimer.unref();}
+  };
+  const releaseOverlay=()=>{
+    if(mediaWatchdog)clearInterval(mediaWatchdog);mediaWatchdog=null;
+    const view=startupView;startupView=null;
+    if(view){window?.contentView.removeChildView(view);if(!view.webContents.isDestroyed())view.webContents.close();}
+    traceStartup('released');layout();notifyPresented();sendState();if(window?.isFocused()&&!recovery&&!menuOpen)focusContent();
+  };
+  updateStartup=event=>{
+    const previous=startup;
+    if(event.type==='video'&&event.signal.type==='progress'){
+      // A slow but advancing source cycle is healthy. This bounded heartbeat
+      // only renews the no-progress fault budget; it never opens the handoff gate.
+      if(startup.active&&startupNativeActive()&&overlayDocumentVisible&&event.signal.drawCount>observedDrawCount){observedDrawCount=event.signal.drawCount;mediaTicks=0;mediaTick=performance.now();}
+      return;
+    }
+    if(event.type==='active')mediaTick=performance.now();
+    else if(startupNativeActive()!==startup.active){mediaTick=performance.now();startup=transitionStartup(startup,{type:'active',active:startupNativeActive()});}
+    if(event.type==='video'&&event.signal.type==='visibility')overlayDocumentVisible=event.signal.visible;
+    startup=transitionStartup(startup,event);
+    if(previous.phase==='releasing'&&startup.phase!=='releasing'&&releaseTimer){clearTimeout(releaseTimer);releaseTimer=null;}
+    if(previous.generation!==startup.generation)traceStartup('navigation');
+    if(!previous.firstFrame&&startup.firstFrame)traceStartup('first-frame');
+    if(!previous.firstPlaybackComplete&&startup.firstPlaybackComplete)traceStartup('first-cycle-complete');
+    if(previous.failure!==startup.failure&&startup.failure)traceStartup('fault');
+    if(previous.video!==startup.video&&startup.video==='reduced-motion')traceStartup('reduced-motion');
+    if(previous.scene!==startup.scene)traceStartup(startup.scene==='prepared'?'prepared':'scene');
+    if(event.type==='video'&&(event.signal.type==='metadata'||event.signal.type==='playing'||event.signal.type==='waiting'||event.signal.type==='stalled')&&!observedMediaSignals.has(event.signal.type)){
+      observedMediaSignals.add(event.signal.type);traceStartup(event.signal.type);
+    }
+    if(startup.phase==='releasing'&&previous.phase!=='releasing'){
+      traceStartup('releasing');
+      layout();
+      const generation=startup.generation;
+      // A compositor/preload failure may prevent the fade receipt. This only
+      // releases an already-open gate; it never supplies video completion.
+      releaseTimer=setTimeout(()=>{releaseTimer=null;if(startup.phase==='releasing'&&startup.generation===generation){traceStartup('overlay-release-timeout');updateStartup({type:'video',signal:{version:1,type:'released',generation}});}},1200);releaseTimer.unref();
+    }
+    if(startup.phase==='released'&&previous.phase!=='released')releaseOverlay();
+    layout();traceNativeState();if(event.type==='active'||event.type==='scene'||previous.active!==startup.active)syncSceneTimers();
+    sendState();
+  };
+  const validateLease=(event:Electron.IpcMainInvokeEvent,value:unknown)=>{
+    const offered=readLoginLease(value);
+    const frame=event.senderFrame;
+    if(!lease||!domReady||!frame||offered.generation!==startup.generation||offered.generation!==lease.generation||offered.nonce!==lease.nonce
+      ||frame.processId!==lease.processId||frame.routingId!==lease.routingId)throw Error('DESKTOP_LOGIN_DOCUMENT_REJECTED');
+    if(!protocolConnected){protocolConnected=true;traceStartup('connect');}syncSceneTimers();
+    return offered.generation;
+  };
+  connectLogin=(event,value)=>{validateLease(event,value);};
+  prepareLogin=(event,value)=>{
+    if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==2||!('lease' in value)||!('prepared' in value))throw Error('DESKTOP_LOGIN_PREPARED_INVALID');
+    readLoginPrepared(value.prepared);const generation=validateLease(event,value.lease);
+    finishRecovery();content?.setVisible(true);updateStartup({type:'scene',generation,scene:'prepared'});notifyPresented();layout();
+    return {presented:startup.phase==='released'};
+  };
+  const nativeActivity=()=>{updateStartup({type:'active',active:startupNativeActive()});};
+  startupPage.on('dom-ready',()=>{startupView?.setBackgroundColor('#00000000');traceStartup('overlay-dom-ready');sendState();focusContent();});
+  const overlayFailed=(signal:StartupSignal)=>{updateStartup({type:'video',signal});if(startup.scene==='loading')beginRecovery(config.serverOrigin+activeLoginEntry,'unavailable');if(startup.phase==='releasing')updateStartup({type:'video',signal:{version:1,type:'released',generation:startup.generation}});};
+  startupPage.on('did-fail-load',(_event,code,_description,_url,mainFrame)=>{if(mainFrame&&code!==-3)overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'});});
+  startupPage.on('render-process-gone',()=>overlayFailed({version:1,type:'failed',reason:'overlay-crashed'}));
+  startupPage.on('preload-error',()=>overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'}));
+  startupPage.on('unresponsive',()=>overlayFailed({version:1,type:'failed',reason:'overlay-crashed'}));
+  // Also diagnose a local script/preload that never started its own watchdog.
+  // Only observed visible ticks without drawing progress count; neither clock
+  // can satisfy firstPlaybackComplete.
+  mediaWatchdog=setInterval(()=>{
+    const now=performance.now(),delta=Math.min(1000,Math.max(0,now-mediaTick));mediaTick=now;
+    if(startup.firstFrame&&!observedFrame){observedFrame=true;mediaTicks=0;}
+    if(!startup.active||!overlayDocumentVisible||startup.phase!=='covering'||startup.firstPlaybackComplete||startup.video==='failed'||startup.video==='reduced-motion')return;
+    mediaTicks+=delta;
+    if(mediaTicks>=8000)updateStartup({type:'video',signal:{version:1,type:'failed',reason:startup.firstFrame?'playback-stalled':'first-frame-timeout'}});
+  },250);mediaWatchdog.unref();
+  void startupPage.loadURL(startupUrl).catch(()=>overlayFailed({version:1,type:'failed',reason:'overlay-load-failed'}));
   let loginTimer:ReturnType<typeof setTimeout>|null=null,loginRefreshAt=0,pendingLogin=false;
   let pendingLoginPath:LoginEntryPath=EMBEDDED_LOGIN_PATH;
   let requestedDocument:{url:string;method:string}|null=null;
@@ -157,7 +319,7 @@ else{
   let rendererCrashes=0,crashWindow=0;
   const clearRecoveryTimers=()=>{if(networkRetry)clearTimeout(networkRetry);if(loadDeadline)clearTimeout(loadDeadline);networkRetry=null;loadDeadline=null;};
   const finishRecovery=()=>{clearRecoveryTimers();networkAttempts=0;target=null;recovery=null;};
-  const displayRecovery=(value:RecoveryState)=>{recovery=value;clearNotices();content?.setVisible(false);layout();sendState();};
+  const displayRecovery=(value:RecoveryState)=>{recovery=value;lease=null;domReady=false;clearNotices();content?.setVisible(false);updateStartup({type:'scene',generation:startup.generation,scene:'error'});layout();sendState();};
   const queueRecovery=()=>{if(networkRetry||recovery==='failed')return;networkRetry=setTimeout(()=>{networkRetry=null;retryRecovery();},Math.min(30_000,1000*2**Math.min(networkAttempts++,5)));networkRetry.unref();};
   const retryRecovery=()=>{
     if(!target||page.isDestroyed()||!window||window.isDestroyed()||quitting||suspended)return;
@@ -166,6 +328,7 @@ else{
     // A still-live document may have protected input. Resume it without navigating away.
     if(context.epoch&&context.blocked&&!page.isCrashed()){finishRecovery();content?.setVisible(true);layout();sendState();return;}
     clearRecoveryTimers();displayRecovery('reconnecting');
+    if(startupView){content?.setVisible(true);layout();}
     loadDeadline=setTimeout(()=>{loadDeadline=null;if(!recovery)return;page.stop();displayRecovery(net.isOnline()?'unavailable':'offline');queueRecovery();},15_000);loadDeadline.unref();
     void page.loadURL(target).catch(()=>{});
   };
@@ -229,12 +392,31 @@ else{
     if(businessDocument(url,config.serverOrigin)){stopLoginTimer();pendingLogin=false;if(!failure){loginExpired=false;loginPresentation=false;layout();}}
   });
   page.on('did-navigate-in-page',(_event,url,mainFrame)=>{if(mainFrame&&businessDocument(url,config.serverOrigin))lastDocument=recoveryTarget(url,config.serverOrigin,'GET',activeLoginEntry)??lastDocument;});
-  page.on('dom-ready',()=>{if(!rejectedDocument&&page.getURL()!=='about:blank'){finishRecovery();content?.setVisible(true);layout();sendState();}});
+  page.on('dom-ready',()=>{
+    const url=page.getURL();if(rejectedDocument)return;
+    traceStartup('dom-ready');if(url==='about:blank')return;
+    domReady=true;
+    if(embeddedLoginDocument(url,config.serverOrigin)){
+      // A main document has reconnected even though its scene may still need
+      // resources. Stop network retries here so they cannot repeatedly hide and
+      // reload that same preparing document; the separate scene deadline remains.
+      finishRecovery();content?.setVisible(true);
+      lease={generation:startup.generation,nonce:randomUUID(),processId:page.mainFrame.processId,routingId:page.mainFrame.routingId};
+      notifyPresented();syncSceneTimers();
+      // Later QR renewals and callbacks never recreate the startup view.
+    }else{
+      finishRecovery();content?.setVisible(true);
+      updateStartup({type:'scene',generation:startup.generation,scene:url===unavailableUrl||url.startsWith(unavailableUrl+'#')?'error':'other'});
+    }
+    layout();sendState();
+  });
   page.on('did-start-navigation',(_event,url,inPlace,mainFrame)=>{if(mainFrame&&!inPlace){
+    sceneDocument=url;lease=null;domReady=false;protocolConnected=false;stopSceneTimers();sceneBudget=20_000;compatibilityBudget=1_000;
+    if(url!=='about:blank'){updateStartup({type:'navigation',generation:startup.generation+1});syncSceneTimers();}
     if(loginEntryPath(url,config.serverOrigin)){loginPresentation=true;layout();}
     if(callbackDocument(url))stopLoginTimer();else if(embeddedLoginDocument(url,config.serverOrigin)||url===config.serverOrigin+OFFICIAL_LOGIN_PATH){stopLoginTimer();pendingLogin=false;}resetContext();
   }});
-  page.on('did-finish-load',()=>{if(window?.isFocused()&&!menuOpen&&!recovery)page.focus();sendState();});window.webContents.on('did-finish-load',sendState);loginChromePage.on('did-finish-load',sendState);
+  page.on('did-finish-load',()=>{if(window?.isFocused()&&!menuOpen&&!recovery)focusContent();sendState();});window.webContents.on('did-finish-load',sendState);loginChromePage.on('did-finish-load',sendState);
   page.on('did-fail-load',(_event,code,_description,url,mainFrame)=>{if(mainFrame&&code!==-3&&window&&!window.isDestroyed()){
     rejectedDocument=true;
     const safeTarget=recoveryTarget(url,config.serverOrigin,requestedDocument?.url===url?requestedDocument.method:'',activeLoginEntry);
@@ -251,29 +433,46 @@ else{
     beginRecovery(recoveryTarget(lastDocument,config.serverOrigin,'GET',activeLoginEntry)??config.serverOrigin+activeLoginEntry,++rendererCrashes<=3?'reconnecting':'failed');
   });
   // A destroyed WebContentsView no longer exposes webContents. Drop the view before parent cleanup.
-  page.on('destroyed',()=>{clearInterval(connectionMonitor);clearRecoveryTimers();stopLoginTimer();pendingLogin=false;content=null;reconnect=()=>{};if(quitting)setImmediate(()=>window?.close());});
+  page.on('destroyed',()=>{clearInterval(connectionMonitor);if(mediaWatchdog)clearInterval(mediaWatchdog);clearRecoveryTimers();stopLoginTimer();stopSceneTimers();if(releaseTimer)clearTimeout(releaseTimer);lease=null;pendingLogin=false;content=null;reconnect=()=>{};prepareLogin=()=>{throw Error('DESKTOP_LOGIN_DOCUMENT_GONE');};connectLogin=()=>{throw Error('DESKTOP_LOGIN_DOCUMENT_GONE');};if(quitting)setImmediate(()=>window?.close());});
   const shortcut=(event:Electron.Event,input:Electron.Input)=>{
     if(input.type!=='keyDown')return;
     if(input.alt&&input.key.toLowerCase()==='m'){event.preventDefault();openMenu();return;}
     if(input.key==='F5'||input.control&&!input.alt&&input.key.toLowerCase()==='r'){event.preventDefault();reload();return;}
     if(input.control&&!input.alt&&['+','=','-','0'].includes(input.key)){event.preventDefault();zoom(input.key==='0'?null:input.key==='-'?-.5:.5);}
   };
-  page.on('before-input-event',shortcut);window.webContents.on('before-input-event',shortcut);loginChromePage.on('before-input-event',shortcut);
+  page.on('before-input-event',(event,input)=>{if(startupView){event.preventDefault();focusContent();return;}shortcut(event,input);});
+  page.on('before-mouse-event',event=>{if(startupView)event.preventDefault();});
+  page.on('focus',()=>{if(startupView)focusContent();});
+  window.webContents.on('before-input-event',shortcut);loginChromePage.on('before-input-event',shortcut);startupPage.on('before-input-event',shortcut);
   window.on('close',event=>{if(!quitting){event.preventDefault();window?.hide();sendState();}});
-  window.on('closed',()=>{if(!page.isDestroyed())page.close();if(!loginChromePage.isDestroyed())loginChromePage.close();content=null;loginChrome=null;window=null;clearNotices();});
+  window.on('closed',()=>{stopSceneTimers();if(releaseTimer)clearTimeout(releaseTimer);if(!page.isDestroyed())page.close();if(!loginChromePage.isDestroyed())loginChromePage.close();if(!startupPage.isDestroyed())startupPage.close();startupView=null;content=null;loginChrome=null;window=null;clearNotices();powerMonitor.removeListener('resume',checkConnection);powerMonitor.removeListener('unlock-screen',checkConnection);powerMonitor.removeListener('resume',renewAfterIdle);powerMonitor.removeListener('unlock-screen',renewAfterIdle);powerMonitor.removeListener('lock-screen',onLock);powerMonitor.removeListener('unlock-screen',onUnlock);powerMonitor.removeListener('suspend',onSuspend);powerMonitor.removeListener('resume',onResume);});
   window.on('show',sendState);window.on('hide',sendState);window.on('minimize',sendState);window.on('restore',sendState);window.on('focus',sendState);window.on('blur',sendState);
+  window.on('show',nativeActivity);window.on('hide',nativeActivity);window.on('minimize',nativeActivity);window.on('restore',nativeActivity);
+  window.on('focus',nativeActivity);window.on('blur',nativeActivity);
   window.on('maximize',sendState);window.on('unmaximize',sendState);
-  const powerChanged=()=>{revision++;clearNotices();sendState();};
-  powerMonitor.on('lock-screen',()=>{locked=true;powerChanged();});powerMonitor.on('unlock-screen',()=>{locked=false;powerChanged();});
-  powerMonitor.on('suspend',()=>{suspended=true;powerChanged();});powerMonitor.on('resume',()=>{suspended=false;powerChanged();});
+  const powerChanged=()=>{revision++;clearNotices();nativeActivity();sendState();};
+  const onLock=()=>{locked=true;powerChanged();},onUnlock=()=>{locked=false;powerChanged();},onSuspend=()=>{suspended=true;powerChanged();},onResume=()=>{suspended=false;powerChanged();};
+  powerMonitor.on('lock-screen',onLock);powerMonitor.on('unlock-screen',onUnlock);powerMonitor.on('suspend',onSuspend);powerMonitor.on('resume',onResume);
   applicationMenu=Menu.buildFromTemplate([{label:'重新连接 / 登录',click:()=>login()},{label:'使用官方登录页',click:()=>login(OFFICIAL_LOGIN_PATH)},{label:'刷新工作台',accelerator:'Ctrl+R',click:reload},{type:'separator'},{label:'编辑',submenu:[{label:'撤销',click:()=>edit('undo')},{label:'重做',click:()=>edit('redo')},{type:'separator'},{label:'剪切',click:()=>edit('cut')},{label:'复制',click:()=>edit('copy')},{label:'粘贴',click:()=>edit('paste')},{label:'全选',click:()=>edit('selectAll')}]},{label:'页面缩放',submenu:[{label:'放大',accelerator:'Ctrl+=',click:()=>zoom(.5)},{label:'缩小',accelerator:'Ctrl+-',click:()=>zoom(-.5)},{label:'恢复默认大小',accelerator:'Ctrl+0',click:()=>zoom(null)}]},{type:'separator'},{label:'医小修 '+app.getVersion(),enabled:false},{label:'退出应用',click:requestQuit}]);
   tray=new Tray(path.join(directory,'icon.ico'));tray.setToolTip('医小修工作台');tray.on('double-click',show);refreshTray();
   void window.loadFile(path.join(directory,'chrome.html')).catch(()=>{});
   // Initialize only an empty owned target before applying the private presentation preference.
   // No debugging port or protocol capability is exposed to any renderer.
-  await page.loadURL('about:blank');
-  page.debugger.attach('1.3');
-  await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:motionPreference(process.argv)}]});
+  // The empty target also needs to finish initializing beneath a native cover.
+  // Keep the original unthrottled empty-document bootstrap, bounded separately
+  // so a failed target/debugger handshake cannot strand generation zero forever.
+  let initializationTimer:ReturnType<typeof setTimeout>|undefined;
+  try{
+    await Promise.race([(async()=>{
+      await page.loadURL('about:blank');
+      if(!initializingContent||quitting||page.isDestroyed()||startup.generation!==0||page.getURL()!=='about:blank')return;
+      page.debugger.attach('1.3');
+      await page.debugger.sendCommand('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:desktopMotion}]});
+    })(),new Promise<never>((_resolve,reject)=>{initializationTimer=setTimeout(()=>reject(Error('DESKTOP_CONTENT_BOOTSTRAP_TIMEOUT')),10_000);initializationTimer.unref();})]);
+  }catch{
+    if(!quitting&&!page.isDestroyed()){page.stop();traceStartup('content-bootstrap-failed');initializingContent=false;layout();beginRecovery(config.serverOrigin+defaultLoginEntry,'unavailable');}
+    return;
+  }finally{clearTimeout(initializationTimer);initializingContent=false;layout();}
   login();
   }).catch(()=>{dialog.showErrorBox('医小修工作台','桌面程序初始化失败，请检查配置和数据目录。');app.exit(1);});
 }

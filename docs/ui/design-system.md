@@ -675,3 +675,7 @@ features/*/             只组合 design/components，原则上不再有自己�
 本规范取代 `docs/ui/yixiaoxiu-ui-design-spec.md`（v1.0）的第 2–5、7、8 章，并修订 `admin-workbench-design.md` §10.1 焦点规则；业务边界、状态含义、权限与 API 仍以现有文档为准。v1.0 中「整屏只有一个实心蓝色按钮」的原则保留，它一直没被代码执行。
 
 附件：`tokens.css`（可直接放入 `src/design/`）、`.stylelintrc.json`。
+
+## Windows 启动动效（2026-11-07，局部前向补充）
+
+可信本地覆盖视图用 Canvas 绘制从原片派生的 68 张 WebP 帧，画面最大 360 CSS px，等比完整显示。默认播放完整动效，显式备用参数可选择静态帧。正常交接等待完整首播与当前登录场景 prepared，随后淡出覆盖层。窗口控制保持可用，二维码续期沿现有页面处理。实现与异常边界见[桌面登录导航](../agents/desktop-login.md)。

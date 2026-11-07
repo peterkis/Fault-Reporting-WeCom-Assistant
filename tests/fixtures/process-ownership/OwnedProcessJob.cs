@@ -57,7 +57,9 @@ public static class OwnedProcessJob {
       using(Process process=Process.GetProcessById((int)child.Pid))Write(Path.Combine(root,"started.json"),new{schema_version=1,kind="WIN32_OWNED_JOB",owner_pid=ownerPid,owner_created_utc=owner.StartTime.ToUniversalTime().ToString("o"),supervisor_pid=Process.GetCurrentProcess().Id,root_pid=child.Pid,root_parent_pid=Process.GetCurrentProcess().Id,root_created_utc=process.StartTime.ToUniversalTime().ToString("o"),profile=profile,suspended_assigned_before_execution=true,verified_member_before_resume=inside,breakaway_allowed=false,kill_on_close=true});
       Check(ResumeThread(child.Thread)!=0xffffffff,"RESUME");CloseHandle(child.Thread);child.Thread=IntPtr.Zero;
       using(StreamWriter samples=new StreamWriter(Path.Combine(root,"members.jsonl"),false,new UTF8Encoding(false))){for(;;){samples.WriteLine(Json.Serialize(new{elapsed_ms=elapsed.ElapsedMilliseconds,members=Members(job)}));samples.Flush();
-        if(WaitForSingleObject(child.Process,0)==0){UInt32 code;Check(GetExitCodeProcess(child.Process,out code),"EXIT_CODE");exit=code;status="COMPLETED";break;}
+        if(WaitForSingleObject(child.Process,0)==0){UInt32 code;Check(GetExitCodeProcess(child.Process,out code),"EXIT_CODE");exit=code;
+          // A browser launcher can hand off while the same owned Job remains live.
+          if(profile==null||code!=0||Get<Accounting>(job,1).ActiveProcesses==0){status="COMPLETED";break;}}
         if(timeout>0&&elapsed.ElapsedMilliseconds>=timeout){status="TIMEOUT";error="WORKLOAD_DEADLINE";break;}
         if(new FileInfo(Path.Combine(root,"stdout.log")).Length>maxOutput||new FileInfo(Path.Combine(root,"stderr.log")).Length>maxOutput){status="FAILED";error="OUTPUT_LIMIT";break;}
         if(File.Exists(Path.Combine(root,"terminate"))){status="STOPPED";break;}if(owner.HasExited){status="OWNER_EXITED";break;}

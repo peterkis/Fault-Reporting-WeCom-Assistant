@@ -15,6 +15,7 @@ import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workbench-wecom-auth.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 
 interface DesktopProcess {child:ChildProcess;command:(action:string,expression?:string)=>Promise<unknown>;evaluate:(expression:string)=>Promise<unknown>;wait:(expression:string)=>Promise<void>;close:()=>Promise<void>}
 async function launchDesktop(root:string,stage:string,spki:string,name:string):Promise<DesktopProcess>{
@@ -42,10 +43,12 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  assert.ok(existsSync(path.join(root,'.local/electron/stage/main.mjs')),'desktop Build must prepare an allowlisted stage');
  const authMigration={databaseUrl:f.databaseUrl,mode:'apply'};
  await migrateWorkbenchAuth(authMigration);
+ await migrateServiceClosure({databaseUrl:f.databaseUrl,mode:'apply'});
  const access=createPilotAccessService({pool:f.pool}),principals:string[]=[];
  for(let i=0;i<3;i++)principals.push((await access.upsertPrincipal({wecomUserId:'desktop-staff-'+i,displayName:'桌面合成人员'+i,roles:['DISPATCHER','HANDLER'],resolverTeamIds:['PILOT_IT']})).id);
  let actor=0,auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined,runtime:P2016EnabledRuntime|undefined;
  let ready:Promise<unknown>=Promise.resolve();const codes=new Map<string,string>();let readWrites=0,activityWrites=0,holdQr=true,heldQrRequests=0,authOffset=-6*60_000,shortFirstIntent=true,confirmations=0;
+ const realtimeResponses: Array<{path: string; status: number}> = [];
  const tls=await createYxxBrowserFixture({pool:f.pool,createApp:({origin}:{origin:string})=>{
   auth=createWeComWorkbenchAuthentication({pool:f.pool,publicOrigin:origin,corpId:'desktop-test',agentId:'1000001',identityHashKey:'desktop-synthetic-identity-secret',now:()=>Date.now()+authOffset,accessTokenProvider:async()=> 'synthetic-only',fetchImpl:async(input,init)=>{
    const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');
@@ -60,13 +63,16 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
   return createServer((request,response)=>{void ready.then(()=>{
    const url=new URL(request.url??'/',origin);
    if(url.pathname==='/workbench/synthetic-provider'){
-    if(holdQr){heldQrRequests++;response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><h1>合成企业微信二维码登录</h1>');return;}
+    if(holdQr){heldQrRequests++;response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end(`<!doctype html><h1 data-synthetic-qr-generation="${heldQrRequests}">合成企业微信二维码登录</h1>`);return;}
     const code=randomUUID();codes.set(code,'open-desktop-staff-'+actor);response.writeHead(303,{location:origin+'/workbench/callback?state='+url.searchParams.get('state')+'&code='+code});response.end();return;
    }
    if(request.method==='POST'&&/read-position|read-cursor/u.test(url.pathname))readWrites++;
    if(request.method==='POST'&&url.pathname==='/api/workbench/activity')activityWrites++;
    const original=response.writeHead.bind(response);
    response.writeHead=((status:number,...args:unknown[])=>{
+    if (realtimeResponses.length < 30 && (url.pathname === '/api/realtime/events' || url.pathname === '/api/lifecycle/bootstrap' || (url.pathname.startsWith('/api/') && status >= 400))) {
+     realtimeResponses.push({path: url.pathname.replace(/\b[\da-f]{8}-[\da-f-]{27}\b/giu, ':id'), status});
+    }
     const headers=args[0];if(headers&&typeof headers==='object'&&!Array.isArray(headers)){
      const value=headers as Record<string,unknown>;
      if(url.pathname==='/workbench/desktop'&&status===302){const cookies=value['set-cookie'];assert.ok(Array.isArray(cookies));assert.ok(cookies.some(cookie=>String(cookie).includes('Max-Age=300')));if(shortFirstIntent){value['set-cookie']=cookies.map(cookie=>String(cookie).replace('Max-Age=300','Max-Age=2'));shortFirstIntent=false;}}
@@ -81,7 +87,8 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  const processes:DesktopProcess[]=[],runId=randomUUID();
  try{
   const stage=path.join(root,'.local/electron/temp','process-stage-'+runId);mkdirSync(stage,{recursive:true});
-  for(const file of ['main.mjs','policy.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs'])copyFileSync(path.join(root,'.local/electron/stage',file),path.join(stage,file));
+  const startupFiles=['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4','startup-frames/manifest.json',...Array.from({length:68},(_,index)=>'startup-frames/'+String(index).padStart(3,'0')+'.webp')];
+  for(const file of startupFiles){const target=path.join(stage,file);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(root,'.local/electron/stage',file),target);}
   copyFileSync(path.join(root,'.local/electron/compiled/process-driver.mjs'),path.join(stage,'process-driver.mjs'));
   writeFileSync(path.join(stage,'desktop.config.json'),JSON.stringify({schemaVersion:1,serverOrigin:tls.origin}));
   for(actor=0;actor<3;actor++){
@@ -91,10 +98,18 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
     assert.equal(heldQrRequests,1);authOffset=0;
     const renewed=Date.now()+8000;while(heldQrRequests<2&&Date.now()<renewed)await delay(50);
     assert.equal(heldQrRequests,2,'an expired waiting intent must be replaced before the first phone confirmation');
+    await desktop.wait('document.querySelector("[data-synthetic-qr-generation]")?.dataset.syntheticQrGeneration === "2"');
     assert.equal(confirmations,0);holdQr=false;
     await desktop.evaluate('location.reload();true');
    }
-   await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   try {
+    await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   } catch (error) {
+    const phase = await desktop.evaluate('(async()=>({path: location.pathname, realtime: document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus, native: await window.workbenchDesktop?.getState(), online: navigator.onLine, visibility: document.visibilityState}))()').catch(() => null);
+    const native = await desktop.command('state').then(value => ({startupVisible: object(value).startupVisible, visible: object(value).visible})).catch(() => null);
+    console.error('DESKTOP_REALTIME_WAIT_CONTEXT', JSON.stringify({actor, confirmations, heldQrRequests, phase, native, realtimeResponses}));
+    throw error;
+   }
    if(actor===0){assert.equal(confirmations,1,'the real PG/OAuth path accepts the first confirmation after renewal');heldQrRequests=0;}
    assert.equal(await desktop.evaluate('(async()=> (await (await fetch("/api/lifecycle/bootstrap")).json()).principal_id)()'),principals[actor]);
    await desktop.wait('document.querySelector(".account")?.textContent.includes("企业微信合成姓名'+actor+'")&&document.querySelector(".account")?.textContent.includes("合成信息科")');

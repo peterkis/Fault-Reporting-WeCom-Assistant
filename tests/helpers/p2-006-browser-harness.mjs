@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import {createHash} from 'node:crypto';
 import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -72,11 +73,15 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
+  const windowsSoftwareGraphics = graphics && process.platform === 'win32' && process.env.TS_MIGRATION_WINDOWS_SOFTWARE_GRAPHICS === '1';
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
-    // Concurrent WebGL/WebGPU scene tests need the browser's normal graphics path.
-    ...(graphics?[]:['--disable-gpu']),
+    // Hosted Windows uses WARP for WebGL and SwiftShader for WebGPU.
+    ...(windowsSoftwareGraphics?[
+      '--use-gl=angle','--use-angle=d3d11-warp','--use-webgpu-adapter=swiftshader','--disable-gpu-compositing',
+      '--enable-unsafe-swiftshader','--enable-unsafe-webgpu',
+    ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
   ];
@@ -108,7 +113,15 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
       if(socket?.readyState!==WebSocket.OPEN){reject(new Error('P2_006_BROWSER_DISCONNECTED'));return;}
-      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT'));},10000);
+      const timer=setTimeout(()=>{
+        pending.delete(id);
+        // Failure-only context: never log expressions, cookies, URLs or CDP payloads.
+        const context={method,sessionKind:sessionId===null?'root':'attached',
+          ...(method==='Runtime.evaluate'&&typeof params.expression==='string'
+            ?{expressionSha256:createHash('sha256').update(params.expression).digest('hex'),expressionLength:params.expression.length}:{})};
+        console.error('P2_006_BROWSER_COMMAND_TIMEOUT_CONTEXT',JSON.stringify(context));
+        reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT',{cause:context}));
+      },10000);
       pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
   }

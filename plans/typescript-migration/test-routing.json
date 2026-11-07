@@ -6877,6 +6877,33 @@
       "path": "tests/workbench-desktop-session.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
+      "requires_database": false,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/workbench-desktop-session.gpu.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/workbench-desktop-session-auth.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/workbench-desktop-session-logout.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
       "requires_database": true,
       "requires_browser": true,
       "requires_powershell": false,
@@ -8942,7 +8969,9 @@
       "tests/wbint-t32-exception-compatibility.integration.test.mts"
     ],
     "pr-desktop": [
-      "tests/pc-admin-electron.browser.test.mts"
+      "tests/pc-admin-electron.browser.test.mts",
+      "tests/workbench-desktop-session.browser.test.mts",
+      "tests/workbench-desktop-session.gpu.browser.test.mts"
     ],
     "pr-read-safety": [
       "tests/t35-account-switch.browser.test.mts",

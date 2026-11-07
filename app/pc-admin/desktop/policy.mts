@@ -5,7 +5,7 @@ export interface DesktopState {
 export const TITLEBAR_HEIGHT=40;
 export type ChromeAction='menu'|'minimize'|'maximize'|'close'|'reconnect';
 export type RecoveryState='offline'|'unavailable'|'reconnecting'|'failed'|null;
-export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean;appVersion:string;booting:boolean;recovery:RecoveryState;loginExpired:boolean}
+export interface ChromeState {maximized:boolean;focused:boolean;menuOpen:boolean;appVersion:string;booting:boolean;recovery:RecoveryState;loginExpired:boolean;loginCompatibility:boolean;reducedMotion:boolean}
 export interface ChromeBridge {state():Promise<ChromeState>;command(action:ChromeAction):Promise<void>;onState(callback:(state:ChromeState)=>void):()=>void}
 export function readChromeAction(value:unknown):ChromeAction {
   if(value==='menu'||value==='minimize'||value==='maximize'||value==='close'||value==='reconnect')return value;
@@ -13,7 +13,25 @@ export function readChromeAction(value:unknown):ChromeAction {
 }
 export interface DesktopContext {epoch:string|null;blocked:boolean;live:boolean;remindersAvailable:boolean}
 export interface DesktopReminder {epoch:string;id:string;kind:'ticket'|'review'|'intake';itemId:string}
-export interface LoginBridge {version:1;getAppVersion():Promise<string>;quit():Promise<void>}
+export interface LoginPrepared {version:1;panel:'created'|'failed';backdrop:'shader'|'fallback'}
+export interface LoginLease {generation:number;nonce:string}
+export interface LoginBridge {
+  version:1;getAppVersion():Promise<string>;quit():Promise<void>;
+  startup?:{version:1;connect?():Promise<void>;prepared(value:LoginPrepared):Promise<{presented:boolean}>;onPresented(callback:()=>void):()=>void};
+}
+export type StartupFailure='frame-load-failed'|'frame-decode-failed'|'canvas-unavailable'|'first-frame-timeout'|'playback-stalled'|'overlay-load-failed'|'overlay-crashed';
+export interface StartupState {
+  version:1;generation:number;active:boolean;releasing:boolean;reducedMotion:boolean;firstPlaybackComplete:boolean;
+  scene:'loading'|'prepared'|'error'|'compatibility'|'other';failure:StartupFailure|null;
+}
+export type StartupSignal=
+  | {version:1;type:'metadata';duration:number;width:number;height:number}
+  | {version:1;type:'visibility';visible:boolean}
+  | {version:1;type:'progress';drawCount:number}
+  | {version:1;type:'first-frame'|'playing'|'waiting'|'stalled'|'first-cycle-complete'|'reduced-motion'}
+  | {version:1;type:'released';generation:number}
+  | {version:1;type:'failed';reason:StartupFailure};
+export interface StartupBridge {state():Promise<StartupState>;onState(callback:(state:StartupState)=>void):()=>void;event(value:StartupSignal):Promise<void>}
 export function motionPreference(args:readonly string[]):'reduce'|'no-preference'{return args.includes('--wecom-reduced-motion')?'reduce':'no-preference';}
 export interface DesktopBridge {
   version:1;
@@ -32,6 +50,47 @@ function object(value:unknown,keys:readonly string[]):Record<string,unknown>{
   const record=value as Record<string,unknown>;
   if(Object.keys(record).length!==keys.length||keys.some(key=>!Object.hasOwn(record,key)))throw Error('DESKTOP_INPUT_INVALID');
   return record;
+}
+export function readLoginPrepared(value:unknown):LoginPrepared {
+  const r=object(value,['version','panel','backdrop']);
+  if(r.version!==1||(r.panel!=='created'&&r.panel!=='failed')||(r.backdrop!=='shader'&&r.backdrop!=='fallback'))throw Error('DESKTOP_LOGIN_PREPARED_INVALID');
+  return {version:1,panel:r.panel,backdrop:r.backdrop};
+}
+export function readLoginLease(value:unknown):LoginLease {
+  const r=object(value,['generation','nonce']);
+  if(!Number.isSafeInteger(r.generation)||typeof r.generation!=='number'||r.generation<1||typeof r.nonce!=='string'||!uuid.test(r.nonce))throw Error('DESKTOP_LOGIN_LEASE_INVALID');
+  return {generation:r.generation,nonce:r.nonce};
+}
+export function readStartupSignal(value:unknown):StartupSignal {
+  if(!value||typeof value!=='object'||!('type' in value))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+  if(value.type==='progress'){
+    const r=object(value,['version','type','drawCount']);
+    if(r.version!==1||typeof r.drawCount!=='number'||!Number.isSafeInteger(r.drawCount)||r.drawCount<1||r.drawCount>1_000_000_000)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'progress',drawCount:r.drawCount};
+  }
+  if(value.type==='visibility'){
+    const r=object(value,['version','type','visible']);if(r.version!==1||typeof r.visible!=='boolean')throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'visibility',visible:r.visible};
+  }
+  if(value.type==='metadata'){
+    const r=object(value,['version','type','duration','width','height']);
+    if(r.version!==1||r.duration!==68/30||r.width!==540||r.height!==540)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'metadata',duration:68/30,width:540,height:540};
+  }
+  if(value.type==='released'){
+    const r=object(value,['version','type','generation']);
+    if(r.version!==1||typeof r.generation!=='number'||!Number.isSafeInteger(r.generation)||r.generation<0)throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'released',generation:r.generation};
+  }
+  if(value.type==='failed'){
+    const r=object(value,['version','type','reason']);
+    const reasons:readonly unknown[]=['frame-load-failed','frame-decode-failed','canvas-unavailable','first-frame-timeout','playback-stalled','overlay-load-failed','overlay-crashed'];
+    if(r.version!==1||!reasons.includes(r.reason))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+    return {version:1,type:'failed',reason:r.reason as StartupFailure};
+  }
+  const r=object(value,['version','type']);
+  if(r.version!==1||(r.type!=='first-frame'&&r.type!=='playing'&&r.type!=='waiting'&&r.type!=='stalled'&&r.type!=='first-cycle-complete'&&r.type!=='reduced-motion'))throw Error('DESKTOP_STARTUP_SIGNAL_INVALID');
+  return {version:1,type:r.type};
 }
 export function serverOrigin(value:unknown):string {
   if(typeof value!=='string'||value.length>512)throw Error('DESKTOP_ORIGIN_INVALID');

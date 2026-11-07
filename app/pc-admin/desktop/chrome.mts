@@ -4,10 +4,13 @@ const maximize=document.getElementById('maximize');
 function render(state:ChromeState){
   const version=document.querySelector('.surface-name');if(version)version.textContent='v'+state.appVersion;
   document.body.dataset.maximized=String(state.maximized);document.body.dataset.focused=String(state.focused);
+  document.body.dataset.reducedMotion=String(state.reducedMotion);
   document.body.dataset.booting=String(state.booting);
   document.querySelector('[data-startup]')?.toggleAttribute('hidden',!state.booting||!!state.recovery);
   document.querySelector('[data-recovery]')?.toggleAttribute('hidden',!state.recovery);
   document.querySelector('[data-session-notice]')?.toggleAttribute('hidden',!state.loginExpired);
+  document.querySelector('[data-compatibility-notice]')?.toggleAttribute('hidden',!state.loginCompatibility);
+  if(document.body.classList.contains('login-chrome'))document.getElementById('menu')?.toggleAttribute('hidden',!state.loginCompatibility);
   const title=document.querySelector('[data-connection-title]'),description=document.querySelector('[data-connection-description]');
   if(title)title.textContent=state.recovery==='failed'?'页面暂时无法恢复':state.recovery==='reconnecting'?'正在重新连接':state.recovery==='unavailable'?'暂时无法连接':'应用已离线';
   if(description)description.textContent=state.recovery==='failed'?'页面多次中断，请尝试重新连接。':state.recovery==='reconnecting'?'正在重新打开刚才的页面，请稍候。':state.recovery==='unavailable'?'暂时无法连接服务，正在自动重试。也可以检查网络后重新连接。':'请检查网络连接。连接恢复后，将自动重新打开刚才的页面。';

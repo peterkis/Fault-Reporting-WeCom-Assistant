@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import * as THREE from 'three';
+import {prepareLoginEnvironment,disposeLoginEnvironment,LoginEnvironmentAssetFailure} from './login-environment';
 
 import './Lanyard.css';
 
@@ -50,7 +51,7 @@ export interface LanyardProps {
   viewportFrame?: HTMLElement;
   onFrontReady?: () => void;
   /** Parent chooses a fresh flat-page login; no loaded iframe is moved for fallback. */
-  onFallback?: (reason: 'webgl-unavailable' | 'context-lost') => void;
+  onFallback?: (reason: 'webgl-unavailable' | 'context-lost' | 'asset-failed') => void;
 }
 
 type Settings = Required<Omit<LanyardProps,
@@ -432,39 +433,68 @@ const buildBandGeometry = (count: number) => {
   return geometry;
 };
 
-const buildEnvironment = (renderer: THREE.WebGLRenderer) => {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0.035, 0.035, 0.04);
-  const geometry = new THREE.PlaneGeometry(1, 1);
-  const materials: THREE.MeshBasicMaterial[] = [];
-  const panel = (intensity: number, position: [number, number, number], scale: [number, number], rotation = 0) => {
-    const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(intensity, intensity, intensity),
-      side: THREE.DoubleSide
-    });
-    materials.push(material);
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(...position);
-    mesh.scale.set(scale[0], scale[1], 1);
-    mesh.lookAt(0, 0, 0);
-    mesh.rotateZ(rotation);
-    scene.add(mesh);
-  };
-  panel(2.6, [0, 4.5, 8], [9, 4]);
-  panel(6, [-5.5, 0.5, 7], [0.9, 14]);
-  panel(4, [5, -0.5, 8], [0.6, 14]);
-  panel(3.5, [0, -1, 9], [24, 0.35], Math.PI / 3);
-  panel(2.5, [1, 2.5, 9], [24, 0.2], Math.PI / 3);
-  panel(1.4, [0, 6, -6], [12, 4]);
-  panel(0.5, [0, -7, 1], [16, 6]);
-  panel(0.9, [8, 0, -2], [4, 10]);
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const target = pmrem.fromScene(scene, 0.035);
-  pmrem.dispose();
-  geometry.dispose();
-  materials.forEach(material => material.dispose());
-  return target;
+const assertGpuPreparationActive = (renderer: THREE.WebGLRenderer, signal: AbortSignal): void => {
+  if (signal.aborted) throw new DOMException('Lanyard preparation cancelled', 'AbortError');
+  if (renderer.getContext().isContextLost()) throw new Error('LANYARD_CONTEXT_LOST');
 };
+
+const releaseProgramShaders = (renderer: THREE.WebGLRenderer): void => {
+  const gl = renderer.getContext();
+  // Three r186 marks shaders for deletion only on first use. Cancellation can
+  // dispose a compiled program before that point. Mark its public handles first;
+  // attached shaders remain usable and repeated deleteShader calls are harmless.
+  for (const program of renderer.info.programs ?? []) {
+    for (const shader of [program.vertexShader, program.fragmentShader]) {
+      if (shader instanceof WebGLShader) gl.deleteShader(shader);
+    }
+  }
+};
+
+// Poll only the non-blocking KHR completion flag. Link diagnostics are queried
+// after completion, so the first real render keeps Three's error checks enabled.
+const waitForCompiledPrograms = (renderer: THREE.WebGLRenderer, signal: AbortSignal): Promise<void> => {
+  const gl = renderer.getContext();
+  const extension = gl.getExtension('KHR_parallel_shader_compile');
+  if (!extension) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    let timer: number | undefined;
+    let settled = false;
+    const checked = new Set<WebGLProgram>();
+    const stop = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      signal.removeEventListener('abort', cancel);
+    };
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true; stop(); reject(error);
+    };
+    const cancel = () => fail(new DOMException('Lanyard preparation cancelled', 'AbortError'));
+    const poll = () => {
+      try {
+        assertGpuPreparationActive(renderer, signal);
+        let pending = false;
+        for (const item of renderer.info.programs ?? []) {
+          const program: unknown = item.program;
+          if (!(program instanceof WebGLProgram)) throw new Error('LANYARD_PROGRAM_HANDLE_INVALID');
+          if (checked.has(program)) continue;
+          const complete: unknown = gl.getProgramParameter(program, extension.COMPLETION_STATUS_KHR);
+          if (complete !== true) { pending = true; continue; }
+          const linked: unknown = gl.getProgramParameter(program, gl.LINK_STATUS);
+          if (linked !== true) {
+            console.error('Lanyard shader link failed:', gl.getProgramInfoLog(program)?.slice(0, 2048) ?? 'No shader log');
+            throw new Error('LANYARD_SHADER_LINK_FAILED');
+          }
+          checked.add(program);
+        }
+        if (pending) { timer = window.setTimeout(poll, 10); return; }
+        settled = true; stop(); resolve();
+      } catch (error) { fail(error); }
+    };
+    signal.addEventListener('abort', cancel, {once: true});
+    poll();
+  });
+};
+
 
 const makeCanvasTexture = (canvas: HTMLCanvasElement, anisotropy: number) => {
   const texture = new THREE.CanvasTexture(canvas);
@@ -705,7 +735,7 @@ const solvePin = (body: Body, grab: Grab, target: THREE.Vector3): void => {
   pushBody(body, r, normal.multiplyScalar(lambda));
 };
 
-const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void => {
+const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean, preserveRotation = false): void => {
   const { nodes, previous, velocities, body, anchor } = sim;
   at(nodes, 0).copy(anchor);
   for (let i = 1; i <= JOINTS; i++) {
@@ -713,8 +743,10 @@ const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void
     if (intro) at(nodes, i).x += sim.rest;
     else at(nodes, i).y -= sim.rest;
   }
-  body.quaternion.identity();
-  if (intro) body.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  if (!preserveRotation) {
+    body.quaternion.identity();
+    if (intro) body.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  }
   body.hang.set(0, layout.hangY, 0);
   const offset = scratch.a.copy(body.hang).applyQuaternion(body.quaternion);
   body.position.copy(at(nodes, JOINTS)).sub(offset);
@@ -727,9 +759,11 @@ const placeHanging = (sim: Simulation, layout: CardLayout, intro: boolean): void
     at(velocities, i).set(0, 0, 0);
   }
   sim.lengths.fill(sim.rest);
-  sim.turn = 0;
-  sim.twist = 0;
-  sim.twistRaw = 0;
+  if (!preserveRotation) {
+    sim.turn = 0;
+    sim.twist = 0;
+    sim.twistRaw = 0;
+  }
   sim.calm = 0;
 };
 
@@ -966,8 +1000,9 @@ const Lanyard = ({
 
     const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     const scene = new THREE.Scene();
-    const environment = buildEnvironment(renderer);
-    scene.environment = environment.texture;
+    const preparation = new AbortController();
+    let environment: THREE.DataTexture | null = null;
+    let gpuReady = false;
     const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     keyLight.position.set(-2.5, 4, 6);
@@ -1096,6 +1131,7 @@ const Lanyard = ({
     let press: Press | null = null;
     let imageToken = 0;
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let staticPaintPending = false;
 
     const paintFaces = () => {
       const s = settingsRef.current;
@@ -1208,6 +1244,8 @@ const Lanyard = ({
           placed = true;
         } else if (layoutKey !== applied.layoutKey) {
           placeHanging(sim, layout, false);
+        } else if (reducedMotion && !sim.grab) {
+          placeHanging(sim, layout, false, true);
         }
       }
 
@@ -1343,7 +1381,8 @@ const Lanyard = ({
 
     const hitCorners = [[-1, 1], [1, 1], [1, -1], [-1, -1]] as const;
     const projectedCorner = new THREE.Vector3();
-    const render = () => {
+    const render = (compileOnly = false) => {
+      if (!alive || failed || (!gpuReady && !compileOnly)) return;
       if (!alive || failed) return;
       cardGroup.position.copy(sim.body.position);
       cardGroup.quaternion.copy(sim.body.quaternion);
@@ -1377,7 +1416,10 @@ const Lanyard = ({
           hintHost.setAttribute('aria-hidden', String(!facing));
         }
       }
+      if (compileOnly) { renderer.compile(scene, camera); return; }
       renderer.render(scene, camera);
+      if (!frontReady && renderer.getContext().isContextLost()) { markContextLost(); return; }
+      if (!alive || failed || preparation.signal.aborted) return;
       cssRenderer?.render(scene, camera);
       if (hintRenderer && hintScene) hintRenderer.render(hintScene, camera);
       if (frontElement && frontObject && !frontReady && !readyPending && frontElement.isConnected) {
@@ -1386,7 +1428,8 @@ const Lanyard = ({
         readyPending = true;
         queueMicrotask(() => {
           readyPending = false;
-          if (!alive || failed || frontReady || !frontElement.isConnected || frontElement.parentNode !== panelHost) return;
+          if (!alive || failed || preparation.signal.aborted || frontReady || !frontElement.isConnected || frontElement.parentNode !== panelHost) return;
+          if (renderer.getContext().isContextLost()) { markContextLost(); return; }
           frontReady = true;
           callbacksRef.current.onFrontReady?.();
           beginOpening();
@@ -1431,6 +1474,7 @@ const Lanyard = ({
     const tick = (now: number): void => {
       raf = 0;
       if (!alive || !visible || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+      if (reducedMotion && !sim.grab) return;
       const dt = Math.min(1 / 30, Math.max(1 / 240, (now - last) / 1000));
       last = now;
       time += dt;
@@ -1473,7 +1517,18 @@ const Lanyard = ({
     };
 
     const start = () => {
-      if (raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+      if (!gpuReady || raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+      if (reducedMotion && !sim.grab) {
+        if (!staticPaintPending) {
+          staticPaintPending = true;
+          queueMicrotask(() => {
+            staticPaintPending = false;
+            if (!gpuReady || raf || !visible || !alive || failed || settingsRef.current?.paused || !settingsRef.current?.presentationReady) return;
+            render();
+          });
+        }
+        return;
+      }
       sim.calm = 0;
       last = performance.now();
       raf = requestAnimationFrame(tick);
@@ -1511,6 +1566,15 @@ const Lanyard = ({
       }
       sim.turn = sim.turn === 0 ? Math.PI * direction : 0;
       body.angular.addScaledVector(up, FLIP_SPIN * direction);
+    };
+
+    const settleReduced = (): void => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      sim.body.quaternion.setFromAxisAngle(scratch.a.set(0, 1, 0), sim.turn);
+      sim.twist = sim.turn;
+      sim.twistRaw = sim.turn;
+      placeHanging(sim, layout, false, true);
     };
 
     const onPointerDown = (event: PointerEvent): void => {
@@ -1551,12 +1615,13 @@ const Lanyard = ({
 
     const onPointerUp = (event: PointerEvent): void => {
       if (!sim.grab || capturedPointer !== event.pointerId) return;
-      sim.grab = null;
       if (press && event.type === 'pointerup' && performance.now() - press.time < 450) flip(press.point);
+      sim.grab = null;
       press = null;
       capturedPointer = null;
       if (container.hasPointerCapture(event.pointerId)) container.releasePointerCapture(event.pointerId);
       setCursor(hovering && event.pointerType !== 'touch' ? 'grab' : '');
+      if (reducedMotion) settleReduced();
       start();
     };
 
@@ -1571,11 +1636,13 @@ const Lanyard = ({
     const stopInteraction = (): void => {
       sim.grab = null;
       press = null;
-      if (capturedPointer !== null && container.hasPointerCapture(capturedPointer)) {
-        container.releasePointerCapture(capturedPointer);
-      }
+      const pointerId = capturedPointer;
       capturedPointer = null;
+      if (pointerId !== null && container.hasPointerCapture(pointerId)) {
+        container.releasePointerCapture(pointerId);
+      }
       setCursor('');
+      if (reducedMotion) settleReduced();
     };
     const syncVisibility = (): void => {
       visible = intersecting && !document.hidden;
@@ -1587,10 +1654,10 @@ const Lanyard = ({
         stopInteraction();
       } else {start();beginOpening();}
     };
-    const onContextLost = (event: Event): void => {
-      event.preventDefault();
+    const markContextLost = (): void => {
       if (!alive || failed) return;
       failed = true;
+      preparation.abort();
       cancelAnimationFrame(raf);
       raf = 0;
       readyPending = false;
@@ -1601,6 +1668,10 @@ const Lanyard = ({
       panelHost.setAttribute('aria-hidden', 'true');
       if (cssRenderer) cssRenderer.domElement.hidden = true;
       callbacksRef.current.onFallback?.('context-lost');
+    };
+    const onContextLost = (event: Event): void => {
+      event.preventDefault();
+      markContextLost();
     };
     container.addEventListener('pointerdown', onPointerDown);
     container.addEventListener('pointermove', onPointerMove);
@@ -1646,8 +1717,11 @@ const Lanyard = ({
     applyRef.current = () => {apply();beginOpening();};
     resize();
 
-    return () => {
+    const disposeScene = () => {
+      if (!alive) return;
       alive = false;
+      releaseProgramShaders(renderer);
+      preparation.abort();
       imageToken++;
       cancelAnimationFrame(raf);
       readyPending = false;
@@ -1687,10 +1761,53 @@ const Lanyard = ({
       [bodyMesh, frontMesh, backMesh, ring, clampMesh, eyelet, band].forEach(mesh => mesh.geometry?.dispose());
       [frontMaterial, backMaterial, edgeMaterial, metalMaterial, bandMaterial].forEach(material => material.dispose());
       [frontTexture, backTexture, strapTexture, grain, weave].forEach(texture => texture.dispose());
-      environment.dispose();
+      const oldEnvironment=environment;environment=null;scene.environment=null;
+      if(oldEnvironment)disposeLoginEnvironment(oldEnvironment);
+      if (!renderer.getContext().isContextLost()) renderer.resetState();
       renderer.dispose();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
+    const initialize = async () => {
+      await prepareLoginEnvironment(preparation.signal,()=>assertGpuPreparationActive(renderer,preparation.signal),texture=>{
+        environment=texture;
+        scene.environment=texture;
+      });
+      if (!alive || failed || preparation.signal.aborted) return;
+      const parallel = renderer.getContext().getExtension('KHR_parallel_shader_compile');
+      if (parallel) {
+        // Props may change while shaders compile. Apply the latest geometry,
+        // lights, materials, textures and viewport before each compile-only pass.
+        let settings: Settings | null;
+        do {
+          settings = settingsRef.current;
+          apply();
+          render(true);
+          await waitForCompiledPrograms(renderer, preparation.signal);
+          assertGpuPreparationActive(renderer, preparation.signal);
+        } while (settings !== settingsRef.current);
+        for (const program of renderer.info.programs ?? []) {
+          assertGpuPreparationActive(renderer, preparation.signal);
+          program.getUniforms();
+          program.getAttributes();
+        }
+        assertGpuPreparationActive(renderer, preparation.signal);
+      }
+      if (!alive || failed || preparation.signal.aborted) return;
+      gpuReady = true;
+      // Only this real GL + CSS3D render can connect the host and report readiness.
+      render();
+      syncVisibility();
+    };
+    void initialize().catch(error => {
+      if (!alive || preparation.signal.aborted) return;
+      const contextLost = renderer.getContext().isContextLost();
+      const assetFailure=error instanceof LoginEnvironmentAssetFailure;
+      container.dataset.gpuPreparationFailure=contextLost?'context-lost':assetFailure?error.reason:error instanceof Error&&error.message==='LANYARD_SHADER_LINK_FAILED'?'shader-link-failed':'initialization-failed';
+      if(assetFailure&&!contextLost)console.error('Lanyard environment asset unavailable:',error.message);
+      disposeScene();
+      callbacksRef.current.onFallback?.(contextLost?'context-lost':assetFailure?'asset-failed':'webgl-unavailable');
+    });
+    return disposeScene;
   }, [frontElement, frontHint, viewportFrame]);
 
   return <div ref={containerRef} className={`lanyard ${viewportFrame ? 'lanyard--viewport' : ''} ${className}`.trim()} style={style} />;
