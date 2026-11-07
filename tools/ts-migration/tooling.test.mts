@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import {runInNewContext} from 'node:vm';
+import {createRequire} from 'node:module';
+import ts from 'typescript';
 import { execFileSync, spawnSync,spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, lstatSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -9,8 +12,8 @@ import { build,buildSyntaxEvidence } from './build.mjs';
 import { verifyArtifact,runtimeOutputInventory } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles,runNode,git as runGit,hash,record } from './common.mjs';
 import {checkCompiledSyntax} from './syntax-check.mjs';
-import {typecheckWeb} from './web.mjs';
-import {ownedSpawnSync} from './owned-process.mjs';
+import {typecheckWeb,finalizeDesktopLogin} from './web.mjs';
+import {ownedSpawnSync,launchOwnedProcess} from './owned-process.mjs';
 import {cssGate} from './gate.mjs';
 
 const original = sourceRoot();
@@ -65,6 +68,39 @@ if(process.platform==='win32')test('owned Windows subprocesses reclaim descendan
     if(foreign.exitCode===null&&foreign.signalCode===null)foreign.kill('SIGTERM');
     await new Promise<void>(resolve=>foreign.exitCode!==null||foreign.signalCode!==null?resolve():foreign.once('close',()=>resolve()));
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-owned-process-'));rmSync(root,{recursive:true,force:true});
+  }
+});
+
+if(process.platform==='win32')test('owned Windows browser leases preserve a successful launcher handoff until explicit stop',async t=>{
+  const root=mkdtempSync(path.join(tmpdir(),'migration-browser-lease-'));
+  const receiptFile=path.join(root,'launcher.json');
+  const alive=(pid:number)=>{try{process.kill(pid,0);return true;}catch(error){if(error&&typeof error==='object'&&'code' in error&&error.code==='ESRCH')return false;throw error;}};
+  const childScript="process.stdout.write('CHILD_READY\\n');setInterval(()=>{},10000);";
+  const script="const{spawn}=require('node:child_process');const{writeFileSync}=require('node:fs');const p=spawn(process.execPath,['-e',"+JSON.stringify(childScript)+"],{stdio:['ignore','pipe','ignore'],windowsHide:true,detached:true});p.stdout.once('data',()=>{writeFileSync("+JSON.stringify(receiptFile)+",JSON.stringify({root:process.pid,child:p.pid,child_ready:true}));process.exit(0);});";
+  const lease=await launchOwnedProcess({executable:process.execPath,args:['-e',script],cwd:root,profile:root});
+  try{
+    const deadline=performance.now()+10000;
+    let observed=false;
+    while(performance.now()<deadline){
+      if(existsSync(receiptFile)){
+        const actual=record(JSON.parse(readFileSync(receiptFile,'utf8')));
+        if(typeof actual.root!=='number'||typeof actual.child!=='number')throw Error('BROWSER_LEASE_ACTUAL_PIDS_REQUIRED');
+        if(!alive(actual.root)&&alive(actual.child)){
+          assert.equal(actual.child_ready,true);assert.equal(actual.root,lease.proof.root_pid);
+          assert.equal(existsSync(path.join(lease.receiptDirectory,'closed.json')),false);assert.equal(lease.child.exitCode,null);
+          const closed=await lease.close();
+          const samples=readFileSync(path.join(lease.receiptDirectory,'members.jsonl'),'utf8').trim().split(/\r?\n/u).map(line=>record(JSON.parse(line)));
+          assert.ok(samples.some(sample=>Array.isArray(sample.members)&&sample.members.some(member=>record(member).pid===actual.child&&record(member).job_descendant===true)));
+          assert.equal(closed.status,'STOPPED');assert.equal(closed.root_exit_code,0);assert.equal(closed.forced_cleanup,true);assert.equal(closed.cleanup_active_processes,0);
+          assert.equal(alive(actual.root),false);assert.equal(alive(actual.child),false);observed=true;
+          t.diagnostic(JSON.stringify({receipt:lease.receiptDirectory,launcher_gone:true,owned_descendant_survived_handoff:true,explicit_stop:true,cleanup_active_processes:0}));break;
+        }
+      }
+      await new Promise(resolve=>setTimeout(resolve,25));
+    }
+    assert.equal(observed,true,'BROWSER_LEASE_HANDOFF_NOT_OBSERVED');
+  }finally{
+    await lease.close();assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-browser-lease-'));rmSync(root,{recursive:true,force:true});
   }
 });
 
@@ -437,5 +473,162 @@ test('direct syntax API excludes parse coverage and preserves actual execution c
  }finally{
   if(prior===undefined)delete process.env.NODE_V8_COVERAGE;else process.env.NODE_V8_COVERAGE=prior;
   assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('migration-direct-syntax-coverage-'));rmSync(root,{recursive:true,force:true});
+ }
+});
+
+
+test('desktop login environment finalizer binds one identity payload and rejects missing extra sidecar or drifted assets',()=>{
+ const parent=realpathSync(tmpdir()),root=mkdtempSync(path.join(parent,'login-env-'));
+ const sourceRelative='app/pc-admin/src/login/assets',source=path.join(root,sourceRelative);
+ const asset='assets/login-environment-v1-Fixture.pmrem',payloadName='login-environment-v1.pmrem',metadataName='login-environment-v1.manifest.json';
+ const expectedHash='dfe29d470a36a2cb171559d79437ad2ab95478d7a94a42037188c6f0005bec3b';
+ const sourcePayload=path.join(original,sourceRelative,payloadName),sourceMetadata=path.join(original,sourceRelative,metadataName);
+ const metadataFile=path.join(source,metadataName);
+ const fixture=(name:string)=>{
+  const output=path.join(root,name);mkdirSync(path.join(output,'.vite'),{recursive:true});mkdirSync(path.join(output,'assets'));
+  copyFileSync(sourceMetadata,metadataFile);copyFileSync(path.join(source,payloadName),path.join(output,asset));
+  writeFileSync(path.join(output,'assets/login-Fixture.js'),'export const loginFixture=true;\n');
+  writeFileSync(path.join(output,'.vite/manifest.json'),JSON.stringify({'src/login/main.ts':{file:'assets/login-Fixture.js',isEntry:true,assets:[asset]}})+'\n');
+  return output;
+ };
+ const changeMetadata=(change:(metadata:Record<string,unknown>)=>void)=>{
+  const parsed:unknown=JSON.parse(readFileSync(metadataFile,'utf8')),metadata=record(parsed);change(metadata);writeFileSync(metadataFile,JSON.stringify(metadata)+'\n');
+ };
+ try{
+  mkdirSync(source,{recursive:true});copyFileSync(path.join(original,'package-lock.json'),path.join(root,'package-lock.json'));copyFileSync(sourcePayload,path.join(source,payloadName));
+  const payload=readFileSync(path.join(source,payloadName));assert.equal(payload.length,880178);assert.equal(hash(payload),expectedHash);
+  const output=fixture('valid');finalizeDesktopLogin(root,output);
+  assert.equal(hash(readFileSync(path.join(output,asset))),expectedHash);
+  const parsed:unknown=JSON.parse(readFileSync(path.join(output,'.vite/manifest.json'),'utf8'));
+  const representations=record(record(parsed)['src/login/main.ts']).loginRepresentations;
+  assert.ok(Array.isArray(representations));const entries=representations.map((entry:unknown)=>record(entry));
+  assert.deepEqual(entries.filter(entry=>entry.source===asset),[{file:asset,source:asset,encoding:'identity',bytes:880178,sha256:expectedHash}]);
+  assert.deepEqual(entries.filter(entry=>entry.source==='assets/login-Fixture.js').map(entry=>entry.encoding).sort(),['br','gzip','identity']);
+  assert.deepEqual(readdirSync(path.join(output,'assets')).sort(),[asset.slice(7),'login-Fixture.js','login-Fixture.js.br','login-Fixture.js.gz'].sort());
+  let totalBytes=0;for(const entry of entries){const bytes=entry.bytes;assert.ok(typeof bytes==='number'&&bytes>=0&&bytes<=4*1024*1024);totalBytes+=bytes;}assert.ok(totalBytes<=16*1024*1024);
+  const cases:ReadonlyArray<{name:string;mutate:(output:string)=>void;error:RegExp}>=[
+   {name:'missing',mutate:out=>rmSync(path.join(out,asset)),error:/^DESKTOP_LOGIN_ENVIRONMENT_MISSING$/u},
+   {name:'extra',mutate:out=>copyFileSync(path.join(source,payloadName),path.join(out,'assets/login-environment-v1-Extra.pmrem')),error:/^DESKTOP_LOGIN_ENVIRONMENT_LIMIT$/u},
+   {name:'sidecar',mutate:out=>writeFileSync(path.join(out,asset+'.gz'),'unexpected sidecar'),error:/^DESKTOP_LOGIN_BUILD_OUTPUT_INVALID$/u},
+   {name:'bytes',mutate:out=>{const damaged=Buffer.from(payload);damaged.writeUInt8(damaged.readUInt8(0)^1,0);writeFileSync(path.join(out,asset),damaged);},error:/^DESKTOP_LOGIN_ENVIRONMENT_PAYLOAD_DRIFT$/u},
+   {name:'metadata',mutate:()=>changeMetadata(metadata=>{record(metadata.decoded).width=1;}),error:/^DESKTOP_LOGIN_ENVIRONMENT_METADATA_INVALID$/u},
+   {name:'version',mutate:()=>changeMetadata(metadata=>{metadata.version=2;}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u},
+   {name:'three',mutate:()=>changeMetadata(metadata=>{record(metadata.engine).version='0.186.2';}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u},
+   {name:'recipe',mutate:()=>changeMetadata(metadata=>{record(metadata.generator).buildEnvironmentBodySha256='0'.repeat(64);}),error:/^DESKTOP_LOGIN_ENVIRONMENT_REBAKE_REQUIRED$/u}
+  ];
+  for(const scenario of cases){const out=fixture(scenario.name);scenario.mutate(out);assert.throws(()=>finalizeDesktopLogin(root,out),error=>error instanceof Error&&scenario.error.test(error.message),scenario.name);}
+ }finally{
+  assert.equal(path.dirname(root),parent);assert.ok(path.basename(root).startsWith('login-env-'));
+  // Refuse cleanup if this owned tree acquired any symlink/junction or escaped its canonical parent.
+  const inspect=(directory:string):void=>{
+   assert.equal(lstatSync(directory).isSymbolicLink(),false);assert.equal(realpathSync(directory),path.resolve(directory));
+   for(const name of readdirSync(directory)){const file=path.join(directory,name),stat=lstatSync(file);assert.equal(stat.isSymbolicLink(),false);if(stat.isDirectory())inspect(file);else assert.ok(stat.isFile());}
+  };
+  inspect(root);rmSync(root,{recursive:true,force:true});
+ }
+});
+
+
+test('desktop login preparation plugin locks vendor inputs and prepares cached pipelines without a frame',{timeout:240_000},async t=>{
+ const parent=path.resolve(original,'.local/electron/temp');mkdirSync(parent,{recursive:true});
+ const scratch=mkdtempSync(path.join(parent,'migration-login-prepare-')),emit=path.join(scratch,'emit');
+ try{
+  mkdirSync(emit);writeFileSync(path.join(emit,'package.json'),'{"type":"module"}');
+  const project=path.join(original,'app/pc-admin'),pluginSource=path.join(project,'desktop-login-prepare-plugin.ts');
+  runNode(original,['node_modules/typescript/bin/tsc','--strict','--noEmitOnError','--target','ES2022','--module','ESNext','--moduleResolution','Bundler','--esModuleInterop','--types','node','--rootDir',project,'--outDir',emit,pluginSource]);
+  const compiled=record(await import(pathToFileURL(path.join(emit,'desktop-login-prepare-plugin.js')).href));
+  const verifySource=compiled.verifyDesktopLoginPrepareSource,transformSource=compiled.transformDesktopLoginPrepareCore,pluginFactory=compiled.desktopLoginPreparePlugin;
+  assert.ok(typeof verifySource==='function');assert.ok(typeof transformSource==='function');assert.ok(typeof pluginFactory==='function');
+  const verifyDesktopLoginPrepareSource=(version:string,core:string,std:string):void=>{Reflect.apply(verifySource,null,[version,core,std]);};
+  const transformDesktopLoginPrepareCore=(core:string):string=>{const value:unknown=Reflect.apply(transformSource,null,[core]);assert.ok(typeof value==='string');return value;};
+  const desktopLoginPreparePlugin=()=>{const value:unknown=Reflect.apply(pluginFactory,null,[]);return record(value);};
+const require=createRequire(path.join(original,'package.json')),coreFile=realpathSync(require.resolve('shaders/core'));
+const source=readFileSync(coreFile,'utf8'),std=readFileSync(path.join(path.dirname(coreFile),'std-Bc4WfKLW.js'),'utf8');
+const checks:string[]=[];const check=(name:string,run:()=>void)=>{run();checks.push(name);};
+check('locked-4.0.5-source',()=>verifyDesktopLoginPrepareSource('4.0.5',source,std));
+check('reject-version-drift',()=>assert.throws(()=>verifyDesktopLoginPrepareSource('4.0.7',source,std),/version/));
+check('reject-core-byte-drift',()=>assert.throws(()=>verifyDesktopLoginPrepareSource('4.0.5',source+' ',std),/core-sha256/));
+check('reject-std-byte-drift',()=>assert.throws(()=>verifyDesktopLoginPrepareSource('4.0.5',source,std+' '),/std-sha256/));
+const patched=transformDesktopLoginPrepareCore(source);
+check('reject-second-application',()=>assert.throws(()=>transformDesktopLoginPrepareCore(patched),/transform-core-sha256/));
+function hook(plugin:unknown,key:string,args:unknown[]=[]):unknown{
+  assert.ok(plugin!==null&&typeof plugin==='object');const method:unknown=Reflect.get(plugin,key);
+  assert.ok(typeof method==='function');return Reflect.apply(method,{},args);
+}
+const plugin=desktopLoginPreparePlugin();
+check('only-build-pre-plugin',()=>{assert.equal(plugin.apply,'build');assert.equal(plugin.enforce,'pre');});
+const loginEntry=path.join(original,'app/pc-admin/src/login/main.ts');
+const loginRoot=path.resolve(path.dirname(loginEntry),'../..');
+check('reject-wrong-entry',()=>assert.throws(()=>hook(plugin,'configResolved',[{root:loginRoot,build:{rolldownOptions:{input:'/other/main.ts'}}}]),/entry/));
+check('accept-exact-login-entry',()=>hook(plugin,'configResolved',[{root:loginRoot,build:{rolldownOptions:{input:loginEntry}}}]));
+hook(plugin,'buildStart');
+check('ignore-other-modules',()=>assert.equal(hook(plugin,'transform',['unrelated source','/other/module.js']),null));
+check('missing-transform-rejects-build',()=>assert.throws(()=>hook(plugin,'generateBundle'),/missing-transform/));
+const transformed:unknown=hook(plugin,'transform',[source,coreFile]);
+assert.ok(transformed!==null&&typeof transformed==='object'&&'code'in transformed);assert.equal(transformed.code,patched);
+check('duplicate-transform-rejects-build',()=>assert.throws(()=>hook(plugin,'transform',[source,coreFile]),/duplicate-transform/));
+hook(plugin,'buildStart');hook(plugin,'transform',[source,coreFile]);hook(plugin,'generateBundle');checks.push('one-transform-allows-build');
+
+const parsed=ts.createSourceFile('patched-core.js',patched,ts.ScriptTarget.ESNext,true,ts.ScriptKind.JS);
+function find(node:ts.Node,predicate:(candidate:ts.Node)=>boolean):ts.Node|undefined{
+  if(predicate(node))return node;let result:ts.Node|undefined;ts.forEachChild(node,child=>{if(!result)result=find(child,predicate);});return result;
+}
+const managerNode=find(parsed,node=>ts.isFunctionDeclaration(node)&&node.name?.text==='createPassManager');assert.ok(managerNode&&ts.isFunctionDeclaration(managerNode));
+const prepareNode=find(parsed,node=>ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&node.name.text==='desktopLoginPrepareAsync');assert.ok(prepareNode&&ts.isVariableDeclaration(prepareNode)&&prepareNode.initializer);
+const rendererPrepare=prepareNode.initializer.getText(parsed);
+check('prepare-does-not-enter-frame-path',()=>assert.ok(!/renderFrame|markReady|recordFrame|afterRender|beforeRender|noteRenderFailure|lastRenderTime|updateAnimatedTime/.test(rendererPrepare)));
+const originalParsed=ts.createSourceFile('original.js',source,ts.ScriptTarget.ESNext,true,ts.ScriptKind.JS);
+for(const name of ['renderFrameInternal','noteRenderFailure']){
+  const declaration=(file:ts.SourceFile)=>find(file,node=>ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&node.name.text===name);
+  const before=declaration(originalParsed),after=declaration(parsed);assert.ok(before&&after);
+  check('original-'+name+'-byte-identical',()=>assert.equal(after.getText(parsed),before.getText(originalParsed)));
+}
+function deferred(){let resolve:()=>void=()=>{},reject:(error:unknown)=>void=()=>{};const promise=new Promise<void>((ok,bad)=>{resolve=ok;reject=bad;});return {promise,resolve,reject};}
+const pipelines:{initCalls:number;drawCalls:number;job:ReturnType<typeof deferred>}[]=[];
+const effects={draws:0,dispatch:0,logs:0,binds:0,builds:0,ready:0,after:0,frames:0};
+const root={device:{limits:{maxSampledTexturesPerShaderStage:16}},createBindGroup:()=>({}),createRenderPipeline:()=>{
+  const state={initCalls:0,drawCalls:0,job:deferred()};pipelines.push(state);let ready=false;
+  const pipeline={initAsync(){state.initCalls++;return state.job.promise.then(()=>{ready=true;});},with(){return pipeline;},withColorAttachment(){return pipeline;},draw(){assert.ok(ready);state.drawCalls++;effects.draws++;}};return pipeline;
+},unwrap:()=>({createView:()=>({})})};
+const createManager:unknown=runInNewContext('('+managerNode.getText(parsed)+')',{preferredCanvasFormat:()=> 'rgba8unorm',fullScreenTriangle:{},SHARED_SAMPLER_LAYOUT:{},debugWarn:()=>{effects.logs++;},debugError:()=>{effects.logs++;}});
+assert.ok(typeof createManager==='function');
+const textureManager={samplers:{},createRenderTexture:()=>({texture:{},resize:()=>false,destroy:()=>{}})},dispatcher={dispatch:()=>{effects.dispatch++;}};
+const manager:unknown=Reflect.apply(createManager,null,[root,{textureManager,dispatcher}]);
+assert.ok(manager!==null&&typeof manager==='object');
+const call=(target:object,key:string,args:unknown[]=[]):unknown=>{const method:unknown=Reflect.get(target,key);assert.ok(typeof method==='function');return Reflect.apply(method,target,args);};
+const fragment={reads:[],externalReads:[],entry:{}};
+const ir={textures:[],externalTextures:[],computeSteps:[],rttPasses:[],finalPass:fragment};
+call(manager,'setComposition',[ir,{}, {width:750,height:733}]);assert.equal(pipelines.length,1);assert.equal(effects.draws,0);
+const composition={passManager:manager};const cache=new Map<string,typeof composition>();
+const context:Record<string,unknown>={failureReason:null,canRender:()=>true,structuralDirty:true,desiredHash:null,computeStructuralHash:()=> 'same-composition',
+  authorError:()=>{effects.logs++;},
+  pipelineCache:{getOrBuild:(hash:string,build:()=>typeof composition)=>{let entry=cache.get(hash);if(!entry){entry=build();cache.set(hash,entry);}return entry;}},
+  buildComposition:()=>{effects.builds++;return composition;},bindComposition:(value:unknown)=>{assert.equal(value,composition);effects.binds++;}};
+const prepare:unknown=runInNewContext('('+rendererPrepare+')',context);assert.ok(typeof prepare==='function');
+let completed=false;const pending=Promise.resolve(Reflect.apply(prepare,null,[])).then(()=>{completed=true;});
+await Promise.resolve();assert.equal(completed,false);assert.equal(pipelines[0]?.initCalls,1);assert.equal(effects.draws,0);assert.equal(effects.logs,0);assert.equal(effects.ready,0);assert.equal(effects.frames,0);
+checks.push('same-existing-pipeline-async-only','pending-prepare-no-submit-ready-error-or-frame');
+pipelines[0]?.job.resolve();await pending;assert.equal(completed,true);assert.equal(effects.builds,1);assert.equal(effects.binds,1);
+call(manager,'render',[{},{}]);effects.ready++;effects.after++;assert.equal(effects.draws,1);assert.equal(effects.logs,0);checks.push('first-real-draw-after-prepare','no-normal-startup-pending-error');
+await Reflect.apply(prepare,null,[]);assert.equal(effects.builds,1);assert.equal(pipelines.length,1);checks.push('same-cache-and-pipeline-reused');
+const second:unknown=Reflect.apply(createManager,null,[root,{textureManager,dispatcher}]);assert.ok(second!==null&&typeof second==='object');
+await assert.rejects(Promise.resolve(call(second,'prepareAsync')),/NO_COMPOSITION/);checks.push('no-composition-fails-closed');
+const computeIr={...ir,computeSteps:[{}]};call(second,'setComposition',[computeIr,{}, {width:750,height:733}]);
+await assert.rejects(Promise.resolve(call(second,'prepareAsync')),/COMPUTE_UNSUPPORTED/);checks.push('unsupported-compute-fails-closed-without-dispatch');
+context.canRender=()=>false;await assert.rejects(Promise.resolve(Reflect.apply(prepare,null,[])),/NOT_INITIALIZED/);checks.push('uninitialized-capability-fails-closed');
+const rttManager:unknown=Reflect.apply(createManager,null,[root,{textureManager,dispatcher}]);assert.ok(rttManager!==null&&typeof rttManager==='object');
+const pipelineStart=pipelines.length;
+call(rttManager,'setComposition',[{...ir,textures:[{kind:'rtt',key:'rtt-a'}],rttPasses:[{fragment,textureKey:'rtt-a'}]}, {},{width:750,height:733}]);
+const rttPending=Promise.resolve(call(rttManager,'prepareAsync'));const added=pipelines.slice(pipelineStart);assert.equal(added.length,2);assert.ok(added.every(pipeline=>pipeline.initCalls===1&&pipeline.drawCalls===0));
+added.forEach(pipeline=>pipeline.job.resolve());await rttPending;checks.push('existing-rtt-and-final-pipelines-both-prepared-without-draw');
+const failedManager:unknown=Reflect.apply(createManager,null,[root,{textureManager,dispatcher}]);assert.ok(failedManager!==null&&typeof failedManager==='object');call(failedManager,'setComposition',[ir,{}, {width:750,height:733}]);
+cache.clear();context.canRender=()=>true;context.structuralDirty=true;context.desiredHash=null;context.buildComposition=()=>({passManager:failedManager});context.bindComposition=()=>{};
+const logsBefore=effects.logs,realError=new Error('expected genuine native compile failure');const failure=Promise.resolve(Reflect.apply(prepare,null,[]));pipelines.at(-1)?.job.reject(realError);
+await assert.rejects(failure,error=>error===realError);assert.equal(effects.logs,logsBefore+1);checks.push('genuine-native-error-keeps-authorError-and-rejects-unchanged');
+
+  assert.equal(checks.length,25,'all locked source and injected preparation mechanisms remain covered');
+  t.diagnostic(JSON.stringify({kind:'COMPILED_BUILD_PLUGIN_AND_INJECTED_VM_ONLY',checks,normalPrepareDraws:0,normalPrepareFrames:0,normalPrepareErrors:0,realGpu:'NOT_RUN_IN_THIS_GROUP'}));
+ }finally{
+  assert.equal(path.dirname(scratch),parent);assert.ok(path.basename(scratch).startsWith('migration-login-prepare-'));rmSync(scratch,{recursive:true,force:true});
  }
 });

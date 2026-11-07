@@ -73,7 +73,7 @@ try{
   Invoke-DesktopNode @($tsc,'-p',(Join-Path $PSScriptRoot 'tsconfig.json'))
   if($Action -eq 'Check'){return}
   if($Action -eq 'Test'){
-    Invoke-DesktopNode @('--test',(Join-Path $desktopLocal 'compiled/policy.test.mjs'),(Join-Path $desktopLocal 'compiled/navigation-errors.test.mjs'))
+    Invoke-DesktopNode @('--test',(Join-Path $desktopLocal 'compiled/policy.test.mjs'),(Join-Path $desktopLocal 'compiled/startup-state.test.mjs'),(Join-Path $desktopLocal 'compiled/navigation-errors.test.mjs'))
     return
   }
   if($Action -eq 'Integration'){
@@ -86,8 +86,29 @@ try{
   if($parsed.Scheme -ne 'https' -or $parsed.GetLeftPart([UriPartial]::Authority) -cne $ServerOrigin -or $parsed.UserInfo -or $parsed.Host.EndsWith('.invalid')){throw 'DESKTOP_HTTPS_ORIGIN_REQUIRED'}
   $stage=Assert-DesktopPath (Join-Path $desktopLocal 'stage')
   # The staging allowlist prevents root dependencies, private settings and server code entering the package.
-  foreach($file in @('main.mjs','policy.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs')){Copy-Item -LiteralPath (Join-Path $desktopLocal ('compiled/'+$file)) -Destination (Join-Path $stage $file) -Force}
-  foreach($file in @('unavailable.html','chrome.html','login-chrome.html','chrome.css')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
+  foreach($file in @('main.mjs','policy.mjs','startup-state.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs','startup.mjs','startup-preload.cjs','frame-playback.mjs')){Copy-Item -LiteralPath (Join-Path $desktopLocal ('compiled/'+$file)) -Destination (Join-Path $stage $file) -Force}
+  $startupVideo=Join-Path $PSScriptRoot 'startup-video.mp4'
+  if((Get-Item -LiteralPath $startupVideo).Length -ne 350437 -or (Get-FileHash -LiteralPath $startupVideo -Algorithm SHA256).Hash.ToLowerInvariant() -ne '0b52ad1a40dc473a6e6adce5b4ea2297f1ecf62ce73ec87e69d7e15eb5fea65b'){throw 'DESKTOP_STARTUP_VIDEO_SOURCE_MISMATCH'}
+  $startupFrames=Join-Path $PSScriptRoot 'startup-frames'
+  if((Get-Item -LiteralPath $startupFrames).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'DESKTOP_STARTUP_FRAMES_REPARSE_REJECTED'}
+  $startupFrameManifest=Get-Content -LiteralPath (Join-Path $startupFrames 'manifest.json') -Raw | ConvertFrom-Json
+  if($startupFrameManifest.schemaVersion -ne 1 -or $startupFrameManifest.width -ne 540 -or $startupFrameManifest.height -ne 540 -or $startupFrameManifest.frameCount -ne 68 -or $startupFrameManifest.fps -ne 30 -or $startupFrameManifest.format -cne 'webp' -or $startupFrameManifest.lossless -ne $true -or $startupFrameManifest.frames.Count -ne 68 -or $startupFrameManifest.source.file -cne 'startup-video.mp4' -or $startupFrameManifest.source.bytes -ne 350437 -or $startupFrameManifest.source.sha256 -cne '0b52ad1a40dc473a6e6adce5b4ea2297f1ecf62ce73ec87e69d7e15eb5fea65b'){throw 'DESKTOP_STARTUP_FRAMES_MANIFEST_INVALID'}
+  $startupFrameFiles=@('startup-frames/manifest.json')
+  foreach($index in 0..67){
+    $file='startup-frames/'+$index.ToString('D3')+'.webp'
+    $record=$startupFrameManifest.frames[$index]
+    $source=Join-Path $PSScriptRoot $file
+    $info=Get-Item -LiteralPath $source
+    if($record.file -cne $file -or -not ($record.sha256 -cmatch '^[a-f0-9]{64}$') -or $info.PSIsContainer -or ($info.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $info.Length -ne $record.bytes -or (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $record.sha256){throw 'DESKTOP_STARTUP_FRAME_SOURCE_MISMATCH'}
+    $startupFrameFiles+=$file
+  }
+  $actualFrameEntries=@(Get-ChildItem -LiteralPath $startupFrames -Force)
+  $expectedFrameNames=@($startupFrameFiles | ForEach-Object {[IO.Path]::GetFileName($_)})
+  if($actualFrameEntries.Count -ne 69 -or @($actualFrameEntries | Where-Object {$_.PSIsContainer -or ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $_.Name -cnotin $expectedFrameNames}).Count -ne 0){throw 'DESKTOP_STARTUP_FRAMES_INVENTORY_INVALID'}
+  $stagedFrames=Assert-DesktopPath (Join-Path $stage 'startup-frames')
+  New-Item -ItemType Directory -Path $stagedFrames -Force | Out-Null
+  foreach($file in $startupFrameFiles){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $stage $file) -Force}
+  foreach($file in @('unavailable.html','chrome.html','login-chrome.html','chrome.css','startup.html','startup.css','startup-video.mp4')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
   @{schemaVersion=1;serverOrigin=$ServerOrigin}|ConvertTo-Json -Compress|Set-Content -LiteralPath (Join-Path $stage 'desktop.config.json') -Encoding utf8
   @{name='wecom-it-workbench';productName='医小修工作台';version=$versions.application;private=$true;type='module';main='main.mjs';description='信息科工单工作台';author='Hospital IT';license='UNLICENSED';dependencies=@{}}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $stage 'package.json') -Encoding utf8
   Add-Type -AssemblyName System.Drawing
@@ -103,7 +124,7 @@ try{
   }finally{$graphics.Dispose();$bitmap.Dispose()}
   if($Action -eq 'Dev'){& (Join-Path $desktopRoot 'node_modules/electron/dist/electron.exe') $stage;return}
   if($Action -eq 'Package'){
-    $config=@{appId='cn.mobimedical.yixiaoxiu.workbench';productName='医小修工作台';electronVersion=$versions.electron;electronDist=(Join-Path $desktopRoot 'node_modules/electron/dist');electronDownload=@{cache=$env:electron_config_cache};asar=$true;directories=@{app=$stage;output=(Join-Path $desktopLocal 'releases')};files=@('!node_modules/**/*','main.mjs','policy.mjs','preload.cjs','unavailable.html','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','desktop.config.json','icon.ico','icon.png','package.json');win=@{target=@(@{target='nsis';arch=@('x64')});icon=(Join-Path $stage 'icon.ico')};nsis=@{oneClick=$false;perMachine=$false;allowToChangeInstallationDirectory=$true;createDesktopShortcut=$true;createStartMenuShortcut=$true;include=(Join-Path $PSScriptRoot 'installer.nsh')};artifactName='Yixiaoxiu-Workbench-${version}-${arch}-Setup.${ext}'}
+    $config=@{appId='cn.mobimedical.yixiaoxiu.workbench';productName='医小修工作台';electronVersion=$versions.electron;electronDist=(Join-Path $desktopRoot 'node_modules/electron/dist');electronDownload=@{cache=$env:electron_config_cache};asar=$true;directories=@{app=$stage;output=(Join-Path $desktopLocal 'releases')};files=(@('!node_modules/**/*','main.mjs','policy.mjs','startup-state.mjs','preload.cjs','unavailable.html','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','frame-playback.mjs','startup-video.mp4','desktop.config.json','icon.ico','icon.png','package.json')+$startupFrameFiles);win=@{target=@(@{target='nsis';arch=@('x64')});icon=(Join-Path $stage 'icon.ico')};nsis=@{oneClick=$false;perMachine=$false;allowToChangeInstallationDirectory=$true;createDesktopShortcut=$true;createStartMenuShortcut=$true;include=(Join-Path $PSScriptRoot 'installer.nsh')};artifactName='Yixiaoxiu-Workbench-${version}-${arch}-Setup.${ext}'}
     $configFile=Join-Path $desktopLocal 'builder.json';$config|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configFile -Encoding utf8
     Invoke-DesktopNode @((Join-Path $desktopRoot 'node_modules/electron-builder/cli.js'),'--config',$configFile,'--win','--x64','--publish','never')
     Invoke-DesktopNode @((Join-Path $desktopLocal 'compiled/verify-package.mjs'))

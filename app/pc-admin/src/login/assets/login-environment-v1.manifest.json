@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "payload": {
+    "sourceFile": "login-environment-v1.pmrem",
+    "format": "gzip-compressed RGBA16F application data",
+    "bytes": 880178,
+    "sha256": "dfe29d470a36a2cb171559d79437ad2ab95478d7a94a42037188c6f0005bec3b",
+    "mime": "application/octet-stream",
+    "representation": "identity",
+    "httpContentEncoding": null,
+    "sidecars": false
+  },
+  "decoded": {
+    "bytes": 6291456,
+    "sha256": "fd1d0fbaf0ebf04caa87c7f365de90e975372ac1fa7842c79616de3fc8e657ab",
+    "width": 768,
+    "height": 1024,
+    "channels": 4,
+    "element": "uint16-half-float-bits",
+    "byteOrder": "little-endian",
+    "rowOrder": "original OpenGL lower-left row first"
+  },
+  "texture": {
+    "class": "DataTexture",
+    "format": "RGBAFormat",
+    "type": "HalfFloatType",
+    "mapping": "CubeUVReflectionMapping",
+    "colorSpace": "srgb-linear",
+    "minFilter": "LinearFilter",
+    "magFilter": "LinearFilter",
+    "wrapS": "ClampToEdgeWrapping",
+    "wrapT": "ClampToEdgeWrapping",
+    "generateMipmaps": false,
+    "mipmaps": [],
+    "flipY": false,
+    "internalFormat": null,
+    "anisotropy": 1,
+    "premultiplyAlpha": false,
+    "unpackAlignment": 4,
+    "needsUpdate": true,
+    "renderTargetFlagOverride": false
+  },
+  "engine": {
+    "package": "three",
+    "version": "0.186.1",
+    "revision": "186"
+  },
+  "generator": {
+    "commit": "e9892ba81bf17072b4694e89a1372323e2a9e14c",
+    "originalLanyardSha256": "e3b8df28e6d4b3c440ae679fc319b295dabc5620a5c8b53a4638540dc91e78b7",
+    "buildEnvironmentBodySha256": "bbf4d4f516f6afd54b609ebb19ecfccb9321e3d8ce0a6f9d3f383ad4298f94ea",
+    "cubeSize": 256,
+    "sigma": 0.035,
+    "scene": "fixed original eight-plane environment; independent of current Settings"
+  },
+  "quality": {
+    "sameGpuFullTexelByteDifferences": 0,
+    "sameActualLanyardPoses": 6,
+    "frontPoses": 3,
+    "backPoses": 3,
+    "boundary": "Same machine and GPU validation only; not a guarantee for every GPU, driver, DPI or OS.",
+    "canvasRgbaByteDifferences": 0,
+    "fullPageBitmapByteDifferences": 0
+  }
+}

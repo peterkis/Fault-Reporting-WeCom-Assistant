@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import {createHash} from 'node:crypto';
 import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -72,11 +73,17 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
+  const linuxGraphics = graphics && process.platform === 'linux';
+  const lavapipe = linuxGraphics && ['/usr/share/vulkan/icd.d/lvp_icd.x86_64.json', '/usr/share/vulkan/icd.d/lvp_icd.json'].find(file => existsSync(file));
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
-    // Concurrent WebGL/WebGPU scene tests need the browser's normal graphics path.
-    ...(graphics?[]:['--disable-gpu']),
+    // Linux CI has no hardware adapter. Use Chromium's software graphics
+    // backend for the browser tests that exercise actual WebGL/WebGPU commands.
+    ...(linuxGraphics?[
+      ...(lavapipe ? ['--use-angle=vulkan', '--enable-features=Vulkan', '--disable-vulkan-surface'] : ['--use-angle=swiftshader', '--use-webgpu-adapter=swiftshader']),
+      '--enable-unsafe-webgpu',
+    ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
   ];
@@ -87,7 +94,9 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
       const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
       ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
-    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true});
+    }else child=spawn(executable,args,{stdio:graphics?['ignore','ignore','pipe']:'ignore',windowsHide:true,
+      ...(lavapipe ? {env: {...process.env, VK_DRIVER_FILES: lavapipe}} : {}),
+    });
   }catch(error){
     await closeBrowserTestResources([async()=>{
       const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
@@ -96,6 +105,12 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     throw error;
   }
   let socket=null,sequence=0,closePromise=null,launchError=null;
+  let graphicsErrors=0;
+  child.stderr?.on('data',chunk=>{
+    for(const [pattern,kind] of [[/GPU process exited|GPU process crash/u,'gpu-process-exit'],[/Context lost|context lost/u,'context-lost'],[/out of memory|Out of memory/u,'out-of-memory'],[/Failed to initialize/u,'initialization-failed']]){
+      if(graphicsErrors<12&&pattern.test(String(chunk))){graphicsErrors++;console.error('P2_006_BROWSER_GRAPHICS_CONTEXT',kind);}
+    }
+  });
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
   const pending=new Map();
   const ownedResourceState=()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,
@@ -108,7 +123,15 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
       if(socket?.readyState!==WebSocket.OPEN){reject(new Error('P2_006_BROWSER_DISCONNECTED'));return;}
-      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT'));},10000);
+      const timer=setTimeout(()=>{
+        pending.delete(id);
+        // Failure-only context: never log expressions, cookies, URLs or CDP payloads.
+        const context={method,sessionKind:sessionId===null?'root':'attached',
+          ...(method==='Runtime.evaluate'&&typeof params.expression==='string'
+            ?{expressionSha256:createHash('sha256').update(params.expression).digest('hex'),expressionLength:params.expression.length}:{})};
+        console.error('P2_006_BROWSER_COMMAND_TIMEOUT_CONTEXT',JSON.stringify(context));
+        reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT',{cause:context}));
+      },10000);
       pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
   }
