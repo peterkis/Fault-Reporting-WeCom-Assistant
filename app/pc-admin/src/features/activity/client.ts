@@ -1,5 +1,6 @@
 import {ApiError,captureWorkbenchRead,readWorkbench} from '../../api/client';
 import {isWorkbenchVisible} from '../../desktop/host';
+import {presenceTransport} from './presence-store';
 import type {Principal} from '../../api/client';
 import type {WorkbenchActivityBatchView,WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView} from '../../../../../contracts/workbench_activity_contracts';
 function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
@@ -27,6 +28,13 @@ export function parseActivityBatchView(value:unknown):WorkbenchActivityBatchView
     return {kind:item.kind,id:item.id,people:item.people.map(person)};
   })};
 }
+/** Card 30B: ADR-0057 batch read for the rendered cards (1–100 targets, read-only). */
+export async function readActivityBatch(principal:Principal,targets:readonly WorkbenchActivityTarget[],signal:AbortSignal):Promise<WorkbenchActivityBatchView>{
+  const current=captureWorkbenchRead(signal);
+  const response=await fetch('/api/workbench/activity/batch-view',{method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',signal,headers:{accept:'application/json','content-type':'application/json','x-csrf-token':principal.csrf_token??''},body:JSON.stringify({schema_version:1,targets:targets.map(({kind,id})=>({kind,id}))})});
+  current();if(!response.ok)throw new ApiError(response.status,'ACTIVITY_UNAVAILABLE');
+  const value:unknown=await response.json();current();return parseActivityBatchView(value);
+}
 async function send(principal:Principal,command:WorkbenchActivityCommand,signal?:AbortSignal):Promise<WorkbenchActivityReceipt>{
   const controller=signal??new AbortController().signal,current=captureWorkbenchRead(controller);
   const response=await fetch('/api/workbench/activity',{method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',signal:controller,headers:{'content-type':'application/json','x-csrf-token':principal.csrf_token??''},body:JSON.stringify(command)});
@@ -40,6 +48,7 @@ const mounted=new Set<ActivityRegistration>();
 let browserId:string|null=null,live=false,identity='',generation=0;
 const key=(principal:Principal)=>JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision]);
 export function activityTransport(principal:Principal|null,isLive:boolean){
+  presenceTransport(principal,isLive);
   const next=principal?key(principal):'',wasLive=live,nextLive=isLive&&principal?.activity_enabled===true,changed=next!==identity;
   if(changed||!nextLive){for(const entry of mounted){if(live)release(entry);else entry.people([]);entry.active=false;entry.editActive=false;entry.lastView=null;entry.lastEdit=0;entry.field=null;entry.generation++;}generation++;}
   if(next!==identity){browserId=principal?.activity_enabled?crypto.randomUUID():null;identity=next;}

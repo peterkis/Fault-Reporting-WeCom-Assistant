@@ -91,3 +91,5 @@
 .work-table.ds-work-table :is(.ds-list-stage,.ds-list-note,.ds-list-feedback,.ds-list-more,.ds-list-empty),.work-table.ds-work-table tbody :is(.ds-list-stage,.ds-list-note,.ds-list-feedback,.ds-list-more,.ds-list-empty):hover {background:var(--bg-canvas);}
 .ds-work-table .ds-list-more .button[data-tone] .ds-button-label {display:inline-flex;align-items:center;gap:var(--space-1);}
 .ds-work-table .ds-list-more .button[data-tone] svg {width:var(--icon-sm);height:var(--icon-sm);}
+/* Card 30B B3: presence tags at the problem cell's right edge; the title still truncates first. List rows get no outline. */
+.ds-list-issue-content .ds-list-presence {margin-left: auto; flex: none;}

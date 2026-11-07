@@ -150,6 +150,7 @@
 
   /* 字号阶梯：6 档，禁止其它值 */
   --fs-xs:  12px;  --lh-xs:  18px;   /* 元信息、时间、标签、编号 */
+  --fs-2xs: 11px;                    /* 卡30B 协作在场名牌、「+N」 */
   --fs-sm:  13px;  --lh-sm:  20px;   /* 次级正文、表头、工具栏、属性名 */
   --fs-md:  14px;  --lh-md:  22px;   /* 正文、卡片标题、按钮、输入 */
   --fs-lg:  16px;  --lh-lg:  24px;   /* 抽屉标题、弹窗内分节标题 */
@@ -177,6 +178,12 @@
   /* 阴影：4 档 */
   --shadow-1: 0 1px 2px rgba(15,15,15,.06), 0 0 0 1px rgba(15,15,15,.04);           /* 静态卡片 */
   --shadow-dismissed: 0 0 0 1px rgba(15,15,15,.06); /* 已关闭卡片：原型01b的1px/6%描边 */
+  --shadow-presence-tag: 0 1px 2px rgba(15,15,15,.18); /* 卡30B 协作在场名牌 */
+  /* 卡30B 有人在场的卡片外圈 1.5px（outline 在 DPR 1 会取整为 1px，故用阴影扩展） */
+  --shadow-presence-viewing: inset 0 0 0 1.5px var(--brand), 0 1px 2px rgba(15,15,15,.06);
+  --shadow-presence-editing: inset 0 0 0 1.5px var(--tone-attention-solid), 0 1px 2px rgba(15,15,15,.06);
+  --shadow-presence-viewing-hover: inset 0 0 0 1.5px var(--brand), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
+  --shadow-presence-editing-hover: inset 0 0 0 1.5px var(--tone-attention-solid), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
   --shadow-2: 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);          /* 卡片悬停、分段选中 */
   --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
   --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */

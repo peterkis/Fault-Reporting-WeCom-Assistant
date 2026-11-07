@@ -12,6 +12,8 @@ import {SourceLabel} from '../SourceLabel/SourceLabel';
 import {StatusBadge} from '../StatusBadge/StatusBadge';
 import {Tag} from '../Tag/Tag';
 import {ClosureReason,TicketCategoryTile,TicketHeat} from '../TicketCard/TicketCard';
+import {PresenceTags} from '../PresenceTags/PresenceTags';
+import {usePresence} from '../../../features/activity/presence-store';
 import './work-table.css';
 
 export interface WorkTableGroup {
@@ -56,9 +58,11 @@ function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTim
   const ownerName=owner?.replace(/\s*[（(][^（）()]*[）)]\s*$/u,'').trim()||owner;
   const sourceTitle='来源：'+(present(item.source_label)??'—')+' · 报修人：'+(name??'—')+' · 位置：'+(location??'—');
   const tags=cardTags(item).filter(tag=>['urge','review','supplement'].includes(tag.key));
+  // Card 30B B3: only a shown, not-dismissed row reads presence; collapsed rows are not requested.
+  const presence=usePresence({kind:item.kind,id:item.id},!hidden&&!dismissed);
   return <tr hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined}>
     <th scope="row"><span className="ds-list-identity"><TicketCategoryTile service={item.service}/><span className="ds-list-number" title={item.number}>{item.number}</span></span></th>
-    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}</span></div></td>
+    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}</span><PresenceTags people={presence} className="ds-list-presence"/></div></td>
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
     <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name}{name&&location?<span className="ds-list-separator"> · </span>:null}{location}</span></>:<span className="ds-list-missing">—</span>}</span></td>

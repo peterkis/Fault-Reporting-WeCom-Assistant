@@ -1,0 +1,136 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "metrics": {
+    "board": {
+      "view": {
+        "presence": "viewing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          }
+        ],
+        "label": "周宁正在查看"
+      },
+      "edit": {
+        "presence": "editing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "陈悦",
+            "mode": "editing",
+            "pencil": true
+          },
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          }
+        ],
+        "label": "陈悦正在编辑内部备注、周宁正在查看"
+      },
+      "crowd": {
+        "presence": "viewing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          },
+          {
+            "text": "+2",
+            "mode": "more",
+            "pencil": false
+          }
+        ],
+        "label": "周宁正在查看、沈然正在查看、陈悦正在查看"
+      }
+    },
+    "geometry": {
+      "top": -9,
+      "right": 12,
+      "height": 18,
+      "radius": "4px 4px 4px 0px",
+      "font": "11px",
+      "weight": "600",
+      "cardHeight": 124
+    },
+    "tooltip": {
+      "opacity": "1",
+      "rows": [
+        "陈悦 正在编辑内部备注",
+        "周宁 正在查看"
+      ],
+      "avatars": 2
+    },
+    "render": {
+      "cards": 9,
+      "touched": [
+        "01a1b6f3-46fe-7570-8662-552bac4e50bd"
+      ]
+    },
+    "list": {
+      "outline": "none",
+      "rightGap": 12,
+      "height": 44
+    },
+    "drawer": {
+      "text": "陈悦周宁悦陈悦正在编辑内部备注宁周宁正在查看在看陈悦正在编辑内部备注、周宁正在查看",
+      "height": 26,
+      "radius": "13px",
+      "bodyText": false,
+      "banner": "陈悦正在编辑内部备注，同时编辑可能互相覆盖",
+      "before": "\"✎ 陈悦正在编辑内部备注，同时编辑可能互相覆盖\"",
+      "locked": false
+    },
+    "network": {
+      "hints": 20,
+      "seconds": 10,
+      "batchReads": 10
+    },
+    "idle": {
+      "seconds": 60,
+      "batchReads": 0,
+      "intervals": 0
+    }
+  },
+  "screenshots": [
+    {
+      "file": "board-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "caae4723139c9cd99f963e9d38dbc08815be8c4a776eb7abb025b77d799acad3"
+    },
+    {
+      "file": "board-1440-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ba9ce9611112a72b444b2b90580959c00c4a40c91860768a554f664122a7eca4"
+    },
+    {
+      "file": "board-1440-claim-hint.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a8c931b36967ad08c80f43e7f6f0328c08f35aeeb9b863cb54b20944c7180f31"
+    },
+    {
+      "file": "list-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5b5c7af105cf08a49f7d856695737a4d9aecaf68a29c370edb4e4c341eccee14"
+    },
+    {
+      "file": "drawer-1440-capsule-banner.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "faa1ef396b59771e78eeeb67b5f17ff1c92355f1ce000102089bef55cd527ba2"
+    }
+  ]
+}

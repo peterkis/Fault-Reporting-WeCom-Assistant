@@ -25,3 +25,5 @@
 .ds-board-column[data-has-arrivals=true] .ds-column-sort>span {display:block;max-width:0;overflow:hidden;white-space:nowrap;}
 
 .ds-board-column .empty p {margin: 0;}
+/* Card 30B B2: presence tags sit 9px above a card; the group body clips (HeroUI disclosure), so its first card gets 10px of room. */
+.ds-board-group .disclosure__body-inner {padding-top: calc(var(--space-2) + var(--space-0-5));}
