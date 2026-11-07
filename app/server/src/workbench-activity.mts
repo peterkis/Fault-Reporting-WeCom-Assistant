@@ -49,7 +49,16 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
   const clock=()=>{const value=now();if(!Number.isSafeInteger(value)||value<0)failP2016();return value;};
   const ready=()=>{if(!enabled||closed)failP2016('DISABLED',503);};
   const notify=()=>{try{wakeup();}catch{/* Existing SSE recovery catches a missed hint. */}};
-  function expire(){const at=clock();let changed=false;for(const [key,lease] of leases)if(lease.expires<=at||at-lease.viewedAt>=WORKBENCH_ACTIVITY_LIMITS.viewing_idle_ms){leases.delete(key);changed=true;}if(changed){version++;notify();}}
+  function expire(){
+    const at=clock();let changed=false;
+    for(const [key,lease] of leases){
+      if(lease.expires<=at||at-lease.viewedAt>=WORKBENCH_ACTIVITY_LIMITS.viewing_idle_ms){leases.delete(key);changed=true;continue;}
+      // Codex review (PR #163): an editor who stops renewing degrades to VIEWING after the editing-idle
+      // deadline; store it here so board-only watchers see the transition before the lease expires.
+      if(lease.mode==='EDITING'&&(lease.editedAt===null||at-lease.editedAt>=WORKBENCH_ACTIVITY_LIMITS.editing_idle_ms)){lease.mode='VIEWING';lease.field=null;changed=true;}
+    }
+    if(changed){version++;notify();}
+  }
   function erase(predicate:(lease:Lease)=>boolean){let changed=false;for(const [key,lease] of leases)if(predicate(lease)){leases.delete(key);changed=true;}generation++;if(changed){version++;notify();}}
   /** The field view() would show for one person on one target, from stored lease state. */
   function editingWinner(principal:string,target:WorkbenchActivityTarget){

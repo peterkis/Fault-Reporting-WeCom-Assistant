@@ -164,3 +164,17 @@ test('review P2: a newer edit in another tab of the same person changes the vers
   await f.service.perform({authContext:actor,body:f.renew(item,tabB,{active:false,mode:'EDITING',field:'ticket-completion'})});
   assert.equal(await f.service.signature(watcher),after,'an inactive heartbeat neither changes the winner nor the version');
 });
+
+test('review P2b: editing that idles out without a renewal changes the version before the lease expires',async t=>{
+  const f=fixture();t.after(()=>f.service.close());
+  const watcher=f.person('看板'),viewer=f.person('观察者'),actor=f.person('林舟'),item=f.target();
+  await f.service.perform({authContext:actor,body:f.renew(item,randomUUID(),{mode:'EDITING',field:'internal-note'})});
+  const before=await f.service.signature(watcher);
+  f.advance(9999);
+  assert.equal(await f.service.signature(watcher),before,'still editing inside the ten-second window');
+  f.advance(1);
+  const after=await f.service.signature(watcher);
+  assert.notEqual(after,before,'the idle transition reaches board-only watchers without any renewal');
+  assert.deepEqual((await f.service.view(viewer,item)).people.map(p=>[p.mode,p.field]),[['VIEWING',null]],'the lease is still live and now shown as viewing');
+  assert.equal(await f.service.signature(watcher),after,'the transition is counted once');
+});
