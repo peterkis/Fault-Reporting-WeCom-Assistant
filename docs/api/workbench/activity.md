@@ -10,7 +10,7 @@
 
 - **人员结构**：`{display_name, mode, field, expires_epoch_ms}`，见 [人员 Schema](../../../contracts/workbench_activity_person.schema.json)。`mode=EDITING` 时 `field` 为最近一次编辑的字段，`VIEWING` 时为 `null`；编辑者在前，同类按显示名排序。单张 GET 与批量接口相同。
 - **批量读取** `POST /api/workbench/activity/batch-view`：与 `POST /api/workbench/activity` 相同的 Cookie、Origin、CSRF、无 query 与 32KiB 限制。请求 [Schema](../../../contracts/workbench_activity_batch_view_request.schema.json) `{schema_version:1,targets:[{kind,id}]}`，1–100 个，去重；0 个、超过 100 个或任一目标非法返回 400。响应 [Schema](../../../contracts/workbench_activity_batch_view.schema.json) `{schema_version:1,items:[{kind,id,people}]}` 只含有人的目标，按请求顺序；对请求人 404 的目标静默省略；401/403（主体／会话撤销）及其它错误使整个请求失败，且返回前对已收集目标再做一次读权限复核；开关关闭 503。没有任何他人租约的目标不调用鉴权。
-- **看板范围提示**：任何租约新增/删除、查看/编辑切换、编辑字段（含同一人多标签合并后的最近编辑字段）变化、过期清理或按认证释放都会让所有 workbench SSE 连接收到一次无内容的 `workbench.activity.changed`；连接建立时不发，同一连接 1 秒内最多一次，被节流的变化由下一次既有 wakeup/recovery 补发。提示只表示「某处在场有变化」，不含人、事项、字段或数量。
+- **看板范围提示**：任何租约新增/删除、查看/编辑切换、编辑字段（含同一人多标签合并后的最近编辑字段）变化、编辑空闲 10 秒降为查看、过期清理或按认证释放都会让所有 workbench SSE 连接收到一次无内容的 `workbench.activity.changed`；连接建立时不发，同一连接 1 秒内最多一次，被节流的变化由下一次既有 wakeup/recovery 补发。提示只表示「某处在场有变化」，不含人、事项、字段或数量。
 
 ## 历史 Source 说明（以下三段保留当时状态）
 
