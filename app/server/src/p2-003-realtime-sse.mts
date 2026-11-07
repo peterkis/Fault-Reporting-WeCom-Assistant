@@ -26,6 +26,8 @@ export interface RealtimeSseOptions<P = unknown> {
   onMetric?: (metric: RawRecord) => unknown; recordMetric?: (metric: RawRecord) => unknown;
   setIntervalFn?: typeof setInterval; clearIntervalFn?: typeof clearInterval;
   setTimeoutFn?: typeof setTimeout; clearTimeoutFn?: typeof clearTimeout; queueMicrotaskFn?: typeof queueMicrotask;
+  /** Clock for the ADR-0057 per-connection activity hint throttle only. */
+  nowFn?: () => number;
 }
 type Metrics = ReturnType<typeof createMetrics>;
 type Configuration = ReturnType<typeof normalizeHandlerConfiguration>;
@@ -33,7 +35,7 @@ interface StreamState {
   request: IncomingMessage; response: ServerResponse; principal: unknown; authorization: NormalizedAuthorization;
   configuration: Configuration; metrics: Metrics; lease: unknown; resolveClosed: () => void;
   responseOff: Listener | null; requestOff: Listener | null; abortController: AbortController;
-  activitySignature: string | null;
+  activitySignature: string | null; activityPrimed: boolean; activityHintAt: number | null;
   scanCursor: string | null; closed: boolean; streaming: boolean; running: boolean; scheduled: boolean; eventsDue: boolean; heartbeatDue: boolean;
   heartbeatTimer: ReturnType<typeof setInterval> | null; recoveryTimer: ReturnType<typeof setInterval> | null;
   heartbeatTimerActive: boolean; recoveryTimerActive: boolean; onResponseClose: (() => void) | null; onRequestAborted: (() => void) | null; cancelDrain: (() => void) | null;
@@ -53,6 +55,7 @@ import {RealtimeScopeUnavailable} from './p2-006-workbench-authorization.mjs';
 const MAX_POSTGRES_BIGINT = '9223372036854775807';
 const REALTIME_PATH = '/api/realtime/events';
 const REALTIME_SCOPE = 'workbench';
+const ACTIVITY_HINT_INTERVAL_MS = 1_000;
 const REALTIME_STREAM_NAME = 'CONVERSATION_WORKBENCH';
 const SAFE_JSON_MAX_BYTES = realtimeEventLog.REALTIME_SAFE_JSON_LIMITS.maximum_canonical_bytes;
 
@@ -881,6 +884,7 @@ function normalizeHandlerConfiguration(options: unknown) {
     setTimeoutFn: timerFunction(options, 'setTimeoutFn', setTimeout),
     clearTimeoutFn: timerFunction(options, 'clearTimeoutFn', clearTimeout),
     queueMicrotaskFn: timerFunction(options, 'queueMicrotaskFn', queueMicrotask),
+    nowFn: timerFunction(options, 'nowFn', Date.now),
   });
 }
 
@@ -1072,10 +1076,20 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
           await replayAvailable(state);
           if (!state.closed && activityHook) {
             const signature = await activityHook(state.principal);
-            if (!state.closed && signature !== state.activitySignature && signature !== null) {
+            // ADR-0057 A3: the first observation primes the connection; later changes emit at most one
+            // contentless hint per second. A throttled change keeps the old signature so the next
+            // existing wakeup/recovery pass delivers it; no extra timer is created.
+            const at = configuration.nowFn();
+            const throttled = state.activityHintAt !== null && at - state.activityHintAt < ACTIVITY_HINT_INTERVAL_MS;
+            const changed = state.activityPrimed && signature !== state.activitySignature && signature !== null;
+            if (!state.closed && changed && !throttled) {
               if (!await writeSseFrame(state, 'event: workbench.activity.changed\ndata: {"schema_version":1}\n\n')) { cleanupStream(state); return; }
+              state.activityHintAt = at;
             }
-            state.activitySignature = signature;
+            if (!changed || !throttled) {
+              state.activityPrimed = true;
+              state.activitySignature = signature;
+            }
           }
         }
         if (!state.closed && state.heartbeatDue) {
@@ -1282,6 +1296,8 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
       requestOff,
       abortController: new AbortController(),
       activitySignature: null,
+      activityPrimed: false,
+      activityHintAt: null,
       scanCursor: requestedCursor,
       closed: false,
       streaming: false,

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_activity_person.schema.json",
+  "title": "WBINT-T39 / ADR-0057 one mutually authorized colleague in an activity projection",
+  "type": "object", "additionalProperties": false, "required": ["display_name", "mode", "field", "expires_epoch_ms"],
+  "properties": {
+    "display_name": {"type": "string", "minLength": 1, "maxLength": 128},
+    "mode": {"enum": ["VIEWING", "EDITING"]},
+    "field": {"enum": [null, "internal-note", "ticket-handling", "ticket-completion", "manual-review"]},
+    "expires_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}
+  },
+  "allOf": [{"if": {"properties": {"mode": {"const": "VIEWING"}}}, "then": {"properties": {"field": {"type": "null"}}}, "else": {"properties": {"field": {"type": "string"}}}}]
+}

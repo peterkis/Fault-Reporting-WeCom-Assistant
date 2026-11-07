@@ -1,4 +1,4 @@
-import type {WorkbenchActivityCommand,WorkbenchActivityField,WorkbenchActivityTarget,WorkbenchActivityView,WorkbenchActivityReceipt,WorkbenchActivityMode} from '../../../contracts/workbench_activity_contracts.js';
+import type {WorkbenchActivityCommand,WorkbenchActivityField,WorkbenchActivityTarget,WorkbenchActivityView,WorkbenchActivityReceipt,WorkbenchActivityMode,WorkbenchActivityPerson,WorkbenchActivityBatchView} from '../../../contracts/workbench_activity_contracts.js';
 import {exactP2016,failP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
 
 export const WORKBENCH_ACTIVITY_LIMITS=Object.freeze({lease_ttl_ms:15000,heartbeat_ms:5000,viewing_idle_ms:60000,editing_idle_ms:10000,max_objects_per_browser:2,max_browsers_per_principal:4,max_browsers:64,max_leases:128,max_leases_per_object:16} as const);
@@ -29,16 +29,28 @@ export function activityCommand(value:unknown):WorkbenchActivityCommand {
   if(v.mode==='EDITING'&&typeof v.field==='string'&&fields.has(v.field))return {...base,mode:'EDITING',field:v.field as WorkbenchActivityField};
   failP2016();
 }
+/** ADR-0057: 1..100 targets, each validated like the single view; duplicates collapse in request order. */
+export const WORKBENCH_ACTIVITY_BATCH_MAX_TARGETS=100;
+export function activityBatchRequest(value:unknown):WorkbenchActivityTarget[]{
+  const v=exactP2016(value,['schema_version','targets']);
+  if(v.schema_version!==1||!Array.isArray(v.targets)||v.targets.length<1||v.targets.length>WORKBENCH_ACTIVITY_BATCH_MAX_TARGETS)failP2016();
+  const unique=new Map<string,WorkbenchActivityTarget>();
+  for(const raw of v.targets as unknown[]){const target=activityTarget(raw),key=targetKey(target);if(!unique.has(key))unique.set(key,target);}
+  return [...unique.values()];
+}
 const targetKey=(target:WorkbenchActivityTarget)=>target.kind+':'+target.id;
+const errorStatus=(error:unknown)=>error&&typeof error==='object'&&'status' in error?error.status:null;
 /** Single-App, bounded, ephemeral hints. No persistent or business command port. */
 export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wakeup=()=>{}}:WorkbenchActivityOptions){
   if(typeof enabled!=='boolean')failP2016('FLAG_INVALID',503);
   const leases=new Map<string,Lease>();let closed=false,generation=0;
+  // ADR-0057: one integer, bumped on every visible presence change, folded into each SSE signature.
+  let version=0;
   const clock=()=>{const value=now();if(!Number.isSafeInteger(value)||value<0)failP2016();return value;};
   const ready=()=>{if(!enabled||closed)failP2016('DISABLED',503);};
   const notify=()=>{try{wakeup();}catch{/* Existing SSE recovery catches a missed hint. */}};
-  function expire(){const at=clock();let changed=false;for(const [key,lease] of leases)if(lease.expires<=at||at-lease.viewedAt>=WORKBENCH_ACTIVITY_LIMITS.viewing_idle_ms){leases.delete(key);changed=true;}if(changed)notify();}
-  function erase(predicate:(lease:Lease)=>boolean){let changed=false;for(const [key,lease] of leases)if(predicate(lease)){leases.delete(key);changed=true;}generation++;if(changed)notify();}
+  function expire(){const at=clock();let changed=false;for(const [key,lease] of leases)if(lease.expires<=at||at-lease.viewedAt>=WORKBENCH_ACTIVITY_LIMITS.viewing_idle_ms){leases.delete(key);changed=true;}if(changed){version++;notify();}}
+  function erase(predicate:(lease:Lease)=>boolean){let changed=false;for(const [key,lease] of leases)if(predicate(lease)){leases.delete(key);changed=true;}generation++;if(changed){version++;notify();}}
   async function authority(authContext:unknown,target:WorkbenchActivityTarget,field:WorkbenchActivityField|null){
     try{return await authorize(authContext,target,field);}
     catch(error){erase(lease=>sameAuthentication(lease.authContext,authContext)&&targetKey(lease.target)===targetKey(target));throw error;}
@@ -47,26 +59,51 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
     if(leases.get(lease.key)!==lease)return null;
     try {
       const identity=await authorize(lease.authContext,lease.target,lease.mode==='EDITING'?lease.field:null);
-      if(identity.binding!==lease.identity.binding||identity.principal_id!==lease.identity.principal_id){if(leases.get(lease.key)===lease)leases.delete(lease.key);return null;}
+      if(identity.binding!==lease.identity.binding||identity.principal_id!==lease.identity.principal_id){if(leases.get(lease.key)===lease){leases.delete(lease.key);version++;}return null;}
       if(leases.get(lease.key)!==lease||lease.expires<=clock())return null;
       const editing=lease.mode==='EDITING'&&lease.editedAt!==null&&clock()-lease.editedAt<WORKBENCH_ACTIVITY_LIMITS.editing_idle_ms;
       return {...lease,identity,mode:editing?'EDITING':'VIEWING'};
     }catch(error){
-      const code=error&&typeof error==='object'&&'status' in error?error.status:null;
+      const code=errorStatus(error);
       if(code!==401&&code!==403&&code!==404)throw error;
-      if(leases.get(lease.key)===lease)leases.delete(lease.key);return null;
+      if(leases.get(lease.key)===lease){leases.delete(lease.key);version++;}return null;
     }
   }
   async function view(authContext:unknown,target:WorkbenchActivityTarget):Promise<WorkbenchActivityView>{
-    ready();expire();const viewer=await authority(authContext,target,null),people=new Map<string,{display_name:string;mode:WorkbenchActivityMode;expires_epoch_ms:string}>();
+    ready();expire();const viewer=await authority(authContext,target,null),people=new Map<string,{display_name:string;mode:WorkbenchActivityMode;field:WorkbenchActivityField|null;editedAt:number;expires:number}>();
     for(const lease of [...leases.values()].filter(value=>targetKey(value.target)===targetKey(target))){
       const live=await current(lease);if(!live||live.identity.principal_id===viewer.principal_id)continue;
-      const old=people.get(live.identity.principal_id),mode=old?.mode==='EDITING'||live.mode==='EDITING'?'EDITING':'VIEWING',expires=Math.max(old?Number(old.expires_epoch_ms):0,live.expires);
-      people.set(live.identity.principal_id,{display_name:live.identity.display_name,mode,expires_epoch_ms:String(expires)});
+      const old=people.get(live.identity.principal_id),expires=Math.max(old?.expires??0,live.expires);
+      // ADR-0057 A1: one person per principal; EDITING wins and the most recently edited field is shown.
+      const editing=live.mode==='EDITING'&&live.field!==null&&(!old||old.mode!=='EDITING'||(live.editedAt??0)>old.editedAt);
+      people.set(live.identity.principal_id,editing
+        ?{display_name:live.identity.display_name,mode:'EDITING',field:live.field,editedAt:live.editedAt??0,expires}
+        :old?{...old,display_name:live.identity.display_name,expires}:{display_name:live.identity.display_name,mode:'VIEWING',field:null,editedAt:0,expires});
     }
     // Fence the response against a viewer whose authority changed while colleagues were read.
     const fresh=await authority(authContext,target,null);if(fresh.binding!==viewer.binding)failP2016('FORBIDDEN',403);
-    return {schema_version:1,people:[...people.values()].filter(person=>BigInt(person.expires_epoch_ms)>BigInt(clock())).sort((a,b)=>a.display_name.localeCompare(b.display_name)).slice(0,WORKBENCH_ACTIVITY_LIMITS.max_leases_per_object)};
+    const at=clock();
+    return {schema_version:1,people:[...people.values()].filter(person=>person.expires>at)
+      .sort((a,b)=>(a.mode===b.mode?0:a.mode==='EDITING'?-1:1)||a.display_name.localeCompare(b.display_name))
+      .slice(0,WORKBENCH_ACTIVITY_LIMITS.max_leases_per_object)
+      .map(({display_name,mode,field,expires}):WorkbenchActivityPerson=>({display_name,mode,field,expires_epoch_ms:String(expires)}))};
+  }
+  /**
+   * ADR-0057 A2: one in-memory pass over at most 128 leases finds targets that hold another
+   * principal's lease; only those reuse view(), sequentially. Empty targets cost no authorization.
+   */
+  async function batchView(authContext:unknown,body:unknown):Promise<WorkbenchActivityBatchView>{
+    ready();const targets=activityBatchRequest(body);expire();
+    const viewerId=authContext&&typeof authContext==='object'?Object.getOwnPropertyDescriptor(authContext,'principal_id')?.value as unknown:undefined;
+    const occupied=new Set<string>();
+    for(const lease of leases.values())if(lease.identity.principal_id!==viewerId)occupied.add(targetKey(lease.target));
+    const items:WorkbenchActivityBatchView['items']=[];
+    for(const target of targets){
+      if(!occupied.has(targetKey(target)))continue;
+      try{const projection=await view(authContext,target);if(projection.people.length)items.push({kind:target.kind,id:target.id,people:projection.people});}
+      catch(error){const code=errorStatus(error);if(code!==401&&code!==403&&code!==404)throw error;}
+    }
+    return {schema_version:1,items};
   }
   return Object.freeze({
     limits:WORKBENCH_ACTIVITY_LIMITS,
@@ -91,16 +128,20 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
         ||!browsers.has(browser)&&(browsers.size>=64||ownBrowsers.size>=4)))failP2016('DISABLED',503);
       const editedAt=command.mode==='EDITING'?(command.active?at:old?.editedAt??null):null;
       const mode=command.mode==='EDITING'&&editedAt!==null&&at-editedAt<10000?'EDITING':'VIEWING';
-      const expires=at+15000;leases.set(key,{key,browser:command.browser_id,target:command.target,authContext,identity,mode,field:mode==='EDITING'?command.field:null,viewedAt:command.active?at:old?.viewedAt??at,editedAt,expires});notify();
+      const field=mode==='EDITING'?command.field:null;
+      if(!old||old.mode!==mode||old.field!==field)version++;
+      const expires=at+15000;leases.set(key,{key,browser:command.browser_id,target:command.target,authContext,identity,mode,field,viewedAt:command.active?at:old?.viewedAt??at,editedAt,expires});notify();
       return {schema_version:1,accepted:true,expires_epoch_ms:String(expires)};
     },
     view,
+    batchView,
+    /** Global presence version (ADR-0057 A3) prefixes the caller's own-object signature. */
     async signature(authContext:unknown){
       ready();expire();const values:string[]=[];
       const targets=new Map<string,WorkbenchActivityTarget>();
       for(const lease of leases.values())if(sameAuthentication(lease.authContext,authContext))targets.set(targetKey(lease.target),lease.target);
-      for(const target of targets.values()){const projection=await view(authContext,target);values.push(JSON.stringify([targetKey(target),projection.people.map(person=>[person.display_name,person.mode]) ]));}
-      return values.length?values.sort().join('|'):null;
+      for(const target of targets.values()){const projection=await view(authContext,target);values.push(JSON.stringify([targetKey(target),projection.people.map(person=>[person.display_name,person.mode,person.field]) ]));}
+      return String(version)+'#'+values.sort().join('|');
     },
     releaseAuthentication(authContext:unknown){erase(lease=>sameAuthentication(lease.authContext,authContext));},
     close(){closed=true;erase(()=>true);},
