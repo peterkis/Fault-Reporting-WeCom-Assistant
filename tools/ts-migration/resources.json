@@ -424,6 +424,7 @@
     "contracts/unified_closure_command.schema.json",
     "contracts/unified_restore_command.schema.json",
     "contracts/unified_closure_contracts.d.ts",
-    "contracts/unified_intake_closure_command.schema.json"
+    "contracts/unified_intake_closure_command.schema.json",
+    "contracts/unified_closure_history.schema.json"
   ]
 }

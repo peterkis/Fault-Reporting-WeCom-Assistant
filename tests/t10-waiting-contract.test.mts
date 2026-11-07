@@ -3,10 +3,31 @@ import {createP2016ManualReviewFacade} from '../app/server/src/p2-016-manual-rev
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import {dirname,resolve} from 'node:path';
+import {transpileModule,ModuleKind,ScriptTarget,createSourceFile,isImportDeclaration,isStringLiteral} from 'typescript';
+import type {ClosureHistoryPage} from '../contracts/unified_closure_contracts.js';
 import {test} from 'node:test';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 import {normalizeP2016TicketCommand} from '../app/server/src/p2-016-ticket-command-facade.mjs';
 import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
+
+async function closureBrowserDecoder(){
+ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),cache=new Map<string,Promise<string>>();
+ function moduleUrl(file:string):Promise<string>{const existing=cache.get(file);if(existing)return existing;
+  const loaded=(async()=>{let code=transpileModule(await readFile(file,'utf8'),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,verbatimModuleSyntax:true}}).outputText;
+   for(const node of createSourceFile(file,code,ScriptTarget.ES2022,true).statements){if(!isImportDeclaration(node)||!isStringLiteral(node.moduleSpecifier))continue;const specifier=node.moduleSpecifier.text,path=resolve(dirname(file),specifier),target=specifier.startsWith('.')?await moduleUrl(path.endsWith('.mjs')?path.slice(0,-4)+'.mts':path.endsWith('.ts')?path:path+'.ts'):import.meta.resolve(specifier);code=code.replaceAll("'"+specifier+"'",JSON.stringify(target)).replaceAll('"'+specifier+'"',JSON.stringify(target));}
+   return 'data:text/javascript;base64,'+Buffer.from(code).toString('base64');})();cache.set(file,loaded);return loaded;
+ }
+ const module:{decodeClosureHistory:(value:unknown,id:string)=>ClosureHistoryPage}=await import(await moduleUrl(resolve(root,'app/pc-admin/src/features/closure/client.ts')));return module.decodeClosureHistory;
+}
+
+test('Card 27C-B history decoding rejects cross-subject data, unknown fields and invented delivery or calendar values',async()=>{
+ const decode=await closureBrowserDecoder(),id=randomUUID(),entry={id:randomUUID(),before_version:1,reason_code:'OTHER' as const,reason_label:'其他',secondary_reason:null,note:'仅内部（合成）',duplicate_of:null,source:'MANUAL' as const,closed_at:'2026-11-07 10:00:00',closed_by_display_name:'处理人（合成）',notification_state:'NOT_SENT' as const,restored_at:null,restored_by_display_name:null};
+ const page:ClosureHistoryPage={subject_id:id,version:2,items:[entry],next_before_version:null,restore_target:{status:'IN_PROGRESS',column:'active',assignee_name:'处理人（合成）',notification_state:'NOT_SENT'}};
+ await assertP2016Schema('unified_closure_history',page);assert.deepEqual(decode(page,id),page);
+ for(const change of [{subject_id:randomUUID()},{private_snapshot:{}},{items:[{...entry,notification_state:'QUEUED'}]},{items:[{...entry,closed_at:'2026-02-30 10:00:00'}]},{items:[{...entry,notification_message_id:randomUUID()}]},{items:[entry,entry]},{next_before_version:1},{restore_target:{...page.restore_target,status:'CANCELLED'}}])assert.throws(()=>decode({...page,...change},id));
+ for(const change of [{private_snapshot:{}},{items:[{...entry,notification_state:'QUEUED'}]},{items:[{...entry,notification_message_id:randomUUID()}]}])await assert.rejects(assertP2016Schema('unified_closure_history',{...page,...change}));
+});
 
 test('four waiting command routes retain closed human internal reason, exact scalar bounds and immutable caller input copies',async()=>{
   const wire={client_command_id:randomUUID(),expected_version:2147483647,reason_code:'HUMAN_INTERNAL_REASON',note:'😀'.repeat(1000),external_visible:false};await assertP2016Schema('p2_016_waiting_action_command',wire);

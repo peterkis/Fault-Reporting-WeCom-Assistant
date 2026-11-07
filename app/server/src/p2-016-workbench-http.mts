@@ -47,6 +47,8 @@ export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,work
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
+      const closureHistory=/^\/api\/(tickets|intakes)\/([0-9a-f-]{36})\/closure-history$/iu.exec(url.pathname);
+      if(closureHistory){if(!intakeClosure)failP2016('DISABLED',503);queryKeys(url,['before_version']);if(url.searchParams.getAll('before_version').length>1)failP2016();json(response,200,await intakeClosure.history({authContext,subjectId:closureHistory[2],kind:closureHistory[1]==='tickets'?'ticket':'intake',beforeVersion:url.searchParams.get('before_version')}));return true;}
       const waitingReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/(request-information|wait-vendor|resume|cancel)\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(waitingReceipt){if(!tickets.waitingAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await tickets.waitingAcknowledgement({authContext,ticketId:waitingReceipt[1],action:waitingReceipt[2]?.toLowerCase() as WaitingAction,commandId:waitingReceipt[3]}));return true;}
       const returnReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/return-to-dispatch\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);

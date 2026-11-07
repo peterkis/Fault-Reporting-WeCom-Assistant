@@ -30,6 +30,18 @@ ClosureCommand 为 `{client_command_id,expected_version,reason_code,secondary_re
 
 ## 状态、权限和核对
 
+### 27C-B 只读历史补充
+
+2026-11-07 用户明确授权补齐前端必需的最小读取合同及解析层；原关闭/恢复命令、状态、通知投递和权限不变。
+
+`GET /api/tickets/{ticketId}/closure-history` 与 `GET /api/intakes/{intakeId}/closure-history` 由 W 宿主沿既有 lifecycle 开关提供，只供当前获权工作台读取。可选 query `before_version` 为 1–2147483647 的整数十进制；未知/重复参数拒绝。按 `before_version` 倒序，每页最多 20 条，额外读 1 条判断下一页；`next_before_version` 为末条版本或 null。单事务只读，statement timeout 2000ms；身份、READ、Cookie 会话及绝对 TTL 在查询后再核验，主体版本或权限快照改变返回 409。
+
+返回 `subject_id`、当前 `version`、`items`、`next_before_version`、`restore_target`。条目含关闭 ID/前版本、固定原因/二级原因、内部说明、可选原单展示编号、来源、关闭/恢复时间和操作人名称、实际 `notification_state`。关闭版本顺序也用于同秒事件的稳定排列；恢复事件在同条关闭之前显示。`restore_target` 仅首页当前未恢复记录有值，包含当前有效恢复状态/列/负责人、通知状态；失效原负责人按 ADR-0056 回 QUEUED。这个提示不是命令授权，提交仍按版本与当前权限终检。
+
+通知状态 `SENT` 必须同时存在 SENT Delivery、ACKNOWLEDGED、实际发送时间和最新成功 Attempt；SENDING 或 UNKNOWN 为 `UNKNOWN`；其它为 `NOT_SENT`。不能把 outbox、通知选择或原因矩阵当送达证明。时间均为上海时区秒精度；说明最多 2000 字、展示名/原单编号最多 128 字。内部说明不进入 H5、通知或外部接口。原单编号通过既有授权搜索解析，搜索不到不猜测其 ID。
+
+DTO 与 Schema：[unified_closure_contracts](../../../contracts/unified_closure_contracts.d.ts)、[关闭历史](../../../contracts/unified_closure_history.schema.json)。无需数据库迁移；关闭/恢复写合同和 071 结构不变。回退时配套撤回此读取、PC 解析和展示。
+
 ADMIN / DISPATCHER / HANDLER 可关闭、恢复当前可见事项，只读账号不可；写权不扩大 READ。Ticket 可从 NEW / QUEUED / ACCEPTED / IN_PROGRESS / WAITING_REQUESTER / WAITING_VENDOR / REOPENED 关闭，统一 CANCELLED；RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED 拒绝再次关闭。人工重复关闭仍为 CANCELLED，DUPLICATE_LINKED 留给原公共故障机制。Intake 使用 IGNORED，已关联 Ticket 的事项通过 Ticket 操作。
 
 恢复当前未恢复的关闭记录，回到前状态/列/负责人/团队/轮次；原负责人失效时按本次用户补充回 QUEUED 且负责人为空。每次关闭一条记录，版本只递增；不重建已终止跟进/预约/提醒，会话接待不变。没有额外恢复时间窗，仍沿已有可见性与保留规则。

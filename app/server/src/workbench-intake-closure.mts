@@ -1,4 +1,6 @@
 import {assertEpochMsString} from './platform/time-contract.mjs';
+import type {ClosureHistoryPage,ClosureHistoryEntry,ClosureReasonCode,ClosureSecondaryReasonCode} from '../../../contracts/unified_closure_contracts.js';
+import {CLOSURE_REASONS,CLOSURE_SECONDARY_REASONS,closureRecordTime} from './service-closure-records.mjs';
 import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
@@ -25,10 +27,9 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
     WHERE l.source_intake_id=i.id AND j.retention_until_epoch_ms>platform.physical_epoch_ms() AND ${predicate.sql}))${lock?' FOR UPDATE OF i':''}`,[id,...predicate.values])).rows[0];
   if(!intake)failP2016('NOT_FOUND',404);return {principal,intake};
  }
- async function authorizeRead(authContext:unknown,id:string,tx:PostgresTransaction){
-  const current=await authorize(authContext,id,tx);
+ async function assertSession(authContext:unknown,principalId:string,tx:PostgresTransaction){
   if(currentSessionPredicate&&authContext&&typeof authContext==='object'&&'auth_method' in authContext&&authContext.auth_method==='COOKIE'){
-   const proof=currentSessionPredicate(authContext,current.principal.principal_id);
+   const proof=currentSessionPredicate(authContext,principalId);
    const session=(await tx.query<{current:boolean}>('SELECT '+proof.sql+' AS current',proof.values)).rows[0];
    if(session?.current!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
   }
@@ -36,9 +37,51 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
    let expires:string;try{expires=assertEpochMsString(authContext.expires_epoch_ms);}catch{failP2016('FORBIDDEN',403);}
    if(BigInt(expires)<=BigInt(Date.now()))failP2016('FORBIDDEN',403);
   }
-  return current;
+ }
+ async function authorizeRead(authContext:unknown,id:string,tx:PostgresTransaction){
+  const current=await authorize(authContext,id,tx);await assertSession(authContext,current.principal.principal_id,tx);return current;
  }
  return Object.freeze({
+  async history({authContext,subjectId,kind,beforeVersion}:{authContext:unknown;subjectId:unknown;kind:'ticket'|'intake';beforeVersion:unknown}):Promise<ClosureHistoryPage>{
+   guardP2016(enabled);const id=uuidP2016(subjectId);
+   const before=beforeVersion==null?null:typeof beforeVersion==='string'&&/^[1-9][0-9]{0,9}$/u.test(beforeVersion)?Number(beforeVersion):NaN;
+   if(before!==null&&(!Number.isInteger(before)||before>2147483647))failP2016('CURSOR_INVALID');
+   return transactionP2016(pool,async tx=>{
+    await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
+    const read=async()=>{
+     if(kind==='intake'){const value=await authorizeRead(authContext,id,tx);return {principal:value.principal,version:value.intake.version};}
+     const value=await query.authorizedTicket({authContext,ticketId:id,transaction:tx});
+     await assertSession(authContext,value.principal.principal_id,tx);return {principal:value.principal,version:value.ticket.version};
+    };
+    const initial=await read();
+    type Row={id:string;before_version:number;reason_code:ClosureReasonCode;secondary_reason_code:ClosureSecondaryReasonCode|null;note:string|null;duplicate_of_ref:string|null;source:'MANUAL'|'SYSTEM';closed_at:string;closed_by_display_name:string|null;restored_at:string|null;restored_by_display_name:string|null;before_status:string;effective_status:string;assignee_name:string|null;notification_state:ClosureHistoryEntry['notification_state']};
+    const rows=(await tx.query<Row>(`SELECT c.id::text,c.before_version,c.reason_code,c.secondary_reason_code,c.note,c.duplicate_of_ref,c.source,c.closed_at,
+     closer.display_name AS closed_by_display_name,c.restored_at,restorer.display_name AS restored_by_display_name,c.before_status,
+     CASE WHEN c.before_assignee_id IS NOT NULL AND NOT COALESCE(owner_valid.valid,false) THEN 'QUEUED' ELSE c.before_status END AS effective_status,
+     CASE WHEN owner_valid.valid THEN owner.display_name ELSE NULL END AS assignee_name,
+     CASE WHEN delivery.sent THEN 'SENT' WHEN delivery.unknown THEN 'UNKNOWN' ELSE 'NOT_SENT' END AS notification_state
+     FROM pilot_ticket.closure_record c
+     LEFT JOIN pilot_ticket.pilot_principal closer ON closer.id::text=c.closed_by
+     LEFT JOIN pilot_ticket.pilot_principal restorer ON restorer.id=c.restored_by
+     LEFT JOIN pilot_ticket.pilot_principal owner ON owner.id=c.before_assignee_id
+     LEFT JOIN LATERAL (SELECT owner.is_active AND (EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=owner.id AND r.role IN ('ADMIN','DISPATCHER'))
+       OR EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r JOIN pilot_ticket.pilot_team_member m ON m.principal_id=r.principal_id JOIN pilot_ticket.resolver_team rt ON rt.team_id=m.team_id
+        WHERE r.principal_id=owner.id AND r.role='HANDLER' AND m.team_id=c.before_team_id AND rt.is_active)) AS valid) owner_valid ON true
+     LEFT JOIN LATERAL (SELECT bool_or(d.status='SENT' AND d.side_effect_state='ACKNOWLEDGED' AND d.sent_epoch_ms IS NOT NULL AND EXISTS(
+       SELECT 1 FROM communication.delivery_attempt a WHERE a.delivery_id=d.id AND a.attempt_no=d.attempt_count AND a.outcome='SENT' AND a.side_effect_state='ACKNOWLEDGED' AND a.completed_epoch_ms IS NOT NULL)) AS sent,
+       bool_or(d.status='SENDING' OR d.side_effect_state='UNKNOWN') AS unknown
+       FROM communication.outbox o JOIN communication.delivery d ON d.outbox_id=o.id WHERE o.message_id=c.notification_message_id) delivery ON true
+     WHERE c.${kind==='ticket'?'ticket_id':'intake_id'}=$1::uuid AND ($2::integer IS NULL OR c.before_version<$2)
+     ORDER BY c.before_version DESC LIMIT 21`,[id,before])).rows;
+    const current=await read();if(current.version!==initial.version||JSON.stringify(current.principal)!==JSON.stringify(initial.principal))failP2016('VERSION_CONFLICT',409);
+    const visible=rows.slice(0,20),active=before===null?visible.find(row=>row.restored_at===null):undefined;
+    return {subject_id:id,version:current.version,next_before_version:rows.length>20?visible.at(-1)?.before_version??null:null,
+     restore_target:active?{status:active.effective_status,column:kind==='intake'||['NEW','QUEUED','ACCEPTED','REOPENED'].includes(active.effective_status)?'pending':'active',assignee_name:active.assignee_name,notification_state:active.notification_state}:null,
+     items:visible.map(row=>({id:row.id,before_version:row.before_version,reason_code:row.reason_code,reason_label:CLOSURE_REASONS[row.reason_code],secondary_reason:row.secondary_reason_code?{code:row.secondary_reason_code,label:CLOSURE_SECONDARY_REASONS[row.secondary_reason_code]}:null,
+      note:row.note,duplicate_of:row.duplicate_of_ref?{display_no:row.duplicate_of_ref}:null,source:row.source,closed_at:closureRecordTime(row.closed_at),closed_by_display_name:row.closed_by_display_name,
+      notification_state:row.notification_state,restored_at:row.restored_at?closureRecordTime(row.restored_at):null,restored_by_display_name:row.restored_by_display_name}))};
+   });
+  },
   async context({authContext,intakeId}:{authContext:unknown;intakeId:unknown}){
    guardP2016(enabled);const id=uuidP2016(intakeId);
    return transactionP2016(pool,async tx=>{

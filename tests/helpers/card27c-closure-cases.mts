@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import type {ClosureHistoryPage} from '../../contracts/unified_closure_contracts.js';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
+import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {clickWorkbenchControl} from './heroui-workbench-controls.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 import {withWeb01Fixture,seedCard27Board,seedWeb01NoConversationIntake} from './web01-workbench-fixture.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harness.mjs';
@@ -169,6 +172,7 @@ test('Card 27C-A all open Ticket states close and restore their state, owner and
   await responseJson(await post(f,'/api/tickets/'+target.id+'/follow-up-schedule',{client_command_id:randomUUID(),expected_version:before.version,expected_schedule_version:'0',reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:formatEpochMsToShanghaiLocal(String(Math.floor((Date.now()+60000)/1000)*1000))}));
   const current=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(current.version)));
   const closed=await target.http.detail(target.id);assert.equal(closed.status,'CANCELLED');assert.equal((await f.pool.query('SELECT 1 FROM pilot_ticket.follow_up_schedule WHERE ticket_id=$1::uuid AND scheduled_event_id IS NOT NULL',[target.id])).rowCount,0);
+  const history=await responseJson(await target.http.get('/api/tickets/'+target.id+'/closure-history'));assert.equal(object(history.restore_target).status,state);assert.equal(object(history.restore_target).column,['NEW','QUEUED','ACCEPTED','REOPENED'].includes(state)?'pending':'active');
   const record=await latest(f,'TICKET',target.id);assert.equal(record.before_status,state);assert.equal(record.before_assignee_id,before.assignee_id);assert.equal(record.before_cycle_id,before.handling_cycle?.id??null);
   const restore={client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'},result=await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',restore));assert.equal(result.ticket_version,closed.version+1);
   const replay=await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',restore));assert.equal(replay.replayed,true);assert.equal(replay.ticket_event_id,result.ticket_event_id);
@@ -305,4 +309,70 @@ test('Card 27C-A closing processing terminates pending supplemental follow-up an
  assert.equal((await f.pool.query('SELECT 1 FROM notification.card_action_task WHERE ticket_id=$1::uuid AND consumed_at IS NULL',[target.id])).rowCount,0);
  const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));
  const summary=await responseJson(await target.http.get('/api/tickets/'+target.id+'/supplement-follow-up'));assert.equal(summary.has_pending_supplements,false);assert.equal((await f.pool.query('SELECT 1 FROM intake.service_intake_message WHERE intake_id=$1::uuid',[target.intakeId])).rowCount,before);
+}));
+
+test('Card 27C-B closure history reads real delivery facts, effective owners and bounded version-ordered history',{timeout:240000},async()=>withClosureFixture(async f=>{
+ const target=await freshTicket(f,'IN_PROGRESS'),owner=target.current.assignee_id;assert.ok(owner);
+ const read=async()=>{const response=await target.http.get('/api/tickets/'+target.id+'/closure-history');assert.equal(response.status,200);return response.json() as Promise<ClosureHistoryPage>;};
+ assert.deepEqual((await read()).items,[]);
+ await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(target.current.version,'REPORTER_WITHDREW')));
+ let page=await read();assert.equal(page.items.length,1);assert.equal(page.items[0]?.note,CANARY);assert.equal(page.items[0]?.notification_state,'NOT_SENT');assert.equal(page.restore_target?.status,'IN_PROGRESS');assert.equal(page.restore_target?.column,'active');assert.ok(page.restore_target?.assignee_name);assert.equal(page.next_before_version,null);
+ const outside=f.cookies[1];assert.ok(outside);assert.equal((await fetch(f.origin+'/api/tickets/'+target.id+'/closure-history',{headers:{cookie:outside,connection:'close'}})).status,404);
+ for(const query of ['?before_version=0','?before_version=-1','?before_version=1&before_version=2','?unknown=1'])assert.equal((await target.http.get('/api/tickets/'+target.id+'/closure-history'+query)).status,400);
+ const sender=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,batchSize:20,sender:{send:async()=>({outcome:'ACKNOWLEDGED',provider_message_id:null,error_code:null,retryable:false})}});await sender.runOnce({limit:20});
+ page=await read();assert.equal(page.items[0]?.notification_state,'SENT');assert.equal(page.restore_target?.notification_state,'SENT');
+ await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[owner]);page=await read();assert.deepEqual(page.restore_target,{status:'QUEUED',column:'pending',assignee_name:null,notification_state:'SENT'});
+ await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:page.version,reason_code:'RESTORE_CLOSED'}));
+ page=await read();assert.equal(page.restore_target,null);assert.ok(page.items[0]?.restored_at);assert.ok(page.items[0]?.restored_by_display_name);
+ for(let index=0;index<20;index++){const current=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(current.version)));const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));}
+ page=await read();assert.equal(page.items.length,20);assert.equal(page.next_before_version,page.items.at(-1)?.before_version);assert.ok(page.items.every((item,index)=>index===0||item.before_version<(page.items[index-1]?.before_version??0)));
+ const response=await target.http.get('/api/tickets/'+target.id+'/closure-history?before_version='+page.next_before_version);assert.equal(response.status,200);const tail=await response.json() as ClosureHistoryPage;assert.equal(tail.items.length,1);assert.equal(tail.next_before_version,null);assert.equal(tail.restore_target,null);assert.equal(new Set([...page.items,...tail.items].map(item=>item.id)).size,21);
+ const intake=await seedPersistedIntake({pool:f.pool,text:'范围外咨询（合成）',requestType:'INCIDENT',status:'WAITING_TRIAGE',chatType:'single'});
+ const context=await responseJson(await target.http.get('/api/intakes/'+intake.intakeId+'/closure-context'));
+ await responseJson(await post(f,'/api/intakes/'+intake.intakeId+'/close',closeBody(Number(context.version),'NOT_IT_SCOPE')));
+ const intakePage=await responseJson(await target.http.get('/api/intakes/'+intake.intakeId+'/closure-history'));assert.equal(object(intakePage.restore_target).column,'pending');assert.equal(object(intakePage.restore_target).status,'WAITING_TRIAGE');assert.ok(Array.isArray(intakePage.items));assert.equal(object(intakePage.items[0]).reason_code,'NOT_IT_SCOPE');
+}));
+
+test('Card 27C-B restore requires renewed confirmation when the closing delivery becomes acknowledged',{timeout:240000},async()=>withClosureFixture(async f=>{
+ const target=await freshTicket(f),path='/api/tickets/'+target.id+'/restore';
+ await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(target.current.version,'REPORTER_WITHDREW')));
+ let page=await responseJson(await target.http.get('/api/tickets/'+target.id+'/closure-history'));assert.equal(object(page.restore_target).notification_state,'NOT_SENT');
+ const cookie=f.browserCookies[0],cookieUrl=cookie?.url;assert.ok(cookie&&cookieUrl);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,error:unknown,posts=0;
+ const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST'&&request.url===path)posts++;};f.runtime.server.on('request',observe);
+ try{
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.id,width:1440,height:900,cookies:[{...cookie,url:cookieUrl}]});assert.ok(browser);
+  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-closure-history] [data-action=restore-closed]')?.disabled===false");
+  await clickWorkbenchControl(browser,'[data-closure-history] [data-action=restore-closed]');
+  await browser.waitFor("Boolean(document.querySelector('[data-restore-confirmation]'))");
+  assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('将通知报修人已重新受理')"),false);
+  assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('如关闭通知最终送达')"),true);
+  const sender=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,batchSize:20,sender:{send:async()=>({outcome:'ACKNOWLEDGED',provider_message_id:null,error_code:null,retryable:false})}});await sender.runOnce({limit:20});
+  page=await responseJson(await target.http.get('/api/tickets/'+target.id+'/closure-history'));assert.equal(object(page.restore_target).notification_state,'SENT');
+  await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');
+  await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('将通知报修人已重新受理')&&document.body.innerText.includes('恢复目标或关闭通知状态已变化')");
+  assert.equal(posts,0);assert.equal((await target.http.detail(target.id)).status,'CANCELLED');
+  await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');await browser.waitFor("!document.querySelector('[data-restore-confirmation]')");
+  assert.equal(posts,1);assert.equal((await target.http.detail(target.id)).status,'QUEUED');
+ }catch(failure){error=failure;}
+ finally{f.runtime.server.removeListener('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
+}));
+
+test('Card 27C-B failed later history page keeps the first twenty records visible and permits retry',{timeout:240000},async()=>withClosureFixture(async f=>{
+ const target=await freshTicket(f);let current=target.current;
+ for(let index=0;index<21;index++){
+  await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(current.version,'FALSE_REPORT_OR_TEST')));
+  const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));
+  current=await target.http.detail(target.id);
+ }
+ const cookie=f.browserCookies[0],cookieUrl=cookie?.url;assert.ok(cookie&&cookieUrl);let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,error:unknown;
+ try{
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.id,width:1440,height:900,cookies:[{...cookie,url:cookieUrl}]});assert.ok(browser);
+  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelectorAll('[data-closure-history] [data-closure-record]').length===20");
+  await browser.evaluate("(()=>{const original=fetch;let failed=false;globalThis.fetch=async(url,options)=>{if(!failed&&String(url).includes('/closure-history?before_version=')){failed=true;return new Response(JSON.stringify({error:{code:'P2_016_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}});}return original(url,options);};})()");
+  await clickWorkbenchControl(browser,'[data-closure-history] button');
+  await browser.waitFor("document.querySelector('[data-closure-history]')?.textContent.includes('更早记录暂不可读')");
+  assert.equal(await browser.evaluate("document.querySelectorAll('[data-closure-history] [data-closure-record]').length"),20);
+  await clickWorkbenchControl(browser,'[data-closure-history] button');await browser.waitFor("document.querySelectorAll('[data-closure-history] [data-closure-record]').length===21");
+ }catch(failure){error=failure;}
+ finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
 }));

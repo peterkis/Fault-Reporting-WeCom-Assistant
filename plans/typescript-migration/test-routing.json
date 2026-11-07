@@ -5463,7 +5463,7 @@
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
-      "requires_browser": false,
+      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },

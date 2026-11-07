@@ -1,3 +1,4 @@
+import {ClosureActionsProvider,RestoreClosedItem,useClosureHighlight} from '../features/ticket-waiting/ClosureActions';
 import {SidebarBrand} from './SidebarBrand';
 import { Dropdown,Label as HLabel,ListBox } from '@heroui/react';
 import { useInfiniteQuery,useMutation,useQuery,useQueryClient } from '@tanstack/react-query';
@@ -91,6 +92,7 @@ function SharedFollowUpSummary({value,compact=false}:{value:WorkbenchCard['follo
   </p>;
 }
 function Card({item,principal,search,selected,now,located=false}:{item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;located?:boolean}){
+  const highlighted=useClosureHighlight(item);
   const profile=useReporterProfile(item,principal),name=item.reporter_name??profile.data?.name,department=item.reporter_department??profile.data?.department;
   const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
   const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
@@ -99,15 +101,15 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const start=cardHeatStart(item);
   const heat=cardHeat(item,now);
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
-  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-ring={item.closure?.kind==='DISMISSED'?undefined:ring} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
-    <BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>
-      {item.closure?.kind==='DISMISSED'?<DismissedTicketCardBody item={item} now={now} metadata={metadata}/>:<TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='closed'?item.completed_at:null}
+  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'?undefined:ring} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
+    {item.closure?.kind==='DISMISSED'?<><div className="ds-dismissed-card-content"><DismissedTicketCardBody item={item} now={now} metadata={metadata} titleLink={<Link draggable={false} className="card-open ds-dismissed-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>{item.title}<span className="sr-only">查看详情</span></Link>}/></div><RestoreClosedItem item={item} principal={principal}/></>:<BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>
+      <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='closed'?item.completed_at:null}
         metadata={metadata} tags={tags}
         followUp={<SharedFollowUpSummary value={item.follow_up_schedule} compact/>}
         owner={<span className="owner" title={item.assignee_name??'等待领取'}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/>{item.assignee_name?<span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span>:null}</span>}
-        activity={<time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time>}/>}
+        activity={<time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time>}/>
       <span className="sr-only">查看详情</span>
-    </Link></BoardActionCard>
+    </Link></BoardActionCard>}
   </TicketCard>;
 }
 function More({expanded,count,onClick,controls,error=false}:{expanded:boolean;count:number;onClick:()=>void;controls:string;error?:boolean}){
@@ -192,7 +194,8 @@ function ProcessedGroup({kind,items,count,principalId,renderCard,error}:{kind:'c
 }
 function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeView}){
   const [detailNavigationBlocked,setNavigationBlocked]=useState(false),[claimNavigationBlocked,setClaimNavigationBlocked]=useState(false);
-  const navigationBlocked=detailNavigationBlocked||claimNavigationBlocked;
+  const [closureBlocked,setClosureBlocked]=useState(false);
+  const navigationBlocked=detailNavigationBlocked||claimNavigationBlocked||closureBlocked;
   const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',closed:'newest'});
   const [summarySelection,setSummarySelection]=useState<{scope:string;filter:BoardSummaryFilter|null}>({scope:'',filter:null});
   const [boardFilters,setBoardFilters]=useState({scope:'',category:'all',handler:'all'});
@@ -298,7 +301,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
   useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching,orderingScope,arrivals.arrivalKeys);
-  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
+  return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ClosureActionsProvider principal={principal} otherBlocked={detailNavigationBlocked||claimNavigationBlocked} onBlockedChange={setClosureBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <Toolbar className={'ds-board-toolbar'+(view==='list'?' ds-list-toolbar':'')}>
       <div className="ds-board-toolbar-top">
         <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked||searchConditionsBusy} scope={scope??'team'} relatedAvailable={principal.workbench_follow_enabled===true} onScope={value=>{if(principal.workbench_follow_enabled)update('scope',value);}}/>
@@ -333,7 +336,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     <div className="range-bar sr-only" data-loaded-count><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
     {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='closed'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
-  </BoardActions></Shell>;
+  </BoardActions></ClosureActionsProvider></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){
   const location=useLocation();

@@ -1,3 +1,4 @@
+import {RestoreClosedItem,useClosureHighlight} from '../../../features/ticket-waiting/ClosureActions';
 import {useState} from 'react';
 import type {ReactNode} from 'react';
 import {Bell,Bot,Check,ChevronDown,ChevronRight,CircleX,Pause,User} from 'lucide-react';
@@ -50,17 +51,18 @@ function ListTime({item,now}:{item:WorkbenchCard;now:number}){
   return heat?<TicketHeat heat={heat} heatStart={start}/>:duration?<span className="ds-list-time">{duration.label}</span>:<span className="ds-list-missing">—</span>;
 }
 function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTime}:Pick<Props,'selected'|'now'|'renderLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
+  const highlighted=useClosureHighlight(item);
   const name=present(item.reporter_name),location=present(item.location),owner=present(item.assignee_name),dismissed=item.closure?.kind==='DISMISSED';
   const ownerName=owner?.replace(/\s*[（(][^（）()]*[）)]\s*$/u,'').trim()||owner;
   const sourceTitle='来源：'+(present(item.source_label)??'—')+' · 报修人：'+(name??'—')+' · 位置：'+(location??'—');
   const tags=cardTags(item).filter(tag=>['urge','review','supplement'].includes(tag.key));
-  return <tr hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind}>
+  return <tr hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined}>
     <th scope="row"><span className="ds-list-identity"><TicketCategoryTile service={item.service}/><span className="ds-list-number" title={item.number}>{item.number}</span></span></th>
     <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}</span></div></td>
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
     <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name??<span className="ds-list-missing">—</span>}<span className="ds-list-separator"> · </span>{location??<span className="ds-list-missing">—</span>}</span></>:<span className="ds-list-missing">—</span>}</span></td>
-    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
+    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
     <td><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time></td>
   </tr>;
 }

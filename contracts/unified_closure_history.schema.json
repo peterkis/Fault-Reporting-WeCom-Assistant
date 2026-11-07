@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/unified_closure_history.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "subject_id",
+    "version",
+    "items",
+    "next_before_version",
+    "restore_target"
+  ],
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "before_version",
+          "reason_code",
+          "reason_label",
+          "secondary_reason",
+          "note",
+          "duplicate_of",
+          "source",
+          "closed_at",
+          "closed_by_display_name",
+          "notification_state",
+          "restored_at",
+          "restored_by_display_name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "before_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "reason_code": {
+            "enum": [
+              "FALSE_REPORT_OR_TEST",
+              "DUPLICATE",
+              "NOT_IT_SCOPE",
+              "REPORTER_WITHDREW",
+              "REPORTER_UNREACHABLE",
+              "OTHER"
+            ]
+          },
+          "reason_label": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "secondary_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "label"
+                ],
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "HUMAN_CONFIRMED",
+                      "INFORMATION_INSUFFICIENT",
+                      "BUSINESS_CONSULTATION_CONFIRMED",
+                      "ACKNOWLEDGED",
+                      "OUT_OF_SCOPE_CONFIRMED",
+                      "SERVICE_REQUEST_CONFIRMED",
+                      "INCIDENT_REVIEW_PENDING",
+                      "STALE_REVIEW_CANCELLED"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 128
+                  }
+                }
+              }
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "duplicate_of": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "display_no"
+                ],
+                "properties": {
+                  "display_no": {
+                    "type": "string",
+                    "maxLength": 128
+                  }
+                }
+              }
+            ]
+          },
+          "source": {
+            "enum": [
+              "MANUAL",
+              "SYSTEM"
+            ]
+          },
+          "closed_at": {
+            "$ref": "local_datetime.schema.json"
+          },
+          "closed_by_display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "notification_state": {
+            "enum": [
+              "SENT",
+              "UNKNOWN",
+              "NOT_SENT"
+            ]
+          },
+          "restored_at": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "local_datetime.schema.json"
+              }
+            ]
+          },
+          "restored_by_display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "next_before_version": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "restore_target": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "column",
+            "assignee_name",
+            "notification_state"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "column": {
+              "enum": [
+                "pending",
+                "active"
+              ]
+            },
+            "assignee_name": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "notification_state": {
+              "enum": [
+                "SENT",
+                "UNKNOWN",
+                "NOT_SENT"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

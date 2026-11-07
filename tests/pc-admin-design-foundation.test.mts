@@ -17,6 +17,15 @@ async function designModule(name: string): Promise<string> {
   return 'data:text/javascript;base64,' + Buffer.from(['board-presentation','format-time'].includes(name)?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
 }
 interface Heat {tone: string; label: string; ring: string | null}
+test('Card 27C-B six fixed reasons keep notification copy independent from private explanations',async()=>{
+ const model:{closureReasons:{value:string;label:string}[];closureNotification:(value:{reason:string;secondary:string;note:string;duplicate:string;notify:boolean})=>{notify:boolean;text:string};closureValidation:(value:{reason:string;secondary:string;note:string;duplicate:string;notify:boolean})=>string|null}=await import(await designModule('components/TicketCard/closure-presentation'));
+ assert.deepEqual(model.closureReasons.map(row=>row.label),['误报或测试','重复报修','非 IT 范围','报修人撤回','无法联系报修人','其他']);
+ const base={secondary:'',note:'内部说明（合成）',duplicate:'',notify:false};
+ for(const reason of model.closureReasons){const notice=model.closureNotification({...base,reason:reason.value});assert.equal(notice.notify,!['FALSE_REPORT_OR_TEST','OTHER'].includes(reason.value));assert.ok(!notice.text.includes(base.note));}
+ assert.equal(model.closureValidation({...base,reason:'OTHER',note:'   '}),'选择“其他”时必须填写说明。');assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE'}),'请选择非 IT 范围的二级原因。');
+ assert.deepEqual(model.closureNotification({...base,reason:'OTHER',notify:true}),{notify:true,text:'您的报修已关闭。如仍需处理，请重新报修。'});
+ assert.ok(model.closureNotification({...base,reason:'DUPLICATE',duplicate:'IT-20261107-0001'}).text.endsWith('原报修编号：IT-20261107-0001'));
+});
 const {heatOf, cardHeat, cardHeatStart, HEAT_THRESHOLDS_MINUTES}: {
   heatOf: (startIso: string | null | undefined, nowMs: number) => Heat | null;
   cardHeat: (item: Pick<WorkbenchCard,'column'|'created_at'|'stage_entered_at'>,now:number)=>Heat|null;

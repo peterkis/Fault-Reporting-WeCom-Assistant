@@ -129,7 +129,7 @@ interface ClosureCookieFixture {
 function cookieObject(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function cookieVersion(value:unknown):number{assert.ok(typeof value==='number');assert.ok(Number.isSafeInteger(value));return value;}
 
-for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-context'] as const)test('Card 27C-A real Cookie '+purpose+' rejects official logout during its actual read wait',{timeout:240000},async t=>{
+for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-context','ticket-history','intake-history'] as const)test('Card 27C-A real Cookie '+purpose+' rejects official logout during its actual read wait',{timeout:240000},async t=>{
   await withWeb01Fixture(async(f:ClosureCookieFixture)=>{
     assert.ok(f.sessionId);const principal=f.principals[0];assert.ok(principal);
     const request=(path:string,init:RequestInit={})=>{const headers=new Headers(init.headers);headers.set('cookie',f.cookies[0]??'');headers.set('connection','close');return fetch((f.backendOrigin??f.origin)+path,{...init,headers,signal:AbortSignal.timeout(20000)});};
@@ -140,17 +140,18 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
       assert.equal(response.status,status,await response.clone().text());return cookieObject(await response.json());
     };
     let paths:{state:string;path:string}[]=[];
-    if(purpose==='ticket-restore'){
+    if(purpose==='ticket-restore'||purpose==='ticket-history'){
       const target=f.tickets[0];assert.ok(target);const path='/api/tickets/'+target.ticket.id,before=await read(path);
       await post(path+'/cancel',{client_command_id:randomUUID(),expected_version:cookieVersion(before.version),reason_code:'OTHER',note:'Cookie当前会话回执（合成）'});
       const closed=await read(path),committed=randomUUID();await post(path+'/restore',{client_command_id:committed,expected_version:cookieVersion(closed.version),reason_code:'RESTORE_CLOSED'});
       const failed=randomUUID();await post(path+'/restore',{client_command_id:failed,expected_version:cookieVersion(closed.version),reason_code:'RESTORE_CLOSED'},409);
-      paths=[{state:'COMMITTED',path:path+'/restore/commands/'+committed},{state:'FAILED',path:path+'/restore/commands/'+failed},{state:'UNKNOWN',path:path+'/restore/commands/'+randomUUID()}];
+      paths=purpose==='ticket-history'?[{state:'HISTORY',path:path+'/closure-history'}]:[{state:'COMMITTED',path:path+'/restore/commands/'+committed},{state:'FAILED',path:path+'/restore/commands/'+failed},{state:'UNKNOWN',path:path+'/restore/commands/'+randomUUID()}];
     }else{
       const path='/api/intakes/'+f.waiting.intakeId,before=await read(path+'/closure-context'),closedId=randomUUID();
       await post(path+'/close',{client_command_id:closedId,expected_version:cookieVersion(before.version),reason_code:'OTHER',note:'Cookie当前受理读取（合成）'});
       const closed=await read(path+'/closure-context');assert.equal(typeof closed.closure_id,'string');
-      if(purpose==='intake-context')paths=[{state:'CONTEXT',path:path+'/closure-context'}];
+      if(purpose==='intake-history')paths=[{state:'HISTORY',path:path+'/closure-history'}];
+      else if(purpose==='intake-context')paths=[{state:'CONTEXT',path:path+'/closure-context'}];
       else if(purpose==='intake-close'){
         const failed=randomUUID();await post(path+'/close',{client_command_id:failed,expected_version:cookieVersion(before.version),reason_code:'OTHER',note:'过期版本关闭（合成）'},409);
         paths=[{state:'COMMITTED',path:path+'/close/commands/'+closedId},{state:'FAILED',path:path+'/close/commands/'+failed},{state:'UNKNOWN',path:path+'/close/commands/'+randomUUID()}];
@@ -160,7 +161,7 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
         paths=[{state:'COMMITTED',path:path+'/restore/commands/'+restoredId},{state:'FAILED',path:path+'/restore/commands/'+failed},{state:'UNKNOWN',path:path+'/restore/commands/'+randomUUID()}];
       }
     }
-    for(const item of paths){const initial=await read(item.path);if(item.state==='CONTEXT'){assert.equal(typeof initial.closure_id,'string');assert.equal(typeof initial.version,'number');}else assert.equal(initial.state,item.state);}
+    for(const item of paths){const initial=await read(item.path);if(item.state==='HISTORY'){assert.ok(Array.isArray(initial.items));assert.equal(initial.items.length,1);}else if(item.state==='CONTEXT'){assert.equal(typeof initial.closure_id,'string');assert.equal(typeof initial.version,'number');}else assert.equal(initial.state,item.state);}
     const authority=async()=>(await f.pool.query('SELECT p.id::text,p.is_active,array_agg(DISTINCT r.role ORDER BY r.role) AS roles,array_agg(DISTINCT m.team_id ORDER BY m.team_id) AS teams FROM pilot_ticket.pilot_principal p LEFT JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id LEFT JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id WHERE p.id=$1::uuid GROUP BY p.id,p.is_active',[principal.id])).rows;
     const counts=async()=>(await f.pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.ticket_command_receipt) AS receipts,(SELECT count(*)::integer FROM pilot_ticket.ticket_event) AS events,(SELECT count(*)::integer FROM pilot_ticket.closure_record) AS closures')).rows;
     const originalAuthority=await authority(),originalCounts=await counts();
@@ -170,10 +171,10 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
     let held=false,primary:unknown;const pending:Promise<Response>[]=[];
     try{
       await gate.connect();await gate.query('BEGIN');held=true;
-      await gate.query(purpose==='intake-context'?'LOCK TABLE pilot_ticket.closure_record IN ACCESS EXCLUSIVE MODE':'LOCK TABLE pilot_ticket.ticket_command_receipt IN ACCESS EXCLUSIVE MODE');
+      await gate.query(purpose==='intake-context'||purpose.endsWith('-history')?'LOCK TABLE pilot_ticket.closure_record IN ACCESS EXCLUSIVE MODE':'LOCK TABLE pilot_ticket.ticket_command_receipt IN ACCESS EXCLUSIVE MODE');
       const pid=(await gate.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(pid);
       for(const item of paths){const response=request(item.path);void response.catch(()=>undefined);pending.push(response);}
-      const fragment=purpose==='intake-context'?'SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id':purpose==='ticket-restore'?'SELECT state,result_ticket_version AS version':'SELECT state,result_snapshot,error_code,retryable FROM pilot_ticket.ticket_command_receipt';
+      const fragment=purpose.endsWith('-history')?'SELECT c.id::text,c.before_version':purpose==='intake-context'?'SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id':purpose==='ticket-restore'?'SELECT state,result_ticket_version AS version':'SELECT state,result_snapshot,error_code,retryable FROM pilot_ticket.ticket_command_receipt';
       await observeClosureReadWait(f.pool,pid,fragment,paths.length);
       const logout=await request('/workbench/logout',{method:'POST',headers:{origin:f.origin,'x-csrf-token':String(bootstrap.csrf_token)}});assert.equal(logout.status,200);assert.deepEqual(await logout.json(),{logged_out:true});
       const session=(await f.pool.query<{state:string;unexpired:boolean}>('SELECT state,expires_epoch_ms>platform.physical_epoch_ms() AS unexpired FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid',[f.sessionId])).rows[0];assert.ok(session);assert.equal(session.state,'REVOKED');assert.equal(session.unexpired,true);
@@ -181,7 +182,7 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
       await gate.query('COMMIT');held=false;
       for(const [index,item] of paths.entries())await t.test(item.state,async()=>{
         const response=await pending[index];assert.ok(response);assert.equal(response.status,401,await response.clone().text());const denied=cookieObject(await response.json());assert.equal(cookieObject(denied.error).code,'WORKBENCH_UNAUTHENTICATED');
-        for(const key of ['state','result','version','closure_id','subject_id','ticket_version','ticket_event_id','pending_review'])assert.equal(Object.hasOwn(denied,key),false,'revoked Cookie cannot receive '+key);
+        for(const key of ['state','result','version','closure_id','subject_id','ticket_version','ticket_event_id','pending_review','items','restore_target'])assert.equal(Object.hasOwn(denied,key),false,'revoked Cookie cannot receive '+key);
       });
       assert.deepEqual(await counts(),originalCounts,'the read/logout sequence cannot create or change Ticket/closure/receipt facts');
     }catch(error){primary=error;}
