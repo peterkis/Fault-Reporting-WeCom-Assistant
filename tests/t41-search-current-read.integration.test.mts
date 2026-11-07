@@ -5,6 +5,7 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {object,rows} from './helpers/t41-search-risk-fixture.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {appendIntakeClosureEvent,insertClosureRecord,normalizeClosureInput} from '../app/server/src/service-closure-records.mjs';
 
 interface Fixture {pool:PostgresPool;origin:string;backendOrigin?:string;cookies:string[];sessionId?:string;
  tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
@@ -15,19 +16,28 @@ function request(f:Fixture,path:string,init:RequestInit={}){
 }
 async function read(f:Fixture,path:string){const response=await request(f,path);assert.equal(response.status,200,await response.clone().text());return object(await response.json());}
 
-test('T41 all/closed/status/number search includes original readable completed and ignored Intakes without changing the board',async()=>{
+test('T41 all/closed/status/number search preserves the default completed and ignored canonical board membership',async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
   for(const status of ['COMPLETED','IGNORED']){
-   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status,status});
+   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status+'（合成）',status:status==='IGNORED'?'WAITING_DESCRIPTION':status});
+   if(status==='IGNORED'){
+    const closed=(await f.pool.query<{version:number}>("UPDATE intake.service_intake SET status='IGNORED',version=version+1 WHERE id=$1::uuid RETURNING version",[intake.intakeId])).rows[0];assert.ok(closed);
+    const event=await appendIntakeClosureEvent(f.pool,{intakeId:intake.intakeId,version:closed.version,type:'intake.closed',oldStatus:'WAITING_DESCRIPTION',newStatus:'IGNORED',actor:null,traceId:'t41-current-read-ignored（合成）'});
+    await insertClosureRecord({transaction:f.pool,subjectType:'INTAKE',subjectId:intake.intakeId,beforeStatus:'WAITING_DESCRIPTION',beforeVersion:closed.version-1,beforeSnapshot:{request_type:'UNKNOWN',reviews:[],journeys:[]},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code:'ACKNOWLEDGED'}),intakeEventId:event});
+   }
    const detail=await read(f,'/api/workbench/items/intake/'+intake.intakeId),item=object(detail.item);
    assert.equal(item.kind,'intake');assert.equal(item.status,status);
+   const before=await read(f,'/api/workbench/board?column=closed&range=all');
+   const membership=rows(before.items).map(row=>[row.kind,row.id,row.status]);
+   assert.ok(rows(before.items).some(row=>row.kind==='intake'&&row.id===intake.intakeId&&row.status===status),'Card 27A defaults include both closed Intake kinds');
    for(const column of ['all','closed']){
     const found=await read(f,'/api/workbench/search?column='+column+'&range=all&statuses='+status+'&q='+encodeURIComponent(text(item.number)));
     assert.deepEqual(rows(found.items).map(row=>[row.kind,row.id,row.status]),[['intake',intake.intakeId,status]]);
     assert.equal(found.next_cursor,null);assert.equal(Object.hasOwn(found,'total'),false);
    }
    const board=await read(f,'/api/workbench/board?column=closed&range=all');
-   assert.ok(!rows(board.items).some(row=>row.id===intake.intakeId),'search must not change ordinary board membership');
+   assert.deepEqual(rows(board.items).map(row=>[row.kind,row.id,row.status]),membership,'search must not change ordinary board membership');
+   assert.deepEqual(board.group_counts,before.group_counts,'read-only search must not change complete group counts');
   }
  },{manualProjection:true,workbenchSearchEnabled:true,workbenchManualReviewEnabled:true});
 });

@@ -21,7 +21,8 @@
     "updated_at",
     "completed_at",
     "service",
-    "stage_entered_at"
+    "stage_entered_at",
+    "closure"
   ],
   "properties": {
     "kind": {
@@ -330,9 +331,275 @@
           ]
         }
       }
+    },
+    "closure": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "source",
+            "reason_code",
+            "reason_label",
+            "reason_note",
+            "closed_by_display_name",
+            "closed_at",
+            "duplicate_of",
+            "can_restore",
+            "secondary_reason"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "COMPLETED",
+                "DISMISSED"
+              ]
+            },
+            "source": {
+              "enum": [
+                "MANUAL",
+                "SYSTEM",
+                null
+              ]
+            },
+            "reason_code": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                }
+              ]
+            },
+            "reason_label": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "\\S"
+                }
+              ]
+            },
+            "reason_note": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                }
+              ]
+            },
+            "closed_by_display_name": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "\\S"
+                }
+              ]
+            },
+            "closed_at": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "local_datetime.schema.json"
+                }
+              ]
+            },
+            "duplicate_of": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "display_no"
+                  ],
+                  "properties": {
+                    "display_no": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "\\S"
+                    }
+                  }
+                }
+              ]
+            },
+            "can_restore": {
+              "type": "boolean"
+            },
+            "secondary_reason": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "code",
+                    "label"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "HUMAN_CONFIRMED",
+                        "INFORMATION_INSUFFICIENT",
+                        "BUSINESS_CONSULTATION_CONFIRMED",
+                        "ACKNOWLEDGED",
+                        "OUT_OF_SCOPE_CONFIRMED",
+                        "SERVICE_REQUEST_CONFIRMED",
+                        "INCIDENT_REVIEW_PENDING",
+                        "STALE_REVIEW_CANCELLED"
+                      ]
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "DISMISSED"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "reason_code": {
+                    "enum": [
+                      "FALSE_REPORT_OR_TEST",
+                      "DUPLICATE",
+                      "NOT_IT_SCOPE",
+                      "REPORTER_WITHDREW",
+                      "REPORTER_UNREACHABLE",
+                      "OTHER"
+                    ]
+                  },
+                  "source": {
+                    "enum": [
+                      "MANUAL",
+                      "SYSTEM"
+                    ]
+                  },
+                  "closed_at": {
+                    "$ref": "./local_datetime.schema.json"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "web01_workbench_card.schema.json",
-  "title": "WEB01 board/detail card with read-only service and state event projections"
+  "title": "WEB01 board/detail card with read-only service and state event projections",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "column": {
+            "const": "closed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "closure": {
+            "type": "object"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "closure": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "RESOLVED",
+              "CLOSED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "closure": {
+            "properties": {
+              "kind": {
+                "const": "COMPLETED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "CANCELLED",
+              "DUPLICATE_LINKED",
+              "IGNORED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "closure": {
+            "properties": {
+              "kind": {
+                "const": "DISMISSED"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

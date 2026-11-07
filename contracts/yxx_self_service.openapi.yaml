@@ -68,6 +68,7 @@ paths:
         - {$ref: '#/components/parameters/Cursor'}
         - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 50, default: 20}}
         - {in: query, name: source, schema: {type: string, enum: [WEB, BOT]}}
+        - {in: query, name: status, description: 'V2 Accept negotiation only. COMPLETED means CLOSED/RESOLVED; CLOSED_OUT means CANCELLED/DUPLICATE_LINKED.', schema: {type: string, enum: [OPEN, ACTIVE, COMPLETED, CLOSED_OUT]}}
       responses:
         '200': {description: 'Member-owned Web Requests with optional nullable retained initial text previews (summary max 120, location max 80 characters) and authorized Bot Tickets without text previews', content: {application/json: {schema: {$ref: './yxx_self_service_report_page.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}

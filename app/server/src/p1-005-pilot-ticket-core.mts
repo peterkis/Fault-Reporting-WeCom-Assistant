@@ -43,7 +43,9 @@ export type IntakeEventType =
   | 'intake.needs_clarification'
   | 'intake.message_added'
   | 'intake.clarification_added'
-  | 'intake.ticket_created';
+  | 'intake.ticket_created'
+  | 'intake.closed'
+  | 'intake.restored';
 export type PilotTicketErrorCode =
   | 'PILOT_TICKET_INTAKE_ID_REQUIRED'
   | 'PILOT_TICKET_POOL_REQUIRED'

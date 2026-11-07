@@ -1,3 +1,4 @@
+import {reportState,reportTone} from '../lib/report';
 import type {ReporterEntry} from './entry';
 
 type Json=Record<string,unknown>;
@@ -14,6 +15,8 @@ function timeline(value:unknown):{items:{text:string;occurred_at:string}[];next_
 function detail(value:unknown,ref:string):Json{
  const raw=object(value);if(raw.public_ref!==ref)throw new ReporterError(404);
  for(const field of ['ticket_no','suffix','title','external_status','created_at','updated_at','guidance'])text(raw[field]);
+ if(typeof raw.status!=='string'||!['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','CLOSED','REOPENED','CANCELLED','DUPLICATE_LINKED'].includes(raw.status))throw new ReporterError(502);
+ if(raw.closure_text!==null)text(raw.closure_text);
  if(!Number.isSafeInteger(raw.version)||Number(raw.version)<1)throw new ReporterError(502);
  if(raw.incident_milestones!==undefined){if(!Array.isArray(raw.incident_milestones)||raw.incident_milestones.length>100)throw new ReporterError(502);for(const value of raw.incident_milestones){const item=object(value);text(item.text);text(item.occurred_at,32);}}
  return raw;
@@ -27,7 +30,7 @@ export function mountReporterController(entry:ReporterEntry,t:Translator):()=>vo
  if(!member)history.replaceState(null,'','/reporter/');
  let ref=entry.publicRef,cursor:string|null=null,etag:string|null=null,timer:ReturnType<typeof setInterval>|undefined,stopped=false,busy=false,generation=0,controller:AbortController|null=null,channel:BroadcastChannel|null=null,logoutRequested=false,disposed=false;
  const valid=(g:number)=>!disposed&&g===generation&&!stopped;
- const clearView=()=>{ticket.hidden=true;for(const id of ['title','number','state','times','timeline'])element(id,HTMLElement).replaceChildren();document.getElementById('incident-milestones')?.remove();cursor=null;etag=null;more.hidden=true;};
+ const clearView=()=>{ticket.hidden=true;for(const id of ['title','number','state','closure-text','reporter-guidance','times','timeline'])element(id,HTMLElement).replaceChildren();document.getElementById('incident-milestones')?.remove();cursor=null;etag=null;more.hidden=true;};
  const cancel=(stop=true)=>{generation++;stopped=stop;busy=false;clearInterval(timer);controller?.abort();clearView();};
  function statusError(code:number){return t(code===401?(member?'reporterAuthExpired':'reporterAccessExpired'):code===403||code===404?'reporterDenied':'reporterRetry');}
  async function request(path:string,options:RequestInit={},signal:AbortSignal|null=controller?.signal??null):Promise<{body:unknown;etag:string|null}|null>{
@@ -47,9 +50,13 @@ export function mountReporterController(entry:ReporterEntry,t:Translator):()=>vo
   while(items.children.length>100)items.firstElementChild?.remove();cursor=value.next_cursor;more.disabled=false;more.hidden=!cursor;
  }
  function renderDetail(value:Json){
-  element('title',HTMLElement).textContent=text(value.title);element('number',HTMLElement).textContent=text(value.ticket_no)+' · '+text(value.suffix);element('state',HTMLElement).textContent=text(value.external_status);
+  const state=reportState({display_status:'TICKET_CREATED',ticket:{ticket_no:text(value.ticket_no),status:text(value.status)}});
+  element('title',HTMLElement).textContent=t(value.title==='信息服务申请'?'serviceRequestTitle':'faultReportTitle');
+  element('number',HTMLElement).textContent=text(value.ticket_no);
+  const badge=element('state',HTMLElement);badge.textContent=t(state);badge.className='ui-badge badge-status-'+reportTone(state);
+  const closure=element('closure-text',HTMLElement);closure.textContent=typeof value.closure_text==='string'&&value.closure_text!=='已关闭'?value.closure_text:'';closure.hidden=!closure.textContent;
   element('times',HTMLElement).replaceChildren(line('dt',t('created')),line('dd',text(value.created_at)),line('dt',t('reporterUpdated')),line('dd',text(value.updated_at)));
-  element('reporter-guidance',HTMLElement).textContent=text(value.guidance);
+  element('reporter-guidance',HTMLElement).textContent=t(value.guidance==='如未解决，请联系工作人员补充情况。'?'manualReporterGuidance':'botReporterGuidance');
   document.getElementById('incident-milestones')?.remove();
   if(Array.isArray(value.incident_milestones)&&value.incident_milestones.length){const section=line('section','');section.id='incident-milestones';section.className='reporter-milestones';section.append(line('h3',t('reporterIncident')));for(const raw of value.incident_milestones){const item=object(raw);section.append(line('p',text(item.text)),line('time',text(item.occurred_at)));}items.after(section);}
  }

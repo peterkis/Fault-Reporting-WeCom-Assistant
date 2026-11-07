@@ -76,7 +76,7 @@ export function h5DepartmentReportsSql(withFilters:boolean,mode:'single'|'group'
       SELECT ${withFilters?"i.intake_id,t.id,t.ticket_no,date_trunc('second',t.created_at) AS created_at,":''}t.status
       ${withFilters?'FROM authorized_source_keys i':sources}
       ${tickets}
-      ${withFilters?`WHERE (${p.p7}::text IS NULL OR CASE WHEN ${p.p7}='COMPLETED' THEN t.status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED') WHEN ${p.p7}='ACTIVE' THEN t.status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR') ELSE t.status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
+      ${withFilters?`WHERE (${p.p7}::text IS NULL OR CASE WHEN ${p.p7}='COMPLETED' THEN t.status IN ('CLOSED','RESOLVED') WHEN ${p.p7}='CLOSED_OUT' THEN t.status IN ('CANCELLED','DUPLICATE_LINKED') WHEN ${p.p7}='ACTIVE' THEN t.status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR') ELSE t.status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
        AND (${p.p6}::text IS NULL OR strpos(lower(t.ticket_no||' '||COALESCE((SELECT s.safe_content->>'service_code' FROM intake.web_submission s WHERE s.intake_id=i.intake_id AND s.kind='SUBMIT'
          AND s.retention_until_epoch_ms>${DEPARTMENT_FRESH_EPOCH_SQL} ORDER BY s.input_revision LIMIT 1),'')||' '||COALESCE((SELECT p.summary FROM pilot_ticket.ticket_public_progress p WHERE p.ticket_id=t.id ORDER BY p.ticket_version DESC LIMIT 1),'')),lower(${p.p6}))>0)`:''}
       ${withFilters?'':retained}

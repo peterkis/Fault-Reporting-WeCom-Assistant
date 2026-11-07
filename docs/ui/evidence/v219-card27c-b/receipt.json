@@ -1,0 +1,64 @@
+{
+  "directory": "D:\\\\CodexTemp\\\\card27c-b-20261107\\\\card27cb-ui-c45938fa-8cf5-48a2-9488-b0f0bb634b7d",
+  "environment": {
+    "platform": "win32",
+    "dpr": 1,
+    "zoom": 1
+  },
+  "metrics": {
+    "width": 440,
+    "radius": "14px",
+    "padding": "20px",
+    "row": 36,
+    "dpr": 1,
+    "zoom": 1
+  },
+  "shots": [
+    {
+      "file": "03-other.png",
+      "sha256": "ea30521debf2a84f591f9b7beddc751ffc927b2da59b3a754c867a1fc84ecb47",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "02-not-it.png",
+      "sha256": "d01b547b37a8ad6fef5558a41d7d6aaff7576a82c1956c8e00a1520aa7191885",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "01-duplicate.png",
+      "sha256": "38ae2a8955e822dc6b184dcd637fcde47c8b6b4a60a526820018218364a61940",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "04-restore-confirm.png",
+      "sha256": "4d6680c08823796282967d6b430e0f4727c9b092bfee1f0c7b19f39297474c14",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "05-restored-highlight.png",
+      "sha256": "707c01ea22246669fd19ada38933ce50d47a887e50b819278bcfcace5c774892",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "06-history.png",
+      "sha256": "2aab73c073afdf65b2dbcbcbd85acb9da0b5c966d456e2218043fec9b6bdf1ec",
+      "width": 1440,
+      "height": 1400
+    }
+  ],
+  "real_sends": 0,
+  "candidate": {
+    "manifest_sha256": "a0d90f6187885b59908eeb12d9d56922ab4bb2de42318362d1c5456187b435e5",
+    "source_input_hash": "2d5df99b543fa118f9d6a236ffd22365eb02f1796c0884e60bb2b39d16396f92",
+    "head": "ba469c4013d765566225470ff96c1661a65d5e97",
+    "status": "STAGED_NOT_ACTIVATED",
+    "working_tree_uncommitted": true
+  },
+  "test": "tests/t10-cancel.browser.test.mts",
+  "raw_tap": "D:\\CodexEvidence\\card27c-b-20261107\\review-ui-23\\001-t10-cancel.browser.test.mts.tap"
+}

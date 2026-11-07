@@ -1,5 +1,5 @@
 export type BoardColumn = 'pending' | 'active' | 'closed';
-export type CompletionRange = 'recent' | 'all' | 'cancelled';
+export type CompletionRange = 'recent' | 'all';
 export type BoardCompletionRange = CompletionRange | 'custom';
 export type WorkbenchKind = 'ticket' | 'review' | 'intake';
 export interface SourceGroupDisplay {
@@ -17,6 +17,16 @@ export interface WorkbenchServiceCatalog {
   schema_version: 1; catalog_version: string;
   categories: {category: string; category_name_zh: string; services: {service_code: string; name_zh: string}[]}[];
 }
+/** Read-only closure-record projection; command services enforce current restoration authority. */
+export interface WorkbenchClosure {
+  kind: 'COMPLETED' | 'DISMISSED'; source: 'MANUAL' | 'SYSTEM' | null;
+  reason_code: string | null; reason_label: string | null; reason_note: string | null;
+  secondary_reason:{code:string;label:string}|null;
+  closed_by_display_name: string | null;
+  /** Asia/Shanghai LocalDateTime, with the same second precision as the card timestamps. */
+  closed_at: string | null;
+  duplicate_of: {display_no: string} | null; can_restore: boolean;
+}
 export interface WorkbenchCard {
   kind: WorkbenchKind; id: string; intake_id: string; number: string; title: string;
   status: string; column: BoardColumn; priority: string | null; source: string;
@@ -27,6 +37,8 @@ export interface WorkbenchCard {
   reporter_profile?: {state:'PENDING'|'PARTIAL'|'RESOLVED'|'UNAVAILABLE';source:'REPORT_SNAPSHOT'|'LATER_LOOKUP'|null;captured_at:string|null};
   assignee_name: string | null; review_reason: string | null;
   created_at: string; updated_at: string; completed_at: string | null;
+  /** Always present; null in the first and second columns. */
+  closure: WorkbenchClosure | null;
   /** Board/detail read projections. Older responses and search omit these fields. */
   service?: WorkbenchService | null;
   stage_entered_at?: string | null;
@@ -37,6 +49,8 @@ export interface WorkbenchCard {
 }
 export interface BoardPage {
   items: WorkbenchCard[]; next_cursor: string | null; column: BoardColumn;
+  /** Required on the closed column, absent on the other columns; before pagination. */
+  group_counts?: {completed: number; dismissed: number};
   range: { mode: BoardCompletionRange; from: string; until: string; timezone: 'Asia/Shanghai' };
 }
 export interface WorkbenchRecord {

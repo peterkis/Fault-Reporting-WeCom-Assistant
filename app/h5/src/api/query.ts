@@ -5,7 +5,7 @@ import type {Bootstrap,ReportsFilter,ReportItem,ReportPage,RequestDetail,YxxTime
 export const EMPTY_FILTER:ReportsFilter=Object.freeze({q:'',status:'',source:''});
 export const BUSINESS_STALE_TIME=30_000;
 export const BUSINESS_CACHE_TIME=120_000;
-export function reportStatus(value:string):ReportsFilter['status']{return value==='OPEN'||value==='ACTIVE'||value==='COMPLETED'?value:'';}
+export function reportStatus(value:string):ReportsFilter['status']{return value==='OPEN'||value==='ACTIVE'||value==='COMPLETED'||value==='CLOSED_OUT'?value:'';}
 export function reportSource(value:string):ReportsFilter['source']{return value==='WEB'||value==='BOT'?value:'';}
 export const queryKeys={
  bootstrap:['bootstrap'] as const,
@@ -30,7 +30,7 @@ export function departmentSummaryOptions(scope:string,revision='legacy'){return 
 },staleTime:BUSINESS_STALE_TIME});}
 export function firstPage<T>(page:T):InfiniteData<T,string|null>{return{pages:[page],pageParams:[null]};}
 export function filterInput(filter:ReportsFilter):Extract<H5EntryInput,{view:'reports'}>{
- const status=filter.status==='OPEN'||filter.status==='ACTIVE'||filter.status==='COMPLETED'?filter.status:null;
+ const status=filter.status==='OPEN'||filter.status==='ACTIVE'||filter.status==='COMPLETED'||filter.status==='CLOSED_OUT'?filter.status:null;
  const source=filter.source==='WEB'||filter.source==='BOT'?filter.source:null;
  return{view:'reports',search:filter.q||null,status,source};
 }

@@ -6,6 +6,22 @@
 
 H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用成员认证合同，不是新增宿主进程；实际装配见 [H5 V2](member/h5-v2.md#宿主认证和协商)。W 的工作人员权限与 M／F 的成员权限分别核验。
 
+
+## 卡 27C-A 关闭与恢复
+
+| 方法 | 完整路径 | 宿主 | 用途 | 契约文档 |
+| --- | --- | --- | --- | --- |
+| POST | `/api/tickets/{ticketId}/cancel` | W | 六选一原因，开放状态人工关闭 | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/tickets/{ticketId}/restore` | W | 按关闭记录恢复前状态 / 负责人 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/tickets/{ticketId}/restore/commands/{commandId}` | W | 原用途、当前 READ 安全核对 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/closure-context` | W | 当前版本与关闭 / 恢复能力 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/tickets/{ticketId}/closure-history` | W | 只读关闭历史、恢复目标与实际通知事实 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/closure-history` | W | 只读关闭历史、恢复目标与实际通知事实 | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/intakes/{intakeId}/close` | W | 关闭 Intake 及待判断 Review | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/intakes/{intakeId}/restore` | W | 恢复 Intake / Review / Journey | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/close/commands/{commandId}` | W | 原关闭命令安全核对 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/restore/commands/{commandId}` | W | 原恢复命令安全核对 | [关闭 / 恢复](workbench/closure.md) |
+
 ## T32 通知异常与 N3 关联来源（默认关闭）
 
 | 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
@@ -168,7 +184,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | B04 | GET | `/api/workbench/service-catalog` | W | 已实现：当前内部身份，只读；生命周期工作台默认关闭 | [只读服务目录](workbench/board.md#工作台只读服务目录) |
 | B02 | GET | `/api/workbench/items/{kind}/{id}` | W | 已实现：WEB01详情 | [看板](workbench/board.md) |
 | B03 | GET | `/api/workbench/items/ticket/{ticketId}/actor-avatars/{actorRef}` | W | 默认关闭：当前工单 READ 下的操作人头像缓存，200 WebP / 204回退 | [头像与媒体](workbench/actor-avatars-and-media.md) |
-| WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |
+| WB-T41-Q1 | GET | `/api/workbench/search` | W | 已实现、默认关闭；当前获权全集组合筛选／稳定游标，含结束方式与自然日日期范围，本地隔离验证待父验收 | [搜索合同与错误](workbench/search-source-forward.md) |
 | WB-T41-Q2 | POST | `/api/workbench/search` | W | 已实现、默认关闭；同一授权读取的长条件传输，32KiB／Origin-CSRF／同预算，无命令写 | [只读 POST](workbench/search-source-forward.md#get-与有界只读-post) |
 | H5-W01 | GET | `/api/workbench/items/{kind}/{id}/web-report` | W | 已挂载、H5 默认关闭：当前 READ 下的 Web 来源材料／催单／评价／公开进度，kind=ticket/review/intake | [网页报修资料](workbench/web-reports.md) |
 | H5-W02 | GET | `/api/workbench/items/{kind}/{id}/web-report/media/{mediaRef}` | W | 已挂载、H5 默认关闭：当前获权 Intake 原件／播放副本，逐块终检 | [材料读取](workbench/web-reports.md#get-apiworkbenchitemskindidweb-reportmediamediaref) |

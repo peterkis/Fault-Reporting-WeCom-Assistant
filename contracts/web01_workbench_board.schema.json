@@ -50,7 +50,6 @@
           "enum": [
             "recent",
             "all",
-            "cancelled",
             "custom"
           ]
         },
@@ -64,6 +63,47 @@
           "const": "Asia/Shanghai"
         }
       }
+    },
+    "group_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completed",
+        "dismissed"
+      ],
+      "properties": {
+        "completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dismissed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "column": {
+            "const": "closed"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "group_counts"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "group_counts"
+          ]
+        }
+      }
+    }
+  ]
 }

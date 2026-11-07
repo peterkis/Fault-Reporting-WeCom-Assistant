@@ -48,3 +48,76 @@
 .ds-ticket-body .shared-follow-up-summary strong {order: 1; flex: none; font-weight: var(--fw-medium);}
 .ds-ticket-body .shared-follow-up-summary.is-due strong {color: var(--tone-attention-fg);}
 .ds-ticket-deadline>svg {stroke-width: 1.75;}
+
+.ds-ticket-card.ticket-card[data-closure-kind=DISMISSED] {background: var(--bg-subtle); box-shadow: var(--shadow-dismissed);}
+.ds-ticket-card.ticket-card[data-closure-kind=DISMISSED][data-ring] {outline-color: transparent;}
+.ds-ticket-dismissed-body .card-top {color: var(--text-tertiary);}
+.ds-ticket-dismissed-body h3 {font-weight: var(--fw-medium); color: var(--text-secondary);}
+.ds-ticket-dismissed-body .ds-ticket-category {filter: grayscale(1); opacity: .55;}
+.ds-ticket-dismissed-body .ds-ticket-closed {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-tertiary); font-family: var(--font-sans);}
+.ds-ticket-closed>svg {width: var(--space-3); height: var(--space-3); flex: none; stroke-width: 1.75;}
+.ds-ticket-dismissed-body .card-footer {flex-wrap: wrap; gap: var(--space-1) var(--space-2);}
+.ds-ticket-dismissed-body .card-tags {flex: 1 1 auto;}
+.ds-ticket-dismissed-body .ds-ticket-closer {display: inline-flex; align-items: center; justify-content: flex-end; flex: 0 1 auto; max-width: 100%; gap: var(--space-1); margin-left: auto; color: var(--text-tertiary);}
+.ds-ticket-closer .owner-name {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-ticket-close-method {flex: none; white-space: nowrap;}
+.ds-closure-number {font-family: var(--font-mono);}
+.ds-closure-properties .ds-closure-note {grid-column: 1 / -1;}
+.ds-closure-properties .ds-closure-note dd {white-space: pre-wrap;}
+.ds-closure-reason-options {display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-1); min-width: 0; margin: 0; padding: 0; border: 0;}
+.ds-closure-reason-options .ds-closure-reason-option {position: relative; display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--bg-canvas); color: var(--text-primary); font-size: var(--fs-sm); line-height: var(--lh-sm); cursor: pointer;}
+.ds-closure-reason-option:hover {background: var(--bg-subtle);}
+.ds-closure-reason-option:has(input:checked) {background: var(--brand-subtle);}
+.ds-closure-reason-option:has(input:focus-visible) {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-closure-reason-indicator {display: inline-grid; place-items: center; width: var(--space-4); height: var(--space-4); flex: none; border: 1px solid var(--border-default); border-radius: var(--radius-full); background: var(--bg-canvas);}
+.ds-closure-reason-indicator::before {content: ''; width: var(--space-2); height: var(--space-2); border-radius: var(--radius-full); background: transparent;}
+.ds-closure-reason-option input:checked+.ds-closure-reason-indicator {border-color: var(--brand);}
+.ds-closure-reason-option input:checked+.ds-closure-reason-indicator::before {background: var(--brand);}
+.ds-closure-reason-options:disabled .ds-closure-reason-option {cursor: default; color: var(--text-tertiary);}
+.ds-closure-reason-options:disabled .ds-closure-reason-indicator {background: var(--bg-subtle);}
+
+.ds-modal.ds-closure-dialog {--radius-closure: calc(var(--radius-lg) + var(--space-0-5)); width: calc(var(--space-5) * 22); max-width: calc(100vw - var(--space-4) * 2); padding: var(--space-5); border-radius: var(--radius-closure);}
+.ds-closure-dialog>header {display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);}
+.ds-closure-dialog .ds-closure-context {margin: var(--space-2) 0 var(--space-4); color: var(--text-secondary); overflow-wrap: anywhere; font-size: var(--fs-sm);}
+.ds-closure-dialog form {display: grid; gap: var(--space-3);}
+.ds-closure-field {display: grid; gap: var(--space-2); color: var(--text-primary); font-size: var(--fs-sm);}
+.ds-closure-dialog .ds-closure-reason-options {gap: 0;}
+.ds-closure-dialog .ds-closure-reason-option {box-sizing: border-box; min-height: calc(var(--space-4) + var(--space-5)); padding: var(--space-2) var(--space-3); line-height: var(--lh-sm); border: 0;}
+.ds-closure-secondary {padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); font-size: var(--fs-sm);}
+.ds-closure-secondary .ds-closure-reason-option {background: transparent;}
+.ds-closure-secondary .ds-closure-reason-option:has(input:checked) {background: var(--brand-subtle);}
+.ds-closure-field textarea,.ds-closure-search input {width: 100%; box-sizing: border-box; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); padding: var(--space-2) var(--space-3); font: inherit; color: var(--text-primary);}
+.ds-closure-field textarea {min-height: calc(var(--space-5) * 4); resize: vertical;}
+.ds-closure-private,.ds-closure-dialog .ds-closure-footnote {color: var(--text-tertiary); font-size: var(--fs-xs);}
+.ds-closure-dialog .ds-closure-private {margin: calc(-1 * var(--space-2)) 0 0;}
+.ds-closure-notice {display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-sm);}
+.ds-closure-notice>svg {flex: none; margin-top: var(--space-0-5);}
+.ds-closure-notice p {margin: var(--space-1) 0 0;}
+.ds-closure-notice strong {font-weight: var(--fw-medium); color: var(--text-primary);}
+.ds-closure-notify-choice {display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);}
+.ds-closure-dialog footer {display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-1);}
+.ds-closure-search {display: grid; gap: var(--space-2); font-size: var(--fs-sm);}
+.ds-closure-search-results {display: grid; gap: var(--space-1); max-height: calc(var(--space-5) * 8); overflow: auto;}
+.ds-closure-search-results button {justify-content: flex-start; min-width: 0; text-align: left; white-space: normal;}
+.ds-closure-error {color: var(--tone-danger-fg); font-size: var(--fs-sm);}
+.ds-closure-restore {position: relative; z-index: var(--z-sticky);}
+.ds-closure-original {position: relative; z-index: var(--z-sticky); font-family: var(--font-mono);}
+.ds-dismissed-card-content {padding: var(--space-3);}
+.ds-ticket-card .ds-dismissed-open.card-open {display: inline; padding: 0; color: inherit; font: inherit;}
+.ds-dismissed-open::after {position: absolute; inset: 0; content: '';}
+.ds-ticket-closure-reason .ds-closure-original {padding: 0; min-height: 0; font-size: inherit; line-height: inherit; color: inherit;}
+.ds-work-row[data-closure-kind=DISMISSED] .ds-list-owner-cell {position: relative;}
+.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {position: absolute; inset: 0; z-index: var(--z-list-claim); margin: auto; opacity: 0; width: fit-content; height: var(--control-h-sm); min-height: var(--control-h-sm);}
+.ds-work-table .ds-work-row:is(:hover,:focus-within) .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;}
+.ds-work-table .ds-closure-original.button {z-index: var(--z-list-claim);}
+.ds-work-row:has(.ds-closure-restore):hover .ds-list-owner,.ds-work-row:has(.ds-closure-restore):focus-within .ds-list-owner {visibility: hidden;}
+.ds-ticket-card .ds-closure-restore.button[data-tone] {position: absolute; right: var(--space-2); bottom: var(--space-2); opacity: 0;}
+.ds-ticket-card:is(:hover,:focus-within) .ds-closure-restore.button[data-tone] {opacity: 1;}
+.ds-ticket-card:has(.ds-closure-restore):hover .ds-ticket-closer,.ds-ticket-card:has(.ds-closure-restore):focus-within .ds-ticket-closer {visibility: hidden;}
+.ds-closure-history {display: grid; gap: var(--space-3);}
+.ds-closure-history-entry {border-bottom: 1px solid var(--border-hair); padding-bottom: var(--space-3);}
+.ds-closure-restored-event {display: flex; flex-wrap: wrap; gap: var(--space-2); color: var(--text-secondary); margin-bottom: var(--space-3);}
+.ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: closure-restored calc(var(--dur-slow) * 5) ease-out;}
+@keyframes closure-restored {from {background-color: var(--brand-subtle);} to {background-color: var(--bg-canvas);}}
+@media (prefers-reduced-motion: reduce) {.ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: none; background: var(--brand-subtle);}}
+@media (hover: none) {.ds-ticket-card .ds-closure-restore.button[data-tone],.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;} .ds-ticket-card:has(.ds-closure-restore) .ds-ticket-closer,.ds-work-row:has(.ds-closure-restore) .ds-list-owner {visibility: hidden;}}

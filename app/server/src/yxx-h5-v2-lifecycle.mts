@@ -30,7 +30,8 @@ const OPEN_STATUSES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER'
 /** A pre-assignment urge belongs to the initial round when its first cycle is established. */
 export const H5_CURRENT_URGE_SQL=`(u.cycle_id IS NOT DISTINCT FROM t.current_handling_cycle_id OR
  (u.cycle_id IS NULL AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_handling_cycle first_cycle
-  WHERE first_cycle.id=t.current_handling_cycle_id AND first_cycle.ticket_id=t.id AND first_cycle.cycle_no=1)))`;
+  WHERE first_cycle.id=t.current_handling_cycle_id AND first_cycle.ticket_id=t.id AND first_cycle.cycle_no=1)))
+ AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_record ended WHERE ended.ticket_id=t.id AND (ended.before_snapshot->>'urge_sequence')::bigint>=u.sequence_no)`;
 const emptyUrge=():H5UrgeSummary=>({active:false,count:0,last_urged_at:null,last_urged_epoch_ms:null,next_allowed_at:null,next_allowed_epoch_ms:null,can_urge:false});
 const emptyEvaluation=():H5EvaluationContext=>({can_evaluate:false,completed_round_ref:null,completed_round_no:null,ticket_version:null,rating:null,comment:null,evaluated_at:null,evaluated_epoch_ms:null});
 const writeEnabled=(m:H5MemberContext)=>m.write_flag&&m.flags.YIXIAOXIU_SELF_SERVICE_ENABLED&&m.flags.YIXIAOXIU_MY_REPORTS_ENABLED;

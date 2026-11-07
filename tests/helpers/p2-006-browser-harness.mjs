@@ -121,6 +121,15 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
   }
+  // Observe native prompts without weakening the application's unload protection.
+  function waitForEvent(method){
+    const id='event:'+ ++sequence;
+    return new Promise((resolveEvent,reject)=>{
+      if(socket?.readyState!==WebSocket.OPEN){reject(new Error('P2_006_BROWSER_DISCONNECTED'));return;}
+      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('P2_006_BROWSER_EVENT_TIMEOUT'));},10000);
+      pending.set(id,{eventMethod:method,resolve:resolveEvent,reject,timer});
+    });
+  }
   async function dispose(){
     // Browser.close normally tears down CDP before replying; that disconnect is expected.
     if(socket?.readyState===WebSocket.OPEN)await command('Browser.close').catch(()=>{});
@@ -177,7 +186,9 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(startupSignal.aborted)aborted();
     });
     socket.addEventListener('message',event=>{
-      const message=JSON.parse(String(event.data));if(!message.id||!pending.has(message.id))return;
+      const message=JSON.parse(String(event.data));
+      if(message.method)for(const [id,request] of pending)if(request.eventMethod===message.method){pending.delete(id);clearTimeout(request.timer);request.resolve(message.params);}
+      if(!message.id||!pending.has(message.id))return;
       const request=pending.get(message.id);pending.delete(message.id);clearTimeout(request.timer);
       if(message.error)request.reject(new Error(typeof message.error.message==='string'&&message.error.message.trim()
         ?message.error.message.trim():'P2_006_BROWSER_COMMAND_FAILED'));else request.resolve(message.result);
@@ -211,7 +222,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     async function pressTab(){
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }
-    return Object.freeze({executable,evaluate,pressTab,command,ownershipReceipt:ownership?.receiptDirectory??null,
+    return Object.freeze({executable,evaluate,pressTab,command,waitForEvent,ownershipReceipt:ownership?.receiptDirectory??null,
       ownedResourceState,
       setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
       screenshot:async()=>(await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,

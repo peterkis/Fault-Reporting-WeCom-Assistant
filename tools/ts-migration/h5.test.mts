@@ -206,7 +206,15 @@ test('actual theme build emits one small synchronous hashed script and a deferre
     // The real product deliberately disables Vite's public directory. These two
     // synthetic public assets belong only to the generic artifact fixture.
     for(const file of ['assets/support.svg','assets/icon.png'])rmSync(path.join(root,'app/h5/public',file));
-    for(const file of ['app/h5/vite.config.ts','app/h5/compile-i18n.ts','app/h5/src/prepaint.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
+    for(const file of ['app/h5/vite.config.ts','app/h5/compile-i18n.ts','app/h5/src/prepaint.ts','app/h5/src/tooling/router-component-purity.ts']){mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(original,file),path.join(root,file));}
+    // Match the real config's existing Router dependency without changing its purity guard.
+    const configFile='app/h5/tsconfig.json',config=record(JSON.parse(readFileSync(path.join(root,configFile),'utf8')) as unknown);
+    record(config.compilerOptions).allowImportingTsExtensions=true;put(root,configFile,JSON.stringify(config));
+    const packageFile='app/h5/package.json',pkg=record(JSON.parse(readFileSync(path.join(root,packageFile),'utf8')) as unknown);
+    record(pkg.dependencies)['react-router']=record(record(JSON.parse(readFileSync(path.join(original,packageFile),'utf8')) as unknown).dependencies)['react-router'];
+    put(root,packageFile,JSON.stringify(pkg));
+    const mainFile='app/h5/src/main.tsx',main=readFileSync(path.join(root,mainFile),'utf8');
+    put(root,mainFile,"import {HashRouter} from 'react-router';\n"+main.replace('render(<Screen/>)','render(<HashRouter><Screen/></HashRouter>)'));
     put(root,'app/h5/index.html','<!doctype html><html><head><meta name="theme-color" content="#faf9f8"><!--h5-prepaint--></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>');
     buildH5(root);
     const html=readFileSync(path.join(root,'.build/emit/h5/index.html'),'utf8'),scripts=[...html.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*>/gu)];

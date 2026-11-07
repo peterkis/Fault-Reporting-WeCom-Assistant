@@ -7,8 +7,9 @@ import type {TicketStatus} from './p1-005-pilot-ticket-core.mjs';
 import {H5_CURRENT_URGE_SQL} from './yxx-h5-v2-lifecycle.mjs';
 import {hashP2016} from './p2-016-domain-contracts.mjs';
 import {h5Fail,h5RequestRef} from './yxx-h5-v2-contracts.mjs';
+import {REPORTER_CLOSURE_JOIN_SQL,REPORTER_CLOSURE_FIELDS_SQL} from './service-closure-records.mjs';
 
-export type H5EntryReadRow=H5LifecycleReadProjection['source'] & {
+export type H5EntryReadRow=H5LifecycleReadProjection['source'] & {closure_public?:unknown;
  request_ref:string;processed_revision:string;revoked_at:string|null;intake_no:string;status:string;
  pilot_ticket_id:string|null;created_at:string;updated_at:string;safe_description:string;safe_location:string|null;
  supplement_items:H5SupplementItem[];ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;
@@ -52,7 +53,7 @@ export async function readH5EntryRow(tx:PostgresTransaction,scope:YxxMemberScope
    (SELECT s.input_revision::text,s.safe_content->>'text' AS text FROM intake.web_submission s
     WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.input_revision<=b.input_revision
      AND s.retention_until_epoch_ms>platform.physical_epoch_ms() ORDER BY s.input_revision DESC LIMIT 21) supplement),'[]'::jsonb) AS supplement_items,
-  t.ticket_no,t.status AS ticket_status,t.version AS ticket_version,t.current_handling_cycle_id::text AS cycle_id,
+  t.ticket_no,t.status AS ticket_status,t.version AS ticket_version,t.current_handling_cycle_id::text AS cycle_id,${REPORTER_CLOSURE_FIELDS_SQL},
   to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,p.display_name AS handler_name,rt.display_name AS team_name,
   EXISTS(SELECT 1 FROM intake.manual_review_item r WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review,
   CASE WHEN completed.id IS NULL THEN NULL ELSE to_jsonb(completed) END AS completed_round,
@@ -63,6 +64,7 @@ export async function readH5EntryRow(tx:PostgresTransaction,scope:YxxMemberScope
   platform.physical_epoch_ms()::text AS read_epoch
  FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
  LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id
+ ${REPORTER_CLOSURE_JOIN_SQL}
  LEFT JOIN pilot_ticket.pilot_principal p ON p.id=t.assignee_id AND p.is_active
  LEFT JOIN pilot_ticket.resolver_team rt ON rt.team_id=t.resolver_team_id AND rt.is_active
  LEFT JOIN LATERAL(SELECT s.safe_content FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUBMIT'

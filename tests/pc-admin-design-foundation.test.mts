@@ -17,6 +17,15 @@ async function designModule(name: string): Promise<string> {
   return 'data:text/javascript;base64,' + Buffer.from(['board-presentation','format-time'].includes(name)?resolved.replaceAll("'./heat'",JSON.stringify(await designModule('heat'))):resolved).toString('base64');
 }
 interface Heat {tone: string; label: string; ring: string | null}
+test('Card 27C-B six fixed reasons keep notification copy independent from private explanations',async()=>{
+ const model:{closureReasons:{value:string;label:string}[];closureNotification:(value:{reason:string;secondary:string;note:string;duplicate:string;notify:boolean})=>{notify:boolean;text:string};closureValidation:(value:{reason:string;secondary:string;note:string;duplicate:string;notify:boolean})=>string|null}=await import(await designModule('components/TicketCard/closure-presentation'));
+ assert.deepEqual(model.closureReasons.map(row=>row.label),['误报或测试','重复报修','非 IT 范围','报修人撤回','无法联系报修人','其他']);
+ const base={secondary:'',note:'内部说明（合成）',duplicate:'',notify:false};
+ for(const reason of model.closureReasons){const notice=model.closureNotification({...base,reason:reason.value});assert.equal(notice.notify,!['FALSE_REPORT_OR_TEST','OTHER'].includes(reason.value));assert.ok(!notice.text.includes(base.note));}
+ assert.equal(model.closureValidation({...base,reason:'OTHER',note:'   '}),'选择“其他”时必须填写说明。');assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE'}),'请选择非 IT 范围的二级原因。');
+ assert.deepEqual(model.closureNotification({...base,reason:'OTHER',notify:true}),{notify:true,text:'您的报修已关闭。如仍需处理，请重新报修。'});
+ assert.ok(model.closureNotification({...base,reason:'DUPLICATE',duplicate:'IT-20261107-0001'}).text.endsWith('原报修编号：IT-20261107-0001'));
+});
 const {heatOf, cardHeat, cardHeatStart, HEAT_THRESHOLDS_MINUTES}: {
   heatOf: (startIso: string | null | undefined, nowMs: number) => Heat | null;
   cardHeat: (item: Pick<WorkbenchCard,'column'|'created_at'|'stage_entered_at'>,now:number)=>Heat|null;
@@ -44,9 +53,13 @@ for(const [name,local,clock,expected] of [
 test('V1 list and timeline dividers share Shanghai midnight',()=>assert.deepEqual(shanghaiDays(Date.parse('2026-11-04T16:00:30Z')),{today:'2026-11-05',yesterday:'2026-11-04'}));
 test('B3 waiting shares heat thresholds, Shanghai starts and whole-day labels',()=>{
   const start='2026-11-05 08:00:00',at=Date.parse('2026-11-05T08:00:00+08:00');
-  for(const [minutes,label,tone] of [[0,'0 分钟','neutral'],[4,'4 分钟','neutral'],[5,'5 分钟','neutral'],[12,'12 分钟','neutral'],[20,'20 分钟','neutral'],[59,'59 分钟','neutral'],[60,'1 小时','attention'],[120,'2 小时','attention'],[239,'3 小时','attention'],[240,'4 小时','danger'],[300,'5 小时','danger'],[1440,'1 天','danger'],[2880,'2 天','danger']] as const)assert.deepEqual(formatWaitingTime(start,at+minutes*60_000),{label,tone});
+  for(const [minutes,label,tone] of [[0,'刚刚','neutral'],[4,'4 分钟','neutral'],[5,'5 分钟','neutral'],[12,'12 分钟','neutral'],[20,'20 分钟','neutral'],[59,'59 分钟','neutral'],[60,'1 小时','attention'],[120,'2 小时','attention'],[239,'3 小时','attention'],[240,'4 小时','danger'],[300,'5 小时','danger'],[1440,'1 天','danger'],[2880,'2 天','danger']] as const)assert.deepEqual(formatWaitingTime(start,at+minutes*60_000),{label,tone});
   for(const local of [null,undefined,'','2026-02-30 08:00:00','2026-11-05T08:00:00Z','2026-11-05 08:01:00'])assert.equal(formatWaitingTime(local,at),null);
   assert.equal(formatWaitingTime(start,NaN),null);
+});
+for(const [seconds,label] of [[0,'刚刚'],[59,'刚刚'],[60,'1 分钟']] as const)test('D2 waiting label at '+seconds+' seconds',()=>{
+  const start='2026-11-06 08:00:00',at=Date.parse('2026-11-06T08:00:00+08:00');
+  assert.deepEqual(formatWaitingTime(start,at+seconds*1000),{label,tone:'neutral'});
 });
 test('B5 minute clock pauses while hidden, resumes immediately and owns no request timer',t=>{
   const doc=new class extends EventTarget{hidden=false;}(),timers=new Map<number,()=>void>(),ticks:number[]=[],delays:number[]=[];let serial=0,clock=1000;
@@ -158,8 +171,17 @@ const {matchesBoardSummary,sortBoardItems}: {
   sortBoardItems:(items:readonly WorkbenchCard[],column:BoardColumn,sort:'oldest'|'newest')=>WorkbenchCard[];
 }=await import(await designModule('board-presentation'));
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
-  return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,...overrides};
+  return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,closure:null,...overrides};
 }
+const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,secondary_reason:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
+test('Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at',()=>{
+  const now=Date.parse('2026-11-06T12:00:00+08:00');
+  for(const status of ['CLOSED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
+  for(const status of ['CANCELLED','DUPLICATE_LINKED','IGNORED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='IGNORED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
+  assert.equal(matchesBoardSummary(boardCard({status:'IGNORED',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
+  assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:'2026-11-06 08:00:00',closure:null}),'today',now),false);
+});
+
 test('R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets',async()=>{
   const {avatarInitial}:{avatarInitial:(name:string)=>string}=await import(await designModule('components/Avatar/avatarInitial'));
   for(const [name,initial] of [['张三（合成）','三'],['李四(外包)','四'],['王五（合成）（外包）','五'],['（合成）','合'],['Peter','P'],['peter (实习)','P'],['  赵六  ','六'],['','—'],[' () （） ','—'],['张😀（合成）','😀']])assert.equal(avatarInitial(name??''),initial,name);
@@ -193,7 +215,7 @@ test('board mine requires the caller-only HANDLING relation, never names, follow
 });
 test('board today follows Shanghai midnight and completion time rather than activity time',()=>{
   for(const [completed,expected] of [['2026-11-01 23:59:59',false],['2026-11-02 00:00:00',true],['2026-11-02 10:00:00',true],['2026-11-02 10:00:01',false]] as const){
-    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed}),'today',now),expected);
+    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed,closure:completedClosure}),'today',now),expected);
   }
   assert.equal(matchesBoardSummary(boardCard({column:'active',completed_at:'2026-11-02 00:00:00'}),'today',now),false);
   assert.equal(matchesBoardSummary(boardCard({column:'closed'}),'today',now),false);
@@ -270,4 +292,13 @@ test('Card 20 T3 semantic colors reference the primitive palette and retire the 
   assert.doesNotMatch(semantic,/#(?:[\da-f]{3}){1,2}\b/iu);
   assert.doesNotMatch(css,/--(?:bg-board|bg-column|gray-board|gray-column)\s*:/u);
   assert.match(css,/--scrollbar-size:\s*8px/u);
+});
+
+
+test('Card 27B dismissed sort uses proven closed_at and keeps unknown time last',()=>{
+  const manual=boardCard({id:'manual',column:'closed',completed_at:'2020-01-01 00:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 09:00:00'}});
+  const system=boardCard({id:'system',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 08:00:00'}});
+  const unknown=boardCard({id:'unknown',column:'closed',completed_at:'2026-11-06 10:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:null}});
+  assert.deepEqual(sortBoardItems([unknown,system,manual],'closed','newest').map(item=>item.id),['manual','system','unknown']);
+  assert.deepEqual(sortBoardItems([unknown,manual,system],'closed','oldest').map(item=>item.id),['system','manual','unknown']);
 });

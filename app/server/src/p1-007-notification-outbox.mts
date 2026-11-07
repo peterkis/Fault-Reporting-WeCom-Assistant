@@ -68,7 +68,7 @@ export interface NotificationOutbox {
     ticket: NotificationTicket;
     event: NotificationEvent;
     cardTasks?: NotificationCardTask[];
-  }): Promise<{ outbox_id: string; delivery_ids: string[] }>;
+  }): Promise<{ outbox_id: string; delivery_ids: string[] } | null>;
 }
 export interface NotificationDeliveryWorker {
   deliver: (input: { deliveryId: unknown }) => Promise<PublicDelivery | null>;
@@ -152,7 +152,7 @@ const NOTIFICATION_MATRIX: Readonly<Partial<Record<TicketEventType, Notification
   'ticket.resolved': Object.freeze({ reporter: true, team: true }),
   'ticket.closed': Object.freeze({ reporter: true, team: true }),
   'ticket.reopened': Object.freeze({ reporter: true, team: true }),
-  'ticket.cancelled': Object.freeze({ reporter: true, team: true }),
+  'ticket.cancelled': Object.freeze({ reporter: false, team: false }),
   'ticket.note_added': Object.freeze({ reporter: false, team: true }),
   'ticket.information_added': Object.freeze({ reporter: false, team: true }),
   'ticket.auto_close_reminder': Object.freeze({ reporter: true, team: true }),
@@ -306,10 +306,15 @@ export function createNotificationOutbox({
       ticket: NotificationTicket;
       event: NotificationEvent;
       cardTasks?: NotificationCardTask[];
-    }): Promise<{ outbox_id: string; delivery_ids: string[] }> => {
+    }): Promise<{ outbox_id: string; delivery_ids: string[] } | null> => {
       if (!transaction || typeof transaction.query !== 'function' || !ticket || !event) {
         throw new TypeError('A transaction, Ticket, and Ticket Event are required.');
       }
+      const requestedTargets=await targetsForEvent({transaction,ticket,event});
+      // A disabled legacy cancellation is an intentional no-op, before an
+      // Outbox is committed. Other events retain their nonempty-target guard.
+      if(event.event_type==='ticket.cancelled'&&Array.isArray(requestedTargets)&&requestedTargets.length===0)return null;
+      const targets=validateTargets(requestedTargets);
       const templateCode = templateCodeFor(event.event_type);
       const payload = {
         ticket_no: ticket.ticket_no,
@@ -339,7 +344,6 @@ export function createNotificationOutbox({
       );
       const outboxRow = outbox.rows[0];
       if (!outboxRow) throw new Error('NOTIFICATION_OUTBOX_NOT_RETURNED');
-      const targets = validateTargets(await targetsForEvent({ transaction, ticket, event }));
       const deliveryIds = [];
       for (const target of targets) {
         const idempotencyKey = [

@@ -34,7 +34,6 @@ export async function appendT22LiveItem(pool:PostgresPool,sessionId:string,text:
 export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false,search=false}:{search?:boolean;enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
   await withWeb01Fixture(async(f:Base)=>{
     await f.runtime.stop();const sessions:T22Session[]=[];
-    if(personalRead){const input={databaseUrl:f.databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
     const identity=buildConversationThreadIdentity({provider:'WECOM_AIBOT',botId:'t22-synthetic-bot',chatType:'group',chatId:'t22-private-group-id',senderUserId:'t22-reporter-a'});
     const thread=(await f.pool.query<{id:string}>(`INSERT INTO conversation.thread(provider,channel_account_id,chat_type,external_thread_key,thread_key,last_activity_at)
       VALUES($1,$2,$3,$4,$5,platform.local_now()) RETURNING id::text`,[identity.provider,identity.channel_account_id,identity.chat_type,identity.external_thread_key,identity.thread_key])).rows[0];if(!thread)throw Error('T22_THREAD_REQUIRED');
@@ -65,6 +64,6 @@ export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{en
     try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');
       await run({...f,runtime,sessions,cookie:first.name+'='+first.value,outsiderCookie:other.name+'='+other.value,handlerCookie:handler.name+'='+handler.value,browserCookie:first,restoreResponses:()=>{dropping=false;},...(bootstrapAuthenticationBoundary?{bootstrapAuthenticationBoundary}:{})});
     }finally{nextBootstrapCallback=null;await runtime.stop();if(runtime.server.listening)throw Error('T22_SERVER_NOT_CLOSED');}
-  });
+  },{beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{if(personalRead){const input={databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}}});
 }
 

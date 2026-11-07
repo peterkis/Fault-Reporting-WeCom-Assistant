@@ -347,6 +347,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
       return await withTransaction(pool, async (transaction) => {
         await realtimeProjector?.lock?.(transaction);
         const { row: root, submissions } = await loadWebRoot(transaction, requestRef);
+        if(root.status==='IGNORED')return {processed:false,reason:'INTAKE_CLOSED',request_ref:requestRef};
         if (Number(root.processed_revision) >= Number(root.input_revision)) return { processed: false, replayed: true, request_ref: requestRef };
         const latest = (submissions.at(-1) as WebSubmission);
         const text = sourceText(submissions);
@@ -398,9 +399,8 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         } });
         const actions = await processActions({ transaction, decision, root, journey, observedAt: latest.received_at,
           decisionStore, manualReviewStore, ticketCore: core, intakeDecisionPort, realtimeProjector });
-        if (decision.result_code === 'OUT_OF_SCOPE' || decision.result_code === 'ACKNOWLEDGEMENT') {
-          const [requestType, intakeStatus] = decision.result_code === 'OUT_OF_SCOPE'
-            ? ['UNKNOWN', 'IGNORED'] : ['CHATTER', 'COMPLETED'];
+        if (decision.result_code === 'ACKNOWLEDGEMENT') {
+          const [requestType, intakeStatus] = ['CHATTER', 'COMPLETED'];
           const terminal = await transaction.query<{version:number;status:string;request_type:string}>(
             `UPDATE intake.service_intake SET request_type=$2,status=$3,version=version+1,
                 updated_at=GREATEST(created_at,platform.local_now())
@@ -459,11 +459,11 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     pumpRunning = true;
     try {
       const candidates = await pool.query<{request_ref:string}>(
-        `SELECT request_ref FROM intake.web_request_binding
-          WHERE input_revision>processed_revision AND revoked_at IS NULL
-            AND retention_until>platform.local_now()
-            AND (next_attempt_epoch_ms IS NULL OR next_attempt_epoch_ms<=$1::bigint)
-          ORDER BY COALESCE(next_attempt_epoch_ms,0),intake_id LIMIT $2`, [nowEpochMs, batchSize],
+        `SELECT b.request_ref FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
+          WHERE b.input_revision>b.processed_revision AND b.revoked_at IS NULL
+            AND b.retention_until>platform.local_now() AND i.status<>'IGNORED'
+            AND (b.next_attempt_epoch_ms IS NULL OR b.next_attempt_epoch_ms<=$1::bigint)
+          ORDER BY COALESCE(b.next_attempt_epoch_ms,0),b.intake_id LIMIT $2`, [nowEpochMs, batchSize],
       );
       const results = [];
       for (const candidate of candidates.rows) {

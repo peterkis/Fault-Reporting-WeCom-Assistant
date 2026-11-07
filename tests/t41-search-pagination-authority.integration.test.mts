@@ -1,3 +1,7 @@
+import {withWeb01Fixture,seedCard28Board} from './helpers/web01-workbench-fixture.mjs';
+import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
+import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
+import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withT41RiskFixture,object,rows} from './helpers/t41-search-risk-fixture.mjs';
@@ -63,4 +67,72 @@ test('T41 closed input is rejected, rate has no unbounded continuation and disab
   assert.equal((await f.get('/api/workbench/board?column=pending')).status,200);
   const response=await f.get('/api/lifecycle/bootstrap');assert.equal(response.status,200);assert.equal(object(await response.json()).workbench_search_enabled,false);
  },{enabled:false});
+});
+
+interface SearchJitSettings {jit:string;above_cost:string;inline_cost:string;optimize_cost:string;statement_timeout_ms:number;read_only:string;timezone:string}
+const searchJitSettingsSql=`SELECT current_setting('jit') AS jit,current_setting('jit_above_cost') AS above_cost,
+ current_setting('jit_inline_above_cost') AS inline_cost,current_setting('jit_optimize_above_cost') AS optimize_cost,
+ (SELECT setting::integer FROM pg_settings WHERE name='statement_timeout') AS statement_timeout_ms,
+ current_setting('transaction_read_only') AS read_only,current_setting('TimeZone') AS timezone`;
+async function searchJitSettings(client:PostgresPoolClient){const value=(await client.query<SearchJitSettings>(searchJitSettingsSql)).rows[0];assert.ok(value);return value;}
+async function restoreSearchJit(client:PostgresPoolClient,value:SearchJitSettings){
+ await client.query("SELECT set_config('jit',$1,false),set_config('jit_above_cost',$2,false),set_config('jit_inline_above_cost',$3,false),set_config('jit_optimize_above_cost',$4,false)",[value.jit,value.above_cost,value.inline_cost,value.optimize_cost]);
+}
+
+test('T41 bounded Card28 dismissal and unassigned searches survive session JIT with forced low compilation thresholds',{timeout:240000},async()=>{
+ await withWeb01Fixture(async(f:T11Fixture)=>{
+  const seeded=await seedCard28Board(f),originalConnect=f.pool.connect;
+  const providerAvailability:boolean[]=[],observed:{query:string;phase:string;guc:SearchJitSettings}[]=[],afterTransactions:SearchJitSettings[]=[];
+  let currentQuery='',failure:unknown;
+  // The actual borrowed query sessions enter with JIT enabled and low thresholds.
+  // Only transaction consumers are wrapped; ordinary public projection reads retain their baseline settings.
+  f.pool.connect=new Proxy(originalConnect,{apply(target,receiver,args:unknown[]){
+   if(args.length)return Reflect.apply(target,receiver,args);
+   return Reflect.apply(target,receiver,args).then(async(client:PostgresPoolClient)=>{
+    let baseline:SearchJitSettings;
+    try{baseline=await searchJitSettings(client);}catch(error){client.release();throw error;}
+    let readQuery=false;
+    try{
+     await client.query("SELECT set_config('jit','on',false),set_config('jit_above_cost','0',false),set_config('jit_inline_above_cost','0',false),set_config('jit_optimize_above_cost','0',false)");
+     const provider=(await client.query<{available:boolean}>('SELECT pg_jit_available() AS available')).rows[0];assert.ok(provider);assert.equal(typeof provider.available,'boolean');providerAvailability.push(provider.available);
+    }catch(error){try{await restoreSearchJit(client,baseline);}finally{client.release();}throw error;}
+    return new Proxy(client,{get(value,key){
+     if(key==='query')return new Proxy(client.query,{apply:async(execute,_this,queryArgs:unknown[])=>{
+      const sql=typeof queryArgs[0]==='string'?queryArgs[0].trim():'';
+      if(sql.startsWith('WITH cards AS MATERIALIZED')&&sql.includes('matched AS MATERIALIZED')){
+       readQuery=true;observed.push({query:currentQuery,phase:sql.includes('AS session_valid')?'final':'prepare',guc:await searchJitSettings(client)});
+      }
+      const result:unknown=await Reflect.apply(execute,client,queryArgs);
+      if(sql==='COMMIT'||sql==='ROLLBACK'){
+       try{if(readQuery)afterTransactions.push(await searchJitSettings(client));}finally{await restoreSearchJit(client,baseline);}
+      }
+      return result;
+     }});
+     const property:unknown=Reflect.get(value,key);return typeof property==='function'?property.bind(value):property;
+    }});
+   });
+  }});
+  try{
+   const cookie=f.cookies[0];assert.ok(cookie);
+   const cases=[
+    {name:'dismissed-all',query:'column=closed&range=all&closure_kind=dismissed&limit=100',ids:[seeded.manual,seeded.duplicate,seeded.unknown,seeded.historical,seeded.system,seeded.duplicateWith]},
+    {name:'pending-unassigned',query:'column=pending&range=all&responsibility=unassigned&limit=100',ids:seeded.pending},
+   ];
+   for(const sample of cases){
+    currentQuery=sample.name;const start=observed.length;
+    const response=await fetch(f.origin+'/api/workbench/search?'+sample.query,{headers:{cookie,connection:'close'},signal:AbortSignal.timeout(15000)});
+    assert.equal(response.status,200,await response.clone().text());const page=object(await response.json()),found=rows(page.items);
+    assert.deepEqual(found.map(item=>String(item.id)).sort(),[...sample.ids].sort());assert.equal(page.next_cursor,null);
+    assert.equal(Object.hasOwn(page,'total'),false);assert.equal(Object.hasOwn(page,'hidden_count'),false);
+    if(sample.name==='dismissed-all')assert.ok(found.every(item=>object(item.closure).kind==='DISMISSED'));
+    else assert.ok(found.every(item=>item.kind==='ticket'&&item.column==='pending'));
+    assert.deepEqual(observed.slice(start).map(item=>item.phase),['prepare','final'],'both real bounded data phases execute for each HTTP shape');
+   }
+   assert.equal(afterTransactions.length,4);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([
+   ()=>{f.pool.connect=originalConnect;seeded.restore();},
+   ()=>console.log('T41_JIT_BOUNDED_SEARCH '+JSON.stringify({provider_available_with_session_jit_on:providerAvailability,node_timezone:process.env.TZ??null,observed,after_transactions:afterTransactions,original_business_assertions_preserved:true,live_provider_calls:0})),
+  ],failure);
+ },{manualProjection:true,precisionV212:true,ticketSelfHandlingEnabled:true,workbenchSearchEnabled:true,workbenchBoardActionsEnabled:true});
 });

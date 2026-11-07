@@ -47,4 +47,4 @@ export interface H5PublicProgressResult { ok: true; replayed: boolean; client_co
 export type H5PublicProgressReceipt = { state: 'UNKNOWN'; client_command_id: string; ticket_id: string } | { state: 'COMMITTED'; client_command_id: string; ticket_id: string; result: H5PublicProgressResult };
 export interface H5DepartmentReport { ticket_no: string; service_category: string | null; status: string; public_progress: H5PublicProgress | null; created_at: string }
 export interface H5DepartmentPage { items: H5DepartmentReport[]; next_cursor: string | null; total: number; active_count: number }
-export interface H5ReportFilters { search?: string | null; status?: 'OPEN' | 'ACTIVE' | 'COMPLETED' | null }
+export interface H5ReportFilters { search?: string | null; status?: 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CLOSED_OUT' | null }

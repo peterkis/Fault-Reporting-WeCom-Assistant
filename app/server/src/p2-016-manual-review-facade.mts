@@ -17,7 +17,7 @@ interface SourceRow { source_provider: string; source_bot_id: string; reporter_w
 interface WebReportRow { source_provider: string; initial_content: unknown; supplement_items: unknown }
 export interface ManualReviewCurrentResult { ok: true; review_id: unknown; status: Exclude<ReviewStatus, 'PENDING'>; resolution_decision_id: string; action_count: number }
 export type ManualReviewLedgerResult = LedgerResult<ManualReviewCurrentResult>;
-export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; workspaceEnabled?:boolean; manualSourceEnabled?:boolean; draftRecoveryEnabled?:boolean; query?: P2016TicketQuery; notificationProjector?: OrchestrationWorkerOptions['notifications'] | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication | undefined; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
+export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; workspaceEnabled?:boolean; manualSourceEnabled?:boolean; draftRecoveryEnabled?:boolean; query?: P2016TicketQuery; notificationProjector?: (OrchestrationWorkerOptions['notifications'] & Partial<Pick<ReturnType<typeof import('./p2-016-ticket-notification-projector.mjs').createP2016TicketNotificationProjector>,'projectClosure'>>) | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication | undefined; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
 type CommunicationObservation = NonNullable<CommunicationResult> & { error?: { code: string } };
 import { createManualReviewStore } from './p2-015-manual-review.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
@@ -33,11 +33,12 @@ import { projectContactJourney,projectDecision } from './p2-015-projections.mjs'
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { createP2016TicketQuery,ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016,guardP2016,exactP2016,uuidP2016,codeP2016,limitP2016,publicP2016,stampP2016,cursorP2016,decodeCursorP2016,textHashP2016,localP2016,transactionP2016 } from './p2-016-domain-contracts.mjs';
+import {normalizeClosureInput,intakeClosureSnapshot} from './service-closure-records.mjs';
 const ACTIONS: Readonly<Record<FacadeResolutionCode, SafeActionType[]>>=Object.freeze({
   CONFIRM_TICKET_ELIGIBLE:['APPLY_INTAKE_CLASSIFICATION','CREATE_MINIMAL_TICKET'],
   CLASSIFY_SERVICE_REQUEST:['APPLY_INTAKE_CLASSIFICATION','ROUTE_SERVICE_REQUEST'],
   REQUEST_DESCRIPTION:['REQUEST_ONE_DESCRIPTION'],CLASSIFY_BUSINESS_CONSULTATION:[],
-  ACKNOWLEDGE:['SEND_FIXED_ACKNOWLEDGEMENT'],MARK_OUT_OF_SCOPE:['SEND_FIXED_SCOPE_NOTICE'],
+  ACKNOWLEDGE:['SEND_FIXED_ACKNOWLEDGEMENT'],MARK_OUT_OF_SCOPE:['APPLY_INTAKE_CLASSIFICATION'],
   KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
 });
 const WEB_ACTIONS: Readonly<Record<FacadeResolutionCode, SafeActionType[]>>=Object.freeze({
@@ -114,9 +115,14 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
     return pending.rows[0]?{kind:'review',id:pending.rows[0].id}:{kind:'intake',id:review.service_intake_id};
   }
   function normalizeResolution(reviewId:unknown,body:unknown){
-      guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis'],
+      guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis','reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'],
         ['client_command_id','expected_row_version','resolution_code','resolution_reason_code']) as ReviewBody;
       if(!Object.hasOwn(ACTIONS,v.resolution_code)||v.target_journey_id!==undefined)failP2016('RESOLUTION_NOT_PERMITTED',403);
+      if(v.resolution_code==='MARK_OUT_OF_SCOPE'){
+        const closure=normalizeClosureInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]])));
+        if(closure.reason_code!=='NOT_IT_SCOPE')failP2016();
+        if(v.resolution_reason_code!==(closure.secondary_reason_code??closure.reason_code))failP2016();
+      }else if(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].some(key=>Object.hasOwn(v,key)))failP2016();
       if(typeof v.expected_row_version!=='string')failP2016();
       const expected=String(v.expected_row_version);
       if(!/^[1-9][0-9]{0,18}$/u.test(expected)||BigInt(expected)>9223372036854775807n)failP2016();
@@ -133,12 +139,20 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
           await realtimeProjector.lock(transaction);
           c=await detail({authContext,reviewId,transaction});if(workspaceEnabled)await materialFor(c,transaction);
         }
-        return {...c,ticket:null};
+        return {...c,ticket:null,authContext};
   }
-  async function runResolution(transaction:PostgresTransaction,{principal,review,store}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>,creationResolverTeamId?:string):Promise<ManualReviewCurrentResult>{
+  async function runResolution(transaction:PostgresTransaction,{principal,review,store,authContext}:Awaited<ReturnType<typeof authorizeResolution>>,reviewId:unknown,{command,v}:ReturnType<typeof normalizeResolution>,afterResolution?: (result:ManualReviewCurrentResult)=>Promise<void>,creationResolverTeamId?:string):Promise<ManualReviewCurrentResult>{
         await realtimeProjector?.lock?.(transaction);
         await transaction.query('SELECT id FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[review.service_intake_id]);
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
+        const closureInput=v.resolution_code==='MARK_OUT_OF_SCOPE'?normalizeClosureInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]]))):null;
+        const closureSnapshot=closureInput?await intakeClosureSnapshot(transaction,review.service_intake_id):null;
+        if(closureInput){
+          await transaction.query('SELECT p.id FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id WHERE p.id=$1::uuid AND p.is_active ORDER BY r.role FOR SHARE OF p,r',[principal.principal_id]);
+          const current=await detail({authContext,reviewId,transaction});principal=current.principal;store=current.store;
+          if(!principal.is_active||!principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))failP2016('FORBIDDEN',403);
+          if(closureInput.duplicate_of_ref){const predicate=ticketPredicateP2016(principal,2);if(!(await transaction.query(`SELECT t.id FROM pilot_ticket.ticket t WHERE t.ticket_no=$1 AND ${predicate.sql}`,[closureInput.duplicate_of_ref,...predicate.values])).rowCount)failP2016('NOT_FOUND',404);}
+        }
          const resolvedAt=stampP2016(now).local;
          const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:resolvedAt}});
         if(!(resolution as { resolution_decision_id?: string }).resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
@@ -148,7 +162,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
           WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0] as SourceRow;
         const webSource=source?.source_provider==='YIXIAOXIU_WEB';
         const appOnly=webSource||manualSourceEnabled&&source?.source_provider==='STAFF_MANUAL_REPORT';
-        const actionTypes=workspaceEnabled&&!appOnly&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE'].includes(v.resolution_code)
+        const actionTypes=workspaceEnabled&&!appOnly&&['REQUEST_DESCRIPTION','CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE'].includes(v.resolution_code)
           ? ['APPLY_INTAKE_CLASSIFICATION',...ACTIONS[v.resolution_code]] as SafeActionType[] : (appOnly?WEB_ACTIONS:ACTIONS)[v.resolution_code];
         const suggestions: SafeActionSuggestion[]=actionTypes.map((type,index)=>{
           const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
@@ -169,7 +183,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
             if((direct as CommunicationObservation).error)failP2016('ACTION_FAILED',503);
           }return result;
         }});
-        const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
+        const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort({closureInput,closureActor:closureInput?principal.principal_id:null,closureSnapshot}),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
           ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
             const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
             const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary),...(creationResolverTeamId===undefined?{}:{resolverTeamId:creationResolverTeamId})});
@@ -191,7 +205,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
             SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
             WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
-        } else if(appOnly&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
+        } else if(appOnly&&['ACKNOWLEDGE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
           const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
             SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
                 updated_at=GREATEST(created_at,$2::timestamp without time zone)
@@ -199,6 +213,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
         }
         const result:ManualReviewCurrentResult={ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
+        if(closureInput&&notificationProjector?.projectClosure){const record=(await transaction.query<{id:string}>('SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL',[review.service_intake_id])).rows[0];if(record)await notificationProjector.projectClosure({transaction,recordId:record.id});else if((await transaction.query<{status:string}>('SELECT status FROM intake.service_intake WHERE id=$1::uuid',[review.service_intake_id])).rows[0]?.status==='IGNORED')failP2016('ACTION_FAILED',503);}
         await afterResolution?.(result);
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId:reviewId as string});
         return result;
@@ -271,7 +286,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
     },
     async resolveManualReview({authContext,reviewId,body}: { authContext: unknown; reviewId: unknown; body: unknown }): Promise<ManualReviewLedgerResult> {
       const normalized=normalizeResolution(reviewId,body);
-      return ledger.execute({command:normalized.command,authorize:transaction=>authorizeResolution(authContext,reviewId,transaction),
+      return ledger.execute({command:normalized.command,authorize:transaction=>authorizeResolution(authContext,reviewId,transaction),...(normalized.v.resolution_code==='MARK_OUT_OF_SCOPE'?{afterReceiptLock:(transaction:PostgresTransaction)=>authorizeResolution(authContext,reviewId,transaction)}:{}),
         run:(transaction,context)=>runResolution(transaction,context,reviewId,normalized)});
     },
   });

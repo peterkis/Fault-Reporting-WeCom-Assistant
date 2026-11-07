@@ -1,0 +1,121 @@
+{
+  "base": "702f80d653f0c96f6febd7404c58834246427fe7",
+  "candidate": "UNCOMMITTED_REVIEW_FIX_WORKING_TREE",
+  "manifest_sha256": "21fd91e2390e16b8f6ee86df683b7a921ea7c30d7e52ab4bb98a184f7faf5b3b",
+  "source_input_hash": "e8b5206a949f80b6431716d56d86b84108bfa5fd2ee7c5f901931641aea1c4d8",
+  "platform": "win32",
+  "viewport_scale": 1,
+  "main_viewport_dpr": 1,
+  "local_bubble_dpr": 2,
+  "screenshots": [
+    {
+      "file": "conversation-1440.png",
+      "width": 1440,
+      "height": 1080,
+      "bytes": 280846,
+      "sha256": "bc139c98c22bf11fe2a7759603cba2a989c13b9cb391408de44b4f394a6c8719",
+      "scale": 1
+    },
+    {
+      "file": "conversation-900.png",
+      "width": 900,
+      "height": 1080,
+      "bytes": 156458,
+      "sha256": "fe0d181d4dd40bf06be041560b9d95c5f64f435d40576b0f6995ac63ab3827bd",
+      "scale": 1
+    },
+    {
+      "file": "conversation-1920.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 307744,
+      "sha256": "f08c41e5df058960fe8428ff3c0f3cf1fca3605bb1484cf1b2ce61363da27de3",
+      "scale": 1
+    },
+    {
+      "file": "bubble-incoming-x2.png",
+      "width": 660,
+      "height": 284,
+      "bytes": 30253,
+      "sha256": "fb1da4d720a344ce692b49748258caa144477cc51a7c6a3f867056bce2a2caf4",
+      "scale": 2,
+      "dpr": 2,
+      "viewportScale": 1,
+      "clip": {
+        "x": 644,
+        "y": 252,
+        "width": 330,
+        "height": 142,
+        "scale": 1
+      },
+      "targets": [
+        {
+          "left": 648,
+          "right": 969.109375,
+          "top": 256,
+          "bottom": 320,
+          "width": 321.109375,
+          "height": 64,
+          "inTimeline": true,
+          "inViewport": true
+        },
+        {
+          "left": 648,
+          "right": 969.109375,
+          "top": 326,
+          "bottom": 390,
+          "width": 321.109375,
+          "height": 64,
+          "inTimeline": true,
+          "inViewport": true
+        }
+      ],
+      "scrollX": 0,
+      "scrollY": 16
+    },
+    {
+      "file": "bubble-outgoing-x2.png",
+      "width": 660,
+      "height": 144,
+      "bytes": 20667,
+      "sha256": "b5dbc8d5f694a2068239ad01d841ff28969fba787e01cee0f226de85b89b3977",
+      "scale": 2,
+      "dpr": 2,
+      "viewportScale": 1,
+      "clip": {
+        "x": 746,
+        "y": 252,
+        "width": 330,
+        "height": 72,
+        "scale": 1
+      },
+      "targets": [
+        {
+          "left": 750.890625,
+          "right": 1072,
+          "top": 256,
+          "bottom": 320,
+          "width": 321.109375,
+          "height": 64,
+          "inTimeline": true,
+          "inViewport": true
+        }
+      ],
+      "scrollX": 0,
+      "scrollY": 16
+    },
+    {
+      "file": "board-1440.png",
+      "width": 1440,
+      "height": 1080,
+      "bytes": 288223,
+      "sha256": "3757de14c182be5c04c4ca0e41abc98e1685d0e24df3257c1e16663beb6483bb",
+      "scale": 1
+    }
+  ],
+  "origin_reports": [
+    "D:/CodexEvidence/pc-admin-v217-card26-review-20261106/inbox-fix",
+    "D:/CodexEvidence/pc-admin-v217-card26-review-20261106/board-fix"
+  ],
+  "prior_review_input": "D:/CodexEvidence/pc-admin-v217-card26-review-20261106/review-input.json"
+}

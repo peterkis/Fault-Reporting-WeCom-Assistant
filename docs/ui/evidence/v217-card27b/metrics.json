@@ -1,0 +1,125 @@
+{
+  "serverGroups": {
+    "completed": 4,
+    "dismissed": 5
+  },
+  "groups": [
+    {
+      "label": "已完成4",
+      "size": "12px",
+      "weight": "500",
+      "color": "rgb(107, 105, 101)",
+      "expanded": "true"
+    },
+    {
+      "label": "已关闭5不计入完成数",
+      "size": "12px",
+      "weight": "500",
+      "color": "rgb(107, 105, 101)",
+      "expanded": "true"
+    }
+  ],
+  "manual": {
+    "kind": "DISMISSED",
+    "ring": null,
+    "heat": false,
+    "size": "14px",
+    "weight": "500",
+    "color": "rgb(107, 105, 101)",
+    "decoration": "none",
+    "background": "rgb(247, 247, 245)",
+    "shadow": "rgba(15, 15, 15, 0.06) 0px 0px 0px 1px",
+    "filter": "grayscale(1)",
+    "opacity": "0.55",
+    "text": "IT-20261106-000116:08 关闭终端、显示与打印 · 打印机设备与耗材测试误报，人工核对关闭（合成）门诊二楼 · 203 诊室（合成）·H5报修已取消舟林舟（合成） · 人工关闭查看详情业务动作",
+    "restore": false
+  },
+  "system": {
+    "kind": "DISMISSED",
+    "ring": null,
+    "heat": false,
+    "size": "14px",
+    "weight": "500",
+    "color": "rgb(107, 105, 101)",
+    "decoration": "none",
+    "background": "rgb(247, 247, 245)",
+    "shadow": "rgba(15, 15, 15, 0.06) 0px 0px 0px 1px",
+    "filter": "grayscale(1)",
+    "opacity": "0.55",
+    "text": "INT-20260903-001616:08 关闭未分类感谢消息经系统判定不受理（合成）群聊报修系统判定不受理系统判定查看详情业务动作",
+    "restore": false
+  },
+  "duplicate": {
+    "kind": "DISMISSED",
+    "ring": null,
+    "heat": false,
+    "size": "14px",
+    "weight": "500",
+    "color": "rgb(107, 105, 101)",
+    "decoration": "none",
+    "background": "rgb(247, 247, 245)",
+    "shadow": "rgba(15, 15, 15, 0.06) 0px 0px 0px 1px",
+    "filter": "grayscale(1)",
+    "opacity": "0.55",
+    "text": "IT-20261106-000216:08 关闭网络与连接 · 终端网络接入打印故障重复报修（合成）住院部 · 六楼护士站（合成）·H5报修重复系统判定查看详情业务动作",
+    "restore": false
+  },
+  "dragStartReads": [
+    {
+      "path": "/api/tickets/01a1afe7-544b-75ce-a2c8-5f59c8588638",
+      "method": "GET"
+    }
+  ],
+  "dismissedDrop": {
+    "requests": [],
+    "openedDrawer": false
+  },
+  "closureRecord": "关闭记录操作人林舟（合成）时间11-06 16:08方式人工关闭原因已取消原单未关联说明与报修人核对为测试误报，保留内部关闭说明（合成）",
+  "groupNavigation": {
+    "from": "01a1afe7-54ef-701c-b091-9217b4a74471",
+    "to": "01a1afe7-53fe-7db0-b9b9-5a228a4e5600"
+  },
+  "preferenceAfterReload": {
+    "completed": false,
+    "dismissed": true
+  },
+  "today": {
+    "completedGroup": 4,
+    "dismissedGroup": 3,
+    "summary": 3
+  },
+  "dismissedRows": [
+    {
+      "kind": "DISMISSED",
+      "color": "rgb(107, 105, 101)",
+      "reason": "已取消",
+      "width": 92
+    },
+    {
+      "kind": "DISMISSED",
+      "color": "rgb(107, 105, 101)",
+      "reason": "重复",
+      "width": 92
+    },
+    {
+      "kind": "DISMISSED",
+      "color": "rgb(107, 105, 101)",
+      "reason": "已取消",
+      "width": 92
+    },
+    {
+      "kind": "DISMISSED",
+      "color": "rgb(107, 105, 101)",
+      "reason": "系统判定不受理",
+      "width": 92
+    },
+    {
+      "kind": "DISMISSED",
+      "color": "rgb(107, 105, 101)",
+      "reason": "已取消",
+      "width": 92
+    }
+  ],
+  "defaultListRange": "recent",
+  "businessPosts": []
+}

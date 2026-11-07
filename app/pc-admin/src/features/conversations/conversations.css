@@ -31,11 +31,15 @@
 /* Card24 C3–C9. Preserve controller state and the existing full-width toolbar. */
 .ds-page .ds-split .inbox-chat-header {background:var(--bg-canvas);border-bottom:1px solid var(--border-hair);flex:none;}
 .ds-page .ds-split .inbox-timeline {position:relative;z-index:0;}
-.ds-page .ds-split .inbox-reception {--radius-reception:calc(var(--radius-md) + var(--space-0-5));margin-bottom:0;border:1px solid var(--border-default);border-bottom:0;border-radius:var(--radius-reception) var(--radius-reception) 0 0;flex-wrap:nowrap;padding:var(--space-2) var(--space-3);}
-.ds-page .ds-split .inbox-reception p {min-width:0;flex:1;}
-.inbox-reception p>span {display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-weight:var(--fw-regular);}
+.ds-page .ds-split .inbox-reception {--radius-reception:calc(var(--radius-md) + var(--space-0-5));margin-bottom:0;border:1px solid var(--border-default);border-bottom:0;border-radius:var(--radius-reception) var(--radius-reception) 0 0;flex-wrap:wrap;row-gap:var(--space-2);padding:var(--space-2) var(--space-3);}
+.ds-page .ds-split .inbox-reception p {min-width:min-content;flex:1 1 0;}
+.inbox-reception p>.inbox-reception-copy {display:flex;align-items:baseline;min-width:0;white-space:nowrap;color:var(--text-secondary);font-weight:var(--fw-regular);}
+.inbox-reception .inbox-reception-main {display:grid;grid-template-columns:minmax(0,max-content) max-content;min-width:0;}
+.inbox-reception-name {flex:0 1 auto;min-width:0;max-width:calc(var(--fs-sm) * 8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.inbox-reception-status,.inbox-reception-hint {flex:none;white-space:nowrap;}
+@container (max-width:680px) {.inbox-reception-copy>.inbox-reception-hint {display:none;}}
 .inbox-reception strong {color:var(--text-primary);font-weight:var(--fw-semibold);}
-.inbox-reception-actions {flex:none;}
+.inbox-reception-actions {flex:none;margin-left:auto;}
 .ds-page .ds-split .inbox-reception:not([hidden])+.inbox-composer {border-radius:var(--radius-lg);border-top-left-radius:0;border-top-right-radius:0;}
 .ds-page .ds-split .inbox-composer:has([role=tabpanel]:not([hidden]) .conversation-composer[data-composer-disabled=true]) {background:var(--bg-canvas);border-color:var(--border-default);}
 .ds-page .ds-split .inbox-composer .conversation-composer textarea:disabled {background:var(--bg-canvas);}
@@ -50,6 +54,14 @@
 .inbox-delivery code {font-family:var(--font-mono);font-size:var(--fs-xs);}
 .inbox-contact-bottom .inbox-delivery-exception>svg {display:block;width:var(--fs-xs);height:var(--fs-xs);}
 .ds-page .ds-split .inbox-associated h3 {font-size:var(--fs-sm);font-weight:var(--fw-semibold);}
+.ds-page .ds-split .inbox-associated .inbox-open-summary {position:relative;isolation:isolate;padding-left:0;padding-right:0;}
+.ds-page .ds-split .inbox-associated .inbox-open-summary:hover {background:transparent;}
+.inbox-open-summary::before {content:'';position:absolute;inset:0 calc(-1 * var(--space-2));z-index:-1;border-radius:var(--radius-sm);}
+.inbox-open-summary:hover::before {background:var(--bg-hover);}
+.ds-page .ds-split .inbox-topic-picker {max-width:calc(var(--space-16) * 3 + var(--space-12));}
+.ds-page .ds-split .inbox-chat-person p {display:flex;min-width:0;contain:none;}
+.inbox-chat-department {flex:1;width:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.inbox-chat-channel,.inbox-chat-identity p>[aria-hidden=true] {flex:none;white-space:nowrap;}
 .inbox-reporter-person strong {font-size:var(--fs-md);}
 .ds-page .ds-split .inbox-origin p {font-size:var(--fs-sm);line-height:var(--lh-md);}
 .ds-page .ds-split .inbox-internal-lock {top:calc(var(--space-2) + var(--space-0-5));}

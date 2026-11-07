@@ -1,0 +1,77 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "windowQueriesHeld": 1,
+  "searches": [
+    {
+      "url": "/api/workbench/search?q=&column=all&range=all&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&limit=50",
+      "status": 200
+    },
+    {
+      "url": "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=dismissed&closed_from=2026-11-06&closed_to=2026-11-06&limit=50",
+      "status": 200
+    },
+    {
+      "url": "/api/workbench/search?q=&column=all&range=custom&scope=team&responsibility=any&supplement=any&schedule=any&closure_kind=completed&closed_from=2026-11-06&closed_to=2026-11-06&limit=50",
+      "status": 200
+    }
+  ],
+  "metrics": {
+    "held": {
+      "dates": [
+        {
+          "preset": "today",
+          "disabled": true
+        },
+        {
+          "preset": "recent",
+          "disabled": true
+        },
+        {
+          "preset": "week",
+          "disabled": true
+        },
+        {
+          "preset": "month",
+          "disabled": true
+        }
+      ],
+      "custom": "true",
+      "chip": true,
+      "submit": true,
+      "exit": true,
+      "refresh": true,
+      "scope": true,
+      "qWritable": true,
+      "url": "?view=list&range=custom&closure_kind=dismissed&search=1&closed_from=2026-11-06&closed_to=2026-11-06"
+    },
+    "heldViewSwitch": {
+      "range": "custom",
+      "from": "2026-11-06",
+      "to": "2026-11-06",
+      "kind": "dismissed"
+    },
+    "unlockedOnBoard": true,
+    "released": {
+      "dismissedToday": 3,
+      "completedToday": 4,
+      "qPreserved": true
+    },
+    "searchRequests": 3,
+    "businessPosts": []
+  },
+  "screenshots": [
+    {
+      "file": "D:\\CodexTemp\\pc-admin-v217-card27b-review-20261106\\card27b-overlap-nr9ocw\\search-controls-locked-1440.png",
+      "width": 1152,
+      "height": 137,
+      "sha256": "8b7270c4d14e6a0ab9b76d7485117a5e5af89b524b42f2ec17067cc7fa358dbc",
+      "viewport": {
+        "width": 1440,
+        "height": 1060,
+        "dpr": 1,
+        "zoom": 1,
+        "platform": "Win32"
+      }
+    }
+  ]
+}

@@ -21,7 +21,7 @@
 
 Cookie：成员为 `__Host-wecom_session`（HttpOnly/Secure/SameSite=Lax/Path=/）；旧访问为 `p2016_reporter`（HttpOnly/Secure/SameSite=Strict/Path=/api/reporter，测试loopback例外须显式允许）。grant 来自卡片 fragment，不能放query、日志或本地存储。
 
-Ticket view：`public_ref,ticket_no,suffix,title,external_status,created_at,updated_at,version,guidance`；Incident 组装可加 `incident_milestones[]` 的安全公开事件。timeline=`{items:[{ref,text,occurred_at,source_rank,source_ordinal,...公开milestone字段}],next_cursor}`。不返回内部备注、处理人私密信息、Ticket UUID、原始绑定或grant。source_rank/ordinal只用于投影排序，不是业务状态版本。
+Ticket view：`public_ref,ticket_no,suffix,title,status,closure_text,external_status,created_at,updated_at,version,guidance`；Incident 组装可加 `incident_milestones[]` 的安全公开事件。timeline=`{items:[{ref,text,occurred_at,source_rank,source_ordinal,...公开milestone字段}],next_cursor}`。不返回内部备注、处理人私密信息、Ticket UUID、原始绑定或grant。source_rank/ordinal只用于投影排序，不是业务状态版本。
 
 成员会话的合成响应与legacy bootstrap不同：
 
@@ -54,3 +54,12 @@ WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF
 ## 核实代录原应用本人读取（WBINT-T25）
 
 经核实MANUAL App卡片沿原 publicRef 页面/GET ticket/timeline，当前OAuth成员及对象归属独立验证；精确原 scope/journey、当前有效App通知binding和物理留存共同核验，卡片URL不是授权。匹配App配置保留而enabled=false不阻断本人历史READ；读取不调用发送资格Resolver。MANUAL不进入BOT_TICKET或Bot feedback，内部过程/身份/绑定/SDK回执不公开。H5仍用原requestRef自助读取。完整装配和恢复见[应用通知](../workbench/app-notifications.md)。
+
+
+## 2026-11-07 H5 关闭展示更新
+
+成员与 Grant 读取共用的 Ticket view 增加必需字段 status 与 closure_text。status 使用 Ticket Core 的既有状态枚举。CANCELLED / DUPLICATE_LINKED 显示“已关闭 / Closed”，CLOSED / RESOLVED 显示“已完成 / Completed”。closure_text 为字符串或 null，复用 ADR-0056 的报修人安全模板，只使用原因码和可选原单编号。内部 note、操作人和关闭快照不进入此响应。误报或测试的通用“已关闭”由本地化状态标签承接。
+
+Bot / Grant 原链接进入同一 React H5 Reporter 页面。页面消费结构化 status，复用 H5 状态和主题组件，固定标题与引导按中英文目录显示。公开关闭说明保持服务端原文，以 textContent 渲染。刷新会清除已恢复事项的旧关闭说明和关闭样式。原 external_status 继续为同一当前状态提供中文展示文案，页面状态由 status 决定。
+
+该 API 沿用原成员本人 READ 或精确 Grant 绑定会话。Grant 读取在查询完成后再次认证，再返回响应和 ETag。轮询、隐藏暂停、退出清屏、跨账号与迟到结果 fence 沿既有控制器执行。

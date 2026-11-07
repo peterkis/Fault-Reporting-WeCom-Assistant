@@ -43,11 +43,11 @@ function safeCode(value: unknown, fallback: string) {
 }
 
 /** The existing cancellation transition and audit, also usable for proven unsent legacy dead letters. */
-export async function cancelUnattemptedDeliveryInTransaction({transaction,deliveryId,expected,reasonCode,occurredEpochMs}:{transaction:PostgresTransaction;deliveryId:string;expected:{status:'LEASED';leaseToken:string}|{status:'DEAD_LETTER'};reasonCode:string;occurredEpochMs:string}):Promise<boolean>{
+export async function cancelUnattemptedDeliveryInTransaction({transaction,deliveryId,expected,reasonCode,occurredEpochMs}:{transaction:PostgresTransaction;deliveryId:string;expected:{status:'LEASED';leaseToken:string}|{status:'DEAD_LETTER'|'PENDING'};reasonCode:string;occurredEpochMs:string}):Promise<boolean>{
   const epoch=assertEpochMsString(occurredEpochMs),local=formatEpochMsToShanghaiLocal(epoch);
   const cancelled=await transaction.query<AttemptRow>(`UPDATE communication.delivery SET status='CANCELLED',side_effect_state='NOT_ATTEMPTED',attempt_count=attempt_count+1,
     lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,send_started_at=NULL,send_started_epoch_ms=NULL,last_error_code=$4,updated_at=$5::timestamp without time zone
-    WHERE id=$1::uuid AND status=$2 AND side_effect_state='NOT_ATTEMPTED' AND ($2='DEAD_LETTER' OR lease_token=$3::uuid) RETURNING attempt_count`,
+    WHERE id=$1::uuid AND status=$2 AND side_effect_state='NOT_ATTEMPTED' AND ($2<>'LEASED' OR lease_token=$3::uuid) RETURNING attempt_count`,
     [deliveryId,expected.status,expected.status==='LEASED'?expected.leaseToken:null,safeCode(reasonCode,'COMMUNICATION_CANCELLED'),local]);
   const count=cancelled.rows[0]?.attempt_count;if(count===undefined)return false;
   await transaction.query(`INSERT INTO communication.delivery_attempt(delivery_id,attempt_no,outcome,side_effect_state,error_code,started_at,started_epoch_ms,completed_at,completed_epoch_ms)

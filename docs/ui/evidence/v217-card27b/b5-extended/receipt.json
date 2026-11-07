@@ -1,0 +1,263 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "candidate_input_hash": "fdfc17a5e63a7b4e088cce2728de0258d5d49ac93b26276c97c3e7c4dce9ff63",
+  "manifest_sha256": "9ddfb37d546a17bf194faee8ce8977abe66a2a09f34671fd7bea988a43988448",
+  "screenshots": [
+    {
+      "file": "list-today-dismissed-1440.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "416c903115706939fc48c3213936013f04fdba7dcb35f1d1030aaf8b7446a61e",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1408,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1042.59375,
+          "right": 1408,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 895.59375,
+          "right": 1030.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1440,
+        "scrollWidth": 1440,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-today-dismissed-1440.png"
+    },
+    {
+      "file": "list-today-dismissed-1920.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "7103b30db931240c9dc169012b392722e6bd75edd85b362c823a180ee0027605",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1648,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1282.59375,
+          "right": 1648,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 1135.59375,
+          "right": 1270.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1920,
+        "scrollWidth": 1920,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-today-dismissed-1920.png"
+    },
+    {
+      "file": "list-week-dismissed-1440.png",
+      "width": 1440,
+      "height": 1101,
+      "sha256": "e98ee97ce7ed73c40fde5153dec7f63656acbc67bd4044b2440a2dc0d21f0217",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1400,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1034.59375,
+          "right": 1400,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 887.59375,
+          "right": 1022.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1440,
+        "scrollWidth": 1432,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-week-dismissed-1440.png"
+    },
+    {
+      "file": "list-week-dismissed-1920.png",
+      "width": 1920,
+      "height": 1101,
+      "sha256": "cbb31d8357667d8bb274352e660c1c06732228d3de36d1ca16cf3cd9a2532a29",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1648,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1282.59375,
+          "right": 1648,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 1135.59375,
+          "right": 1270.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1920,
+        "scrollWidth": 1912,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-week-dismissed-1920.png"
+    },
+    {
+      "file": "list-month-dismissed-1440.png",
+      "width": 1440,
+      "height": 1101,
+      "sha256": "8d55ea48597b6cc8fd55a5809155de313e952e5a0f985393e56367df271cfec9",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1400,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1034.59375,
+          "right": 1400,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 887.59375,
+          "right": 1022.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1440,
+        "scrollWidth": 1432,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-month-dismissed-1440.png"
+    },
+    {
+      "file": "list-month-dismissed-1920.png",
+      "width": 1920,
+      "height": 1101,
+      "sha256": "d65cd88c77875af0990e98b436d1118db6860ee0024984cde83c2c84b361145c",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1648,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1282.59375,
+          "right": 1648,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 1135.59375,
+          "right": 1270.59375,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1920,
+        "scrollWidth": 1912,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-month-dismissed-1920.png"
+    },
+    {
+      "file": "list-custom-dismissed-1440.png",
+      "width": 1440,
+      "height": 1060,
+      "sha256": "5f68825e5f8480d66799bdf8847b4f321c778afcc90e767491e90d47b06a3379",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1408,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 997.953125,
+          "right": 1408,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 850.953125,
+          "right": 985.953125,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1440,
+        "scrollWidth": 1440,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-custom-dismissed-1440.png"
+    },
+    {
+      "file": "list-custom-dismissed-1920.png",
+      "width": 1920,
+      "height": 1060,
+      "sha256": "ad923acafa7d27d58a57e4497ee148c6733546133a867b6be127f04441dde32d",
+      "viewport": {
+        "toolbar": {
+          "left": 272,
+          "right": 1648,
+          "top": 165,
+          "bottom": 233
+        },
+        "dates": {
+          "left": 1237.953125,
+          "right": 1648,
+          "top": 183,
+          "bottom": 215
+        },
+        "chip": {
+          "left": 1090.953125,
+          "right": 1225.953125,
+          "top": 183,
+          "bottom": 215
+        },
+        "width": 1920,
+        "scrollWidth": 1920,
+        "platform": "Win32",
+        "dpr": 1,
+        "zoom": 1
+      },
+      "source_capture": "D:\\CodexTemp\\pc-admin-v217-card27b-b5-20261106\\card27b-b5-TrAL9b\\list-custom-dismissed-1920.png"
+    }
+  ]
+}
