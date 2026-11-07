@@ -13,7 +13,12 @@ export function createNeutralProviderFixture(){
  const call=async(method:string,params:Record<string,unknown>,sessionId:string|null)=>{if(!command||closed)throw Error('NEUTRAL_PROVIDER_NOT_ACTIVE');return command(method,params,sessionId);};
  const iframeOperation=async(method:string,params:Record<string,unknown>,sessionId:string):Promise<boolean>=>{
   try{await call(method,params,sessionId);return true;}catch(error){
-   if(!ownedIframeSessions.has(sessionId)||!(error instanceof Error)||error.message!=='Session with given id not found.')throw error;
+   if(!ownedIframeSessions.has(sessionId)||!(error instanceof Error))throw error;
+   const details=record(error.cause);
+   const resumeTimedOut=method==='Runtime.runIfWaitingForDebugger'
+    && error.message==='P2_006_BROWSER_COMMAND_TIMEOUT'
+    && details?.method===method && details?.sessionKind==='attached';
+   if(error.message!=='Session with given id not found.'&&!resumeTimedOut)throw error;
    let source='detached-event';
    if(!detachedSessions.has(sessionId)){
     // Confirm retirement through a read-only session command; a still-usable
@@ -31,9 +36,20 @@ export function createNeutralProviderFixture(){
  const handle=async(value:unknown)=>{
   const event=record(value);if(!event||typeof event.method!=='string')return;const params=record(event.params);if(!params)return;
   if(event.method==='Target.attachedToTarget'){
-   const id=params.sessionId,info=record(params.targetInfo);if(typeof id!=='string'||!info)return;liveSessions.add(id);
-   if(info.type==='iframe'){ownedIframeSessions.add(id);if(await iframeOperation('Fetch.enable',{patterns},id)&&liveSessions.has(id))await iframeOperation('Runtime.runIfWaitingForDebugger',{},id);}
-   else if(liveSessions.has(id))await call('Runtime.runIfWaitingForDebugger',{},id);
+   const id=params.sessionId,info=record(params.targetInfo);
+   if(typeof id!=='string'||!info)return;
+   const waitingForDebugger=params.waitingForDebugger;
+   if(typeof waitingForDebugger!=='boolean')throw Error('NEUTRAL_PROVIDER_ATTACH_WAITING_FLAG_INVALID');
+   liveSessions.add(id);
+   if(info.type==='iframe'){
+    ownedIframeSessions.add(id);
+    const interceptionReady=await iframeOperation('Fetch.enable',{patterns},id);
+    if(interceptionReady&&waitingForDebugger&&liveSessions.has(id)){
+     await iframeOperation('Runtime.runIfWaitingForDebugger',{},id);
+    }
+   }else if(waitingForDebugger&&liveSessions.has(id)){
+    await call('Runtime.runIfWaitingForDebugger',{},id);
+   }
    return;
   }
   if(event.method==='Target.detachedFromTarget'){if(typeof params.sessionId==='string'){liveSessions.delete(params.sessionId);detachedSessions.add(params.sessionId);}return;}
@@ -52,7 +68,12 @@ export function createNeutralProviderFixture(){
  return {
   socketFactory(address:string){assert.equal(socket,null);socket=new WebSocket(address);socket.addEventListener('message',onMessage);return socket;},
   async install(execute:ProviderCommand){assert.equal(command,null);command=execute;await call('Fetch.enable',{patterns},null);await call('Target.setAutoAttach',{autoAttach:true,waitForDebuggerOnStart:true,flatten:true},null);},
-  assertHealthy(){if(failure)throw failure;assert.ok(fulfilledDocuments>0,'the actual SDK iframe document must be fulfilled by the neutral endpoint fixture');},
+  async assertHealthy(){
+   // Check the operations already handed to this fixture before its caller closes it.
+   await Promise.all([...tasks]);
+   if(failure)throw failure;
+   assert.ok(fulfilledDocuments>0,'the actual SDK iframe document must be fulfilled by the neutral endpoint fixture');
+  },
   receipt(){return {kind:'NEUTRAL_PROVIDER_DOCUMENT_ONLY',fulfilledDocuments,blockedRequests,pendingHandlers:tasks.size,retiredIframeSessions:retiredSessions.size,retiredOperations,callbackScript:false,qrContent:false,realProvider:false};},
   dispose(){closed=true;socket?.removeEventListener('message',onMessage);socket=null;command=null;liveSessions.clear();}
  };

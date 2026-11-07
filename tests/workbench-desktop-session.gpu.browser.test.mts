@@ -2,7 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {setTimeout as delay} from 'node:timers/promises';
+import {setTimeout as delay,setImmediate as nextTurn} from 'node:timers/promises';
+import {once} from 'node:events';
+import WebSocket,{WebSocketServer} from 'ws';
+import {createNeutralProviderFixture} from './helpers/desktop-login-backdrop-pipeline-fixture.mjs';
 import {renderEmbeddedLogin,embeddedLoginHeaders,serveEmbeddedLoginAsset} from '../app/server/src/workbench-embedded-login.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {loginGpuFaultModes,loginGpuFaultScript,readLoginGpuFaultSnapshot,assertLoginGpuFaultReleased,loginEnvironmentFaultModes,loginEnvironmentFaultScript,readLoginEnvironmentFaultSnapshot,type LoginEnvironmentFaultSnapshot,type LoginGpuFaultSnapshot} from './helpers/desktop-login-gpu-fault-fixture.mjs';
@@ -183,3 +186,104 @@ test('compiled login releases the exact first-used environment texture and its C
  finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}],failure);}
 });
 
+
+
+// Unit cases inject late CDP outcomes through the actual compiled neutral-provider fixture.
+const providerRetirementModes=['retired-detached','retired-not-found','still-live','unknown'] as const;
+type ProviderRetirementMode=typeof providerRetirementModes[number];
+function providerDeferred(){
+ let resolve:()=>void=()=>{};
+ let reject:(error:unknown)=>void=()=>{};
+ const promise=new Promise<void>((ok,bad)=>{resolve=ok;reject=bad;});
+ return {promise,resolve,reject};
+}
+async function exerciseProviderRetirement(mode:ProviderRetirementMode){
+ const server=new WebSocketServer({host:'127.0.0.1',port:0});
+ await once(server,'listening');
+ const address=server.address();assert.ok(address&&typeof address==='object');
+ const connection=once(server,'connection');
+ const fixture=createNeutralProviderFixture();
+ const client=fixture.socketFactory('ws://127.0.0.1:'+address.port);
+ const [connectionResult]=await Promise.all([connection,once(client,'open')]);
+ const peer:unknown=connectionResult[0];assert.ok(peer instanceof WebSocket);
+ const seedEnabled=providerDeferred(),seedFulfilled=providerDeferred(),resumeEntered=providerDeferred(),resume=providerDeferred(),barrier=providerDeferred();
+ const timeout=new Error('P2_006_BROWSER_COMMAND_TIMEOUT',{cause:{method:'Runtime.runIfWaitingForDebugger',sessionKind:'attached'}});
+ const missing=new Error('Session with given id not found.');
+ const unknown=new Error('SYNTHETIC_ISOLATE_CHECK_UNAVAILABLE');
+ let probeCount=0,resumeCount=0,seedResumeCount=0,healthSettled=false;
+ let summary:Record<string,unknown>|undefined;
+ const send=(method:string,params:Record<string,unknown>,sessionId?:string)=>peer.send(JSON.stringify({method,params,...(sessionId?{sessionId}:{})}));
+ try{
+  await fixture.install(async(method,params={},sessionId=null)=>{
+   if(sessionId===null&&['Fetch.enable','Target.setAutoAttach'].includes(method))return {};
+   if(method==='Fetch.enable'){
+    assert.ok(typeof sessionId==='string');assert.ok(['seed','probe'].includes(sessionId));
+    if(sessionId==='seed')seedEnabled.resolve();
+    return {};
+   }
+   if(method==='Runtime.runIfWaitingForDebugger'&&sessionId==='seed'){seedResumeCount++;return {};}
+   if(method==='Runtime.runIfWaitingForDebugger'&&sessionId==='probe'){
+    resumeCount++;resumeEntered.resolve();return resume.promise;
+   }
+   if(method==='Fetch.fulfillRequest'){
+    assert.equal(sessionId,'seed');assert.equal(params.responseCode,200);seedFulfilled.resolve();return {};
+   }
+   if(method==='Fetch.failRequest'){
+    assert.equal(sessionId,'seed');assert.equal(params.requestId,'barrier');barrier.resolve();return {};
+   }
+   if(method==='Runtime.getIsolateId'){
+    assert.equal(sessionId,'probe');probeCount++;
+    if(mode==='retired-not-found')throw missing;
+    if(mode==='still-live')return {id:'synthetic-isolate'};
+    throw unknown;
+   }
+   throw Error('UNEXPECTED_SYNTHETIC_COMMAND');
+  });
+  send('Target.attachedToTarget',{sessionId:'seed',targetInfo:{type:'iframe'},waitingForDebugger:false});
+  await seedEnabled.promise;
+  send('Fetch.requestPaused',{requestId:'neutral',resourceType:'Document',request:{method:'GET',url:'https://login.work.weixin.qq.com/wwlogin/sso/login'}},'seed');
+  await seedFulfilled.promise;await nextTurn();await fixture.assertHealthy();
+  assert.equal(fixture.receipt().fulfilledDocuments,1);
+  send('Target.attachedToTarget',{sessionId:'probe',targetInfo:{type:'iframe'},waitingForDebugger:true});
+  await resumeEntered.promise;
+  const health=Promise.resolve(fixture.assertHealthy());
+  void health.then(()=>{healthSettled=true;},()=>{healthSettled=true;});
+  await Promise.resolve();
+  assert.equal(healthSettled,false,'the final health check must observe its already-pending handler');
+  if(mode==='retired-detached'){
+   send('Target.detachedFromTarget',{sessionId:'probe'});
+   send('Fetch.requestPaused',{requestId:'barrier',resourceType:'Document',request:{method:'GET',url:'https://login.work.weixin.qq.com/not-neutral'}},'seed');
+   await barrier.promise;await nextTurn();
+  }
+  resume.reject(timeout);
+  if(mode==='retired-detached'||mode==='retired-not-found')await health;
+  else await assert.rejects(health,error=>error===(mode==='still-live'?timeout:unknown));
+  const receipt=fixture.receipt();
+  assert.equal(receipt.fulfilledDocuments,1,'retirement never counts as a fulfilled provider document');
+  assert.equal(receipt.pendingHandlers,0);
+  assert.equal(resumeCount,1);
+  assert.equal(seedResumeCount,0,'a non-waiting target receives zero resume commands');
+  assert.equal(probeCount,mode==='retired-detached'?0:1);
+  assert.equal(receipt.retiredIframeSessions,mode.startsWith('retired-')?1:0);
+  assert.deepEqual(receipt.retiredOperations,mode==='retired-detached'?[{operation:'Runtime.runIfWaitingForDebugger',source:'detached-event'}]:mode==='retired-not-found'?[{operation:'Runtime.runIfWaitingForDebugger',source:'authoritative-session-not-found'}]:[]);
+  summary={mode,resumeCount,seedResumeCount,probeCount,lateHealthObserved:healthSettled,fulfilledDocuments:receipt.fulfilledDocuments,retiredIframeSessions:receipt.retiredIframeSessions,retiredOperations:receipt.retiredOperations,expectedFailureObserved:!mode.startsWith('retired-')};
+ }finally{
+  fixture.dispose();
+  resume.resolve();
+  const peerClosed=peer.readyState===3?Promise.resolve():once(peer,'close');
+  if(client.readyState!==3){const closed=once(client,'close');client.close();await closed;}
+  await peerClosed;
+  await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
+ }
+ assert.ok(summary);
+ return {...summary,clientClosed:client.readyState===3,serverClients:server.clients.size,serverClosed:true};
+}
+
+for(const mode of providerRetirementModes){
+ test('unit neutral provider retirement evidence '+mode,{timeout:5000},async context=>{
+  const proof=await exerciseProviderRetirement(mode);
+  assert.equal(proof.clientClosed,true);
+  assert.equal(proof.serverClients,0);
+  context.diagnostic(JSON.stringify(proof));
+ });
+}
