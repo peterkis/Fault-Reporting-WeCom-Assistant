@@ -311,17 +311,27 @@ test('Card 27C-A closing processing terminates pending supplemental follow-up an
  const summary=await responseJson(await target.http.get('/api/tickets/'+target.id+'/supplement-follow-up'));assert.equal(summary.has_pending_supplements,false);assert.equal((await f.pool.query('SELECT 1 FROM intake.service_intake_message WHERE intake_id=$1::uuid',[target.intakeId])).rowCount,before);
 }));
 
+test('Card 29 restore target reports a closure that chose not to notify, so restoring sends nothing',{timeout:240000},async()=>withClosureFixture(async f=>{
+ const target=await freshTicket(f,'IN_PROGRESS');
+ await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(target.current.version,'OTHER',{notify_reporter:false})));
+ const response=await target.http.get('/api/tickets/'+target.id+'/closure-history');assert.equal(response.status,200);const page=await (response.json() as Promise<ClosureHistoryPage>);
+ assert.equal(page.restore_target?.notify_reporter,false);assert.equal(page.restore_target?.notification_state,'NOT_SENT');
+ const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));
+ const record=(await f.pool.query<{restoration_notification_message_id:string|null}>('SELECT restoration_notification_message_id::text FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid ORDER BY closed_at DESC LIMIT 1',[target.id])).rows[0];
+ assert.equal(record?.restoration_notification_message_id,null,'a closure without notification restores without a reporter message');
+}));
+
 test('Card 27C-B closure history reads real delivery facts, effective owners and bounded version-ordered history',{timeout:240000},async()=>withClosureFixture(async f=>{
  const target=await freshTicket(f,'IN_PROGRESS'),owner=target.current.assignee_id;assert.ok(owner);
  const read=async()=>{const response=await target.http.get('/api/tickets/'+target.id+'/closure-history');assert.equal(response.status,200);return response.json() as Promise<ClosureHistoryPage>;};
  assert.deepEqual((await read()).items,[]);
  await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(target.current.version,'REPORTER_WITHDREW')));
- let page=await read();assert.equal(page.items.length,1);assert.equal(page.items[0]?.note,CANARY);assert.equal(page.items[0]?.notification_state,'NOT_SENT');assert.equal(page.restore_target?.status,'IN_PROGRESS');assert.equal(page.restore_target?.column,'active');assert.ok(page.restore_target?.assignee_name);assert.equal(page.next_before_version,null);
+ let page=await read();assert.equal(page.restore_target?.notify_reporter,true,'a notifying closure reports it to the restore confirmation');assert.equal(page.items.length,1);assert.equal(page.items[0]?.note,CANARY);assert.equal(page.items[0]?.notification_state,'NOT_SENT');assert.equal(page.restore_target?.status,'IN_PROGRESS');assert.equal(page.restore_target?.column,'active');assert.ok(page.restore_target?.assignee_name);assert.equal(page.next_before_version,null);
  const outside=f.cookies[1];assert.ok(outside);assert.equal((await fetch(f.origin+'/api/tickets/'+target.id+'/closure-history',{headers:{cookie:outside,connection:'close'}})).status,404);
  for(const query of ['?before_version=0','?before_version=-1','?before_version=1&before_version=2','?unknown=1'])assert.equal((await target.http.get('/api/tickets/'+target.id+'/closure-history'+query)).status,400);
  const sender=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,batchSize:20,sender:{send:async()=>({outcome:'ACKNOWLEDGED',provider_message_id:null,error_code:null,retryable:false})}});await sender.runOnce({limit:20});
  page=await read();assert.equal(page.items[0]?.notification_state,'SENT');assert.equal(page.restore_target?.notification_state,'SENT');
- await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[owner]);page=await read();assert.deepEqual(page.restore_target,{status:'QUEUED',column:'pending',assignee_name:null,notification_state:'SENT'});
+ await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[owner]);page=await read();assert.deepEqual(page.restore_target,{status:'QUEUED',column:'pending',assignee_name:null,notify_reporter:true,notification_state:'SENT'});
  await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:page.version,reason_code:'RESTORE_CLOSED'}));
  page=await read();assert.equal(page.restore_target,null);assert.ok(page.items[0]?.restored_at);assert.ok(page.items[0]?.restored_by_display_name);
  for(let index=0;index<20;index++){const current=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/cancel',closeBody(current.version)));const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));}

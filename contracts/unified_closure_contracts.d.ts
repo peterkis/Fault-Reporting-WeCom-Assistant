@@ -17,5 +17,6 @@ export interface ClosureHistoryEntry {
 }
 export interface ClosureHistoryPage {
  subject_id:string;version:number;items:ClosureHistoryEntry[];next_before_version:number|null;
- restore_target:{status:string;column:'pending'|'active';assignee_name:string|null;notification_state:'SENT'|'UNKNOWN'|'NOT_SENT'}|null;
+ /** notify_reporter: whether the closure being restored chose to notify the reporter; restore notifies only after a notified closure. */
+ restore_target:{status:string;column:'pending'|'active';assignee_name:string|null;notify_reporter:boolean;notification_state:'SENT'|'UNKNOWN'|'NOT_SENT'}|null;
 }

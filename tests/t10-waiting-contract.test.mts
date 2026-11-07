@@ -24,9 +24,9 @@ async function closureBrowserDecoder(){
 
 test('Card 27C-B history decoding rejects cross-subject data, unknown fields and invented delivery or calendar values',async()=>{
  const decode=await closureBrowserDecoder(),id=randomUUID(),entry={id:randomUUID(),before_version:1,reason_code:'OTHER' as const,reason_label:'其他',secondary_reason:null,note:'仅内部（合成）',duplicate_of:null,source:'MANUAL' as const,closed_at:'2026-11-07 10:00:00',closed_by_display_name:'处理人（合成）',notification_state:'NOT_SENT' as const,restored_at:null,restored_by_display_name:null};
- const page:ClosureHistoryPage={subject_id:id,version:2,items:[entry],next_before_version:null,restore_target:{status:'IN_PROGRESS',column:'active',assignee_name:'处理人（合成）',notification_state:'NOT_SENT'}};
+ const page:ClosureHistoryPage={subject_id:id,version:2,items:[entry],next_before_version:null,restore_target:{status:'IN_PROGRESS',column:'active',assignee_name:'处理人（合成）',notify_reporter:true,notification_state:'NOT_SENT'}};
  await assertP2016Schema('unified_closure_history',page);assert.deepEqual(decode(page,id),page);
- for(const change of [{subject_id:randomUUID()},{private_snapshot:{}},{items:[{...entry,notification_state:'QUEUED'}]},{items:[{...entry,closed_at:'2026-02-30 10:00:00'}]},{items:[{...entry,notification_message_id:randomUUID()}]},{items:[entry,entry]},{next_before_version:1},{restore_target:{...page.restore_target,status:'CANCELLED'}}])assert.throws(()=>decode({...page,...change},id));
+ for(const change of [{subject_id:randomUUID()},{private_snapshot:{}},{items:[{...entry,notification_state:'QUEUED'}]},{items:[{...entry,closed_at:'2026-02-30 10:00:00'}]},{items:[{...entry,notification_message_id:randomUUID()}]},{items:[entry,entry]},{next_before_version:1},{restore_target:{...page.restore_target,status:'CANCELLED'}},{restore_target:{...page.restore_target,notify_reporter:'true'}},{restore_target:{status:'IN_PROGRESS',column:'active',assignee_name:null,notification_state:'NOT_SENT'}}])assert.throws(()=>decode({...page,...change},id));
  for(const change of [{private_snapshot:{}},{items:[{...entry,notification_state:'QUEUED'}]},{items:[{...entry,notification_message_id:randomUUID()}]}])await assert.rejects(assertP2016Schema('unified_closure_history',{...page,...change}));
 });
 

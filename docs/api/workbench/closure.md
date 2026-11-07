@@ -38,7 +38,7 @@ ClosureCommand 为 `{client_command_id,expected_version,reason_code,secondary_re
 
 `GET /api/tickets/{ticketId}/closure-history` 与 `GET /api/intakes/{intakeId}/closure-history` 由 W 宿主沿既有 lifecycle 开关提供，只供当前获权工作台读取。可选 query `before_version` 为 1–2147483647 的整数十进制；未知/重复参数拒绝。按 `before_version` 倒序，每页最多 20 条，额外读 1 条判断下一页；`next_before_version` 为末条版本或 null。单事务只读，statement timeout 2000ms；身份、READ、Cookie 会话及绝对 TTL 在查询后再核验，主体版本或权限快照改变返回 409。
 
-返回 `subject_id`、当前 `version`、`items`、`next_before_version`、`restore_target`。条目含关闭 ID/前版本、固定原因/二级原因、内部说明、可选原单展示编号、来源、关闭/恢复时间和操作人名称、实际 `notification_state`。关闭版本顺序也用于同秒事件的稳定排列；恢复事件在同条关闭之前显示。`restore_target` 仅首页当前未恢复记录有值，包含当前有效恢复状态/列/负责人、通知状态；失效原负责人按 ADR-0056 回 QUEUED。这个提示不是命令授权，提交仍按版本与当前权限终检。
+返回 `subject_id`、当前 `version`、`items`、`next_before_version`、`restore_target`。条目含关闭 ID/前版本、固定原因/二级原因、内部说明、可选原单展示编号、来源、关闭/恢复时间和操作人名称、实际 `notification_state`。关闭版本顺序也用于同秒事件的稳定排列；恢复事件在同条关闭之前显示。`restore_target` 仅首页当前未恢复记录有值，包含当前有效恢复状态/列/负责人、`notify_reporter`（该次关闭是否选择通知报修人；为 false 时恢复不发送通知）、通知状态；失效原负责人按 ADR-0056 回 QUEUED。这个提示不是命令授权，提交仍按版本与当前权限终检。
 
 通知状态 `SENT` 必须同时存在 SENT Delivery、ACKNOWLEDGED、实际发送时间和最新成功 Attempt；SENDING 或 UNKNOWN 为 `UNKNOWN`；其它为 `NOT_SENT`。不能把 outbox、通知选择或原因矩阵当送达证明。时间均为上海时区秒精度；说明最多 2000 字、展示名/原单编号最多 128 字。内部说明不进入 H5、通知或外部接口。原单编号通过既有授权搜索解析，搜索不到不猜测其 ID。
 
