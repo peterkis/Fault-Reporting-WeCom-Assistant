@@ -13,7 +13,9 @@
     "created_at",
     "updated_at",
     "version",
-    "guidance"
+    "guidance",
+    "status",
+    "closure_text"
   ],
   "properties": {
     "feedback_context": {
@@ -59,7 +61,10 @@
       "maximum": 2147483647
     },
     "guidance": {
-      "enum": ["如未解决，请在企业微信机器人单聊中回复。", "如未解决，请联系工作人员补充情况。"]
+      "enum": [
+        "如未解决，请在企业微信机器人单聊中回复。",
+        "如未解决，请联系工作人员补充情况。"
+      ]
     },
     "incident_milestones": {
       "type": "array",
@@ -67,6 +72,28 @@
       "items": {
         "$ref": "p2_012_reporter_milestone.schema.json"
       }
+    },
+    "status": {
+      "enum": [
+        "NEW",
+        "QUEUED",
+        "ACCEPTED",
+        "IN_PROGRESS",
+        "WAITING_REQUESTER",
+        "WAITING_VENDOR",
+        "RESOLVED",
+        "CLOSED",
+        "REOPENED",
+        "CANCELLED",
+        "DUPLICATE_LINKED"
+      ]
+    },
+    "closure_text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 4000
     }
   },
   "x-business-timezone": "Asia/Shanghai",

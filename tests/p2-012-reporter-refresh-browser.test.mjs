@@ -6,6 +6,7 @@ import {createYxxH5Static} from '../app/server/src/yxx-h5-static.mjs';
 
 test('Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal', {timeout:60000}, async()=>{
   const presentation=createYxxH5Static({enabled:true,reporter:{identityMode:'BOUND_ACCESS_SESSION',feedback:false}}),ref='S'.repeat(32);
+  let ticketStatus='IN_PROGRESS', closureText=null;
   let version=1, milestones=[], failTimeline=false, timelineRequests=0;
   const detailHeaders=[];
   const server=createServer(async(req,res)=>{
@@ -14,7 +15,7 @@ test('Reporter browser retries incomplete ETag render after transient timeline f
     if(req.url==='/api/reporter/tickets/'+ref){
       const etag='"synthetic-'+version+'"';detailHeaders.push(req.headers['if-none-match']??null);
       if(req.headers['if-none-match']===etag){res.writeHead(304);return res.end();}
-      res.setHeader('etag',etag);return json({public_ref:ref,version,title:'合成报修',ticket_no:'SYNTHETIC-001',suffix:'0001',external_status:'处理中',created_at:'2026-09-08 00:00:00',updated_at:'2026-09-08 00:00:00',guidance:'如未解决，请联系工作人员补充情况。',incident_milestones:milestones});
+      res.setHeader('etag',etag);return json({public_ref:ref,version,title:'合成报修',ticket_no:'SYNTHETIC-001',suffix:'0001',status:ticketStatus,closure_text:closureText,note:'内部说明（合成）',external_status:'处理中',created_at:'2026-09-08 00:00:00',updated_at:'2026-09-08 00:00:00',guidance:'如未解决，请联系工作人员补充情况。',incident_milestones:milestones});
     }
     if(req.url==='/api/reporter/tickets/'+ref+'/timeline'){
       timelineRequests++;if(failTimeline){failTimeline=false;return json({},503);}
@@ -45,6 +46,33 @@ test('Reporter browser retries incomplete ETag render after transient timeline f
       await browser.evaluate('window.pollReporter()');
       assert.equal(detailHeaders.at(-1),'"synthetic-'+version+'"');
       assert.equal(timelineRequests,before+2,'successful render permits subsequent 304 without reloading timeline');
+    }
+    for(const mode of [
+      {lang:'zh-CN',theme:'light',closed:'已关闭'},
+      {lang:'zh-CN',theme:'dark',closed:'已关闭'},
+      {lang:'en',theme:'light',closed:'Closed'},
+      {lang:'en',theme:'dark',closed:'Closed'},
+    ]){
+      await browser.command('Emulation.setUserAgentOverride',{userAgent:'wxwork Language/'+mode.lang+' ColorScheme/'+(mode.theme==='dark'?'Dark':'Light')});
+      const previousDocument=await browser.evaluate('performance.timeOrigin');
+      await browser.command('Page.reload');
+      await browser.waitFor('performance.timeOrigin!=='+previousDocument);
+      await browser.waitFor("document.querySelector('#ticket')?.hidden===false&&typeof window.pollReporter==='function'");
+      for(const state of ['CANCELLED','DUPLICATE_LINKED','CLOSED','RESOLVED','QUEUED','WAITING_REQUESTER','WAITING_VENDOR']){
+        ticketStatus=state;closureText=state==='CANCELLED'?'已关闭':state==='DUPLICATE_LINKED'?'公开重复说明（合成）':null;version++;
+        await browser.evaluate('window.pollReporter()');
+        const view=await browser.evaluate("({state:document.querySelector('#state').textContent,tone:document.querySelector('#state').className,theme:document.documentElement.dataset.theme,closure:document.querySelector('#closure-text').textContent,hidden:document.querySelector('#closure-text').hidden,body:document.querySelector('#ticket').textContent})");
+        if(state==='WAITING_VENDOR')assert.equal(view.state,mode.lang==='en'?'Awaiting vendor':'等待厂商');
+        if(state==='WAITING_REQUESTER')assert.equal(view.state,mode.lang==='en'?'Awaiting details':'待补充资料');
+        if(['CANCELLED','DUPLICATE_LINKED'].includes(state)){assert.equal(view.state,mode.closed);assert.match(view.tone,/\bbadge-status-neutral\b/);}
+        if(['CLOSED','RESOLVED'].includes(state)){
+          assert.equal(view.state,mode.lang==='en'?'Completed':'已完成');
+          assert.match(view.tone,/\bbadge-status-done\b/);
+        }
+        assert.equal(view.theme,mode.theme);
+        assert.equal(view.hidden,state!=='DUPLICATE_LINKED');assert.equal(view.closure,state==='DUPLICATE_LINKED'?'公开重复说明（合成）':'');
+        assert.equal(view.body.includes('内部说明（合成）'),false);
+      }
     }
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 });

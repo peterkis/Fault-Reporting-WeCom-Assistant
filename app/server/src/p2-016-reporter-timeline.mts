@@ -9,12 +9,13 @@ type Reader<T> = (transaction: PostgresTransaction, scope: ReadScope) => Promise
 interface TimelineOptions { pool: PostgresTransaction; access?: Pick<ReporterAccess, 'authenticate'>; enabled?: boolean; incidentAdapter?: { milestones: (input: { ticketId: string; transaction: PostgresTransaction; memberRead: boolean }) => Promise<unknown> } | null; authorizeRead?: (<T>(input: ReadInput, reader: Reader<T>) => Promise<T>) | null; feedbackContext?:((transaction:PostgresTransaction,input:ReadInput)=>Promise<BotReporterFeedbackContext>)|null }
 export type ReporterTimeline = ReturnType<typeof createP2016ReporterTimeline>;
 
+import {reporterClosureProjection,REPORTER_CLOSURE_FIELDS_SQL} from './service-closure-records.mjs';
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { failP2016,guardP2016,publicP2016,limitP2016,cursorP2016,decodeCursorP2016,localP2016,textHashP2016 } from './p2-016-domain-contracts.mjs';
 const MILESTONES=Object.freeze({'ticket.created':'工单已受理','ticket.queued':'等待受理','ticket.accepted':'已接单',
   'ticket.started':'正在处理','ticket.resumed':'已恢复处理','ticket.waiting_requester':'等待您补充信息',
-  'ticket.waiting_vendor':'已联系厂商协助','ticket.resolved':'已处理，等待确认','ticket.closed':'工单已关闭',
-  'ticket.reopened':'已重新受理','ticket.cancelled':'工单已撤销'});
+  'ticket.waiting_vendor':'已联系厂商协助','ticket.resolved':'已处理，等待确认','ticket.closed':'工单已完成',
+  'ticket.reopened':'已重新受理','ticket.cancelled':'报修已关闭','ticket.restored':'报修已重新受理'});
 export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null,authorizeRead=null,feedbackContext=null}: TimelineOptions) {
   async function scope(sessionToken: unknown,publicRef: unknown) {guardP2016(enabled);return (access as NonNullable<typeof access>).authenticate(sessionToken,{publicRef});}
   // Both facades execute this one safe projection. authorizeRead is an internal composition port,
@@ -22,16 +23,28 @@ export function createP2016ReporterTimeline({pool,access,enabled=false,incidentA
   async function read<T>(input: ReadInput,run: Reader<T>): Promise<T>{
     guardP2016(enabled);
     if(authorizeRead)return authorizeRead(input,run);
-    return run(pool,await scope(input.sessionToken,input.publicRef));
+    const authorized=await scope(input.sessionToken,input.publicRef);
+    const result=await run(pool,authorized);
+    await scope(input.sessionToken,input.publicRef);
+    return result;
   }
   return Object.freeze({
     async bootstrap({sessionToken}: { sessionToken: unknown }) {const s=await scope(sessionToken,null);return publicP2016({public_ref:s.public_ref,identity_mode:'BOUND_ACCESS_SESSION',read_only:true});},
     async detail({sessionToken,publicRef}: ReadInput) {
       return read({sessionToken,publicRef},async(tx,s)=>{
       const q=await tx.query<{ ticket_no: string; request_type: string; status: TicketStatus; version: number; created_at: string; updated_at: string }>('SELECT ticket_no,request_type,status,version,created_at,updated_at FROM pilot_ticket.ticket WHERE id=$1::uuid',[s.ticket_id]);
-      if(q.rowCount!==1)failP2016('REPORTER_UNAUTHENTICATED',401);const t=(q.rows[0] as (typeof q.rows)[number]);
-      return publicP2016({public_ref:publicRef,ticket_no:t.ticket_no,suffix:t.ticket_no.slice(-4),
-        title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:EXTERNAL_TICKET_STATUS[t.status],
+      if(q.rowCount!==1)failP2016('REPORTER_UNAUTHENTICATED',401);let t=(q.rows[0] as (typeof q.rows)[number]);
+      let closureText:string|null=null;
+      if(t.status==='CANCELLED'||t.status==='DUPLICATE_LINKED'){
+        const closure=await tx.query<(typeof q.rows)[number]&{closure_public:unknown}>(`SELECT t.ticket_no,t.request_type,t.status,t.version,t.created_at,t.updated_at,${REPORTER_CLOSURE_FIELDS_SQL}
+          FROM pilot_ticket.ticket t LEFT JOIN pilot_ticket.closure_record public_closure
+          ON public_closure.ticket_id=t.id AND public_closure.restored_at IS NULL WHERE t.id=$1::uuid`,[s.ticket_id]);
+        const current=closure.rows[0];if(!current)failP2016('REPORTER_UNAUTHENTICATED',401);
+        t=current;
+        closureText=reporterClosureProjection(current.closure_public,current.status);
+      }
+      return publicP2016({public_ref:publicRef,status:t.status,closure_text:closureText,ticket_no:t.ticket_no,suffix:t.ticket_no.slice(-4),
+        title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:t.status==='CANCELLED'||t.status==='DUPLICATE_LINKED'?'已关闭':t.status==='CLOSED'||t.status==='RESOLVED'?'已完成':EXTERNAL_TICKET_STATUS[t.status],
         created_at:localP2016(t.created_at),updated_at:localP2016(t.updated_at),version:t.version,
         guidance:s.original_source==='VERIFIED_MANUAL_REPORT'?'如未解决，请联系工作人员补充情况。':'如未解决，请在企业微信机器人单聊中回复。',
         ...(feedbackContext&&s.original_source!=='VERIFIED_MANUAL_REPORT'?{feedback_context:await feedbackContext(tx,{sessionToken,publicRef})}:{}),
