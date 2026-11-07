@@ -8,7 +8,7 @@ import {createWorkbenchAppNotificationSender} from './workbench-app-notification
 import type {WorkbenchAppNotificationSenderOptions} from './workbench-app-notification-sender.mjs';
 type ReceiptObservation = { errcode?: unknown; body?: { errcode?: unknown }; headers?: { req_id?: unknown } } | null | undefined;
 function groupContent(value:unknown):value is Record<string,unknown>{return value!==null&&typeof value==='object'&&!Array.isArray(value);}
-interface SenderOptions {qualifyBotNotificationRecipient?:(source:{botId:string;reporterUserId:string})=>Promise<boolean>;mvpPolicy?:boolean;groupReplies?:{pool:import('./platform/postgres-pool.mjs').PostgresTransaction;authorize?:(basis:import('./mvp-group-replies.mjs').MvpGroupReplyBasis)=>Promise<boolean>}; gateway: { getAuthenticatedClient: () => Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'enabled'>;appRoundNotifications?:Omit<WorkbenchAppNotificationSenderOptions,'enabled'|'origin'|'allowedHosts'|'allowLocalHttp'> }
+interface SenderOptions {closureNotifications?:{pool:import('./platform/postgres-pool.mjs').PostgresTransaction};qualifyBotNotificationRecipient?:(source:{botId:string;reporterUserId:string})=>Promise<boolean>;mvpPolicy?:boolean;groupReplies?:{pool:import('./platform/postgres-pool.mjs').PostgresTransaction;authorize?:(basis:import('./mvp-group-replies.mjs').MvpGroupReplyBasis)=>Promise<boolean>}; gateway: { getAuthenticatedClient: () => Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode;groupRoundNotifications?:Omit<WorkbenchGroupNotificationOptions,'enabled'>;appRoundNotifications?:Omit<WorkbenchAppNotificationSenderOptions,'enabled'|'origin'|'allowedHosts'|'allowLocalHttp'> }
 
 import {isDeepStrictEqual} from 'node:util';
 import {readMvpGroupReplyBasis,createMvpNotificationAdmission} from './mvp-group-replies.mjs';
@@ -17,8 +17,9 @@ import { createCommunicationSenderPort,communicationPreSendCheck } from './p2-00
 import { buildP2016TemplateCard } from './p2-016-template-card-builder.mjs';
 import { textHashP2016,snapshotP2016 } from './p2-016-domain-contracts.mjs';
 import {computeCommunicationContentHash} from './p2-004-communication-core.mjs';
+import {readServiceClosureDeliveryBinding,SERVICE_CLOSURE_TRANSPORT} from './service-closure-notifications.mjs';
 
-export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=false,cardEnabled=false,mvpPolicy=false,groupReplies,qualifyBotNotificationRecipient,
+export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=false,cardEnabled=false,mvpPolicy=false,groupReplies,qualifyBotNotificationRecipient,closureNotifications,
   reporterAccess,origin,allowedHosts=[],allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT',groupRoundNotifications,appRoundNotifications}: SenderOptions) {
   if(typeof enabled!=='boolean'||typeof cardEnabled!=='boolean'||!['LEGACY_BOUND_GRANT','MEMBER_REQUIRED'].includes(linkMode)
     ||qualifyBotNotificationRecipient!==undefined&&(typeof qualifyBotNotificationRecipient!=='function'||!mvpPolicy||linkMode!=='MEMBER_REQUIRED'))throw new TypeError('P2_016_SENDER_CONFIG_INVALID');
@@ -44,6 +45,31 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
       return groups?groups.send({...request,message:{message_type:'template_card',content:request.message.content}}):rejected('GROUP_PUSH_ROUTE_MISSING');
     }
     if((request.message.content as { transport?: unknown } | null)?.transport==='WECOM_GROUP_WEBHOOK')return rejected('P2_016_GROUP_WEBHOOK_TRANSPORT_REQUIRED');
+    if(groupContent(request.message.content)&&request.message.content.transport===SERVICE_CLOSURE_TRANSPORT){
+      if(!closureNotifications||request.message.message_type!=='text'||request.provider!=='WECOM_AIBOT'||request.target_type!=='PERSON')return rejected('SERVICE_CLOSURE_BINDING_INVALID');
+      let basis:Awaited<ReturnType<typeof readServiceClosureDeliveryBinding>>;
+      try{
+        basis=await check(()=>readServiceClosureDeliveryBinding(closureNotifications.pool,request.delivery_id));
+        if(!basis||basis.provider!==request.provider||basis.channel_account_id!==request.channel_account_id||basis.target_id!==request.target_id
+          ||basis.idempotency_key!==request.idempotency_key||basis.content_hash!==computeCommunicationContentHash(request.message.content))return rejected('SERVICE_CLOSURE_BINDING_INVALID');
+        if(qualifyBotNotificationRecipient){
+          const recipient={botId:basis.channel_account_id,reporterUserId:basis.target_id};
+          if(!await check(()=>qualifyBotNotificationRecipient(recipient)))return rejected('P2_016_SEND_SCOPE_FORBIDDEN');
+        }else if(!allowlist.has(textHashP2016(request.target_id)))return rejected('P2_016_SEND_SCOPE_FORBIDDEN');
+        if(!isDeepStrictEqual(await check(()=>readServiceClosureDeliveryBinding(closureNotifications.pool,request.delivery_id)),basis))return rejected('SERVICE_CLOSURE_BINDING_INVALID');
+      }catch{return rejected('SERVICE_CLOSURE_BINDING_UNAVAILABLE',true);}
+      let client;try{client=gateway.getAuthenticatedClient();}catch{
+        const error=new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND') as Error&{code:string};error.code='GATEWAY_UNAVAILABLE_BEFORE_SEND';throw error;
+      }
+      if(preparationSignal.aborted)return rejected('P2_016_ABORTED_BEFORE_SEND',true);
+      if(BigInt(basis.retention_epoch)<=BigInt(Date.now()))return rejected('SERVICE_CLOSURE_BINDING_INVALID');
+      try{
+        const receipt=await client.sendMessage(request.target_id,{msgtype:'markdown',markdown:{content:basis.text}}) as ReceiptObservation;
+        const code=receipt?.errcode??receipt?.body?.errcode;
+        return code===0?{outcome:'ACKNOWLEDGED',provider_message_id:typeof receipt?.headers?.req_id==='string'?'wecom_ack_'+textHashP2016(receipt.headers.req_id).slice(0,32):null,error_code:null,retryable:false}
+          :Number.isInteger(code)&&code!==0?rejected('P2_016_PROVIDER_REJECTED'):unknown();
+      }catch{return unknown();}
+    }
     if(request.target_type==='GROUP'&&groupContent(request.message.content)&&request.message.content.group_reply){
       if(!mvpPolicy||!groupReplies||request.provider!=='WECOM_AIBOT'||request.message.message_type!=='text')return rejected('MVP_GROUP_REPLY_DISABLED');
       let client:ReturnType<SenderOptions['gateway']['getAuthenticatedClient']>;

@@ -11,6 +11,7 @@ type WorkbenchDetail=Omit<CoreWorkbenchDetail,'item'>&{item:WorkbenchCard};
 export type {WorkbenchFollowCommand,WorkbenchFollowResult,WorkbenchFollowReceipt};
 import {decodeAssignmentHistory} from '../contracts/workbench-assignment-history-browser-contracts.mjs';
 import type {WaitingAction,WaitingCommand,WaitingResult,WaitingCapability,WaitingAcknowledgement} from '../../../../contracts/workbench_waiting_contracts';
+import type {ClosureCommand,RestoreCommand} from '../../../../contracts/unified_closure_contracts';
 import type {P2016TakeoverCompletionCommand,P2016TakeoverCompletionResult,P2016TakeoverCompletionTargets,P2016TakeoverCompletionAcknowledgement} from '../../../../contracts/p2_016_takeover_completion_contracts';
 export type {P2016TakeoverCompletionCommand};
 import type { BoardColumn, CompletionRange, BoardCompletionRange, BoardPage as CoreBoardPage, WorkbenchCard as CoreWorkbenchCard, WorkbenchDetail as CoreWorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
@@ -98,7 +99,7 @@ function decodeCardService(value:unknown):NonNullable<WorkbenchCard['service']> 
 }
 function decodeCardClosure(value:unknown,column:BoardColumn,status:string):WorkbenchCard['closure'] {
   if(column!=='closed'){if(value!==null)throw new ApiError(502,'INVALID_RESPONSE');return null;}
-  const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','closed_by_display_name','closed_at','duplicate_of','can_restore'];
+  const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','secondary_reason','closed_by_display_name','closed_at','duplicate_of','can_restore'];
   const expected=['RESOLVED','CLOSED','COMPLETED'].includes(status)?'COMPLETED':['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status)?'DISMISSED':null;
   if(Object.keys(v).length!==keys.length||keys.some(key=>!Object.hasOwn(v,key))||expected===null||v.kind!==expected
     ||v.source!==null&&v.source!=='MANUAL'&&v.source!=='SYSTEM'||typeof v.can_restore!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
@@ -106,9 +107,12 @@ function decodeCardClosure(value:unknown,column:BoardColumn,status:string):Workb
   const actor=bounded(v.closed_by_display_name,128);
   if(v.source!=='MANUAL'&&actor!==null)throw new ApiError(502,'INVALID_RESPONSE');
   let duplicate:NonNullable<WorkbenchCard['closure']>['duplicate_of']=null;
-  if(v.duplicate_of!==null){const d=object(v.duplicate_of);if(Object.keys(d).length!==1||!Object.hasOwn(d,'display_no'))throw new ApiError(502,'INVALID_RESPONSE');const display=bounded(d.display_no,128);if(display===null||status!=='DUPLICATE_LINKED')throw new ApiError(502,'INVALID_RESPONSE');duplicate={display_no:display};}
+  let secondary:NonNullable<WorkbenchCard['closure']>['secondary_reason']=null;
+  if(v.secondary_reason!==null){const s=object(v.secondary_reason),code=bounded(s.code,64),label=bounded(s.label,128);if(Object.keys(s).length!==2||code===null||label===null||v.reason_code!=='NOT_IT_SCOPE')throw new ApiError(502,'INVALID_RESPONSE');secondary={code,label};}
+  if(v.duplicate_of!==null){const d=object(v.duplicate_of);if(Object.keys(d).length!==1||!Object.hasOwn(d,'display_no'))throw new ApiError(502,'INVALID_RESPONSE');const display=bounded(d.display_no,128);if(display===null||v.reason_code!=='DUPLICATE')throw new ApiError(502,'INVALID_RESPONSE');duplicate={display_no:display};}
+  if(expected==='DISMISSED'&&(!['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(String(v.reason_code))||v.closed_at===null||v.source===null))throw new ApiError(502,'INVALID_RESPONSE');
   return {kind:expected,source:v.source as NonNullable<WorkbenchCard['closure']>['source'],reason_code:bounded(v.reason_code,64),reason_label:bounded(v.reason_label,128),reason_note:bounded(v.reason_note,2000),
-    closed_by_display_name:actor,closed_at:v.closed_at===null?null:notificationDatetime(v.closed_at),duplicate_of:duplicate,can_restore:v.can_restore};
+    secondary_reason:secondary,closed_by_display_name:actor,closed_at:v.closed_at===null?null:notificationDatetime(v.closed_at),duplicate_of:duplicate,can_restore:v.can_restore};
 }
 function decodeCard(value:unknown):WorkbenchCard {
   const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
@@ -282,12 +286,12 @@ function decodeReopen(value:unknown,ticketId:string):P2016ReopenResult {
     ||Object.keys(c).length!==4||version(c.cycle_no)<2||c.first_responsibility_event_id!==null||c.staff_completion_event_id!==null)throw new ApiError(502,'INVALID_RESPONSE');
   return {...decodeTicketReceipt(v,ticketId),handling_cycle:{id:id(c.id),cycle_no:version(c.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}};
 }
-export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016TakeoverCommand|P2016UnassignCommand|P2016ReopenCommand|P2016ReturnToDispatchCommand|P2016TakeoverCompletionCommand|SharedFollowUpCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016TakeoverCommand|P2016UnassignCommand|P2016ReopenCommand|P2016ReturnToDispatchCommand|P2016TakeoverCompletionCommand|SharedFollowUpCommand|ClosureCommand|RestoreCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
     const current=captureWorkbenchRead(signal);current();
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
-        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(action==='cancel'?('reason_code' in command&&['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(command.reason_code)?command:{client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'OTHER',note:'note' in command?command.note:null}):command)});
       current();if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const v=object(await response.json());current();
@@ -371,6 +375,8 @@ export const api={
       if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();return {...completed,communication_choice:command.communication_choice,conversations};
     });requireCurrent();return result;}catch(error){requireCurrent();throw error;}
   },
+  closeTicket:(ticketId:string,command:ClosureCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'cancel',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
+  restoreClosedTicket:(ticketId:string,command:RestoreCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'restore',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
   waitingAction:(ticketId:string,action:WaitingAction,command:WaitingCommand,csrfToken:string|null,signal:AbortSignal):Promise<WaitingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
     if(Object.keys(v).length!==7||!Object.hasOwn(v,'handling_cycle_id'))throw new UnknownCommandOutcome();
     return {...decodeTicketReceipt(v,ticketId),handling_cycle_id:v.handling_cycle_id===null?null:id(v.handling_cycle_id)};

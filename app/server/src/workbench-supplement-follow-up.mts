@@ -27,12 +27,14 @@ export const SUPPLEMENT_MATERIALS_SQL=`WITH readable AS (
   SELECT i.id AS source_intake_id,'WEB'::text AS source_kind,'web:'||s.id::text AS source_ref,s.input_revision AS revision,s.received_at AS at,s.input_revision AS ordinal,s.id::text AS source_id
    FROM readable r JOIN intake.service_intake i ON i.id=r.id JOIN intake.web_request_binding b ON b.intake_id=i.id JOIN intake.web_submission s ON s.intake_id=i.id
    WHERE i.source_provider='YIXIAOXIU_WEB' AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms() AND s.kind='SUPPLEMENT' AND s.retention_until_epoch_ms>platform.physical_epoch_ms()
+    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=$2::uuid AND ended.source_intake_id=i.id AND ended.source_ref='web:'||s.id::text AND ended.revision=s.input_revision)
   UNION ALL
   SELECT i.id,'BOT','channel:'||m.id::text,rel.sequence_no,rel.linked_at,rel.sequence_no,m.id::text
    FROM readable r JOIN intake.service_intake i ON i.id=r.id JOIN intake.service_intake_message rel ON rel.intake_id=i.id JOIN channel.message_inbox m ON m.id=rel.channel_message_id
    WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until_epoch_ms>platform.physical_epoch_ms() AND (rel.relation_type='SUPPLEMENT' OR (rel.relation_type='PRIMARY' AND EXISTS(
     SELECT 1 FROM intake.channel_leg later JOIN intake.channel_leg basis ON basis.journey_id=later.journey_id JOIN intake.contact_journey j ON j.id=later.journey_id
      WHERE later.source_intake_id=i.id AND basis.source_intake_id=$1::uuid AND later.leg_ordinal>basis.leg_ordinal AND j.linked_ticket_id=$2::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())))
+    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=$2::uuid AND ended.source_intake_id=i.id AND ended.source_ref='channel:'||m.id::text AND ended.revision=rel.sequence_no)
  )`;
 export const SUPPLEMENT_RESOLUTION_SQL=`SELECT proof.id,proof.occurred_at,proof.basis FROM (
   SELECT d.id,d.occurred_at,'RECORDED_DISPOSITION'::text AS basis FROM pilot_ticket.workbench_supplement_disposition d JOIN pilot_ticket.ticket_command_receipt l ON l.id=d.command_receipt_id

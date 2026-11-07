@@ -941,6 +941,30 @@ paths:
         '404': {description: Not found or not visible}
         '409': {description: Version, command hash or state conflict}
         '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/restore:
+    post:
+      operationId: p2016RestoreClosedTicket
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./unified_restore_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
   /tickets/{ticketId}/cancel:
     post:
       operationId: p2016TicketCancel
@@ -955,7 +979,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+            schema: {"$ref":"./unified_closure_command.schema.json"}
       responses:
         '200':
           description: Safe bounded result; not Phase 2 Go or live acceptance
@@ -1732,6 +1756,74 @@ paths:
   /wecom/yixiaoxiu/reports/{request_ref}:
     $ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1{request_ref}'
     servers: [{url: /}]
+
+  /intakes/{intakeId}/closure-context:
+    get:
+      operationId: p2016IntakeClosureContext
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {in: path, name: intakeId, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Current authorized Intake version, closure capability and pending review reference}
+        '404': {description: Not visible}
+  /intakes/{intakeId}/close:
+    post:
+      operationId: p2016CloseIntake
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      description: Six fixed reasons. Pending reviews require expected_review_version. Current visibility and worker role; If-Match and principal-scoped idempotency are mandatory.
+      parameters:
+        - {in: path, name: intakeId, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './unified_intake_closure_command.schema.json'}
+      responses:
+        '200': {description: Safe ClosureResult, including monotonic version and closure/event references}
+        '400': {description: Invalid closure reason or input}
+        '403': {description: Readonly or current authority rejected}
+        '404': {description: Not visible}
+        '409': {description: Version or state conflict}
+  /intakes/{intakeId}/restore:
+    post:
+      operationId: p2016RestoreIntake
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {in: path, name: intakeId, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './unified_restore_command.schema.json'}
+      responses:
+        '200': {description: Safe ClosureResult; previous Intake and pending-review state restored}
+        '403': {description: Readonly or current authority rejected}
+        '404': {description: Not visible}
+        '409': {description: Version or state conflict}
+  /tickets/{ticketId}/restore/commands/{commandId}:
+    get:
+      operationId: p2016RestoreTicketReceipt
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {in: path, name: ticketId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: commandId, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Safe UNKNOWN, FAILED or COMMITTED receipt for this actor and restore purpose}
+  /intakes/{intakeId}/{closureAction}/commands/{commandId}:
+    get:
+      operationId: p2016IntakeClosureReceipt
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {in: path, name: intakeId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: closureAction, required: true, schema: {type: string, enum: [close, restore]}}
+        - {in: path, name: commandId, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Safe original-actor original-purpose receipt; never contains internal reasons or notes}
+
 components:
   securitySchemes:
     WeComMember: {type: apiKey, in: cookie, name: __Host-wecom_session, description: "Secure HttpOnly member authentication only; per-request server ownership is required."}

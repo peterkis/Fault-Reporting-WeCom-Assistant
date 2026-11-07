@@ -12,7 +12,7 @@ export type G1RoleCommand =
   | { type: 'gateway-disconnect' | 'gateway-reconnect'; request_id: string }
   | { type: 'stop' };
 interface AppOptions { runtimeFactory?: (input: G1RuntimeOptions & { pool: PostgresPool; publicOrigin: string; allowedTargetHashes: readonly string[] }) => Pick<ReturnType<typeof createP2G1Runtime>, 'start' | 'stop' | 'disconnectRealtimePrincipal'>; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null | undefined; externalSendEnabled?: boolean }
-interface GatewayOptions { intakeFactory?: (input: { pool: PostgresPool; identityHashKey?: string }) => Pick<ReturnType<typeof createP2G1PilotOperationalIntake>, 'accept'>; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool; allowedTargetHashes: readonly string[]; gateway: ReturnType<typeof createP2G1WeComGateway> }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
+interface GatewayOptions { beforeReady?: ((input:{pool:PostgresPool})=>unknown|Promise<unknown>)|null; intakeFactory?: (input: { pool: PostgresPool; identityHashKey?: string }) => Pick<ReturnType<typeof createP2G1PilotOperationalIntake>, 'accept'>; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool; allowedTargetHashes: readonly string[]; gateway: ReturnType<typeof createP2G1WeComGateway> }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
 interface WorkerOptions { deliveryAttemptAdmissionFactory?:((input:{pool:PostgresPool})=>DeliveryAttemptAdmission)|null; extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown>;close?():unknown|Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -146,7 +146,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
   send({ type: 'role-ready', role: 'APP', address: started.address, cookies: started.cookies, pool_max: 4 });
 }
 
-export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender,gatewayFactory=createP2G1WeComGateway}: GatewayOptions = {}) {
+export async function runGateway({beforeReady=null,intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender,gatewayFactory=createP2G1WeComGateway}: GatewayOptions = {}) {
   const enabled = truth('P2_G1_GATEWAY_ENABLED');
   const senderEnabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
@@ -155,6 +155,8 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
     connectionTimeoutMillis: 2_000,
     application_name: 'p2_g1_gateway',
   });
+  try { await beforeReady?.({pool}); }
+  catch(error) { await pool.end(); throw error; }
   const metrics = createP2G1ProcessMetrics({ role: 'GATEWAY' });
   let gateway: ReturnType<typeof createP2G1WeComGateway>;
   if (enabled) {

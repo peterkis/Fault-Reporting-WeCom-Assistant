@@ -127,7 +127,8 @@
           "take-and-start-with-conversations",
           "accept-for-later-with-conversations",
           "complete",
-          "return-to-dispatch"
+          "return-to-dispatch",
+          "restore"
         ]
       }
     },

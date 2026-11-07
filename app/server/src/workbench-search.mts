@@ -178,6 +178,9 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
   try{
    const prepared=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
+    // Closure joins can cross LLVM cost thresholds even for a small interactive page.
+    // Keep both bounded READ phases free of compilation work; the SQL limit is unchanged.
+    await tx.query('SET LOCAL jit=off');
     const p=await query.principal(authContext,tx),scope=ticketPredicateP2016(p),bound=binding(authContext,p);await ready(tx,c);
     const session=sessionPredicate(authContext,p),valid=(await tx.query<{valid:boolean}>('SELECT '+session.sql+' AS valid',session.values)).rows[0];
     if(valid?.valid!==true)throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
@@ -218,6 +221,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    const decoratedItems=await cards.decorateWebReportUrgency(items);
    const more=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
+    await tx.query('SET LOCAL jit=off');
     const p=await query.principal(authContext,tx);if(binding(authContext,p)!==prepared.bound)failP2016('CURSOR_INVALID');await ready(tx,c);
     const values:unknown[]=[...prepared.values],session=sessionPredicate(authContext,p,values.length+1);values.push(...session.values);
     const parameter=(value:unknown)=>{values.push(value);return '$'+values.length;};

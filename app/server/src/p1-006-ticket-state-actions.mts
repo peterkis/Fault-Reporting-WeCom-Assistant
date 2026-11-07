@@ -15,6 +15,8 @@ import type {
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type {NormalizedClosureInput} from '../../../contracts/unified_closure_contracts.js';
+import {normalizeClosureInput,insertClosureRecord,currentClosure,effectiveClosureAssignee,markClosureRestored,terminateClosureFollowUps} from './service-closure-records.mjs';
 
 const MIGRATION_URL = new URL('../../../database/migrations/004_p1_006_ticket_state_actions.sql', import.meta.url);
 export type TicketAction =
@@ -29,6 +31,7 @@ export type TicketAction =
   | 'confirm'
   | 'reopen'
   | 'cancel'
+  | 'restore'
   | 'auto-close'
   | 'add-note';
 export type OperatorType = 'PILOT_USER' | 'REPORTER' | 'SYSTEM';
@@ -44,6 +47,8 @@ export type TicketEventType =
   | 'ticket.closed'
   | 'ticket.reopened'
   | 'ticket.cancelled'
+  | 'ticket.restored'
+  | 'ticket.handling_aborted'
   | 'ticket.duplicate_linked'
   | 'ticket.unlinked'
   | 'ticket.note_added'
@@ -97,7 +102,8 @@ const ACTIONS: Readonly<Record<TicketAction, TicketTransition>> = Object.freeze(
     to: 'REOPENED',
     eventType: 'ticket.reopened',
   },
-  cancel: { from: ['QUEUED', 'ACCEPTED'], to: 'CANCELLED', eventType: 'ticket.cancelled' },
+  cancel: { from: ['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'], to: 'CANCELLED', eventType: 'ticket.cancelled' },
+  restore: { from: ['CANCELLED','DUPLICATE_LINKED'], toCurrentStatus:true, eventType:'ticket.restored' },
   'auto-close': { from: ['RESOLVED'], to: 'CLOSED', eventType: 'ticket.closed' },
   'add-note': {
     from: [
@@ -143,6 +149,9 @@ export interface TicketActionInput {
   internalProcess?: string;
   externalSummary?: string;
   externalSummaryConfirmed?: true;
+  secondaryReasonCode?:string|null;
+  duplicateOfRef?:string|null;
+  notifyReporter?:boolean;
 }
 
 export interface TicketEventRow {
@@ -242,6 +251,7 @@ interface NormalizedTicketActionInput {
   traceId: string;
   internalProcess: string | null;
   externalSummary: string | null;
+  closure:NormalizedClosureInput|null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -289,6 +299,7 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
   if (actionValue === 'auto-close' && input.actor.type !== 'SYSTEM') {
     throw new TicketActionError('FORBIDDEN');
   }
+  if(actionValue==='restore'&&(input.actor.type!=='PILOT_USER'||input.reasonCode!=='RESTORE_CLOSED'||input.note!=null||input.externalVisible===true))throw new TicketActionError('VALIDATION_FAILED');
   let internalProcess: string | null = null, externalSummary: string | null = null;
   if (actionValue === 'complete') {
     if (input.actor.type !== 'PILOT_USER') throw new TicketActionError('FORBIDDEN');
@@ -319,18 +330,28 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
   if (!Array.isArray(attachmentIds)) {
     throw new TicketActionError('VALIDATION_FAILED');
   }
+  let closure:NormalizedClosureInput|null=null;
+  if(actionValue==='cancel'){
+    if(input.externalVisible===true)throw new TicketActionError('VALIDATION_FAILED');
+    try{closure=normalizeClosureInput({reason_code:input.reasonCode,note:input.note??null,
+      ...(input.secondaryReasonCode===undefined?{}:{secondary_reason_code:input.secondaryReasonCode}),
+      ...(input.duplicateOfRef===undefined?{}:{duplicate_of_ref:input.duplicateOfRef}),
+      ...(input.notifyReporter===undefined?{}:{notify_reporter:input.notifyReporter})});}
+    catch{throw new TicketActionError('VALIDATION_FAILED');}
+  }else if(input.secondaryReasonCode!==undefined||input.duplicateOfRef!==undefined||input.notifyReporter!==undefined)throw new TicketActionError('VALIDATION_FAILED');
   return {
     ticketId,
     action: actionValue,
     actor: { type: input.actor.type, id: operatorId },
     expectedVersion: input.expectedVersion,
-    note: nullableText(input.note, 'VALIDATION_FAILED', 2000),
+    note: closure?closure.note:nullableText(input.note, 'VALIDATION_FAILED', 2000),
     externalVisible: input.externalVisible === true,
     reasonCode: nullableText(input.reasonCode, 'VALIDATION_FAILED', 128),
     attachmentIds,
     traceId,
     internalProcess,
     externalSummary,
+    closure,
   };
 }
 
@@ -573,7 +594,10 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
         throw new TicketActionError('FORBIDDEN');
       }
     }
-    const nextStatus = transition.toCurrentStatus === true ? current.status : transition.to;
+    const restoring=request.action==='restore'?await currentClosure(transaction,'TICKET',current.id,true):null;
+    const restoreTarget=restoring?await effectiveClosureAssignee(transaction,restoring):null;
+    if(restoreTarget&&!isTicketStatus(restoreTarget.status))throw new TicketActionError('INVALID_STATE_TRANSITION');
+    const nextStatus:TicketStatus=restoreTarget&&isTicketStatus(restoreTarget.status)?restoreTarget.status:transition.toCurrentStatus === true ? current.status : transition.to;
     if (request.action === 'complete' && current.assignee_id !== request.actor.id) throw new TicketActionError('FORBIDDEN');
     const externalNote = request.action === 'complete' ? request.externalSummary : request.externalVisible ? request.note : null;
     const internalNote = request.action === 'complete' ? request.internalProcess : request.externalVisible ? null : request.note;
@@ -583,10 +607,10 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
         ? 'AUTO_TIMEOUT'
         : request.action === 'cancel'
           ? request.reasonCode ?? 'CANCELLED'
-          : request.action === 'reopen'
+          : request.action === 'reopen'||request.action==='restore'
             ? null
             : current.closure_reason;
-    const assigneeId = request.action === 'accept' ? request.actor.id : request.action==='reopen'&&reopenClearAssignee?null:current.assignee_id;
+    const assigneeId = restoreTarget?restoreTarget.assignee:request.action === 'accept' ? request.actor.id : request.action==='reopen'&&reopenClearAssignee?null:current.assignee_id;
     const externalResult = ['resolve','complete'].includes(request.action) && externalNote !== null
       ? externalNote
       : current.external_result;
@@ -624,6 +648,28 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
       attachmentIds: request.attachmentIds,
       traceId: request.traceId,
     });
+    if(request.closure){
+      const snapshot=(await transaction.query<{cycle_id:string|null}>('SELECT to_jsonb(t)->>\'current_handling_cycle_id\' AS cycle_id FROM pilot_ticket.ticket t WHERE id=$1::uuid',[current.id])).rows[0];
+      const record=await insertClosureRecord({transaction,subjectType:'TICKET',subjectId:current.id,beforeStatus:current.status,beforeAssignee:current.assignee_id,beforeTeam:current.resolver_team_id,
+        beforeVersion:current.version,beforeCycle:snapshot?.cycle_id??null,beforeSnapshot:{status:current.status,assignee_id:current.assignee_id,resolver_team_id:current.resolver_team_id,version:current.version,cycle_id:snapshot?.cycle_id??null},
+        actor:request.actor.id,source:request.actor.type==='SYSTEM'?'SYSTEM':'MANUAL',input:request.closure,ticketEventId:event.event_id});
+      await terminateClosureFollowUps(transaction,record,current.source_intake_id);
+      if(record.before_cycle_id){
+        const aborted=await appendTicketEvent({transaction,ticket,eventType:'ticket.handling_aborted',oldStatus:nextStatus,newStatus:nextStatus,actor:request.actor,
+          reasonCode:'CLOSURE_ABORTED_HANDLING',traceId:request.traceId});
+        await transaction.query('UPDATE pilot_ticket.closure_record SET aborted_cycle_event_id=$2::uuid WHERE id=$1::uuid',[record.id,aborted.event_id]);
+        await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[current.id,record.before_cycle_id,aborted.event_id]);
+      }
+    }
+    if(restoring){
+      if(!request.actor.id)throw new TicketActionError('FORBIDDEN');
+      await transaction.query('UPDATE pilot_ticket.ticket SET resolver_team_id=$2 WHERE id=$1::uuid',[current.id,restoring.before_team_id]);
+      await markClosureRestored(transaction,restoring,request.actor.id,event.event_id);
+      if(restoring.before_cycle_id){
+        await transaction.query('UPDATE pilot_ticket.ticket SET current_handling_cycle_id=$2::uuid WHERE id=$1::uuid',[current.id,restoring.before_cycle_id]);
+        await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[current.id,restoring.before_cycle_id,event.event_id]);
+      }
+    }
     const sideEffects = afterAction
       ? await afterAction({
         transaction,

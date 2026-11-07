@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/unified_intake_closure_command.schema.json",
+  "title": "Close a current Intake and its pending reviews",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_version",
+    "reason_code"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "expected_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "reason_code": {
+      "enum": [
+        "FALSE_REPORT_OR_TEST",
+        "DUPLICATE",
+        "NOT_IT_SCOPE",
+        "REPORTER_WITHDREW",
+        "REPORTER_UNREACHABLE",
+        "OTHER"
+      ]
+    },
+    "secondary_reason_code": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "enum": [
+            "HUMAN_CONFIRMED",
+            "INFORMATION_INSUFFICIENT",
+            "BUSINESS_CONSULTATION_CONFIRMED",
+            "ACKNOWLEDGED",
+            "OUT_OF_SCOPE_CONFIRMED",
+            "SERVICE_REQUEST_CONFIRMED",
+            "INCIDENT_REVIEW_PENDING",
+            "STALE_REVIEW_CANCELLED"
+          ]
+        }
+      ]
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "maxLength": 2000
+        }
+      ]
+    },
+    "duplicate_of_ref": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "notify_reporter": {
+      "type": "boolean"
+    },
+    "expected_review_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "maxLength": 19
+    },
+    "expected_material_basis": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reason_code": {
+            "const": "OTHER"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "note"
+        ],
+        "properties": {
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reason_code": {
+            "const": "NOT_IT_SCOPE"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "secondary_reason_code"
+        ],
+        "properties": {
+          "secondary_reason_code": {
+            "enum": [
+              "HUMAN_CONFIRMED",
+              "INFORMATION_INSUFFICIENT",
+              "BUSINESS_CONSULTATION_CONFIRMED",
+              "ACKNOWLEDGED",
+              "OUT_OF_SCOPE_CONFIRMED",
+              "SERVICE_REQUEST_CONFIRMED",
+              "INCIDENT_REVIEW_PENDING",
+              "STALE_REVIEW_CANCELLED"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "secondary_reason_code": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reason_code": {
+            "enum": [
+              "FALSE_REPORT_OR_TEST",
+              "NOT_IT_SCOPE",
+              "REPORTER_WITHDREW",
+              "REPORTER_UNREACHABLE",
+              "OTHER"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "duplicate_of_ref": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reason_code": {
+            "const": "FALSE_REPORT_OR_TEST"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "notify_reporter": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reason_code": {
+            "enum": [
+              "DUPLICATE",
+              "NOT_IT_SCOPE",
+              "REPORTER_WITHDREW",
+              "REPORTER_UNREACHABLE"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "notify_reporter": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
+}

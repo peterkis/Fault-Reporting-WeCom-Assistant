@@ -81,8 +81,6 @@ export async function seedCard21Exceptions(f:T32Fixture){
 export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{enabled?:boolean;publication?:boolean;ddl?:boolean;externalSend?:boolean}={}) {
   await withWeb01Fixture(async(original:T11Fixture)=>{
     await original.runtime.coordinator.runOnce();await original.runtime.stop();
-    await migrateP2012({databaseUrl:original.databaseUrl});
-    if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl:original.databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl:original.databaseUrl,mode:'apply'});}
     const incident=await fixtureP2012(original.pool,{reporters:4});
     const runtime=createP2012Runtime({pool:original.pool,publicOrigin:original.origin,listenPort:Number(new URL(original.origin).port),
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},principalIds:[original.principals[0]?.id??'',original.principals[1]?.id??'',original.outsider.id,t32Text(t32Record(incident.dispatcher).id)],
@@ -103,5 +101,8 @@ export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{
       await run({...context,incident,get,post,confirm});
     }catch(error){primaryError=error;}
     await closeBrowserTestResources([()=>runtime.stop(),()=>assert.equal(runtime.server.listening,false)],primaryError);
-  },{manualProjection:true});
+  },{manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+    await migrateP2012({databaseUrl});
+    if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});}
+  }});
 }

@@ -15,12 +15,7 @@ import {migrateTicketReturnToDispatch} from '../../app/server/scripts/ticket-ret
 
 export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,mvpNotificationsEnabled=false,groupNotificationTargets=[],manualRoundConsumption=false,roundNotificationsOff=false,externalSendEnabled=false}:{ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;mvpNotificationsEnabled?:boolean;groupNotificationTargets?:{botId:string;groupId:string}[];manualRoundConsumption?:boolean;roundNotificationsOff?:boolean;externalSendEnabled?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
-    await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
-    if(mvpNotificationsEnabled)await migrateMvpNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
-    if(ticketUnassignEnabled||ticketReturnToDispatchEnabled)await migrateTicketUnassign({databaseUrl:f.databaseUrl,mode:'apply'});
-    if(ticketReturnToDispatchEnabled)await migrateTicketReturnToDispatch({databaseUrl:f.databaseUrl,mode:'apply'});
-    // Base withWeb01Fixture(ticketSelfHandlingEnabled:true) formally installs033/039; above installs040. Never fake schema ledger or cycles.
-    if(ticketReopenRoundsEnabled)await migrateTicketReopenRounds({databaseUrl:f.databaseUrl,mode:'apply'});
+    await f.runtime.stop();
     const intake=await seedPersistedIntake({pool:f.pool,text:'合成Bot单聊报修',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t24-fixture'});
     assert.ok(created.ticket);
@@ -39,5 +34,12 @@ export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string}
       assert.ok(started.cookies);await run({...f,runtime,ticketId:created.ticket.id,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});
     }
     finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  },{ticketSelfHandlingEnabled:true});
+  },{ticketSelfHandlingEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+    await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
+    if(mvpNotificationsEnabled)await migrateMvpNotifications({databaseUrl:databaseUrl,mode:'apply'});
+    if(ticketUnassignEnabled||ticketReturnToDispatchEnabled)await migrateTicketUnassign({databaseUrl:databaseUrl,mode:'apply'});
+    if(ticketReturnToDispatchEnabled)await migrateTicketReturnToDispatch({databaseUrl:databaseUrl,mode:'apply'});
+    // Base withWeb01Fixture(ticketSelfHandlingEnabled:true) formally installs033/039; above installs040. Never fake schema ledger or cycles.
+    if(ticketReopenRoundsEnabled)await migrateTicketReopenRounds({databaseUrl:databaseUrl,mode:'apply'});
+  }});
 }

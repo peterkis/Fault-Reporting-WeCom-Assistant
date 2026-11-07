@@ -11,7 +11,12 @@
     "resolution_reason_code"
   ],
   "properties": {
-    "expected_material_basis": {"type":"string","minLength":64,"maxLength":64,"pattern":"^[a-f0-9]{64}$"},
+    "expected_material_basis": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "client_command_id": {
       "type": "string",
       "minLength": 36,
@@ -41,8 +46,223 @@
       "minLength": 1,
       "maxLength": 64,
       "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "reason_code": {
+      "enum": [
+        "FALSE_REPORT_OR_TEST",
+        "DUPLICATE",
+        "NOT_IT_SCOPE",
+        "REPORTER_WITHDREW",
+        "REPORTER_UNREACHABLE",
+        "OTHER"
+      ]
+    },
+    "secondary_reason_code": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "enum": [
+            "HUMAN_CONFIRMED",
+            "INFORMATION_INSUFFICIENT",
+            "BUSINESS_CONSULTATION_CONFIRMED",
+            "ACKNOWLEDGED",
+            "OUT_OF_SCOPE_CONFIRMED",
+            "SERVICE_REQUEST_CONFIRMED",
+            "INCIDENT_REVIEW_PENDING",
+            "STALE_REVIEW_CANCELLED"
+          ]
+        }
+      ]
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "maxLength": 2000
+        }
+      ]
+    },
+    "duplicate_of_ref": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "notify_reporter": {
+      "type": "boolean"
     }
   },
   "x-business-timezone": "Asia/Shanghai",
-  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "resolution_code": {
+            "const": "MARK_OUT_OF_SCOPE"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason_code",
+          "secondary_reason_code"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "OTHER"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "note"
+              ],
+              "properties": {
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "NOT_IT_SCOPE"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "secondary_reason_code"
+              ],
+              "properties": {
+                "secondary_reason_code": {
+                  "enum": [
+                    "HUMAN_CONFIRMED",
+                    "INFORMATION_INSUFFICIENT",
+                    "BUSINESS_CONSULTATION_CONFIRMED",
+                    "ACKNOWLEDGED",
+                    "OUT_OF_SCOPE_CONFIRMED",
+                    "SERVICE_REQUEST_CONFIRMED",
+                    "INCIDENT_REVIEW_PENDING",
+                    "STALE_REVIEW_CANCELLED"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "secondary_reason_code": {
+                  "const": null
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "enum": [
+                    "FALSE_REPORT_OR_TEST",
+                    "NOT_IT_SCOPE",
+                    "REPORTER_WITHDREW",
+                    "REPORTER_UNREACHABLE",
+                    "OTHER"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "duplicate_of_ref": {
+                  "const": null
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "FALSE_REPORT_OR_TEST"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "notify_reporter": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "enum": [
+                    "DUPLICATE",
+                    "NOT_IT_SCOPE",
+                    "REPORTER_WITHDREW",
+                    "REPORTER_UNREACHABLE"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "notify_reporter": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "reason_code": {
+            "const": "NOT_IT_SCOPE"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason_code": {
+            "enum": []
+          },
+          "secondary_reason_code": {
+            "enum": []
+          },
+          "note": {
+            "enum": []
+          },
+          "duplicate_of_ref": {
+            "enum": []
+          },
+          "notify_reporter": {
+            "enum": []
+          }
+        }
+      }
+    }
+  ]
 }

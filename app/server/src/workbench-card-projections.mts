@@ -6,35 +6,37 @@ import {ticketActionAllowedP2016} from './p2-016-ticket-query.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {failP2016, localP2016} from './p2-016-domain-contracts.mjs';
+import {CLOSURE_REASONS,CLOSURE_SECONDARY_REASONS} from './service-closure-records.mjs';
 
 /** Existing terminal-event evidence, selected only through the canonical READ relation. */
 export interface ClosureEvidence {
   source:'MANUAL'|'SYSTEM'|null; reason_code:string|null; reason_note:string|null;
   closed_by_display_name:string|null; closed_at:string|null;
   resolver_team_id?:string; assignee_id?:string|null;
+  record_id?:string;secondary_reason_code?:string|null;duplicate_of_ref?:string|null;
 }
-const CLOSURE_REASONS:Readonly<Record<string,string>>=Object.freeze({
-  HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'描述不足，需要补充',
-  BUSINESS_CONSULTATION_CONFIRMED:'已核对为业务咨询',ACKNOWLEDGED:'确认收到',
-  OUT_OF_SCOPE_CONFIRMED:'已核对为范围外诉求',SERVICE_REQUEST_CONFIRMED:'已核对为服务请求',
-  INCIDENT_REVIEW_PENDING:'待公共故障审核',STALE_REVIEW_CANCELLED:'明确取消旧复核',
-});
 export function projectWorkbenchClosure(status:string,evidence:ClosureEvidence|null,canRestore=false):WorkbenchCard['closure'] {
   const completed=['RESOLVED','CLOSED','COMPLETED'].includes(status),dismissed=['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status);
   if(!completed&&!dismissed)return null;
+  if(dismissed&&(!evidence?.record_id||!evidence.closed_at||!evidence.reason_code||!Object.hasOwn(CLOSURE_REASONS,evidence.reason_code)))failP2016('ACTION_FAILED',503);
   const source=evidence?.source??null,reason=evidence?.reason_code;
   // Legacy commands accept nonempty whitespace. It carries no displayable
   // reason/name; retain the original Event while keeping the read DTO valid.
   const note=evidence?.reason_note?.trim()?evidence.reason_note:null;
   const actor=evidence?.closed_by_display_name?.trim()?evidence.closed_by_display_name:null;
-  const reasonCode=typeof reason==='string'&&Object.hasOwn(CLOSURE_REASONS,reason)?reason:null;
+  const labels:Readonly<Record<string,string>>=completed?CLOSURE_SECONDARY_REASONS:CLOSURE_REASONS;
+  const reasonCode=typeof reason==='string'&&Object.hasOwn(labels,reason)?reason:null;
+  const secondary=evidence?.secondary_reason_code;
   return {kind:completed?'COMPLETED':'DISMISSED',source,reason_code:reasonCode,
-    reason_label:reasonCode?CLOSURE_REASONS[reasonCode]??null:status==='CANCELLED'?'已取消':status==='DUPLICATE_LINKED'?'重复':status==='IGNORED'&&source==='SYSTEM'?'系统判定不受理':'已关闭',
+    reason_label:reasonCode?labels[reasonCode]??null:'已关闭',
+    secondary_reason:reasonCode==='NOT_IT_SCOPE'&&typeof secondary==='string'&&Object.hasOwn(CLOSURE_SECONDARY_REASONS,secondary)?{code:secondary,label:CLOSURE_SECONDARY_REASONS[secondary as keyof typeof CLOSURE_SECONDARY_REASONS]}:null,
     reason_note:note,closed_by_display_name:source==='MANUAL'?actor:null,
-    closed_at:evidence?.closed_at==null?null:localP2016(evidence.closed_at),duplicate_of:null,
-    can_restore:completed&&['RESOLVED','CLOSED'].includes(status)&&canRestore};
+    closed_at:evidence?.closed_at==null?null:localP2016(evidence.closed_at),duplicate_of:evidence?.duplicate_of_ref?{display_no:evidence.duplicate_of_ref}:null,
+    can_restore:dismissed?canRestore:['RESOLVED','CLOSED'].includes(status)&&canRestore};
 }
 export function workbenchCanRestore(kind:string,status:string,evidence:ClosureEvidence|null,principal?:WorkbenchPrincipal):boolean {
+  if(['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status))return Boolean(evidence?.record_id&&principal?.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))
+    &&(kind!=='ticket'||typeof evidence.resolver_team_id==='string'&&ticketActionAllowedP2016(principal,{status,resolver_team_id:evidence.resolver_team_id,assignee_id:evidence.assignee_id??null},'restore')));
   return kind==='ticket'&&['RESOLVED','CLOSED'].includes(status)&&typeof evidence?.resolver_team_id==='string'
     &&ticketActionAllowedP2016(principal,{status,resolver_team_id:evidence.resolver_team_id,assignee_id:evidence.assignee_id??null},'reopen');
 }

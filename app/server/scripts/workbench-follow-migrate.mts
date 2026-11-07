@@ -1,4 +1,4 @@
-import {conversationDeliveryReceiptSchemaShape} from '../src/p2-006-delivery-command-schema.mjs';
+import {conversationDeliveryReceiptSchemaShape,conversationDeliveryReceiptCatalog,normalizeServiceClosureReceiptCatalog} from '../src/p2-006-delivery-command-schema.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -6,7 +6,6 @@ import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {failP2016} from '../src/p2-016-domain-contracts.mjs';
-import {p2016CatalogInventory} from './p2-016-migrate.mjs';
 
 export const FOLLOW_MIGRATION_ID='044_workbench_item_follow';
 const SQL_URL=new URL('../../../database/migrations/'+FOLLOW_MIGRATION_ID+'.sql',import.meta.url);
@@ -23,14 +22,8 @@ export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<b
   if(RECEIPT_PREDECESSORS.some(id=>!markers.some(row=>row.migration_id===id)))return false;
   const checksum=async(name:string)=>createHash('sha256').update(await readFile(new URL('../../../database/migrations/'+name+'.sql',import.meta.url))).digest('hex');
   for(const marker of markers)if(marker.checksum_sha256!==await checksum(marker.migration_id))return false;
-  const complete:unknown=await p2016CatalogInventory(tx);
-  if(!isRecord(complete))return false;
-  const receipt:Record<string,unknown>={};
-  for(const category of ['relations','columns','constraints','indexes','triggers']){
-    const rows=complete[category];if(!Array.isArray(rows)||!rows.every(isRecord))return false;
-    receipt[category]=rows.filter(row=>row.relation==='pilot_ticket.ticket_command_receipt');
-  }
-  const digest=createHash('sha256').update(JSON.stringify(receipt)).digest('hex');
+ const receipt=await normalizeServiceClosureReceiptCatalog(tx,await conversationDeliveryReceiptCatalog(tx));
+ const digest=createHash('sha256').update(JSON.stringify(receipt)).digest('hex');
   return digest===(bot?RECEIPT_047_050:RECEIPT_047)||await conversationDeliveryReceiptSchemaShape(tx)===(bot?'BOT':'INTAKE');
 }
 /** Exact feature inventory. No weakening of the existing receipt resource/purpose guards. */

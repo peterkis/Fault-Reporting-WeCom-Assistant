@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
+import './helpers/card27c-closure-cases.mjs';
+import './helpers/card27c-notification-review-cases.mjs';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 

@@ -164,7 +164,7 @@ const {matchesBoardSummary,sortBoardItems}: {
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
   return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,closure:null,...overrides};
 }
-const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
+const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,secondary_reason:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
 test('Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at',()=>{
   const now=Date.parse('2026-11-06T12:00:00+08:00');
   for(const status of ['CLOSED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
