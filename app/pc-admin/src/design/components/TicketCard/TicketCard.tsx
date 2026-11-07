@@ -1,6 +1,6 @@
 import type {HTMLAttributes,ReactNode} from 'react';
-import {useId} from 'react';
-import {Bell,Bot,Check,CircleX,Clock3} from 'lucide-react';
+import {Fragment,useId} from 'react';
+import {Bell,Bot,Check,CircleX,Clock3,Undo2} from 'lucide-react';
 import {categoryOf} from '../../category-map';
 import type {WorkbenchCard} from '../../../api/client';
 import type {Heat} from '../../heat';
@@ -9,10 +9,9 @@ import {visibleCardTags} from '../../status-map';
 import type {CardTag} from '../../status-map';
 import {formatListTime} from '../../format-time';
 import {Avatar} from '../Avatar/Avatar';
-import {PropertyList} from '../PropertyList/PropertyList';
-import {Section} from '../Section/Section';
 import {BeijingTime} from '../Timeline/BeijingTime';
 import {ClosureOriginalLink} from '../../../features/ticket-waiting/ClosureLinks';
+import {closureReasonText,externalTicketNumber} from './closure-presentation';
 import './ticket-card.css';
 
 export function TicketCard({className='',...props}:HTMLAttributes<HTMLElement>){
@@ -39,9 +38,10 @@ export function TicketCardBody({number,title,metadata,tags,owner,activity,follow
 
 export function ClosureReason({closure}:{closure:WorkbenchCard['closure']}){
   if(!closure)return null;
-  const label=closure.reason_code==='DUPLICATE'&&closure.duplicate_of?'重复':(closure.reason_label??'已关闭')+(closure.reason_code==='NOT_IT_SCOPE'&&closure.secondary_reason?' · '+closure.secondary_reason.label:'');
-  return <Tag className="ds-ticket-closure-reason" data-closure-reason title={label+(closure.duplicate_of?' · '+closure.duplicate_of.display_no:'')}>
-    {label}{closure.duplicate_of?<><span aria-hidden="true"> · </span><ClosureOriginalLink number={closure.duplicate_of.display_no}/></>:null}
+  const original=externalTicketNumber(closure.duplicate_of?.display_no);
+  const label=closure.reason_code==='DUPLICATE'&&original?'重复':closureReasonText(closure);
+  return <Tag className="ds-ticket-closure-reason" data-closure-reason title={label+(original?' · '+original:'')}>
+    <span className="ds-closure-reason-label">{label}</span>{original?<><span aria-hidden="true" className="ds-closure-reason-separator"> · </span><ClosureOriginalLink number={original}/></>:null}
   </Tag>;
 }
 
@@ -58,22 +58,25 @@ export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:Work
   </div>;
 }
 
-export function ClosureRecord({closure,notificationState}:{closure:WorkbenchCard['closure'];notificationState?:'SENT'|'UNKNOWN'|'NOT_SENT'}){
-  if(closure?.kind!=='DISMISSED')return null;
-  return <Section title="关闭记录" data-closure-record="true"><PropertyList aria-label="关闭记录" className="ds-closure-properties">
-    <div className="property-field"><dt>操作人</dt><dd>{closure.closed_by_display_name??(closure.source==='SYSTEM'?'系统':'未记录')}</dd></div>
-    <div className="property-field"><dt>时间</dt><dd>{closure.closed_at?<BeijingTime value={closure.closed_at}/>:<span>未记录</span>}</dd></div>
-    <div className="property-field"><dt>方式</dt><dd>{closure.source==='MANUAL'?'人工关闭':closure.source==='SYSTEM'?'系统判定':'未记录'}</dd></div>
-    <div className="property-field"><dt>原因</dt><dd>{closure.reason_label??'未记录'}{closure.secondary_reason?' · '+closure.secondary_reason.label:''}</dd></div>
-    <div className="property-field"><dt>原单</dt><dd>{closure.duplicate_of?<ClosureOriginalLink number={closure.duplicate_of.display_no}/>:<span>未关联</span>}</dd></div>
-    <div className="property-field ds-closure-note"><dt>说明</dt><dd>{closure.reason_note??'未记录'}</dd></div>
-    {notificationState?<div className="property-field"><dt>通知报修人</dt><dd>{notificationState==='SENT'?'已通知':notificationState==='UNKNOWN'?'结果待核实':'未通知'}</dd></div>:null}
-  </PropertyList></Section>;
+export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;closed_at:string|null;closed_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null}
+/** Card 29 D3: one compact closure entry; empty values are omitted instead of shown as placeholders. */
+export function ClosureRecord({entry,now}:{entry:ClosureRecordEntry;now?:number}){
+  const name=entry.closed_by_display_name,original=externalTicketNumber(entry.duplicate_of?.display_no);
+  return <div className="ds-closure-entry" data-closure-record="true">
+    <div className="ds-closure-entry-head">{entry.source==='SYSTEM'?<Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/>:name?<Avatar name={name} size={20} aria-hidden="true"/>:null}
+      {name?<strong className="ds-closure-entry-name">{name}</strong>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.closed_at?<> · <BeijingTime value={entry.closed_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
+    <div className="ds-closure-entry-facts"><Tag className="ds-closure-entry-reason">{closureReasonText(entry)}</Tag>
+      {original?<span className="ds-closure-entry-original"><span>原单</span><ClosureOriginalLink number={original}/></span>:null}
+      {entry.notification_state==='SENT'?<span className="ds-closure-entry-notified">已通知报修人</span>:null}</div>
+    {entry.note?<p className="ds-closure-entry-note">说明：{entry.note}</p>:null}
+    {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restored_by_display_name?<strong>{entry.restored_by_display_name}</strong>:null}<span>恢复 · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}
+  </div>;
 }
 
-export function ClosureReasonOptions({options,value,isDisabled,onChange,label='关闭原因'}:{options:readonly {value:string;label:string}[];value:string;isDisabled:boolean;onChange:(value:string)=>void;label?:string}){
+/** Native radios; a nested group (Card 29 K1) renders directly beneath its parent option. */
+export function ClosureReasonOptions({options,value,isDisabled,onChange,label='关闭原因',nested}:{options:readonly {value:string;label:string;hint?:string}[];value:string;isDisabled:boolean;onChange:(value:string)=>void;label?:string;nested?:{after:string;content:ReactNode}|undefined}){
   const name=useId();
-  return <fieldset className="ds-closure-reason-options" disabled={isDisabled} aria-label={label}><legend className="sr-only">{label}</legend>{options.map(option=><label className="ds-closure-reason-option" key={option.value}>
-    <input className="sr-only" type="radio" name={name} value={option.value} checked={value===option.value} onChange={event=>onChange(event.currentTarget.value)}/><span className="ds-closure-reason-indicator" aria-hidden="true"/><span>{option.label}</span>
-  </label>)}</fieldset>;
+  return <fieldset className="ds-closure-reason-options" disabled={isDisabled} aria-label={label}><legend className="sr-only">{label}</legend>{options.map(option=><Fragment key={option.value}><label className="ds-closure-reason-option">
+    <input className="sr-only" type="radio" name={name} value={option.value} checked={value===option.value} onChange={event=>onChange(event.currentTarget.value)}/><span className="ds-closure-reason-indicator" aria-hidden="true"/><span className="ds-closure-reason-text">{option.label}</span>{option.hint?<span className="ds-closure-reason-hint"> · {option.hint}</span>:null}
+  </label>{nested?.after===option.value?nested.content:null}</Fragment>)}</fieldset>;
 }

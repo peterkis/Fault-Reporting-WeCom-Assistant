@@ -218,7 +218,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     const current=await cards.authorizedItem(authContext,row.kind,row.id,false);
     if(current.kind!==row.kind||current.id!==row.id)failP2016('CURSOR_INVALID');items.push(current);
    }
-   const decoratedItems=await cards.decorateWebReportUrgency(items);
+   const decoratedItems=await cards.decorateWebReportUrgency(await cards.projectSearchItems(authContext,items));
    const more=await transactionP2016(pool,async tx=>{
     await tx.query('SET TRANSACTION READ ONLY');await tx.query("SET LOCAL statement_timeout='2000ms'");
     await tx.query('SET LOCAL jit=off');

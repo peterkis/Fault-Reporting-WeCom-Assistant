@@ -1,0 +1,108 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_EXPLICIT_CARD28_SYNTHETIC_READ_FIELDS",
+  "platform": "darwin",
+  "metrics": {
+    "longOwner": {
+      "whiteSpace": "nowrap",
+      "overflow": "ellipsis",
+      "height": 20,
+      "title": "阿卜杜拉艾合买提（合成）",
+      "row": 44
+    },
+    "collapse": {
+      "text": "收起",
+      "icon": 14,
+      "size": "12px"
+    },
+    "search": {
+      "plain": {
+        "category": "CLINICAL_CORE",
+        "time": "1 小时"
+      },
+      "searched": {
+        "category": "CLINICAL_CORE",
+        "time": "1 小时"
+      }
+    },
+    "drawer": {
+      "badge": "已关闭",
+      "completedStage": false,
+      "substatusHidden": true,
+      "kicker": "已关闭 · 不计入完成数",
+      "summary": "重复报修 · IT-20261107-0010",
+      "historyRestore": 0,
+      "placeholders": false
+    },
+    "menu": {
+      "width": 220,
+      "radius": "10px",
+      "padding": "4px",
+      "item": 32,
+      "label": "关闭事项…",
+      "icon": 14,
+      "danger": true
+    }
+  },
+  "screenshots": [
+    {
+      "file": "list-1440-closed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "00be9002f5039fad15fe9869243b33e6a6835a3fdffedc797b8b64ac06898f6a",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "list-1440-search.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "03b9c1bfea91acf52c09fb733bff543f655d493ba48190a184f3522bbdeca509",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "board-1440-duplicate-tag.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "737870df1c62b4c06cb9a865bf460a4324ab1647cc7b7c8c5a725561070fa4ff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "drawer-1440-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a61bcb01bd580bac6790cade82380748dd39b501d110802549ac21d15849bbd9",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "zoom": 1
+      }
+    },
+    {
+      "file": "drawer-1440-menu.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "93738dabefd03681ee2dd5d9cf94e27fdcc9c472fde2fb2706183024d9cf43a0",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "zoom": 1
+      }
+    }
+  ]
+}

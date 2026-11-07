@@ -30,7 +30,7 @@ const substatus:Readonly<Record<string,{label:string;tone:Tone;icon?:'clock';tit
   WAITING_REQUESTER:{label:'等待中',tone:'neutral',icon:'clock',title:'等待补充'},
   WAITING_VENDOR:{label:'等待中',tone:'neutral',icon:'clock',title:'等待厂商'},
   RESOLVED:{label:'待确认',tone:'success',title:'已解决待确认'},
-  CANCELLED:{label:'已取消',tone:'neutral'},
+  CANCELLED:{label:'已关闭',tone:'neutral'},
   FAILED:{label:'受理处理失败',tone:'danger'},
   WAITING_DESCRIPTION:{label:'待补充',tone:'attention'},
 };

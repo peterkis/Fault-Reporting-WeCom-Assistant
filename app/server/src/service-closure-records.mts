@@ -22,6 +22,13 @@ export function normalizeClosureInput(input:unknown):NormalizedClosureInput{
  if(reason!=='OTHER'&&v.notify_reporter!==undefined&&v.notify_reporter!==notify)failP2016();
  return {reason_code:reason,secondary_reason_code:secondary as ClosureSecondaryReasonCode|null,note,duplicate_of_ref:duplicate as string|null,notify_reporter:notify};
 }
+// Card 29 K1: the close dialog only offers why an item is outside IT. Manual review keeps its own full reason set.
+export const CLOSING_SECONDARY_REASONS:readonly ClosureSecondaryReasonCode[]=Object.freeze(['BUSINESS_CONSULTATION_CONFIRMED','OUT_OF_SCOPE_CONFIRMED','SERVICE_REQUEST_CONFIRMED']);
+export function normalizeClosingInput(input:unknown):NormalizedClosureInput{
+ const closure=normalizeClosureInput(input);
+ if(closure.reason_code==='NOT_IT_SCOPE'&&!CLOSING_SECONDARY_REASONS.includes(closure.secondary_reason_code as ClosureSecondaryReasonCode))failP2016();
+ return closure;
+}
 export const CLOSURE_NOTIFICATION_TEMPLATES=Object.freeze({
  FALSE_REPORT_OR_TEST:'已关闭',DUPLICATE:'您的报修与已有报修重复，我们会在原报修中继续跟进。',NOT_IT_SCOPE:'您反映的问题不属于信息科受理范围，建议联系相关部门处理。',REPORTER_WITHDREW:'已按您的要求撤销本次报修。',REPORTER_UNREACHABLE:'多次联系未果，本次报修已关闭。如仍需处理，请重新报修。',OTHER:'您的报修已关闭。如仍需处理，请重新报修。',RESTORED:'您的报修已重新受理，我们会继续处理。',
 });

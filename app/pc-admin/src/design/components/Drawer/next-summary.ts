@@ -12,7 +12,7 @@ export function nextSummary(item:WorkbenchCard,heatLabel:string|undefined,isAssi
     WAITING_VENDOR:'等待厂商回复'+(heatLabel?' · 已等待 '+heatLabel.replace('超时 ',''):''),
     RESOLVED:'已解决，等待报修人确认',
     CLOSED:'工单已关闭 · 同一故障仍未解决时可重新打开',
-    CANCELLED:'工单已取消 · 请查看取消原因',
+    CANCELLED:'工单已关闭 · 请查看关闭记录',
     REOPENED:'同一故障仍未解决 · 请重新领取',
     PENDING:'规则无法判断 · 需要人工复核',
     RECEIVED:'报修已受理 · 等待建立工单',

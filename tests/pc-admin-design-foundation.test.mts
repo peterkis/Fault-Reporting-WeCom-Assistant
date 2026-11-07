@@ -22,7 +22,10 @@ test('Card 27C-B six fixed reasons keep notification copy independent from priva
  assert.deepEqual(model.closureReasons.map(row=>row.label),['误报或测试','重复报修','非 IT 范围','报修人撤回','无法联系报修人','其他']);
  const base={secondary:'',note:'内部说明（合成）',duplicate:'',notify:false};
  for(const reason of model.closureReasons){const notice=model.closureNotification({...base,reason:reason.value});assert.equal(notice.notify,!['FALSE_REPORT_OR_TEST','OTHER'].includes(reason.value));assert.ok(!notice.text.includes(base.note));}
- assert.equal(model.closureValidation({...base,reason:'OTHER',note:'   '}),'选择“其他”时必须填写说明。');assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE'}),'请选择非 IT 范围的二级原因。');
+ assert.equal(model.closureValidation({...base,reason:'OTHER',note:'   '}),'选择“其他”时必须填写说明。');assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE'}),'请选择非 IT 范围的具体情况。');
+ // Card 29 K1: a retired manual-review reason is not a valid close-dialog choice.
+ for(const secondary of ['HUMAN_CONFIRMED','ACKNOWLEDGED'])assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE',secondary}),'请选择非 IT 范围的具体情况。');
+ for(const secondary of ['BUSINESS_CONSULTATION_CONFIRMED','OUT_OF_SCOPE_CONFIRMED','SERVICE_REQUEST_CONFIRMED'])assert.equal(model.closureValidation({...base,reason:'NOT_IT_SCOPE',secondary}),null);
  assert.deepEqual(model.closureNotification({...base,reason:'OTHER',notify:true}),{notify:true,text:'您的报修已关闭。如仍需处理，请重新报修。'});
  assert.ok(model.closureNotification({...base,reason:'DUPLICATE',duplicate:'IT-20261107-0001'}).text.endsWith('原报修编号：IT-20261107-0001'));
 });
@@ -268,7 +271,7 @@ const summaryCopy:Record<string,readonly [string,string]>={
   WAITING_VENDOR:['等待厂商回复 · 已等待 12 分钟','等待厂商回复 · 已等待 12 分钟'],
   RESOLVED:['已解决，等待报修人确认','已解决，等待报修人确认'],
   CLOSED:['工单已关闭 · 同一故障仍未解决时可重新打开','工单已关闭 · 同一故障仍未解决时可重新打开'],
-  CANCELLED:['工单已取消 · 请查看取消原因','工单已取消 · 请查看取消原因'],
+  CANCELLED:['工单已关闭 · 请查看关闭记录','工单已关闭 · 请查看关闭记录'],
   REOPENED:['同一故障仍未解决 · 请重新领取','同一故障仍未解决 · 请重新领取'],
   PENDING:['规则无法判断 · 需要人工复核','规则无法判断 · 需要人工复核'],
   RECEIVED:['报修已受理 · 等待建立工单','报修已受理 · 等待建立工单'],

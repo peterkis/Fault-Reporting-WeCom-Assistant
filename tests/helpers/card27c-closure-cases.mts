@@ -341,15 +341,15 @@ test('Card 27C-B restore requires renewed confirmation when the closing delivery
  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST'&&request.url===path)posts++;};f.runtime.server.on('request',observe);
  try{
   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.id,width:1440,height:900,cookies:[{...cookie,url:cookieUrl}]});assert.ok(browser);
-  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-closure-history] [data-action=restore-closed]')?.disabled===false");
-  await clickWorkbenchControl(browser,'[data-closure-history] [data-action=restore-closed]');
+  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('.ds-next-step [data-action=restore-closed]')?.disabled===false");
+  await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-closed]');
   await browser.waitFor("Boolean(document.querySelector('[data-restore-confirmation]'))");
   assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('将通知报修人已重新受理')"),false);
-  assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('如关闭通知最终送达')"),true);
+  assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('关闭通知尚未送达，恢复后将按送达结果决定是否通知')"),true);
   const sender=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,batchSize:20,sender:{send:async()=>({outcome:'ACKNOWLEDGED',provider_message_id:null,error_code:null,retryable:false})}});await sender.runOnce({limit:20});
   page=await responseJson(await target.http.get('/api/tickets/'+target.id+'/closure-history'));assert.equal(object(page.restore_target).notification_state,'SENT');
   await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');
-  await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('将通知报修人已重新受理')&&document.body.innerText.includes('恢复目标或关闭通知状态已变化')");
+  await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('关闭时已通知，将通知报修人已重新受理')&&document.body.innerText.includes('恢复目标或关闭通知状态已变化')");
   assert.equal(posts,0);assert.equal((await target.http.detail(target.id)).status,'CANCELLED');
   await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');await browser.waitFor("!document.querySelector('[data-restore-confirmation]')");
   assert.equal(posts,1);assert.equal((await target.http.detail(target.id)).status,'QUEUED');

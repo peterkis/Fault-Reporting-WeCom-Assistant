@@ -89,7 +89,7 @@ test('production detail shares report materials, uses responsive information and
     await click('[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");
     await click('[data-action=cancel]');await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
     assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog textarea').value"),'合成取消原因：重复提出，已核对。');
-    await click(':is([aria-label="确认取消当前工单"],.detail-cancel-dialog input[value=OTHER])');await click('.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已取消')");
+    await click(':is([aria-label="确认取消当前工单"],.detail-cancel-dialog input[value=OTHER])');await click('.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('.properties')?.innerText.includes('已关闭')");
     assert.equal((await http.detail(cancelId)).status,'CANCELLED');assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/cancel')).length"),1);
     await navigateDetail('/workbench/app/items/ticket/'+first.ticket.id+'?detail=page&compat_missing_report_time=1');await browser.waitFor("document.querySelector('.detail-properties')?.innerText.includes('未记录')");
     const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'detail-restructure.png');await writeFile(file,bytes);

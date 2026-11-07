@@ -62,8 +62,6 @@
 .ds-ticket-closer .owner-name {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .ds-ticket-close-method {flex: none; white-space: nowrap;}
 .ds-closure-number {font-family: var(--font-mono);}
-.ds-closure-properties .ds-closure-note {grid-column: 1 / -1;}
-.ds-closure-properties .ds-closure-note dd {white-space: pre-wrap;}
 .ds-closure-reason-options {display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-1); min-width: 0; margin: 0; padding: 0; border: 0;}
 .ds-closure-reason-options .ds-closure-reason-option {position: relative; display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--bg-canvas); color: var(--text-primary); font-size: var(--fs-sm); line-height: var(--lh-sm); cursor: pointer;}
 .ds-closure-reason-option:hover {background: var(--bg-subtle);}
@@ -76,36 +74,11 @@
 .ds-closure-reason-options:disabled .ds-closure-reason-option {cursor: default; color: var(--text-tertiary);}
 .ds-closure-reason-options:disabled .ds-closure-reason-indicator {background: var(--bg-subtle);}
 
-.ds-modal.ds-closure-dialog {--radius-closure: calc(var(--radius-lg) + var(--space-0-5)); width: calc(var(--space-5) * 22); max-width: calc(100vw - var(--space-4) * 2); padding: var(--space-5); border-radius: var(--radius-closure);}
-.ds-closure-dialog>header {display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);}
-.ds-closure-dialog .ds-closure-context {margin: var(--space-2) 0 var(--space-4); color: var(--text-secondary); overflow-wrap: anywhere; font-size: var(--fs-sm);}
-.ds-closure-dialog form {display: grid; gap: var(--space-3);}
-.ds-closure-field {display: grid; gap: var(--space-2); color: var(--text-primary); font-size: var(--fs-sm);}
-.ds-closure-dialog .ds-closure-reason-options {gap: 0;}
-.ds-closure-dialog .ds-closure-reason-option {box-sizing: border-box; min-height: calc(var(--space-4) + var(--space-5)); padding: var(--space-2) var(--space-3); line-height: var(--lh-sm); border: 0;}
-.ds-closure-secondary {padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); font-size: var(--fs-sm);}
-.ds-closure-secondary .ds-closure-reason-option {background: transparent;}
-.ds-closure-secondary .ds-closure-reason-option:has(input:checked) {background: var(--brand-subtle);}
-.ds-closure-field textarea,.ds-closure-search input {width: 100%; box-sizing: border-box; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); padding: var(--space-2) var(--space-3); font: inherit; color: var(--text-primary);}
-.ds-closure-field textarea {min-height: calc(var(--space-5) * 4); resize: vertical;}
-.ds-closure-private,.ds-closure-dialog .ds-closure-footnote {color: var(--text-tertiary); font-size: var(--fs-xs);}
-.ds-closure-dialog .ds-closure-private {margin: calc(-1 * var(--space-2)) 0 0;}
-.ds-closure-notice {display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-sm);}
-.ds-closure-notice>svg {flex: none; margin-top: var(--space-0-5);}
-.ds-closure-notice p {margin: var(--space-1) 0 0;}
-.ds-closure-notice strong {font-weight: var(--fw-medium); color: var(--text-primary);}
-.ds-closure-notify-choice {display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);}
-.ds-closure-dialog footer {display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-1);}
-.ds-closure-search {display: grid; gap: var(--space-2); font-size: var(--fs-sm);}
-.ds-closure-search-results {display: grid; gap: var(--space-1); max-height: calc(var(--space-5) * 8); overflow: auto;}
-.ds-closure-search-results button {justify-content: flex-start; min-width: 0; text-align: left; white-space: normal;}
-.ds-closure-error {color: var(--tone-danger-fg); font-size: var(--fs-sm);}
 .ds-closure-restore {position: relative; z-index: var(--z-sticky);}
 .ds-closure-original {position: relative; z-index: var(--z-sticky); font-family: var(--font-mono);}
 .ds-dismissed-card-content {padding: var(--space-3);}
 .ds-ticket-card .ds-dismissed-open.card-open {display: inline; padding: 0; color: inherit; font: inherit;}
 .ds-dismissed-open::after {position: absolute; inset: 0; content: '';}
-.ds-ticket-closure-reason .ds-closure-original {padding: 0; min-height: 0; font-size: inherit; line-height: inherit; color: inherit;}
 .ds-work-row[data-closure-kind=DISMISSED] .ds-list-owner-cell {position: relative;}
 .ds-work-table .ds-list-owner-cell .ds-closure-restore.button {position: absolute; inset: 0; z-index: var(--z-list-claim); margin: auto; opacity: 0; width: fit-content; height: var(--control-h-sm); min-height: var(--control-h-sm);}
 .ds-work-table .ds-work-row:is(:hover,:focus-within) .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;}
@@ -114,10 +87,101 @@
 .ds-ticket-card .ds-closure-restore.button[data-tone] {position: absolute; right: var(--space-2); bottom: var(--space-2); opacity: 0;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-closure-restore.button[data-tone] {opacity: 1;}
 .ds-ticket-card:has(.ds-closure-restore):hover .ds-ticket-closer,.ds-ticket-card:has(.ds-closure-restore):focus-within .ds-ticket-closer {visibility: hidden;}
-.ds-closure-history {display: grid; gap: var(--space-3);}
-.ds-closure-history-entry {border-bottom: 1px solid var(--border-hair); padding-bottom: var(--space-3);}
-.ds-closure-restored-event {display: flex; flex-wrap: wrap; gap: var(--space-2); color: var(--text-secondary); margin-bottom: var(--space-3);}
 .ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: closure-restored calc(var(--dur-slow) * 5) ease-out;}
 @keyframes closure-restored {from {background-color: var(--brand-subtle);} to {background-color: var(--bg-canvas);}}
 @media (prefers-reduced-motion: reduce) {.ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: none; background: var(--brand-subtle);}}
 @media (hover: none) {.ds-ticket-card .ds-closure-restore.button[data-tone],.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;} .ds-ticket-card:has(.ds-closure-restore) .ds-ticket-closer,.ds-work-row:has(.ds-closure-restore) .ds-list-owner {visibility: hidden;}}
+
+/* Card 29 · close and restore dialogs share one spec: 440 / 400 wide, radius 14, padding 20, title 16 / 600. */
+.ds-modal-container.ds-closure-container {width: calc(var(--space-5) * 22);}
+.ds-modal-container.ds-restore-container {width: calc(var(--space-5) * 20);}
+.ds-modal.ds-closure-dialog {--radius-closure: calc(var(--radius-lg) + var(--space-0-5)); width: 100%; max-width: calc(100vw - var(--space-4) * 2); padding: var(--space-5); border-radius: var(--radius-closure);}
+.ds-modal.ds-closure-dialog>header {display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0;}
+.ds-modal.ds-closure-dialog>header h2 {font-size: var(--fs-lg); line-height: var(--lh-lg); font-weight: var(--fw-semibold);}
+.ds-closure-dialog .ds-closure-context {margin: var(--space-1) 0 var(--space-4); color: var(--text-secondary); overflow-wrap: anywhere; font-size: var(--fs-sm); line-height: var(--lh-sm);}
+.ds-closure-dialog form {display: grid; gap: var(--space-3);}
+.ds-closure-field {display: grid; gap: var(--space-1-5); color: var(--text-primary); font-size: var(--fs-sm);}
+.ds-closure-field-label,.ds-closure-search-label {font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--text-primary);}
+.ds-closure-optional {font-weight: var(--fw-regular); color: var(--text-tertiary);}
+.ds-closure-dialog .ds-closure-reason-options {gap: 0;}
+.ds-closure-dialog .ds-closure-reason-option {box-sizing: border-box; min-height: calc(var(--space-4) + var(--space-5)); padding: var(--space-2) var(--space-3); border: 0; color: var(--text-primary); line-height: var(--lh-sm);}
+.ds-closure-reason-text {color: var(--text-primary);}
+.ds-closure-reason-hint {color: var(--text-tertiary); font-size: var(--fs-xs);}
+/* K1: indented 「具体情况」 group under 「非 IT 范围」. */
+.ds-closure-secondary {display: grid; gap: var(--space-1); margin: var(--space-1) 0 var(--space-1) calc(var(--space-6) + var(--space-0-5)); padding: var(--space-2); border-radius: var(--radius-md); background: var(--bg-subtle);}
+.ds-closure-secondary-title {padding: 0 var(--space-2); font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-secondary);}
+.ds-closure-dialog .ds-closure-secondary .ds-closure-reason-option {min-height: var(--space-8); padding: var(--space-1-5) var(--space-2); border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--fs-sm);}
+.ds-closure-dialog .ds-closure-secondary .ds-closure-reason-option:hover {background: var(--bg-hover);}
+.ds-closure-dialog .ds-closure-secondary .ds-closure-reason-option:has(input:checked) {background: var(--bg-canvas); border-color: var(--border-brand-subtle);}
+.ds-closure-field textarea {width: 100%; box-sizing: border-box; min-height: calc(var(--space-5) * 3); resize: vertical; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); padding: var(--space-2) var(--space-3); font: inherit; color: var(--text-primary);}
+.ds-closure-dialog .ds-closure-private {margin: 0; color: var(--text-tertiary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+/* K4: the notice speaks only about notifying the reporter. */
+.ds-closure-notice {display: grid; gap: var(--space-1); padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-sm); line-height: var(--lh-sm);}
+.ds-closure-notice-title {display: inline-flex; align-items: center; gap: var(--space-1-5);}
+.ds-closure-notice-title>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
+.ds-closure-notice p {margin: 0;}
+.ds-closure-notice strong {font-weight: var(--fw-medium); color: var(--text-primary);}
+.ds-closure-notify-choice {display: flex; align-items: center; gap: var(--space-2);}
+.ds-closure-termination {display: flex; align-items: center; gap: var(--space-1-5); margin: 0; color: var(--tone-attention-fg); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-closure-termination>svg {width: calc(var(--icon-sm) - 1px); height: calc(var(--icon-sm) - 1px); flex: none;}
+/* K5: one footer row; draft state on the left, actions on the right. */
+.ds-closure-dialog footer {display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-1);}
+.ds-closure-draft {display: flex; align-items: center; gap: var(--space-1); min-width: 0; color: var(--text-tertiary); font-size: var(--fs-xs);}
+.ds-closure-draft .workbench-draft-status:not(.sr-only) {display: inline-flex; align-items: center; gap: var(--space-1); width: auto; height: auto; min-width: 0; max-width: calc(var(--space-16) * 3); color: var(--text-tertiary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-closure-draft .inbox-draft-copy {min-width: 0;}
+.ds-closure-draft .workbench-draft-status svg {width: var(--space-3); height: var(--space-3); flex: none;}
+.ds-closure-dialog .ds-closure-draft .ds-closure-discard.button {height: var(--control-h-sm); min-height: var(--control-h-sm); padding: 0 var(--space-1); font-size: var(--fs-xs); color: var(--text-secondary);}
+.ds-closure-actions {display: flex; align-items: center; gap: var(--space-2); margin-left: auto;}
+/* K3: original-ticket combobox. */
+.ds-closure-search {position: relative; display: grid; gap: var(--space-1-5); font-size: var(--fs-sm);}
+.ds-closure-combobox {display: flex; align-items: center; gap: var(--space-2); min-height: var(--control-h-md); padding: 0 var(--space-1) 0 var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); color: var(--text-tertiary);}
+.ds-closure-combobox:focus-within {border-color: var(--brand); outline: 2px solid var(--border-focus); outline-offset: var(--space-0-5);}
+.ds-closure-combobox>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
+.ds-closure-combobox input {flex: 1; min-width: 0; height: calc(var(--control-h-md) - 2px); border: 0; outline: 0; background: transparent; font: inherit; color: var(--text-primary);}
+.ds-modal .ds-closure-combobox input:focus-visible {outline: 0;}
+.ds-closure-combobox.is-selected {color: var(--text-secondary);}
+.ds-closure-combobox.is-selected .ds-closure-number {flex: none; color: var(--text-primary); font-size: var(--fs-xs);}
+.ds-closure-selected-title {flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);}
+.ds-closure-dialog .ds-closure-clear.button {width: var(--space-6); min-width: var(--space-6); height: var(--space-6); min-height: var(--space-6); margin-left: auto; padding: 0;}
+.ds-closure-clear svg {width: var(--icon-sm); height: var(--icon-sm);}
+.ds-closure-search-results {position: absolute; top: 100%; right: 0; left: 0; z-index: var(--z-dropdown); display: grid; max-height: calc(var(--space-10) * 6); margin: var(--space-1) 0 0; padding: var(--space-1); overflow: auto; list-style: none; border-radius: var(--radius-md); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
+.ds-closure-search-option {position: relative; display: flex; align-items: center; gap: var(--space-2); height: var(--space-10); padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--text-primary); cursor: pointer;}
+.ds-closure-search-option[data-active] {background: var(--bg-hover);}
+.ds-closure-search-option .ds-ticket-category {position: static; width: var(--space-5); height: var(--space-5); flex: none;}
+.ds-closure-search-option .ds-ticket-category>svg {width: var(--icon-sm); height: var(--icon-sm);}
+.ds-closure-search-option .ds-closure-number {flex: none; font-size: var(--fs-xs);}
+.ds-closure-option-title {flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-closure-option-stage.ds-tag {flex: none; margin: 0;}
+.ds-closure-search-empty {padding: var(--space-2); color: var(--text-tertiary); font-size: var(--fs-xs);}
+.ds-closure-error {margin: 0; color: var(--tone-danger-fg); font-size: var(--fs-xs);}
+/* R1/R2: restore confirmation. Fixed spacing replaces the negative margin that overlapped the footnote. */
+.ds-restore-facts {display: grid; gap: var(--space-1-5); margin: 0; padding: calc(var(--space-2) + var(--space-0-5)) var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); font-size: var(--fs-sm); line-height: var(--lh-sm);}
+.ds-restore-facts>div {display: grid; grid-template-columns: calc(var(--space-12) + var(--space-2)) minmax(0,1fr); align-items: center; min-height: var(--space-6);}
+.ds-restore-facts dt {color: var(--text-secondary);}
+.ds-restore-facts dd {display: flex; align-items: center; gap: var(--space-1-5); min-width: 0; margin: 0; color: var(--text-primary);}
+.ds-restore-facts dd .ds-tag {margin: 0;}
+.ds-restore-unassigned {color: var(--text-secondary);}
+.ds-restore-followups {margin: var(--space-2) 0 0; color: var(--text-tertiary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-restore-dialog footer {margin-top: var(--space-4);}
+.ds-restore-dialog .ds-button[data-action=confirm-restore-closed] svg {width: var(--icon-sm); height: var(--icon-sm);}
+/* B1: one tag for 「重复 · IT-…」. */
+.ds-ticket-closure-reason.ds-tag {display: inline-flex; align-items: center; gap: 0; min-width: 0;}
+.ds-closure-reason-label {flex: none;}
+.ds-closure-reason-separator {flex: none; white-space: pre; color: var(--text-tertiary);}
+.ds-ticket-closure-reason .ds-closure-original.button {height: auto; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: var(--fw-regular); line-height: inherit; color: inherit;}
+/* D3: compact closure history, newest first. */
+.ds-closure-history {display: grid; gap: var(--space-3);}
+.ds-closure-history-entry+.ds-closure-history-entry {padding-top: var(--space-3); border-top: 1px solid var(--border-hair);}
+.ds-closure-entry {display: grid; gap: var(--space-1-5); font-size: var(--fs-sm); line-height: var(--lh-sm);}
+.ds-closure-entry-head {display: flex; align-items: center; gap: var(--space-1-5); min-width: 0; color: var(--text-secondary);}
+.ds-closure-entry-name {font-weight: var(--fw-semibold); color: var(--text-primary);}
+.ds-closure-entry-method {min-width: 0; font-size: var(--fs-xs);}
+.ds-closure-entry-facts {display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1-5) var(--space-2); padding-left: calc(var(--space-5) + var(--space-1-5)); font-size: var(--fs-xs);}
+.ds-closure-entry-facts .ds-tag {margin: 0;}
+.ds-closure-entry-original {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-secondary);}
+.ds-closure-entry-original .ds-closure-original.button {height: auto; min-height: 0; padding: 0; font-size: var(--fs-xs); color: var(--text-link);}
+.ds-closure-entry-notified {color: var(--text-secondary);}
+.ds-closure-entry-note {margin: 0 0 0 calc(var(--space-5) + var(--space-1-5)); padding: var(--space-1-5) var(--space-2); border-radius: var(--radius-sm); background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: pre-wrap; overflow-wrap: anywhere;}
+.ds-closure-restored-event {display: flex; align-items: center; gap: var(--space-1); margin: 0 0 0 calc(var(--space-5) + var(--space-1-5)); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-closure-restored-event>svg {width: var(--space-3); height: var(--space-3); flex: none;}
+.ds-closure-restored-event strong {font-weight: var(--fw-medium); color: var(--text-primary);}

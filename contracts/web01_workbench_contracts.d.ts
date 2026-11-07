@@ -39,7 +39,7 @@ export interface WorkbenchCard {
   created_at: string; updated_at: string; completed_at: string | null;
   /** Always present; null in the first and second columns. */
   closure: WorkbenchClosure | null;
-  /** Board/detail read projections. Older responses and search omit these fields. */
+  /** Board, detail and search read projections. Older responses omit these fields. */
   service?: WorkbenchService | null;
   stage_entered_at?: string | null;
   /** Present only on authorized Ticket cards while shared-time viewing is enabled. */

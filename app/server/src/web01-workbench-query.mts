@@ -286,9 +286,15 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     if(!row)failP2016('NOT_FOUND',404);
     const selected=card(row,authorized.principal);return (await decorate([selected],authContext,includeWebReports))[0]??selected;
   }
+  /** Card 29 L6: search results carry the same read-only service and stage timing as board cards. */
+  async function projectSearchItems(authContext:unknown,items:WorkbenchCard[]):Promise<WorkbenchCard[]>{
+    if(!items.length)return items;
+    return readWorkbenchCardProjections(pool,workbenchSearchCardsSql(manualReviewEnabled),{authority:()=>scope(authContext),session:start=>sessionProof(authContext,start)},items,serviceCatalog,manualReportsEnabled);
+  }
   return Object.freeze({
     authorizedItem:item,
     decorateWebReportUrgency,
+    projectSearchItems,
     async serviceCatalog(authContext:unknown){
       await verifyWorkbenchReadAccess(pool,{authority:()=>scope(authContext),session:start=>sessionProof(authContext,start)});
       let catalog;
