@@ -82,6 +82,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     ...(linuxGraphics?[
       '--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader',
       '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
+      '--webgl-antialiasing-mode=none',
       '--enable-logging=stderr',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
