@@ -1,12 +1,31 @@
 import {ApiError,captureWorkbenchRead,readWorkbench} from '../../api/client';
 import {isWorkbenchVisible} from '../../desktop/host';
 import type {Principal} from '../../api/client';
-import type {WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView} from '../../../../../contracts/workbench_activity_contracts';
+import type {WorkbenchActivityBatchView,WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView} from '../../../../../contracts/workbench_activity_contracts';
 function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function epoch(value:unknown){if(typeof value!=='string'||!/^[1-9][0-9]{0,18}$/u.test(value)||BigInt(value)>9223372036854775807n)throw new ApiError(502,'INVALID_RESPONSE');return value;}
+const isActivityField=(value:unknown):value is WorkbenchActivityField=>value==='internal-note'||value==='ticket-handling'||value==='ticket-completion'||value==='manual-review';
+// ADR-0057: `field` is accepted (EDITING → a known field, VIEWING → null); an older three-key person reads as field:null.
+function person(value:unknown):WorkbenchActivityPerson{
+  const p=record(value),keys=Object.keys(p).length,hasField=Object.hasOwn(p,'field');
+  if(keys!==(hasField?4:3)||typeof p.display_name!=='string'||!p.display_name.length||p.display_name.length>128||(p.mode!=='VIEWING'&&p.mode!=='EDITING'))throw new ApiError(502,'INVALID_RESPONSE');
+  const field=hasField?p.field:null;
+  if(field!==null&&(p.mode!=='EDITING'||!isActivityField(field)))throw new ApiError(502,'INVALID_RESPONSE');
+  return {display_name:p.display_name,mode:p.mode,field,expires_epoch_ms:epoch(p.expires_epoch_ms)};
+}
 function view(value:unknown):WorkbenchActivityView{
   const v=record(value);if(Object.keys(v).length!==2||v.schema_version!==1||!Array.isArray(v.people)||v.people.length>16)throw new ApiError(502,'INVALID_RESPONSE');
-  return {schema_version:1,people:v.people.map(value=>{const p=record(value);if(Object.keys(p).length!==3||typeof p.display_name!=='string'||!p.display_name.length||p.display_name.length>128||(p.mode!=='VIEWING'&&p.mode!=='EDITING'))throw new ApiError(502,'INVALID_RESPONSE');return {display_name:p.display_name,mode:p.mode,expires_epoch_ms:epoch(p.expires_epoch_ms)};})};
+  return {schema_version:1,people:v.people.map(person)};
+}
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+/** ADR-0057 batch-view response parser; card 30B owns the request timing and store. */
+export function parseActivityBatchView(value:unknown):WorkbenchActivityBatchView{
+  const v=record(value);if(Object.keys(v).length!==2||v.schema_version!==1||!Array.isArray(v.items)||v.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
+  return {schema_version:1,items:v.items.map(value=>{
+    const item=record(value);
+    if(Object.keys(item).length!==3||(item.kind!=='ticket'&&item.kind!=='review'&&item.kind!=='intake')||typeof item.id!=='string'||!uuid.test(item.id)||!Array.isArray(item.people)||!item.people.length||item.people.length>16)throw new ApiError(502,'INVALID_RESPONSE');
+    return {kind:item.kind,id:item.id,people:item.people.map(person)};
+  })};
 }
 async function send(principal:Principal,command:WorkbenchActivityCommand,signal?:AbortSignal):Promise<WorkbenchActivityReceipt>{
   const controller=signal??new AbortController().signal,current=captureWorkbenchRead(controller);

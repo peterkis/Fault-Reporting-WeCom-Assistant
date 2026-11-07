@@ -10,14 +10,16 @@ function same(left:unknown,right:unknown){
 }
 export function createWorkbenchActivityHttp(activity:ReturnType<typeof createWorkbenchActivity>|null){
   return async({request,response,url,authContext,json,readJson}:Context)=>{
-    const command=url.pathname==='/api/workbench/activity',view=/^\/api\/workbench\/items\/(ticket|review|intake)\/([0-9a-f-]{36})\/activity$/iu.exec(url.pathname);
-    if(!command&&!view)return false;
+    const command=url.pathname==='/api/workbench/activity',batch=url.pathname==='/api/workbench/activity/batch-view',view=/^\/api\/workbench\/items\/(ticket|review|intake)\/([0-9a-f-]{36})\/activity$/iu.exec(url.pathname);
+    if(!command&&!batch&&!view)return false;
     if(!activity)failP2016('DISABLED',503);
     if(authContext.auth_method!=='COOKIE')failP2016('FORBIDDEN',403);
     if(url.searchParams.size)failP2016();
-    if(command&&request.method==='POST'){
+    if((command||batch)&&request.method==='POST'){
       if(request.headers.origin!==authContext.public_origin||request.headers['sec-fetch-site']==='cross-site'||!same(request.headers['x-csrf-token'],authContext.csrf_token))failP2016('FORBIDDEN',403);
-      json(response,200,await activity.perform({authContext,body:await readJson(request)}));return true;
+      const body=await readJson(request);
+      // ADR-0057: read-only batch projection shares the command route's Cookie/Origin/CSRF boundary.
+      json(response,200,batch?await activity.batchView(authContext,body):await activity.perform({authContext,body}));return true;
     }
     if(view&&request.method==='GET'){json(response,200,await activity.view(authContext,activityTarget({kind:view[1],id:view[2]})));return true;}
     failP2016('NOT_FOUND',404);

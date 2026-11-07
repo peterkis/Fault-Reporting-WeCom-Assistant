@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_activity_batch_view.schema.json",
+  "title": "ADR-0057 activity batch view: only targets with at least one mutually authorized colleague",
+  "type": "object", "additionalProperties": false, "required": ["schema_version", "items"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "items": {
+      "type": "array", "maxItems": 100,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["kind", "id", "people"],
+        "properties": {
+          "kind": {"enum": ["ticket", "review", "intake"]},
+          "id": {"type": "string", "format": "uuid"},
+          "people": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"$ref": "./workbench_activity_person.schema.json"}}
+        }
+      }
+    }
+  }
+}

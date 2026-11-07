@@ -88,7 +88,8 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | MR05 | GET | `/api/workbench/reports/self-handling-context` | W | 已挂载、默认关闭；当前创建／真实活动组成员许可，有界候选或精确原组恢复核验 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
 | MR06 | POST | `/api/workbench/reports/take-and-start` | W | 已挂载、默认关闭；原 MANUAL 账本同事务受理／唯一 Core／本人合法组承接开始，仅原 UNVERIFIED 合同 | [本人立即处理](workbench/manual-reports.md#10-代录后由本人立即处理wbint-t19) |
 | A01 | POST | `/api/workbench/activity` | W | 已实现、默认关闭；本地验证完成待父验收：获权可见事项短租期续租／释放 | [活动](workbench/activity.md) |
-| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | 已实现、默认关闭；本地验证完成待父验收：当前双方获权的安全同事活动投影 | [活动](workbench/activity.md) |
+| A02 | GET | `/api/workbench/items/{kind}/{id}/activity` | W | 已实现、默认关闭；本地验证完成待父验收：当前双方获权的安全同事活动投影（ADR-0057 起含 `field`、编辑者在前） | [活动](workbench/activity.md) |
+| A03 | POST | `/api/workbench/activity/batch-view` | W | 卡30A／ADR-0057，默认关闭：1–100 个目标的只读批量在场，只返回有人的双方获权目标；无人目标不鉴权 | [活动](workbench/activity.md#adr-0057-批量读取编辑字段与看板提示卡-30a) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
 | C03 | GET | `/api/conversations/{sessionId}` | W | 已实现：详情/ETag | [会话](workbench/conversations.md) |

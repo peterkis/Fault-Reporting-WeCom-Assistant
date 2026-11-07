@@ -28,12 +28,22 @@ export interface WorkbenchActivityReceipt {
   accepted: true;
   expires_epoch_ms: string | null;
 }
-/** Current, mutually authorized colleagues only. No principal/browser/raw external identities. */
+/**
+ * Current, mutually authorized colleagues only. No principal/browser/raw external identities.
+ * ADR-0057: `field` is the most recently edited field while `mode` is EDITING, otherwise null.
+ * People are ordered editors first, then by display name.
+ */
 export interface WorkbenchActivityPerson {
   display_name: string;
   mode: WorkbenchActivityMode;
+  field: WorkbenchActivityField | null;
   expires_epoch_ms: string;
 }
 export interface WorkbenchActivityView { schema_version: 1; people: WorkbenchActivityPerson[] }
+/** ADR-0057 read-only batch request: 1..100 targets, duplicates collapse. */
+export interface WorkbenchActivityBatchViewRequest { schema_version: 1; targets: WorkbenchActivityTarget[] }
+export interface WorkbenchActivityBatchViewItem extends WorkbenchActivityTarget { people: WorkbenchActivityPerson[] }
+/** Only targets with at least one mutually authorized colleague appear; unauthorized targets are omitted. */
+export interface WorkbenchActivityBatchView { schema_version: 1; items: WorkbenchActivityBatchViewItem[] }
 /** Ephemeral named SSE hint, no id field and no durable event/cursor allocation. */
 export interface WorkbenchActivityHint { schema_version: 1 }

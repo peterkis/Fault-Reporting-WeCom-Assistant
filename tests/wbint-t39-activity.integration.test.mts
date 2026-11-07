@@ -43,7 +43,8 @@ test('a currently authorized visible viewing lease is shown to another authorize
     const colleagueView=await fetch(origin+detailPath+'/activity',{headers:{cookie:colleagueCookie}});
     const view:unknown=await colleagueView.json();
     assert.equal(colleagueView.status,200);
-    assert.deepEqual(view,{schema_version:1,people:[{display_name:'林舟',mode:'VIEWING',expires_epoch_ms:receipt.expires_epoch_ms}]},
-      'the current authorized activity projection exposes only the safe colleague name, mode and bounded expiry');
+    // ADR-0057 adds `field` (null while VIEWING); no other key is exposed.
+    assert.deepEqual(view,{schema_version:1,people:[{display_name:'林舟',mode:'VIEWING',field:null,expires_epoch_ms:receipt.expires_epoch_ms}]},
+      'the current authorized activity projection exposes only the safe colleague name, mode, edited field and bounded expiry');
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
 });
