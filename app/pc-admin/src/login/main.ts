@@ -4,6 +4,7 @@ import {createElement} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Ellipsis} from 'lucide-react';
 import type {LoginBridge,LoginPrepared} from '../../desktop/policy.mjs';
+import {prepareBackdropDevice, retireBackdropDevice} from './backdrop-device';
 import './login.css';
 declare global {interface Window {workbenchLogin?:LoginBridge}}
 
@@ -79,19 +80,38 @@ const revealScene=()=>{
   if(sceneReleased||!presentationAllowed)return;
   sceneReleased=true;document.body.dataset.loginScene='ready';document.body.dataset.loginPresentation='presented';setSceneInert(false);renderScene?.();renderBackdrop?.();
 };
+function retireFallbackBackdrop(): void {
+  try {
+    backdrop?.unmount();
+  } finally {
+    backdrop = null;
+    retireBackdropDevice();
+  }
+}
+
 const finishBackdrop=(mode:'shader'|'fallback',reason?:string)=>{
   if(!active||completing)return;
   if(reason)document.body.dataset.backdropReason=reason;
   if(backgroundMode!=='pending'){
-    if(mode==='fallback'){document.body.dataset.backdrop='fallback';queueMicrotask(()=>{backdrop?.unmount();backdrop=null;});}
+    if(mode==='fallback'){document.body.dataset.backdrop='fallback';queueMicrotask(retireFallbackBackdrop);}
     return;
   }
   backgroundMode=mode;clearTimeout(backgroundTimer);document.body.dataset.backdrop=mode;
-  if(mode==='fallback')queueMicrotask(()=>{backdrop?.unmount();backdrop=null;});
+  if(mode==='fallback')queueMicrotask(retireFallbackBackdrop);
   startPresentation();
   revealScene();
 };
 const armBackgroundTimer=()=>{clearTimeout(backgroundTimer);if(backgroundMode==='pending'&&!document.hidden)backgroundTimer=window.setTimeout(()=>finishBackdrop('fallback','timeout'),8000);};
+let backdropModulePromise: Promise<typeof import('./LoginBackdrop')> | undefined;
+function loadBackdropModule() {
+  backdropModulePromise ??= import('./LoginBackdrop');
+  return backdropModulePromise;
+}
+function canLoadBackdropEarly(): boolean {
+  return active && !completing && backgroundMode === 'pending' && !document.hidden && navigator.onLine
+    && innerWidth > 0 && matchMedia('(min-width: 801px)').matches
+    && 'gpu' in navigator && Boolean(navigator.gpu) && document.getElementById('login-backdrop') !== null;
+}
 const mountBackdrop=()=>{
   const host=document.getElementById('login-backdrop');
   if(backdropRequested||!active||completing||document.hidden||innerWidth===0)return;
@@ -99,7 +119,7 @@ const mountBackdrop=()=>{
   if(!host||!('gpu' in navigator)||!navigator.gpu){finishBackdrop('fallback','unsupported');return;}
   if(!matchMedia('(min-width: 801px)').matches){finishBackdrop('fallback','narrow');return;}
   armBackgroundTimer();
-  void import('./LoginBackdrop').then(({default:LoginBackdrop})=>{
+  void loadBackdropModule().then(({default:LoginBackdrop})=>{
     if(!active||completing||backgroundMode!=='pending')return;
     backdrop=createRoot(host,{onUncaughtError:()=>finishBackdrop('fallback','component-error')});
     renderBackdrop=()=>{if(active&&!completing)backdrop?.render(createElement(LoginBackdrop,{presented:sceneReleased,onReady:()=>finishBackdrop('shader'),onUnavailable:(reason:string)=>finishBackdrop('fallback',reason)}));};
@@ -195,6 +215,11 @@ try{
 }
 cardPrepared=true;revealScene();
 };
+if (canLoadBackdropEarly()) {
+  void prepareBackdropDevice();
+  // The rAF mount consumes this same promise, including an import failure.
+  void loadBackdropModule().catch(() => {});
+}
 const lanyardModule=view==='lanyard'?import('./Lanyard'):null;
 void lanyardModule?.catch(()=>{});
 function startPresentation(){
@@ -224,4 +249,11 @@ window.visualViewport?.addEventListener('resize',checkScale);
 // Native resume checks the trusted main response's Cookie lifetime. Page guards coalesce this with its own timer.
 window.addEventListener('workbench-login-expired',restart);
 document.addEventListener('visibilitychange',()=>{root.dataset.pageHidden=String(document.hidden);clearTimeout(readyTimer);clearTimeout(backgroundTimer);if(document.visibilityState==='visible'){resume();armReadyTimer();mountBackdrop();armBackgroundTimer();}});
-window.addEventListener('pagehide',()=>{active=false;dispose();},{once:true});
+window.addEventListener('pagehide', () => {
+  active = false;
+  try {
+    dispose();
+  } finally {
+    retireBackdropDevice();
+  }
+}, {once: true});

@@ -10,7 +10,14 @@ import {setTimeout as delay} from 'node:timers/promises';
 const frameFiles=['startup-frames/manifest.json',...Array.from({length:68},(_,index)=>'startup-frames/'+String(index).padStart(3,'0')+'.webp')];
 const startupFiles=['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','unavailable.html','package.json','icon.ico','icon.png','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','startup-video.mp4',...frameFiles];
 type FrameFault='normal'|'missing'|'decode-failed'|'canvas-unavailable'|'script-failed'|'bootstrap-stalled'|'os-reduce'|'slow-progress';
-const copyStartup=(root:string,stage:string)=>{for(const file of startupFiles){const target=path.join(stage,file);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(root,'.local/electron/stage',file),target);}};
+const copyStartup=(root:string,stage:string)=>{
+  for(const file of startupFiles){const target=path.join(stage,file);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(root,'.local/electron/stage',file),target);}
+  for(const file of ['main.mjs','policy.mjs','startup-state.mjs','frame-playback.mjs','preload.cjs','chrome.mjs','chrome-preload.cjs','startup.mjs','startup-preload.cjs']){
+    const compiled=path.join(root,'.local/electron/compiled',file),target=path.join(stage,file);
+    copyFileSync(compiled,target);
+    assert.deepEqual(readFileSync(target),readFileSync(compiled),'startup fixture uses current compiled bytes for '+file);
+  }
+};
 function installFrameProbe(stage:string,fault:FrameFault='normal'){
   const html=path.join(stage,'startup.html');
   writeFileSync(html,readFileSync(html,'utf8').replace('<script type="module" src="startup.mjs">','<script src="frame-probe.mjs"></script><script type="module" src="startup.mjs">'));
@@ -22,6 +29,117 @@ function installFrameProbe(stage:string,fault:FrameFault='normal'){
     window.cancelAnimationFrame=id=>{held.delete(id);cancel(id);};
     window.__pauseStartupFrames=()=>{paused=true;};window.__resumeStartupFrames=()=>{paused=false;const callbacks=[...held.values()];held.clear();for(const callback of callbacks)window.requestAnimationFrame(callback);};
     window.__startupFrameObservations=[];window.__observedStartupCycles=0;window.__maxResidentFrames=0;window.__maxInFlight=0;
+    const displayCanvas=document.getElementById('startup-canvas');
+    const framesUrl=new URL('startup-frames/',document.baseURI).href;
+    const prototype=CanvasRenderingContext2D.prototype;
+    const originalDraw=prototype.drawImage,originalRead=prototype.getImageData,originalPut=prototype.putImageData;
+    const scratchFrame=new WeakMap(),imageDataFrame=new WeakMap();
+    const nativeFrames={observations:[],displayWrites:0,scratchDraws:0,scratchReads:0,unprovenDisplayWrites:0,videoFrameCopies:0,videoCopyBuffers:0,videoDisplayImages:0,videoCopiesInFlight:0,maxVideoCopiesInFlight:0,invalidVideoCopies:0,staleVideoCopies:0};
+    window.__startupNativeFrames=nativeFrames;
+    const detachedScratch=context=>context.canvas instanceof HTMLCanvasElement&&context.canvas!==displayCanvas&&!context.canvas.isConnected&&context.canvas.width===540&&context.canvas.height===540;
+    const fullDraw=args=>args.length===5&&args[1]===0&&args[2]===0&&args[3]===540&&args[4]===540;
+    const sourceIndex=image=>{
+      if(!(image instanceof HTMLImageElement)||image.naturalWidth!==540||image.naturalHeight!==540)return null;
+      const url=image.currentSrc||image.src;
+      if(!url.startsWith(framesUrl))return null;
+      const match=/^([0-9]{3})[.]webp$/u.exec(url.slice(framesUrl.length));
+      const index=match?Number(match[1]):-1;
+      return index>=0&&index<68?index:null;
+    };
+    const recordDisplay=(method,index,copyGeneration=null)=>{
+      nativeFrames.displayWrites++;
+      if(index===null){nativeFrames.unprovenDisplayWrites++;return;}
+      if(nativeFrames.observations.length<160)nativeFrames.observations.push({method,index,at:performance.now(),copyGeneration});
+    };
+    prototype.drawImage=function(...args){
+      scratchFrame.delete(this);
+      const result=Reflect.apply(originalDraw,this,args);
+      const index=fullDraw(args)?sourceIndex(args[0]):null;
+      if(this.canvas===displayCanvas)recordDisplay('drawImage',index);
+      else if(index!==null&&detachedScratch(this)){scratchFrame.set(this,index);nativeFrames.scratchDraws++;}
+      return result;
+    };
+    prototype.getImageData=function(...args){
+      const index=scratchFrame.get(this);scratchFrame.delete(this);
+      const pixels=Reflect.apply(originalRead,this,args);
+      const settings=args[4];
+      if(index!==undefined&&detachedScratch(this)&&args.length===5&&args[0]===0&&args[1]===0&&args[2]===540&&args[3]===540&&settings?.colorSpace==='srgb'&&settings?.pixelFormat==='rgba-unorm8'&&pixels instanceof ImageData&&pixels.width===540&&pixels.height===540&&pixels.colorSpace==='srgb'&&pixels.data instanceof Uint8ClampedArray&&pixels.data.length===540*540*4){
+        imageDataFrame.set(pixels,index);nativeFrames.scratchReads++;
+      }
+      return pixels;
+    };
+    const videoFrameIndex=new WeakMap(),copyByBuffer=new WeakMap();
+    const knownCopyBuffers=new WeakSet(),knownVideoDisplayImages=new WeakSet();
+    const frameBytes=540*540*4;
+    let nextCopyGeneration=0;
+    const fullPixelArray=data=>data instanceof Uint8ClampedArray&&data.byteOffset===0&&data.byteLength===frameBytes&&data.buffer instanceof ArrayBuffer&&data.buffer.byteLength===frameBytes;
+    const fullPlane=planes=>Array.isArray(planes)&&planes.length===1&&planes[0]?.offset===0&&planes[0]?.stride===2160;
+    const fullCopyOptions=options=>{
+      const rect=options?.rect;
+      return options?.format==='RGBA'&&options.colorSpace==='srgb'&&rect?.x===0&&rect.y===0&&rect.width===540&&rect.height===540&&fullPlane(options.layout);
+    };
+    if(typeof VideoFrame==='function'&&typeof VideoFrame.prototype.copyTo==='function'){
+      const NativeVideoFrame=VideoFrame,originalCopy=NativeVideoFrame.prototype.copyTo;
+      window.VideoFrame=new Proxy(NativeVideoFrame,{construct(target,args,newTarget){
+        const frame=Reflect.construct(target,args,newTarget);
+        const index=sourceIndex(args[0]);
+        if(index!==null)videoFrameIndex.set(frame,index);
+        return frame;
+      }});
+      NativeVideoFrame.prototype.copyTo=function(...args){
+        const target=args[0];
+        const backing=target instanceof ArrayBuffer?target:ArrayBuffer.isView(target)?target.buffer:null;
+        const buffer=backing instanceof ArrayBuffer?backing:null;
+        const index=videoFrameIndex.get(this);
+        const full=buffer!==null&&index!==undefined&&fullPixelArray(target)&&fullCopyOptions(args[1])&&this.codedWidth===540&&this.codedHeight===540&&this.displayWidth===540&&this.displayHeight===540;
+        const copy={generation:++nextCopyGeneration,index:null,invalidated:false};
+        if(buffer){
+          copyByBuffer.set(buffer,copy);
+          if(!knownCopyBuffers.has(buffer)){knownCopyBuffers.add(buffer);nativeFrames.videoCopyBuffers++;}
+        }
+        nativeFrames.videoCopiesInFlight++;
+        nativeFrames.maxVideoCopiesInFlight=Math.max(nativeFrames.maxVideoCopiesInFlight,nativeFrames.videoCopiesInFlight);
+        const finish=(success,planes)=>{
+          nativeFrames.videoCopiesInFlight--;
+          if(buffer){
+            const latest=copyByBuffer.get(buffer);
+            if(latest!==copy){
+              nativeFrames.staleVideoCopies++;
+              if(latest){latest.invalidated=true;latest.index=null;}
+              return;
+            }
+          }
+          if(success&&full&&!copy.invalidated&&fullPixelArray(target)&&fullPlane(planes)){
+            copy.index=index;nativeFrames.videoFrameCopies++;
+          }else nativeFrames.invalidVideoCopies++;
+        };
+        let pendingCopy;
+        try{pendingCopy=Reflect.apply(originalCopy,this,args);}
+        catch(error){finish(false,null);throw error;}
+        // Observe the native settlement before callers resume from the original Promise.
+        void pendingCopy.then(planes=>finish(true,planes),()=>finish(false,null));
+        return pendingCopy;
+      };
+    }
+    prototype.putImageData=function(...args){
+      scratchFrame.delete(this);
+      const result=Reflect.apply(originalPut,this,args);
+      if(this.canvas===displayCanvas){
+        const pixels=args[0];
+        let index=null,copyGeneration=null;
+        if(args.length===3&&args[1]===0&&args[2]===0&&pixels instanceof ImageData){
+          const copy=copyByBuffer.get(pixels.data.buffer);
+          if(copy){
+            if(!copy.invalidated&&copy.index!==null&&pixels.width===540&&pixels.height===540&&pixels.colorSpace==='srgb'&&fullPixelArray(pixels.data)){
+              index=copy.index;copyGeneration=copy.generation;
+              if(!knownVideoDisplayImages.has(pixels)){knownVideoDisplayImages.add(pixels);nativeFrames.videoDisplayImages++;}
+            }
+          }else index=imageDataFrame.get(pixels)??null;
+        }
+        recordDisplay('putImageData',index,copyGeneration);
+      }
+      return result;
+    };
     new MutationObserver(()=>{const data=document.body.dataset,index=Number(data.frameIndex),observations=window.__startupFrameObservations;
       if(Number.isInteger(index)&&index>=0&&observations.at(-1)?.index!==index)observations.push({index,at:performance.now(),activeMs:Number(data.activeMs)});
       window.__observedStartupCycles=Math.max(window.__observedStartupCycles,Number(data.cycleCount)||0);window.__maxResidentFrames=Math.max(window.__maxResidentFrames,Number(data.residentFrames)||0,Number(data.maxResidentFrames)||0);window.__maxInFlight=Math.max(window.__maxInFlight,Number(data.inFlight)||0,Number(data.maxInFlight)||0);
@@ -220,6 +338,8 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     await reduced.wait('startup-evaluate','document.body.dataset.reducedMotion==="true"');
     assert.equal(await reduced.command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),false,'reduced motion is an explicit bypass, not a completed viewing');
     assert.equal(await reduced.command('startup-evaluate','document.body.dataset.frameIndex'),'30','the manual emergency option displays the chosen source frame');
+    assert.deepEqual(await reduced.command('startup-evaluate','window.__startupNativeFrames.observations.map(frame=>[frame.method,frame.index])'),[['putImageData',30]],'the manual still uses one proven native display write for source frame 30');
+    assert.equal(await reduced.command('startup-evaluate','window.__startupNativeFrames.observations[0]?.copyGeneration>0'),true,'the manual still comes from a completed native VideoFrame copy');
     await reduced.command('evaluate','window.prepare()');await reduced.waitReleased();await finish();
     const systemReduced=await launch('system-reduced-motion-input','os-reduce');
     await systemReduced.wait('evaluate','typeof window.prepare==="function"');
@@ -237,6 +357,9 @@ test('native startup gates real playback, isolates input, preserves prepared fra
     assert.equal(await slow.command('startup-evaluate','document.body.dataset.startupFailure??null'),null,'continuing draw progress is not a stalled-player failure');
     assert.doesNotMatch(slow.diagnostics(),/"failure":"(?:playback-stalled|first-frame-timeout)"/u);
     assert.deepEqual(await slow.command('startup-evaluate','window.__startupFrameObservations.slice(0,68).map(frame=>frame.index)'),Array.from({length:68},(_,index)=>index),'slow decoding still renders every real source frame in order');
+    assert.deepEqual(await slow.command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,68).map(frame=>[frame.method,frame.index])'),Array.from({length:68},(_,index)=>['putImageData',index]),'slow decoding submits all 68 proven native display writes in order');
+    assert.equal(await slow.command('startup-evaluate','window.__startupNativeFrames.unprovenDisplayWrites'),0,'slow decoding never counts an unproven display write');
+    assert.equal(await slow.command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,68).every(frame=>frame.copyGeneration>0)&&window.__startupNativeFrames.maxVideoCopiesInFlight===1&&window.__startupNativeFrames.videoCopyBuffers<=3'),true,'slow native copies preserve source generations and the bounded pool');
     await slow.command('evaluate','window.prepare()');await slow.waitReleased();await finish();
     console.log('DESKTOP_STARTUP_MATRIX '+JSON.stringify({early_prepared:true,later_loop_handoff:true,iframe_retained:true,input_isolated:true,legacy_server_one_second_fallback:true,overlay_module_failure:true,retry_visible_before_first_end:true,frame_load_error:true,frame_decode_error:true,canvas_error:true,stall_watchdog:true,slow_progress_survives_stall_window:true,manual_reduced_motion:true,system_reduce_ignored:true,visible_unfocused_playback:true,real_wecom_qr:'NOT_RUN',physical_power_events:'NOT_RUN'}));
   }finally{await finish();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
@@ -312,7 +435,7 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     assert.equal(startupBounds.startupBounds.x,0);assert.equal(startupBounds.startupBounds.y,40);
     assert.equal(startupBounds.startupBounds.width,startupBounds.contentSize[0]);assert.equal(startupBounds.startupBounds.height,(startupBounds.contentSize[1]??0)-40);
     await waitStartup('document.body.dataset.firstFrame==="true"');
-    assert.deepEqual(await command('startup-evaluate','(()=>{const c=document.getElementById("startup-canvas"),s=getComputedStyle(c),attributes=c.getContext("2d").getContextAttributes();return {width:c.width,height:c.height,software:attributes.willReadFrequently,desynchronized:attributes.desynchronized,videos:document.querySelectorAll("video").length,fit:s.objectFit,local:location.protocol,noNode:typeof require+":"+typeof process};})()'),{width:540,height:540,software:true,desynchronized:true,videos:0,fit:'contain',local:'file:',noNode:'undefined:undefined'},'the original artwork uses the actual low-latency software canvas without a video decoder or remote source');
+    assert.deepEqual(await command('startup-evaluate','(()=>{const c=document.getElementById("startup-canvas"),s=getComputedStyle(c),attributes=c.getContext("2d").getContextAttributes();return {width:c.width,height:c.height,software:attributes.willReadFrequently,desynchronized:attributes.desynchronized,videos:document.querySelectorAll("video").length,fit:s.objectFit,local:location.protocol,noNode:typeof require+":"+typeof process};})()'),{width:540,height:540,software:false,desynchronized:true,videos:0,fit:'contain',local:'file:',noNode:'undefined:undefined'},'the original artwork uses the expected low-latency display canvas and local source');
     const startupImage=await command('screenshot');assert.ok(typeof startupImage==='string'&&startupImage.startsWith(profile+path.sep));
     console.log('DESKTOP_STARTUP '+JSON.stringify({local_visible_before_response:true,remote_visible_under_native_cover:true,frame_manifest_sha256:createHash('sha256').update(readFileSync(path.join(stage,'startup-frames/manifest.json'))).digest('hex'),screenshot:{file:startupImage,sha256:createHash('sha256').update(readFileSync(startupImage)).digest('hex')}}));
     assert.equal(await command('chrome-evaluate','document.querySelector(".startup-columns,.startup-card,.startup-line")===null'),true,'before authentication the native startup surface must not impersonate the ticket workbench');
@@ -332,6 +455,8 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     }
     await waitStartup('window.__observedStartupCycles>=2');
     assert.deepEqual(await command('startup-evaluate','window.__startupFrameObservations.slice(0,68).map(frame=>frame.index)'),Array.from({length:68},(_,index)=>index),'the real renderer presents every source frame before looping');
+    assert.deepEqual(await command('startup-evaluate','window.__startupNativeFrames.observations.slice(0,136).map(frame=>[frame.method,frame.index])'),Array.from({length:136},(_,index)=>['putImageData',index%68]),'both cycles submit the exact source order to the display canvas');
+    assert.equal(await command('startup-evaluate','(()=>{const probe=window.__startupNativeFrames;return probe.unprovenDisplayWrites===0&&probe.invalidVideoCopies===0&&probe.staleVideoCopies===0&&probe.videoFrameCopies>=136&&probe.maxVideoCopiesInFlight===1&&probe.videoCopyBuffers<=3&&probe.videoDisplayImages<=3&&probe.observations.slice(0,136).every(frame=>frame.copyGeneration>0);})()'),true,'each F display write uses a completed full copy generation within three buffers and one native copy task');
     assert.ok(Number(await command('startup-evaluate','document.body.dataset.firstCycleActiveMs'))>=2266.666,'the renderer holds the final frame and a full 68/30 second visible cycle');
     assert.equal(await command('startup-evaluate','window.__maxResidentFrames<=3&&window.__maxInFlight<=1'),true,'real canvas decode residency and concurrency remain bounded');
     assert.equal(await command('startup-evaluate','window.desktopStartup.state().then(state=>state.firstPlaybackComplete)'),true,'only a fully presented source-frame cycle establishes the normal first playback');

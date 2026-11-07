@@ -2,19 +2,37 @@ import type {StartupBridge,StartupFailure,StartupSignal,StartupState} from './po
 import {createFramePlayback,FRAME_COUNT,FRAME_RATE} from './frame-playback.mjs';
 import type {FramePlaybackSnapshot} from './frame-playback.mjs';
 
-interface DecodedImageFrame {readonly image:HTMLImageElement;close():void}
+interface DecodedPixelFrame {
+  pixels: ImageData | null;
+  close(): void;
+}
 
 declare global {interface Window {desktopStartup:StartupBridge}}
 const canvas=document.getElementById('startup-canvas');
 if(!(canvas instanceof HTMLCanvasElement))throw Error('STARTUP_CANVAS_DOCUMENT_INVALID');
 let context:CanvasRenderingContext2D|null=null;
-// Prefer software backing for this small surface: the native Windows comparison
-// found a large accelerated-canvas cache despite closing every owned bitmap.
-// Request independent complete-frame painting while the remote view initializes its GPU.
-try{context=canvas.getContext('2d',{alpha:false,willReadFrequently:true,desynchronized:true});}catch{/* Report the bounded canvas failure once the bridge is ready. */}
+const FRAME_SIZE = 540;
+const PIXEL_BYTES = FRAME_SIZE * FRAME_SIZE * 4;
+// These WebIDL settings are supported by the pinned Chromium but are absent from the TS DOM declarations.
+const rgbaContext: CanvasRenderingContext2DSettings & {colorType: 'unorm8'} = {
+  alpha: false, colorSpace: 'srgb', colorType: 'unorm8'
+};
+const FRAME_STRIDE = FRAME_SIZE * 4;
+const frameCopy: VideoFrameCopyToOptions = {
+  format: 'RGBA',
+  colorSpace: 'srgb',
+  rect: {x: 0, y: 0, width: FRAME_SIZE, height: FRAME_SIZE},
+  layout: [{offset: 0, stride: FRAME_STRIDE}]
+};
+const freePixels: ImageData[] = [];
+let allocatedSlots = 0;
+try {
+  context = canvas.getContext('2d', {...rgbaContext, willReadFrequently: false, desynchronized: true});
+} catch { /* Report the bounded canvas failure once the bridge is ready. */ }
 const status=document.querySelector('.startup-status'),message=document.querySelector('[data-message]'),detail=document.querySelector('[data-detail]'),code=document.querySelector('[data-code]');
 let current:StartupState|null=null,disposed=false,failed:StartupFailure|null=null,firstFrame=false,reduced=false,released=false;
-let player:ReturnType<typeof createFramePlayback<DecodedImageFrame>>|null=null,staticFrame:DecodedImageFrame|null=null,staticRequested=false,staticDrawn=false;
+let player:ReturnType<typeof createFramePlayback<DecodedPixelFrame>>|null=null,staticFrame:DecodedPixelFrame|null=null,staticRequested=false,staticDrawn=false;
+let decodeInFlight: Promise<DecodedPixelFrame> | null = null;
 let raf=0,fadeDeadline:number|undefined,releasingGeneration:number|undefined,reportedCycle=0,metadata=false;
 let lastWatch=performance.now(),withoutFrame=0,withoutProgress=0,lastDrawCount=0,stalled=false;
 let lastHeartbeat=performance.now(),reportedDrawCount=0;
@@ -31,31 +49,106 @@ const diagnostics=(reason:StartupFailure|'reduced-motion')=>{
   if(code)code.textContent=reason==='reduced-motion'?'MANUAL_REDUCED_MOTION':('STARTUP_'+reason.replaceAll('-','_').toUpperCase());
 };
 const stopFrames=()=>{cancelAnimationFrame(raf);raf=0;player?.pause();if(player)record(player.snapshot(),true);setData('playback','paused');};
-const disposeFrames=()=>{stopFrames();player?.dispose();staticFrame?.close();staticFrame=null;};
+const disposeFrames=()=>{stopFrames();player?.dispose();staticFrame?.close();staticFrame=null;freePixels.length=0;};
 const fail=(reason:StartupFailure)=>{
   if(disposed||failed||current?.releasing)return;
   failed=reason;disposeFrames();document.body.dataset.failed='true';document.body.dataset.startupFailure=reason;
   diagnostics(reason);emit({version:1,type:'failed',reason});
 };
-const loadFrame=async(index:number):Promise<DecodedImageFrame>=>{
-  const image=new Image();image.decoding='async';
-  let closed=false;
-  const frame:DecodedImageFrame={image,close(){
-    if(closed)return;closed=true;
-    image.onload=null;image.onerror=null;image.removeAttribute('src');
-  }};
-  try{
-    await new Promise<void>((resolve,reject)=>{
-      image.onload=()=>resolve();image.onerror=()=>reject(new FrameFailure('frame-load-failed'));
-      image.src='startup-frames/'+String(index).padStart(3,'0')+'.webp';
+function takePixels(): ImageData {
+  const free = freePixels.pop();
+  if (free) return free;
+  if (allocatedSlots >= 3) throw new FrameFailure('frame-decode-failed');
+  const pixels = new ImageData(new Uint8ClampedArray(PIXEL_BYTES), FRAME_SIZE, FRAME_SIZE, {colorSpace: 'srgb'});
+  allocatedSlots++;
+  return pixels;
+}
+
+function returnPixels(pixels: ImageData): void {
+  if (!disposed && !failed) freePixels.push(pixels);
+}
+
+async function decodeFramePixels(index: number): Promise<DecodedPixelFrame> {
+  if (disposed || failed || typeof VideoFrame !== 'function' || typeof VideoFrame.prototype.copyTo !== 'function') {
+    throw new FrameFailure('frame-decode-failed');
+  }
+  const modeAtRequest = reduced;
+  const image = new Image();
+  image.decoding = 'async';
+  let pixels: ImageData | undefined;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new FrameFailure('frame-load-failed'));
+      image.src = 'startup-frames/' + String(index).padStart(3, '0') + '.webp';
     });
-    try{await image.decode();}catch{throw new FrameFailure('frame-decode-failed');}
-    if(image.naturalWidth!==540||image.naturalHeight!==540)throw new FrameFailure('frame-decode-failed');
-    return frame;
-  }catch(error){frame.close();throw error;}
-  finally{image.onload=null;image.onerror=null;}
-};
-const draw=(frame:DecodedImageFrame)=>{try{if(!context||context.isContextLost())throw Error('CANVAS_UNAVAILABLE');context.drawImage(frame.image,0,0,540,540);}catch{throw new FrameFailure('canvas-unavailable');}};
+    try {
+      await image.decode();
+    } catch {
+      throw new FrameFailure('frame-decode-failed');
+    }
+    if (disposed || failed || reduced !== modeAtRequest) throw new FrameFailure('frame-decode-failed');
+    if (image.naturalWidth !== FRAME_SIZE || image.naturalHeight !== FRAME_SIZE) {
+      throw new FrameFailure('frame-decode-failed');
+    }
+    pixels = takePixels();
+    const source = new VideoFrame(image, {timestamp: Math.round(index * 1_000_000 / FRAME_RATE)});
+    try {
+      if (source.codedWidth !== FRAME_SIZE || source.codedHeight !== FRAME_SIZE
+        || source.displayWidth !== FRAME_SIZE || source.displayHeight !== FRAME_SIZE) {
+        throw new FrameFailure('frame-decode-failed');
+      }
+      const layout = await source.copyTo(pixels.data, frameCopy);
+      const plane = layout[0];
+      if (layout.length !== 1 || plane?.offset !== 0 || plane.stride !== FRAME_STRIDE) {
+        throw new FrameFailure('frame-decode-failed');
+      }
+    } finally {
+      source.close();
+    }
+    if (disposed || failed || reduced !== modeAtRequest) throw new FrameFailure('frame-decode-failed');
+  } catch (error) {
+    if (pixels) returnPixels(pixels);
+    throw error;
+  } finally {
+    image.onload = null;
+    image.onerror = null;
+    image.removeAttribute('src');
+  }
+  const frame: DecodedPixelFrame = {
+    pixels,
+    close() {
+      const owned = this.pixels;
+      if (!owned) return;
+      this.pixels = null;
+      returnPixels(owned);
+    }
+  };
+  return frame;
+}
+
+function loadFrame(index: number): Promise<DecodedPixelFrame> {
+  if (decodeInFlight) {
+    // Wait for the disposed player's decode before the static request can lease a slot.
+    return decodeInFlight.then(() => loadFrame(index), () => loadFrame(index));
+  }
+  const pending = decodeFramePixels(index);
+  decodeInFlight = pending;
+  const clear = () => {
+    if (decodeInFlight === pending) decodeInFlight = null;
+  };
+  void pending.then(clear, clear);
+  return pending;
+}
+
+function draw(frame: DecodedPixelFrame): void {
+  try {
+    if (!context || context.isContextLost() || !frame.pixels) throw new FrameFailure('canvas-unavailable');
+    context.putImageData(frame.pixels, 0, 0);
+  } catch {
+    throw new FrameFailure('canvas-unavailable');
+  }
+}
 const showFirstFrame=()=>{
   if(firstFrame||disposed||failed)return;firstFrame=true;document.body.dataset.firstFrame='true';
   if(!metadata){metadata=true;document.body.dataset.metadata='true';emit({version:1,type:'metadata',duration:FRAME_COUNT/FRAME_RATE,width:540,height:540});}

@@ -3,6 +3,7 @@ import type {GpuShaderDefinition} from 'shaders/core';
 import SolidColor from 'shaders/core/SolidColor';
 import Blob from 'shaders/core/Blob';
 import type {ComponentProps} from 'shaders/core/Blob';
+import {prepareBackdropDevice, releaseLostBackdropDevice} from './backdrop-device';
 
 const cobalt={colorA:'#2864e8',colorB:'#6067dd',colorSpace:'oklab',size:0.46,deformation:0.78,softness:0.14,speed:0.32,seed:7,center:{x:0.63,y:0.42},highlightIntensity:0.3,highlightColor:'#dcecff'} satisfies Partial<ComponentProps>;
 const lilac={colorA:'#507fe8',colorB:'#9a83e8',colorSpace:'oklab',size:0.36,deformation:0.68,softness:0.18,speed:0.24,seed:27,center:{x:0.24,y:0.81},highlightIntensity:0.24,highlightColor:'#e5efff'} satisfies Partial<ComponentProps>;
@@ -87,13 +88,26 @@ export function createBackdropRenderer(canvas:HTMLCanvasElement,{onReady,onUnava
         ready=true;notifyReady();if(!canRun())suspend();
       });
       candidate.setOnUnavailable(reason=>{if(current===candidate)unavailable(reason);});
-      candidate.setOnDeviceLost(()=>{
+      const pendingDevice = prepareBackdropDevice();
+      if (!await waitPending(pendingDevice)) return;
+      const preparedDevice = await pendingDevice;
+      if (!valid() || !active() || preparedDevice.kind === 'retired') return;
+      if (preparedDevice.kind === 'failed') {
+        unavailable(preparedDevice.reason);
+        return;
+      }
+      const recoverDevice = () => {
         if(destroyed||failed||current!==candidate)return;
         const now=Date.now();if(now-lastLossAt>60_000)rebuilds=0;lastLossAt=now;
-        if(++rebuilds>3){unavailable('unrecoverable');return;}
+        if(++rebuilds>3||!releaseLostBackdropDevice(preparedDevice)){unavailable('unrecoverable');return;}
         cancelPreparation();current=null;candidate.cleanup();void build('rebuild_failed');
-      });
-      await candidate.initialize({canvas,resizeTarget:canvas,colorSpace:'srgb',observeElement:false,enablePerformanceTracking:false});
+      };
+      candidate.setOnDeviceLost(recoverDevice);
+      if (preparedDevice.loss) {
+        recoverDevice();
+        return;
+      }
+      await candidate.initialize({canvas,resizeTarget:canvas,colorSpace:'srgb',observeElement:false,enablePerformanceTracking:false,gpu:preparedDevice.gpu});
       if(!valid()||!active())return;
       candidate.setFrameRateCap(30);
       candidate.registerNode('shader-root',rootPassthrough.fragment,null,null,{},rootPassthrough);
