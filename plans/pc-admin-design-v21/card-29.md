@@ -55,6 +55,10 @@
 
 - CI `pr-database`（head `21cd18f6`）：唯一失败为 `pc-admin-card12` 的「Card 27B separates closure groups…」，因本卡修改该测试文件而被选中；同一用例在未修改的 main 上本机也失败。两处期望已过时：已关闭卡片断言无「恢复」按钮（与同用例中 API `can_restore===true` 及 27C-B 悬停恢复矛盾），抽屉关闭记录断言旧属性表标签（D3 已改为紧凑条目）。按现状更新为：恢复入口存在；单一「关闭记录」分节、「人工关闭 · 时间」、「说明：…」且不出现属性标签与空值占位。本机整份 `pc-admin-card12` 18/18 PASS。
 
+## 后续：恢复确认通知文案（分支 `codex/v220-card29-restore-notice`）
+
+R2 遗留限制的修复：`restore_target` 增加 `notify_reporter`（取自关闭记录），恢复确认据此显示「关闭时未通知报修人，本次不发送」，不再用原因码推断。后端恢复通知本就只在「关闭时选择通知」时发送，文案与行为一致。改动：`workbench-intake-closure.mts`、`unified_closure_contracts.d.ts`、`unified_closure_history.schema.json`、PC `features/closure/client.ts` 解析、`ClosureActions.tsx` 文案、`docs/api/workbench/closure.md`。
+
 ## 回退
 
 前端改动可整体回退；K1 回退需同时恢复两份 Schema 与 `normalizeClosureInput` 调用；L6 回退删除 `projectSearchItems` 调用与 Schema / 解析字段即可。

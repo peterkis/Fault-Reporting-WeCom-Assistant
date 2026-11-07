@@ -54,8 +54,8 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
      await assertSession(authContext,value.principal.principal_id,tx);return {principal:value.principal,version:value.ticket.version};
     };
     const initial=await read();
-    type Row={id:string;before_version:number;reason_code:ClosureReasonCode;secondary_reason_code:ClosureSecondaryReasonCode|null;note:string|null;duplicate_of_ref:string|null;source:'MANUAL'|'SYSTEM';closed_at:string;closed_by_display_name:string|null;restored_at:string|null;restored_by_display_name:string|null;before_status:string;effective_status:string;assignee_name:string|null;notification_state:ClosureHistoryEntry['notification_state']};
-    const rows=(await tx.query<Row>(`SELECT c.id::text,c.before_version,c.reason_code,c.secondary_reason_code,c.note,c.duplicate_of_ref,c.source,c.closed_at,
+    type Row={id:string;before_version:number;reason_code:ClosureReasonCode;secondary_reason_code:ClosureSecondaryReasonCode|null;note:string|null;duplicate_of_ref:string|null;source:'MANUAL'|'SYSTEM';closed_at:string;closed_by_display_name:string|null;restored_at:string|null;restored_by_display_name:string|null;before_status:string;effective_status:string;assignee_name:string|null;notify_reporter:boolean;notification_state:ClosureHistoryEntry['notification_state']};
+    const rows=(await tx.query<Row>(`SELECT c.id::text,c.before_version,c.reason_code,c.secondary_reason_code,c.note,c.duplicate_of_ref,c.source,c.closed_at,c.notify_reporter,
      closer.display_name AS closed_by_display_name,c.restored_at,restorer.display_name AS restored_by_display_name,c.before_status,
      CASE WHEN c.before_assignee_id IS NOT NULL AND NOT COALESCE(owner_valid.valid,false) THEN 'QUEUED' ELSE c.before_status END AS effective_status,
      CASE WHEN owner_valid.valid THEN owner.display_name ELSE NULL END AS assignee_name,
@@ -76,7 +76,7 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
     const current=await read();if(current.version!==initial.version||JSON.stringify(current.principal)!==JSON.stringify(initial.principal))failP2016('VERSION_CONFLICT',409);
     const visible=rows.slice(0,20),active=before===null?visible.find(row=>row.restored_at===null):undefined;
     return {subject_id:id,version:current.version,next_before_version:rows.length>20?visible.at(-1)?.before_version??null:null,
-     restore_target:active?{status:active.effective_status,column:kind==='intake'||['NEW','QUEUED','ACCEPTED','REOPENED'].includes(active.effective_status)?'pending':'active',assignee_name:active.assignee_name,notification_state:active.notification_state}:null,
+     restore_target:active?{status:active.effective_status,column:kind==='intake'||['NEW','QUEUED','ACCEPTED','REOPENED'].includes(active.effective_status)?'pending':'active',assignee_name:active.assignee_name,notify_reporter:active.notify_reporter,notification_state:active.notification_state}:null,
      items:visible.map(row=>({id:row.id,before_version:row.before_version,reason_code:row.reason_code,reason_label:CLOSURE_REASONS[row.reason_code],secondary_reason:row.secondary_reason_code?{code:row.secondary_reason_code,label:CLOSURE_SECONDARY_REASONS[row.secondary_reason_code]}:null,
       note:row.note,duplicate_of:row.duplicate_of_ref?{display_no:row.duplicate_of_ref}:null,source:row.source,closed_at:closureRecordTime(row.closed_at),closed_by_display_name:row.closed_by_display_name,
       notification_state:row.notification_state,restored_at:row.restored_at?closureRecordTime(row.restored_at):null,restored_by_display_name:row.restored_by_display_name}))};

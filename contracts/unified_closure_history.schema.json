@@ -188,6 +188,7 @@
             "status",
             "column",
             "assignee_name",
+            "notify_reporter",
             "notification_state"
           ],
           "properties": {
@@ -207,6 +208,9 @@
                 "null"
               ],
               "maxLength": 128
+            },
+            "notify_reporter": {
+              "type": "boolean"
             },
             "notification_state": {
               "enum": [

@@ -32,7 +32,7 @@ export function decodeClosureHistory(value:unknown,subjectId:string):ClosureHist
  });
  if(new Set(items.map(item=>item.id)).size!==items.length||items.some((item,index)=>index>0&&item.before_version>=(items[index-1]?.before_version??0)))invalid();
  let target:ClosureHistoryPage['restore_target']=null;
- if(v.restore_target!==null){const r=exact(v.restore_target,['status','column','assignee_name','notification_state']);if(r.column!=='pending'&&r.column!=='active'||!['NEW','QUEUED','ACCEPTED','REOPENED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(String(r.status)))invalid();target={status:text(r.status,64),column:r.column,assignee_name:nullableText(r.assignee_name,128),notification_state:notification(r.notification_state)};}
+ if(v.restore_target!==null){const r=exact(v.restore_target,['status','column','assignee_name','notify_reporter','notification_state']);if(typeof r.notify_reporter!=='boolean')invalid();if(r.column!=='pending'&&r.column!=='active'||!['NEW','QUEUED','ACCEPTED','REOPENED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(String(r.status)))invalid();target={status:text(r.status,64),column:r.column,assignee_name:nullableText(r.assignee_name,128),notify_reporter:r.notify_reporter,notification_state:notification(r.notification_state)};}
  const next=v.next_before_version===null?null:version(v.next_before_version);if(next!==null&&(items.length!==20||next!==items.at(-1)?.before_version))invalid();
  return {subject_id:subjectId,version:version(v.version),items,next_before_version:next,restore_target:target};
 }
