@@ -76,8 +76,11 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
-    // Concurrent WebGL/WebGPU scene tests need the browser's normal graphics path.
-    ...(graphics?[]:['--disable-gpu']),
+    // Linux CI has no hardware adapter. Use Chromium's software graphics
+    // backend for the browser tests that exercise actual WebGL/WebGPU commands.
+    ...(graphics&&process.platform==='linux'?[
+      '--use-angle=swiftshader','--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
+    ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
   ];

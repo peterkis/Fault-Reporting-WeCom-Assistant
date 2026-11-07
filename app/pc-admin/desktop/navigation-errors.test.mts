@@ -431,7 +431,8 @@ test('real Electron navigation recovers offline/crashes and keeps authentication
     assert.equal((await command('state') as {startupVisible:boolean}).startupVisible,true,'a trusted native child view covers remote loading before the first response');
     assert.equal((await command('state') as {viewVisible:boolean}).viewVisible,true,'remote login stays visible beneath the cover so its preparation can make progress');
     const startupBounds=await command('state') as {startupBounds:{x:number;y:number;width:number;height:number};contentSize:number[];windowBounds:{width:number;height:number}};
-    assert.equal(startupBounds.windowBounds.width,1440);assert.equal(startupBounds.windowBounds.height,960,'startup keeps the existing main window size');
+    const {width, height} = startupBounds.windowBounds;
+    assert.deepEqual({width, height}, await command('reference-window-size'), 'startup keeps the existing main window size under the same display constraints');
     assert.equal(startupBounds.startupBounds.x,0);assert.equal(startupBounds.startupBounds.y,40);
     assert.equal(startupBounds.startupBounds.width,startupBounds.contentSize[0]);assert.equal(startupBounds.startupBounds.height,(startupBounds.contentSize[1]??0)-40);
     await waitStartup('document.body.dataset.firstFrame==="true"');

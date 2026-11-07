@@ -110,6 +110,17 @@ process.on('message',async(value:unknown)=>{
       case 'notification-click':notices.at(-1)?.emit('click');result=notices.length;break;
       case 'second-instance':result=await new Promise<number|null>((resolve,reject)=>{const child=spawn(process.execPath,[path.join(stage,'main.mjs')],{env:process.env,windowsHide:true,stdio:'ignore'});const timer=setTimeout(()=>{child.kill();reject(Error('SECOND_INSTANCE_TIMEOUT'));},10000);child.once('exit',code=>{clearTimeout(timer);resolve(code);});child.once('error',error=>{clearTimeout(timer);reject(error);});});break;
       case 'screenshot':{window.show();window.focus();const image=await window.capturePage(undefined,{stayAwake:true});const target=path.join(process.env.WECOM_DESKTOP_DATA_ROOT!,'formal-workbench.png');writeFileSync(target,image.toPNG());result=target;break;}
+      case 'reference-window-size': {
+        // Apply the platform's display constraints to the existing default size.
+        const reference = new BrowserWindow({width: 1440, height: 960, minWidth: 900, minHeight: 650, frame: false, show: false});
+        try {
+          const {width, height} = reference.getBounds();
+          result = {width, height};
+        } finally {
+          reference.destroy();
+        }
+        break;
+      }
       case 'state':result={url:page.getURL().split('?')[0],chromeUrl:window.webContents.getURL(),windows:BrowserWindow.getAllWindows().length,visible:window.isVisible(),minimized:window.isMinimized(),maximized:window.isMaximized(),windowBounds:window.getBounds(),contentSize:window.getContentSize(),viewBounds:view?.getBounds(),viewVisible:view?.getVisible(),loginControlsVisible:loginControls?.getVisible()??false,loginControlsBounds:loginControls?.getBounds(),startupVisible:startup?.getVisible()??false,startupBounds:startup?.getBounds(),startupUrl:startup?.webContents.getURL()??null,viewCount:window.contentView.children.length,focusedURL:webContents.getFocusedWebContents()?.getURL()??null,nativeMenuRemoved:Menu.getApplicationMenu()===null&&!window.isMenuBarVisible(),dialogs,notifications:notices.length,paths:{userData:app.getPath('userData'),sessionData:app.getPath('sessionData'),temp:app.getPath('temp')}};break;
       case 'quit':page.close({waitForBeforeUnload:true});result=true;break;
       default:throw Error('TEST_ACTION_UNKNOWN');
