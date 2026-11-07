@@ -29,6 +29,7 @@ test('Reporter browser retries incomplete ETag render after transient timeline f
   try{
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
     browser=await launchSystemBrowser({url:'http://127.0.0.1:'+server.address().port+'/reporter/',width:390,height:844});
+    await browser.command('Emulation.setUserAgentOverride',{userAgent:'wxwork Language/zh-CN ColorScheme/Light'});
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.setInterval=(fn)=>{window.pollReporter=fn;return 1;};'});
     const beforeReload=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor('performance.timeOrigin!=='+beforeReload+'&&document.readyState==="complete"');
     await browser.waitFor("document.querySelector('#ticket').hidden===false&&typeof window.pollReporter==='function'");
