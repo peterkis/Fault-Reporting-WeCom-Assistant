@@ -530,3 +530,13 @@ build-ci04-03与types-ci04-03均PASS：928/928语法、strict/negative types、C
 最终ci04-final-01在同一编译候选完成current-read 4/4、final-scope 1/1、read POST 1/1及authority/JIT 4/4，共四个完整后端入口10/10 PASS。PC完整入口两次均达到原文件级240000ms截止：ci04-pc-01有15个case完成PASS，最终批次PC有10个case完成PASS，均未观察到截止前业务断言FAIL；两次入口均为真实TIMEOUT/FAIL。当前实际库存是18个case，16只是静态literal名称数，另有pointer/keyboard两例，不能以16为验收分母。最终PC尚有8例未完成或未到达；原CI相关的Card28、Card27B、B5、pending-overlap与advanced-search在最终部分运行中已分别通过，但不等于完整Windows入口PASS。按本次边界仅重跑一次，不加第三轮、不抬预算；最终summary的10/10只统计四个完整后端入口，整体SELECTED_TESTS_FAIL保持。
 
 原始TAP、case trace、截图、阶段耗时与summary继续保存在对应目录；ci04-02-03-comparison及ci04-final-01-jit-observation-audit分别记录制品差异与四阶段GUC实值。当前自有loopback PG仍运行；一个旧诊断库和两个PC超时库作为失败取证保留，没有手工DROP，完整状态在本地交接原件列出。新head Linux/LLVM CI尚未执行，完整Windows18入口仍未通过；远端Codex额度不足仍为NOT_EXECUTED。full/certify、Electron、真实发送、现场写库、部署和Gate未运行或批准；后续Git/CI、合并与清理由Root沿既有授权收口，不提前标完成。
+
+### CI05：原窄屏指针入口的布局前提
+
+CI04已发布为dc0629e9d31e91992e1793a19df931d54a3d1d39，输入哈希与上述候选一致；发布后独立五文件审查0剩余问题。Linux run42316071840仍FAIL，但PC入口已有17/18通过，原关闭分组/B5/overlap/advanced-search均通过。唯一剩余失败为Card28首例compiled第295行：窄宽横向滚动后等待原领取按钮出现超时。目录回归与证据检查均PASS；原日志/制品存于ci04-remote-artifact，不改写为通过。
+
+只读核对排除首个ticket被新关闭夹具替换：seedCard28Board仍创建四个未领取QUEUED工单，pending排在active/closed之前，同例较早的宽屏领取检查已通过。窄宽段在resize/scroll之后立即采坐标并mouseMoved，命中断言却在领取等待之后；退出搜索也只等URL。当前制品没有该例专用metrics，不能确定失败宽度或断言具体时序根因。
+
+本次只补齐原测试交互前提：退出搜索后等待既有settle/ready；指针先真实移出，再等待与clickWorkbenchControl一致的两帧几何稳定及原row-link命中，重读坐标后真实hover/click。新增安全的宽度/坐标/合成ID观测。保留所有原选择器、按钮可见/命中/详情ID/无写入断言与原预算；不改UI、权限或业务期望。当前仍100路径，验证及新head CI结果按后续原件记录。
+
+CI05本地复验：build-ci05-01语法928/928、types-ci05-01、docs-ci05-01、verify-ci05-01均PASS；manifest=a82ebd3f3488b93e853ee75bb1397e93b9abd0f1f9adef666b6b79e2e2f8fda8，input_hash=b3c3ab77f5002a2bf65952f044bcfc216c93ca404235f98371d7745519715467。原PC完整入口ci05-pc-01在Windows原240000ms文件预算内完成18/18 PASS，0 FAIL/SKIP/取消，TAP duration_ms=145808.2547；两个窄宽均通过原领取、命中和详情检查。独立ci05-review对两文件增量0finding。本轮未改变业务期望，旧Linux FAIL与两次Windows TIMEOUT仍保留；本次通过不补写旧候选结论。发布后仍以新完整SHA的适用Linux CI决定合并。
