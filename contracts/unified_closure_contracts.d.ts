@@ -8,3 +8,14 @@ export interface IntakeClosureCommand extends ClosureCommand {expected_review_ve
 export interface ClosureResult {ok:true;subject_type:'TICKET'|'INTAKE';subject_id:string;version:number;closure_id:string;event_id:string;replayed:boolean}
 export interface IntakeClosureContext {subject_id:string;version:number;status:string;can_close:boolean;can_restore:boolean;closure_id:string|null;pending_review:{id:string;row_version:string}|null}
 export type ClosureReceipt={state:'UNKNOWN'}|{state:'FAILED';error:{code:string;retryable:false}}|{state:'COMMITTED';result:ClosureResult};
+/** Staff-only, bounded read projection. No internal fields are exposed to H5. */
+export interface ClosureHistoryEntry {
+ id:string;before_version:number;reason_code:ClosureReasonCode;reason_label:string;
+ secondary_reason:{code:ClosureSecondaryReasonCode;label:string}|null;note:string|null;
+ duplicate_of:{display_no:string}|null;source:'MANUAL'|'SYSTEM';closed_at:string;closed_by_display_name:string|null;
+ notification_state:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at:string|null;restored_by_display_name:string|null;
+}
+export interface ClosureHistoryPage {
+ subject_id:string;version:number;items:ClosureHistoryEntry[];next_before_version:number|null;
+ restore_target:{status:string;column:'pending'|'active';assignee_name:string|null;notification_state:'SENT'|'UNKNOWN'|'NOT_SENT'}|null;
+}

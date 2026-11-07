@@ -15,6 +15,8 @@ H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用�
 | POST | `/api/tickets/{ticketId}/restore` | W | 按关闭记录恢复前状态 / 负责人 | [关闭 / 恢复](workbench/closure.md) |
 | GET | `/api/tickets/{ticketId}/restore/commands/{commandId}` | W | 原用途、当前 READ 安全核对 | [关闭 / 恢复](workbench/closure.md) |
 | GET | `/api/intakes/{intakeId}/closure-context` | W | 当前版本与关闭 / 恢复能力 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/tickets/{ticketId}/closure-history` | W | 只读关闭历史、恢复目标与实际通知事实 | [关闭 / 恢复](workbench/closure.md) |
+| GET | `/api/intakes/{intakeId}/closure-history` | W | 只读关闭历史、恢复目标与实际通知事实 | [关闭 / 恢复](workbench/closure.md) |
 | POST | `/api/intakes/{intakeId}/close` | W | 关闭 Intake 及待判断 Review | [关闭 / 恢复](workbench/closure.md) |
 | POST | `/api/intakes/{intakeId}/restore` | W | 恢复 Intake / Review / Journey | [关闭 / 恢复](workbench/closure.md) |
 | GET | `/api/intakes/{intakeId}/close/commands/{commandId}` | W | 原关闭命令安全核对 | [关闭 / 恢复](workbench/closure.md) |

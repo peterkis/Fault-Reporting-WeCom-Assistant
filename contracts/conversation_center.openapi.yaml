@@ -1757,6 +1757,44 @@ paths:
     $ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1{request_ref}'
     servers: [{url: /}]
 
+  /tickets/{ticketId}/closure-history:
+    get:
+      operationId: p2016TicketClosureHistory
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      description: Staff-only read of up to 20 closure records in descending before_version order, effective restoration target and acknowledged delivery facts. Current READ and session are checked again after the query. Never returned to H5.
+      parameters:
+        - {in: path, name: ticketId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: before_version, required: false, schema: {type: integer, minimum: 1, maximum: 2147483647}}
+      responses:
+        '200':
+          description: Closure history and current restoration target
+          content:
+            application/json:
+              schema: {$ref: './unified_closure_history.schema.json'}
+        '400': {description: Invalid or duplicate query parameter}
+        '401': {description: Session expired or revoked}
+        '403': {description: Current authority rejected}
+        '404': {description: Not visible}
+        '409': {description: Version or authority changed during the read}
+  /intakes/{intakeId}/closure-history:
+    get:
+      operationId: p2016IntakeClosureHistory
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      description: Staff-only closure history with the same bounded paging and current session proof as Ticket history. Internal notes are never returned to H5.
+      parameters:
+        - {in: path, name: intakeId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: before_version, required: false, schema: {type: integer, minimum: 1, maximum: 2147483647}}
+      responses:
+        '200':
+          description: Closure history and current restoration target
+          content:
+            application/json:
+              schema: {$ref: './unified_closure_history.schema.json'}
+        '400': {description: Invalid or duplicate query parameter}
+        '401': {description: Session expired or revoked}
+        '403': {description: Current authority rejected}
+        '404': {description: Not visible}
+        '409': {description: Version or authority changed during the read}
   /intakes/{intakeId}/closure-context:
     get:
       operationId: p2016IntakeClosureContext

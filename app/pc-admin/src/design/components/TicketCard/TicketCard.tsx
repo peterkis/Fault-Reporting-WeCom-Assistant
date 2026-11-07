@@ -12,6 +12,7 @@ import {Avatar} from '../Avatar/Avatar';
 import {PropertyList} from '../PropertyList/PropertyList';
 import {Section} from '../Section/Section';
 import {BeijingTime} from '../Timeline/BeijingTime';
+import {ClosureOriginalLink} from '../../../features/ticket-waiting/ClosureLinks';
 import './ticket-card.css';
 
 export function TicketCard({className='',...props}:HTMLAttributes<HTMLElement>){
@@ -38,40 +39,41 @@ export function TicketCardBody({number,title,metadata,tags,owner,activity,follow
 
 export function ClosureReason({closure}:{closure:WorkbenchCard['closure']}){
   if(!closure)return null;
-  const label=closure.reason_label??'已关闭';
+  const label=closure.reason_code==='DUPLICATE'&&closure.duplicate_of?'重复':(closure.reason_label??'已关闭')+(closure.reason_code==='NOT_IT_SCOPE'&&closure.secondary_reason?' · '+closure.secondary_reason.label:'');
   return <Tag className="ds-ticket-closure-reason" data-closure-reason title={label+(closure.duplicate_of?' · '+closure.duplicate_of.display_no:'')}>
-    {label}{closure.duplicate_of?<><span aria-hidden="true"> · </span><span className="ds-closure-number">{closure.duplicate_of.display_no}</span></>:null}
+    {label}{closure.duplicate_of?<><span aria-hidden="true"> · </span><ClosureOriginalLink number={closure.duplicate_of.display_no}/></>:null}
   </Tag>;
 }
 
-export function DismissedTicketCardBody({item,now,followUp}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode}){
+export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode;titleLink?:ReactNode}){
   const closure=item.closure;
   if(closure?.kind!=='DISMISSED')return null;
   const name=closure.closed_by_display_name;
   return <div className="ds-ticket-body ds-ticket-dismissed-body has-category">
     <div className="card-top"><span title={item.number}>{item.number}</span><span className="activity-time ds-ticket-closed" title={closure.closed_at?closure.closed_at+'（北京时间）':'关闭时间未记录'}><CircleX aria-hidden="true"/>{closure.closed_at?<time dateTime={closure.closed_at.replace(' ','T')+'+08:00'}>{formatListTime(closure.closed_at,now)} 关闭</time>:<span>时间未记录 关闭</span>}</span><TicketCategoryTile service={item.service}/></div>
-    <h3 title={item.title}>{item.title||'待补充的问题描述'}</h3>
+    <h3 title={item.title}>{titleLink??(item.title||'待补充的问题描述')}</h3>
     <footer className="card-footer"><div className="card-tags"><ClosureReason closure={closure}/>{followUp}</div><span className="ds-ticket-owner ds-ticket-closer" data-closure-source={closure.source??'unknown'}>
       {closure.source==='SYSTEM'?<><Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/><span className="ds-ticket-close-method">系统判定</span></>:closure.source==='MANUAL'?<>{name?<><Avatar name={name} size={20} aria-hidden="true"/><span className="owner-name" title={name}>{name}</span><span aria-hidden="true"> · </span></>:null}<span className="ds-ticket-close-method">人工关闭</span></>:name?<span className="owner-name" title={name}>{name}</span>:null}
     </span></footer>
   </div>;
 }
 
-export function ClosureRecord({closure}:{closure:WorkbenchCard['closure']}){
+export function ClosureRecord({closure,notificationState}:{closure:WorkbenchCard['closure'];notificationState?:'SENT'|'UNKNOWN'|'NOT_SENT'}){
   if(closure?.kind!=='DISMISSED')return null;
   return <Section title="关闭记录" data-closure-record="true"><PropertyList aria-label="关闭记录" className="ds-closure-properties">
     <div className="property-field"><dt>操作人</dt><dd>{closure.closed_by_display_name??(closure.source==='SYSTEM'?'系统':'未记录')}</dd></div>
     <div className="property-field"><dt>时间</dt><dd>{closure.closed_at?<BeijingTime value={closure.closed_at}/>:<span>未记录</span>}</dd></div>
     <div className="property-field"><dt>方式</dt><dd>{closure.source==='MANUAL'?'人工关闭':closure.source==='SYSTEM'?'系统判定':'未记录'}</dd></div>
-    <div className="property-field"><dt>原因</dt><dd>{closure.reason_label??'未记录'}</dd></div>
-    <div className="property-field"><dt>原单</dt><dd>{closure.duplicate_of?<span className="ds-closure-number">{closure.duplicate_of.display_no}</span>:<span>未关联</span>}</dd></div>
+    <div className="property-field"><dt>原因</dt><dd>{closure.reason_label??'未记录'}{closure.secondary_reason?' · '+closure.secondary_reason.label:''}</dd></div>
+    <div className="property-field"><dt>原单</dt><dd>{closure.duplicate_of?<ClosureOriginalLink number={closure.duplicate_of.display_no}/>:<span>未关联</span>}</dd></div>
     <div className="property-field ds-closure-note"><dt>说明</dt><dd>{closure.reason_note??'未记录'}</dd></div>
+    {notificationState?<div className="property-field"><dt>通知报修人</dt><dd>{notificationState==='SENT'?'已通知':notificationState==='UNKNOWN'?'结果待核实':'未通知'}</dd></div>:null}
   </PropertyList></Section>;
 }
 
-export function ClosureReasonOptions({options,value,isDisabled,onChange}:{options:readonly {value:string;label:string}[];value:string;isDisabled:boolean;onChange:(value:string)=>void}){
+export function ClosureReasonOptions({options,value,isDisabled,onChange,label='关闭原因'}:{options:readonly {value:string;label:string}[];value:string;isDisabled:boolean;onChange:(value:string)=>void;label?:string}){
   const name=useId();
-  return <fieldset className="ds-closure-reason-options" disabled={isDisabled} aria-label="关闭原因"><legend className="sr-only">关闭原因</legend>{options.map(option=><label className="ds-closure-reason-option" key={option.value}>
+  return <fieldset className="ds-closure-reason-options" disabled={isDisabled} aria-label={label}><legend className="sr-only">{label}</legend>{options.map(option=><label className="ds-closure-reason-option" key={option.value}>
     <input className="sr-only" type="radio" name={name} value={option.value} checked={value===option.value} onChange={event=>onChange(event.currentTarget.value)}/><span className="ds-closure-reason-indicator" aria-hidden="true"/><span>{option.label}</span>
   </label>)}</fieldset>;
 }
