@@ -70,7 +70,11 @@ runs:
       EXPECTED_HEAD: ${{ inputs.head }}
     run: |
       set -euo pipefail
-      node .build/tools/pr-plan.mjs --base "$EXPECTED_BASE" --head "$EXPECTED_HEAD" --out "$RUNNER_TEMP/pr-check/plan.json" --run --report-dir "$RUNNER_TEMP/pr-check/tests" 2>&1 | tee "$RUNNER_TEMP/pr-check/tests.txt"
+      runner=(node)
+      if [ '${{ inputs.browser }}' = true ]; then
+        runner=(xvfb-run -a node)
+      fi
+      "${runner[@]}" .build/tools/pr-plan.mjs --base "$EXPECTED_BASE" --head "$EXPECTED_HEAD" --out "$RUNNER_TEMP/pr-check/plan.json" --run --report-dir "$RUNNER_TEMP/pr-check/tests" 2>&1 | tee "$RUNNER_TEMP/pr-check/tests.txt"
       if node -e "const p=require(process.argv[1]);process.exit(p.profiles.includes('policy')?0:1)" "$RUNNER_TEMP/pr-check/plan.json"; then
         node --test --test-name-pattern 'retired T02 replay' .build/tools/t02-expiry.test.mjs 2>&1 | tee "$RUNNER_TEMP/pr-check/scheduling.txt"
       fi

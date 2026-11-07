@@ -60,7 +60,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
   return createServer((request,response)=>{void ready.then(()=>{
    const url=new URL(request.url??'/',origin);
    if(url.pathname==='/workbench/synthetic-provider'){
-    if(holdQr){heldQrRequests++;response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end('<!doctype html><h1>合成企业微信二维码登录</h1>');return;}
+    if(holdQr){heldQrRequests++;response.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});response.end(`<!doctype html><h1 data-synthetic-qr-generation="${heldQrRequests}">合成企业微信二维码登录</h1>`);return;}
     const code=randomUUID();codes.set(code,'open-desktop-staff-'+actor);response.writeHead(303,{location:origin+'/workbench/callback?state='+url.searchParams.get('state')+'&code='+code});response.end();return;
    }
    if(request.method==='POST'&&/read-position|read-cursor/u.test(url.pathname))readWrites++;
@@ -92,10 +92,17 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
     assert.equal(heldQrRequests,1);authOffset=0;
     const renewed=Date.now()+8000;while(heldQrRequests<2&&Date.now()<renewed)await delay(50);
     assert.equal(heldQrRequests,2,'an expired waiting intent must be replaced before the first phone confirmation');
+    await desktop.wait('document.querySelector("[data-synthetic-qr-generation]")?.dataset.syntheticQrGeneration === "2"');
     assert.equal(confirmations,0);holdQr=false;
     await desktop.evaluate('location.reload();true');
    }
-   await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   try {
+    await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   } catch (error) {
+    const phase = await desktop.evaluate('({path: location.pathname, realtime: document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus, bridge: typeof window.workbenchDesktop, visibility: document.visibilityState})').catch(() => null);
+    console.error('DESKTOP_REALTIME_WAIT_CONTEXT', JSON.stringify({actor, confirmations, heldQrRequests, phase}));
+    throw error;
+   }
    if(actor===0){assert.equal(confirmations,1,'the real PG/OAuth path accepts the first confirmation after renewal');heldQrRequests=0;}
    assert.equal(await desktop.evaluate('(async()=> (await (await fetch("/api/lifecycle/bootstrap")).json()).principal_id)()'),principals[actor]);
    await desktop.wait('document.querySelector(".account")?.textContent.includes("企业微信合成姓名'+actor+'")&&document.querySelector(".account")?.textContent.includes("合成信息科")');

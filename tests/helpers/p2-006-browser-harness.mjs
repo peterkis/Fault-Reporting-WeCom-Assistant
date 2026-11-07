@@ -79,8 +79,8 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     // Linux CI has no hardware adapter. Use Chromium's software graphics
     // backend for the browser tests that exercise actual WebGL/WebGPU commands.
     ...(graphics&&process.platform==='linux'?[
-      '--use-angle=vulkan','--use-vulkan=swiftshader','--enable-features=Vulkan',
-      '--disable-vulkan-surface','--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
+      ...(process.env.DISPLAY?['--ozone-platform=x11','--use-gl=angle','--use-angle=gl']:['--use-angle=swiftshader']),
+      '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,'about:blank',
@@ -92,7 +92,9 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
       const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
       ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
-    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true});
+    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true,
+      ...(graphics&&process.platform==='linux'?{env:{...process.env,LIBGL_ALWAYS_SOFTWARE:'1'}}:{}),
+    });
   }catch(error){
     await closeBrowserTestResources([async()=>{
       const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
