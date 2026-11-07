@@ -50,8 +50,20 @@ runs:
       test -f "$sandbox"
       sudo install -o root -g root -m 4755 "$sandbox" "$browser_dir/chrome-linux64/chrome-sandbox"
       "$BROWSER_PATH" --version | grep -F "$browser_version"
-      timeout 20s "$BROWSER_PATH" --headless=new --disable-gpu --no-first-run \
-        --user-data-dir="$browser_dir/sandbox-probe" --dump-dom about:blank | grep -F '<html>'
+      "$BROWSER_PATH" --headless=new --disable-gpu --no-first-run \
+        --disable-background-networking --remote-debugging-port=0 \
+        --user-data-dir="$browser_dir/sandbox-probe" about:blank > "$browser_dir/probe.log" 2>&1 &
+      probe_pid=$!
+      trap 'kill "$probe_pid" 2>/dev/null || true; wait "$probe_pid" || true' EXIT
+      for attempt in {1..80}; do
+        test ! -s "$browser_dir/sandbox-probe/DevToolsActivePort" || break
+        kill -0 "$probe_pid" 2>/dev/null || break
+        sleep 0.25
+      done
+      if ! test -s "$browser_dir/sandbox-probe/DevToolsActivePort"; then
+        tail -n 20 "$browser_dir/probe.log"
+        exit 1
+      fi
       echo "TS_MIGRATION_BROWSER_EXECUTABLE=$BROWSER_PATH" >> "$GITHUB_ENV"
   - name: Prepare selected media tools
     if: ${{ inputs.ffmpeg == 'true' }}
