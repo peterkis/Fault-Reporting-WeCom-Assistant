@@ -73,7 +73,9 @@ Electron45本机原生探针证明：即使远端getVisible=true，本地覆盖�
 
 播放器最多每秒报告一次真实drawCount增长，主进程只以当前可见且单调增长的计数续期无进展故障预算，不写逐帧日志、不触发场景准备或首播完成。这允许低速但持续推进的首遍超过8秒，仍能检测脚本失联和真正卡死；心跳不能代替全部68帧与末帧停留的完成信号。
 
-仅这个小Canvas以`alpha:false, willReadFrequently:true, desynchronized:true`请求软件backing及低延迟绘制，不关闭整个Electron窗口的GPU能力。原生对照中，三槽位图即使全部正确close，默认加速Canvas仍产生较大的GPU进程私有内存增量；软件backing候选须重新测CPU与卡顿，不能把JS池上限当作Chromium缓存上限。2026-11-07同源三配对诊断中，原同步绘制的p95为119/92.5/64.5ms，加入desynchronized提示后为34.1/34.0/34.5ms；实际context属性、完整68帧、源周期及末帧停留均独立核验。这只支持采用最小提示，不能替代普通构建性能验收或屏幕扫描级撕裂验证。每帧仍一次绘制完整原图，不改变播放器时钟、GPU准备并行性、像素、窗口或释放条件。两个选项都是实现提示，须读回实际context属性；其他硬件收益不作预先保证。接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)与[Chrome低延迟Canvas说明](https://developer.chrome.com/blog/desynchronized/)。
+软件backing曾用于控制这个小Canvas的图片纹理缓存，不关闭整个Electron窗口的GPU能力。三槽位图即使全部正确close，仍须测Chromium实际缓存与进程资源，不能把JS池上限当作浏览器内存上限。2026-11-07同源私有诊断中，`willReadFrequently:true`与`desynchronized:true`组合的draw计数、源周期和数值门槛通过，但后续Windows.Graphics.Capture连续多时点只见灰色；CPU像素有原图，原hint对照能显示人物。因此`f274691f`及该组合按可视失败拒收，不能依据此前34.1/34.0/34.5ms数值宣称交付通过。后续仅去掉软件请求虽恢复实际呈现，却未通过原私有内存增量门槛；这些失败与原件保持。所有候选必须同时证明实际画面、同540×540原像素、完整68帧、原时钟和资源门槛；context属性与draw调用计数本身不能替代呈现证明。context选项都是实现提示，须读回实际属性，其他硬件收益与屏幕扫描级无撕裂不作预先保证。接口边界见[Canvas context属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)与[Chrome低延迟Canvas说明](https://developer.chrome.com/blog/desynchronized/)。
+
+2026-11-07用户最新明确将本次三轮Canvas draw间隔p95上限前向调整为`55/55/55ms`：每轮独立以原始数值判断是否不超过55ms，不把实测值写成55，也不取三轮平均来替代逐轮判定。旧50ms配方、报告、FAIL和被测身份保持不变，新配方单独记录授权与继承关系。CPU比率不超过MP4的110%、相对CSS的私有内存增量不超过MP4对应增量的50%、rAF p95中位差不超过2ms均不变；68帧顺序、末帧至少`1000/30ms`、首遍至少`68/30s`、默认完整动效、画质、可视与资源清理合同均不变。此调整不适用于播放器的时钟、50/16ms案例或其他同值常量，也不表示当前候选已达标。
 
 rAF时间戳存在有限精度。正常换帧deadline允许0.2ms量化容差，并以1纳秒算术裕量包含二进制舍入后的相等边界；保留提前绘制后的微小负相位，避免把约33.3ms误判成不足一帧而形成50/16ms交替。这不扩大0.2ms展示容差，不放宽末帧实际驻留或首遍源最短时长。暂停、解码等待与长回调间隔仍不产生快进债。实际native时钟回放覆盖相等边界与真实不足，不能替代原生绘制间隔测量。诊断DOM只在绘制/播放状态变化时发布，预解码完成不重复写13个属性；测试同时读取单调峰值，不能因少一次DOM发布漏检三帧/单任务限制。
 
