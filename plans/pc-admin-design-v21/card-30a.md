@@ -24,9 +24,9 @@
 | 指标 | 要求 | 实测 | 结论 |
 | --- | --- | --- | --- |
 | 批量（100 目标，0 个有人），服务层，128 租约/64 目标 | 不调用鉴权；p95 < 5ms | authorize 调用 0；p95 0.24ms（200 次） | 达到 |
-| 同上，经真实 HTTP + PG（含边界 Cookie 会话认证） | — | p95 2.88ms（40 次） | 达到 |
+| 同上，经真实 HTTP + PG（含边界 Cookie 会话认证） | — | p95 2.68ms（40 次；首轮 2.88ms） | 达到 |
 | 批量（100 目标，64 个有人），服务层内存鉴权，128 租约 | p95 < 100ms | p95 2.0ms；authorize 256 次 = 64×(2+2) | 算法开销达到 |
-| 批量（100 目标），真实 HTTP + 本地 PG 鉴权，8 个有人 × 1 租约 | p95 < 100ms（64 个有人） | p95 85.9ms；约 10.4ms/有人目标 | **64 个有人未达到**：外推约 0.7–0.9s |
+| 批量（100 目标），真实 HTTP + 本地 PG 鉴权，8 个有人 × 1 租约 | p95 < 100ms（64 个有人） | p95 60.9ms；约 7.3ms/有人目标（首轮 85.9ms / 10.4ms） | **64 个有人未达到**：外推约 0.5–0.9s |
 | 一次租约变化触发的 SSE 提示 | 每连接 ≤ 1 次/秒 | 32 连接各 1 次；同一秒内再 20 次变化 0 次追加；+1000ms 后补发 1 次；无变化心跳 0 次 | 达到 |
 | SSE 连接数 | 64 个 | 64 个请求中 32 个建立、32 个得到既有容量降级（`REALTIME_SSE_DEFAULTS.maxClients=32`，2C4G 上限） | 64 个无法同时存在，按上限 32 测量 |
 | 内存 | 不新增与目标数相关的常驻结构 | 只新增 1 个整数版本号；每请求临时 Set（≤128 键）随请求释放；SSE 每连接 2 个标量 | 达到 |
@@ -46,7 +46,16 @@
 
 ## 验证
 
-<!-- VALIDATION -->
+macOS 本机，Node 24.18.0，PG 18.6，Chrome。全部在已提交 HEAD 上构建后执行；runSelection 遇失败入口即停，后续分批补跑。
+
+- `npm ci`、`npm run migration:build`：PASS（931 typed）；`node .build/tools/gate.mjs types`：PASS；`node .build/tools/verify-artifact.mjs`：ARTIFACT_VERIFIED_NOT_ACTIVATED。
+- `pr-plan --base origin/main`：profiles core/mvp/pc/policy/presence/toolchain，64 入口。
+  - 1–49：219/220；唯一 FAIL 为 `wbint-t39-activity.integration` 精确断言旧三键人员，已按 ADR-0057 加 `field:null`，复跑 PASS。
+  - 50–51：`web01-workbench.integration` 首次 1 FAIL（27A 已关闭看板 500，与在场无关），单独复跑 17/17 PASS，记为间歇。
+  - 52–64：`yxx-h5-flow.integration`、`yxx-h5-media.integration`、`yxx-h5-media` 共 9 FAIL（`YXX_MEDIA_STORAGE_UNAVAILABLE` / `YXX_MEDIA_CONVERSION_UNAVAILABLE`），在未修改的 `origin/main` 构建上逐一复现相同失败，属本机环境既有问题；其余全部 PASS。
+  - 新增 3 个入口（批量服务、批量 HTTP+PG、提示节流）与 presence 全部入口 PASS（含 lifecycle 浏览器）。
+- 工具测试：backend-layout、check-agent-docs、design-system PASS；h5（8 FAIL，H5_BUILD_OUTPUT_INVALID）、hosts（5 FAIL，WEB01_BUILD_OUTPUT_INVALID）、pr-plan（2 FAIL，`spawnSync python ENOENT`）、tooling（多项）FAIL，本机缺 python/PyYAML 等；main 上复现仍在进行，未完成核对，依 CI 结果为准。
+- `npm run docs:agents:check`：PASS。Stylelint/ESLint：本卡无样式改动，未单独运行。
 
 ## 自检
 
