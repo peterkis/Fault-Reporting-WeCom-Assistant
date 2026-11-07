@@ -150,6 +150,12 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true,socketFactory:legacyProvider.socketFactory});assert.ok(browser);
   const loginBrowser=browser;
   const waitScene=()=>loginBrowser.waitFor('document.body?.dataset.loginScene==="ready"');
+  const reloadLogin=async()=>{
+   const previous=Number(await loginBrowser.evaluate('performance.timeOrigin'));assert.ok(Number.isFinite(previous));
+   await loginBrowser.command('Page.reload');
+   // A reload acknowledgement is not a new document; old ready DOM must not satisfy the next action.
+   await loginBrowser.waitFor('performance.timeOrigin!=='+previous+'&&document.readyState!=="loading"&&location.pathname==="/workbench/desktop/embedded"');
+  };
   const clickLogin=async(selector:string)=>{
    await waitScene();
    const target=await loginBrowser.evaluate('(()=>{const e=document.querySelector('+JSON.stringify(selector)+');if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,width:r.width,height:r.height};})()') as {x:number;y:number;width:number;height:number}|null;
@@ -277,7 +283,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   if(await browser.evaluate('!!navigator.gpu')){
     await waitScene();
     assert.equal(await browser.evaluate('document.querySelectorAll("#wecom-panel iframe").length'),1,'full-motion opening must start the background without renewing the QR attempt');
-    await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
+    await reloadLogin();await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
     await waitScene();
     const early=await browser.evaluate('(()=>{window.__interruptedPanel=document.querySelector("#wecom-panel iframe");const r=document.querySelector(".lanyard-front").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()') as {x:number;y:number};
     for(const type of ['mousePressed','mouseReleased'])await browser.command('Input.dispatchMouseEvent',{type,x:early.x,y:early.y,button:'left',clickCount:1});
@@ -290,22 +296,22 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   assert.deepEqual(paletteCycle[4],paletteCycle[0],'both colors return together to the first stage');
   await browser.evaluate('document.querySelector(".lanyard-canvas").getContext("webgl2").getExtension("WEBGL_lose_context").loseContext()');
   await browser.waitFor('document.getElementById("desktop-login")?.dataset.view==="flat"&&Boolean(document.querySelector(".login-panel-parking iframe"))');
-  await browser.command('Page.reload');
+  await reloadLogin();
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("desktop-login").dataset.view'),'lanyard','the next complete attempt retries the badge after a temporary failure');
   await clickLogin('#login-more');await browser.waitFor('document.getElementById("login-options-menu").matches(":popover-open")');await clickLogin('#switch-login-view');
   await browser.waitFor('document.getElementById("desktop-login")?.dataset.view==="flat"&&Boolean(document.querySelector(".login-panel-parking iframe"))');
-  await browser.command('Page.reload');
+  await reloadLogin();
   await browser.waitFor('document.getElementById("desktop-login")?.dataset.view==="flat"&&Boolean(document.querySelector(".login-panel-parking iframe"))');
   assert.equal(await browser.evaluate('sessionStorage.getItem("workbench-login-view-v2")'),'flat','explicit flat selection survives a complete refresh');
   await browser.evaluate('sessionStorage.removeItem("workbench-login-view-v2");sessionStorage.setItem("workbench-login-view","flat")');
-  await browser.command('Page.reload');
+  await reloadLogin();
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('sessionStorage.getItem("workbench-login-view")'),null,'the ambiguous legacy fallback preference is cleared once');
   if(await browser.evaluate('!!navigator.gpu')){
     const delayed=await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'if(navigator.gpu){const adapter=navigator.gpu.requestAdapter.bind(navigator.gpu);navigator.gpu.requestAdapter=(...args)=>new Promise(resolve=>setTimeout(()=>resolve(adapter(...args)),12000));}'}) as {identifier:string};
     const delayedOrigin=Number(await browser.evaluate('performance.timeOrigin'));
-    await browser.command('Page.reload');
+    await reloadLogin();
     await browser.waitFor('performance.timeOrigin!=='+delayedOrigin+'&&document.body?.dataset.loginScene==="ready"');
     assert.equal(await browser.evaluate('document.body.dataset.backdrop'),'fallback','a slow GPU yields one coherent fallback scene within the startup bound');
     await browser.evaluate('window.__fallbackPanel=document.querySelector("#wecom-panel iframe")');
@@ -315,7 +321,7 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
     await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:delayed.identifier});
   }
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'window.__hiddenStartup=true;Object.defineProperty(document,"hidden",{get:()=>window.__hiddenStartup});Object.defineProperty(document,"visibilityState",{get:()=>window.__hiddenStartup?"hidden":"visible"});const realRaf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=fn=>window.__hiddenStartup?0:realRaf(fn);'});
-  await browser.command('Page.reload');
+  await reloadLogin();
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   await browser.evaluate('window.__hiddenPanel=document.querySelector(".lanyard-front iframe")');
   const hiddenGeneration=generation;
@@ -329,11 +335,11 @@ test('compiled embedded login keeps one iframe during badge interaction and rene
   await browser.waitFor('document.getElementById("desktop-login").dataset.pageHidden==="false"');
   assert.equal(await browser.evaluate('window.__hiddenPanel===document.querySelector(".lanyard-front iframe")'),true,'returning to the page keeps the mounted official panel');
   await waitScene();
-  await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:loginHostScript.identifier});await browser.command('Page.reload');
+  await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:loginHostScript.identifier});await reloadLogin();
   await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("quit-desktop").hidden'),true,'a plain browser does not display an unusable native quit action');
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(navigator,"gpu",{configurable:true,value:undefined})'});
-  await browser.command('Page.reload');await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
+  await reloadLogin();await browser.waitFor('Boolean(document.querySelector(".lanyard-front iframe"))');
   assert.equal(await browser.evaluate('document.getElementById("login-backdrop").childElementCount'),0,'missing WebGPU leaves the static background while the QR panel remains usable');
   assert.equal(await browser.evaluate('performance.getEntriesByType("resource").some(e=>e.name.includes("LoginBackdrop-"))'),false,'unsupported GPUs do not download the optional shader engine');
   legacyProvider.assertHealthy();console.log('LOGIN_LEGACY_NEUTRAL_PROVIDER',JSON.stringify({...legacyProvider.receipt(),realQr:'NOT_REAL_QR'}));

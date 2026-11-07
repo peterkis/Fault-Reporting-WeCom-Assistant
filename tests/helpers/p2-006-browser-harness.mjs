@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import {createHash} from 'node:crypto';
 import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -108,7 +109,15 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
       if(socket?.readyState!==WebSocket.OPEN){reject(new Error('P2_006_BROWSER_DISCONNECTED'));return;}
-      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT'));},10000);
+      const timer=setTimeout(()=>{
+        pending.delete(id);
+        // Failure-only context: never log expressions, cookies, URLs or CDP payloads.
+        const context={method,sessionKind:sessionId===null?'root':'attached',
+          ...(method==='Runtime.evaluate'&&typeof params.expression==='string'
+            ?{expressionSha256:createHash('sha256').update(params.expression).digest('hex'),expressionLength:params.expression.length}:{})};
+        console.error('P2_006_BROWSER_COMMAND_TIMEOUT_CONTEXT',JSON.stringify(context));
+        reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT',{cause:context}));
+      },10000);
       pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
   }
