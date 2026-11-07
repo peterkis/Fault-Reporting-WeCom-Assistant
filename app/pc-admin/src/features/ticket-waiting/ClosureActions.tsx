@@ -80,8 +80,8 @@ function decodeDraft(text:string):{value:ClosureFormValue;pending:Pending|null}{
 }
 
 function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onClose,onSuccess}:{target:Target;principal:Principal;otherBlocked:boolean;onBlockedChange:(value:boolean)=>void;onClose:()=>void;onSuccess:()=>void}){
- const {item,action}=target,s=subject(item),client=useQueryClient(),[value,setValue]=useState(target.initial),[pending,setPending]=useState<Pending|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
- const request=useRef<AbortController|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.closure_draft_recovery_enabled;
+ const {item,action}=target,s=subject(item),client=useQueryClient(),[value,setValue]=useState(emptyClosureForm),[pending,setPending]=useState<Pending|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+ const request=useRef<AbortController|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),prefillApplied=useRef(false),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.closure_draft_recovery_enabled;
  const readContext=async(signal:AbortSignal)=>{
   const current=captureWorkbenchRead(signal);const fresh=await api.bootstrap(signal);current();if(fresh.principal_id!==principal.principal_id)throw new ApiError(401,'WORKBENCH_UNAUTHENTICATED');client.setQueryData(['session'],fresh);
   if(s.kind==='ticket'){const context=await api.ticketCommandContext(s.id,signal);current();return {fresh,version:context.version,allowed:context.allowed_actions.includes(action==='close'?'cancel':'restore'),review:null};}
@@ -95,8 +95,8 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
   authorize:async signal=>{const result=await readContext(signal);return result.fresh.closure_draft_recovery_enabled&&result.allowed;},onAuthorityFailure:error=>{if(!denied(error))setMessage(errorMessage(error));},
   onRestore:copy=>{setValue(!copy.pending&&target.initial.reason?{...copy.value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}:copy.value);setPending(copy.pending);if(copy.pending)setMessage('上次操作结果待核对；不会重复提交。');},onOperation:id=>{setOpaque(id);setPending(null);setValue(emptyClosureForm);},onSensitiveClear:clear});
  const originalId=pending?.client_command_id??opaque??draft.operationId,locked=busy||Boolean(originalId)||cleanupBlocked;
- // Prefill belongs to an opening intent, never to settling the prior command.
- useEffect(()=>{if(target.open&&target.initial.reason&&!originalId)setValue(value=>({...value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}));},[target.open,target.initial]);
+ // A saved draft must be read before the opening intent supplies its reason.
+ useEffect(()=>{if(!target.open){prefillApplied.current=false;return;}if(prefillApplied.current||!target.initial.reason||originalId||raw&&draft.status==='loading')return;prefillApplied.current=true;setValue(value=>({...value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}));},[target.open,target.initial,originalId,raw,draft.status]);
  const unsaved=Boolean(value.reason||value.note)&&!draft.safeToLeave;
  useEffect(()=>{onBlockedChange(target.open||unsaved);return()=>onBlockedChange(false);},[onBlockedChange,target.open,unsaved]);
  useEffect(()=>()=>request.current?.abort(),[]);
