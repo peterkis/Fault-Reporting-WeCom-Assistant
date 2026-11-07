@@ -9,10 +9,12 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 // ADR-0057 card 30A: person field/order, batch view, global presence version and service-level A5 measurement.
 interface Auth {principal_id:string;csrf_token:string;session_id:string;name:string}
 function fixture(){
-  let now=100000,calls=0;const denied=new Set<string>();
+  let now=100000,calls=0;const denied=new Set<string>(),forbidden=new Set<string>();let hook:((principal:string,target:WorkbenchActivityTarget)=>void)|null=null;
   const service=createWorkbenchActivity({enabled:true,now:()=>now,authorize:async(auth,target)=>{
     calls++;
     if(!auth||typeof auth!=='object'||!('principal_id' in auth)||typeof auth.principal_id!=='string'||!('name' in auth)||typeof auth.name!=='string')throw Object.assign(new Error('denied'),{status:403});
+    hook?.(auth.principal_id,target);
+    if(forbidden.has(auth.principal_id))throw Object.assign(new Error('session revoked'),{status:403});
     if(denied.has(auth.principal_id+':'+target.id))throw Object.assign(new Error('denied'),{status:404});
     return {principal_id:auth.principal_id,display_name:auth.name,binding:auth.principal_id+':'+String('csrf_token' in auth?auth.csrf_token:'')};
   }});
@@ -21,7 +23,7 @@ function fixture(){
   const renew=(item:WorkbenchActivityTarget,browser=randomUUID(),extra:{active?:boolean;mode?:'VIEWING'|'EDITING';field?:WorkbenchActivityField|null}={}):WorkbenchActivityCommand=>
     extra.mode==='EDITING'&&extra.field?{schema_version:1,browser_id:browser,action:'RENEW',target:item,visible:true,active:extra.active??true,mode:'EDITING',field:extra.field}
       :{schema_version:1,browser_id:browser,action:'RENEW',target:item,visible:true,active:extra.active??true,mode:'VIEWING',field:null};
-  return {service,person,target,renew,denied,calls:()=>calls,resetCalls:()=>{calls=0;},advance:(ms:number)=>{now+=ms;}};
+  return {service,person,target,renew,denied,forbidden,onAuthorize:(next:typeof hook)=>{hook=next;},calls:()=>calls,resetCalls:()=>{calls=0;},advance:(ms:number)=>{now+=ms;}};
 }
 const batch=(targets:unknown[])=>({schema_version:1,targets});
 const p95=(samples:number[])=>{const sorted=[...samples].sort((a,b)=>a-b);return sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*0.95)-1)]??0;};
@@ -123,7 +125,42 @@ test('A5 service worst case: 128 leases on 64 targets, a 100-target batch with 0
   t.diagnostic(`A5 service 64-occupied (in-memory authorize): p95=${full.p95.toFixed(3)}ms authorize_calls=${full.calls} items=${full.items}`);
   assert.equal(zero.calls,0);assert.equal(zero.items,0);assert.ok(zero.p95<5,'zero occupied p95 '+zero.p95);
   assert.equal(full.items,64);
-  // Per occupied target: viewer authority + fence + one per colleague lease (2) = 4; 64 targets → 256.
-  assert.equal(full.calls,256);
+  // Per occupied target: viewer authority + fence + one per colleague lease (2) = 4; 64 targets → 256,
+  // plus the final batch fence for every returned item except the last-fenced one (63) → 319.
+  assert.equal(full.calls,319);
   assert.ok(full.p95<100,'64 occupied in-memory p95 '+full.p95);
+});
+
+test('review P1: a revocation detected while a later target is authorized cannot return earlier projections',async t=>{
+  const f=fixture();t.after(()=>f.service.close());
+  const viewer=f.person('观察者'),actor=f.person('林舟'),first=f.target(),second=f.target(),third=f.target();
+  for(const item of [first,second])await f.service.perform({authContext:actor,body:f.renew(item)});
+  await f.service.perform({authContext:actor,body:f.renew(third)});
+  // Session-wide revocation while the second target is being read: the whole batch fails closed.
+  f.onAuthorize((principal,target)=>{if(principal===viewer.principal_id&&target.id===second.id)f.forbidden.add(viewer.principal_id);});
+  await assert.rejects(f.service.batchView(viewer,batch([first,second,third])),{status:403});
+  f.forbidden.clear();f.onAuthorize(null);
+  // Item-level loss of READ on the first target while the second is read: first is dropped, second kept.
+  f.onAuthorize((principal,target)=>{if(principal===viewer.principal_id&&target.id===second.id)f.denied.add(viewer.principal_id+':'+first.id);});
+  const result=await f.service.batchView(viewer,batch([first,second]));
+  assert.deepEqual(result.items.map(item=>item.id),[second.id]);
+  f.onAuthorize(null);
+});
+
+test('review P2: a newer edit in another tab of the same person changes the version, a plain heartbeat does not',async t=>{
+  const f=fixture();t.after(()=>f.service.close());
+  const watcher=f.person('看板'),viewer=f.person('观察者'),actor=f.person('林舟'),item=f.target(),tabA=randomUUID(),tabB=randomUUID();
+  await f.service.perform({authContext:actor,body:f.renew(item,tabA,{mode:'EDITING',field:'internal-note'})});
+  f.advance(1000);
+  await f.service.perform({authContext:actor,body:f.renew(item,tabB,{mode:'EDITING',field:'ticket-completion'})});
+  assert.equal((await f.service.view(viewer,item)).people[0]?.field,'ticket-completion');
+  const before=await f.service.signature(watcher);
+  f.advance(1000);
+  await f.service.perform({authContext:actor,body:f.renew(item,tabA,{mode:'EDITING',field:'internal-note'})});
+  assert.equal((await f.service.view(viewer,item)).people[0]?.field,'internal-note','tab A is now the most recent edit');
+  const after=await f.service.signature(watcher);
+  assert.notEqual(after,before,'the merged field change must reach board-only watchers');
+  f.advance(1000);
+  await f.service.perform({authContext:actor,body:f.renew(item,tabB,{active:false,mode:'EDITING',field:'ticket-completion'})});
+  assert.equal(await f.service.signature(watcher),after,'an inactive heartbeat neither changes the winner nor the version');
 });
