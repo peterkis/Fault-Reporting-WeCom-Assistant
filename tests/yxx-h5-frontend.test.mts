@@ -289,8 +289,12 @@ test('H5 timeline presents closed-out Ticket updates as report closed and the ne
  const at=(event_type:string,status:string|null,epoch:string,summary='工单状态已更新')=>({event_type,summary,occurred_epoch_ms:epoch,occurred_at:'2026-10-20 14:32:00',ticket:status===null?null:{ticket_no:'SYNTHETIC',status}});
  const created=at('TICKET_CREATED','QUEUED','100','工单已创建'),firstClose=at('TICKET_UPDATED','CANCELLED','200'),restored=at('TICKET_UPDATED','IN_PROGRESS','300'),duplicate=at('TICKET_UPDATED','DUPLICATE_LINKED','400');
  const input=[duplicate,restored,firstClose,created],snapshot=structuredClone(input);
- assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）'),[{titleKey:'eventClosed',summary:'公开重复说明（合成）'},{titleKey:'eventRestored',summary:''},{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},{titleKey:'eventCreated',summary:'工单已创建'}]);
+ assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',true),[{titleKey:'eventClosed',summary:'公开重复说明（合成）'},{titleKey:'eventRestored',summary:''},{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},{titleKey:'eventCreated',summary:'工单已创建'}]);
  assert.deepEqual(input,snapshot,'presentation must not mutate the cached API page');
+ // Partial history: the current note is never attached to an older loaded closure.
+ assert.deepEqual(timeline.timelinePresentations([firstClose,created],'公开重复说明（合成）',false)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'});
+ assert.deepEqual(timeline.timelinePresentations([restored,firstClose,created],'公开重复说明（合成）',true)[1],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},'a closure followed by a newer Ticket fact is not the current closure');
+ assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',false)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},'unloaded newer pages keep the neutral text');
  assert.deepEqual(timeline.timelinePresentations([duplicate,created],null)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'});
  // A completion or an intake fact after a closure is not a restore; unrelated Ticket updates keep their safe summary.
  const completed=at('TICKET_UPDATED','CLOSED','500','工作人员已完成本轮处理：（合成）'),processing=at('PROCESSING',null,'250','报修正在处理中'),started=at('TICKET_UPDATED','IN_PROGRESS','260');

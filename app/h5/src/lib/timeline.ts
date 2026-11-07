@@ -16,13 +16,14 @@ export function reporterClosureNote(text:string|null|undefined):string|null{
 function closesReport(event:YxxTimelineEvent){return event.event_type==='TICKET_UPDATED'&&closedOut.has(event.ticket?.status??'');}
 /**
  * Presentation for latest-first loaded events. A Ticket update into a closed-out status
- * reads as "report closed"; the newest one carries the current reporter-visible note and
- * every other one the neutral default. A Ticket update leaving that status for an active
+ * reads as "report closed". The current reporter-visible note is bound only when the whole
+ * history is loaded and the newest closure is the newest Ticket fact; otherwise, and for
+ * every older closure, the neutral default is shown. A Ticket update leaving that status for an active
  * one directly after it, within the loaded facts, reads as "accepted again". Facts are not
  * reordered or invented; unloaded pages keep the generic presentation.
  */
-export function timelinePresentations(events:readonly YxxTimelineEvent[],closureNote:string|null=null):TimelinePresentation[]{
- const views=events.map(timelinePresentation),newest=events.findIndex(closesReport);
+export function timelinePresentations(events:readonly YxxTimelineEvent[],closureNote:string|null=null,complete=false):TimelinePresentation[]{
+ const views=events.map(timelinePresentation),newestTicket=events.findIndex(event=>event.event_type.startsWith('TICKET_')),newest=complete&&newestTicket>=0&&closesReport(events[newestTicket] as YxxTimelineEvent)?newestTicket:-1;
  let previousClosed=false;
  for(let index=events.length-1;index>=0;index--){
   const event=events[index];if(!event)continue;
