@@ -178,6 +178,28 @@ jobs:
         if ($tap -notmatch '(?m)^# skipped 0\r?$' -or $tap -notmatch '(?m)^# tests [1-9][0-9]*\r?$') { throw 'NATIVE_PROCESS_NOT_REACHED' }
     - name: Verify existing Windows package boundary
       run: npm run desktop:package -- -ServerOrigin https://workbench.invalid.example
+    - name: Run desktop login graphics entries on Windows
+      env:
+        EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      shell: pwsh
+      run: |
+        $report = Join-Path $env:RUNNER_TEMP 'pr-native'
+        Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, ProductType | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $report 'windows-os.json')
+        @'
+        import {writeFileSync} from 'node:fs';
+        import path from 'node:path';
+        import {createPlan} from './.build/tools/pr-plan.mjs';
+        import {runSelection} from './.build/tools/run-tests.mjs';
+        const root = process.cwd();
+        const plan = await createPlan(root, process.env.EXPECTED_BASE, process.env.EXPECTED_HEAD);
+        const names = new Set(['tests/workbench-desktop-session.browser.test.mts', 'tests/workbench-desktop-session.gpu.browser.test.mts']);
+        const entries = plan.selection.entries.filter(entry => names.has(entry.path));
+        const reportDir = path.join(process.env.RUNNER_TEMP, 'pr-native');
+        writeFileSync(path.join(reportDir, 'graphics-selection.json'), JSON.stringify({head: plan.head, entries: entries.map(entry => entry.path)}, null, 2));
+        if (entries.length) runSelection(root, {...plan.selection, label: 'pr-windows-desktop-graphics', entries}, {reportDir: path.join(reportDir, 'graphics')});
+        '@ | node --input-type=module
+        if ($LASTEXITCODE -ne 0) { throw 'NATIVE_GRAPHICS_FAILED' }
     - name: Verify native artifact and source
       if: always()
       shell: pwsh
