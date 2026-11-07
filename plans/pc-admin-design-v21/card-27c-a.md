@@ -501,3 +501,32 @@ ci-delta-standards与ci-delta-spec分别只读审查5文件增量，0finding：�
 - `tests/p2-016-live-cluster.integration.test.mjs`
 
 当前五文件CI修补已经本地复验通过，将追加提交至同一授权分支并更新PR159。远端Codex额度限制仍为未执行；只在新head适用原生CI与独立增量审查完成后合并，main快进、分支清理和最终运行状态以交付原生回执为准，不提前计PASS。
+
+
+## CI04：关闭关系搜索预算回归
+
+c77ddd280304ad6e186b2cc34722b178ab7a0d10 的主CI run42297546042在PC浏览器入口失败：Card28筛选子组为空、Card27B/B5/overlap及advanced搜索超时，原FAIL/NOT_RUN及下载artifact保留。独立Spec/后端审查先定位同一search HTTP503，而非日期错位；完整PG容器日志在6219/6417/6613/6809/7009等行实际记录 WITH cards AS MATERIALIZED 的 statement timeout。
+
+原2秒预算未放宽。Root受控UTC进程下的相同两类HTTP查询都200；本地PG18 jit=on但pg_jit_available=false，计划估算约135万、jit-off实际执行4–6ms。由此将LLVM规划编译开销列为首要机制，实际Linux JIT数据不预报；诊断原件search-plan-evidence.json / search-plan-02.log / search-plan-N.json。新搜索关系的扩展来自本卡关闭记录/已关闭Intake，属于本卡回归，继续修补，不改名规避旧搜索底线。
+
+最小生产改动仅在workbench-search原prepare/final两个只读事务增加SET LOCAL jit=off；原statement_timeout=2000ms、限流、源/范围过滤、排序/游标与最后同快照READ不动，没有UI、日期helper、状态或权限变化，没有持久Feature Flag或依赖。原来的所有浏览器断言保留。
+
+新增正确PG seam位于已注册的 t41-search-pagination-authority.integration.test.mts：保留原3分页/不可见用例，借用真实Tx连接时启用session JIT并压低阈值，使用原seedCard28Board，两类真实HTTP分别校验dismissed/closed/rangeall精确IDs和pending/unassigned精确IDs、分页终止及安全字段。JIT provider和两轮GUC/2秒预算仅白名单观测；会话设置在COMMIT/ROLLBACK后恢复，无LLVM本机不伪造旧路径RED或假定旧查询必须慢。原CI超时为真实RED，后继运行另记。
+
+辅助探针search-plan-01因Pool.connect观察器未保留callback签名挂起；只终止核验过命令行的自有Node44264。其一个新合成UUID诊断库作为失败取证保留，未手工DROP；修正为Pool acquire观察后的search-plan-02成功，正常fixture库已由原helper回收。当前PG仅自有loopback，结束时停止并如实列出保留取证库，不把旧三库清单改绑为当前清理。
+
+该回归没有修改已有业务断言期望；对应U3/U7关闭数据仍须在原查询预算和当前READ下可用，旧超时与安全底线保留。当前新增2个授权路径（后端搜索、后端测试），总99路径。现有98/100/556原候选回执保留；CI04构建/相关回归及LinuxCI随后按实际结果收口。
+
+CI04增量独立复审确认生产GUC仅限原2个只读Tx，无权限/排序/游标/2000ms/锁序变化。新测试首次读取连接baseline设置失败时补充release分支，避免异常租借泄漏；原3用例和新增两查询业务断言不变。build-ci04-01的928语法PASS保留为小修前候选，后继构建另记，不改绑。
+
+### CI04本地后继：真实失败、U7夹具重建与当前限制
+
+CI04-02构建与types均PASS，manifest为dc1728cbbb58175f3df76b9de10be3667f6742e7ca289c7c6e1641240077c6fa。ci04-jit-01在已注册authority入口4/4 PASS；两类真实HTTP均返回精确ID，四个prepare/final阶段实际为jit=off、READ ONLY、原2000ms，事务结束后的局部设置恢复；四次provider可用性均为false，不代表测得LLVM编译耗时。ci04-scope-01另有末次唯一团队READ撤销与有界只读POST合同2/2 PASS。
+
+ci04-read-01保留3 PASS/1 FAIL：logout、physical-expiry及Journey留存到期拒绝均通过，旧canonical-membership夹具直接种IGNORED而没有071关闭记录，详情正确拒绝503；其后的两个入口原NOT_RUN保留，随后才在ci04-scope-01执行。按U7仅重建这一个合成夹具：从WAITING_DESCRIPTION前状态开始，复用既有appendIntakeClosureEvent与insertClosureRecord产生当前关闭事实；原输入文案、用例名、状态/分页/权限/组计数业务断言全部保留，未放宽currentClosure或投影503。source-preservation比较证明除该准备段和import外旧正文一致。本修补新增一个授权后端测试路径tests/t41-search-current-read.integration.test.mts，当前总100路径；没有生产UI、样式、依赖或超时变更。
+
+build-ci04-03与types-ci04-03均PASS：928/928语法、strict/negative types、CSS/design variables/feature语法及PC/H5类型通过。候选仍为c77ddd280304ad6e186b2cc34722b178ab7a0d10加工作区，manifest=9d963880d8b1372963cc1634aeeb19af714b04c8360169d443c06629944b732b，input_hash=dfafc22c4c8d5caf8ab94baf6f8824638064022c82d8d6aa185305f913aa91d0。与CI04-02逐字节比较仅current-read测试mjs/map变化，生产输出变化0；旧PASS/FAIL不改绑本候选。
+
+最终ci04-final-01在同一编译候选完成current-read 4/4、final-scope 1/1、read POST 1/1及authority/JIT 4/4，共四个完整后端入口10/10 PASS。PC完整入口两次均达到原文件级240000ms截止：ci04-pc-01有15个case完成PASS，最终批次PC有10个case完成PASS，均未观察到截止前业务断言FAIL；两次入口均为真实TIMEOUT/FAIL。当前实际库存是18个case，16只是静态literal名称数，另有pointer/keyboard两例，不能以16为验收分母。最终PC尚有8例未完成或未到达；原CI相关的Card28、Card27B、B5、pending-overlap与advanced-search在最终部分运行中已分别通过，但不等于完整Windows入口PASS。按本次边界仅重跑一次，不加第三轮、不抬预算；最终summary的10/10只统计四个完整后端入口，整体SELECTED_TESTS_FAIL保持。
+
+原始TAP、case trace、截图、阶段耗时与summary继续保存在对应目录；ci04-02-03-comparison及ci04-final-01-jit-observation-audit分别记录制品差异与四阶段GUC实值。当前自有loopback PG仍运行；一个旧诊断库和两个PC超时库作为失败取证保留，没有手工DROP，完整状态在本地交接原件列出。新head Linux/LLVM CI尚未执行，完整Windows18入口仍未通过；远端Codex额度不足仍为NOT_EXECUTED。full/certify、Electron、真实发送、现场写库、部署和Gate未运行或批准；后续Git/CI、合并与清理由Root沿既有授权收口，不提前标完成。

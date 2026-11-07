@@ -112,6 +112,8 @@ Ticket 人工关闭事件沿用 `ticket.cancelled`；新增 `ticket.restored` �
 
 当前 Human / P2016 的 App、Worker、Gateway 均在 ready 前要求迁移 071；Gateway 在构造 Intake、SDK 和连接网络前检查，失败关闭自有连接池。H5 未启用时此关闭模型依赖仍成立；通用 G1 默认入口不增加该前置。
 
+关闭记录加入统一搜索关系后，CI 的 PostgreSQL 原日志实际记录多次 2000ms statement timeout；不是日期筛空。无 LLVM 的本地 PG18 上同一关系估算成本约 135 万，而关闭 JIT 的实际执行约 4–6ms。搜索 prepare / final-proof 两个原有只读事务固定 `SET LOCAL jit=off`，避免小页交互承担 LLVM 编译开销；原 2000ms 限制、限流、查询条件、排序、最终会话/权限/保留期快照均保留，不增加持久开关。设置只在本事务生效，结束后恢复原会话设置。依据 [PG18 JIT 决策](https://www.postgresql.org/docs/18/jit-decision.html) 与 [SET LOCAL](https://www.postgresql.org/docs/18/sql-set.html)；LLVM 宿主上的实际结果另由本卡真实 PG/HTTP 回归和当前 CI 验证。
+
 ## H5 统计和解析
 
 筛选 `COMPLETED` 仅含 `CLOSED / RESOLVED`；新增 `CLOSED_OUT` 含 `CANCELLED / DUPLICATE_LINKED`。`ACTIVE`、`OPEN`、total、active_count 的现有归属不变。受影响入口：`yxx-self-service-query.mts` 列表、`yxx-h5-batch-sql.mts` reports / home / department/profile 聚合、`yxx-h5-v2-profile.mts` 科室计数。关闭原因只输出固定 reporter 文案，不输出 note、操作人或内部事件。
