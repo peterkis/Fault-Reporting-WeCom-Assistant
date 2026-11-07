@@ -4,6 +4,14 @@
 
 2026-10-15 当前状态：活动 HTTP 与正式前端已实现，默认 `workbenchActivityEnabled=false`。本地完整七项验证完成，待父任务验收／独立集成。实际运行 source `f4cbf647f018d2efffb28b7e7a0758190da863bf`／tree `19701963f5d9f4c839f38630651552d5c239f426`／manifest `f1c736f316d5c7dd808d557ee038442817eb3af0d828d4002a313703649a4fd6`；严格类型、一次构建、最终制品核验、本票20项分段 case 与相关消费者证据见 [当前执行记录](../../../plans/admin-workbench-integration/execution/t39.md)。后台验证使用受控 visibility 输入配合真实 DOM／HTTP／SSE；原生 OS 后台未另行声称。原 first、三份合同及46 SQL保持；无数据库变更。本文档后继不重绑运行对象，也不宣称部署或 Gate。
 
+## ADR-0057 批量读取、编辑字段与看板提示（卡 30A）
+
+2026-11-07 前向更新，依据 [ADR-0057](../../../adr/0057_workbench_activity_batch_view.md)，实现与验证见[卡 30A 执行记录](../../../plans/pc-admin-design-v21/card-30a.md)。下文 T39 原合同中与本节冲突之处（不输出字段名称；只为自有可见对象发提示）以本节为准；租约、心跳、空闲、上限与登记语义不变，默认仍关闭。
+
+- **人员结构**：`{display_name, mode, field, expires_epoch_ms}`，见 [人员 Schema](../../../contracts/workbench_activity_person.schema.json)。`mode=EDITING` 时 `field` 为最近一次编辑的字段，`VIEWING` 时为 `null`；编辑者在前，同类按显示名排序。单张 GET 与批量接口相同。
+- **批量读取** `POST /api/workbench/activity/batch-view`：与 `POST /api/workbench/activity` 相同的 Cookie、Origin、CSRF、无 query 与 32KiB 限制。请求 [Schema](../../../contracts/workbench_activity_batch_view_request.schema.json) `{schema_version:1,targets:[{kind,id}]}`，1–100 个，去重；0 个、超过 100 个或任一目标非法返回 400。响应 [Schema](../../../contracts/workbench_activity_batch_view.schema.json) `{schema_version:1,items:[{kind,id,people}]}` 只含有人的目标，按请求顺序；对请求人 401/403/404 的目标静默省略，其它错误使请求失败；开关关闭 503。没有任何他人租约的目标不调用鉴权。
+- **看板范围提示**：任何租约新增/删除、查看/编辑切换、编辑字段变化、过期清理或按认证释放都会让所有 workbench SSE 连接收到一次无内容的 `workbench.activity.changed`；连接建立时不发，同一连接 1 秒内最多一次，被节流的变化由下一次既有 wakeup/recovery 补发。提示只表示「某处在场有变化」，不含人、事项、字段或数量。
+
 ## 历史 Source 说明（以下三段保留当时状态）
 
 2026-10-15 合同保持冻结，当前为 SOURCE_CANDIDATE_NOT_BUILT_NOT_RUN。以下路径已有默认关闭的源码接线，尚未构建、运行或验收。本票全部七项条件仍 PENDING；原未实施基线及首条真实 HTTP RED 的后续顺序见文末。
