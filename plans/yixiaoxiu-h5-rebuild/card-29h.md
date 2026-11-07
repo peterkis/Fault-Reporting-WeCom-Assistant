@@ -100,3 +100,9 @@ macOS 构建产物与此前 Windows 记录的数值不直接可比，所以只�
 - Web H5 处理记录的数据源（`yxx-self-service-store`）不包含 `ticket.restored` 和 `ticket.duplicate_linked` 事件，本卡不改后端。因此“报修已重新受理”在真实数据中只会出现在关闭之后、已加载的下一条非终态 Ticket 更新上。重复报修的关闭事件要等后端把它纳入时间线后才会显示。这一点作为后续后端议题另记，不在本卡处理。
 - 对于分页之外的前一条事实，不做推断，保持通用展示。
 - 回退：普通 revert 本卡提交即可，不涉及数据、合同或开关。
+
+## Codex 复审修复（PR #164，评论 4502103937）
+
+- 问题：分页未加载完时，当前关闭说明可能绑到已加载的较早关闭事件上。属实。
+- 修复：只有在整个时间线已加载（无下一页），且最新关闭事件就是最新的 Ticket 事实时，才绑定当前说明；其它情况显示中性文本“本次报修已关闭”。新增部分历史、关闭后又有更新、未加载新页三条断言。
+- 验证：migration:build、gate types、verify-artifact PASS（manifest `cf2d1fad…`）；pr-plan 56/56 入口、419/419 tests PASS（macOS，TMPDIR 与 ffmpeg 使用真实路径）。
