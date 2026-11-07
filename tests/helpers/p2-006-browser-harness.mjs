@@ -79,7 +79,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     // Linux CI has no hardware adapter. Use Chromium's software graphics
     // backend for the browser tests that exercise actual WebGL/WebGPU commands.
     ...(graphics&&process.platform==='linux'?[
-      ...(process.env.DISPLAY?['--ozone-platform=x11','--use-gl=angle','--use-angle=gl']:['--use-angle=swiftshader']),
+      '--use-angle=swiftshader','--disable-gpu-compositing',
       '--use-webgpu-adapter=swiftshader','--enable-unsafe-webgpu',
     ]:graphics?[]:['--disable-gpu']),
     ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
@@ -92,9 +92,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
       if(path.basename(root)==='runtime'&&path.basename(path.dirname(root))==='.build')root=resolve(root,'../..');
       const {launchOwnedProcess}=await import(pathToFileURL(join(root,'.build/tools/owned-process.mjs')).href);
       ownership=await launchOwnedProcess({executable,args,cwd:process.cwd(),profile});child=ownership.child;
-    }else child=spawn(executable,args,{stdio:'ignore',windowsHide:true,
-      ...(graphics&&process.platform==='linux'?{env:{...process.env,LIBGL_ALWAYS_SOFTWARE:'1'}}:{}),
-    });
+    }else child=spawn(executable,args,{stdio:graphics?['ignore','ignore','pipe']:'ignore',windowsHide:true});
   }catch(error){
     await closeBrowserTestResources([async()=>{
       const owned=relative(resolve(tmpdir()),resolve(profile));assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
@@ -103,6 +101,12 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
     throw error;
   }
   let socket=null,sequence=0,closePromise=null,launchError=null;
+  let graphicsErrors=0;
+  child.stderr?.on('data',chunk=>{
+    for(const [pattern,kind] of [[/GPU process exited|GPU process crash/u,'gpu-process-exit'],[/Context lost|context lost/u,'context-lost'],[/out of memory|Out of memory/u,'out-of-memory'],[/Failed to initialize/u,'initialization-failed']]){
+      if(graphicsErrors<12&&pattern.test(String(chunk))){graphicsErrors++;console.error('P2_006_BROWSER_GRAPHICS_CONTEXT',kind);}
+    }
+  });
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
   const pending=new Map();
   const ownedResourceState=()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,

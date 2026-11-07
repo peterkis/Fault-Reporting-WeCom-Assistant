@@ -46,6 +46,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  for(let i=0;i<3;i++)principals.push((await access.upsertPrincipal({wecomUserId:'desktop-staff-'+i,displayName:'桌面合成人员'+i,roles:['DISPATCHER','HANDLER'],resolverTeamIds:['PILOT_IT']})).id);
  let actor=0,auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined,runtime:P2016EnabledRuntime|undefined;
  let ready:Promise<unknown>=Promise.resolve();const codes=new Map<string,string>();let readWrites=0,activityWrites=0,holdQr=true,heldQrRequests=0,authOffset=-6*60_000,shortFirstIntent=true,confirmations=0;
+ const realtimeResponses: Array<{path: string; status: number}> = [];
  const tls=await createYxxBrowserFixture({pool:f.pool,createApp:({origin}:{origin:string})=>{
   auth=createWeComWorkbenchAuthentication({pool:f.pool,publicOrigin:origin,corpId:'desktop-test',agentId:'1000001',identityHashKey:'desktop-synthetic-identity-secret',now:()=>Date.now()+authOffset,accessTokenProvider:async()=> 'synthetic-only',fetchImpl:async(input,init)=>{
    const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');
@@ -67,6 +68,9 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
    if(request.method==='POST'&&url.pathname==='/api/workbench/activity')activityWrites++;
    const original=response.writeHead.bind(response);
    response.writeHead=((status:number,...args:unknown[])=>{
+    if (realtimeResponses.length < 30 && (url.pathname === '/api/realtime/events' || url.pathname === '/api/lifecycle/bootstrap' || (url.pathname.startsWith('/api/') && status >= 400))) {
+     realtimeResponses.push({path: url.pathname.replace(/\b[\da-f]{8}-[\da-f-]{27}\b/giu, ':id'), status});
+    }
     const headers=args[0];if(headers&&typeof headers==='object'&&!Array.isArray(headers)){
      const value=headers as Record<string,unknown>;
      if(url.pathname==='/workbench/desktop'&&status===302){const cookies=value['set-cookie'];assert.ok(Array.isArray(cookies));assert.ok(cookies.some(cookie=>String(cookie).includes('Max-Age=300')));if(shortFirstIntent){value['set-cookie']=cookies.map(cookie=>String(cookie).replace('Max-Age=300','Max-Age=2'));shortFirstIntent=false;}}
@@ -99,8 +103,9 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
    try {
     await desktop.wait('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
    } catch (error) {
-    const phase = await desktop.evaluate('({path: location.pathname, realtime: document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus, bridge: typeof window.workbenchDesktop, visibility: document.visibilityState})').catch(() => null);
-    console.error('DESKTOP_REALTIME_WAIT_CONTEXT', JSON.stringify({actor, confirmations, heldQrRequests, phase}));
+    const phase = await desktop.evaluate('(async()=>({path: location.pathname, realtime: document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus, native: await window.workbenchDesktop?.getState(), online: navigator.onLine, visibility: document.visibilityState}))()').catch(() => null);
+    const native = await desktop.command('state').then(value => ({startupVisible: object(value).startupVisible, visible: object(value).visible})).catch(() => null);
+    console.error('DESKTOP_REALTIME_WAIT_CONTEXT', JSON.stringify({actor, confirmations, heldQrRequests, phase, native, realtimeResponses}));
     throw error;
    }
    if(actor===0){assert.equal(confirmations,1,'the real PG/OAuth path accepts the first confirmation after renewal');heldQrRequests=0;}
