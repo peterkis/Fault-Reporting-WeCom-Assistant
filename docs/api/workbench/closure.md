@@ -34,6 +34,8 @@ ClosureCommand 为 `{client_command_id,expected_version,reason_code,secondary_re
 
 2026-11-07 用户明确授权补齐前端必需的最小读取合同及解析层；原关闭/恢复命令、状态、通知投递和权限不变。
 
+工作台 bootstrap 的 `closure_draft_recovery_enabled` 只反映全局浏览器草稿恢复开关，独立于内部备注开关。关闭/恢复仍以当前主体命令权限为准；关闭草稿沿原 `waiting-cancel` 作用域读取旧版加密副本，旧待核对 UUID 只用于原用途回执 GET。恢复关闭时不要求浏览器草稿存储存在；有旧记录则先核对或清理，避免盲发新命令。
+
 `GET /api/tickets/{ticketId}/closure-history` 与 `GET /api/intakes/{intakeId}/closure-history` 由 W 宿主沿既有 lifecycle 开关提供，只供当前获权工作台读取。可选 query `before_version` 为 1–2147483647 的整数十进制；未知/重复参数拒绝。按 `before_version` 倒序，每页最多 20 条，额外读 1 条判断下一页；`next_before_version` 为末条版本或 null。单事务只读，statement timeout 2000ms；身份、READ、Cookie 会话及绝对 TTL 在查询后再核验，主体版本或权限快照改变返回 409。
 
 返回 `subject_id`、当前 `version`、`items`、`next_before_version`、`restore_target`。条目含关闭 ID/前版本、固定原因/二级原因、内部说明、可选原单展示编号、来源、关闭/恢复时间和操作人名称、实际 `notification_state`。关闭版本顺序也用于同秒事件的稳定排列；恢复事件在同条关闭之前显示。`restore_target` 仅首页当前未恢复记录有值，包含当前有效恢复状态/列/负责人、通知状态；失效原负责人按 ADR-0056 回 QUEUED。这个提示不是命令授权，提交仍按版本与当前权限终检。

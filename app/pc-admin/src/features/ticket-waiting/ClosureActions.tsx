@@ -5,6 +5,7 @@ import {Undo2} from 'lucide-react';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,WorkbenchCard} from '../../api/client';
 import type {ClosureCommand,IntakeClosureCommand,RestoreCommand} from '../../../../../contracts/unified_closure_contracts';
+import type {WaitingCommand} from '../../../../../contracts/workbench_waiting_contracts';
 import {closureApi,clearClosureRead} from '../closure/client';
 import {reviewApi} from '../manual-review/client';
 import {Button} from '../../design/components/Button/Button';
@@ -20,6 +21,7 @@ import {ToastFeedback,DraftStatus} from '../../app/ToastFeedback';
 
 type Action='close'|'restore';
 type Command=IntakeClosureCommand|RestoreCommand;
+type Pending=Command|WaitingCommand;
 type Target={item:WorkbenchCard;action:Action;initial:ClosureFormValue;open:boolean};
 interface ActionScope {request:(item:WorkbenchCard,action:Action,initial?:ClosureFormValue)=>void;canOpen:(item:WorkbenchCard,action:Action)=>boolean;highlighted:string|null;blocked:boolean}
 const ClosureScope=createContext<ActionScope|null>(null);
@@ -56,11 +58,19 @@ export function RestoreClosedItem({item,principal,inline=false}:{item:WorkbenchC
  return <Button tone="ghost" className={inline?'ds-closure-restore-inline':'ds-closure-restore'} data-action="restore-closed" isDisabled={!scope.canOpen(item,'restore')} onPress={()=>scope.request(item,'restore')}><Undo2 size={14}/>{pending?'核对恢复':'恢复'}</Button>;
 }
 
-function decodeDraft(text:string):{value:ClosureFormValue;pending:Command|null}{
- const raw:unknown=JSON.parse(text);if(!raw||typeof raw!=='object')throw new DraftError('DRAFT_CORRUPT');const r=raw as Record<string,unknown>,v=r.value;
+function decodeDraft(text:string):{value:ClosureFormValue;pending:Pending|null}{
+ const raw:unknown=JSON.parse(text);if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new DraftError('DRAFT_CORRUPT');const r=raw as Record<string,unknown>,v=r.value;
+ if(r.schema===1&&Object.keys(r).length===3&&typeof r.note==='string'&&r.note.length<=2000&&Object.hasOwn(r,'pending')){
+  let pending:WaitingCommand|null=null;
+  if(r.pending!==null){if(!r.pending||typeof r.pending!=='object'||Array.isArray(r.pending))throw new DraftError('DRAFT_CORRUPT');const c=r.pending as Record<string,unknown>;
+   if(Object.keys(c).length!==5||typeof c.client_command_id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(c.client_command_id)||typeof c.expected_version!=='number'||!Number.isSafeInteger(c.expected_version)||c.expected_version<1||c.expected_version>2147483647||typeof c.reason_code!=='string'||! /^[A-Z][A-Z0-9_]{0,63}$/u.test(c.reason_code)||typeof c.note!=='string'||!c.note.trim()||c.note.length>2000||c.external_visible!==false)throw new DraftError('DRAFT_CORRUPT');
+   pending={client_command_id:c.client_command_id,expected_version:c.expected_version,reason_code:c.reason_code,note:c.note,external_visible:false};
+  }
+  return {value:{...emptyClosureForm,reason:r.note.trim()?'OTHER':'',note:r.note},pending};
+ }
  if(r.schema!==1||Object.keys(r).length!==3||!v||typeof v!=='object')throw new DraftError('DRAFT_CORRUPT');const f=v as Record<string,unknown>;
  if(Object.keys(f).length!==5||!['',...closureReasons.map(x=>x.value)].includes(String(f.reason))||!['',...closureSecondaryReasons.map(x=>x.value)].includes(String(f.secondary))||typeof f.note!=='string'||f.note.length>2000||typeof f.duplicate!=='string'||f.duplicate.length>128||typeof f.notify!=='boolean')throw new DraftError('DRAFT_CORRUPT');
- let pending:Command|null=null;
+ let pending:Pending|null=null;
  if(r.pending!==null){if(!r.pending||typeof r.pending!=='object')throw new DraftError('DRAFT_CORRUPT');const c=r.pending as Record<string,unknown>;
   if(typeof c.client_command_id!=='string'||!/^[0-9a-f-]{36}$/iu.test(c.client_command_id)||typeof c.expected_version!=='number'||!Number.isInteger(c.expected_version)||c.expected_version<1||c.expected_version>2147483647)throw new DraftError('DRAFT_CORRUPT');
   if(c.reason_code==='RESTORE_CLOSED'){if(Object.keys(c).length!==3)throw new DraftError('DRAFT_CORRUPT');pending={client_command_id:c.client_command_id,expected_version:c.expected_version,reason_code:'RESTORE_CLOSED'};}
@@ -70,8 +80,8 @@ function decodeDraft(text:string):{value:ClosureFormValue;pending:Command|null}{
 }
 
 function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onClose,onSuccess}:{target:Target;principal:Principal;otherBlocked:boolean;onBlockedChange:(value:boolean)=>void;onClose:()=>void;onSuccess:()=>void}){
- const {item,action}=target,s=subject(item),client=useQueryClient(),[value,setValue]=useState(target.initial),[pending,setPending]=useState<Command|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
- const request=useRef<AbortController|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.draft_recovery_enabled;
+ const {item,action}=target,s=subject(item),client=useQueryClient(),[value,setValue]=useState(target.initial),[pending,setPending]=useState<Pending|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+ const request=useRef<AbortController|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.closure_draft_recovery_enabled;
  const readContext=async(signal:AbortSignal)=>{
   const current=captureWorkbenchRead(signal);const fresh=await api.bootstrap(signal);current();if(fresh.principal_id!==principal.principal_id)throw new ApiError(401,'WORKBENCH_UNAUTHENTICATED');client.setQueryData(['session'],fresh);
   if(s.kind==='ticket'){const context=await api.ticketCommandContext(s.id,signal);current();return {fresh,version:context.version,allowed:context.allowed_actions.includes(action==='close'?'cancel':'restore'),review:null};}
@@ -81,8 +91,8 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  const history=useQuery({queryKey:['closure-history',principal.principal_id,s.kind,s.id,principal.authorization_revision],queryFn:({signal})=>closureApi.history(s.kind,s.id,null,signal),enabled:action==='restore',retry:false,gcTime:0});
  const clear=()=>{request.current?.abort();request.current=null;setValue(emptyClosureForm);setPending(null);setBusy(false);};
  const denied=(error:unknown)=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){clear();if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearClosureRead(client,principal.principal_id,s.kind,s.id,error).then(()=>clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error));onClose();return true;}return false;};
- const draft=useAuthorizedDraft<ClosureFormValue,Command>({scope,enabled:raw,writeEnabled:raw&&context.data?.allowed===true,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:emptyClosureForm,hasInput:form=>Boolean(form.reason||form.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeDraft,commandId:command=>command.client_command_id,
-  authorize:async signal=>{const result=await readContext(signal);return result.fresh.draft_recovery_enabled&&result.allowed;},onAuthorityFailure:error=>{if(!denied(error))setMessage(errorMessage(error));},
+ const draft=useAuthorizedDraft<ClosureFormValue,Pending>({scope,enabled:raw,writeEnabled:raw&&context.data?.allowed===true,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:emptyClosureForm,hasInput:form=>Boolean(form.reason||form.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeDraft,commandId:command=>command.client_command_id,
+  authorize:async signal=>{const result=await readContext(signal);return result.fresh.closure_draft_recovery_enabled&&result.allowed;},onAuthorityFailure:error=>{if(!denied(error))setMessage(errorMessage(error));},
   onRestore:copy=>{setValue(!copy.pending&&target.initial.reason?{...copy.value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}:copy.value);setPending(copy.pending);if(copy.pending)setMessage('上次操作结果待核对；不会重复提交。');},onOperation:id=>{setOpaque(id);setPending(null);setValue(emptyClosureForm);},onSensitiveClear:clear});
  const originalId=pending?.client_command_id??opaque??draft.operationId,locked=busy||Boolean(originalId)||cleanupBlocked;
  // Prefill belongs to an opening intent, never to settling the prior command.
@@ -91,12 +101,13 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  useEffect(()=>{onBlockedChange(target.open||unsaved);return()=>onBlockedChange(false);},[onBlockedChange,target.open,unsaved]);
  useEffect(()=>()=>request.current?.abort(),[]);
  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(locked&&target.open||unsaved)event.preventDefault();};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[locked,target.open,unsaved]);
+ const existing=async(current:()=>void)=>{const found=await hasExistingDraft(scope);current();if(!found)return null;const copy=await openDraft(scope,{restore:false});current();if(copy.handle.record)await removeSensitiveDraft(copy.handle,'revoked',{requireMatchingRevision:true});current();return copy.handle;};
  useEffect(()=>{if(raw){setStorageReady(true);return;}const controller=new AbortController(),current=captureWorkbenchRead(controller.signal);setStorageReady(false);
-  void (async()=>{await readContext(controller.signal);current();const copy=await openDraft(scope,{restore:false});current();if(copy.handle.record)await removeSensitiveDraft(copy.handle,'revoked',{requireMatchingRevision:true});current();setOpaque(copy.handle.operation?.commandId??null);setStorageReady(true);})().catch(error=>{if(!controller.signal.aborted&&!denied(error))setMessage('恢复标记暂不可读，请重试。');});return()=>controller.abort();
+  void (async()=>{await readContext(controller.signal);current();const handle=await existing(current);setOpaque(handle?.operation?.commandId??null);setStorageReady(true);})().catch(error=>{if(!controller.signal.aborted&&!denied(error))setMessage('恢复标记暂不可读，请重试。');});return()=>controller.abort();
  },[raw,principal.principal_id,s.kind,s.id,action]);
  useEffect(()=>{if(context.error)denied(context.error);if(history.error)denied(history.error);},[context.error,history.error]);
  const refresh=async()=>{await Promise.all(['board','detail','workbench-search','closure-history','closure-context','ticket-command-context','manual-review','ticket-follow-up-schedule','web-report'].map(name=>client.invalidateQueries({queryKey:[name,principal.principal_id]})));};
- const settle=async(id:string,preserveInput:boolean)=>{if(raw)return draft.success(id,preserveInput);const copy=await openDraft(scope,{restore:false});if(copy.handle.record||copy.handle.operation&&copy.handle.operation.commandId!==id)return false;if(copy.handle.operation)await settleDraft(copy.handle,id);return true;};
+ const settle=async(id:string,preserveInput:boolean)=>{if(raw)return draft.success(id,preserveInput);if(!await hasExistingDraft(scope))return true;const copy=await openDraft(scope,{restore:false});if(copy.handle.record||copy.handle.operation&&copy.handle.operation.commandId!==id)return false;if(copy.handle.operation)await settleDraft(copy.handle,id);return true;};
  const finish=async(id:string,state:'COMMITTED'|'FAILED',current:()=>void)=>{known.current=state;if(state==='COMMITTED')setValue(emptyClosureForm);const cleaned=await settle(id,state==='FAILED');current();if(!cleaned){setCleanupBlocked(true);setOpaque(id);setMessage('操作终态已确认，本地恢复标记尚待清理。请核对上次操作。');return;}
   setPending(null);setOpaque(null);setCleanupBlocked(false);await refresh();current();if(state==='COMMITTED')onSuccess();else setMessage('上次操作已明确失败。请核对当前资料后重新选择操作。');
  };
@@ -113,7 +124,8 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
      setMessage('恢复目标或关闭通知状态已变化，请核对新提示后再次确认。');return;
     }
    }
-   if(!workbenchTransportWritable()||fresh.fresh.draft_recovery_enabled!==raw)throw new ApiError(409,'WORKBENCH_TRANSPORT_NOT_WRITABLE');
+   if(!workbenchTransportWritable()||fresh.fresh.closure_draft_recovery_enabled!==raw)throw new ApiError(409,'WORKBENCH_TRANSPORT_NOT_WRITABLE');
+   if(!raw){const handle=await existing(current);if(handle?.operation){setOpaque(handle.operation.commandId);throw new DraftError('DRAFT_OPERATION_PENDING');}}
    await draft.prepare(command);current();setPending(command);known.current=null;sent=true;
    if(action==='restore'){const input:RestoreCommand={client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'RESTORE_CLOSED'};if(s.kind==='ticket')await api.restoreClosedTicket(s.id,input,fresh.fresh.csrf_token,controller.signal);else await closureApi.restoreIntake(s.id,input,fresh.fresh.csrf_token,controller.signal);}
    else{const input=command as IntakeClosureCommand;if(s.kind==='ticket')await api.closeTicket(s.id,input,fresh.fresh.csrf_token,controller.signal);else await closureApi.closeIntake(s.id,input,fresh.fresh.csrf_token,controller.signal);}
