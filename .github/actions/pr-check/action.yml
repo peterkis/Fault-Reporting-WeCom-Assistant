@@ -46,7 +46,12 @@ runs:
       unzip -q "$browser_dir/chrome.zip" -d "$browser_dir"
       BROWSER_PATH="$browser_dir/chrome-linux64/chrome"
       test -x "$BROWSER_PATH"
+      sandbox="$browser_dir/chrome-linux64/chrome_sandbox"
+      test -f "$sandbox"
+      sudo install -o root -g root -m 4755 "$sandbox" "$browser_dir/chrome-linux64/chrome-sandbox"
       "$BROWSER_PATH" --version | grep -F "$browser_version"
+      timeout 20s "$BROWSER_PATH" --headless=new --disable-gpu --no-first-run \
+        --user-data-dir="$browser_dir/sandbox-probe" --dump-dom about:blank | grep -F '<html>'
       echo "TS_MIGRATION_BROWSER_EXECUTABLE=$BROWSER_PATH" >> "$GITHUB_ENV"
   - name: Prepare selected media tools
     if: ${{ inputs.ffmpeg == 'true' }}
