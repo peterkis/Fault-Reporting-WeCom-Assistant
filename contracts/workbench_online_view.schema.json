@@ -42,7 +42,7 @@
     "total": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 64
+      "description": "All visible online colleagues, including accounts within the 15 s grace period; not bounded by the stream limit."
     }
   }
 }

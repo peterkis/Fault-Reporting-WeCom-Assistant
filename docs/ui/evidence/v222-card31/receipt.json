@@ -57,7 +57,7 @@
       "unpaired": 0
     },
     "failure": {
-      "hiddenAfterMs": 28337
+      "hiddenAfterMs": 28754
     },
     "many": {
       "more": "+52",
@@ -76,31 +76,31 @@
   "screenshots": [
     {
       "file": "sidebar-empty.png",
-      "sha256": "f3280b62808bcee449b13ee22215d85f3e064e66ce2c5b7aeed32ac150080933",
+      "sha256": "d4b590679ebf31cb68eb615c41f57904661f3e4584093d9a1806d4757bba3e0f",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-online.png",
-      "sha256": "86fc3e177cb5a02f458f3dd65a2bef805535e1b9d187d1285d533c8b55b4b721",
+      "sha256": "62458b4ae447d9f3c4970165c1b38e7bc453b45829c6e00f6d0af9949a50c60e",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover.png",
-      "sha256": "4454696776fcc344d17c11172e77f7430c787fd250a75fec20305ba48428f6a5",
+      "sha256": "f31370b5ac77ff498c29a7a3520f1e668e63cd6e5e4b28eb30d8831ae3fd4481",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover-55-synthetic.png",
-      "sha256": "afe86f6a488557e5ab9a04075bcdea9dcc3dfd79a3eceaec66e368653fcdbe33",
+      "sha256": "c1bae005fe86e1cdf46859c38f4baff448e1bd039faa141cdd2d5a233ffd9b9f",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-collapsed.png",
-      "sha256": "88e1202f45cccb47c8ecb5b98868d98219d9f2d8929888d680b062002bfaf49d",
+      "sha256": "9a9285b97d4e835ca9701d12e14fe2d38ad49cbfd8264528705158cecb2a8406",
       "width": 1440,
       "height": 1000
     }

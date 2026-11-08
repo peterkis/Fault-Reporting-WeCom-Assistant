@@ -30,7 +30,7 @@ export function parseActivityBatchView(value:unknown):WorkbenchActivityBatchView
 }
 /** Card 31: online colleagues (display name + coarse status only). */
 export function parseOnlineView(value:unknown):WorkbenchOnlineView{
-  const v=record(value);if(Object.keys(v).length!==3||v.schema_version!==1||!Array.isArray(v.people)||v.people.length>50||typeof v.total!=='number'||!Number.isInteger(v.total)||v.total<v.people.length||v.total>64)throw new ApiError(502,'INVALID_RESPONSE');
+  const v=record(value);if(Object.keys(v).length!==3||v.schema_version!==1||!Array.isArray(v.people)||v.people.length>50||typeof v.total!=='number'||!Number.isSafeInteger(v.total)||v.total<v.people.length)throw new ApiError(502,'INVALID_RESPONSE');
   return {schema_version:1,total:v.total,people:v.people.map(value=>{const p=record(value);if(Object.keys(p).length!==2||typeof p.display_name!=='string'||!p.display_name.length||p.display_name.length>128||(p.status!=='EDITING'&&p.status!=='VIEWING'&&p.status!=='ONLINE'))throw new ApiError(502,'INVALID_RESPONSE');return {display_name:p.display_name,status:p.status};})};
 }
 export const readOnlineView=(signal:AbortSignal)=>readWorkbench('/api/workbench/online',signal,parseOnlineView);

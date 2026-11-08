@@ -57,3 +57,12 @@ test('Card 31 status: editing beats viewing beats online; the requester is exclu
   assert.equal(await activity.signature(auth(self)),next,'an unchanged online set does not bump again');
   online=[self,editor,viewer];assert.notEqual(await activity.signature(auth(self)),next,'leaving (after grace) is noticed on the next read without a timer');
 });
+
+test('Card 31 total counts accounts within the grace period beyond the stream limit, and stays schema-valid',async t=>{
+  const {activity}=fixture();t.after(()=>activity.close());
+  const self=randomUUID(),ids=Array.from({length:70},()=>randomUUID());
+  activity.setOnline({principals:()=>[self,...ids],resolve:async()=>({self,visible:ids.map((principal_id,index)=>({principal_id,display_name:'同事'+index+'（合成）'}))})});
+  const view=await activity.online(auth(self));
+  assert.equal(view.total,70);assert.equal(view.people.length,WORKBENCH_ONLINE_MAX_PEOPLE);
+  await assertP2016Schema('workbench_online_view',view);
+});
