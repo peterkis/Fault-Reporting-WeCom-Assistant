@@ -23,7 +23,7 @@ let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing
 const onlineListeners=new Set<()=>void>();
 export const ONLINE_STALE_MS=30000;
 function putOnline(next:WorkbenchOnlineView|null){if(next===online)return;online=next;for(const listener of onlineListeners)listener();}
-export const PRESENCE_RENDER_DELAY_MS=500,PRESENCE_HINT_DELAY_MS=1000,PRESENCE_HINT_MAX_WAIT_MS=2000,PRESENCE_MIN_READ_GAP_MS=1500,PRESENCE_EXPIRY_CHECK_MS=5000,PRESENCE_REFRESH_MARGIN_MS=7000,PRESENCE_MAX_TARGETS=100;
+export const PRESENCE_RENDER_DELAY_MS=500,PRESENCE_HINT_DELAY_MS=1000,PRESENCE_HINT_MAX_WAIT_MS=2000,PRESENCE_MIN_READ_GAP_MS=1500,PRESENCE_EXPIRY_CHECK_MS=5000,PRESENCE_REFRESH_MARGIN_MS=10000,PRESENCE_MAX_TARGETS=100;
 
 const keyOf=(target:WorkbenchActivityTarget)=>target.kind+':'+target.id;
 const alive=(person:WorkbenchActivityPerson,now:bigint)=>BigInt(person.expires_epoch_ms)>now;
