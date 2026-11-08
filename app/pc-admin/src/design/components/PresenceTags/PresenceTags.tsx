@@ -10,6 +10,10 @@ export function presenceAction(person:WorkbenchActivityPerson){return person.mod
 export function presenceDescription(people:readonly WorkbenchActivityPerson[]){return people.map(person=>person.display_name+presenceAction(person)).join('、');}
 /** Names longer than four characters show their first three and an ellipsis; the full name stays in the tooltip and label. */
 export function shortPresenceName(name:string){const characters=Array.from(name);return characters.length>4?characters.slice(0,3).join('')+'…':name;}
+/** Card 32 A5: 「周宁正在编辑内部备注」 or, with several editors of one field, 「周宁等 2 人正在编辑内部备注」. */
+export function presenceFieldBannerText(editors:readonly WorkbenchActivityPerson[],field:WorkbenchActivityField){const first=editors[0];return first?first.display_name+(editors.length>1?'等 '+editors.length+' 人':'')+'正在编辑'+presenceFieldLabels[field]:'';}
+/** Card 32 A5: banner attached to the top of an input area's frame, with the same lucide pencil as the name tags. */
+export function PresenceFieldBanner({text}:{text:string}){return <span className="ds-presence-field-banner" data-presence-field-banner role="status"><Pencil aria-hidden="true"/><span>{text}</span></span>;}
 export const presenceTone=(people:readonly WorkbenchActivityPerson[])=>people[0]?.mode==='EDITING'?'editing':people.length?'viewing':undefined;
 
 /**

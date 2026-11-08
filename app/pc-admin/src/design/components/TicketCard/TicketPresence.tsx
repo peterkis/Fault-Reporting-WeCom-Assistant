@@ -7,5 +7,5 @@ export function TicketPresence({people,unclaimed}:{people:readonly WorkbenchActi
   const first=people[0];
   if(!first)return null;
   return <><PresenceTags people={people} className="ds-ticket-presence"/>
-    {unclaimed?<p className="ds-presence-claim-hint" data-presence-claim-hint><Eye aria-hidden="true"/>{first.display_name}{first.mode==='EDITING'?'正在处理这张工单':'正在查看这张工单，领取前可先确认'}</p>:null}</>;
+    {unclaimed?<p className="ds-presence-claim-hint" data-presence-claim-hint><Eye aria-hidden="true"/><span>{first.display_name}{first.mode==='EDITING'?'正在处理这张工单':'正在查看这张工单，领取前可先确认'}</span></p>:null}</>;
 }

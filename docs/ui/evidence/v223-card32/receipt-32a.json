@@ -1,0 +1,201 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS",
+  "synthetic": [
+    "second internal-note editor 「周宁（合成）」 in the drawer activity read (window.__extraEditor)"
+  ],
+  "platform": "darwin",
+  "metrics": {
+    "categories": {
+      "tiles": 7,
+      "fallback": 0,
+      "categories": [
+        "DIAGNOSTIC",
+        "ENDPOINT_PRINT",
+        "NETWORK_INFRASTRUCTURE"
+      ],
+      "untriagedIntakes": 2,
+      "untriagedFallback": 2
+    },
+    "editingColour": {
+      "token": "rgb(154, 74, 10)",
+      "tag": "rgb(154, 74, 10)",
+      "outline": true
+    },
+    "claimHover": {
+      "text": "沈然正在查看这张工单，领取前可先确认",
+      "onTop": true,
+      "height": 28
+    },
+    "claimPlacement": {
+      "inside": true,
+      "besideClaim": true,
+      "sameRow": true,
+      "truncated": false,
+      "moreClickable": true,
+      "gapToMore": 17
+    },
+    "claimFocus": {
+      "text": "沈然正在查看这张工单，领取前可先确认",
+      "onTop": true,
+      "height": 28
+    },
+    "subgroup": {
+      "background": "rgb(251, 251, 250)",
+      "group": "rgb(251, 251, 250)",
+      "hover": "rgb(247, 247, 245)",
+      "hairlines": 2,
+      "header": "rgb(255, 255, 255)"
+    },
+    "subgroupHover": {
+      "row": "rgb(247, 247, 245)",
+      "subgroup": "rgb(251, 251, 250)"
+    },
+    "more": {
+      "before": {
+        "text": "显示剩余 2 项",
+        "icon": "lucide-chevron-down",
+        "size": 14,
+        "gap": "4px",
+        "color": "rgb(107, 105, 101)",
+        "secondary": "rgb(107, 105, 101)"
+      },
+      "after": {
+        "text": "收起",
+        "icon": "lucide-chevron-up",
+        "size": 14,
+        "gap": "4px",
+        "color": "rgb(107, 105, 101)",
+        "secondary": "rgb(107, 105, 101)"
+      }
+    },
+    "bannerOverlap": {
+      "onTop": true,
+      "clearOfContent": true
+    },
+    "bannerFrame": {
+      "withBanner": 868.91,
+      "withoutBanner": 868.91,
+      "again": 868.91
+    },
+    "capsuleColour": "rgb(154, 74, 10)",
+    "banner": {
+      "one": {
+        "text": "陈悦正在编辑内部备注",
+        "height": 28,
+        "gap": 0,
+        "width": true,
+        "left": true,
+        "radius": "10px 10px 0px 0px",
+        "frameRadius": "10px",
+        "frameTop": "0px 0px",
+        "padding": "12px 12px",
+        "font": "12px",
+        "pencil": true,
+        "icon": 12,
+        "stroke": "1.75px",
+        "area": "陈悦正在编辑内部备注",
+        "locked": false,
+        "glyph": false
+      },
+      "two": {
+        "text": "陈悦等 2 人正在编辑内部备注",
+        "height": 28,
+        "gap": 0,
+        "width": true,
+        "left": true,
+        "radius": "10px 10px 0px 0px",
+        "frameRadius": "10px",
+        "frameTop": "0px 0px",
+        "padding": "12px 12px",
+        "font": "12px",
+        "pencil": true,
+        "icon": 12,
+        "stroke": "1.75px",
+        "area": "陈悦等 2 人正在编辑内部备注",
+        "locked": false,
+        "glyph": false
+      }
+    },
+    "onlineRow": [
+      20,
+      20,
+      20
+    ],
+    "onlinePopover": [
+      [
+        24,
+        24
+      ],
+      [
+        24,
+        24
+      ],
+      [
+        24,
+        24
+      ]
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "board-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e2f354552a9852d69809868afaec7a95e83f12f62c7e45cfe3dcce26c8197a69"
+    },
+    {
+      "file": "board-1440-claim-hint.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "6dcd2bea51b51d753fc057f879723a3d16dbf0f31e9b1c0099160ff08f898c33"
+    },
+    {
+      "file": "list-1440-subgroup.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f6a1aa5b7bb9a487b781a419f04299fccb2347e6f729a267f603cac2a5da120c"
+    },
+    {
+      "file": "list-1440-subgroup-hover.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "99a4c43382b622f24533cf4093da7ea299d78e2cbea364e737518c0173eaccb8"
+    },
+    {
+      "file": "list-1440-more.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "1bab0f3e7b8833e04d86a48b52aab59cec9767b3b26edc9f6592782f86328695"
+    },
+    {
+      "file": "list-1440-more-expanded.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f53da87f5f4a99d5b8695aef8ab356ad7fa924040ba1416afc7ebffe0daf6a6a"
+    },
+    {
+      "file": "drawer-1440-banner.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c35e079a9997516c7917e53c01d7801e36fc2a74f3f6c3a96520fccd25bb33d0"
+    },
+    {
+      "file": "drawer-1440-banner-two.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a19a5747b4dd032c362d233f6bf64ffe77cea889679b661ef7a375bb7d8dd44d"
+    },
+    {
+      "file": "sidebar-online.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "3fb49c561a3e473022c31b9611f7d7daf727d181b2a2455f8afa7f35cf00304e"
+    },
+    {
+      "file": "sidebar-online-popover.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ba09dd3262f3328bf51b8c61332b6cdfa3483cbc274a43d84f504a56062aae42"
+    }
+  ]
+}

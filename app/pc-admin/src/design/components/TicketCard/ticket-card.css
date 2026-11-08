@@ -192,6 +192,11 @@
 .ds-ticket-card.ticket-card[data-presence=viewing]:hover {box-shadow: var(--shadow-presence-viewing-hover);}
 .ds-ticket-card.ticket-card[data-presence=editing]:hover {box-shadow: var(--shadow-presence-editing-hover);}
 .ds-ticket-card.ticket-card.is-selected[data-presence] {outline: 2px solid var(--brand); outline-offset: -2px;}
-.ds-presence-claim-hint {position: absolute; top: calc(100% + var(--space-1)); right: 0; left: 0; z-index: var(--z-dropdown); display: none; align-items: center; gap: var(--space-1-5); margin: 0; padding: var(--space-1-5) var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); box-shadow: var(--shadow-2); font-size: var(--fs-xs); line-height: var(--lh-xs); pointer-events: none;}
+.ds-presence-claim-hint {position: absolute; right: var(--space-3); bottom: var(--space-3); left: var(--space-3); z-index: var(--z-sticky); display: none; align-items: center; gap: var(--space-1-5); height: var(--control-h-sm); margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;}
 .ds-presence-claim-hint>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-presence-claim-hint {display: flex;}
+/* Card 32 A4 (review): the hint sits inside the card on its footer row, left of 「领取」, so it never covers the next card or the column's 「显示剩余」.
+   Like the claim button, it takes the owner/time row while shown. */
+.ds-presence-claim-hint>span {min-width: 0; overflow: hidden; text-overflow: ellipsis;}
+.ds-ticket-card:has(.ds-board-claim-slot button) .ds-presence-claim-hint {right: calc(var(--space-3) + var(--space-16) + var(--space-2));}
+.ds-ticket-card:is(:hover,:focus-within):has(.ds-presence-claim-hint) :is(.ds-ticket-owner,.activity-time,.card-tags) {visibility: hidden;}
