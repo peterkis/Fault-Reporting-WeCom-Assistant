@@ -1,0 +1,149 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "metrics": {
+    "board": {
+      "view": {
+        "presence": "viewing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          }
+        ],
+        "label": "周宁正在查看"
+      },
+      "edit": {
+        "presence": "editing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "陈悦",
+            "mode": "editing",
+            "pencil": true
+          },
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          }
+        ],
+        "label": "陈悦正在编辑内部备注、周宁正在查看"
+      },
+      "crowd": {
+        "presence": "viewing",
+        "ring": null,
+        "outline": "1.5px",
+        "tags": [
+          {
+            "text": "周宁",
+            "mode": "viewing",
+            "pencil": false
+          },
+          {
+            "text": "+2",
+            "mode": "more",
+            "pencil": false
+          }
+        ],
+        "label": "周宁正在查看、沈然正在查看、陈悦正在查看"
+      }
+    },
+    "geometry": {
+      "top": -9,
+      "right": 12,
+      "height": 18,
+      "radius": "4px 4px 4px 0px",
+      "font": "11px",
+      "weight": "600",
+      "cardHeight": 124
+    },
+    "steady": {
+      "seconds": 22,
+      "batchReads": 3
+    },
+    "tooltip": {
+      "opacity": "1",
+      "rows": [
+        "陈悦 正在编辑内部备注",
+        "周宁 正在查看"
+      ],
+      "avatars": 2
+    },
+    "render": {
+      "cards": 9,
+      "touched": [
+        "01a1b8aa-f550-73a8-91c6-4bf0d9303025"
+      ]
+    },
+    "list": {
+      "outline": "none",
+      "rightGap": 12,
+      "height": 44
+    },
+    "drawer": {
+      "text": "陈悦周宁悦陈悦正在编辑内部备注宁周宁正在查看在看陈悦正在编辑内部备注、周宁正在查看",
+      "height": 26,
+      "radius": "13px",
+      "bodyText": false,
+      "banner": "陈悦正在编辑内部备注，同时编辑可能互相覆盖",
+      "before": "\"✎ 陈悦正在编辑内部备注，同时编辑可能互相覆盖\"",
+      "locked": false
+    },
+    "lateMount": true,
+    "network": {
+      "hints": 20,
+      "seconds": 10,
+      "batchReads": 6,
+      "offsetsMs": [
+        1017,
+        3040,
+        5091,
+        7139,
+        9189,
+        10690
+      ]
+    },
+    "idle": {
+      "seconds": 60,
+      "batchReads": 0,
+      "intervals": 0
+    }
+  },
+  "screenshots": [
+    {
+      "file": "board-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "19d1d5c08f52ce36a5f7075e3496f1453627821476fec362b37c377a29b6850c"
+    },
+    {
+      "file": "board-1440-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c6a8169c510b52c0de12bec58aa0dc01bec720c468ca98da71a5d02d3618f7e6"
+    },
+    {
+      "file": "board-1440-claim-hint.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "29aa7eb26ffc5d4a87910e08503bd923f08f724816e6ea82971a7687e1e54ec2"
+    },
+    {
+      "file": "list-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5c4adeffda40d3bbe9b8522b6f48bf199d290a521079470268b344888e3b5901"
+    },
+    {
+      "file": "drawer-1440-capsule-banner.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d97dc9569e8798dfac80421d209ee4b2afb171e4402aa7dbcd2ac77461bac437"
+    }
+  ]
+}

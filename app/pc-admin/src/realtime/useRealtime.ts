@@ -1,4 +1,5 @@
 import {activityTransport,flushActivity} from '../features/activity/client';
+import {presenceHint} from '../features/activity/presence-store';
 import {useEffect,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,advanceWorkbenchAuthorizationEpoch,setWorkbenchTransportWritable} from '../api/client';
@@ -38,7 +39,7 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
         const source=new EventSource(endpoint);
         return {state:()=>source.readyState,close:()=>source.close(),listen:(name,listener)=>{const fn=(event:Event)=>listener(event instanceof MessageEvent?{data:event.data,lastEventId:event.lastEventId}:{});source.addEventListener(name,fn);return()=>source.removeEventListener(name,fn);}};
       },
-      ...(principal.activity_enabled?{activityTick:(signal:AbortSignal,isLive:boolean)=>flushActivity(principal,signal,isLive)}:{}),
+      ...(principal.activity_enabled?{activityTick:(signal:AbortSignal,isLive:boolean)=>flushActivity(principal,signal,isLive),onActivityHint:presenceHint}:{}),
       report:state=>{if(mounted){activityTransport(principal,state.status==='live');if(['offline','auth-blocked'].includes(state.status))setWorkbenchTransportWritable(false);setView(state);}},authorizationDenied:error=>error instanceof IdentityChanged||error instanceof ApiError&&[401,403].includes(error.status),
       refresh:async signal=>{
         try{

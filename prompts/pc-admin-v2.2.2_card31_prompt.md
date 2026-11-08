@@ -4,7 +4,7 @@
 
 ## 〇、执行顺序
 
-- **必须等卡 30A 和 30B 都合并后再开始**：本卡复用 30A 的在场版本号和变化提示、30B 的在场存储与 `PresenceStack` 组件。开始前同步最新 `origin/main`，读取 ADR-0057 与卡 30A / 30B 执行记录。
+- **必须等卡 30A 和 30B 都合并后再开始**：本卡复用 30A 的在场版本号和变化提示、30B 的在场存储与 `PresenceTags`（侧栏头像组在本卡新建）。开始前同步最新 `origin/main`，读取 ADR-0057 与卡 30A / 30B 执行记录。
 - 本卡同时改后端和 PC 前端，不要与其它改 `features/activity/*`、侧栏组件或 activity 后端模块的卡并行。
 
 ---
@@ -34,7 +34,7 @@
 
 ## 三、文件范围与交付
 
-- 可修改：`app/server/src/p2-003-realtime-sse.mts`（只限提供「当前在线账号」的只读查询与在线集合变化回调）、`app/server/src/workbench-activity*.mts`（在线列表计算与接口）、`contracts/workbench_activity_*`、`adr/0057_*`（追加「在线同事」一节，不新建 ADR）、`docs/api/*`；PC：`features/activity/*`、侧栏组件、`design/components/PresenceStack/*`（只限复用或加尺寸）、相关测试与 fixture。
+- 可修改：`app/server/src/p2-003-realtime-sse.mts`（只限提供「当前在线账号」的只读查询与在线集合变化回调）、`app/server/src/workbench-activity*.mts`（在线列表计算与接口）、`contracts/workbench_activity_*`、`adr/0057_*`（追加「在线同事」一节，不新建 ADR）、`docs/api/*`；PC：`features/activity/*`、侧栏组件、新建 `design/components/PresenceStack/*`（侧栏头像组，规格见 F1）、相关测试与 fixture。
 - 分支：`codex/v222-card31`；执行记录：`plans/pc-admin-design-v21/card-31.md`；截图：`docs/ui/evidence/v222-card31/`。
 - 交付：编号清单、文件清单、性能测量（见 S4）、截图（Windows，DPR 1，缩放 1）与 2 倍局部、相关测试与 `migration:build`、`gate.mjs types`、`verify-artifact.mjs`、契约校验、Stylelint / ESLint 结果。
 

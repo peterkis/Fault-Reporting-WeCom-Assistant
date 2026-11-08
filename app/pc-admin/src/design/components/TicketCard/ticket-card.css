@@ -185,3 +185,13 @@
 .ds-closure-restored-event {display: flex; align-items: center; gap: var(--space-1); margin: 0 0 0 calc(var(--space-5) + var(--space-1-5)); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-closure-restored-event>svg {width: var(--space-3); height: var(--space-3); flex: none;}
 .ds-closure-restored-event strong {font-weight: var(--fw-medium); color: var(--text-primary);}
+/* Card 30B B2: presence on board cards. Tags sit outside the card's top edge; the outline replaces heat/attention/review rings. */
+.ds-ticket-card .ds-ticket-presence {position: absolute; top: calc(-1 * var(--space-2) - 1px); right: var(--space-3); z-index: var(--z-sticky);}
+.ds-ticket-card.ticket-card[data-presence=viewing] {outline: 0; box-shadow: var(--shadow-presence-viewing);}
+.ds-ticket-card.ticket-card[data-presence=editing] {outline: 0; box-shadow: var(--shadow-presence-editing);}
+.ds-ticket-card.ticket-card[data-presence=viewing]:hover {box-shadow: var(--shadow-presence-viewing-hover);}
+.ds-ticket-card.ticket-card[data-presence=editing]:hover {box-shadow: var(--shadow-presence-editing-hover);}
+.ds-ticket-card.ticket-card.is-selected[data-presence] {outline: 2px solid var(--brand); outline-offset: -2px;}
+.ds-presence-claim-hint {position: absolute; top: calc(100% + var(--space-1)); right: 0; left: 0; z-index: var(--z-dropdown); display: none; align-items: center; gap: var(--space-1-5); margin: 0; padding: var(--space-1-5) var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); box-shadow: var(--shadow-2); font-size: var(--fs-xs); line-height: var(--lh-xs); pointer-events: none;}
+.ds-presence-claim-hint>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
+.ds-ticket-card:is(:hover,:focus-within) .ds-presence-claim-hint {display: flex;}

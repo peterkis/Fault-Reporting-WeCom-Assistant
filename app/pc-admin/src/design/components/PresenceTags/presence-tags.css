@@ -1,0 +1,20 @@
+/* Card 30B B1: corner name tags (prototype 01f V3). */
+.ds-presence-tags {--radius-presence: var(--radius-xs) var(--radius-xs) var(--radius-xs) 0; position: relative; display: inline-flex; align-items: center; gap: var(--space-1); flex: none; animation: presence-fade 150ms ease-out;}
+.ds-presence-tag {display: inline-flex; align-items: center; gap: var(--space-0-5); height: calc(var(--space-4) + var(--space-0-5)); padding: 0 var(--space-1-5); border-radius: var(--radius-presence); background: var(--brand); color: var(--on-brand); box-shadow: var(--shadow-presence-tag); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); line-height: 1; white-space: nowrap;}
+.ds-presence-tag[data-mode=editing] {background: var(--tone-attention-solid);}
+.ds-presence-tag[data-mode=more] {background: var(--text-primary);}
+.ds-presence-tag>svg {width: calc(var(--space-2) + var(--space-0-5)); height: calc(var(--space-2) + var(--space-0-5)); flex: none; stroke-width: 2.25;}
+.ds-presence-tooltip {position: absolute; top: calc(100% + var(--space-1-5)); right: 0; z-index: var(--z-tooltip); display: grid; gap: var(--space-1-5); min-width: calc(var(--space-16) * 3); padding: var(--space-2); border-radius: var(--radius-md); background: var(--text-primary); color: var(--text-inverse); box-shadow: var(--shadow-3); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 150ms ease-out 0s, visibility 0s linear 150ms;}
+.ds-presence-tags:hover .ds-presence-tooltip {opacity: 1; visibility: visible; transition: opacity 150ms ease-out .3s, visibility 0s linear .3s;}
+.ds-presence-tooltip-row {display: flex; align-items: center; gap: var(--space-1-5);}
+.ds-presence-tooltip-row strong {font-weight: var(--fw-semibold);}
+.ds-presence-tooltip-more {color: var(--text-tertiary);}
+@keyframes presence-fade {from {opacity: 0;} to {opacity: 1;}}
+@media (prefers-reduced-motion: reduce) {.ds-presence-tags {animation: none;} .ds-presence-tooltip {transition: none;}}
+/* Card 30B B4: drawer top-bar presence capsule and same-field editing banner. */
+.ds-presence-capsule-slot {display: contents;}
+.ds-presence-capsule {--radius-capsule: calc(var(--radius-md) + var(--space-1) + 1px); display: inline-flex; align-items: center; gap: var(--space-1-5); height: calc(var(--space-6) + var(--space-0-5)); padding: 0 var(--space-2) 0 var(--space-1); border-radius: var(--radius-capsule); background: var(--bg-subtle);}
+.ds-presence-capsule-label {color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap;}
+.ds-presence-capsule .ds-presence-tooltip {top: calc(100% + var(--space-2));}
+[data-presence-editing]::before {content: '\270E\00a0' attr(data-presence-editing); display: block; margin-bottom: var(--space-2); padding: var(--space-1-5) var(--space-2); border-radius: var(--radius-sm); background: var(--tone-attention-bg); color: var(--tone-attention-fg); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-presence-tooltip .ds-presence-tooltip-avatar {width: calc(var(--space-4) + var(--space-0-5)); height: calc(var(--space-4) + var(--space-0-5)); min-width: calc(var(--space-4) + var(--space-0-5)); font-size: var(--fs-2xs);}
