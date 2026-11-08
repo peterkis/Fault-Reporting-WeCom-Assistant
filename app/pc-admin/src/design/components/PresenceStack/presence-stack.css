@@ -1,0 +1,6 @@
+/* Card 31 F1: sidebar avatar group. 20px avatars overlap 5px, each ringed 2px in the sidebar colour, with a 7px online dot. */
+.ds-presence-stack {display: inline-flex; align-items: center; flex: none;}
+.ds-presence-stack-person {position: relative; display: inline-flex; border-radius: var(--radius-full); box-shadow: var(--shadow-presence-stack-ring);}
+.ds-presence-stack-person+.ds-presence-stack-person {margin-left: calc(-1 * var(--space-1) - 1px);}
+.ds-presence-stack-dot {position: absolute; right: calc(-1 * var(--space-0-5) + 1px); bottom: calc(-1 * var(--space-0-5) + 1px); width: calc(var(--space-2) - 1px); height: calc(var(--space-2) - 1px); border-radius: var(--radius-full); background: var(--tone-success-fg); box-shadow: var(--shadow-presence-stack-dot);}
+.ds-presence-stack-more {margin-left: var(--space-1); color: var(--text-secondary); font-size: var(--fs-2xs); font-variant-numeric: tabular-nums;}

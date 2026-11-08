@@ -294,6 +294,20 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
         };
         activity=createWorkbenchActivity({enabled:true,authorize:authorizeActivity,wakeup:realtime.wakeup});
         realtime.setWorkbenchActivity?.(async authContext=>{try{return await activity?.signature(authContext)??null;}catch{activity?.releaseAuthentication(authContext);return null;}});
+        // Card 31: online colleagues share one team with the requester (both active, team active); no per-item authorization.
+        if(realtime.onlinePrincipals&&realtime.setOnlineChange){
+          const onlinePrincipals=realtime.onlinePrincipals;
+          activity.setOnline({principals:()=>onlinePrincipals(),resolve:async(authContext,principalIds)=>{
+            const principal=await query.principal(authContext);
+            if(!principalIds.length)return {self:principal.principal_id,visible:[]};
+            const rows=(await pool.query<{principal_id:string;display_name:string}>(`SELECT p.id::text AS principal_id,left(p.display_name,128) AS display_name FROM pilot_ticket.pilot_principal p
+              WHERE p.id=ANY($2::uuid[]) AND p.is_active AND p.id<>$1::uuid AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member mine
+                JOIN pilot_ticket.pilot_team_member theirs ON theirs.team_id=mine.team_id JOIN pilot_ticket.resolver_team team ON team.team_id=mine.team_id AND team.is_active
+                WHERE mine.principal_id=$1::uuid AND theirs.principal_id=p.id)`,[principal.principal_id,[...principalIds]])).rows;
+            return {self:principal.principal_id,visible:rows.filter(row=>row.display_name.trim()).map(row=>({principal_id:row.principal_id,display_name:row.display_name}))};
+          }});
+          realtime.setOnlineChange(()=>activity?.onlineChanged());
+        }
       }
       const activityHttp=createWorkbenchActivityHttp(activity);
       const reminders=workbenchRemindersEnabled||h5?.enabled?createWorkbenchReminders({pool,query,enabled:true,followEnabled:workbenchFollowEnabled,webReportsEnabled:h5?.enabled===true}):null;

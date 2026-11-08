@@ -1,8 +1,14 @@
-import type {WorkbenchActivityCommand,WorkbenchActivityField,WorkbenchActivityTarget,WorkbenchActivityView,WorkbenchActivityReceipt,WorkbenchActivityMode,WorkbenchActivityPerson,WorkbenchActivityBatchView} from '../../../contracts/workbench_activity_contracts.js';
+import type {WorkbenchActivityCommand,WorkbenchActivityField,WorkbenchActivityTarget,WorkbenchActivityView,WorkbenchActivityReceipt,WorkbenchActivityMode,WorkbenchActivityPerson,WorkbenchActivityBatchView,WorkbenchOnlineView} from '../../../contracts/workbench_activity_contracts.js';
 import {exactP2016,failP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
 
 export const WORKBENCH_ACTIVITY_LIMITS=Object.freeze({lease_ttl_ms:15000,heartbeat_ms:5000,viewing_idle_ms:60000,editing_idle_ms:10000,max_objects_per_browser:2,max_browsers_per_principal:4,max_browsers:64,max_leases:128,max_leases_per_object:16} as const);
 export interface ActivityIdentity {principal_id:string;display_name:string;binding:string}
+/** Card 31: the online-colleague read. `visible` must exclude the requester and keep only mutually visible teammates. */
+export interface ActivityOnlineSource {
+  principals:()=>readonly string[];
+  resolve:(authContext:unknown,principalIds:readonly string[])=>Promise<{self:string;visible:readonly {principal_id:string;display_name:string}[]}>;
+}
+export const WORKBENCH_ONLINE_MAX_PEOPLE=50;
 export interface WorkbenchActivityOptions {
   enabled?:boolean;
   now?:()=>number;
@@ -58,6 +64,16 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
       if(lease.mode==='EDITING'&&(lease.editedAt===null||at-lease.editedAt>=WORKBENCH_ACTIVITY_LIMITS.editing_idle_ms)){lease.mode='VIEWING';lease.field=null;changed=true;}
     }
     if(changed){version++;notify();}
+    syncOnline();
+  }
+  // Card 31 O5: the online set is part of the presence version. Joining is reported by the SSE callback; leaving after
+  // the grace period is noticed on the next read (signature/view), without a timer.
+  let onlineSource:ActivityOnlineSource|null=null,onlineKey:string|null=null;
+  function syncOnline(){
+    if(!onlineSource)return;
+    const key=[...onlineSource.principals()].sort().join(',');
+    if(onlineKey!==null&&key!==onlineKey){version++;notify();}
+    onlineKey=key;
   }
   function erase(predicate:(lease:Lease)=>boolean){let changed=false;for(const [key,lease] of leases)if(predicate(lease)){leases.delete(key);changed=true;}generation++;if(changed){version++;notify();}}
   /** The field view() would show for one person on one target, from stored lease state. */
@@ -164,6 +180,18 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
     },
     view,
     batchView,
+    setOnline(source:ActivityOnlineSource|null){onlineSource=source;onlineKey=null;if(source)syncOnline();},
+    onlineChanged(){syncOnline();},
+    /** Card 31 S2: O(online accounts + leases); one visibility query, no per-item authorization. Never names a ticket. */
+    async online(authContext:unknown):Promise<WorkbenchOnlineView>{
+      ready();expire();if(!onlineSource)failP2016('DISABLED',503);
+      const ids=onlineSource.principals(),{self,visible}=await onlineSource.resolve(authContext,ids);
+      const rank={EDITING:0,VIEWING:1,ONLINE:2} as const,status=new Map<string,keyof typeof rank>();
+      for(const lease of leases.values()){const id=lease.identity.principal_id,next=lease.mode==='EDITING'?'EDITING':'VIEWING',current=status.get(id);if(!current||rank[next]<rank[current])status.set(id,next);}
+      const people=visible.filter(person=>person.principal_id!==self).map(person=>({display_name:person.display_name,status:status.get(person.principal_id)??'ONLINE' as const}))
+        .sort((a,b)=>rank[a.status]-rank[b.status]||a.display_name.localeCompare(b.display_name,'zh-Hans-CN'));
+      return {schema_version:1,people:people.slice(0,WORKBENCH_ONLINE_MAX_PEOPLE),total:people.length};
+    },
     /** Global presence version (ADR-0057 A3) prefixes the caller's own-object signature. */
     async signature(authContext:unknown){
       ready();expire();const values:string[]=[];

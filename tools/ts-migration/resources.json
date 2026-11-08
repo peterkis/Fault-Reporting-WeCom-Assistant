@@ -190,6 +190,7 @@
     "contracts/workbench_activity_contracts.d.ts",
     "contracts/workbench_activity_person.schema.json",
     "contracts/workbench_activity_view.schema.json",
+    "contracts/workbench_online_view.schema.json",
     "contracts/workbench_attachment_contracts.d.ts",
     "contracts/workbench_board_action_capability.schema.json",
     "contracts/workbench_board_action_intent.schema.json",

@@ -44,6 +44,9 @@ export interface RealtimeSseHandler {
   (request: IncomingMessage, response: ServerResponse): Promise<void>;
   handle: RealtimeSseHandler; close(): Promise<Readonly<Metrics>>; getMetrics(): Readonly<Metrics>; metrics(): Readonly<Metrics>;
   setWorkbenchActivity?(hook: ((authContext: unknown) => Promise<string | null>) | null): void;
+  /** Card 31: accounts with an open workbench stream, or whose last stream closed within the grace period. */
+  onlinePrincipals?(): readonly string[];
+  setOnlineChange?(callback: (() => void) | null): void;
   wakeup(): unknown; notify(): unknown; disconnectPrincipal(principalId: string): Readonly<{ disconnected_count: number }>;
   wakeupHub: unknown; hubSnapshot(): unknown;
 }
@@ -922,6 +925,9 @@ function configureSseHeaders(response: ServerResponse) {
   }
 }
 
+/** Card 31 O2: matches the presence lease (15 s). */
+export const ONLINE_GRACE_MS = 15000;
+
 export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOptions<P> = {}): RealtimeSseHandler {
   let activityHook: ((authContext: unknown) => Promise<string | null>) | null = null;
   const configuration = normalizeHandlerConfiguration(options);
@@ -963,6 +969,33 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     : null;
   const metrics = createMetrics(configuration.maxClients);
   const streams = new Set<StreamState>();
+  // Card 31 O1/O2: an account is online while it has an open stream, and for ONLINE_GRACE_MS after its last stream
+  // closes, so a reload or short drop does not flicker. The grace is judged when read; no timer is created.
+  const online = new Map<string, { open: number; closedAt: number | null }>();
+  let onlineChange: (() => void) | null = null;
+  const onlinePrincipalId = (authContext: unknown) => {
+    const value = authContext && typeof authContext === 'object' ? Object.getOwnPropertyDescriptor(authContext, 'principal_id')?.value : undefined;
+    return typeof value === 'string' && value.length > 0 && value.length <= 64 ? value : null;
+  };
+  const inGrace = (entry: { open: number; closedAt: number | null }, now: number) => entry.open > 0 || entry.closedAt !== null && now - entry.closedAt < ONLINE_GRACE_MS;
+  function onlineOpened(state: StreamState) {
+    const id = onlinePrincipalId(state.principal);
+    if (!id) return;
+    const now = configuration.nowFn(), entry = online.get(id), was = entry ? inGrace(entry, now) : false;
+    if (entry) { entry.open += 1; entry.closedAt = null; } else online.set(id, { open: 1, closedAt: null });
+    if (!was) ignoreFailure(() => onlineChange?.());
+  }
+  function onlineClosed(state: StreamState) {
+    const id = onlinePrincipalId(state.principal), entry = id ? online.get(id) : undefined;
+    if (!entry) return;
+    entry.open = Math.max(0, entry.open - 1);
+    if (entry.open === 0) entry.closedAt = configuration.nowFn();
+  }
+  function onlinePrincipals(): readonly string[] {
+    const now = configuration.nowFn(), result: string[] = [];
+    for (const [id, entry] of online) { if (inGrace(entry, now)) result.push(id); else online.delete(id); }
+    return Object.freeze(result);
+  }
   let handlerClosed = false;
 
   function getMetrics() {
@@ -1004,6 +1037,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     if (release) {
       ignoreFailure(() => release.call(state.lease));
     }
+    if (streams.has(state)) onlineClosed(state);
     streams.delete(state);
     metrics.active_clients -= 1;
     metrics.open_streams -= 1;
@@ -1319,6 +1353,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     listenerMethod(response, 'once')?.('error', state.onResponseClose);
     listenerMethod(request, 'once')?.('aborted', state.onRequestAborted);
     streams.add(state);
+    onlineOpened(state);
     metrics.active_clients += 1;
     metrics.open_streams += 1;
     metrics.accepted_client_count += 1;
@@ -1463,6 +1498,8 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
     notify: { value: wakeup, enumerable: true },
     disconnectPrincipal: { value: disconnectPrincipal, enumerable: true },
     setWorkbenchActivity: { value: (hook: ((authContext: unknown) => Promise<string | null>) | null) => { activityHook = hook; }, enumerable: true },
+    onlinePrincipals: { value: onlinePrincipals, enumerable: true },
+    setOnlineChange: { value: (callback: (() => void) | null) => { onlineChange = callback; }, enumerable: true },
     wakeupHub: { value: wakeupHub, enumerable: true },
     hubSnapshot: {
       value: () => (hubSnapshot ? hubSnapshot.call(wakeupHub) : null),

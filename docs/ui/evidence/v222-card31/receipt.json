@@ -1,0 +1,87 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS",
+  "platform": "darwin",
+  "metrics": {
+    "row": {
+      "label": "在线同事 3 人",
+      "avatars": 3,
+      "dots": 3,
+      "avatar": 20,
+      "overlap": 5,
+      "dot": 7,
+      "font": "12px",
+      "aboveAccount": true
+    },
+    "panel": {
+      "width": 260,
+      "radius": "10px",
+      "padding": "6px",
+      "title": "在线同事 · 3",
+      "rows": [
+        {
+          "name": "陈悦",
+          "status": "正在编辑",
+          "height": 36
+        },
+        {
+          "name": "周宁",
+          "status": "正在查看工单",
+          "height": 36
+        },
+        {
+          "name": "沈然",
+          "status": "在线",
+          "height": 36
+        }
+      ],
+      "note": "只显示同团队、当前打开工作台的同事",
+      "above": true
+    },
+    "reload": {
+      "total": 3,
+      "hints": 0
+    },
+    "grace": {
+      "presentAt10s": true,
+      "goneAt16s": true
+    },
+    "renderOnOnlineChange": [],
+    "network": {
+      "seconds": 60,
+      "onlineReads": 30,
+      "batchReads": 30,
+      "unpaired": 0
+    },
+    "collapsed": {
+      "title": "在线同事 3 人",
+      "badge": "3",
+      "font": "11px"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "sidebar-empty.png",
+      "sha256": "4a8ae121017a4046d25dbd501b2be944d30bddbc0402fc042a7fcde703e9214c",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-online.png",
+      "sha256": "9efc9a56073ca2498d7eb9134b5d12c02cc12ff033ce067056e73dd3b842a969",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-popover.png",
+      "sha256": "cdea05a22d778de756fb02f3610cef07a1903c61e16c2f158be89b30670d0e3b",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-collapsed.png",
+      "sha256": "8f895d9eedc0b10bb0618111c627d24f3796a3efb8460c4de126fdca20c04d7c",
+      "width": 1440,
+      "height": 1000
+    }
+  ]
+}

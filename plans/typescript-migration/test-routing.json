@@ -59,6 +59,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card31.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-design-foundation.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -6368,6 +6377,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/wbint-t39-online-colleagues.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/wbint-t39-activity-lifecycle.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -8775,6 +8793,7 @@
     "wbint-t39-whole-boundaries": [
       "tests/wbint-t39-activity-http-boundaries.integration.test.mts",
       "tests/wbint-t39-activity-capacity.test.mts",
+      "tests/wbint-t39-online-colleagues.test.mts",
       "tests/wbint-t39-activity-lifecycle.browser.test.mts"
     ],
     "wbint-t41-search-http-first": [
