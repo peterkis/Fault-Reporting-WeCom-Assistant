@@ -35,11 +35,14 @@ export function ActivityPeople({principal,target,root,readReady,capsuleTarget=nu
   const editing=principal.activity_enabled&&readReady?people.filter(person=>person.mode==='EDITING'&&person.field):[];
   const editingKey=editing.map(person=>person.display_name+'\u0000'+person.field).join('\u0001');
   useEffect(()=>{
-    const element=root.current;if(!element)return;
-    const marked:HTMLElement[]=[];
-    for(const person of editing){const field=person.field;if(!field)continue;const area=element.querySelector<HTMLElement>('[data-activity-field="'+field+'"]');if(!area||area.hasAttribute('data-presence-editing'))continue;
-      area.setAttribute('data-presence-editing',person.display_name+'正在编辑'+presenceFieldLabels[field]+'，同时编辑可能互相覆盖');marked.push(area);}
-    return()=>{for(const area of marked)area.removeAttribute('data-presence-editing');};
+    if(!editing.length||!root.current)return;
+    const marked=new Set<HTMLElement>();
+    // Areas can mount later (an inline form or dialog opened after the colleague began editing), so re-apply on DOM changes while someone edits.
+    const apply=()=>{for(const person of editing){const field=person.field;if(!field)continue;for(const area of document.querySelectorAll<HTMLElement>('[data-activity-field="'+field+'"]')){if(area.hasAttribute('data-presence-editing'))continue;
+      area.setAttribute('data-presence-editing',person.display_name+'正在编辑'+presenceFieldLabels[field]+'，同时编辑可能互相覆盖');marked.add(area);}}};
+    let frame=0;const observer=new MutationObserver(()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;apply();});});
+    apply();observer.observe(document.body,{childList:true,subtree:true});
+    return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);for(const area of marked)area.removeAttribute('data-presence-editing');};
   },[editingKey,root]);
   if(!principal.activity_enabled||!readReady||!people.length)return null;
   const capsule=<span className="ds-presence-capsule" data-workbench-activity role="status"><PresenceTags people={people}/><span className="ds-presence-capsule-label" aria-hidden="true">在看</span><span className="sr-only">{presenceDescription(people)}</span></span>;

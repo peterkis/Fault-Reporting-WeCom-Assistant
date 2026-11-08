@@ -63,6 +63,10 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   metrics.geometry=object(await b.evaluate(`(()=>{const c=document.querySelector(${JSON.stringify(card(viewTarget))}),g=c.querySelector('.ds-ticket-presence'),t=g.querySelector('.ds-presence-tag'),s=getComputedStyle(t),cr=c.getBoundingClientRect(),gr=g.getBoundingClientRect();return {top:Math.round(gr.top-cr.top),right:Math.round(cr.right-gr.right),height:t.getBoundingClientRect().height,radius:s.borderRadius,font:s.fontSize,weight:s.fontWeight,cardHeight:cr.height};})()`));
   assert.deepEqual(metrics.geometry,{top:-9,right:12,height:18,radius:'4px 4px 4px 0px',font:'11px',weight:'600',cardHeight:heightBefore});
   await capture('board-1440-presence');
+  // Codex review: steady heartbeats renew leases without a presence hint; presence must outlive the first cached lease (~15s).
+  const steadyFrom=batch.length;await delay(22000);
+  assert.equal(await b.evaluate(`document.querySelectorAll(${JSON.stringify(card(editTarget)+' .ds-presence-tag')}).length`),2,'presence stays while colleagues keep renewing');
+  metrics.steady={seconds:22,batchReads:batch.length-steadyFrom};
   // Tooltip after hover: full names and actions, editor first.
   const tags=card(editTarget)+' .ds-presence-tags';await b.evaluate(`document.querySelector(${JSON.stringify(tags)}).scrollIntoView({block:'center'})`);
   const point=object(await b.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(tags)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
@@ -97,12 +101,16 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   assert.match(String(drawer.text),/在看/u);assert.match(String(drawer.text),/陈悦正在编辑内部备注/u);assert.equal(drawer.height,26);assert.equal(drawer.radius,'13px');assert.equal(drawer.bodyText,false);
   assert.equal(drawer.banner,'陈悦正在编辑内部备注，同时编辑可能互相覆盖');assert.match(String(drawer.before),/同时编辑可能互相覆盖/u);assert.notEqual(drawer.locked,true);
   await capture('drawer-1440-capsule-banner');
+  // Codex review: an input area that mounts later (e.g. a dialog form) receives the warning without another presence change.
+  await b.evaluate("(()=>{const n=document.createElement('div');n.id='card30b-late-area';n.setAttribute('data-activity-field','internal-note');document.querySelector('.detail-body').append(n);})()");
+  await b.waitFor("document.getElementById('card30b-late-area')?.getAttribute('data-presence-editing')==='陈悦正在编辑内部备注，同时编辑可能互相覆盖'");
+  await b.evaluate("document.getElementById('card30b-late-area').remove()");metrics.lateMount=true;
   // B6 network: 20 presence hints within 10 seconds cause at most 10 batch reads.
   await b.command('Page.navigate',{url:f.origin+'/workbench/app/?range=all'});await b.waitFor(live+`&&document.querySelectorAll(${JSON.stringify(card(editTarget)+' .ds-presence-tag')}).length===2`);await delay(1500);
-  const from=batch.length;
+  const from=batch.length,burstStart=Date.now();
   // Each hold or release changes the presence version, i.e. 20 server hints in 10 seconds.
   for(let index=0;index<20;index++){if(index%2)await peers.zhou.release(viewTarget);else await peers.zhou.hold(viewTarget,'VIEWING');await delay(500);}
-  await delay(1500);metrics.network={hints:20,seconds:10,batchReads:batch.length-from};
+  await delay(1500);metrics.network={hints:20,seconds:10,batchReads:batch.length-from,offsetsMs:batch.slice(from).map(at=>at-burstStart)};
   assert.ok(batch.length-from<=10&&batch.length-from>=1,JSON.stringify(metrics.network));
   // B6 idle: with nobody present there are no batch reads and no running 5-second check for 60 seconds.
   for(const one of Object.values(peers))one.stop();

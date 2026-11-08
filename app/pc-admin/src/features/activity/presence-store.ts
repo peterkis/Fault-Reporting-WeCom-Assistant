@@ -16,9 +16,9 @@ const people=new Map<string,People>();
 const listeners=new Map<string,Set<()=>void>>();
 const rendered=new Map<string,{target:WorkbenchActivityTarget;count:number}>();
 let principal:Principal|null=null,live=false,environmentBound=false;
-let readTimer:ReturnType<typeof setTimeout>|null=null,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
+let readTimer:ReturnType<typeof setTimeout>|null=null,readAt=0,firstTriggerAt=0,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
 let reads=0;
-export const PRESENCE_RENDER_DELAY_MS=500,PRESENCE_HINT_DELAY_MS=1000,PRESENCE_EXPIRY_CHECK_MS=5000,PRESENCE_MAX_TARGETS=100;
+export const PRESENCE_RENDER_DELAY_MS=500,PRESENCE_HINT_DELAY_MS=1000,PRESENCE_HINT_MAX_WAIT_MS=2000,PRESENCE_MIN_READ_GAP_MS=1500,PRESENCE_EXPIRY_CHECK_MS=5000,PRESENCE_REFRESH_MARGIN_MS=7000,PRESENCE_MAX_TARGETS=100;
 
 const keyOf=(target:WorkbenchActivityTarget)=>target.kind+':'+target.id;
 const alive=(person:WorkbenchActivityPerson,now:bigint)=>BigInt(person.expires_epoch_ms)>now;
@@ -43,12 +43,26 @@ function syncExpiry(){
   if(people.size&&expiryTimer===null)expiryTimer=setInterval(expire,PRESENCE_EXPIRY_CHECK_MS);
   else if(!people.size&&expiryTimer!==null){clearInterval(expiryTimer);expiryTimer=null;}
 }
-function expire(){const now=BigInt(Date.now());for(const [key,value] of [...people])put(key,value.filter(person=>alive(person,now)));}
-/** Coalesces: an already pending read absorbs later triggers, so hints never postpone a read indefinitely. */
+/**
+ * The 5-second check runs only while someone is cached. It hides expired people and, because a colleague's steady
+ * heartbeats renew the server lease without a presence hint, re-reads before the nearest cached lease would lapse.
+ */
+function expire(){
+  const now=BigInt(Date.now());for(const [key,value] of [...people])put(key,value.filter(person=>alive(person,now)));
+  let nearest:bigint|null=null;for(const value of people.values())for(const person of value){const at=BigInt(person.expires_epoch_ms);if(nearest===null||at<nearest)nearest=at;}
+  if(nearest!==null&&nearest-now<BigInt(PRESENCE_REFRESH_MARGIN_MS))schedule(PRESENCE_HINT_DELAY_MS);
+}
+/**
+ * Trailing debounce with a maximum wait: a burst of triggers is merged, a quiet `delay` reads, and a continuing
+ * burst still reads at least every PRESENCE_HINT_MAX_WAIT_MS so presence never goes stale behind constant hints.
+ * Consecutive reads stay PRESENCE_MIN_READ_GAP_MS apart: the server already sends at most one hint per second.
+ */
 function schedule(delay:number){
   if(!enabled()){clear();return;}
-  if(!rendered.size||readTimer!==null)return;
-  readTimer=setTimeout(()=>{readTimer=null;void read();},delay);
+  if(!rendered.size)return;
+  const at=Date.now();if(readTimer===null)firstTriggerAt=at;else clearTimeout(readTimer);
+  const due=Math.max(Math.min(at+delay,firstTriggerAt+Math.max(delay,PRESENCE_HINT_MAX_WAIT_MS)),readAt?readAt+PRESENCE_MIN_READ_GAP_MS:0);
+  readTimer=setTimeout(()=>{readTimer=null;readAt=Date.now();void read();},Math.max(0,due-at));
 }
 async function read(){
   const owner=principal;if(!owner||!enabled())return;
@@ -97,4 +111,4 @@ export function usePresence(target:WorkbenchActivityTarget,active:boolean):Peopl
   return useSyncExternalStore(callback=>subscribe(key,callback),()=>active?people.get(key)??EMPTY:EMPTY,()=>EMPTY);
 }
 /** Test and evidence hooks; no production caller depends on them. */
-export const presenceDiagnostics={reads:()=>reads,expiryRunning:()=>expiryTimer!==null,size:()=>people.size,rendered:()=>rendered.size};
+export const presenceDiagnostics={lastReadAt:()=>readAt,reads:()=>reads,expiryRunning:()=>expiryTimer!==null,size:()=>people.size,rendered:()=>rendered.size};

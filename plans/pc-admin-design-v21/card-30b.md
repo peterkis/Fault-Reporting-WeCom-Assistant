@@ -24,7 +24,7 @@
 | 指标 | 要求 | 实测 |
 | --- | --- | --- |
 | 1 张卡在场变化时重渲的卡片 | 只有这 1 张 | 1 张（MutationObserver：9 张已渲染卡中只有变化的那张有 DOM 变动） |
-| 10 秒内 20 次 `workbench.activity.changed` 的批量请求 | ≤ 10 | 9–10 次（两次运行） |
+| 10 秒内 20 次 `workbench.activity.changed` 的批量请求 | ≤ 10 | 6 次（审查后修复；首版 9–11 次，见下文） |
 | 无人在场 60 秒 | 无批量请求、无运行中的 5 秒定时器 | 0 次请求、0 个 5 秒定时器 |
 
 限制：卡片要求「看板 60 张卡」，测试夹具只有 9 张已渲染卡片（其余在折叠「显示剩余」中）；按卡片订阅的机制与卡片数量无关，结论适用，但未在 60 张卡上实测。
@@ -43,6 +43,13 @@
 - `migration:build`、`gate.mjs types`、`verify-artifact.mjs`、`docs:agents:check`、Stylelint、ESLint、pc-admin `tsc` 通过。
 - `pc-admin-card30b` PASS；回归 `pc-admin-card12`（18）、`pc-admin-card29`、`pc-admin-design-foundation`、`wbint-t38-realtime`、`workbench-detail-restructure` 共 104/104 PASS；T38/T39 活动与实时套件 48/50，2 项失败（`wbint-t39-activity-boundaries` 的「trusted production Review input…」、`wbint-t39-related-review-activity`）在未修改的 main 上本机同样失败，非本卡引入，未改。
 - 截图 `docs/ui/evidence/v221-card30b/`（macOS Chrome，DPR 1，**非 Windows**）：看板在场（查看 / 编辑 + 双人 / 三人 +2）、悬停提示、未领取提示、列表行、抽屉胶囊 + 同字段提示条；`receipt.json` 含全部实测值。未单独导出 2 倍局部图。
+
+## 审查与 CI 后修复（PR #167）
+
+- CI `pr-database`：B6 网络用例实测 11 次（上限 10）。服务端提示本已每秒至多一次，1s 防抖使每次提示各读一次，叠加其它读取即超限。改为：防抖 1s + 连续提示下最长 2s 必读 + 两次批量读取至少间隔 1.5s。复测 20 次提示 → 6 次读取。
+- Codex P2（稳定续约后在场消失）：续约不改变在场版本，不产生提示，前端缓存约 15 秒后过期即隐藏。5 秒检查在最近缓存租约 7 秒内到期时补读（与提示读取合并）；无人在场时不请求。新增用例：同事持续续约 22 秒，名牌保持，期间 3 次读取。
+- Codex P2（后挂载的输入区无提示）：有人编辑期间用 MutationObserver（rAF 合并）在全文档重新标记匹配的 `data-activity-field`，弹窗或之后展开的表单也会出现提示；无人编辑时不监听。新增用例：后插入的内部备注输入区立即出现提示。
+- 复测：`pc-admin-card30b` PASS（空闲 60 秒 0 请求 / 0 定时器，渲染仅 1 张）；`wbint-t39-activity-lifecycle`、`wbint-t38-realtime`、`workbench-detail-restructure`、`pc-admin-card12` 29/29 PASS。
 
 ## 回退
 
