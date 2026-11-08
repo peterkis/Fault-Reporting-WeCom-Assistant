@@ -81,8 +81,10 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(card(viewTarget)+' [data-presence-claim-hint]')}).textContent`),'周宁正在查看这张工单，领取前可先确认');
   await capture('board-1440-claim-hint');
   // B6 render: a single presence change mutates only that card.
-  await b.evaluate(`window.__touchedPromise=new Promise(resolve=>{const cards=[...document.querySelectorAll('.ticket-card')],hit=new Set();const o=new MutationObserver(list=>{for(const m of list){const n=m.target.nodeType===1?m.target:m.target.parentElement;const c=n&&n.closest?n.closest('.ticket-card'):null;if(c)hit.add(c.dataset.itemId);}});o.observe(document.querySelector('.board'),{subtree:true,childList:true,attributes:true,characterData:true});window.__finishTouched=()=>{o.disconnect();resolve({cards:cards.length,touched:[...hit]});};});0`);
-  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:5,y:5});await delay(300);
+  // Settle hover state first so pointer-driven attributes are not mistaken for re-renders.
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:5,y:5});await delay(800);
+  // Only structural, text and presence-related attribute changes count as a card re-render; clock-driven time and heat labels are excluded.
+  await b.evaluate(`window.__touchedPromise=new Promise(resolve=>{const cards=[...document.querySelectorAll('.ticket-card')],hit=new Set();const o=new MutationObserver(list=>{for(const m of list){const n=m.target.nodeType===1?m.target:m.target.parentElement;const c=n&&n.closest?n.closest('.ticket-card'):null;if(c&&!n.closest('time,.activity-time,.ds-ticket-heat'))hit.add(c.dataset.itemId);}});o.observe(document.querySelector('.board'),{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-presence','data-ring','data-mode','aria-label','data-presence-count']});window.__finishTouched=()=>{o.disconnect();resolve({cards:cards.length,touched:[...hit]});};});0`);
   await peers.zhou.release(viewTarget);
   await b.waitFor(`document.querySelector(${JSON.stringify(card(viewTarget)+' .ds-ticket-presence')})===null`);await delay(300);
   await b.evaluate('window.__finishTouched()');metrics.render=object(await b.evaluate('window.__touchedPromise'));
