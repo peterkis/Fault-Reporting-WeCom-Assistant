@@ -49,13 +49,13 @@ W 同源工作人员宿主，沿用当前活动内部 Principal 认证、Cookie 
 
 canonical 关联沿原 Intake 或 Journey/Channel Leg 完整关系，核实际 service_intake、Thread 与 Reporter 绑定。多个有效会话中任意一条实际 ASSIGNED 本人即可；查询先筛选本人 assignment，按 Session UUID 取最多一条，在调用方事务内保持 stream→Ticket→当前 authority→选中 Session→assignment 的锁序，再用原 getSessionAccess 复核。3和21个关联会话的实测保持固定查询数量，不锁其他会话。
 
-可维护状态为 NEW/QUEUED/ACCEPTED/IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR/REOPENED。RESOLVED/CLOSED/CANCELLED/DUPLICATE_LINKED 不接受新 SET/CANCEL。RESOLVED 保留现有活动安排及到期提示。没有个人处理／沟通责任时，由原处理组作为团队待办承接，不保存第三份 owner。
+可维护状态为 NEW/QUEUED/ACCEPTED/IN_PROGRESS/WAITING_REQUESTER/WAITING_VENDOR/REOPENED。RESOLVED/COMPLETED/DISMISSED 不接受新 SET/CANCEL。RESOLVED 保留现有活动安排及到期提示。没有个人处理／沟通责任时，由原处理组作为团队待办承接，不保存第三份 owner。
 
 ## 输出、卡片与恢复
 
 [查询 Schema](../../../contracts/workbench_follow_up_schedule_view.schema.json)闭合输出 ticket_id、ticket_version、schedule_version、active、allowed_actions、history、history_has_more。active 为 null 或四字段 {schedule_version,due_at,due_epoch_ms,is_due}，修订等于顶层，时间／epoch精确配对。无安排初始版本为"0"，取消／结束后不回零。history 按安排修订和真实 Event ordinal 降序，最多20条；history_has_more 明示还有更早的持久历史；本接口不提供cursor或翻页参数。
 
-历史项为 {schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|CLOSED|CANCELLED}。CANCEL/ENDED 保留结束的时间；ENDED 引用真实关闭／取消 Event，不伪造用户 CANCEL。
+历史项为 {schedule_version,action:SET|CANCEL|ENDED,due_at,occurred_at,ticket_event_id,end_reason:null|COMPLETED|DISMISSED}。CANCEL/ENDED 保留结束的时间；ENDED 引用真实关闭／取消 Event，不伪造用户 CANCEL。
 
 [POST结果](../../../contracts/workbench_follow_up_schedule_result.schema.json)为 {ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,schedule_version,replayed}。成功后重读当前事实；当前读取临时失败不推翻原成功。[ACK](../../../contracts/workbench_follow_up_schedule_receipt.schema.json)为 {client_command_id,ticket_id,state}：UNKNOWN 无额外字段；COMMITTED 增加上述安全 result 且 replayed=true；FAILED 增加 error:{code,retryable:false}。无收据、STARTED或不匹配主体／Ticket／用途返回 UNKNOWN，不能据此推定未提交。旧 ACK 始终核当前 Ticket READ，但不要求新写开关、raw recovery 或维护资格；后续改期不会改写原成功 ACK。UNKNOWN 只显式 GET，不自动 POST。
 

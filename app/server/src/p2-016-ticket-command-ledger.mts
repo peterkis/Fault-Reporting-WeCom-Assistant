@@ -40,7 +40,7 @@ export async function readBotFeedbackCommandInTransaction({transaction:tx,comman
     JOIN pilot_ticket.ticket_event e ON e.event_id=r.reopen_event_id AND e.ticket_id=r.ticket_id
     WHERE l.command_scope=$1 AND l.client_command_id=$2::uuid AND l.command_type='BOT_REPORTER_FEEDBACK' AND l.actor_principal_id IS NULL AND l.state='COMMITTED'
       AND c.cycle_start_event_id=e.event_id AND e.event_type='ticket.reopened' AND e.operator_type='REPORTER' AND e.operator_id=$3
-      AND e.old_status='CLOSED' AND e.new_status='REOPENED' AND e.aggregate_version=l.result_ticket_version`,[botFeedbackScope(commandScope),uuidP2016(commandId),commandScope.slice(BOT_FEEDBACK_TYPE.length+1)]);
+      AND e.old_status='COMPLETED' AND e.new_status='REOPENED' AND e.aggregate_version=l.result_ticket_version`,[botFeedbackScope(commandScope),uuidP2016(commandId),commandScope.slice(BOT_FEEDBACK_TYPE.length+1)]);
   const row=selected.rows[0];if(!row)return null;
   const result=botFeedbackResult(row.result_snapshot);
   if(result.ticket.ticket_no!==row.ticket_no||result.ticket.version!==row.version||result.reopened_round_no!==row.cycle_no)failP2016('ACTION_FAILED',503);
@@ -88,7 +88,7 @@ export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'con
             JOIN pilot_ticket.ticket_event e ON e.event_id=r.reopen_event_id AND e.ticket_id=r.ticket_id
             WHERE r.ticket_id=$1::uuid AND r.client_command_id=$2::uuid AND r.origin='STAFF' AND r.reopen_event_id=$3::uuid
              AND c.cycle_start_event_id=e.event_id AND e.event_type='ticket.reopened' AND e.operator_type='PILOT_USER'
-             AND e.operator_id=$4 AND e.aggregate_version=$5 AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId,commandId,row.event,principal.principal_id,row.version]);
+             AND e.operator_id=$4 AND e.aggregate_version=$5 AND e.old_status='COMPLETED' AND e.new_status='REOPENED'`,[ticketId,commandId,row.event,principal.principal_id,row.version]);
           const cycle=basis.rows[0];if(cycle)return {...base,state:'COMMITTED',result:{ok:true,ticket_id:ticketId,ticket_version:versionP2016(row.version),ticket_event_id:uuidP2016(row.event),control_event_id:null,replayed:true,
             handling_cycle:{id:uuidP2016(cycle.id),cycle_no:versionP2016(cycle.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}}};
         }

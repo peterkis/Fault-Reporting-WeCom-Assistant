@@ -196,7 +196,7 @@ test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and sur
     const cancelledAccepted = await member.command.accept({ request: member.request(cancelledRoot.client_command_id), input: cancelledRoot });
     const cancelledResult = await process().processOne({ requestRef: cancelledAccepted.receipt.request_ref });
     const cancelledState = (await pool.query('SELECT version FROM pilot_ticket.ticket WHERE id=$1::uuid', [cancelledResult.ticket_id])).rows[0];
-    assert.equal((await actions.perform({ ticketId: cancelledResult.ticket_id, action: 'cancel', expectedVersion: cancelledState.version,
+    assert.equal((await actions.perform({ ticketId: cancelledResult.ticket_id, action: 'dismiss', expectedVersion: cancelledState.version,
       actor: { type: 'SYSTEM', id: null }, reasonCode: 'SS006_CANCEL', traceId: 'yxx:ss006:cancel' })).ok, true);
     const cancelledSupplement = supplement('取消后补充', 1);
     await assert.rejects(member.supplement.accept({ request: member.request(cancelledSupplement.client_command_id), input: cancelledSupplement,

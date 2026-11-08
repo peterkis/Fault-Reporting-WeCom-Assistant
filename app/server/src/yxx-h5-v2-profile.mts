@@ -68,7 +68,7 @@ export function createYxxH5Profile({pool,scopeSecret,enabled=false,sourceScope='
   function departmentSummaryStatement(scope:YxxMemberScope,member:H5ResolvedProfile){
     if(!enabled)h5Fail('YXX_UNAVAILABLE',503);if(!member.can_view_department)h5Fail('YXX_FORBIDDEN',403);
     return {text:departmentReportsSql(false)+`
-      SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED'))::integer AS active_count FROM reports`,
+      SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('COMPLETED','DISMISSED','RESOLVED'))::integer AS active_count FROM reports`,
       values:[scope.scopeHash,sourceScope,scope.sourceCorpScope,scope.sourceAppScope,maximumDirectoryAgeMs]};
   }
   async function departmentSummaryInTransaction(tx:PostgresTransaction,scope:YxxMemberScope,member?:H5ResolvedProfile):Promise<H5DepartmentSummary>{

@@ -15,6 +15,7 @@ import {migrateIncidentOwnerTransfer} from '../../app/server/scripts/incident-ow
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 import {record,text} from './wbint-t27-browser-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 export {record,text};
 
 type HttpResult={status:number;body:Record<string,unknown>};
@@ -41,7 +42,7 @@ export async function ownerTransferHttp(run:(context:OwnerTransferHttpContext)=>
   try{
     await withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t29ownerhttp',run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
       await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});
-      if(options.ddl??true){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});if(options.ownerDDL??true)await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});}
+      if(options.ddl??true){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});if(options.ownerDDL??true)await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});}await ensureCompletionDismissal(databaseUrl);
       const f=await fixtureP2012(pool,{reporters:3});
       let probe:Server|undefined,runtime:P2016EnabledRuntime|undefined,primaryError:unknown,releaseTargetRead:(()=>void)|undefined;
       try{

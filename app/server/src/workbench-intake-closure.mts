@@ -90,8 +90,8 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
     const review=(await tx.query<{id:string;row_version:string}>('SELECT id::text,row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status=\'PENDING\' ORDER BY created_at,id LIMIT 1',[id])).rows[0]??null;
     const {principal,intake}=await authorizeRead(authContext,id,tx);if(intake.version!==initial.intake.version)failP2016('VERSION_CONFLICT',409);
     const worker=principal.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));
-    if(intake.status==='IGNORED'&&!record)failP2016('ACTION_FAILED',503);
-    return {subject_id:id,version:intake.version,status:intake.status,can_close:worker&&['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(intake.status)&&!intake.linked_ticket,can_restore:worker&&intake.status==='IGNORED'&&Boolean(record)&&!intake.linked_ticket,closure_id:record?.id??null,pending_review:review};
+    if(intake.status==='DISMISSED'&&!record)failP2016('ACTION_FAILED',503);
+    return {subject_id:id,version:intake.version,status:intake.status,can_close:worker&&['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(intake.status)&&!intake.linked_ticket,can_restore:worker&&intake.status==='DISMISSED'&&Boolean(record)&&!intake.linked_ticket,closure_id:record?.id??null,pending_review:review};
    });
   },
   async acknowledgement({authContext,intakeId,commandId,restoring}:{authContext:unknown;intakeId:unknown;commandId:unknown;restoring:boolean}){
@@ -122,7 +122,7 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
      if(intake.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
      if(intake.linked_ticket)failP2016('ACTION_FAILED',409);
      if(restoring){
-      if(intake.status!=='IGNORED')failP2016('ACTION_FAILED',409);
+      if(intake.status!=='DISMISSED')failP2016('ACTION_FAILED',409);
       const record=await currentClosure(tx,'INTAKE',id,true),snapshot=record.before_snapshot;
       if(!['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(record.before_status))failP2016('ACTION_FAILED',503);
       await tx.query('UPDATE intake.service_intake SET status=$2,request_type=$3,version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid',[id,record.before_status,snapshot.request_type??intake.request_type]);
@@ -135,7 +135,7 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
        await tx.query(`UPDATE intake.manual_review_item SET status='PENDING',row_version=row_version+1,resolution_command_id=NULL,resolution_command_hash=NULL,resolution_code=NULL,resolution_reason_code=NULL,resolved_by_principal_id=NULL,resolution_decision_id=NULL,resolved_at=NULL,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND service_intake_id=$2::uuid`,[r.id,id]);
        await realtime.review({transaction:tx,reviewId:r.id});
       }
-      const event=await appendIntakeClosureEvent(tx,{intakeId:id,version:intake.version+1,type:'intake.restored',oldStatus:'IGNORED',newStatus:record.before_status,actor:principal.principal_id,traceId:'closure:'+command.client_command_id});
+      const event=await appendIntakeClosureEvent(tx,{intakeId:id,version:intake.version+1,type:'intake.restored',oldStatus:'DISMISSED',newStatus:record.before_status,actor:principal.principal_id,traceId:'closure:'+command.client_command_id});
       await markClosureRestored(tx,record,principal.principal_id,event);await notifications.projectClosure({transaction:tx,recordId:record.id,restoring:true});
       return {ok:true as const,subject_type:'INTAKE' as const,subject_id:id,version:intake.version+1,closure_id:record.id,event_id:event};
      }
@@ -158,8 +158,8 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
        return {ok:true as const,subject_type:'INTAKE' as const,subject_id:id,version:intake.version+1,closure_id:record.id,event_id:record.closure_intake_event_id};
       }
      }else if(v.expected_review_version!==undefined||v.expected_material_basis!==undefined)failP2016('VERSION_CONFLICT',409);
-     await tx.query("UPDATE intake.service_intake SET status='IGNORED',version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid",[id]);
-     const event=await appendIntakeClosureEvent(tx,{intakeId:id,version:intake.version+1,type:'intake.closed',oldStatus:intake.status,newStatus:'IGNORED',actor:principal.principal_id,traceId:'closure:'+command.client_command_id});
+     await tx.query("UPDATE intake.service_intake SET status='DISMISSED',version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid",[id]);
+     const event=await appendIntakeClosureEvent(tx,{intakeId:id,version:intake.version+1,type:'intake.dismissed',oldStatus:intake.status,newStatus:'DISMISSED',actor:principal.principal_id,traceId:'closure:'+command.client_command_id});
      const record=await insertClosureRecord({transaction:tx,subjectType:'INTAKE',subjectId:id,beforeStatus:intake.status,beforeVersion:intake.version,beforeSnapshot:{...snapshot,request_type:intake.request_type},actor:principal.principal_id,source:'MANUAL',input:closure,intakeEventId:event});
      if(Array.isArray(snapshot.journeys))for(const j of snapshot.journeys){if(!j||typeof j!=='object'||typeof j.id!=='string')failP2016('ACTION_FAILED',503);await tx.query("UPDATE intake.contact_journey SET status='ENDED',ended_at=GREATEST(last_activity_at,platform.local_now()),row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND linked_ticket_id IS NULL AND status<>'ENDED'",[j.id]);}
      await notifications.projectClosure({transaction:tx,recordId:record.id});

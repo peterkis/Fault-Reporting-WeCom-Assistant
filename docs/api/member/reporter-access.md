@@ -49,7 +49,7 @@ ETag 命中304无正文；不能当空Ticket重置页面。权限、绑定、有
 核对：[成员profile](../../../tests/p2-g2-yixiaoxiu-profile.integration.test.mjs)、[OAuth归属](../../../tests/p2-g2-yixiaoxiu-oauth.test.mjs)、[旧surface](../../../tests/p2-016-reporter-surface.integration.test.mjs)、[Incident reporter](../../../tests/p2-012-reporter-http.integration.test.mjs)。成员Reporter无SSE，既有客户端5秒只读轮询。本轮未启用任何访问策略或现场外发。
 
 
-WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF_COMPLETED的ticket.closed追加事件为依据。本人/绑定授权timeline仅展示其已单独确认且≤500字的external_note；internal_note处理过程和普通内部备注仍不可见。不会伪造REPORTER或REQUESTER_CONFIRMED，不生成旧Reporter确认task；legacy RESOLVED-confirm保持原语义。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
+WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→COMPLETED、STAFF_COMPLETED的ticket.completed追加事件为依据。本人/绑定授权timeline仅展示其已单独确认且≤500字的external_note；internal_note处理过程和普通内部备注仍不可见。不会伪造REPORTER或REQUESTER_CONFIRMED，不生成旧Reporter确认task；legacy RESOLVED-confirm保持原语义。[完工合同](../workbench/tickets.md#工作人员完工wbint-t11)。
 
 ## 核实代录原应用本人读取（WBINT-T25）
 
@@ -58,7 +58,7 @@ WBINT-T11的工作人员完工以真实PILOT_USER、IN_PROGRESS→CLOSED、STAFF
 
 ## 2026-11-07 H5 关闭展示更新
 
-成员与 Grant 读取共用的 Ticket view 增加必需字段 status 与 closure_text。status 使用 Ticket Core 的既有状态枚举。CANCELLED / DUPLICATE_LINKED 显示“已关闭 / Closed”，CLOSED / RESOLVED 显示“已完成 / Completed”。closure_text 为字符串或 null，复用 ADR-0056 的报修人安全模板，只使用原因码和可选原单编号。内部 note、操作人和关闭快照不进入此响应。误报或测试的通用“已关闭”由本地化状态标签承接。
+成员与 Grant 读取共用的 Ticket view 增加必需字段 status 与 closure_text。status 使用 Ticket Core 的既有状态枚举。DISMISSED 显示“已关闭 / Closed”，COMPLETED / RESOLVED 显示“已完成 / Completed”。closure_text 为字符串或 null，复用 ADR-0056 的报修人安全模板，只使用原因码和可选原单编号。内部 note、操作人和关闭快照不进入此响应。误报或测试的通用“已关闭”由本地化状态标签承接。
 
 Bot / Grant 原链接进入同一 React H5 Reporter 页面。页面消费结构化 status，复用 H5 状态和主题组件，固定标题与引导按中英文目录显示。公开关闭说明保持服务端原文，以 textContent 渲染。刷新会清除已恢复事项的旧关闭说明和关闭样式。原 external_status 继续为同一当前状态提供中文展示文案，页面状态由 status 决定。
 

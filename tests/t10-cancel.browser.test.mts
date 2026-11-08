@@ -23,7 +23,7 @@ test('Card 27C-B closure recovery uses its own capability when internal notes ar
    await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=OTHER]');
    await browser.evaluate(fillWaiting('.detail-cancel-dialog textarea','独立关闭草稿（合成）'));await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('已保存恢复副本')");
    await clickWorkbenchControl(browser,'.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-cancel]')?.textContent.includes('已处理 · 已关闭')");
-   assert.equal((await http.detail(target.ticket.id)).status,'CANCELLED');
+   assert.equal((await http.detail(target.ticket.id)).status,'DISMISSED');
   });
  },{closureUi:true,internalNotesEnabled:false});
 });
@@ -31,12 +31,12 @@ test('Card 27C-B closure recovery uses its own capability when internal notes ar
 test('Card 27C-B disabled recovery permits closing without browser draft storage',{timeout:120000},async()=>{
  await withT10Fixture(async context=>{
   const target=context.tickets[0];assert.ok(target);const http=await t11Http(context,2,{closeConnections:true});let posts=0;
-  const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url==='/api/tickets/'+target.ticket.id+'/cancel')posts++;};context.runtime.server.on('request',observe);
+  const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url==='/api/tickets/'+target.ticket.id+'/dismiss')posts++;};context.runtime.server.on('request',observe);
   try{await withT10Browser(context,target.ticket.id,2,'CARD27CB_NO_RECOVERY_STORAGE',async browser=>{
    await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"Object.defineProperty(window,'indexedDB',{value:undefined})"});const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector('[data-action=cancel]')?.disabled===false`);
    await clickWorkbenchControl(browser,'[data-action=cancel]');await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=OTHER]');await browser.evaluate(fillWaiting('.detail-cancel-dialog textarea','无本地恢复存储（合成）'));
    await browser.waitFor("document.querySelector('.detail-cancel-dialog button[type=submit]')?.disabled===false");await clickWorkbenchControl(browser,'.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-cancel]')?.textContent.includes('已处理 · 已关闭')");
-   assert.equal(posts,1);assert.equal((await http.detail(target.ticket.id)).status,'CANCELLED');
+   assert.equal(posts,1);assert.equal((await http.detail(target.ticket.id)).status,'DISMISSED');
   });}finally{context.runtime.server.removeListener('request',observe);}
  },{closureUi:true,recoveryEnabled:false});
 });
@@ -44,7 +44,7 @@ test('Card 27C-B disabled recovery permits closing without browser draft storage
 test('Card 27C-B restores prior waiting-cancel notes and retains an old operation UUID for safe reconciliation',{timeout:120000},async()=>{
  await withT10Fixture(async context=>{
   const target=context.tickets[0],principal=context.principals[1];assert.ok(target);assert.ok(principal);const module=await recoveryModule();assert.ok(module);const scope={principal:principal.id,kind:'ticket',id:target.ticket.id,purpose:'waiting-cancel'},oldId=randomUUID();let posts=0,gets=0;
-  const observe=(request:IncomingMessage)=>{if(request.url==='/api/tickets/'+target.ticket.id+'/cancel'&&request.method==='POST')posts++;if(request.url==='/api/tickets/'+target.ticket.id+'/cancel/commands/'+oldId&&request.method==='GET')gets++;};context.runtime.server.on('request',observe);
+  const observe=(request:IncomingMessage)=>{if(request.url==='/api/tickets/'+target.ticket.id+'/dismiss'&&request.method==='POST')posts++;if(request.url==='/api/tickets/'+target.ticket.id+'/dismiss/commands/'+oldId&&request.method==='GET')gets++;};context.runtime.server.on('request',observe);
   try{await withT10Browser(context,target.ticket.id,2,'CARD27CB_LEGACY_CANCEL_DRAFT',async browser=>{
    await browser.evaluate(`(async()=>{const store=await import(${JSON.stringify(module)}),copy=await store.openDraft(${JSON.stringify(scope)});await store.saveDraft(copy.handle,JSON.stringify({schema:1,note:'旧版取消说明（合成）',pending:null}));})()`);
    let previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector('[data-action=cancel]')?.disabled===false`);
@@ -61,7 +61,7 @@ test('Card 27C-B restores prior waiting-cancel notes and retains an old operatio
 test('production cancellation requires an independent human confirmation and preserves a closed form reason without sending or creating a round',async()=>{
   await withT10Fixture(async context=>{
     const http=await t11Http(context),target=context.tickets[0];assert.ok(target);const before=await http.detail(target.ticket.id);assert.equal(before.status,'QUEUED');assert.equal(before.handling_cycle,null);
-    const path='/api/tickets/'+target.ticket.id+'/cancel';let posts=0;const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url===path)posts++;};context.runtime.server.on('request',observe);
+    const path='/api/tickets/'+target.ticket.id+'/dismiss';let posts=0;const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url===path)posts++;};context.runtime.server.on('request',observe);
     try{await withT10Browser(context,target.ticket.id,0,'T10_SEPARATE_LEGAL_CANCEL_CONFIRMATION',async(browser,capture)=>{
       const form='form[aria-label="取消工单"]',input=form+' textarea[aria-label="取消原因"]',submit=form+' button[type="submit"]',note='INTERNAL_T10_CANCEL_UI：报修人撤销合成请求。';
       await browser.waitFor("Boolean(document.querySelector('[data-action=cancel]'))&&!document.querySelector('[data-action=cancel]').disabled");await browser.evaluate("document.querySelector('[data-action=cancel]').click()");await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(input)}))`);
@@ -69,7 +69,7 @@ test('production cancellation requires an independent human confirmation and pre
       await browser.evaluate(`Array.from(document.querySelector(${JSON.stringify(form)}).querySelectorAll('button')).find(row=>['暂不取消','取消'].includes(row.textContent??'')).click()`);assert.equal(posts,0);assert.equal((await http.detail(target.ticket.id)).status,'QUEUED');
       await browser.evaluate("document.querySelector('[data-action=cancel]').click()");await browser.waitFor(`document.querySelector(${JSON.stringify(input)})?.value===${JSON.stringify(note)}`);await browser.evaluate(`document.querySelector(${JSON.stringify(form+' input[value=OTHER]')}).click()`);assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(form+' input[type="checkbox"]')}).checked`),false);
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(form+' input[value=OTHER]')}).checked`),true);await browser.waitFor(`!document.querySelector(${JSON.stringify(submit)}).disabled`);await browser.evaluate(`document.querySelector(${JSON.stringify(submit)}).click()`);
-      await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-cancel]')?.innerText.includes('已处理 · 已关闭')");const after=await http.detail(target.ticket.id);assert.equal(posts,1);assert.equal(after.status,'CANCELLED');assert.equal(after.version,before.version+1);assert.equal(after.handling_cycle,null);assert.equal(after.assignee_id,before.assignee_id);assert.equal(after.resolver_team_id,before.resolver_team_id);
+      await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-cancel]')?.innerText.includes('已处理 · 已关闭')");const after=await http.detail(target.ticket.id);assert.equal(posts,1);assert.equal(after.status,'DISMISSED');assert.equal(after.version,before.version+1);assert.equal(after.handling_cycle,null);assert.equal(after.assignee_id,before.assignee_id);assert.equal(after.resolver_team_id,before.resolver_team_id);
       await capture('new-detail-1920.png');
     });}finally{context.runtime.server.removeListener('request',observe);}
   });
@@ -115,7 +115,7 @@ test('Card 27C-B six closure reasons, original links, history and board/list res
    for(const key of ['ArrowDown','Enter'] as const){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key,code:key,...(key==='Enter'?{text:'\r'}:{})});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key,code:key});}
    await browser.waitFor('document.querySelector(".ds-closure-search [data-closure-selected]")?.getAttribute("data-closure-selected")==='+JSON.stringify(originalTicket.ticket_no));await shot('01-duplicate.png');
    await clickWorkbenchControl(browser,'.detail-cancel-dialog button[type=submit]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')&&document.querySelector('[data-closure-history]')?.textContent.includes('重复报修')");
-   assert.equal((await http.detail(target.ticket.id)).status,'CANCELLED');assert.equal(await browser.evaluate("document.querySelector('[data-closure-record]').textContent.includes('内部说明不可外发（合成）')"),true);
+   assert.equal((await http.detail(target.ticket.id)).status,'DISMISSED');assert.equal(await browser.evaluate("document.querySelector('[data-closure-record]').textContent.includes('内部说明不可外发（合成）')"),true);
    await clickWorkbenchControl(browser,'[data-closure-record] [data-action=open-closure-original]');await browser.waitFor('location.pathname.endsWith('+JSON.stringify('/ticket/'+original.ticket.id)+')&&document.querySelector(".detail-breadcrumb")?.textContent.includes('+JSON.stringify(originalTicket.ticket_no)+')');await clickWorkbenchControl(browser,'[aria-label="关闭详情"]');await browser.waitFor('location.pathname.endsWith('+JSON.stringify('/ticket/'+target.ticket.id)+')&&Boolean(document.querySelector("[data-closure-record]"))');
    await clickWorkbenchControl(browser,'[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('#detail-title')");
    await browser.evaluate("(()=>{const group=[...document.querySelectorAll('[data-board-group]')].find(n=>n.getAttribute('data-board-group')==='已关闭'),b=group?.querySelector('button[aria-expanded]');if(b?.getAttribute('aria-expanded')==='false')b.click();})()");
@@ -140,7 +140,7 @@ test('Card 27C-B six closure reasons, original links, history and board/list res
 test('Card 27C-B lost restore response keeps its original UUID across reload and uses only the safe receipt GET',{timeout:120000},async()=>{
  await withT10Fixture(async context=>{
   const target=context.tickets[0];assert.ok(target);const http=await t11Http(context,2,{closeConnections:true}),before=await http.start(target.ticket.id);
-  const closed=await http.post(target.ticket.id,'cancel',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'OTHER',note:'恢复核对（合成）'});assert.equal(closed.status,200);
+  const closed=await http.post(target.ticket.id,'dismiss',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'OTHER',note:'恢复核对（合成）'});assert.equal(closed.status,200);
   const path='/api/tickets/'+target.ticket.id+'/restore',requests:{method:string;path:string}[]=[];const observe=(request:IncomingMessage)=>{if(request.url?.startsWith(path))requests.push({method:request.method??'',path:request.url});};context.runtime.server.on('request',observe);
   try{await withT10Browser(context,target.ticket.id,2,'CARD27CB_RESTORE_UNKNOWN',async(browser,capture)=>{
    await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('.ds-next-step [data-action=restore-closed]')?.disabled===false");await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-closed]');await browser.waitFor("Boolean(document.querySelector('[data-restore-confirmation]'))");
@@ -161,7 +161,7 @@ test('Card 27C-B lost restore response keeps its original UUID across reload and
 test('Card 27C-B closing the dialog preserves the unsaved draft navigation fence and permits reopening its owner',{timeout:120000},async()=>{
  await withT10Fixture(async context=>{
   const target=context.tickets[0];assert.ok(target);const http=await t11Http(context,0),before=await http.detail(target.ticket.id);let posts=0;
-  const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url==='/api/tickets/'+target.ticket.id+'/cancel')posts++;};context.runtime.server.on('request',observe);
+  const observe=(request:IncomingMessage)=>{if(request.method==='POST'&&request.url==='/api/tickets/'+target.ticket.id+'/dismiss')posts++;};context.runtime.server.on('request',observe);
   try{await withT10Browser(context,target.ticket.id,0,'CARD27CB_UNSAVED_CLOSURE_FENCE',async(browser,capture)=>{
    await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
    await browser.evaluate("(()=>{const original=crypto.subtle.encrypt.bind(crypto.subtle);const gate=new Promise(resolve=>globalThis.__releaseClosureEncryption=resolve);crypto.subtle.encrypt=async(...args)=>{globalThis.__closureEncryptionWaiting=true;await gate;return original(...args);};})()");

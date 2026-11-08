@@ -94,7 +94,7 @@ test('already selected due candidates recheck real close and reschedule commits 
       // The actual command acquires its existing stream/Ticket/cycle locks and commits while the old candidate is parked.
       const closed=await handler.post(closedPath+'/complete',{client_command_id:randomUUID(),expected_version:version(beforeClose.ticket.version),reason_code:'STAFF_COMPLETED',
         handling_cycle_id:text(object(beforeClose.ticket.handling_cycle).id),internal_process:'T37 有界真实关闭竞争验证',external_summary:'合成处置已完成。',external_summary_confirmed:true});
-      assert.equal(closed.status,200,JSON.stringify(closed.value));const committed=await facts(handler,closedPath);assert.equal(committed.ticket.status,'CLOSED');assert.equal(committed.schedule.active,null);
+      assert.equal(closed.status,200,JSON.stringify(closed.value));const committed=await facts(handler,closedPath);assert.equal(committed.ticket.status,'COMPLETED');assert.equal(committed.schedule.active,null);
       closeGate.release();assert.deepEqual(await oldCloseCandidate,{scanned:1,emitted:0,skipped:1});
       assert.deepEqual(await markers(fixture,closedId),[]);assert.equal((await signals(fixture,closedId)).length,0);assert.deepEqual(await facts(handler,closedPath),committed);
     }finally{closeGate.restore();await Promise.allSettled([oldCloseCandidate]);}

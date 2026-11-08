@@ -77,7 +77,7 @@ test('deferred Bot details recover after restart and remain authorized years aft
   const query=createP2016TicketQuery({pool:f.pool,enabled:true,workbenchReporterProfilesEnabled:true}),cards=createWeb01WorkbenchQuery({pool:f.pool,query,reporterProfilesEnabled:true});
   const authContext={principal_id:principal.id};
   let detail=await cards.detail({authContext,kind:'ticket',id,cursor:null,limit:10});assert.equal(detail.item.reporter_name,retained.name);assert.equal(detail.item.source,'WECOM_GROUP');
-  await f.pool.query("UPDATE pilot_ticket.ticket SET status='CLOSED' WHERE id=$1",[id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED' WHERE id=$1",[id]);
   await clock(f.pool,Date.UTC(2046,0,1));await worker(f.pool,port).runOnce();assert.equal(calls,2,'completed material is not reacquired or cleared');
   retained=(await readTicketReporterProfiles(f.pool,[id])).get(id);assert.equal(retained?.name,'补全合成报修人');
   detail=await cards.detail({authContext,kind:'ticket',id,cursor:null,limit:10});assert.equal(detail.item.reporter_department,'合成信息科');
@@ -101,7 +101,7 @@ test('manual Ticket name, department and source persist without retaining contac
   const ticket=(await f.pool.query<{id:string}>("SELECT t.id::text FROM pilot_ticket.ticket t JOIN intake.service_intake i ON i.id=t.source_intake_id WHERE i.source_provider='STAFF_MANUAL_REPORT'")).rows[0];assert.ok(ticket);
   let calls=0;const run=worker(f.pool,{resolve:async()=>{calls++;return {status:'DEFERRED',snapshot:{}};}});
   await run.runOnce();assert.equal(calls,0);
-  await f.pool.query("UPDATE pilot_ticket.ticket SET status='CLOSED' WHERE id=$1",[ticket.id]);await clock(f.pool,Date.UTC(2046,0,1));
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED' WHERE id=$1",[ticket.id]);await clock(f.pool,Date.UTC(2046,0,1));
   const retained=(await readTicketReporterProfiles(f.pool,[ticket.id])).get(ticket.id);assert.ok(retained);
   assert.equal(retained.name,'永久合成报修人（身份未核实）');assert.equal(retained.department,'永久合成科室');assert.equal(retained.source_channel,'MANUAL');assert.equal(retained.source_label,'电话代录');
   assert.equal(JSON.stringify((await f.pool.query('SELECT * FROM intake.ticket_reporter_profile WHERE ticket_id=$1',[ticket.id])).rows).includes('合成内线不可复制'),false);

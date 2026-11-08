@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import{withWeb01Fixture}from'./web01-workbench-fixture.mjs';
 import{createP2016Runtime}from'../../app/server/src/p2-016-runtime.mjs';import type{P2016EnabledRuntime}from'../../app/server/src/p2-016-runtime.mjs';
 import type{T07Fixture}from'./t07-public-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 import{migrateTicketStaffCompletion}from'../../app/server/scripts/ticket-staff-completion-migrate.mjs';
 import{migrateTicketReopenRounds}from'../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
 import{migrateTicketUnassign}from'../../app/server/scripts/ticket-unassign-migrate.mjs';
@@ -16,6 +17,6 @@ export async function withT13Profile(run:(f:T13Fixture)=>Promise<void>,{historyE
   let primary:unknown;try{const started=await runtime.start();assert.ok(started.cookies);await run({...f,runtime,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value),browserCookies:started.cookies});}catch(error){primary=error;}
   await closeBrowserTestResources([async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);assert.equal((await runtime.observability.metrics()).sse_clients,0);}],primary);
  },{ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketTakeoverEnabled:true,ticketAssignmentEnabled:true,ticketSelfHandlingWebSource:false,chronologicalTicketEvents:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
-  await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl,mode:'apply'});await migrateTicketReturnToDispatch({databaseUrl,mode:'apply'});
+  await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl,mode:'apply'});await migrateTicketReturnToDispatch({databaseUrl,mode:'apply'});await ensureCompletionDismissal(databaseUrl);
  }});
 }

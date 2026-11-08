@@ -11,7 +11,7 @@ export const statusTones:Readonly<Record<string,Tone>>={
   NEW:'warning',QUEUED:'warning',ACCEPTED:'neutral',REOPENED:'neutral',
   PENDING:'review',RECEIVED:'neutral',WAITING_TRIAGE:'neutral',WAITING_DESCRIPTION:'attention',
   IN_PROGRESS:'info',WAITING_REQUESTER:'neutral',WAITING_VENDOR:'neutral',
-  RESOLVED:'success',CLOSED:'success',CANCELLED:'neutral',DUPLICATE_LINKED:'neutral',FAILED:'danger',
+  RESOLVED:'success',COMPLETED:'success',DISMISSED:'neutral',FAILED:'danger',
 };
 export const actionPresentation={
   urge:{label:'已催单',tone:'attention'},
@@ -26,11 +26,10 @@ const substatus:Readonly<Record<string,{label:string;tone:Tone;icon?:'clock';tit
   ACCEPTED:{label:'已领取',tone:'neutral'},
   REOPENED:{label:'重新报障',tone:'neutral'},
   RECEIVED:{label:'已受理待建单',tone:'neutral'},
-  DUPLICATE_LINKED:{label:'已关闭',tone:'neutral'},
   WAITING_REQUESTER:{label:'等待中',tone:'neutral',icon:'clock',title:'等待补充'},
   WAITING_VENDOR:{label:'等待中',tone:'neutral',icon:'clock',title:'等待厂商'},
   RESOLVED:{label:'待确认',tone:'success',title:'已解决待确认'},
-  CANCELLED:{label:'已关闭',tone:'neutral'},
+  DISMISSED:{label:'已关闭',tone:'neutral'},
   FAILED:{label:'受理处理失败',tone:'danger'},
   WAITING_DESCRIPTION:{label:'待补充',tone:'attention'},
 };

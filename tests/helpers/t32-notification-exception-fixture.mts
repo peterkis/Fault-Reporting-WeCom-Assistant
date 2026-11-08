@@ -16,6 +16,7 @@ import {createCommunicationSenderPort} from '../../app/server/src/p2-004-communi
 import {attachInboxJourney} from './conversation-inbox-fixture.mjs';
 import {MockResolvedDirectory} from '../../app/server/src/p2-015-contact-journey.mjs';
 import {snapshotReporterProfile} from '../../app/server/src/p2-015-reporter-profile.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export function t32Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t32Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -103,6 +104,6 @@ export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{
     await closeBrowserTestResources([()=>runtime.stop(),()=>assert.equal(runtime.server.listening,false)],primaryError);
   },{manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     await migrateP2012({databaseUrl});
-    if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});}
+    if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});}await ensureCompletionDismissal(databaseUrl);
   }});
 }

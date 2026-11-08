@@ -37,7 +37,7 @@ export const YXX_WEB_LIMITS=Object.freeze({description:4000,location:200,departm
 const IMPACTS=new Set(['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
 const HASH=/^[a-f0-9]{64}$/u;
 const REF=/^[A-Za-z0-9_-]{32}$/u;
-const TICKET_TIMELINE_EVENTS=Object.freeze(['ticket.created','ticket.queued','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.information_added','ticket.resolved','ticket.closed','ticket.reopened','ticket.cancelled']);
+const TICKET_TIMELINE_EVENTS=Object.freeze(['ticket.created','ticket.queued','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.information_added','ticket.resolved','ticket.completed','ticket.reopened','ticket.dismissed']);
 const cleanText=(value:unknown,max:number)=>{if(typeof value!=='string')throw new TypeError('YXX_INPUT_INVALID');const text=value.trim();if(!text||Array.from(text).length>max||Buffer.byteLength(text,'utf8')>max*4)throw new TypeError('YXX_INPUT_INVALID');return text;};
 const optionalText=(value:unknown,max:number)=>value===null?null:typeof value==='string'&&value.trim()===''?null:cleanText(value,max);
 const ensureHash=(value:unknown)=>{if(typeof value!=='string'||!HASH.test(value))throw new TypeError('YXX_SCOPE_INVALID');return value;};
@@ -83,7 +83,7 @@ function displayStatus(row:RequestStatusRow){
   if(row.input_revision!==row.processed_revision)return 'RECEIVED_PROCESSING';
   if(row.status==='WAITING_DESCRIPTION')return 'WAITING_FOR_DETAILS';
   if(row.status==='WAITING_REVIEW'||row.status==='WAITING_TRIAGE'||row.review_id)return 'UNDER_REVIEW';
-  if(row.status==='IGNORED'||row.status==='COMPLETED')return 'NOT_SERVICE';
+  if(row.status==='DISMISSED'||row.status==='COMPLETED')return 'NOT_SERVICE';
   return 'RECEIVED_PROCESSING';
 }
 function timelineItem(row:Pick<TimelineRow,'event_type'|'payload'|'occurred_at'|'ticket_no'|'ticket_status'|'ticket_updated_at'|'event_source'>){
@@ -95,7 +95,7 @@ function timelineItem(row:Pick<TimelineRow,'event_type'|'payload'|'occurred_at'|
     return {event_type:eventType,occurred_at:String(row.occurred_at),occurred_epoch_ms:localEpoch(row.occurred_at),summary,ticket};
   }
   const terminalStatus=row.payload?.new_status;
-  const eventType=terminalStatus==='IGNORED'?'NOT_SERVICE':terminalStatus==='COMPLETED'?'NOT_SERVICE'
+  const eventType=terminalStatus==='DISMISSED'?'NOT_SERVICE':terminalStatus==='COMPLETED'?'NOT_SERVICE'
     :terminalStatus==='WAITING_DESCRIPTION'?'WAITING_FOR_DETAILS':terminalStatus==='WAITING_TRIAGE'?'UNDER_REVIEW'
       :row.event_type==='intake.web_received'?'REQUEST_ACCEPTED'
     :row.event_type==='intake.web_supplement_added'?'SUPPLEMENT_ACCEPTED'
@@ -109,7 +109,7 @@ function timelineItem(row:Pick<TimelineRow,'event_type'|'payload'|'occurred_at'|
 function publicDetail(row:DetailRow){
   const created=String(row.created_at),updated=String(row.updated_at);
   const supplements=Array.isArray(row.supplement_items)?row.supplement_items.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null})):[];
-  return Object.freeze({request_ref:row.request_ref,intake_no:row.intake_no,source_kind:'WEB_REQUEST',input_revision:String(row.input_revision),processed_revision:String(row.processed_revision),display_status:displayStatus(row),needs_action:row.needs_action??null,safe_description:row.safe_description,supplements,safe_location:row.safe_location??null,created_at:created,created_epoch_ms:localEpoch(created),updated_at:updated,updated_epoch_ms:localEpoch(updated),ticket:safeTicket(row),safe_clarification:row.safe_clarification??null,can_supplement:BigInt(row.input_revision)<BigInt(YXX_WEB_LIMITS.window)&&!['CLOSED','CANCELLED'].includes(row.ticket_status??'')&&row.revoked_at===null});
+  return Object.freeze({request_ref:row.request_ref,intake_no:row.intake_no,source_kind:'WEB_REQUEST',input_revision:String(row.input_revision),processed_revision:String(row.processed_revision),display_status:displayStatus(row),needs_action:row.needs_action??null,safe_description:row.safe_description,supplements,safe_location:row.safe_location??null,created_at:created,created_epoch_ms:localEpoch(created),updated_at:updated,updated_epoch_ms:localEpoch(updated),ticket:safeTicket(row),safe_clarification:row.safe_clarification??null,can_supplement:BigInt(row.input_revision)<BigInt(YXX_WEB_LIMITS.window)&&!['COMPLETED','DISMISSED'].includes(row.ticket_status??'')&&row.revoked_at===null});
 }
 function cursorToken(payload:unknown,secret:string){const data=Buffer.from(JSON.stringify(payload),'utf8').toString('base64url');return data+'.'+createHmac('sha256',secret).update(data).digest('base64url');}
 function decodeCursor(value:unknown,secret:string,scopeHash:string){if(typeof value!=='string'||value.length>2048)throw new TypeError('YXX_CURSOR_INVALID');const parts=value.split('.');if(parts.length!==2||!parts[0]||!parts[1])throw new TypeError('YXX_CURSOR_INVALID');const [data,signature]=parts as [string,string];const expected=createHmac('sha256',secret).update(data).digest('base64url');const a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');let parsed: {scope_hash?:unknown;created_at?:unknown;id?:unknown};try{parsed=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));}catch{throw new TypeError('YXX_CURSOR_INVALID');}if(parsed.scope_hash!==scopeHash||typeof parsed.created_at!=='string'||typeof parsed.id!=='string')throw new TypeError('YXX_CURSOR_INVALID');return parsed;}
@@ -175,7 +175,7 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
         return {replayed:false,receipt};
       }
       requestRefValue=requestRef(nullRef);const locked=await tx.query<LockedRequestRow>(`SELECT b.intake_id::text,b.input_revision,b.retention_until,i.intake_no,i.pilot_ticket_id::text,i.status,t.status AS ticket_status
-        FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now() AND (t.status IS NULL OR t.status NOT IN ('CLOSED','CANCELLED')) FOR UPDATE OF b,i`,[requestRefValue,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]);
+        FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.source_corp_scope=$3 AND b.source_app_scope=$4 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now() AND (t.status IS NULL OR t.status NOT IN ('COMPLETED','DISMISSED')) FOR UPDATE OF b,i`,[requestRefValue,scopeHash,scope.sourceCorpScope,scope.sourceAppScope]);
       if(locked.rowCount!==1){const error=new Error('YXX_NOT_FOUND') as Error & {code:string;status?:number};error.code='YXX_NOT_FOUND';error.status=404;throw error;}
       const row=(locked.rows[0] as LockedRequestRow);if(BigInt((value as YxxSupplementInput).expected_input_revision)!==BigInt(row.input_revision)){const error=new Error('YXX_VERSION_CONFLICT') as Error & {code:string;status?:number};error.code='YXX_VERSION_CONFLICT';error.status=409;throw error;}if(BigInt(row.input_revision)>=BigInt(YXX_WEB_LIMITS.window)){const error=new Error('YXX_LIMIT_EXCEEDED') as Error & {code:string;status?:number};error.code='YXX_LIMIT_EXCEEDED';error.status=413;throw error;}
       revision=Number(row.input_revision)+1;intakeId=row.intake_id;
@@ -250,7 +250,7 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
         )
         SELECT page.event_source,page.event_type,
           CASE WHEN page.event_source='INTAKE' THEN ie.payload ELSE jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
-            CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
+            CASE WHEN te.event_type='ticket.completed' AND te.old_status='IN_PROGRESS' AND te.new_status='COMPLETED'
               AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
               AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END) END AS payload,
           to_char(page.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
@@ -276,7 +276,7 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
         ORDER BY e.occurred_at,e.event_id LIMIT $2
       ), ticket_candidates AS (
         SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status,'staff_completion_summary',
-          CASE WHEN te.event_type='ticket.closed' AND te.old_status='IN_PROGRESS' AND te.new_status='CLOSED'
+          CASE WHEN te.event_type='ticket.completed' AND te.old_status='IN_PROGRESS' AND te.new_status='COMPLETED'
             AND te.reason_code='STAFF_COMPLETED' AND te.operator_type='PILOT_USER' AND te.internal_note IS NOT NULL
             AND char_length(btrim(te.external_note)) BETWEEN 1 AND 500 THEN te.external_note ELSE NULL END) AS payload,
           te.created_at::timestamp without time zone AS occurred_at,te.event_ordinal::integer AS source_ordinal,te.event_id::text AS source_id,

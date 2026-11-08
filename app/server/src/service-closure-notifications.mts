@@ -16,9 +16,9 @@ const LATEST_CLOSURE_SQL=`NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_record n
  WHERE newer.subject_type=c.subject_type AND newer.before_version>c.before_version
  AND (newer.ticket_id=c.ticket_id OR newer.intake_id=c.intake_id))`;
 const CURRENT_RESTORATION_SQL=`c.restored_at IS NOT NULL AND ${LATEST_CLOSURE_SQL} AND
- CASE WHEN c.ticket_id IS NOT NULL THEN t.status NOT IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED')
- ELSE i.status NOT IN ('COMPLETED','IGNORED') AND NOT EXISTS(
-  SELECT 1 FROM pilot_ticket.ticket canonical WHERE canonical.status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED')
+ CASE WHEN c.ticket_id IS NOT NULL THEN t.status NOT IN ('RESOLVED','COMPLETED','DISMISSED')
+ ELSE i.status NOT IN ('COMPLETED','DISMISSED') AND NOT EXISTS(
+  SELECT 1 FROM pilot_ticket.ticket canonical WHERE canonical.status IN ('RESOLVED','COMPLETED','DISMISSED')
   AND (canonical.id=i.pilot_ticket_id OR canonical.source_intake_id=i.id OR EXISTS(
    SELECT 1 FROM intake.contact_journey j WHERE j.linked_ticket_id=canonical.id
     AND (j.origin_intake_id=i.id OR EXISTS(SELECT 1 FROM intake.channel_leg leg WHERE leg.journey_id=j.id AND leg.source_intake_id=i.id)))))

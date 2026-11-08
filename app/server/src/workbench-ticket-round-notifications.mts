@@ -13,7 +13,7 @@ import {cancelUnattemptedDeliveryInTransaction} from './p2-004-communication-del
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';
 export interface OriginalBotSource {bot_id:string;reporter_user_id:string;group_id:string|null;retention_epoch:string;journey_id:string|null}
-interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'CLOSED';created_at:string;aggregate_version:number}
+interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'COMPLETED';created_at:string;aggregate_version:number}
 interface RoundOptions {mvpPolicy?:boolean;groupNotificationTargets?:readonly GroupNotificationTarget[];pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined;appNotifications?:TicketAppNotificationOptions|null}
 
 export async function roundNotificationSchemaReady(tx:PostgresTransaction){
@@ -75,7 +75,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   AND lower(e.assignment_metadata->>'new_assignee_id')=c.first_responsibility_principal_id::text
                   AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
               OR (n.node='FIRST_HANDLING' AND e.event_id=${FIRST_HANDLING_EVENT_SQL})
-              OR (n.node='STAFF_COMPLETED' AND e.event_type='ticket.closed' AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
+              OR (n.node='STAFF_COMPLETED' AND e.event_type='ticket.completed' AND e.old_status='IN_PROGRESS' AND e.new_status='COMPLETED'
                 AND e.reason_code='STAFF_COMPLETED' AND e.operator_id IS NOT NULL AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500))
           WHERE ($1::uuid IS NULL OR (c.id,n.node)>($1::uuid,$2::text)) ORDER BY c.id,n.node LIMIT 20`,[after?.cycleId??null,after?.node??null]);
         let created=0;
@@ -108,7 +108,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
               if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type='PERSON'",[candidate.cycle_id,candidate.node])).rowCount)return false;
               const target=await resolveOriginalAppTarget(tx,candidate.source_intake_id,app);if(!target)return false;
               const binding=textHashP2016(JSON.stringify(['WECOM_APP',target.target.channel_account_id,target.source.scope.sourceCorpScope,target.source.scope.sourceAppScope,target.source.scope.scopeHash,target.target.target_id]));
-              const notificationType=candidate.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED';
+              const notificationType=candidate.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_COMPLETED';
               const ref=await reporterAccess.ensurePublicRefInTransaction({transaction:tx,ticketId:candidate.ticket_id,reporterBindingHash:binding,journeyId:target.source.journey_id});
               const message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',
                 client_command_id:randomUUID(),message_type:'template_card',visibility:'EXTERNAL',destination_policy:'P2_016_ORIGINAL_APP_ROUND',privacy_class:'INTERNAL',
@@ -130,7 +130,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
             if((await tx.query('SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type=$3',[candidate.cycle_id,candidate.node,route])).rowCount)continue;
             if(route==='PERSON'&&personDestinationAuthorizer&&await personDestinationAuthorizer({transaction:tx,bot_id:source.bot_id,reporter_user_id:source.reporter_user_id})!==true)continue;
             const binding=textHashP2016(JSON.stringify(route==='GROUP'?['WECOM_AIBOT',source.bot_id,source.group_id,source.reporter_user_id]:['WECOM_AIBOT',source.bot_id,source.reporter_user_id]));
-            const notificationType=candidate.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED';
+            const notificationType=candidate.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_COMPLETED';
             // Adopt an already committed legacy notice for this exact basis, independent of template upgrades.
             let notificationId=(await tx.query<{id:string}>(`SELECT id::text FROM communication.ticket_notification_binding
               WHERE ticket_id=$1::uuid AND ticket_event_id=$2::uuid AND notification_type=$3 AND recipient_binding_hash=$4 AND destination_type=$5

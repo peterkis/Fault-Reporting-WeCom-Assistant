@@ -24,7 +24,7 @@
         "WAITING_REQUESTER",
         "WAITING_VENDOR",
         "TICKET_RESOLVED",
-        "TICKET_CLOSED",
+        "TICKET_COMPLETED",
         "TICKET_REOPENED",
         "TICKET_CANCELLED"
       ]

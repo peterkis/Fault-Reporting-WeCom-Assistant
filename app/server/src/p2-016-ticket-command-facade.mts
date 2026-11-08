@@ -7,7 +7,7 @@ import type { P2016TicketQuery, P2016TicketRow } from './p2-016-ticket-query.mjs
 import type { createConversationControlService, ControlResult } from './p2-005-conversation-control.mjs';
 type CommandBase = { ticket_id: string; client_command_id: string; expected_version: number; reason_code: string; note?: string|null; external_visible?: boolean;secondary_reason_code?:string|null;duplicate_of_ref?:string|null;notify_reporter?:boolean };
 export type TicketCommand = CommandBase & (
-  { action: Exclude<TicketAction, 'auto-close'>; target_principal_id?: never; resolver_team_id?: never; session_id?: never; expected_session_row_version?: never }
+  { action: Exclude<TicketAction, 'auto-complete'>; target_principal_id?: never; resolver_team_id?: never; session_id?: never; expected_session_row_version?: never }
   | { action: 'transfer-assignment'; target_principal_id: string; resolver_team_id?: string; session_id?: never; expected_session_row_version?: never }
   | { action: 'takeover-and-accept-ticket'; session_id: string; expected_session_row_version: number; target_principal_id?: never; resolver_team_id?: never });
 export interface TicketProjectionInput { transaction: PostgresTransaction; ticket: P2016TicketRow | PublicPilotTicket; event: PublicTicketEvent; command?: TicketCommand | null }
@@ -26,14 +26,14 @@ import { selfHandlingSchemaReady } from './workbench-ticket-self-handling.mjs';
 import { exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
 import type {WaitingAction} from '../../../contracts/workbench_waiting_contracts.js';
 
-const ACTIONS=['queue','accept','start','request-information','wait-vendor','resume','resolve','confirm','reopen','cancel','restore','add-note','transfer-assignment','takeover-and-accept-ticket'];
+const ACTIONS=['queue','accept','start','request-information','wait-vendor','resume','resolve','confirm','reopen','dismiss','restore','add-note','transfer-assignment','takeover-and-accept-ticket'];
 export function normalizeP2016TicketCommand(input: unknown): TicketCommand {
   const v=exactP2016(input,['action','ticket_id','client_command_id','expected_version','reason_code','note','external_visible','target_principal_id','resolver_team_id','session_id','expected_session_row_version','secondary_reason_code','duplicate_of_ref','notify_reporter'],
     ['action','ticket_id','client_command_id','expected_version','reason_code']);
   if(!ACTIONS.includes(v.action as string))failP2016();
   const result: Record<string, unknown> & CommandBase={...v,ticket_id:uuidP2016(v.ticket_id),client_command_id:uuidP2016(v.client_command_id),
     expected_version:versionP2016(v.expected_version),reason_code:codeP2016(v.reason_code)};
-  if(v.action==='cancel'){
+  if(v.action==='dismiss'){
     if(v.external_visible!==undefined)failP2016();
     Object.assign(result,normalizeClosingInput(Object.fromEntries(['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'].filter(key=>Object.hasOwn(v,key)).map(key=>[key,v[key]]))));
   }else{
@@ -77,7 +77,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
       }});
     },
     async waitingAcknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand,action}:{authContext:unknown;ticketId:unknown;commandId:unknown;action:WaitingAction}){
-      guardP2016(enabled);if(!['request-information','wait-vendor','resume','cancel'].includes(action))failP2016();
+      guardP2016(enabled);if(!['request-information','wait-vendor','resume','dismiss'].includes(action))failP2016();
       const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
       return ledger.waitingAcknowledgement({ticketId,commandId,action,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
     },
@@ -92,10 +92,10 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
     async perform({authContext,command:input,internalNote=false}: { authContext: unknown; command: unknown;internalNote?:boolean }) {
       guardP2016(enabled);const command=normalizeP2016TicketCommand(input);
       if(internalNote&&command.action!=='add-note')failP2016();
-      const cycleAware=ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume','cancel'].includes(command.action);
-      const currentAuthority=cycleAware||['reopen','cancel','restore'].includes(command.action);
+      const cycleAware=ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume','dismiss'].includes(command.action);
+      const currentAuthority=cycleAware||['reopen','dismiss','restore'].includes(command.action);
       if(cycleAware){
-        if(command.action!=='cancel'&&(typeof command.note!=='string'||!command.note.trim()||command.external_visible!==false))failP2016();
+        if(command.action!=='dismiss'&&(typeof command.note!=='string'||!command.note.trim()||command.external_visible!==false))failP2016();
         if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
       }
       return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
@@ -115,7 +115,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
           let {principal,ticket:authorizedTicket}=initial;
           await realtimeProjector?.lock?.(transaction);
           const action=command.action==='takeover-and-accept-ticket'?'accept':command.action;
-          if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(authorizedTicket.status))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
+          if(action==='transfer-assignment'&&['RESOLVED','COMPLETED','DISMISSED'].includes(authorizedTicket.status))failP2016('ASSIGNMENT_STATE_CONFLICT',409);
           if(!ticketActionAllowedP2016(principal,authorizedTicket,action))failP2016('FORBIDDEN',403);
           let control: ControlResult | null=null;
           if(command.action==='takeover-and-accept-ticket'){
@@ -139,7 +139,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             principal=(await query.authorizedTicket({authContext,ticketId:ticket.id,transaction})).principal;
             if(!ticketActionAllowedP2016(principal,ticket,action)||!principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')&&!membership.rowCount)failP2016('FORBIDDEN',403);
           }
-          if(action==='cancel'&&command.duplicate_of_ref){
+          if(action==='dismiss'&&command.duplicate_of_ref){
             const predicate=ticketPredicateP2016(principal,2);
             const original=(await transaction.query<{id:string}>(`SELECT t.id::text FROM pilot_ticket.ticket t WHERE t.ticket_no=$1 AND ${predicate.sql}`,[command.duplicate_of_ref,...predicate.values])).rows[0];
             if(!original)failP2016('NOT_FOUND',404);if(original.id===ticket.id)failP2016();
@@ -161,7 +161,7 @@ export function createP2016TicketCommandFacade({pool,enabled=false,ticketStaffCo
             result=await actions.performInTransaction({ticketId:ticket.id,action:command.action==='takeover-and-accept-ticket'?'accept':command.action,
               actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:command.expected_version,
               note:command.note??null,externalVisible:command.external_visible??false,reasonCode:command.reason_code,
-              ...(action==='cancel'?{secondaryReasonCode:command.secondary_reason_code??null,duplicateOfRef:command.duplicate_of_ref??null,notifyReporter:command.notify_reporter}:{}),
+              ...(action==='dismiss'?{secondaryReasonCode:command.secondary_reason_code??null,duplicateOfRef:command.duplicate_of_ref??null,notifyReporter:command.notify_reporter}:{}),
               traceId:'p2-016:'+command.client_command_id},transaction);
           }
           let handlingCycleId:string|null=null;

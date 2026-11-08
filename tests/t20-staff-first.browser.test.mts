@@ -22,7 +22,7 @@ test('production PC HANDLER explicitly reopens a completed Ticket through its in
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);const closed=await http.detail(ticketId);
    const cookie=started.cookies[2];assert.ok(cookie);assert.equal(typeof cookie.url,'string');
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
-   await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已关闭')");
+   await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已完成')");
    await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&document.querySelector('#reopen-reason')?.matches(':disabled')===false");
    assert.equal(await tab.evaluate("Boolean(document.querySelector('[data-action=reopen-ticket]'))"),true,'production PC must expose independent authorized staff reopen');
    await tab.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t20Posts=[];globalThis.__t20Reads=[];globalThis.__t20Responses=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t20Posts.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);if(options?.method==='POST')globalThis.__t20Responses.push({path:String(path),status:response.status,reply:await response.clone().json()});else globalThis.__t20Reads.push(String(path));return response;};})()");

@@ -73,9 +73,9 @@ export async function readH5EntryRow(tx:PostgresTransaction,scope:YxxMemberScope
   e.operator_id AS completed_by,t.resolver_team_id,t.ticket_no,t.version,t.status
   FROM pilot_ticket.ticket_handling_cycle c JOIN pilot_ticket.ticket_event e ON e.event_id=c.staff_completion_event_id AND e.ticket_id=t.id
   JOIN pilot_ticket.staff_completion_notification_commitment n ON n.cycle_id=c.id AND n.ticket_id=t.id AND n.ticket_event_id=e.event_id AND n.source_intake_id=t.source_intake_id
-  WHERE c.id=t.current_handling_cycle_id AND c.ticket_id=t.id AND c.source_intake_id=t.source_intake_id AND t.status='CLOSED'
-   AND e.event_type='ticket.closed' AND e.reason_code='STAFF_COMPLETED' AND e.operator_type='PILOT_USER'
-   AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
+  WHERE c.id=t.current_handling_cycle_id AND c.ticket_id=t.id AND c.source_intake_id=t.source_intake_id AND t.status='COMPLETED'
+   AND e.event_type='ticket.completed' AND e.reason_code='STAFF_COMPLETED' AND e.operator_type='PILOT_USER'
+   AND e.old_status='IN_PROGRESS' AND e.new_status='COMPLETED'
    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_cycle_reopen r WHERE r.completed_cycle_id=c.id)) completed ON TRUE
  LEFT JOIN LATERAL(SELECT t.id::text AS ticket_id,count(u.id)::integer AS count,max(u.occurred_epoch_ms)::text AS last_epoch,
   t.status=ANY(ARRAY['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED']) AS active

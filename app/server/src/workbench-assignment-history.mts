@@ -37,7 +37,7 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
      AND n.ticket_event_id=r.completion_event_id AND n.source_intake_id=r.source_intake_id
    WHERE r.ticket_id=e.ticket_id AND r.new_cycle_id=c.id AND c.cycle_no=prior.cycle_no+1
      AND c.source_intake_id=r.source_intake_id AND c.cycle_start_event_id=re.event_id
-     AND re.event_type='ticket.reopened' AND re.old_status='CLOSED' AND re.new_status='REOPENED'
+     AND re.event_type='ticket.reopened' AND re.old_status='COMPLETED' AND re.new_status='REOPENED'
      AND c.first_responsibility_event_id=e.event_id AND e.assignment_metadata IS NULL AND ${firstProof}
      AND re.event_ordinal<e.event_ordinal AND (SELECT count(*)=e.event_ordinal-re.event_ordinal-1
        AND COALESCE(bool_and(h.event_type NOT IN (${assignmentTypes})),true)

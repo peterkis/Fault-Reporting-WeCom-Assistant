@@ -213,7 +213,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
         }
         const result:ManualReviewCurrentResult={ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:(resolution as { resolution_decision_id: string }).resolution_decision_id,action_count:actions.length};
-        if(closureInput&&notificationProjector?.projectClosure){const record=(await transaction.query<{id:string}>('SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL',[review.service_intake_id])).rows[0];if(record)await notificationProjector.projectClosure({transaction,recordId:record.id});else if((await transaction.query<{status:string}>('SELECT status FROM intake.service_intake WHERE id=$1::uuid',[review.service_intake_id])).rows[0]?.status==='IGNORED')failP2016('ACTION_FAILED',503);}
+        if(closureInput&&notificationProjector?.projectClosure){const record=(await transaction.query<{id:string}>('SELECT id::text FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL',[review.service_intake_id])).rows[0];if(record)await notificationProjector.projectClosure({transaction,recordId:record.id});else if((await transaction.query<{status:string}>('SELECT status FROM intake.service_intake WHERE id=$1::uuid',[review.service_intake_id])).rows[0]?.status==='DISMISSED')failP2016('ACTION_FAILED',503);}
         await afterResolution?.(result);
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId:reviewId as string});
         return result;

@@ -13,7 +13,7 @@ export interface WorkbenchAppNotificationSenderOptions {
  pool:PostgresPool;notifications:TicketAppNotificationOptions;agentId:number;accessTokenProvider:WeComAccessTokenProvider;
  applicationMemberVerifier?:import('./wecom-application-member.mjs').ApplicationMemberVerifier|null;enabled?:boolean;fetchImpl?:typeof fetch;origin:string;allowedHosts:readonly string[];allowLocalHttp?:boolean;
 }
-interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'CLOSED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
+interface Basis {source_intake_id:string;node:'FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';ticket_no:string;status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'COMPLETED';created_at:string;version:number;public_ref:string;content:unknown;recipient_binding_hash:string;external_summary:string|null}
 const reject=(code:string,retryable=false):CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:code,retryable});
 const qualificationUnavailable=():CommunicationSenderResult=>({outcome:'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:'APP_NOTIFICATION_QUALIFICATION_UNAVAILABLE',retryable:true});
 const unknown=():CommunicationSenderResult=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'APP_NOTIFICATION_RECONCILIATION_REQUIRED',retryable:false});
@@ -59,8 +59,8 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
         AND ((e.event_type='ticket.accepted' AND e.new_status='ACCEPTED') OR (e.event_type='ticket.assignment_transferred' AND e.old_status='QUEUED' AND e.new_status='QUEUED'
           AND e.assignment_metadata->>'old_assignee_id' IS NULL AND lower(e.assignment_metadata->>'new_assignee_id')=c.first_responsibility_principal_id::text AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
         OR (r.node='FIRST_HANDLING' AND e.event_id=${FIRST_HANDLING_EVENT_SQL} AND b.notification_type='TICKET_ACCEPTED')
-        OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_CLOSED' AND e.event_type='ticket.closed'
-          AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND e.internal_note IS NOT NULL
+        OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_COMPLETED' AND e.event_type='ticket.completed'
+          AND e.old_status='IN_PROGRESS' AND e.new_status='COMPLETED' AND e.reason_code='STAFF_COMPLETED' AND e.internal_note IS NOT NULL
           AND char_length(btrim(e.external_note)) BETWEEN 1 AND 500 AND EXISTS(SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p
             WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`+(lock?' FOR SHARE OF d,m,ref':''),
     [request.delivery_id,request.channel_account_id,request.target_id,request.idempotency_key]);
@@ -71,7 +71,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    const binding=textHashP2016(JSON.stringify(['WECOM_APP',request.channel_account_id,target.source.scope.sourceCorpScope,target.source.scope.sourceAppScope,target.source.scope.scopeHash,request.target_id]));
    if(binding!==row.recipient_binding_hash)return reject('APP_NOTIFICATION_BINDING_INVALID');
    const expected={...(target.source.recipient?{recipient_namespace:target.source.recipient.namespace}:{}),transport:'WECOM_APP',public_ref:row.public_ref,request_ref:target.source.request_ref,source_kind:target.source.source_kind,node:row.node,suffix:row.ticket_no.slice(-4),status:row.status,
-    occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED'};
+    occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_COMPLETED'};
    if(!isDeepStrictEqual(row.content,expected)||!isDeepStrictEqual(request.message.content,expected))return reject('APP_NOTIFICATION_BINDING_INVALID');
   }catch{return reject('APP_NOTIFICATION_BINDING_UNAVAILABLE',true);}
   const signal=AbortSignal.any([request.signal,AbortSignal.timeout(5000)]);let token:string,recipient:string;
@@ -104,7 +104,7 @@ export function createWorkbenchAppNotificationSender({pool,notifications,agentId
    if(denied)return reject(denied);
   }catch{return reject('APP_NOTIFICATION_BINDING_UNAVAILABLE',true);}
   try{
-   const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_CLOSED',source:'DIRECT'};
+   const model={public_ref:row.public_ref,suffix:row.ticket_no.slice(-4),status:row.status,occurred_at:localP2016(row.created_at),version:versionP2016(row.version),notification_type:row.node!=='STAFF_COMPLETED'?'TICKET_ACCEPTED':'TICKET_COMPLETED',source:'DIRECT'};
    const card=buildP2016TemplateCard({model,origin,allowedHosts,allowLocalHttp,linkMode:'MEMBER_REQUIRED'});
    const url=original.source.source_kind==='WEB_REQUEST'?new URL('/wecom/yixiaoxiu/reports/'+original.source.request_ref,origin).href:new URL('/wecom/yixiaoxiu/tickets/'+row.public_ref,origin).href;
    if(original.source.source_kind==='WEB_REQUEST'&&!/^[A-Za-z0-9_-]{32}$/u.test(original.source.request_ref??''))return reject('APP_NOTIFICATION_CARD_INVALID');

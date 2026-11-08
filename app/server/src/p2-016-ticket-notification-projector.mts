@@ -44,17 +44,17 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
       const nodeEvent=fact.rows[0];if(!nodeEvent)failP2016('NOTIFICATION_EVENT_INVALID');
-      if(nodeEvent.event_type==='ticket.cancelled'||nodeEvent.event_type==='ticket.restored'){
+      if(nodeEvent.event_type==='ticket.dismissed'||nodeEvent.event_type==='ticket.restored'){
         const restoring=nodeEvent.event_type==='ticket.restored',record=(await tx.query<{id:string}>(`SELECT id::text FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid AND ${restoring?'restoration_event_id':'closure_ticket_event_id'}=$2::uuid`,[ticket.id,event.event_id])).rows[0];
         if(!record)failP2016('NOTIFICATION_EVENT_INVALID');return projectServiceClosureNotification({transaction:tx,recordId:record.id,restoring,communicationAppend,personDestinationAuthorizer});
       }
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
-      if(roundNotificationBotId!==null&&(nodeEvent.event_type==='ticket.accepted'||nodeEvent.event_type==='ticket.closed')
+      if(roundNotificationBotId!==null&&(nodeEvent.event_type==='ticket.accepted'||nodeEvent.event_type==='ticket.completed')
         &&await readOriginalBotSource(tx,ticket.intake_id as string,roundNotificationBotId)){
         const round=nodeEvent.trace_id.startsWith('t04:')||(await tx.query(`SELECT 1 FROM pilot_ticket.ticket t
           JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id
           WHERE t.id=$1::uuid AND c.first_responsibility_event_id IS NOT NULL`,[ticket.id])).rowCount===1;
-        if(nodeEvent.event_type==='ticket.accepted'&&round||nodeEvent.event_type==='ticket.closed'&&nodeEvent.reason_code==='STAFF_COMPLETED')
+        if(nodeEvent.event_type==='ticket.accepted'&&round||nodeEvent.event_type==='ticket.completed'&&nodeEvent.reason_code==='STAFF_COMPLETED')
           return {created:false,reason:'ROUND_NOTIFICATION_OWNS_NODE'};
       }
       const sourceFact=await tx.query(`SELECT source_channel,source_provider FROM intake.service_intake WHERE id=$1::uuid`,[ticket.intake_id]);
@@ -93,7 +93,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         return {created:false,reason:'HANDLING_ROUND_ALREADY_NOTIFIED'};
       const suffix=(ticket.ticket_no as string).slice(-4),stamp=stampP2016(now),expiry=String(BigInt(stamp.epoch)+2592000000n);
       const groupReceipt=(policy as NonNullable<typeof policy>).notification_type==='TICKET_CREATED'&&source.source_chat_type==='group';
-      const groupClosure=(policy as NonNullable<typeof policy>).notification_type==='TICKET_CLOSED'&&source.source_chat_type==='group';
+      const groupClosure=(policy as NonNullable<typeof policy>).notification_type==='TICKET_COMPLETED'&&source.source_chat_type==='group';
       const groupBinding=textHashP2016(JSON.stringify(['WECOM_AIBOT',source.source_bot_id,source.source_chat_id]));
       // A prior group-only receipt completes this event; establishing a direct leg does not replay old cards.
       if((groupReceipt||groupClosure)&&(await tx.query(`SELECT 1 FROM communication.ticket_notification_binding

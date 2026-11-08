@@ -40,7 +40,7 @@ export const REPORTER_CLOSURE_JOIN_SQL=`LEFT JOIN pilot_ticket.closure_record pu
  ((t.id IS NOT NULL AND public_closure.ticket_id=t.id) OR (t.id IS NULL AND public_closure.intake_id=i.id))`;
 export const REPORTER_CLOSURE_FIELDS_SQL=`CASE WHEN public_closure.id IS NULL THEN NULL ELSE jsonb_build_object('reason_code',public_closure.reason_code,'duplicate_of_ref',public_closure.duplicate_of_ref) END AS closure_public`;
 export function reporterClosureProjection(value:unknown,status:string|null):string|null{
- if(!['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status??''))return null;
+ if(!['DISMISSED'].includes(status??''))return null;
  if(value===null||value===undefined)failP2016('ACTION_FAILED',503);
  const record=exactP2016(value,['reason_code','duplicate_of_ref']);
  if(typeof record.reason_code!=='string'||!Object.hasOwn(CLOSURE_REASONS,record.reason_code)||record.duplicate_of_ref!==null&&typeof record.duplicate_of_ref!=='string')failP2016('ACTION_FAILED',503);
@@ -94,7 +94,7 @@ export async function terminateClosureFollowUps(tx:PostgresTransaction,record:Cl
  if(features?.cards)await tx.query('UPDATE notification.card_action_task SET consumed_at=COALESCE(consumed_at,platform.local_now()) WHERE ticket_id=$1::uuid AND consumed_at IS NULL',[record.ticket_id]);
 }
 /** Timestamp is the state-transition transaction's physical clock, never a source observation. */
-export async function appendIntakeClosureEvent(tx:PostgresTransaction,input:{intakeId:string;version:number;type:'intake.closed'|'intake.restored';oldStatus:string;newStatus:string;actor:string|null;traceId:string}):Promise<string>{
+export async function appendIntakeClosureEvent(tx:PostgresTransaction,input:{intakeId:string;version:number;type:'intake.dismissed'|'intake.restored';oldStatus:string;newStatus:string;actor:string|null;traceId:string}):Promise<string>{
  const row=(await tx.query<{id:string}>(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
   SELECT $2,'intake',$1::uuid,$3,COALESCE(max(event_ordinal),0)+1,date_trunc('second',clock_timestamp() AT TIME ZONE 'Asia/Shanghai'),$4,$5::jsonb FROM intake.service_intake_event WHERE intake_id=$1::uuid RETURNING event_id::text AS id`,
  [input.intakeId,input.type,input.version,input.traceId,JSON.stringify({old_status:input.oldStatus,new_status:input.newStatus,actor_principal_id:input.actor})])).rows[0];

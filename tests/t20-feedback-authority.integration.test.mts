@@ -10,7 +10,7 @@ import {mapping,oauthOptions} from './helpers/yxx-ss-009-http-fixture.mjs';
 test('ordinary thanks and supplementary material keep the completed Ticket and round closed',async()=>{
  await withT20FeedbackFixture(async f=>{
   const facts=await f.context.pool.query<{status:string;version:number;cycle:string}>(`SELECT status,version,current_handling_cycle_id::text AS cycle FROM pilot_ticket.ticket WHERE id=$1::uuid`,[f.ticketId]);
-  assert.deepEqual(facts.rows[0],{status:'CLOSED',version:f.completed.version,cycle:f.completed.handling_cycle?.id});
+  assert.deepEqual(facts.rows[0],{status:'COMPLETED',version:f.completed.version,cycle:f.completed.handling_cycle?.id});
   assert.equal((await f.context.pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid',[f.ticketId])).rows[0]?.n,0);
  },{beforeCompletion:async({member,path,csrf})=>{
   const before=t20Object((await member.request(path)).json());assert.equal(before.can_supplement,true);
@@ -68,6 +68,6 @@ test('source binding proof revocation and retention are checked independently of
   assert.equal((await f.send()).status,404);
   await f.context.pool.query('UPDATE intake.web_request_binding SET revoked_at=NULL,retention_until_epoch_ms=0,retention_until=platform.local_from_epoch_ms(0) WHERE request_ref=$1',[f.requestRef]);
   assert.equal((await f.send()).status,404);
-  assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'CLOSED');
+  assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'COMPLETED');
  });
 });

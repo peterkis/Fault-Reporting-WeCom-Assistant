@@ -98,6 +98,7 @@ import { createP2016WorkbenchStatic } from './p2-016-workbench-static.mjs';
 import { flagsP2016,failP2016 } from './p2-016-domain-contracts.mjs';
 import {createWorkbenchIntakeClosure} from './workbench-intake-closure.mjs';
 import {serviceClosureSchemaReady} from '../scripts/service-closure-migrate.mjs';
+import {completionDismissalSchemaReady} from '../scripts/completion-dismissal-migrate.mjs';
 import { appendP2016Realtime,lockP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { createP2016OrchestrationWorker } from './p2-016-orchestration-adapters.mjs';
 import { normalizeP2015FeatureFlags } from './p2-015-domain-contracts.mjs';
@@ -371,7 +372,8 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
           const h5Ready=!h5||await h5.ready();
           const reporterProfilesReady=!workbenchReporterProfilesEnabled||await ticketReporterProfilesSchemaReady(pool);
           const actorAvatarsReady=!workbenchActorAvatarsEnabled||await actorAvatarSchemaReady(pool);
-          const closureReady=await serviceClosureSchemaReady(pool);
+          // ADR-0058: the closure vocabulary (COMPLETED / DISMISSED) is part of the same closure schema readiness.
+          const closureReady=await serviceClosureSchemaReady(pool)&&await completionDismissalSchemaReady(pool);
           const ready=closureReady&&actorAvatarsReady&&reporterProfilesReady&&h5Ready&&mvpSchemaReady&&personalReadReady&&supplementReady&&followReady&&followUpReady&&roundNotificationsReady&&botFeedbackReady&&reopenReady&&returnToDispatchReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
             checks:{...base.checks,p2_016_schema:schema,service_closure_schema:closureReady,...(workbenchActorAvatarsEnabled?{actor_avatar_cache_schema:actorAvatarsReady}:{}),...(workbenchReporterProfilesEnabled?{ticket_reporter_profiles_schema:reporterProfilesReady}:{}),...(h5?{yxx_h5_schema:h5Ready}:{}),...(mvpNotificationsEnabled||memberConfig.identityMode==='VERIFIED_APP_OPENID'?{mvp_notification_schema:mvpSchemaReady}:{}),...(workbenchPersonalReadEnabled?{workbench_personal_read_schema:personalReadReady}:{}),...(workbenchReviewResolveAndStartEnabled?{workbench_review_resolve_and_start_schema:selfHandlingReady}:{}),...(workbenchSupplementFollowUpEnabled?{workbench_supplement_follow_up_schema:supplementReady}:{}),...(workbenchFollowEnabled?{workbench_follow_schema:followReady}:{}),...(workbenchAssignmentHistoryEnabled?{assignment_history_schema:selfHandlingReady}:{}),...(ticketRoundNotificationsEnabled?{ticket_round_notification_schema:roundNotificationsReady}:{}),...(followUpSchemaRequired?{workbench_follow_up_schedules_schema:followUpReady}:{}),...(botReporterFeedbackEnabled?{bot_reporter_feedback_schema:botFeedbackReady}:{}),...(ticketReturnToDispatchEnabled?{ticket_return_to_dispatch_schema:returnToDispatchReady}:{}),...(roundsRequested?{ticket_reopen_rounds_schema:reopenReady}:{}),...(workbenchManualReportsEnabled?{workbench_manual_reports_schema:manualReportsReady}:{}),...(ticketStaffCompletionEnabled?{ticket_staff_completion_schema:staffCompletionReady}:{}),...(ticketTakeoverCompletionEnabled?{ticket_takeover_completion_schema:staffCompletionReady}:{}),...(ticketAssignmentEnabled?{ticket_assignment_schema:selfHandlingReady}:{}),...(ticketTakeoverEnabled?{ticket_takeover_schema:selfHandlingReady}:{}),...(ticketWaitingActionsEnabled?{ticket_waiting_actions_schema:selfHandlingReady}:{}),...(ticketSelfHandlingEnabled?{ticket_self_handling_schema:selfHandlingReady}:{}),...(ticketConversationSelfHandlingEnabled?{ticket_conversation_self_handling_schema:selfHandlingReady}:{}),workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
@@ -404,7 +406,7 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
       };
     },
   });
-  const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:(closure as P2016ClosurePort).afterTicketAction});
+  const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:(closure as P2016ClosurePort).afterTicketAction});
   return Object.freeze({...runtime,roundNotifications,query,tickets:tickets as TicketFacade,reviews:reviews as ReviewFacade,reporterAccess:access,notifications,realtimeProjector:realtimeProjector as RealtimeProjector,orchestrationWorker,incidentExtension,
     selfService,runFollowUpDueBatch:(input?:{limit?:unknown})=>{if(!runFollowUpDueBatch)failP2016('FOLLOW_UP_UNAVAILABLE',503);return runFollowUpDueBatch(input);},
     stop:async()=>{activity?.close();await employeeMedia?.close();await attachments?.close();await webReports?.close();await selfService?.close();await h5?.close();memberExtension?.close();(webOAuth as {close?:()=>void}).close?.();return runtime.stop();},

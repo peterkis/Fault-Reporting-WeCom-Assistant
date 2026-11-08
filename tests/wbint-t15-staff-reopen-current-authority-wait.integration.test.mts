@@ -37,7 +37,7 @@ test('STAFF_REOPEN rejects a role revoked while its original command waits for t
       const complete=await handler.post(ticketId,'complete',handler.command(active));
       assert.equal(complete.status,200,await complete.clone().text());
       const closed=await handler.detail(ticketId);
-      assert.equal(closed.status,'CLOSED');assert.equal(closed.assignee_id,actor.id);
+      assert.equal(closed.status,'COMPLETED');assert.equal(closed.assignee_id,actor.id);
       assert.ok(closed.handling_cycle?.staff_completion_event_id);
       assert.ok(closed.allowed_actions.includes('reopen'),'real current staff purpose before the wait');
       const command={client_command_id:randomUUID(),expected_version:closed.version,

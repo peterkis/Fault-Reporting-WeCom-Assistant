@@ -46,8 +46,8 @@ export function createP2016GroupClosureWebhookSender({pool,routes=[],fetchImpl=f
         AND origin.source_bot_id=i.source_bot_id AND origin.reporter_wecom_userid=i.reporter_wecom_userid
       WHERE d.id=$1::uuid AND d.status='SENDING' AND d.provider=$2 AND d.channel_account_id=$3
         AND d.target_type='GROUP' AND d.target_id=$4 AND d.idempotency_key=$5
-        AND b.notification_type='TICKET_CLOSED' AND b.destination_type='GROUP'
-        AND e.event_type='ticket.closed' AND e.new_status='CLOSED'
+        AND b.notification_type='TICKET_COMPLETED' AND b.destination_type='GROUP'
+        AND e.event_type='ticket.completed' AND e.new_status='COMPLETED'
         AND m.sender_kind='SYSTEM' AND m.sender_system_code='TICKET_LIFECYCLE'
         AND m.purpose='SYSTEM_NOTIFICATION' AND m.visibility='EXTERNAL'
         AND o.route_policy='P2_016_GROUP_CLOSURE_WEBHOOK'

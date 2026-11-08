@@ -1,8 +1,8 @@
 import type {YxxTimelineEvent} from '../../../../contracts/yxx_self_service_contracts.js';
 const eventLabels:Record<string,string>={REQUEST_ACCEPTED:'received',SUPPLEMENT_ACCEPTED:'eventSupplement',WAITING_FOR_DETAILS:'waiting',UNDER_REVIEW:'review',TICKET_CREATED:'eventCreated',TICKET_UPDATED:'eventUpdated',NOT_SERVICE:'notService',PROCESSING:'processing'};
 const tiedStageOrder:ReadonlyMap<string,number>=new Map([['REQUEST_ACCEPTED',0],['TICKET_CREATED',1],['PROCESSING',2]]);
-const closedOut:ReadonlySet<string>=new Set(['CANCELLED','DUPLICATE_LINKED']);
-const terminal:ReadonlySet<string>=new Set(['CLOSED','RESOLVED','CANCELLED','DUPLICATE_LINKED']);
+const closedOut:ReadonlySet<string>=new Set(['DISMISSED']);
+const terminal:ReadonlySet<string>=new Set(['COMPLETED','RESOLVED','DISMISSED']);
 export type TimelinePresentation={titleKey:string|null;summary:string;summaryKey?:string};
 /** Titles use known external event kinds; the external safe summary remains the narrative. */
 export function timelinePresentation(event:YxxTimelineEvent):TimelinePresentation{

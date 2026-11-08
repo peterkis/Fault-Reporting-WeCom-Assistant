@@ -36,11 +36,11 @@
       "internal": true,
       "template": "TICKET_RESOLVED"
     },
-    "ticket.closed": {
+    "ticket.completed": {
       "group": false,
       "direct": true,
       "internal": true,
-      "template": "TICKET_CLOSED"
+      "template": "TICKET_COMPLETED"
     },
     "ticket.reopened": {
       "group": false,

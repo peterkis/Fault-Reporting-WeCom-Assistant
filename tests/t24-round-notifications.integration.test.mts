@@ -29,7 +29,7 @@ test('committed staff completion yields a second independent safe personal node 
     await context.runtime.roundNotifications.runOnce();
     const command={...http.command(started),internal_process:'INTERNAL_T24_CANARY：仅内部的合成排查过程',external_summary:'打印服务已恢复，请重新尝试。'};
     const completion=await http.post(context.ticketId,'complete',command);assert.equal(completion.status,200);
-    const completed=await http.detail(context.ticketId);assert.equal(completed.status,'CLOSED');
+    const completed=await http.detail(context.ticketId);assert.equal(completed.status,'COMPLETED');
     await context.runtime.roundNotifications.runOnce();
     const result=await (await http.get('/api/tickets/'+context.ticketId+'/deliveries')).json() as {items:{node:string;cycle_no:number;destination_type:string;status:string}[]};
     assert.deepEqual(result.items.map(row=>({node:row.node,cycle_no:row.cycle_no,route:row.destination_type,status:row.status})).sort((a,b)=>a.node.localeCompare(b.node)),[

@@ -15,7 +15,7 @@ const orders:Record<string,string[]>={
   NEW:['take','assign'],QUEUED:['take','assign'],REOPENED:['take','assign'],ACCEPTED:['take','assign','return'],
   IN_PROGRESS:['complete','request-information','assign','wait-vendor'],
   WAITING_REQUESTER:['resume','follow-up'],WAITING_VENDOR:['resume','follow-up'],
-  RESOLVED:['reopen'],CLOSED:['reopen'],PENDING:['review'],
+  RESOLVED:['reopen'],COMPLETED:['reopen'],PENDING:['review'],
 };
 
 /** Only arranges entries already admitted by their original command owners. */

@@ -71,7 +71,7 @@ test('Card 27C-A restore ACK rechecks current READ and absolute TTL after its re
       const http=await t11Http({...context,runtime,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value)},2,{closeConnections:true});
       const target=context.tickets[0],actor=context.principals[1]?.id;assert.ok(target&&actor);
       const before=await http.detail(target.ticket.id);assert.equal(before.assignee_id,null,'only current team membership grants this actor Ticket READ');
-      const closed=await http.post(target.ticket.id,'cancel',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'OTHER',note:'回执终检（合成）'});
+      const closed=await http.post(target.ticket.id,'dismiss',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'OTHER',note:'回执终检（合成）'});
       assert.equal(closed.status,200);await closed.json();
       const current=await http.detail(target.ticket.id),restoredId=randomUUID();
       const restored=await http.post(target.ticket.id,'restore',{client_command_id:restoredId,expected_version:current.version,reason_code:'RESTORE_CLOSED'});
@@ -142,7 +142,7 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
     let paths:{state:string;path:string}[]=[];
     if(purpose==='ticket-restore'||purpose==='ticket-history'){
       const target=f.tickets[0];assert.ok(target);const path='/api/tickets/'+target.ticket.id,before=await read(path);
-      await post(path+'/cancel',{client_command_id:randomUUID(),expected_version:cookieVersion(before.version),reason_code:'OTHER',note:'Cookie当前会话回执（合成）'});
+      await post(path+'/dismiss',{client_command_id:randomUUID(),expected_version:cookieVersion(before.version),reason_code:'OTHER',note:'Cookie当前会话回执（合成）'});
       const closed=await read(path),committed=randomUUID();await post(path+'/restore',{client_command_id:committed,expected_version:cookieVersion(closed.version),reason_code:'RESTORE_CLOSED'});
       const failed=randomUUID();await post(path+'/restore',{client_command_id:failed,expected_version:cookieVersion(closed.version),reason_code:'RESTORE_CLOSED'},409);
       paths=purpose==='ticket-history'?[{state:'HISTORY',path:path+'/closure-history'}]:[{state:'COMMITTED',path:path+'/restore/commands/'+committed},{state:'FAILED',path:path+'/restore/commands/'+failed},{state:'UNKNOWN',path:path+'/restore/commands/'+randomUUID()}];

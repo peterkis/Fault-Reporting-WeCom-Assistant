@@ -6,7 +6,7 @@
 
 | METHOD + PATH | 合同 |
 | --- | --- |
-| POST /api/tickets/{ticketId}/cancel | 同一取消接口改用 ClosureCommand；返回原安全 Ticket 命令结果，原 waiting 模式保留 handling_cycle_id |
+| POST /api/tickets/{ticketId}/dismiss | 关闭接口（ADR-0058，原 `/cancel` 已删除）使用 ClosureCommand；返回原安全 Ticket 命令结果，原 waiting 模式保留 handling_cycle_id |
 | POST /api/tickets/{ticketId}/restore | RestoreCommand，返回原安全 Ticket 命令结果，版本递增 |
 | GET /api/tickets/{ticketId}/restore/commands/{commandId} | 无 query，原 actor + 当前 READ 下的 UNKNOWN / FAILED / COMMITTED 安全核对 |
 | POST /api/manual-reviews/{reviewId}/resolve | MARK_OUT_OF_SCOPE 保持非 IT 范围分类，仅接受 NOT_IT_SCOPE；下列原因字段必经校验。resolution_reason_code 等于二级原因，非 NOT_IT_SCOPE 时等于一级原因。沿原 expected_row_version、材料 fence 和安全结果 |
@@ -44,7 +44,7 @@ ClosureCommand 为 `{client_command_id,expected_version,reason_code,secondary_re
 
 DTO 与 Schema：[unified_closure_contracts](../../../contracts/unified_closure_contracts.d.ts)、[关闭历史](../../../contracts/unified_closure_history.schema.json)。无需数据库迁移；关闭/恢复写合同和 071 结构不变。回退时配套撤回此读取、PC 解析和展示。
 
-ADMIN / DISPATCHER / HANDLER 可关闭、恢复当前可见事项，只读账号不可；写权不扩大 READ。Ticket 可从 NEW / QUEUED / ACCEPTED / IN_PROGRESS / WAITING_REQUESTER / WAITING_VENDOR / REOPENED 关闭，统一 CANCELLED；RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED 拒绝再次关闭。人工重复关闭仍为 CANCELLED，DUPLICATE_LINKED 留给原公共故障机制。Intake 使用 IGNORED，已关联 Ticket 的事项通过 Ticket 操作。
+ADMIN / DISPATCHER / HANDLER 可关闭、恢复当前可见事项，只读账号不可；写权不扩大 READ。Ticket 可从 NEW / QUEUED / ACCEPTED / IN_PROGRESS / WAITING_REQUESTER / WAITING_VENDOR / REOPENED 关闭，统一 DISMISSED（事件 ticket.dismissed）；RESOLVED / COMPLETED / DISMISSED 拒绝再次关闭。人工重复关闭同为 DISMISSED + 原因 DUPLICATE；DUPLICATE_LINKED 已删除（ADR-0058）。Intake 使用 DISMISSED（事件 intake.dismissed），已关联 Ticket 的事项通过 Ticket 操作。
 
 恢复当前未恢复的关闭记录，回到前状态/列/负责人/团队/轮次；原负责人失效时按本次用户补充回 QUEUED 且负责人为空。每次关闭一条记录，版本只递增；不重建已终止跟进/预约/提醒，会话接待不变。没有额外恢复时间窗，仍沿已有可见性与保留规则。
 

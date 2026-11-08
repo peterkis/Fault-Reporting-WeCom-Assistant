@@ -67,7 +67,7 @@ async function withTracer(twoTickets:boolean,run:(value:Tracer)=>Promise<void>){
    second=await f.verifyStaff(async staff=>{
     const intake=await seedPersistedIntake({pool:f.context.pool,text:'第二个合成 Bot 本人工单打印故障。',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const created=await createPilotTicketCore({pool:f.context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t21-actor-other-bot-ticket'});assert.ok(created.ticket);
-    const id=created.ticket.id,active=await staff.start(id);assert.equal((await staff.post(id,'complete',staff.command(active))).status,200);const completed=await staff.detail(id);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+    const id=created.ticket.id,active=await staff.start(id);assert.equal((await staff.post(id,'complete',staff.command(active))).status,200);const completed=await staff.detail(id);assert.equal(completed.status,'COMPLETED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
     const binding=await transactionP2016(f.context.pool,transaction=>f.access.ensurePublicRefInTransaction({transaction,ticketId:id,reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test']))}));
     return {id,ref:binding.public_ref,path:'/api/reporter/tickets/'+binding.public_ref,version:completed.version};
    });assert.notEqual(second.ref,original.ref);

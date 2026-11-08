@@ -15,6 +15,7 @@ import {createCommunicationSenderPort} from '../../app/server/src/p2-004-communi
 import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export function t33Record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function t33Text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -37,7 +38,7 @@ export async function t33WholeHttp(run:(context:Context)=>Promise<void>,options:
     await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});
     await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});
     await migrateIncidentOwnerTransfer({databaseUrl,mode:'apply'});
-    await migrateIncidentDeliveryControl({databaseUrl,mode:'apply'});await migrateConversationDeliveryCommands({databaseUrl,mode:'apply'});
+    await migrateIncidentDeliveryControl({databaseUrl,mode:'apply'});await migrateConversationDeliveryCommands({databaseUrl,mode:'apply'});await ensureCompletionDismissal(databaseUrl);
     const f=await fixtureP2012(pool,{reporters:4});
     const adminId=t33Text(t33Record(f.admin).id),dispatcherId=t33Text(t33Record(f.dispatcher).id),handlerId=t33Text(t33Record(f.handler).id),outsiderId=t33Text(t33Record(f.outsider).id);
     const grants=new Set<string>();

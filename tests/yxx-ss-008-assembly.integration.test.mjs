@@ -204,8 +204,8 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
         const command={client_command_id:randomUUID(),expected_version:detail.json().version,reason_code:'SS008_'+action.toUpperCase()};
         const result=await staff.request('/api/tickets/'+ticket.id+'/'+action,post(command,csrf));assert.equal(result.status,200,result.text);
       }
-      const detail=(await a.request('/api/yixiaoxiu/requests/'+ref)).json();assert.equal(detail.ticket.status,'CLOSED');
-      assert.equal((await member.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
+      const detail=(await a.request('/api/yixiaoxiu/requests/'+ref)).json();assert.equal(detail.ticket.status,'COMPLETED');
+      assert.equal((await member.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'COMPLETED');
       assert.equal((await staff.request('/api/tickets/'+ticket.id+'/responsibility')).json().conversations.length,0);
       const access=createPilotAccessService({pool});
       const handler=await access.upsertPrincipal({wecomUserId:'ss008-handler',displayName:'Synthetic Handler',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});

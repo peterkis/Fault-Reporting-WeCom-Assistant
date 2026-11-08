@@ -36,7 +36,7 @@ test('one composite UUID closes the original cycle and takes only explicitly sel
   const body=command([selected]),result=await s.b.post(s.path+'/takeover-and-complete',body);assert.equal(result.status,200,JSON.stringify(result.value));
   assert.equal(result.value.communication_choice,'TAKE_SELECTED');const changed=rows(result.value.conversations);assert.equal(changed.length,1);
   assert.equal(changed[0]?.session_id,selected.session_id);assert.equal(changed[0]?.session_row_version,selected.expected_row_version+1);assert.equal(changed[0]?.changed,true);
-  const committed=await snapshot();assert.equal(committed.ticket.status,'CLOSED');assert.equal(committed.ticket.version,body.expected_version+2);
+  const committed=await snapshot();assert.equal(committed.ticket.status,'COMPLETED');assert.equal(committed.ticket.version,body.expected_version+2);
   assert.equal(committed.ticket.assignee_id,s.actor.id);assert.equal(committed.ticket.resolver_team_id,'T07_NETWORK');assert.equal(object(committed.ticket.handling_cycle).id,cycle.id);
   assert.equal(committed.commitments.length,1);assert.equal(rows(committed.responsibility.conversations)[0]?.conversation_principal_id,s.actor.id);
   const receipt=await f.pool.query<{command_type:string;state:string}>('SELECT command_type,state FROM pilot_ticket.ticket_command_receipt WHERE client_command_id=$1::uuid',[body.client_command_id]);

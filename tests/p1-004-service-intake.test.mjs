@@ -17,6 +17,7 @@ import {
   createServiceIntakeProcessor,
   mapServiceIntakeMigrationFailure,
 } from '../app/server/src/p1-004-service-intake.mjs';
+import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -117,10 +118,13 @@ function assertEventIntakeIdentity(response) {
 
 before(async () => {
   if (pool) {
+    // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
+    await releaseCompletionDismissal(pool);
     await applyChannelMessageInboxMigration({ pool });
     await applyServiceIntakeMigration({ pool });
     // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
     await migrateCurrentBaseline({ databaseUrl });
+    await ensureCompletionDismissal(pool);
   }
 });
 
@@ -140,6 +144,8 @@ after(async () => {
       ['WECOM_AIBOT', [...testMessageIds]],
     );
   }
+  // Restore the shared database's original vocabulary once this file's own rows are gone.
+  await releaseCompletionDismissal(pool);
   await pool.end();
 });
 
@@ -574,7 +580,7 @@ integrationTest('standalone thanks is CHATTER without an unnecessary clarificati
 
   assert.equal(response.ok, true);
   assert.equal(response.result.intake.request_type, 'CHATTER');
-  assert.equal(response.result.intake.status, 'IGNORED');
+  assert.equal(response.result.intake.status, 'DISMISSED');
   assert.deepEqual(
     response.result.events.map((event) => event.event_type),
     ['intake.received'],
@@ -1079,7 +1085,7 @@ test('Service Intake JSON Schema freezes the domain boundary and P1-004 version 
     'WAITING_TRIAGE',
     'LINKED_INCIDENT',
     'COMPLETED',
-    'IGNORED',
+    'DISMISSED',
     'FAILED',
   ]);
   assert.equal(schema.properties.version.minimum, 1);

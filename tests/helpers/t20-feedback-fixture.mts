@@ -38,7 +38,7 @@ export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>P
   if('disabled' in staff)throw Error('T20_FIXTURE_STAFF_DISABLED');let completed:P2016TicketDetail;
   try{const started=await staff.start();assert.ok(started.cookies);const http=await t11Http({...context,runtime:staff,cookies:started.cookies.map(c=>c.name+'='+c.value)});
    const active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);
-   completed=await http.detail(ticketId);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+   completed=await http.detail(ticketId);assert.equal(completed.status,'COMPLETED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
   }finally{await staff.stop();assert.equal(staff.server.listening,false);}
   const app=t20MemberApp({...options,identityMapping:await mapping()});
   try{

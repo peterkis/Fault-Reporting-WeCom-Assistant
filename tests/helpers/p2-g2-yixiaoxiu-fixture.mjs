@@ -5,6 +5,7 @@ import {request as httpRequest} from 'node:http';
 import {withP2012Database,applyThrough031} from './p2-012-postgres-harness.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 import {createPilotTicketCore} from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {appendTicketEvent} from '../../app/server/src/p1-006-ticket-state-actions.mjs';
 import {createP2016ReporterAccess} from '../../app/server/src/p2-016-reporter-access.mjs';
@@ -18,7 +19,7 @@ export const entryConfig=Object.freeze({enabled:true,corpId:'synthetic-corp',age
 export const entryKey='synthetic-only-yxx-reporter-hmac-key-32-bytes';
 export async function withYxxDatabase(run,{grantTtlMs=1800000}={}){
   return withP2012Database({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'yxxentry',run:async context=>{
-    await applyThrough031(context);await migrateP2012({databaseUrl:context.databaseUrl});
+    await applyThrough031(context);await migrateP2012({databaseUrl:context.databaseUrl});await ensureCompletionDismissal(context.pool);
     let epoch=String(Date.now());
     const access=createP2016ReporterAccess({pool:context.pool,enabled:true,hmacSecret:entryKey,now:()=>epoch,grantTtlMs});
     const notifications=createP2016TicketNotificationProjector({pool:context.pool,enabled:true,cardEnabled:true,reporterAccess:access,additionalEventTypes:['ticket.created']});

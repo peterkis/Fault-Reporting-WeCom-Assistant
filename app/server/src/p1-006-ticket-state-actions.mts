@@ -30,9 +30,9 @@ export type TicketAction =
   | 'complete'
   | 'confirm'
   | 'reopen'
-  | 'cancel'
+  | 'dismiss'
   | 'restore'
-  | 'auto-close'
+  | 'auto-complete'
   | 'add-note';
 export type OperatorType = 'PILOT_USER' | 'REPORTER' | 'SYSTEM';
 export type TicketEventType =
@@ -44,13 +44,11 @@ export type TicketEventType =
   | 'ticket.waiting_vendor'
   | 'ticket.resumed'
   | 'ticket.resolved'
-  | 'ticket.closed'
+  | 'ticket.completed'
   | 'ticket.reopened'
-  | 'ticket.cancelled'
+  | 'ticket.dismissed'
   | 'ticket.restored'
   | 'ticket.handling_aborted'
-  | 'ticket.duplicate_linked'
-  | 'ticket.unlinked'
   | 'ticket.note_added'
   | 'ticket.information_added'
   | 'ticket.auto_close_reminder'
@@ -95,20 +93,20 @@ const ACTIONS: Readonly<Record<TicketAction, TicketTransition>> = Object.freeze(
   },
   'wait-vendor': { from: ['IN_PROGRESS'], to: 'WAITING_VENDOR', eventType: 'ticket.waiting_vendor' },
   resolve: { from: ['IN_PROGRESS'], to: 'RESOLVED', eventType: 'ticket.resolved' },
-  complete: { from: ['IN_PROGRESS'], to: 'CLOSED', eventType: 'ticket.closed' },
-  confirm: { from: ['RESOLVED'], to: 'CLOSED', eventType: 'ticket.closed' },
+  complete: { from: ['IN_PROGRESS'], to: 'COMPLETED', eventType: 'ticket.completed' },
+  confirm: { from: ['RESOLVED'], to: 'COMPLETED', eventType: 'ticket.completed' },
   reopen: {
-    from: ['RESOLVED', 'CLOSED'],
+    from: ['RESOLVED', 'COMPLETED'],
     to: 'REOPENED',
     eventType: 'ticket.reopened',
   },
-  cancel: { from: ['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'], to: 'CANCELLED', eventType: 'ticket.cancelled' },
-  restore: { from: ['CANCELLED','DUPLICATE_LINKED'], toCurrentStatus:true, eventType:'ticket.restored' },
-  'auto-close': { from: ['RESOLVED'], to: 'CLOSED', eventType: 'ticket.closed' },
+  dismiss: { from: ['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'], to: 'DISMISSED', eventType: 'ticket.dismissed' },
+  restore: { from: ['DISMISSED'], toCurrentStatus:true, eventType:'ticket.restored' },
+  'auto-complete': { from: ['RESOLVED'], to: 'COMPLETED', eventType: 'ticket.completed' },
   'add-note': {
     from: [
       'NEW', 'QUEUED', 'ACCEPTED', 'IN_PROGRESS', 'WAITING_REQUESTER',
-      'WAITING_VENDOR', 'RESOLVED', 'CLOSED', 'REOPENED',
+      'WAITING_VENDOR', 'RESOLVED', 'COMPLETED', 'REOPENED',
     ],
     toCurrentStatus: true,
     eventType: 'ticket.note_added',
@@ -296,7 +294,7 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
   if (!isRecord(input.actor) || !isOperatorType(input.actor.type)) {
     throw new TicketActionError('VALIDATION_FAILED');
   }
-  if (actionValue === 'auto-close' && input.actor.type !== 'SYSTEM') {
+  if (actionValue === 'auto-complete' && input.actor.type !== 'SYSTEM') {
     throw new TicketActionError('FORBIDDEN');
   }
   if(actionValue==='restore'&&(input.actor.type!=='PILOT_USER'||input.reasonCode!=='RESTORE_CLOSED'||input.note!=null||input.externalVisible===true))throw new TicketActionError('VALIDATION_FAILED');
@@ -331,7 +329,7 @@ function validateActionInput(input: unknown): NormalizedTicketActionInput {
     throw new TicketActionError('VALIDATION_FAILED');
   }
   let closure:NormalizedClosureInput|null=null;
-  if(actionValue==='cancel'){
+  if(actionValue==='dismiss'){
     if(input.externalVisible===true)throw new TicketActionError('VALIDATION_FAILED');
     try{closure=normalizeClosureInput({reason_code:input.reasonCode,note:input.note??null,
       ...(input.secondaryReasonCode===undefined?{}:{secondary_reason_code:input.secondaryReasonCode}),
@@ -603,10 +601,10 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
     const internalNote = request.action === 'complete' ? request.internalProcess : request.externalVisible ? null : request.note;
     const closureReason = request.action === 'complete' ? 'STAFF_COMPLETED' : request.action === 'confirm'
       ? request.reasonCode ?? 'REQUESTER_CONFIRMED'
-      : request.action === 'auto-close'
+      : request.action === 'auto-complete'
         ? 'AUTO_TIMEOUT'
-        : request.action === 'cancel'
-          ? request.reasonCode ?? 'CANCELLED'
+        : request.action === 'dismiss'
+          ? request.reasonCode ?? null
           : request.action === 'reopen'||request.action==='restore'
             ? null
             : current.closure_reason;

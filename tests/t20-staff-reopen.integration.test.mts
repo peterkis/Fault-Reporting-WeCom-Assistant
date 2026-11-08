@@ -21,7 +21,7 @@ test('authorized staff uses its own W reopen permission to start a new unassigne
    // Source admission/Core create and public T04/T11 close establish the legitimate completed cycle.
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);
    assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);
-   const closed=await http.detail(ticketId);assert.equal(closed.status,'CLOSED');assert.ok(closed.handling_cycle?.staff_completion_event_id);
+   const closed=await http.detail(ticketId);assert.equal(closed.status,'COMPLETED');assert.ok(closed.handling_cycle?.staff_completion_event_id);
    const oldRound=closed.handling_cycle;
    const command={client_command_id:randomUUID(),expected_version:closed.version,reason_code:'STAFF_REOPEN',note:'工作人员核实同一故障仍需处置'};
    const response=await http.post(ticketId,'reopen',command);assert.equal(response.status,200,await response.text());

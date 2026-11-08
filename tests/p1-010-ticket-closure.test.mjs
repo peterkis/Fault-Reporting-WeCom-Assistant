@@ -34,6 +34,7 @@ import {
   createTicketClosureService,
   createTicketLifecycleProcessor,
 } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -113,6 +114,8 @@ before(async () => {
   if (!pool) {
     return;
   }
+  // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
+  await releaseCompletionDismissal(pool);
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
@@ -120,6 +123,7 @@ before(async () => {
   await applyNotificationOutboxMigration({ pool });
   await applyPilotAccessMigration({ pool });
   await applyTicketClosureMigration({ pool });
+  await ensureCompletionDismissal(pool);
 });
 
 after(async () => {
@@ -148,6 +152,8 @@ after(async () => {
       ['WECOM_AIBOT', [...messageIds]],
     );
   }
+  // Restore the shared database's original vocabulary once this file's own rows are gone.
+  await releaseCompletionDismissal(pool);
   await pool.end();
 });
 
@@ -304,7 +310,7 @@ integrationTest('supplement, card confirmation, duplicate card protection, close
     actionService: actions,
   });
   assert.equal(closed.ok, true);
-  assert.equal(closed.ticket.status, 'CLOSED');
+  assert.equal(closed.ticket.status, 'COMPLETED');
   assert.equal(closed.ticket.closure_reason, 'REQUESTER_CONFIRMED');
   assert.equal(reporter.id.length, 36);
 });
@@ -419,5 +425,5 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
     'SELECT status, closure_reason FROM pilot_ticket.ticket WHERE id = $1::uuid',
     [ticket.id],
   );
-  assert.deepEqual(persisted.rows, [{ status: 'CLOSED', closure_reason: 'AUTO_TIMEOUT' }]);
+  assert.deepEqual(persisted.rows, [{ status: 'COMPLETED', closure_reason: 'AUTO_TIMEOUT' }]);
 });

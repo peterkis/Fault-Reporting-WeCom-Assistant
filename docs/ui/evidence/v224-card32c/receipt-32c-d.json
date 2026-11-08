@@ -1,0 +1,79 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "tokens": {
+    "done": "rgb(68, 131, 97)",
+    "dismissed": "rgb(165, 162, 154)"
+  },
+  "metrics": {
+    "drawer-timeline-completed": {
+      "label": "已完成",
+      "dot": "rgb(68, 131, 97)",
+      "legacy": []
+    },
+    "drawer-timeline-dismissed": {
+      "label": "已关闭",
+      "dot": "rgb(165, 162, 154)",
+      "legacy": []
+    },
+    "list": {
+      "groups": [
+        "待判断",
+        "待接单",
+        "已完成",
+        "已关闭"
+      ],
+      "closedNote": true,
+      "completedGroup": "已完成",
+      "dismissedGroup": "已关闭",
+      "completedChip": "已完成",
+      "dismissedReason": "误报或测试",
+      "dismissedTime": true,
+      "dismissedChip": null
+    },
+    "search": [
+      "待接单",
+      "待接单",
+      "已领取",
+      "重新报障",
+      "处理中",
+      "等待补充",
+      "等待厂商",
+      "已解决待确认",
+      "已完成",
+      "已关闭",
+      "待复核",
+      "已受理待建单",
+      "待补充报修信息",
+      "待判断",
+      "受理处理失败"
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "drawer-timeline-completed.png",
+      "sha256": "3d50e923572eb6b69c40ca05613e5511c3cb5c8b10e05ad328d7e944e1aadd4d",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "drawer-timeline-dismissed.png",
+      "sha256": "a26c0ed3911960a03c30128ad65ea2e63081b65e5b8e5a2c18ed18f5c722366d",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "list-1440-closed-groups.png",
+      "sha256": "2049f2f4473be040e7c74400ef419c0cf88b6d031783d106492f4570ed5287c7",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "search-status-labels.png",
+      "sha256": "f2647db50270d080f4b4972f2d637d3aaed8eb398935162591396db355c11b59",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "real_sends": 0
+}

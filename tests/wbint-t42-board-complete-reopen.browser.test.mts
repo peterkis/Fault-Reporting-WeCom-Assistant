@@ -38,7 +38,7 @@ test('T42 board completion and independent staff reopen each require their origi
    await browser.evaluate("[...document.querySelectorAll('.board-column.closed button')].find(button=>button.textContent.includes('显示剩余'))?.click()");
    await browser.waitFor(`Boolean(document.querySelector('.board-column.closed '+${JSON.stringify(card)}))&&!document.querySelector('.board-column.active '+${JSON.stringify(card)})`);
    await browser.waitFor("document.querySelector('[data-board-intent-panel] h3')?.textContent==='官方已显示：已关闭'");
-   const closed=await http.detail(known.ticket.id);assert.equal(closed.status,'CLOSED');assert.equal(closed.assignee_id,f.principals[1]?.id);
+   const closed=await http.detail(known.ticket.id);assert.equal(closed.status,'COMPLETED');assert.equal(closed.assignee_id,f.principals[1]?.id);
    const completedWrites=await browser.evaluate('globalThis.__t42LifecycleWrites');assert.ok(Array.isArray(completedWrites));assert.equal(completedWrites.length,1);const complete=object(object(completedWrites[0]).body);
    assert.equal(complete.internal_process,'T42合成内部排查过程，不能作为外发摘要。');assert.equal(complete.external_summary,'合成设备服务已恢复。');assert.equal(complete.external_summary_confirmed,true);assert.equal(complete.reason_code,'STAFF_COMPLETED');assert.equal(complete.expected_version,active.version);
    await browser.waitFor("document.querySelector('button[aria-label=关闭详情]')?.disabled===false");await browser.evaluate("document.querySelector('button[aria-label=关闭详情]').click()");
@@ -46,7 +46,7 @@ test('T42 board completion and independent staff reopen each require their origi
    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=pending]')}).click()`);
    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #reopen-reason'))");
    await openWorkbenchStep(browser,'.ticket-reopen');
-   assert.equal(await browser.evaluate('globalThis.__t42LifecycleWrites.length'),1);assert.equal(await browser.evaluate("document.querySelector('[data-action=reopen-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'CLOSED');
+   assert.equal(await browser.evaluate('globalThis.__t42LifecycleWrites.length'),1);assert.equal(await browser.evaluate("document.querySelector('[data-action=reopen-ticket]')?.disabled"),true);assert.equal((await http.detail(known.ticket.id)).status,'COMPLETED');
    await browser.evaluate("document.querySelector('#reopen-reason').focus()");await browser.command('Input.insertText',{text:'工作人员核实同一故障仍需处理。'});
    await browser.waitFor("document.querySelector('[data-action=reopen-ticket]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
    await browser.waitFor("globalThis.__t42LifecycleResponses.some(row=>row.path.endsWith('/reopen')&&row.status===200)");

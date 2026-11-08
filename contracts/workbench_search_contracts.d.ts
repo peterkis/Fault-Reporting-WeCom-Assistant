@@ -7,7 +7,7 @@ export type WorkbenchSearchColumn=BoardColumn|'all';
 export type WorkbenchSearchResponsibility='any'|'handling'|'communication'|'following'|'unassigned';
 export type WorkbenchSearchSource='WECOM_DIRECT'|'WECOM_GROUP'|'WEB_REQUEST'|'MANUAL_PHONE'|'MANUAL_ON_SITE';
 export type WorkbenchSearchStatus='NEW'|'QUEUED'|'ACCEPTED'|'REOPENED'|'IN_PROGRESS'|'WAITING_REQUESTER'|'WAITING_VENDOR'|
- 'RESOLVED'|'CLOSED'|'CANCELLED'|'DUPLICATE_LINKED'|'PENDING'|'RECEIVED'|'WAITING_DESCRIPTION'|'WAITING_TRIAGE'|'FAILED'|'COMPLETED'|'IGNORED';
+ 'RESOLVED'|'COMPLETED'|'DISMISSED'|'PENDING'|'RECEIVED'|'WAITING_DESCRIPTION'|'WAITING_TRIAGE'|'FAILED';
 export interface WorkbenchSearchCriteria {
  readonly q:string;readonly column:WorkbenchSearchColumn;readonly range:BoardCompletionRange;readonly scope:'team'|'related';
  readonly responsibility:WorkbenchSearchResponsibility;readonly resolver_team_id:string|null;readonly assignee_id:string|null;

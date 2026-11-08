@@ -26,6 +26,7 @@ import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUp
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {migrateWorkbenchSupplementFollowUp} from '../../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
 import type {PersonalReadPage} from '../../contracts/workbench_personal_read_contracts.js';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 type Reader='admin'|'staff'|'outsider';
 type BrowserCookie=NonNullable<Parameters<typeof launchSystemBrowser>[0]['cookies']>[number];
 interface MaterialDetail {records:{audience:string;text:string;read_material?:SupplementFollowUpTarget}[];responsibility:unknown}
@@ -46,7 +47,7 @@ export function withT36WebFixture(run:(f:T36WebFixture)=>Promise<void>,
  return withT35Fixture(async base=>{
   await base.runtime.stop();
   // The owned test schema is prepared after the original public-seam RED.
-  await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});
+  await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});await ensureCompletionDismissal(base.databaseUrl);
   await prepareSchema?.(base);
   const admin=base.principals[0],staff=base.principals[2];assert.ok(admin&&staff);
   const options={pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:base.origin,

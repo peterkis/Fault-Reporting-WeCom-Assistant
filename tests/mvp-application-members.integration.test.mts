@@ -19,6 +19,7 @@ import {createP2016WeComSender} from '../app/server/src/p2-016-wecom-sender.mjs'
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
 import {composeConversationRuleAdmission} from '../app/server/src/conversation-rule-admission.mjs';
 import {createMvpNotificationAdmission} from '../app/server/src/mvp-group-replies.mjs';
+import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 function object(v:unknown):Record<string,unknown>{assert.ok(v&&typeof v==='object'&&!Array.isArray(v));return v as Record<string,unknown>;}
 function nativeClient(base:string,origin:string){
@@ -42,6 +43,7 @@ function nativeClient(base:string,origin:string){
 test('MVP H5 admits unlisted visible members through real OAuth and HTTP; durable application notifications survive logout and process restart without a Bot identity',{timeout:240000},async()=>{
  await withT24Fixture(async context=>{
   await migrateBotReporterFeedback({databaseUrl:context.databaseUrl,mode:'apply'});
+  await ensureCompletionDismissal(context.pool);
   const config=validateYxxEntryConfig({...entryConfig,identityMode:'VERIFIED_APP_OPENID'});assert.ok(config.enabled);assert.equal(config.reporterUserIds,undefined);
   const visible=new Set(['open-new-a','open-new-b']),appBodies:Record<string,unknown>[]=[],paths:string[]=[],origin='https://entry.test';let memberUnavailable=false,stallMemberLookup=false,releaseMemberLookup:(()=>void)|undefined;
   const fetchImpl:typeof fetch=async(input,init)=>{

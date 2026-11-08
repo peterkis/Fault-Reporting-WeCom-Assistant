@@ -8,7 +8,7 @@ test('closed composite contracts retain one immutable confirmed capture and reje
  const session={session_id:randomUUID(),expected_row_version:1},body={client_command_id:randomUUID(),expected_version:4,reason_code:'STAFF_COMPLETED',resolver_team_id:'PILOT_IT',handling_cycle_id:randomUUID(),communication_choice:'TAKE_SELECTED',sessions:[session],internal_process:'独立内部过程',external_summary:'可公开的结果',external_summary_confirmed:true},input={action:'takeover-and-complete',ticket_id:randomUUID(),...body};
  const normalized=normalizeTakeoverCompletionCommand(input);await assertP2016Schema('p2_016_takeover_completion_command',body);session.expected_row_version=2;
  assert.equal(normalized.sessions[0]?.expected_row_version,1);assert.ok(Object.isFrozen(normalized)&&Object.isFrozen(normalized.sessions)&&Object.isFrozen(normalized.sessions[0]));
- for(const patch of [{actor_principal_id:randomUUID()},{target_principal_id:randomUUID()},{force:true},{status:'CLOSED'},{reason_code:'REQUESTER_CONFIRMED'},
+ for(const patch of [{actor_principal_id:randomUUID()},{target_principal_id:randomUUID()},{force:true},{status:'COMPLETED'},{reason_code:'REQUESTER_CONFIRMED'},
   {expected_version:'4'},{expected_version:0},{expected_version:2147483648},{handling_cycle_id:'cycle'},{resolver_team_id:''},{internal_process:' '},{internal_process:'x'.repeat(2001)},
   {external_summary:' '},{external_summary:'x'.repeat(501)},{external_summary_confirmed:false},{communication_choice:'TAKE_SELECTED',sessions:[]},
   {communication_choice:'RETAIN_CURRENT',sessions:[session]},{sessions:[session,{...session,session_id:session.session_id.toUpperCase()}]},

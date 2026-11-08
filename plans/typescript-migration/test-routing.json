@@ -50,6 +50,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card32c-d.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card32b.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -6774,6 +6783,15 @@
     },
     {
       "path": "tests/conversation-inbox.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/completion-dismissal-migration.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,

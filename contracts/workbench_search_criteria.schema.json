@@ -115,16 +115,13 @@
           "WAITING_REQUESTER",
           "WAITING_VENDOR",
           "RESOLVED",
-          "CLOSED",
-          "CANCELLED",
-          "DUPLICATE_LINKED",
+          "COMPLETED",
+          "DISMISSED",
           "PENDING",
           "RECEIVED",
           "WAITING_DESCRIPTION",
           "WAITING_TRIAGE",
-          "FAILED",
-          "COMPLETED",
-          "IGNORED"
+          "FAILED"
         ]
       }
     },

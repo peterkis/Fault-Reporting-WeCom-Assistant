@@ -31,9 +31,9 @@ test('independent T12 and existing notes serialize real receipt FK and stream wa
    console.log('T12_INDEPENDENT_MIXED_QUEUE '+JSON.stringify({actual_stream_waiters:2,legacy_flags_false:true,statuses:results.map(reply=>reply.status),errors:results.map(reply=>reply.value.error??null)}));
    assert.deepEqual(results.map(reply=>reply.status).sort(),[200,409],'independent T12 and notes must serialize version conflict without a DB deadlock refusal');
    const fresh=(await b.get(s.path)).value;
-   if(fresh.status!=='CLOSED'){assert.equal((await b.post(s.path+'/takeover-and-complete',{...command,client_command_id:randomUUID(),expected_version:version(fresh.version)})).status,200);}
-   const after=(await b.get(s.path)).value;assert.equal(after.status,'CLOSED');assert.equal(object(after.handling_cycle).id,cycle.id);assert.equal((await f.pool.query('SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment WHERE ticket_id=$1::uuid',[s.first.ticket.id])).rowCount,1);
-   const events=rows((await a.get(s.path+'/events')).value.items);assert.equal(events.filter(row=>row.event_type==='ticket.closed').length,1);assert.equal(events.filter(row=>row.event_type==='ticket.assignment_transferred').length,1);
+   if(fresh.status!=='COMPLETED'){assert.equal((await b.post(s.path+'/takeover-and-complete',{...command,client_command_id:randomUUID(),expected_version:version(fresh.version)})).status,200);}
+   const after=(await b.get(s.path)).value;assert.equal(after.status,'COMPLETED');assert.equal(object(after.handling_cycle).id,cycle.id);assert.equal((await f.pool.query('SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment WHERE ticket_id=$1::uuid',[s.first.ticket.id])).rowCount,1);
+   const events=rows((await a.get(s.path+'/events')).value.items);assert.equal(events.filter(row=>row.event_type==='ticket.completed').length,1);assert.equal(events.filter(row=>row.event_type==='ticket.assignment_transferred').length,1);
    assert.equal((await f.pool.query('SELECT 1 FROM conversation.control_event WHERE client_command_id=$1::uuid',[command.client_command_id])).rowCount,0);
   }finally{runtime.server.closeAllConnections();await closeConversationWorkbenchServer(runtime.server);await runtime.stop();assert.equal(runtime.server.listening,false);const connections=await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count)));assert.equal(connections,0);}
  });

@@ -16,7 +16,7 @@ const requestDeadlineMs=15000;
 // Feedback uses the T03 encrypted journal under its own member binding, request
 // and purpose. The generic SUBMIT/SUPPLEMENT journal remains independent.
 const feedbackState={pending:null,recovery:null,settling:false,message:'',kind:''};
-function feedbackEligible(detail){const value=detail?.feedback_context;return value?.schema_version===1&&value.can_feedback===true&&value.rejection===null&&REQUEST_REF.test(value.completed_round_ref??'')&&Number.isInteger(value.completed_round_no)&&value.completed_round_no>=1&&value.completed_round_no<2147483647&&Number.isInteger(value.ticket_version)&&value.ticket_version>=1&&value.ticket_version<2147483647&&detail.ticket?.status==='CLOSED';}
+function feedbackEligible(detail){const value=detail?.feedback_context;return value?.schema_version===1&&value.can_feedback===true&&value.rejection===null&&REQUEST_REF.test(value.completed_round_ref??'')&&Number.isInteger(value.completed_round_no)&&value.completed_round_no>=1&&value.completed_round_no<2147483647&&Number.isInteger(value.ticket_version)&&value.ticket_version>=1&&value.ticket_version<2147483647&&detail.ticket?.status==='COMPLETED';}
 const exactFeedback=(object,keys)=>object&&typeof object==='object'&&!Array.isArray(object)&&Object.keys(object).sort().join(',')===keys.slice().sort().join(',');
 const feedbackCommandId=pending=>pending?.input?.client_command_id??pending?.commandId;
 function opaqueFeedback(id,detail){return Object.freeze({requestRef:detail.request_ref,ticketNo:detail.ticket?.ticket_no??null,commandId:id,input:null});}
@@ -127,7 +127,7 @@ async function checkFeedback(){
  finally{if(finishOperation(operation)){renderFeedback();syncPendingButtons();schedule();}}
 }
 const sessionRevalidationMs=5000;
-const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});
+const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',COMPLETED:'已完成',REOPENED:'重新处理中',DISMISSED:'已关闭'});
 const logoutStorageKey='yxx.self_service.logout_signal';
 const logoutStorageValue='v1';
 const logoutSignal=Object.freeze({v:1,type:'logout'});

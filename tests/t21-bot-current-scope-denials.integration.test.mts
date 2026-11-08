@@ -47,7 +47,7 @@ test('current approved App ownership rejects another member, wrong Bot, Web ref,
     {code:'YXX_ENTRY_IDENTITY_NAMESPACE_UNVERIFIED'});
   }finally{if(matchingOAuth.enabled)matchingOAuth.close();}
   // These are startup authority failures, never a claim about message history.
-  await f.verifyStaff(async staff=>{const ticket=await staff.detail(f.ticketId);assert.equal(ticket.status,'CLOSED');
+  await f.verifyStaff(async staff=>{const ticket=await staff.detail(f.ticketId);assert.equal(ticket.status,'COMPLETED');
    assert.equal(ticket.version,f.completed.version);assert.equal(ticket.handling_cycle?.cycle_no,f.completed.handling_cycle?.cycle_no);});
  });
 });

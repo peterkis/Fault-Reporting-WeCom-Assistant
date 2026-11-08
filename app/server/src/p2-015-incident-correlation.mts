@@ -65,7 +65,7 @@ export function createIncidentCorrelationWorker({ pool, enabled = false }: { poo
             AND old.safe_result->'known_fields'->>'selected_service_code'=d.safe_result->'known_fields'->>'selected_service_code'
             AND jsonb_array_length(COALESCE(old.safe_result->'known_fields'->'symptom_codes','[]'::jsonb))>0
           ORDER BY old.decision_ordinal LIMIT 1) anchor ON true
-        WHERE j.status<>'ENDED' AND l.status='OPEN' AND i.status NOT IN ('COMPLETED','IGNORED','FAILED')
+        WHERE j.status<>'ENDED' AND l.status='OPEN' AND i.status NOT IN ('COMPLETED','DISMISSED','FAILED')
           AND NOT EXISTS (SELECT 1 FROM intake.service_intake pending
             LEFT JOIN LATERAL (SELECT x.source_window_end_sequence FROM intake.deterministic_decision x
               WHERE x.service_intake_id=pending.id AND x.engine_version=$1

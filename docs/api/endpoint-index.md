@@ -11,7 +11,7 @@ H5 V2 的 **F** 表示 `FULL_SERVICE_LOOP` 中的 W 成员扩展，与 M 共用�
 
 | 方法 | 完整路径 | 宿主 | 用途 | 契约文档 |
 | --- | --- | --- | --- | --- |
-| POST | `/api/tickets/{ticketId}/cancel` | W | 六选一原因，开放状态人工关闭 | [关闭 / 恢复](workbench/closure.md) |
+| POST | `/api/tickets/{ticketId}/dismiss` | W | 六选一原因，开放状态人工关闭（ADR-0058，原 `/cancel` 已删除） | [关闭 / 恢复](workbench/closure.md) |
 | POST | `/api/tickets/{ticketId}/restore` | W | 按关闭记录恢复前状态 / 负责人 | [关闭 / 恢复](workbench/closure.md) |
 | GET | `/api/tickets/{ticketId}/restore/commands/{commandId}` | W | 原用途、当前 READ 安全核对 | [关闭 / 恢复](workbench/closure.md) |
 | GET | `/api/intakes/{intakeId}/closure-context` | W | 当前版本与关闭 / 恢复能力 | [关闭 / 恢复](workbench/closure.md) |
@@ -123,7 +123,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | T15 | POST | `/api/tickets/{ticketId}/resolve` | W | 已实现：解决 | [工单](workbench/tickets.md) |
 | T16 | POST | `/api/tickets/{ticketId}/confirm` | W | 已实现：确认 | [工单](workbench/tickets.md) |
 | T17 | POST | `/api/tickets/{ticketId}/reopen` | W | 已实现：重开 | [工单](workbench/tickets.md) |
-| T18 | POST | `/api/tickets/{ticketId}/cancel` | W | 已实现：取消 | [工单](workbench/tickets.md) |
+| T18 | POST | `/api/tickets/{ticketId}/dismiss` | W | 已实现：关闭（原 `/cancel`） | [工单](workbench/tickets.md) |
 | T19 | POST | `/api/tickets/{ticketId}/notes` | W | 已实现：备注 | [工单](workbench/tickets.md) |
 | T20 | POST | `/api/tickets/{ticketId}/transfer` | W | 已实现：处理责任转派 | [工单](workbench/tickets.md) |
 | T21 | POST | `/api/tickets/{ticketId}/deliveries/{deliveryId}/retry` | W | 已实现：通知重试 | [工单](workbench/tickets.md) |
@@ -265,7 +265,7 @@ T40 默认关闭的 `GET /api/workbench/reminders` 位于 W 宿主，读取当�
 | P09 | POST | `/api/pilot/tickets/{ticketId}/actions/resolve` | P | 已实现：历史动作 | [P1契约](platform/auth-health.md) |
 | P10 | POST | `/api/pilot/tickets/{ticketId}/actions/confirm` | P | 已实现：历史动作 | [P1契约](platform/auth-health.md) |
 | P11 | POST | `/api/pilot/tickets/{ticketId}/actions/reopen` | P | 已实现：历史动作 | [P1契约](platform/auth-health.md) |
-| P12 | POST | `/api/pilot/tickets/{ticketId}/actions/cancel` | P | 已实现：历史动作 | [P1契约](platform/auth-health.md) |
+| P12 | POST | `/api/pilot/tickets/{ticketId}/actions/dismiss` | P | 已实现：历史动作（原 `cancel`） | [P1契约](platform/auth-health.md) |
 | P13 | POST | `/api/pilot/tickets/{ticketId}/actions/add-note` | P | 已实现：历史动作 | [P1契约](platform/auth-health.md) |
 
 ## HTML、重定向与静态入口（客户端预期GET）
@@ -325,8 +325,8 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
 | GET | `/api/attachments/*` | 未匹配附件扩展的路径，基础W仍显式404不可用 | [附件](workbench/attachments.md)／[会话](workbench/conversations.md) |
-| POST | `/api/pilot/tickets/{ticketId}/actions/auto-close` | P显式403 | [平台](platform/auth-health.md) |
-| POST | `/api/tickets/{ticketId}/auto-close` | 无HTTP动作 | [工单](workbench/tickets.md) |
+| POST | `/api/pilot/tickets/{ticketId}/actions/auto-complete` | P显式403 | [平台](platform/auth-health.md) |
+| POST | `/api/tickets/{ticketId}/auto-complete` | 无HTTP动作 | [工单](workbench/tickets.md) |
 | POST | `/api/incident-candidates/{candidateId}/expire` | 无HTTP动作 | [公共故障](workbench/incidents.md) |
 | POST | `/internal/v1/intakes/wecom` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |
 | POST | `/internal/v1/messages/{messageId}/media` | 仅设计，未挂载 | [设计差异](design-and-gaps.md) |

@@ -196,7 +196,7 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
         assert.equal(response.status,200,await response.text());
       }
       await until(async()=>(await pool.query(`SELECT d.status FROM communication.ticket_notification_binding b
-        JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1 AND b.notification_type='TICKET_CLOSED'`,[groupTicket.id])).rows[0]?.status==='SENT');
+        JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1 AND b.notification_type='TICKET_COMPLETED'`,[groupTicket.id])).rows[0]?.status==='SENT');
       const receiptText=readFileSync(path.join(budgetDirectory,'webhook-receipts.jsonl'),'utf8'),receipts=receiptText.trim().split('\n').map(JSON.parse);
       assert.equal(receipts.length,1);assert.equal(receipts[0].record.provider_errcode,0);assert.equal(receipts[0].record.outcome,'ACKED');
       assert.doesNotMatch(receiptText,/synthetic-process-unused|reporter-a|qyapi/u);

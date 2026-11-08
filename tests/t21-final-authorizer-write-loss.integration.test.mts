@@ -127,7 +127,7 @@ test('T21 WRITE loss during the actual final authorizer DB await rolls back Core
       assert.deepEqual(receiptValue,{client_command_id:originalCommandId,public_ref:f.publicRef,state:'UNKNOWN'});
       assert.equal(memberDetailStatus,200,'current Bot READ is independent of new WRITE');
       assert.equal(current.id,f.ticketId);assert.equal(current.ticket_no,f.completed.ticket_no);
-      assert.equal(current.intake_id,f.completed.intake_id);assert.equal(current.status,'CLOSED');
+      assert.equal(current.intake_id,f.completed.intake_id);assert.equal(current.status,'COMPLETED');
       assert.equal(current.version,f.completed.version);assert.equal(current.assignee_id,f.completed.assignee_id);
       assert.equal(current.resolver_team_id,f.completed.resolver_team_id);
       assert.deepEqual(current.handling_cycle,f.completed.handling_cycle);assert.equal(current.reopen_follow_up,undefined);

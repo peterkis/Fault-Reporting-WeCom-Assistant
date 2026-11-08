@@ -25,7 +25,7 @@ export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'clos
 const STATUS_COLUMNS = {
   pending: ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'],
   active: ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'],
-  closed: ['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED'],
+  closed: ['RESOLVED','COMPLETED','DISMISSED'],
 } as const;
 export function boardColumn(status: string): BoardColumn {
   for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
@@ -63,14 +63,14 @@ const INTAKE_CLOSURE_SQL=`LEFT JOIN LATERAL (SELECT e.event_type,e.occurred_at,e
  LEFT JOIN pilot_ticket.pilot_principal closing_actor ON closing_actor.id=closing_review.resolved_by_principal_id
  LEFT JOIN pilot_ticket.closure_record intake_closure ON intake_closure.intake_id=i.id AND intake_closure.restored_at IS NULL
  LEFT JOIN pilot_ticket.pilot_principal intake_closing_actor ON intake_closing_actor.id::text=intake_closure.closed_by`;
-const INTAKE_CLOSURE_EVIDENCE_SQL=`CASE WHEN i.status='IGNORED' THEN CASE WHEN intake_closure.id IS NOT NULL THEN jsonb_build_object('record_id',intake_closure.id::text,'source',intake_closure.source,'reason_code',intake_closure.reason_code,'secondary_reason_code',intake_closure.secondary_reason_code,'reason_note',intake_closure.note,'closed_by_display_name',intake_closing_actor.display_name,'closed_at',to_char(intake_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',intake_closure.duplicate_of_ref) END ELSE (CASE WHEN i.status='COMPLETED' THEN jsonb_build_object(
+const INTAKE_CLOSURE_EVIDENCE_SQL=`CASE WHEN i.status='DISMISSED' THEN CASE WHEN intake_closure.id IS NOT NULL THEN jsonb_build_object('record_id',intake_closure.id::text,'source',intake_closure.source,'reason_code',intake_closure.reason_code,'secondary_reason_code',intake_closure.secondary_reason_code,'reason_note',intake_closure.note,'closed_by_display_name',intake_closing_actor.display_name,'closed_at',to_char(intake_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',intake_closure.duplicate_of_ref) END ELSE (CASE WHEN i.status='COMPLETED' THEN jsonb_build_object(
   'source',CASE WHEN closing_review.id IS NOT NULL THEN 'MANUAL'
     WHEN closing_decision.status='RECORDED' AND closing_decision.safe_result->'human_override' IS NULL THEN 'SYSTEM'
-    WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='IGNORED' THEN 'SYSTEM' END,
+    WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='DISMISSED' THEN 'SYSTEM' END,
   'reason_code',CASE WHEN closing_review.id IS NOT NULL THEN closing_decision.reason_code END,
   'reason_note',NULL,'closed_by_display_name',closing_actor.display_name,
   'closed_at',to_char(CASE WHEN closing_review.id IS NOT NULL THEN closing_review.resolved_at
-    WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='IGNORED'
+    WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='DISMISSED'
       THEN i.created_at END,'YYYY-MM-DD HH24:MI:SS')) END) END`;
 export const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
@@ -79,9 +79,9 @@ export const CARD_SQL = `WITH cards AS (
    review.review_reason_code AS review_reason,
    to_char(t.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
    to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
-   to_char(CASE WHEN t.status IN ('CANCELLED','DUPLICATE_LINKED') THEN ticket_closure.closed_at WHEN t.status<>'RESOLVED' THEN ended.at END,'YYYY-MM-DD HH24:MI:SS') AS completed_at,
+   to_char(CASE WHEN t.status IN ('DISMISSED') THEN ticket_closure.closed_at WHEN t.status<>'RESOLVED' THEN ended.at END,'YYYY-MM-DD HH24:MI:SS') AS completed_at,
    to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at,
-   CASE WHEN t.status IN ('CANCELLED','DUPLICATE_LINKED') THEN CASE WHEN ticket_closure.id IS NOT NULL THEN jsonb_build_object('record_id',ticket_closure.id::text,'source',ticket_closure.source,'reason_code',ticket_closure.reason_code,'secondary_reason_code',ticket_closure.secondary_reason_code,'reason_note',ticket_closure.note,'closed_by_display_name',ticket_closing_actor.display_name,'closed_at',to_char(ticket_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',ticket_closure.duplicate_of_ref,'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END WHEN t.status IN ('RESOLVED','CLOSED') THEN jsonb_build_object(
+   CASE WHEN t.status IN ('DISMISSED') THEN CASE WHEN ticket_closure.id IS NOT NULL THEN jsonb_build_object('record_id',ticket_closure.id::text,'source',ticket_closure.source,'reason_code',ticket_closure.reason_code,'secondary_reason_code',ticket_closure.secondary_reason_code,'reason_note',ticket_closure.note,'closed_by_display_name',ticket_closing_actor.display_name,'closed_at',to_char(ticket_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',ticket_closure.duplicate_of_ref,'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END WHEN t.status IN ('RESOLVED','COMPLETED') THEN jsonb_build_object(
      'source',CASE WHEN ended.operator_type IN ('PILOT_USER','REPORTER') THEN 'MANUAL' WHEN ended.operator_type='SYSTEM' THEN 'SYSTEM' END,
      'reason_code',NULL,'reason_note',ended.internal_note,'closed_by_display_name',closing_actor.display_name,
      'closed_at',to_char(ended.at,'YYYY-MM-DD HH24:MI:SS'),'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END AS closure_evidence
@@ -92,9 +92,9 @@ export const CARD_SQL = `WITH cards AS (
  LEFT JOIN pilot_ticket.closure_record ticket_closure ON ticket_closure.ticket_id=t.id AND ticket_closure.restored_at IS NULL
  LEFT JOIN pilot_ticket.pilot_principal ticket_closing_actor ON ticket_closing_actor.id::text=ticket_closure.closed_by
  LEFT JOIN LATERAL (SELECT e.created_at AS at,e.operator_type,e.operator_id,e.internal_note FROM pilot_ticket.ticket_event e
-   WHERE t.status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED') AND e.ticket_id=t.id AND e.new_status=t.status
+   WHERE t.status IN ('RESOLVED','COMPLETED','DISMISSED') AND e.ticket_id=t.id AND e.new_status=t.status
      AND e.old_status IS DISTINCT FROM e.new_status
-     AND e.event_type IN ('ticket.resolved','ticket.closed','ticket.cancelled','ticket.duplicate_linked')
+     AND e.event_type IN ('ticket.resolved','ticket.completed','ticket.dismissed')
    ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) ended ON TRUE
  LEFT JOIN pilot_ticket.pilot_principal closing_actor ON closing_actor.id=CASE
    WHEN ended.operator_id ~ '${UUID_TEXT_PATTERN}' THEN ended.operator_id::uuid END AND ended.operator_type='PILOT_USER'
@@ -128,7 +128,7 @@ export const CARD_SQL = `WITH cards AS (
    NULL,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS'),${INTAKE_CLOSURE_EVIDENCE_SQL}
  FROM intake.service_intake i ${REPORTER_PROFILE_SQL} ${INTAKE_CLOSURE_SQL}
  WHERE $1::boolean AND i.retention_until>platform.local_now()
-   AND i.status IN ('RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED','COMPLETED','IGNORED')
+   AND i.status IN ('RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED','COMPLETED','DISMISSED')
    AND NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket actual WHERE actual.source_intake_id=i.id OR actual.id=i.pilot_ticket_id)
    AND NOT EXISTS (SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
      JOIN pilot_ticket.ticket actual ON actual.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)
@@ -178,7 +178,7 @@ const CLOSED_INTAKE_CARD_SQL=`SELECT 'intake'::text AS kind,i.id::text,i.id::tex
         to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
         NULL::text AS completed_at,to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at,${INTAKE_CLOSURE_EVIDENCE_SQL} AS closure_evidence
         FROM intake.service_intake i ${REPORTER_PROFILE_SQL} ${INTAKE_CLOSURE_SQL} WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()
-          AND i.status IN ('COMPLETED','IGNORED')
+          AND i.status IN ('COMPLETED','DISMISSED')
           AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id OR t.id=i.pilot_ticket_id)
           AND NOT EXISTS(SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id
             JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id WHERE l.source_intake_id=i.id)`;

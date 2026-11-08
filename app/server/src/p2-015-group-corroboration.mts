@@ -48,7 +48,7 @@ export async function readGroupCorroboration({transaction,intake,window,reporter
       ORDER BY old.decision_ordinal LIMIT 1)anchor ON true
     WHERE peer.source_provider=$2 AND peer.source_bot_id=$3 AND peer.source_chat_type='group' AND peer.source_chat_id=$4
       AND peer.id<>$5::uuid AND j.reporter_identity_hash<>$6 AND peer.reporter_wecom_userid<>$10
-      AND peer.status NOT IN ('COMPLETED','IGNORED','FAILED') AND j.status<>'ENDED' AND l.status='OPEN'
+      AND peer.status NOT IN ('COMPLETED','DISMISSED','FAILED') AND j.status<>'ENDED' AND l.status='OPEN'
       AND l.reporter_identity_hash=j.reporter_identity_hash AND d.journey_id=j.id AND d.channel_leg_id=l.id
       AND d.source_window_end_sequence=peer.message_count AND d.status<>'HUMAN_OVERRIDDEN'
       AND d.ticket_creation_recommended AND peer.pilot_ticket_id IS NOT NULL

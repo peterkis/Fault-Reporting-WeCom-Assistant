@@ -1,6 +1,6 @@
 # 06. 工单状态机与通知规则
 
-本状态机在 Phase 1/2 由 Pilot Ticket Core 执行。Phase 3 必须通过已批准的状态映射迁移到 Hospital Tickets，不得在 Gateway 中直接修改医院工单状态。
+本状态机在 Phase 1/2 由 Pilot Ticket Core 执行。「完成」与「关闭」的当前语言见 [ADR-0058](../adr/0058_completion_and_dismissal_language.md)：原 `CLOSED` 改为 `COMPLETED`（已完成），原 `CANCELLED` 改为 `DISMISSED`（已关闭），`DUPLICATE_LINKED` 已删除。Phase 3 必须通过已批准的状态映射迁移到 Hospital Tickets，不得在 Gateway 中直接修改医院工单状态。
 
 ## 1. 状态设计原则
 
@@ -28,10 +28,9 @@ IN_PROGRESS
 WAITING_REQUESTER
 WAITING_VENDOR
 RESOLVED
-CLOSED
+COMPLETED
 REOPENED
-CANCELLED
-DUPLICATE_LINKED
+DISMISSED
 ```
 
 ### 2.1 状态定义
@@ -45,10 +44,9 @@ DUPLICATE_LINKED
 | WAITING_REQUESTER | 等待申报人补充 |
 | WAITING_VENDOR | 等待厂商或第三方 |
 | RESOLVED | 技术处理结束，等待申报人确认 |
-| CLOSED | 用户确认、管理员关闭或超时自动关闭 |
+| COMPLETED | 处理完成：用户确认、处理人完成或超时自动完成 |
 | REOPENED | 用户反馈仍未恢复 |
-| CANCELLED | 撤销、误报或无效请求 |
-| DUPLICATE_LINKED | 作为重复申报关联到 Incident/主任务 |
+| DISMISSED | 关闭：误报、重复、非 IT 范围、报修人撤回或联系不上等，不计入完成数 |
 
 ## 3. 对外状态映射
 
@@ -60,10 +58,9 @@ DUPLICATE_LINKED
 | WAITING_REQUESTER | 待您补充 |
 | WAITING_VENDOR | 处理中 |
 | RESOLVED | 已处理，待确认 |
-| CLOSED | 已关闭 |
+| COMPLETED | 已完成 |
 | REOPENED | 重新处理中 |
-| CANCELLED | 已撤销 |
-| DUPLICATE_LINKED | 已关联公共故障 |
+| DISMISSED | 已关闭 |
 
 ## 4. 合法转换
 
@@ -78,21 +75,19 @@ stateDiagram-v2
     IN_PROGRESS --> WAITING_VENDOR
     WAITING_VENDOR --> IN_PROGRESS
     IN_PROGRESS --> RESOLVED
-    RESOLVED --> CLOSED
+    RESOLVED --> COMPLETED
     RESOLVED --> REOPENED
-    CLOSED --> REOPENED
+    COMPLETED --> REOPENED
     REOPENED --> IN_PROGRESS
-    QUEUED --> CANCELLED
-    ACCEPTED --> CANCELLED
+    QUEUED --> DISMISSED
+    ACCEPTED --> DISMISSED
 ```
 
 任何未列出的转换返回 `INVALID_STATE_TRANSITION`。
 
-P1-010 明确保留已关闭工单的重开入口：申报人可将 `CLOSED`（包括
+P1-010 明确保留已关闭工单的重开入口：申报人可将 `COMPLETED`（包括
 `REQUESTER_CONFIRMED` 与 `AUTO_TIMEOUT`）转为 `REOPENED`，随后由处理人
-通过 `start` 进入 `IN_PROGRESS`；`CANCELLED` 不允许通过重开绕过原有处置。
-`DUPLICATE_LINKED` 的转换须等 Phase 2 形成可审计 Incident/主任务事实后再由受权任务
-定义，P1 不生成该状态。
+通过 `start` 进入 `IN_PROGRESS`；`DISMISSED` 不允许通过重开绕过原有处置，只能按关闭记录「恢复」。
 
 ## 5. Action API
 
@@ -100,7 +95,7 @@ P1-010 明确保留已关闭工单的重开入口：申报人可将 `CLOSED`（�
 
 ```http
 PATCH /tickets/{id}
-{"status":"CLOSED"}
+{"status":"COMPLETED"}
 ```
 
 必须使用明确动作：
@@ -114,7 +109,7 @@ wait-vendor
 resolve
 confirm
 reopen
-cancel
+dismiss
 ```
 
 每次 Action 请求包含：
@@ -198,7 +193,7 @@ COMMIT
 | ticket.waiting_requester | 否 | 是 | 是 |
 | ticket.waiting_vendor | 否 | 可选 | 是 |
 | ticket.resolved | 可选 | 是 | 是 |
-| ticket.closed | 否 | 是 | 是 |
+| ticket.completed | 否 | 是 | 是 |
 | ticket.reopened | 否 | 是 | 是 |
 | incident.confirmed | 是 | 是 | 是 |
 | incident.updated | 重要进展才发 | 是 | 是 |
@@ -251,7 +246,7 @@ COMMIT
 
 ### 已恢复
 
-- `RESOLVED → CLOSED`
+- `RESOLVED → COMPLETED`
 - `closure_reason=REQUESTER_CONFIRMED`
 
 ### 仍未恢复

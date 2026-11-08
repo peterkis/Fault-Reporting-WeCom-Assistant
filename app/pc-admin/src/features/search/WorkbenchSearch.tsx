@@ -77,5 +77,5 @@ export function SearchControls({principal,criteria,blocked,busy=false,inlineLeav
 export function searchEmptyMessage(criteria:WorkbenchSearchCriteria|null){
  return criteria&&hasSearchCriteria(criteria)?'当前没有符合这些条件的可见事项。':'当前没有可见的事项。';
 }
-// Card 29 D5: CANCELLED now reads 「已关闭」; the completed CLOSED status is told apart within this one list.
-function searchStatusLabel(status:string):string{return status==='CLOSED'?'已关闭（已完成）':statusLabels[status]??status;}
+// ADR-0058: COMPLETED reads 「已完成」 and DISMISSED reads 「已关闭」 from the one shared status table.
+function searchStatusLabel(status:string):string{return statusLabels[status]??status;}

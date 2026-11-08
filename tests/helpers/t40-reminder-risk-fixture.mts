@@ -19,6 +19,7 @@ import {migrateWorkbenchManualReports} from '../../app/server/scripts/workbench-
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-migrate.mjs';
 import {withT37Fixture,object,text,type T37Http} from './t37-follow-up-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export {object,text};
 export function version(value:unknown):number {
@@ -70,7 +71,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
     let official:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined;
     const realCookies:{name:string;value:string;url:string}[]=[],realCsrf:string[]=[];
     if(realSession){
-      await migrateWorkbenchAuth(migration);
+      await migrateWorkbenchAuth(migration);await ensureCompletionDismissal(migration.databaseUrl);
       official=createWeComWorkbenchAuthentication({pool:base.pool,publicOrigin:authOrigin,corpId,agentId,identityHashKey,accessTokenProvider:async()=> 't40-isolated-token',fetchImpl:async(input,init)=>{
         const url=new URL(String(input));assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(url.pathname,'/cgi-bin/batch/userid_to_openuserid');
         assert.equal(typeof init?.body,'string');const body=object(JSON.parse(String(init?.body)));assert.ok(Array.isArray(body.userid_list));
@@ -190,7 +191,7 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
         const started=await http.post(path+'/take-and-start',{client_command_id:randomUUID(),expected_version:version(before.value.version),reason_code:'T40_PRECISION_REAL_START',resolver_team_id:'PILOT_IT'});assert.equal(started.status,200,JSON.stringify(started.value));
         const active=await http.get(path);assert.equal(active.status,200);
         const completed=await http.post(path+'/complete',{client_command_id:randomUUID(),expected_version:version(active.value.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(object(active.value.handling_cycle).id),internal_process:'T40 isolated precision regression',external_summary:'合成设备已恢复。',external_summary_confirmed:true});assert.equal(completed.status,200,JSON.stringify(completed.value));
-        const closed=await http.get(path);assert.equal(closed.status,200);assert.equal(closed.value.status,'CLOSED');
+        const closed=await http.get(path);assert.equal(closed.status,200);assert.equal(closed.value.status,'COMPLETED');
         return async()=>{const reopened=await http.post(path+'/reopen',{client_command_id:randomUUID(),expected_version:version(closed.value.version),reason_code:'STAFF_REOPEN',note:'合成故障核实后需要继续处置。'});assert.equal(reopened.status,200,JSON.stringify(reopened.value));};
       };
       const logout=async()=>{assert.ok(official);const response=await fetch(base.origin+'/workbench/logout',{method:'POST',headers:{cookie:cookieAt(1),origin:authOrigin,'x-csrf-token':text(realCsrf[1])}});assert.equal(response.status,200);assert.deepEqual(await response.json(),{logged_out:true});};

@@ -24,7 +24,7 @@ function scenarioMatches({proof,manifest,snapshot,delivery:d,receipt,root}: {pro
   const ticketEvent=(snapshot.ticket_events??[]).find(e=>e.event_id===d.source_event_ref&&e.ticket_id===d.ticket_id&&e.event_type===d.source_event_type);
   const privateTicket=d.audience==='PERSON'&&d.destination_eligible_at_reconciliation===true&&Boolean(ticketEvent)
     &&(d.source_event_type==='ticket.accepted'&&d.notification_type==='TICKET_ACCEPTED'
-      ||d.source_event_type==='ticket.closed'&&d.notification_type==='TICKET_CLOSED'
+      ||d.source_event_type==='ticket.completed'&&d.notification_type==='TICKET_COMPLETED'
       ||d.source_event_type==='ticket.created'&&d.notification_type==='TICKET_CREATED'&&(manifest.scope.ticket_notification_additional_events??[]).includes('ticket.created'));
   const groupCreated=d.audience==='GROUP'&&d.notification_type==='TICKET_CREATED'&&d.source_event_type==='ticket.created'&&Boolean(ticketEvent);
   const events=(snapshot.incident_events??[]).filter(e=>e.incident_id===d.incident_id&&e.actor_kind==='HUMAN');
@@ -42,8 +42,8 @@ function scenarioMatches({proof,manifest,snapshot,delivery:d,receipt,root}: {pro
     case 'G2-N02':return privateTicket&&d.origin_channel==='WECOM_GROUP'&&(d.direct_guided_leg_count as number)>0&&d.old_private_created_artifacts===0;
     case 'G2-N04':return privateTicket&&d.message_type==='template_card'&&d.consumed_grants===1;
     case 'G2-T01':{
-      if(!ticketEvent||d.source_event_type!=='ticket.closed'||d.notification_type!=='TICKET_CLOSED')return false;
-      const required=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','IN_PROGRESS','WAITING_VENDOR','IN_PROGRESS','RESOLVED','CLOSED','REOPENED','IN_PROGRESS','RESOLVED','CLOSED'];
+      if(!ticketEvent||d.source_event_type!=='ticket.completed'||d.notification_type!=='TICKET_COMPLETED')return false;
+      const required=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','IN_PROGRESS','WAITING_VENDOR','IN_PROGRESS','RESOLVED','COMPLETED','REOPENED','IN_PROGRESS','RESOLVED','COMPLETED'];
       let matched=0;for(const e of snapshot.ticket_events.filter(e=>e.ticket_id===d.ticket_id))if(e.new_status===required[matched])matched++;
       return matched===required.length&&(privateTicket||d.audience==='GROUP'&&d.transport==='WECOM_GROUP_WEBHOOK');
     }

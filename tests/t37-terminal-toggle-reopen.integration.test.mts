@@ -33,10 +33,10 @@ test('real completion while shared-time maintenance is disabled ends the old sch
    assert.equal((await handler.get(path+'/follow-up-schedule')).status,503);const ackWhileOff=await handler.get(path+'/follow-up-schedule/commands/'+command.client_command_id);assert.equal(ackWhileOff.status,200);assert.equal(ackWhileOff.value.state,'COMMITTED');
    const currentRunning=await current(handler,path),cycle=object(currentRunning.handling_cycle);
    const completion=await handler.post(path+'/complete',{client_command_id:randomUUID(),expected_version:version(currentRunning.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(cycle.id),internal_process:'T37 合成内部处理过程',external_summary:'合成设备已恢复，完成本轮处置。',external_summary_confirmed:true});assert.equal(completion.status,200,JSON.stringify(completion.value));
-   const closed=await current(handler,path);assert.equal(closed.status,'CLOSED');assert.equal(object(closed.handling_cycle).id,firstCycle.id);const completionEvent=text(object(closed.handling_cycle).staff_completion_event_id);
+   const closed=await current(handler,path);assert.equal(closed.status,'COMPLETED');assert.equal(object(closed.handling_cycle).id,firstCycle.id);const completionEvent=text(object(closed.handling_cycle).staff_completion_event_id);
    fixture=await recompose(fixture,true);handler=await http(fixture,1);
    const ended=await current(handler,path+'/follow-up-schedule');assert.equal(ended.active,null);assert.equal(ended.schedule_version,'1');assert.deepEqual(ended.allowed_actions,[]);
-   assert.ok(rows(ended.history).some(row=>row.action==='ENDED'&&row.ticket_event_id===completionEvent&&row.end_reason==='CLOSED'&&row.due_at==='2020-01-02 09:30:00'));
+   assert.ok(rows(ended.history).some(row=>row.action==='ENDED'&&row.ticket_event_id===completionEvent&&row.end_reason==='COMPLETED'&&row.due_at==='2020-01-02 09:30:00'));
    const reopened=await handler.post(path+'/reopen',{client_command_id:randomUUID(),expected_version:version(closed.version),reason_code:'STAFF_REOPEN',note:'合成故障仍需下一轮处理'});assert.equal(reopened.status,200,JSON.stringify(reopened.value));
    const fresh=await current(handler,path),newCycle=object(fresh.handling_cycle);assert.equal(fresh.status,'REOPENED');assert.equal(fresh.assignee_id,null);assert.equal(fresh.id,closed.id);assert.equal(fresh.ticket_no,closed.ticket_no);assert.notEqual(newCycle.id,firstCycle.id);assert.equal(Number(newCycle.cycle_no),Number(firstCycle.cycle_no)+1);assert.equal(newCycle.first_responsibility_event_id,null);
    const freshSchedule=await current(handler,path+'/follow-up-schedule');assert.equal(freshSchedule.active,null);assert.equal(freshSchedule.schedule_version,'1');
@@ -54,11 +54,11 @@ test('real cancellation while shared-time maintenance is disabled retains the ac
    let dispatcher=await http(fixture,0);const path='/api/tickets/'+await fixture.createTicket(),queued=await current(dispatcher,path),empty=await current(dispatcher,path+'/follow-up-schedule');
    const command=scheduleCommand(queued,text(empty.schedule_version),'SET','2020-01-02 09:30:00');assert.equal((await dispatcher.post(path+'/follow-up-schedule',command)).status,200);
    fixture=await recompose(fixture,false);dispatcher=await http(fixture,0);const arranged=await current(dispatcher,path);
-   const cancel=await dispatcher.post(path+'/cancel',{client_command_id:randomUUID(),expected_version:version(arranged.version),reason_code:'T37_REAL_CANCEL'});assert.equal(cancel.status,200,JSON.stringify(cancel.value));const terminal=await current(dispatcher,path);assert.equal(terminal.status,'CANCELLED');
+   const cancel=await dispatcher.post(path+'/dismiss',{client_command_id:randomUUID(),expected_version:version(arranged.version),reason_code:'T37_REAL_CANCEL'});assert.equal(cancel.status,200,JSON.stringify(cancel.value));const terminal=await current(dispatcher,path);assert.equal(terminal.status,'DISMISSED');
    fixture=await recompose(fixture,true);dispatcher=await http(fixture,0);const ended=await current(dispatcher,path+'/follow-up-schedule');assert.equal(ended.active,null);assert.equal(ended.schedule_version,'1');assert.deepEqual(ended.allowed_actions,[]);
-   assert.ok(rows(ended.history).some(row=>row.action==='ENDED'&&row.ticket_event_id===cancel.value.ticket_event_id&&row.end_reason==='CANCELLED'));
+   assert.ok(rows(ended.history).some(row=>row.action==='ENDED'&&row.ticket_event_id===cancel.value.ticket_event_id&&row.end_reason==='DISMISSED'));
    const rejected=await dispatcher.post(path+'/reopen',{client_command_id:randomUUID(),expected_version:version(terminal.version),reason_code:'STAFF_REOPEN',note:'验证取消工单不能通过工作人员重开。'});assert.equal(rejected.status,409,'a valid reopen command cannot bypass the CANCELLED state');
-   assert.equal((await current(dispatcher,path)).status,'CANCELLED');assert.equal((await current(dispatcher,path+'/follow-up-schedule')).active,null);
+   assert.equal((await current(dispatcher,path)).status,'DISMISSED');assert.equal((await current(dispatcher,path+'/follow-up-schedule')).active,null);
   }finally{await stop(fixture);}
  },{workbenchFollowUpSchedulesEnabled:true,lifecycleEnabled:true});
 });

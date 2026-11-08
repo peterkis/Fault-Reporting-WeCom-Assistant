@@ -103,7 +103,7 @@ async function withBrowser(raw:boolean|undefined,mode:'drop'|'hold',run:(value:R
    async()=>{app?.server.off('request',observe);await fixture?.close();if(fixture)assert.deepEqual(fixture.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},
    async()=>{await app?.stop();await writeFile(join(directory,'terminal-resources.json'),JSON.stringify({browser:browser?.ownedResourceState()??null,fixture:fixture?.ownedResourceState()??null,memberListening:app?.server.listening??false}));},
   ],primary);
-  await f.verifyStaff(async staff=>{const current=await staff.detail(f.ticketId);assert.equal(current.status,'CLOSED');assert.equal(current.version,f.completed.version);assert.deepEqual(current.handling_cycle,f.completed.handling_cycle);});
+  await f.verifyStaff(async staff=>{const current=await staff.detail(f.ticketId);assert.equal(current.status,'COMPLETED');assert.equal(current.version,f.completed.version);assert.deepEqual(current.handling_cycle,f.completed.handling_cycle);});
  });
 }
 

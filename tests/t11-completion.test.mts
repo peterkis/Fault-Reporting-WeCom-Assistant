@@ -8,7 +8,7 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 test('staff completion is an explicit Core Action that closes active work without Reporter confirmation',()=>{
   assert.equal(getTicketActionTransitions().some(value=>value.action==='complete'),false);
   assert.deepEqual(getTicketActionTransitions({staffCompletionEnabled:true}).find(value=>value.action==='complete'),{
-    action:'complete',from:['IN_PROGRESS'],to:'CLOSED',event_type:'ticket.closed',
+    action:'complete',from:['IN_PROGRESS'],to:'COMPLETED',event_type:'ticket.completed',
   });
   assert.deepEqual(getTicketActionTransitions().find(value=>value.action==='confirm')?.from,['RESOLVED']);
 });

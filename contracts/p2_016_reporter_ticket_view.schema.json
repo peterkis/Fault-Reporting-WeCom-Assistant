@@ -82,10 +82,9 @@
         "WAITING_REQUESTER",
         "WAITING_VENDOR",
         "RESOLVED",
-        "CLOSED",
+        "COMPLETED",
         "REOPENED",
-        "CANCELLED",
-        "DUPLICATE_LINKED"
+        "DISMISSED"
       ]
     },
     "closure_text": {

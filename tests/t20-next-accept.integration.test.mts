@@ -39,7 +39,7 @@ for(const action of ['take-and-start','accept-for-later'] as const){
     assert.deepEqual(basis.rows[0],{principal:context.principals[1]?.id,team:completed.resolver_team_id,event:accepted.handling_cycle.first_responsibility_event_id,kind:'ticket.accepted'});
     const running=action==='take-and-start'?accepted:await http.start(ticketId);
     assert.equal((await http.post(ticketId,'complete',http.command(running))).status,200);
-    const closedAgain=await http.detail(ticketId);assert.equal(closedAgain.status,'CLOSED');assert.equal(closedAgain.handling_cycle?.id,fresh.handling_cycle.id);
+    const closedAgain=await http.detail(ticketId);assert.equal(closedAgain.status,'COMPLETED');assert.equal(closedAgain.handling_cycle?.id,fresh.handling_cycle.id);
     assert.ok(closedAgain.handling_cycle?.staff_completion_event_id);assert.notEqual(closedAgain.handling_cycle?.staff_completion_event_id,previous.staff_completion_event_id);
     const history=await context.pool.query<{completion:string;handler:string;team:string}>(`SELECT staff_completion_event_id::text AS completion,first_responsibility_principal_id::text AS handler,first_responsibility_team_id AS team FROM pilot_ticket.ticket_handling_cycle WHERE id=$1::uuid`,[previous.id]);
     assert.deepEqual(history.rows[0],{completion:previous.staff_completion_event_id,handler:context.principals[1]?.id,team:completed.resolver_team_id});

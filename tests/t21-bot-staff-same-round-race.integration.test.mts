@@ -33,7 +33,7 @@ test('T21 STAFF W reopen and current Bot member M feedback compete on one comple
       const staff=await t11Http({...f.context,runtime:full,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value)});
       const member=browser(full.server);await login(member,'a');
       const completed=await staff.detail(f.ticketId);
-      assert.equal(completed.status,'CLOSED');assert.equal(completed.version,f.completed.version);
+      assert.equal(completed.status,'COMPLETED');assert.equal(completed.version,f.completed.version);
       assert.deepEqual(completed.handling_cycle,f.completed.handling_cycle);assert.ok(completed.handling_cycle);
       const bot=await t21FeedbackCommand(member,f.path),staffCommand={client_command_id:randomUUID(),
         expected_version:completed.version,reason_code:'STAFF_REOPEN',note:'工作人员核实同一故障仍需处置，与原报修人明确反馈竞争'};
@@ -81,7 +81,7 @@ test('T21 STAFF W reopen and current Bot member M feedback compete on one comple
       }
       const added=currentEvents.filter(event=>!priorIds.has(String(event.event_id)));
       assert.equal(added.length,1,'exactly one new shared reopen event is visible');
-      assert.equal(added[0]?.event_type,'ticket.reopened');assert.equal(added[0]?.old_status,'CLOSED');
+      assert.equal(added[0]?.event_type,'ticket.reopened');assert.equal(added[0]?.old_status,'COMPLETED');
       assert.equal(added[0]?.new_status,'REOPENED');assert.equal(added[0]?.aggregate_version,completed.version+1);
 
       // UUIDs locate only their dedicated actor/scope/purpose. Current READ must

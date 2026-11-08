@@ -43,7 +43,7 @@ export function decodeManualReportProjection(value:unknown):ManualReportSourcePr
   return {source_kind:'MANUAL_REPORT',source:source(v.source),description,location:{text:location,unknown:l.unknown},reporter:{verification:'UNVERIFIED',name,contact,department},identity_source:'HAND_ENTERED',actor_principal_id:uuid(v.actor_principal_id),manual_contact_required:true,external_notification:false};
 }
 const resultCodes=['TICKET_ELIGIBLE','NEEDS_DESCRIPTION','MANUAL_REVIEW_REQUIRED','RELATED_FOLLOW_UP','STATUS_QUERY','SERVICE_REQUEST','BUSINESS_CONSULTATION','ACKNOWLEDGEMENT','OUT_OF_SCOPE','INCIDENT_REVIEW_CANDIDATE'] as const;
-const statuses=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','CLOSED','REOPENED','CANCELLED','DUPLICATE_LINKED'] as const;
+const statuses=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','COMPLETED','REOPENED','DISMISSED'] as const;
 export function decodeManualReportResult(value:unknown,id:string):ManualReportAdmissionResult{
   if(value&&typeof value==='object'&&'reporter_verification' in value&&value.reporter_verification==='VERIFIED'){
     const v=exact(value,['ok','client_command_id','intake_id','intake_no','source','reporter_verification','manual_contact_required','external_notification','result_code','ticket','review','replayed','notification_eligibility']);

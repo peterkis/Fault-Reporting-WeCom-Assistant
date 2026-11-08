@@ -124,7 +124,7 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
 
     await browser.command('Page.bringToFront');await clickWorkbenchControl(browser,'#detail-tab-trigger-attachments');await clickWorkbenchControl(browser,'#detail-tab-trigger-conversations');
     const reader=await t11Http(f);let activeId='',closedId='';
-    for(const candidate of f.tickets){const facts=await reader.detail(candidate.ticket.id);if(facts.status==='IN_PROGRESS'&&!activeId)activeId=candidate.ticket.id;if(facts.status==='CLOSED'&&!closedId)closedId=candidate.ticket.id;if(activeId&&closedId)break;}
+    for(const candidate of f.tickets){const facts=await reader.detail(candidate.ticket.id);if(facts.status==='IN_PROGRESS'&&!activeId)activeId=candidate.ticket.id;if(facts.status==='COMPLETED'&&!closedId)closedId=candidate.ticket.id;if(activeId&&closedId)break;}
     assert.ok(activeId&&closedId);
     for(const target of [{stage:'active',id:activeId},{stage:'closed',id:closedId}]){
       await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+target.id});

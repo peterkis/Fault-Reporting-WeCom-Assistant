@@ -42,7 +42,7 @@ export function ActivityTimeline({records,principal,item,active,now,children,des
     </TimelineGroup>)}</Timeline>{children}
   </Section>;
 }
-const closingStatuses=new Set(['CANCELLED','DUPLICATE_LINKED','IGNORED']);
+const closingStatuses=new Set(['DISMISSED']);
 function ActivityRecord({record,principal,item,active,now,closure=false}:{record:WorkbenchDetail['records'][number];principal:Principal;item:WorkbenchDetail['item'];active:boolean;now:number;closure?:boolean}){
   const [expanded,setExpanded]=useState(false),name=activityActorName(record),kind=recordKind(record);
   const text=record.text??(kind==='status'?'更新状态':'已记录处理操作。');

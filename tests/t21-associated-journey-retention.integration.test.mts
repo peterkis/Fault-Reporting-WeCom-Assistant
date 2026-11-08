@@ -68,7 +68,7 @@ test('T21 genuine associated Journey expiring during the actual source row wait 
     await f.verifyStaff(async staff=>{
       const unchanged=await staff.detail(f.ticketId);assert.equal(unchanged.id,f.ticketId);
       assert.equal(unchanged.ticket_no,f.completed.ticket_no);assert.equal(unchanged.intake_id,f.completed.intake_id);
-      assert.equal(unchanged.status,'CLOSED');assert.equal(unchanged.version,f.completed.version);
+      assert.equal(unchanged.status,'COMPLETED');assert.equal(unchanged.version,f.completed.version);
       assert.equal(unchanged.assignee_id,f.completed.assignee_id);assert.equal(unchanged.resolver_team_id,f.completed.resolver_team_id);
       assert.deepEqual(unchanged.handling_cycle,f.completed.handling_cycle);assert.equal(unchanged.reopen_follow_up,undefined);
     });

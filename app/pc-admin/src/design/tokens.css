@@ -130,6 +130,7 @@
   --stage-intake-accent: var(--yellow-500); --stage-intake-bg: var(--yellow-50); --stage-intake-fg: var(--yellow-700);
   --stage-active-accent: var(--blue-500); --stage-active-bg: var(--blue-stage-50); --stage-active-fg: var(--blue-700);
   --stage-done-accent: var(--green-500); --stage-done-bg: var(--green-50); --stage-done-fg: var(--green-700);
+  --stage-dismissed-accent: var(--gray-400); /* 卡32C D3 / ADR-0058：「已关闭」状态点为中性灰，与完成绿区分 */
   --ring-attention: var(--orange-ring);
   --ring-danger: var(--red-ring);
   --ring-review: var(--purple-ring);

@@ -5,6 +5,7 @@ import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
 import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 interface Base {origin:string;databaseUrl:string;pool:PostgresPool;runtime:{stop():Promise<unknown>};principals:{id:string}[];outsider:{id:string};tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
 export interface T35Fixture extends Base {firstCookie:string;secondCookie:string;outsiderCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};get:(path:string,reader?:0|1)=>Promise<Response>;post:(path:string,body:Record<string,unknown>,reader?:0|1)=>Promise<Response>}
 export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=true,migrate=true,waiting=false}:{enabled?:boolean;migrate?:boolean;waiting?:boolean}={}){
@@ -22,6 +23,6 @@ export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=
     }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   },{workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     if(waiting)await migrateTicketSelfHandling({databaseUrl:databaseUrl,mode:'apply'});
-    if(migrate)await migrateWorkbenchPersonalRead({databaseUrl:databaseUrl,mode:'apply'});
+    if(migrate)await migrateWorkbenchPersonalRead({databaseUrl:databaseUrl,mode:'apply'});await ensureCompletionDismissal(databaseUrl);
   }});
 }

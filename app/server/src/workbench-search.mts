@@ -123,7 +123,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     lower(concat_ws(' ',cards.number,cards.title,cards.location,
      CASE WHEN i.source_provider<>'STAFF_MANUAL_REPORT' OR ${manual?'TRUE':'FALSE'} THEN i.summary END,
      profile.value,web_text.value,${manualText})) AS search_text,
-    CASE WHEN $5::text='all' THEN CASE WHEN cards.status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED') THEN 0 ELSE 1 END
+    CASE WHEN $5::text='all' THEN CASE WHEN cards.status IN ('RESOLVED','COMPLETED','DISMISSED') THEN 0 ELSE 1 END
      ELSE CASE WHEN COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at') IS NOT NULL THEN 1 ELSE 0 END END AS order_group,
     COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at',cards.sort_at) AS order_at
    FROM origins cards
@@ -148,8 +148,8 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    ($4::text='' OR strpos(search_text,lower($4))>0)
    AND ($5::text='all' OR ($5='pending' AND status IN ('NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'))
     OR ($5='active' AND status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'))
-    OR ($5='closed' AND status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')))
-   AND (status NOT IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED')
+    OR ($5='closed' AND status IN ('RESOLVED','COMPLETED','DISMISSED')))
+   AND (status NOT IN ('RESOLVED','COMPLETED','DISMISSED')
     OR CASE WHEN $6::text='all' THEN TRUE ELSE
       (status='RESOLVED' OR COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp>=$7::timestamp
        AND COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp<$8::timestamp) END)
@@ -165,9 +165,9 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     $16='pending' AND pending_supplement OR $16='followed' AND material_count>0 AND NOT pending_supplement OR $16='none' AND material_count=0))
    AND ($17::text='any' OR kind='ticket' AND (
     $17='active' AND due_epoch_ms IS NOT NULL OR $17='due' AND due_epoch_ms<=platform.physical_epoch_ms() OR $17='none' AND due_epoch_ms IS NULL))
-   AND (status NOT IN ('RESOLVED','CLOSED','COMPLETED','CANCELLED','DUPLICATE_LINKED','IGNORED') OR $18::text IS NULL
-     OR $18='completed' AND status IN ('RESOLVED','CLOSED','COMPLETED')
-     OR $18='dismissed' AND status IN ('CANCELLED','DUPLICATE_LINKED','IGNORED'))
+   AND (status NOT IN ('RESOLVED','COMPLETED','DISMISSED') OR $18::text IS NULL
+     OR $18='completed' AND status IN ('RESOLVED','COMPLETED')
+     OR $18='dismissed' AND status IN ('DISMISSED'))
   )`;
  }
  return Object.freeze({async search({authContext,request}:{authContext:unknown;request:WorkbenchSearchRequest}):Promise<WorkbenchSearchPage>{

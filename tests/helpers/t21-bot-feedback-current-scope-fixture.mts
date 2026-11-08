@@ -61,7 +61,7 @@ export async function withT21DraftFixture(run:(fixture:{context:T11Fixture;ticke
   const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t21-draft-bot'});
   assert.ok(created.ticket);const ticketId=created.ticket.id,staff=await t11Http(context,0,{closeConnections:true}),active=await staff.start(ticketId);
   assert.equal((await staff.post(ticketId,'complete',staff.command(active))).status,200);
-  const completed=await staff.detail(ticketId);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+  const completed=await staff.detail(ticketId);assert.equal(completed.status,'COMPLETED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
   const journey=associatedJourney?await transactionP2016(context.pool,transaction=>createContactJourneyStore().ensureJourney({transaction,input:{
    entry_mode:'DIRECT_ORGANIC',origin_intake_id:intake.intakeId,linked_ticket_id:ticketId,
    reporter_identity_hash:reporterIdentityHash({provider:'WECOM_AIBOT',bot_id:'bot-test',reporter_external_id:'user-test',hmac_key:secret}),

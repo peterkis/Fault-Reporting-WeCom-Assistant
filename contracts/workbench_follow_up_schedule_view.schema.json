@@ -22,7 +22,7 @@
       "due_at":{"oneOf":[{"$ref":"local_datetime.schema.json"},{"type":"null"}]},
       "occurred_at":{"$ref":"local_datetime.schema.json"},
       "ticket_event_id":{"type":"string","format":"uuid"},
-      "end_reason":{"enum":[null,"CLOSED","CANCELLED"]}
+      "end_reason":{"enum":[null,"COMPLETED","DISMISSED"]}
     }}},
     "history_has_more":{"type":"boolean"}
   },

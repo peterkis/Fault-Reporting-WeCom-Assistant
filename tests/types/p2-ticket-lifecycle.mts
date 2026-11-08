@@ -20,8 +20,8 @@ const base = { ticket_id: 'synthetic', client_command_id: 'synthetic', expected_
 const missingTarget: TicketCommand = { ...base, action: 'transfer-assignment' };
 // @ts-expect-error -- Regular actions cannot carry transfer-only ownership fields.
 const foreignTarget: TicketCommand = { ...base, action: 'accept', target_principal_id: 'synthetic' };
-// @ts-expect-error -- User actions exclude background auto-close from the accepted command union.
-const automatic: TicketCommand = { ...base, action: 'auto-close' };
+// @ts-expect-error -- User actions exclude background auto-complete from the accepted command union.
+const automatic: TicketCommand = { ...base, action: 'auto-complete' };
 // @ts-expect-error -- Ticket versions are bounded integer numbers at this boundary, not BIGINT strings.
 const stringVersion: TicketCommand = { ...base, action: 'accept', expected_version: '1' };
 void missingTarget; void foreignTarget; void automatic; void stringVersion;

@@ -49,7 +49,7 @@ export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,work
     if(request.method==='GET'){
       const closureHistory=/^\/api\/(tickets|intakes)\/([0-9a-f-]{36})\/closure-history$/iu.exec(url.pathname);
       if(closureHistory){if(!intakeClosure)failP2016('DISABLED',503);queryKeys(url,['before_version']);if(url.searchParams.getAll('before_version').length>1)failP2016();json(response,200,await intakeClosure.history({authContext,subjectId:closureHistory[2],kind:closureHistory[1]==='tickets'?'ticket':'intake',beforeVersion:url.searchParams.get('before_version')}));return true;}
-      const waitingReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/(request-information|wait-vendor|resume|cancel)\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
+      const waitingReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/(request-information|wait-vendor|resume|dismiss)\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(waitingReceipt){if(!tickets.waitingAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await tickets.waitingAcknowledgement({authContext,ticketId:waitingReceipt[1],action:waitingReceipt[2]?.toLowerCase() as WaitingAction,commandId:waitingReceipt[3]}));return true;}
       const returnReceipt=/^\/api\/tickets\/([0-9a-f-]{36})\/return-to-dispatch\/commands\/([0-9a-f-]{36})$/iu.exec(url.pathname);
       if(returnReceipt){if(!returnToDispatchAcknowledgement)failP2016('DISABLED',503);queryKeys(url,[]);json(response,200,await returnToDispatchAcknowledgement({authContext,ticketId:returnReceipt[1],commandId:returnReceipt[2]}));return true;}
@@ -170,7 +170,7 @@ export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,work
         const result=await tickets.perform({authContext,command:{...rest,ticket_id,expected_version:expected_ticket_version,session_id:combined[1],action:'takeover-and-accept-ticket'}});
         json(response,status(result),result);return true;
       }
-      const ticket=/^\/api\/tickets\/([0-9a-f-]{36})\/(queue|accept|start|request-information|wait-vendor|resume|resolve|confirm|reopen|cancel|restore|notes|internal-notes|transfer)$/iu.exec(url.pathname);
+      const ticket=/^\/api\/tickets\/([0-9a-f-]{36})\/(queue|accept|start|request-information|wait-vendor|resume|resolve|confirm|reopen|dismiss|restore|notes|internal-notes|transfer)$/iu.exec(url.pathname);
       if(ticket){checkVersion(request,body.expected_version);
         if(ticketWaitingActionsEnabled&&['request-information','wait-vendor','resume'].includes(ticket[2]??'')){
           exactP2016(body,['client_command_id','expected_version','reason_code','note','external_visible']);

@@ -1,8 +1,8 @@
 import type {ReportItem,RequestDetail} from '../api/types';
 export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>&Pick<RequestDetail,'closure_text'>):'received'|'processing'|'queued'|'completed'|'waiting'|'waitingVendor'|'review'|'closed'|'notService'|'reopened' {
   const ticket=item.ticket?.status;
-  if(ticket==='CLOSED'||ticket==='RESOLVED')return 'completed';
-  if(ticket==='CANCELLED'||ticket==='DUPLICATE_LINKED')return 'closed';
+  if(ticket==='COMPLETED'||ticket==='RESOLVED')return 'completed';
+  if(ticket==='DISMISSED')return 'closed';
   if(ticket==='WAITING_REQUESTER')return 'waiting';
   if(ticket==='WAITING_VENDOR')return 'waitingVendor';
   if(ticket==='REOPENED')return 'reopened';

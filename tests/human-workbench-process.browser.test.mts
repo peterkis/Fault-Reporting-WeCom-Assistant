@@ -421,7 +421,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
      }
      mark('C_COMPLETION_'+source.kind);
      await post(handler,path+'/complete',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:object(current.handling_cycle).id,internal_process:privateCanary,external_summary:'合成打印设备已恢复，请本人重新核对。',external_summary_confirmed:true});
-     const closed=await detail(handler,source.id);assert.equal(closed.status,'CLOSED');assert.equal(object(closed.handling_cycle).id,cycle.id);
+     const closed=await detail(handler,source.id);assert.equal(closed.status,'COMPLETED');assert.equal(object(closed.handling_cycle).id,cycle.id);
      if(source.kind==='manual'){
       assert.deepEqual(list((await read(staff,path+'/deliveries')).items),[]);assert.equal((await pool.query<{n:number}>('SELECT count(*)::int AS n FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid',[source.id])).rows[0]?.n,0);
      }else{
@@ -429,7 +429,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
       if(source.kind==='private'){
        const ordinary=await accept('single','补充：错误提示为403。','synthetic-A');await processed(ordinary.message_id);assert.equal(ordinary.intake_id,direct.intake_id);
        const newIssue=await accept('single','另外门诊系统也登录不了','synthetic-A');await processed(newIssue.message_id);assert.notEqual(newIssue.intake_id,direct.intake_id);assert.notEqual(newIssue.session_id,direct.session_id);assert.notEqual(await ticketFor(newIssue.intake_id),source.id);
-       const still=await detail(handler,source.id);assert.equal(still.status,'CLOSED');assert.equal(still.version,closed.version);assert.deepEqual(still.handling_cycle,closed.handling_cycle);
+       const still=await detail(handler,source.id);assert.equal(still.status,'COMPLETED');assert.equal(still.version,closed.version);assert.deepEqual(still.handling_cycle,closed.handling_cycle);
       }
       mark('D_REPORTER_FEEDBACK_'+source.kind);
       let publicPath='/api/yixiaoxiu/requests/'+webRef;

@@ -35,10 +35,9 @@
         "WAITING_REQUESTER",
         "WAITING_VENDOR",
         "RESOLVED",
-        "CLOSED",
+        "COMPLETED",
         "REOPENED",
-        "CANCELLED",
-        "DUPLICATE_LINKED"
+        "DISMISSED"
       ]
     },
     "occurred_at": {
@@ -57,7 +56,7 @@
         "WAITING_REQUESTER",
         "WAITING_VENDOR",
         "TICKET_RESOLVED",
-        "TICKET_CLOSED",
+        "TICKET_COMPLETED",
         "TICKET_REOPENED",
         "TICKET_CANCELLED"
       ]

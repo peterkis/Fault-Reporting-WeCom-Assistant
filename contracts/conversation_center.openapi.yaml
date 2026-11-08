@@ -17,7 +17,7 @@ paths:
       x-reject-unknown-query: true
       description: >
         Current authorized canonical cards. Every card contains closure (null outside the closed column).
-        The closed column returns completed and dismissed states, including CANCELLED, by default;
+        The closed column returns completed and dismissed states (COMPLETED / RESOLVED and DISMISSED) by default;
         group_counts counts the same authorized range before pagination. Dismissed range membership
         uses a proven closure time; unknown times are excluded from dated windows. No include or closure-group compatibility parameter exists.
         The former cancelled range is rejected; use the dismissed group with the same date range. No business command is executed.
@@ -49,7 +49,7 @@ paths:
         Existing current-authority search/list endpoint. Criteria and cursor retain their closed,
         scope-bound semantics. Every card contains closure. closure_kind optionally restricts only
         third-column states; pending and active state selection is unchanged. Omission returns both
-        completed and dismissed states, including CANCELLED. Custom range requires both closed_from and
+        completed and dismissed states (COMPLETED / RESOLVED and DISMISSED). Custom range requires both closed_from and
         closed_to as real inclusive Shanghai dates with closed_from <= closed_to < 9999-12-31;
         other ranges reject either date key. The server returns the exclusive next-day upper bound.
         All date fields and closure_kind bind the existing cursor. Requires the existing Search capability.
@@ -604,7 +604,7 @@ paths:
       tags: [P2-016]
       security: [{InternalSession: []}, {InternalBearer: []}]
       parameters:
-        - {"in":"query","name":"state","schema":{"type":"string","enum":["queued","accepted","in_progress","waiting_requester","waiting_vendor","resolved","closed","reopened","cancelled","unassigned","mine","failed_delivery"]}}
+        - {"in":"query","name":"state","schema":{"type":"string","enum":["queued","accepted","in_progress","waiting_requester","waiting_vendor","resolved","completed","reopened","dismissed","unassigned","mine","failed_delivery"]}}
         - {"in":"query","name":"cursor","schema":{"type":"string","minLength":10,"maxLength":2048}}
         - {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100,"default":30}}
       responses:
@@ -965,9 +965,9 @@ paths:
         '404': {description: Not found or not visible}
         '409': {description: Version, command hash or state conflict}
         '503': {description: Disabled or temporarily unavailable}
-  /tickets/{ticketId}/cancel:
+  /tickets/{ticketId}/dismiss:
     post:
-      operationId: p2016TicketCancel
+      operationId: p2016TicketDismiss
       tags: [P2-016]
       security: [{InternalSession: []}, {InternalBearer: []}]
       parameters:

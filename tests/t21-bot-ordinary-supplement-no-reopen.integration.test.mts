@@ -55,7 +55,7 @@ test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journ
     assert.equal(taken.status,200,await taken.text());
     const started=await staff.detail(ticketId);assert.equal(started.status,'IN_PROGRESS');
     assert.equal((await staff.post(ticketId,'complete',staff.command(started))).status,200);
-    const completed=await staff.detail(ticketId);assert.equal(completed.status,'CLOSED');
+    const completed=await staff.detail(ticketId);assert.equal(completed.status,'COMPLETED');
     assert.equal(completed.intake_id,first.intakeId);assert.ok(completed.handling_cycle?.staff_completion_event_id);
     const readJourney=async()=>{
       const response=await staff.get('/api/contact-journeys/'+journeyId);assert.equal(response.status,200);
@@ -71,7 +71,7 @@ test('T21 ordinary Bot supplement and thanks continue the same real Intake/Journ
       assert.equal(t21Object(next.evaluated.journey).id,journeyId);
       const journey=await readJourney();assert.equal(journey.id,journeyId);assert.equal(journey.linked_ticket_id,ticketId);
       const current=await staff.detail(ticketId);
-      assert.equal(current.status,'CLOSED');assert.equal(current.version,completed.version);
+      assert.equal(current.status,'COMPLETED');assert.equal(current.version,completed.version);
       assert.equal(current.ticket_no,completed.ticket_no);assert.equal(current.assignee_id,completed.assignee_id);
       assert.deepEqual(current.handling_cycle,completed.handling_cycle);assert.equal(current.reopen_follow_up,undefined);
     }

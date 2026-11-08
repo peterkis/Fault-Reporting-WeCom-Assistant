@@ -69,7 +69,7 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
       await context.runtime.roundNotifications.runOnce();
       const response=await producer.post(id,'complete',{...producer.command(started),internal_process:internalCanary+'：仅内部合成排查过程',external_summary:'合成服务已恢复。'});
       assert.equal(response.status,200);await context.runtime.roundNotifications.runOnce();
-      const completed=await producer.detail(id);assert.equal(completed.status,'CLOSED');
+      const completed=await producer.detail(id);assert.equal(completed.status,'COMPLETED');
       const path='/api/tickets/'+id+'/deliveries';
       const readActual=async()=>{const response=await reader.get(path);assert.equal(response.status,200);const reply=await response.json() as Reply;assertSafeReply(reply);return reply;};
       const pending=await readActual();assert.equal(pending.items.length,2);

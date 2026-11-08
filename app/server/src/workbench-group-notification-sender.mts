@@ -49,8 +49,8 @@ export function createWorkbenchGroupNotificationSender({pool,enabled=false,mvpPo
           AND ((e.event_type='ticket.accepted' AND e.new_status='ACCEPTED') OR (e.event_type='ticket.assignment_transferred' AND e.old_status='QUEUED' AND e.new_status='QUEUED'
             AND e.assignment_metadata->>'old_assignee_id' IS NULL AND lower(e.assignment_metadata->>'new_assignee_id')=c.first_responsibility_principal_id::text
             AND e.assignment_metadata->>'new_team_id'=c.first_responsibility_team_id)))
-          OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_CLOSED' AND e.event_type='ticket.closed'
-            AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED' AND e.reason_code='STAFF_COMPLETED' AND EXISTS(
+          OR (r.node='STAFF_COMPLETED' AND e.event_id=c.staff_completion_event_id AND b.notification_type='TICKET_COMPLETED' AND e.event_type='ticket.completed'
+            AND e.old_status='IN_PROGRESS' AND e.new_status='COMPLETED' AND e.reason_code='STAFF_COMPLETED' AND EXISTS(
               SELECT 1 FROM pilot_ticket.staff_completion_notification_commitment p WHERE p.cycle_id=c.id AND p.ticket_id=c.ticket_id AND p.source_intake_id=c.source_intake_id AND p.ticket_event_id=e.event_id)))`,
       [request.delivery_id,request.provider,request.channel_account_id,request.target_id,request.idempotency_key]);
     let text:string,mention:unknown;

@@ -98,7 +98,7 @@ test('original department physical-clock multiplicity and own recent source guar
   const groupedSummary=h5DepartmentSummarySql('group'),ownershipCase='CASE WHEN i.canonical_reporter_binding=wb.canonical_reporter_binding AND i.source_app_scope=wb.source_app_scope THEN TRUE ELSE FALSE END';
   assert.ok(groupedSummary.includes('JOIN intake.service_intake i ON i.id=wb.intake_id AND '+ownershipCase),'UUID matching cannot replace the complete source ownership predicate; NULL must take ELSE FALSE');
   assert.ok(groupedSummary.includes('JOIN (SELECT id,status FROM pilot_ticket.ticket OFFSET 0) t ON t.id=i.pilot_ticket_id'),'unaccepted sources with no Ticket never enter summary counts');
-  assert.ok(groupedSummary.includes("count(*)::integer AS total,count(*) FILTER(WHERE t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED'))::integer AS active_count"));
+  assert.ok(groupedSummary.includes("count(*)::integer AS total,count(*) FILTER(WHERE t.status NOT IN ('COMPLETED','DISMISSED','RESOLVED'))::integer AS active_count"));
   assert.equal(groupedSummary.includes('reports AS MATERIALIZED'),false);
   for(const unchanged of [h5DepartmentSummarySql(),h5DepartmentPageSql(),h5DepartmentPageSql('group')])assert.equal(unchanged.includes(ownershipCase),false,'the bounded group summary optimization does not change the legacy or department queries');
   const recent=h5RecentSql('slot');assert.equal(occurrences(recent,'platform.physical_epoch_ms()'),4);

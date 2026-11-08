@@ -93,3 +93,7 @@ Status: **Accepted for the authorized local read projection; 写入侧原因与�
 完成统计口径需单独决定前端今日完成、H5 COMPLETED/active_count 与未来月报是否按 kind 分开；27A 不改这些消费者。重复关联无法交付编号；完整业务原因与恢复写入侧未实现。
 
 投影与计数复用现有查询和最终当前主体/角色/团队/会话/对象 READ 证明；不得按卡追加查询或读取生产配置。查询计划、实测规模、验证、截图、文件与资源记录见[卡 27A 执行记录](../plans/pc-admin-design-v21/card-27a.md)。回退以本卡提交为单位，同时回退后端合同与前端解析，保留卡26、用户原型及历史证据。无迁移、依赖、默认 Flag 或写入事实变化。
+
+## 2026-11-08 前向替代指针
+
+本 ADR 的「状态 → kind」表已被 [ADR-0058](0058_completion_and_dismissal_language.md) 前向替代：Ticket 终态改为 `COMPLETED` / `DISMISSED`（`CLOSED`、`CANCELLED`、`DUPLICATE_LINKED` 退役），Intake `IGNORED` 改为 `DISMISSED`。上文原文保留不改。

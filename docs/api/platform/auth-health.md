@@ -88,7 +88,7 @@ W handler通过注入provider返回对象，不能假定所有装配的readiness
 | `GET /api/pilot/tickets/{ticketId}` | UUID，actor | 200 `{ok:true,ticket,events[]}`；Ticket可加web_report，事件按角色裁剪；拒绝403 |
 | `POST /api/pilot/tickets/{ticketId}/actions/{action}` | camelCase body：expectedVersion:number、traceId:string必需；note?、externalVisible?、reasonCode?、attachmentIds?；actor/action/ticketId由server注入 | 200 `{ok:true,ticket,event,side_effects}`；拒绝403，业务失败409，异常400 |
 
-action允许 `queue|accept|start|request-information|resume|wait-vendor|resolve|confirm|reopen|cancel|add-note`，由领域服务做状态校验；auto-close显式403。旧HTTP wrapper没有W的Idempotency-Key/If-Match/CSRF协议，不能复用当前工单snake_case body；改建新功能应使用 [当前工单接口](../workbench/tickets.md)。
+action允许 `queue|accept|start|request-information|resume|wait-vendor|resolve|confirm|reopen|dismiss|add-note`，由领域服务做状态校验；auto-complete显式403。旧HTTP wrapper没有W的Idempotency-Key/If-Match/CSRF协议，不能复用当前工单snake_case body；改建新功能应使用 [当前工单接口](../workbench/tickets.md)。
 
 旧错误外壳 `{ok:false,error:{code,retryable:false}}`；UNAUTHORIZED401、FORBIDDEN403、NOT_FOUND404、VALIDATION_FAILED400等。合成示例 `GET /api/pilot/work` 可返回 `{"ok":true,"items":[]}`；不会创建第二套Ticket事实源。
 

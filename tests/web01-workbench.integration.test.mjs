@@ -49,15 +49,15 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const closingNext=await read('/api/workbench/board?column=closed&limit=1&cursor='+closingFirst.next_cursor);
     assert.equal(closingNext.items[0].id,tickets[10].ticket.id);
     const resolved=closed.items.find(i=>i.status==='RESOLVED');assert.ok(resolved);assert.equal(resolved.completed_at,null);
-    await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=date_trunc('day',platform.local_now())-interval '2 days' WHERE ticket_id=$1::uuid AND event_type='ticket.closed'",[tickets[9].ticket.id]);
+    await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=date_trunc('day',platform.local_now())-interval '2 days' WHERE ticket_id=$1::uuid AND event_type='ticket.completed'",[tickets[9].ticket.id]);
     assert.equal((await read('/api/workbench/board?column=closed')).items.length,3);
     assert.equal((await read('/api/workbench/board?column=closed&range=all')).items.length,4);
     const commandId=randomUUID();
-    const cancelled=await fetch(origin+'/api/tickets/'+tickets[0].ticket.id+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'OTHER',note:'取消原因（合成）'})});
+    const cancelled=await fetch(origin+'/api/tickets/'+tickets[0].ticket.id+'/dismiss',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'OTHER',note:'取消原因（合成）'})});
     assert.equal(cancelled.status,200,await cancelled.clone().text());
-    assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.some(i=>i.id===tickets[0].ticket.id&&i.status==='CANCELLED'));
-    const cancellationView=(await read('/api/workbench/board?column=closed&range=all')).items.filter(item=>item.status==='CANCELLED');
-    assert.equal(cancellationView.length,1);assert.equal(cancellationView[0].status,'CANCELLED');
+    assert.ok((await read('/api/workbench/board?column=closed&range=all')).items.some(i=>i.id===tickets[0].ticket.id&&i.status==='DISMISSED'));
+    const cancellationView=(await read('/api/workbench/board?column=closed&range=all')).items.filter(item=>item.status==='DISMISSED');
+    assert.equal(cancellationView.length,1);assert.equal(cancellationView[0].status,'DISMISSED');
     assert.equal((await get('/api/workbench/board?column=closed&range=cancelled')).status,400,'the removed cancelled range is rejected');
     const separateReview=pending.items.find(i=>i.kind==='review');
     await pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$1::uuid WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$2::uuid)',[tickets[5].ticket.id,separateReview.id]);
@@ -361,7 +361,7 @@ test('Card 11 preserves terminal Intake detail and resolved Review aliases',asyn
     await processReviewIntake(waiting.intakeId);
     const review=(await pool.query("SELECT id::text,row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status='PENDING'",[waiting.intakeId])).rows[0];assert.ok(review);
     const result=await runtime.reviews.resolveManualReview({authContext:{principal_id:principals[0].id},reviewId:review.id,body:{client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code:'CANCEL_REVIEW',resolution_reason_code:'CARD11_FIXTURE'}});assert.equal(result.ok,true);
-    for(const status of ['COMPLETED','IGNORED']){
+    for(const status of ['COMPLETED','DISMISSED']){
       if(status==='COMPLETED')await pool.query('UPDATE intake.service_intake SET status=$2 WHERE id=$1::uuid',[waiting.intakeId,status]);
       else{
         await pool.query("UPDATE intake.service_intake SET status='WAITING_TRIAGE' WHERE id=$1::uuid",[waiting.intakeId]);
@@ -384,11 +384,11 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
       if(path.startsWith('/api/workbench/search'))await assertP2016Schema('workbench_search_page',value);return value;};
     const bootstrap=await read('/api/lifecycle/bootstrap');
     const commandId=randomUUID(),cancelledId=tickets[0].ticket.id;
-    const cancel=await fetch(origin+'/api/tickets/'+cancelledId+'/cancel',{method:'POST',headers:{cookie:cookies[0],origin,
+    const cancel=await fetch(origin+'/api/tickets/'+cancelledId+'/dismiss',{method:'POST',headers:{cookie:cookies[0],origin,
       'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},
       body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'FALSE_REPORT_OR_TEST',note:'误报核对后取消（合成）'})});
     assert.equal(cancel.status,200,await cancel.clone().text());
-    const cancelledEvent=(await pool.query("SELECT reason_code,internal_note,to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS closed_at FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[cancelledId])).rows[0];
+    const cancelledEvent=(await pool.query("SELECT reason_code,internal_note,to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS closed_at FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.dismissed' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[cancelledId])).rows[0];
     assert.equal(cancelledEvent.reason_code,'FALSE_REPORT_OR_TEST');assert.equal(cancelledEvent.internal_note,'误报核对后取消（合成）');
     const cancellation=await read('/api/workbench/items/ticket/'+cancelledId);
     assert.deepEqual(cancellation.item.closure,{kind:'DISMISSED',source:'MANUAL',reason_code:'FALSE_REPORT_OR_TEST',reason_label:'误报或测试',secondary_reason:null,reason_note:'误报核对后取消（合成）',
@@ -398,8 +398,8 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     assert.equal((await get('/api/workbench/items/ticket/'+cancelledId,1)).status,404);
 
     const duplicateId=tickets[1].ticket.id;
-    const duplicate=(await pool.query("UPDATE pilot_ticket.ticket SET status='DUPLICATE_LINKED',title='重复事项（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateId])).rows[0];
-    const duplicateEvent=await appendTicketEvent({transaction:pool,ticket:duplicate,eventType:'ticket.duplicate_linked',actor:{type:'SYSTEM',id:null},oldStatus:tickets[1].ticket.status,internalNote:null,externalNote:null,traceId:'card27a-duplicate-synthetic'});
+    const duplicate=(await pool.query("UPDATE pilot_ticket.ticket SET status='DISMISSED',title='重复事项（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateId])).rows[0];
+    const duplicateEvent=await appendTicketEvent({transaction:pool,ticket:duplicate,eventType:'ticket.dismissed',actor:{type:'SYSTEM',id:null},oldStatus:tickets[1].ticket.status,internalNote:null,externalNote:null,traceId:'card27a-duplicate-synthetic'});
     await insertClosureRecord({transaction:pool,subjectType:'TICKET',subjectId:duplicateId,beforeStatus:tickets[1].ticket.status,beforeVersion:tickets[1].ticket.version,beforeAssignee:tickets[1].ticket.assignee_id,beforeTeam:tickets[1].ticket.resolver_team_id,beforeSnapshot:{},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'DUPLICATE'}),ticketEventId:duplicateEvent.event_id});
     const duplicateCard=(await read('/api/workbench/items/ticket/'+duplicateId)).item;
     assert.equal(duplicateCard.closure.kind,'DISMISSED');assert.equal(duplicateCard.closure.source,'SYSTEM');assert.equal(duplicateCard.closure.reason_label,'重复报修');
@@ -416,7 +416,7 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     };
     const manual=await resolve('范围外请求人工核对（合成）','MARK_OUT_OF_SCOPE','OUT_OF_SCOPE_CONFIRMED',true);
     const manualCard=(await read('/api/workbench/items/intake/'+manual.intake.intakeId)).item;
-    assert.equal(manualCard.status,'IGNORED');assert.equal(manualCard.closure.kind,'DISMISSED');assert.equal(manualCard.closure.source,'MANUAL');
+    assert.equal(manualCard.status,'DISMISSED');assert.equal(manualCard.closure.kind,'DISMISSED');assert.equal(manualCard.closure.source,'MANUAL');
     assert.equal(manualCard.closure.reason_code,'NOT_IT_SCOPE');assert.deepEqual(manualCard.closure.secondary_reason,{code:'OUT_OF_SCOPE_CONFIRMED',label:'已核对为范围外诉求'});assert.equal(manualCard.closure.closed_by_display_name,principals[0].display_name);
     assert.equal(manualCard.closure.reason_note,null);assert.equal(manualCard.closure.can_restore,true);
     const manualTimes=(await pool.query("SELECT to_char(r.resolved_at,'YYYY-MM-DD HH24:MI:SS') AS resolved_at,to_char(e.occurred_at,'YYYY-MM-DD HH24:MI:SS') AS event_at FROM intake.manual_review_item r JOIN intake.service_intake_event e ON e.payload->>'decision_id'=r.resolution_decision_id::text WHERE r.id=$1::uuid AND e.event_type='intake.rule_decision_applied'",[manual.review.id])).rows[0];
@@ -441,7 +441,7 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
       catalog_version:original.catalog_version,rule_set_version:original.rule_set_version,occurred_at:delayedAt,trace_id:'card27a-automatic-synthetic'}});
     assert.equal(applied.applied,true);
     const automaticCard=(await read('/api/workbench/items/intake/'+retired.intake.intakeId)).item;
-    assert.equal(automaticCard.status,'IGNORED');assert.equal(automaticCard.closure.source,'SYSTEM');assert.equal(automaticCard.closure.reason_label,'非 IT 范围');
+    assert.equal(automaticCard.status,'DISMISSED');assert.equal(automaticCard.closure.source,'SYSTEM');assert.equal(automaticCard.closure.reason_label,'非 IT 范围');
     assert.equal(automaticCard.closure.reason_code,'NOT_IT_SCOPE');assert.equal(automaticCard.closure.closed_by_display_name,null);assert.equal(automaticCard.closure.reason_note,null);
     assert.ok(automaticCard.closure.closed_at>delayedAt,'the closure record persists the physical closing instant while the source event keeps its observed time');
     const automaticEvent=(await pool.query("SELECT to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS at FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied' ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1",[retired.intake.intakeId])).rows[0];assert.equal(automaticEvent.at,delayedAt);
@@ -449,7 +449,7 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     const pending=await read('/api/workbench/board?column=pending'),active=await read('/api/workbench/board?column=active');
     for(const page of [pending,active]){assert.equal(Object.hasOwn(page,'group_counts'),false);assert.ok(page.items.every(item=>Object.hasOwn(item,'closure')&&item.closure===null));}
     const all=await read('/api/workbench/board?column=closed&range=all');
-    assert.deepEqual(new Set(all.items.map(item=>item.status)),new Set(['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','COMPLETED','IGNORED']));
+    assert.deepEqual(new Set(all.items.map(item=>item.status)),new Set(['RESOLVED','COMPLETED','DISMISSED']));
     const counted={completed:all.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:all.items.filter(item=>item.closure.kind==='DISMISSED').length};
     assert.deepEqual(all.group_counts,counted);assert.ok(all.items.some(item=>item.id===cancelledId));
     const paged=[];let cursor=null;
@@ -462,7 +462,10 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     const empty=await read('/api/workbench/board?column=closed&range=all',1);assert.deepEqual(empty.items,[]);assert.deepEqual(empty.group_counts,{completed:0,dismissed:0});
     assert.equal((await get('/api/workbench/board?column=closed&range=cancelled')).status,400,'the removed board mode is rejected instead of silently changing the date range');
     assert.equal((await get('/api/workbench/search?column=closed&range=cancelled')).status,400,'the removed list mode is rejected');
-    const cancelledOnly=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=CANCELLED');assert.deepEqual(cancelledOnly.items.map(item=>item.id),[cancelledId]);assert.ok(cancelledOnly.items.every(item=>item.closure.kind==='DISMISSED'));
+    // ADR-0058: every dismissed Ticket / Intake now has the single status DISMISSED (no separate DUPLICATE_LINKED / IGNORED), so the status filter selects exactly the dismissed set.
+    const dismissedIds=new Set(all.items.filter(item=>item.closure.kind==='DISMISSED').map(item=>item.kind+':'+item.id));assert.ok(dismissedIds.size>1);
+    const cancelledOnly=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=DISMISSED');assert.deepEqual(new Set(cancelledOnly.items.map(item=>item.kind+':'+item.id)),dismissedIds);assert.ok(cancelledOnly.items.some(item=>item.id===cancelledId));assert.ok(cancelledOnly.items.every(item=>item.status==='DISMISSED'&&item.closure.kind==='DISMISSED'));
+    assert.deepEqual((await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=COMPLETED')).items,[],'a completed status never matches a dismissed closure');
 
     const day=(await pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(date_trunc('day',platform.local_now()),'YYYY-MM-DD HH24:MI:SS') AS start")).rows[0];
     await pool.query("UPDATE pilot_ticket.closure_record SET closed_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL",[cancelledId,day.start]);
@@ -480,7 +483,7 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     assert.equal(dismissedList.criteria.closure_kind,'dismissed');assert.ok(dismissedList.items.length>0);assert.ok(dismissedList.items.every(item=>item.closure.kind==='DISMISSED'));
     assert.deepEqual(new Set(dismissedList.items.map(item=>item.kind+':'+item.id)),new Set(all.items.filter(item=>item.closure.kind==='DISMISSED').map(item=>item.kind+':'+item.id)));
     const mixed=await read('/api/workbench/search?column=all&range=all&closure_kind=dismissed');assert.ok(mixed.items.some(item=>item.column!=='closed'));assert.ok(mixed.items.every(item=>item.column!=='closed'||item.closure.kind==='DISMISSED'),'the filter affects terminal statuses only');
-    const selected=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=CANCELLED');assert.deepEqual(selected.items.map(item=>item.id),[cancelledId]);
+    const selected=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&statuses=DISMISSED');assert.deepEqual(new Set(selected.items.map(item=>item.kind+':'+item.id)),new Set(dismissedList.items.map(item=>item.kind+':'+item.id)));
     const first=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&limit=1');assert.ok(first.next_cursor);
     assert.equal((await get('/api/workbench/search?column=closed&range=all&closure_kind=completed&limit=1&cursor='+encodeURIComponent(first.next_cursor))).status,400,'a cursor cannot be reused for a different closure kind');
     const next=await read('/api/workbench/search?column=closed&range=all&closure_kind=dismissed&limit=1&cursor='+encodeURIComponent(first.next_cursor));assert.equal(next.items.length,1);assert.notEqual(next.items[0].id,first.items[0].id);
@@ -512,10 +515,10 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     await pool.query("UPDATE intake.service_intake_event SET payload=$2::jsonb WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[completed.intake.intakeId,JSON.stringify(completedEvent.payload)]);
     assert.deepEqual((await read('/api/workbench/items/intake/'+completed.intake.intakeId)).item.closure,completedCard.closure);
     const originalCancellation=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
-    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,'旧操作人未解析（合成）']);
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.dismissed'",[cancelledId,'旧操作人未解析（合成）']);
     const unknownActor=(await read('/api/workbench/items/ticket/'+cancelledId)).item.closure;
     assert.deepEqual(unknownActor,originalCancellation,'event text cannot override the actor in the new closure record');
-    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.cancelled'",[cancelledId,principals[0].id]);
+    await pool.query("UPDATE pilot_ticket.ticket_event SET operator_id=$2 WHERE ticket_id=$1::uuid AND event_type='ticket.dismissed'",[cancelledId,principals[0].id]);
     assert.deepEqual((await read('/api/workbench/items/ticket/'+cancelledId)).item.closure,originalCancellation);
     await pool.query('DELETE FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid',[cancelledId]);assert.equal((await get('/api/workbench/items/ticket/'+cancelledId)).status,503,'a missing closure record is a data error, never a legacy fallback');
     console.log('CARD27A_SYNTHETIC '+JSON.stringify({states:6,manual_intake:manualCard.status,automatic_intake:automaticCard.status,cancelled_reason_note_visible:true,duplicate_original_available:false,dismissed_restore:true,retained_closure_time:true,post_wait_record_stable:true,all_group_counts:counted,pages:Math.ceil(paged.length/2)}));
@@ -527,7 +530,7 @@ test('Card 27A review rejects a newly matching prefix or sentinel after a real f
   for(const scenario of ['before','after','empty'])await withWeb01Fixture(async f=>{
     const get=async path=>{const r=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200,await r.clone().text());return r.json();};
     const a=f.tickets[scenario==='before'?11:9].ticket.id,b=f.tickets[scenario==='before'?9:11].ticket.id;
-    await f.pool.query("UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE status IN ('RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED')",[f.principals[2].id]);
+    await f.pool.query("UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE status IN ('RESOLVED','COMPLETED','DISMISSED')",[f.principals[2].id]);
     if(scenario!=='empty')await f.pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE id=$2::uuid',[f.principals[0].id,a]);
     const path='/api/workbench/board?column=closed&range=all&scope=related&limit=1';
     const initial=await get(path);assert.deepEqual(initial.items.map(item=>item.id),scenario==='empty'?[]:[a]);assert.equal(initial.next_cursor,null);
@@ -554,10 +557,10 @@ test('Card 27A review normalizes valid legacy whitespace without changing stored
     const read=async path=>{const r=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200,await r.clone().text());return r.json();};
     const bootstrap=await read('/api/lifecycle/bootstrap'),id=f.tickets[0].ticket.id,commandId=randomUUID();
     await f.pool.query("UPDATE pilot_ticket.pilot_principal SET display_name=' ' WHERE id=$1::uuid",[f.principals[0].id]);
-    const cancelled=await fetch(f.origin+'/api/tickets/'+id+'/cancel',{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'FALSE_REPORT_OR_TEST',note:' '})});
+    const cancelled=await fetch(f.origin+'/api/tickets/'+id+'/dismiss',{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':commandId,'if-match':'"2"'},body:JSON.stringify({client_command_id:commandId,expected_version:2,reason_code:'FALSE_REPORT_OR_TEST',note:' '})});
     assert.equal(cancelled.status,200,await cancelled.clone().text());
     const detail=await read('/api/workbench/items/ticket/'+id);assert.equal(detail.item.closure.reason_note,null);assert.equal(detail.item.closure.closed_by_display_name,null);assert.equal(detail.item.closure.source,'MANUAL');
-    assert.ok(detail.records.some(item=>item.type==='ticket.cancelled'&&item.text===null),'the new closure normalizes pure whitespace to null in its internal Event');
+    assert.ok(detail.records.some(item=>item.type==='ticket.dismissed'&&item.text===null),'the new closure normalizes pure whitespace to null in its internal Event');
     await assertP2016Schema('web01_workbench_card',detail.item);
   },{precisionV212:true});
 });
@@ -567,7 +570,7 @@ test('Card 27A review initial ignored closing time is its creation fact, not del
     const at=formatEpochMsToShanghaiLocal(String(Math.floor(Date.now()/1000)*1000-259200000)),expiry=String(Math.floor(Date.now()/1000)*1000+2592000000);
     const frame=adaptWeComSdkFrame({cmd:'aibot_msg_callback',headers:{req_id:'初始感谢（合成）-'+randomUUID()},body:{msgid:'初始感谢（合成）-'+randomUUID(),aibotid:'bot-test',chattype:'single',from:{userid:'thanks-synthetic-initial'},msgtype:'text',text:{content:'谢谢'}}},{receivedAt:at});assert.equal(frame.ok,true);
     const accepted=await createChannelMessageInbox({pool:f.pool}).accept({message:frame.message,traceId:'card27c-initial-thanks（合成）',privacyClass:'INTERNAL',retentionUntil:formatEpochMsToShanghaiLocal(expiry),retentionUntilEpochMs:expiry},createServiceIntakeProcessor());assert.equal(accepted.ok,true);
-    const intake=accepted.result.intake;assert.equal(intake.status,'IGNORED');
+    const intake=accepted.result.intake;assert.equal(intake.status,'DISMISSED');
     const closed=(await f.pool.query("SELECT before_status,to_char(closed_at,'YYYY-MM-DD HH24:MI:SS') AS at FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid",[intake.id])).rows[0];assert.equal(closed.before_status,'WAITING_DESCRIPTION');
     const response=await fetch(f.origin+'/api/workbench/items/intake/'+intake.id,{headers:{cookie:f.cookies[0]}});assert.equal(response.status,200);const body=await response.json();assert.equal(body.item.closure.source,'SYSTEM');assert.equal(body.item.closure.closed_at,closed.at);assert.ok(closed.at>at,'the closure transaction clock is independent of delayed input');
   },{precisionV212:true});
