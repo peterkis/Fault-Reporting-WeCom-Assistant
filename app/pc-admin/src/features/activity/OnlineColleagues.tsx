@@ -26,7 +26,7 @@ export function OnlineColleagues({collapsed}:{collapsed:boolean}){
   if(!total)return <div className="ds-online-colleagues" data-online-colleagues><div className="ds-online-row is-empty"><span className="ds-online-title">在线同事</span><span className="ds-online-none">暂无</span></div></div>;
   return <div className="ds-online-colleagues" data-online-colleagues ref={root}>
     <button ref={trigger} type="button" className="ds-online-row" aria-label={label} aria-expanded={open} aria-controls={panelId} data-action="open-online-colleagues" onClick={()=>setOpen(value=>!value)}>
-      <span className="ds-online-title">在线同事</span><PresenceStack names={view.people.map(person=>person.display_name)} max={3}/><span className="ds-online-count">{total}</span>
+      <span className="ds-online-title">在线同事</span><PresenceStack names={view.people.map(person=>person.display_name)} max={3} total={total}/><span className="ds-online-count">{total}</span>
     </button>
     {open?<div className="ds-online-panel" id={panelId} role="dialog" aria-label={'在线同事 · '+total}>
       <p className="ds-online-panel-title">在线同事 · {total}</p>

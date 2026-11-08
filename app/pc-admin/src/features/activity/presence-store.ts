@@ -19,7 +19,7 @@ let principal:Principal|null=null,live=false,environmentBound=false;
 let readTimer:ReturnType<typeof setTimeout>|null=null,readAt=0,firstTriggerAt=0,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
 let reads=0,onlineReads=0;
 // Card 31: online colleagues share this store's gate and debounce; only the sidebar row subscribes.
-let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineRequest:AbortController|null=null;
+let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing=false,onlineRequest:AbortController|null=null;
 const onlineListeners=new Set<()=>void>();
 export const ONLINE_STALE_MS=30000;
 function putOnline(next:WorkbenchOnlineView|null){if(next===online)return;online=next;for(const listener of onlineListeners)listener();}
@@ -39,20 +39,24 @@ function put(key:string,next:People){
 }
 function enabled(){return Boolean(principal?.activity_enabled&&live&&typeof document!=='undefined'&&!document.hidden&&navigator.onLine&&isWorkbenchVisible());}
 function clear(){
-  request?.abort();request=null;onlineRequest?.abort();onlineRequest=null;putOnline(null);
+  request?.abort();request=null;onlineRequest?.abort();onlineRequest=null;onlineFailing=false;putOnline(null);
   if(readTimer!==null){clearTimeout(readTimer);readTimer=null;}
   for(const key of [...people.keys()]){people.delete(key);emit(key);}
   syncExpiry();
 }
+// The 5-second check runs while someone is cached or while a failed online refresh is holding the last result.
 function syncExpiry(){
-  if(people.size&&expiryTimer===null)expiryTimer=setInterval(expire,PRESENCE_EXPIRY_CHECK_MS);
-  else if(!people.size&&expiryTimer!==null){clearInterval(expiryTimer);expiryTimer=null;}
+  const needed=people.size>0||onlineFailing;
+  if(needed&&expiryTimer===null)expiryTimer=setInterval(expire,PRESENCE_EXPIRY_CHECK_MS);
+  else if(!needed&&expiryTimer!==null){clearInterval(expiryTimer);expiryTimer=null;}
 }
 /**
  * The 5-second check runs only while someone is cached. It hides expired people and, because a colleague's steady
  * heartbeats renew the server lease without a presence hint, re-reads before the nearest cached lease would lapse.
  */
 function expire(){
+  // Card 31 F3 (Codex review): a failing online refresh retries here and hides its last result 30 s after the last success.
+  if(onlineFailing){if(Date.now()-onlineAt>ONLINE_STALE_MS){onlineFailing=false;putOnline(null);syncExpiry();}else if(onlineWanted)schedule(0);}
   const now=BigInt(Date.now());for(const [key,value] of [...people])put(key,value.filter(person=>alive(person,now)));
   let nearest:bigint|null=null;for(const value of people.values())for(const person of value){const at=BigInt(person.expires_epoch_ms);if(nearest===null||at<nearest)nearest=at;}
   if(nearest!==null&&nearest-now<BigInt(PRESENCE_REFRESH_MARGIN_MS))schedule(PRESENCE_HINT_DELAY_MS);
@@ -91,8 +95,12 @@ async function readOnline(owner:Principal){
   try{
     const result=await readOnlineView(controller.signal);
     if(controller.signal.aborted||identity(principal)!==identity(owner)||!enabled())return;
-    onlineAt=Date.now();putOnline(result);
-  }catch{if(!controller.signal.aborted&&Date.now()-onlineAt>ONLINE_STALE_MS)putOnline(null);/* A failed read keeps the last result for up to 30 s. */}
+    onlineAt=Date.now();onlineFailing=false;putOnline(result);syncExpiry();
+  }catch{
+    if(controller.signal.aborted)return;
+    if(Date.now()-onlineAt>ONLINE_STALE_MS){onlineFailing=false;putOnline(null);}else if(online){onlineFailing=true;}/* A failed read keeps the last result for up to 30 s. */
+    syncExpiry();
+  }
   finally{if(onlineRequest===controller)onlineRequest=null;}
 }
 function environment(){if(enabled())schedule(0);else clear();}

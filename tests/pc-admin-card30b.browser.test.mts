@@ -115,9 +115,10 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   // B6 idle: with nobody present there are no batch reads and no running 5-second check for 60 seconds.
   for(const one of Object.values(peers))one.stop();
   await peers.zhou.release(viewTarget);await peers.zhou.release(crowdTarget);await peers.zhou.release(editTarget);await peers.chen.release(editTarget);await peers.chen.release(crowdTarget);await peers.shen.release(crowdTarget);
-  await b.waitFor("document.querySelector('.ds-presence-tags')===null");await delay(2000);
-  const idleFrom=batch.length;await delay(60000);
-  metrics.idle={seconds:60,batchReads:batch.length-idleFrom,intervals:await b.evaluate('window.__presenceIntervals()')};
+  // Let trailing reads from the release burst settle (reads stay 1.5 s apart) before measuring idle.
+  await b.waitFor("document.querySelector('.ds-presence-tags')===null");await delay(6000);
+  const idleFrom=batch.length,idleStart=Date.now();await delay(60000);
+  metrics.idle={seconds:60,batchReads:batch.length-idleFrom,intervals:await b.evaluate('window.__presenceIntervals()')};metrics.idleOffsets=batch.slice(idleFrom).map(at=>at-idleStart);
   assert.deepEqual(metrics.idle,{seconds:60,batchReads:0,intervals:0});
  }catch(error){failure=error;}
  finally{await closeBrowserTestResources([async()=>{if(failure&&browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));},()=>writeFile(join(directory,'receipt.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,metrics,screenshots},null,2)),()=>{for(const one of Object.values(peers))one.stop();f.runtime.server.off('request',observe);},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}

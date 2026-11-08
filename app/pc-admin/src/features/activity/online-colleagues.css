@@ -8,9 +8,11 @@
 .ds-online-title {flex: none;}
 .ds-online-none {color: var(--text-tertiary);}
 .ds-online-count {margin-left: auto; color: var(--text-secondary); font-variant-numeric: tabular-nums;}
-.ds-online-panel {--radius-online: calc(var(--radius-md) + var(--space-0-5)); position: absolute; bottom: calc(100% + var(--space-1)); left: 0; z-index: var(--z-dropdown); width: calc(var(--space-5) * 13); padding: var(--space-1-5); border-radius: var(--radius-online); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
+.ds-online-panel {--radius-online: calc(var(--radius-md) + var(--space-0-5)); position: absolute; bottom: calc(100% + var(--space-1)); left: 0; z-index: var(--z-dropdown); display: flex; flex-direction: column; width: calc(var(--space-5) * 13); max-height: calc(100dvh - var(--space-16) * 2 - var(--space-8)); padding: var(--space-1-5); border-radius: var(--radius-online); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
 .ds-online-panel-title {margin: 0; padding: var(--space-1) var(--space-2); color: var(--text-secondary); font-size: var(--fs-xs);}
-.ds-online-list {margin: 0; padding: 0; list-style: none;}
+/* Codex review: with up to 50 colleagues the panel stays inside the viewport and the list scrolls. */
+.ds-online-list {flex: 1 1 auto; min-height: 0; margin: 0; padding: 0; overflow-y: auto; list-style: none;}
+.ds-online-panel-title,.ds-online-more,.ds-online-note {flex: none;}
 .ds-online-person {display: flex; align-items: center; gap: var(--space-2); height: calc(var(--space-8) + var(--space-1)); padding: 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--fs-sm);}
 .ds-online-panel .ds-online-avatar {width: calc(var(--space-5) + var(--space-0-5)); height: calc(var(--space-5) + var(--space-0-5)); min-width: calc(var(--space-5) + var(--space-0-5));}
 .ds-online-name {min-width: 0; overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap;}

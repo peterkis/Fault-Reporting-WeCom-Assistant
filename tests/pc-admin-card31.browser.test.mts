@@ -42,6 +42,8 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   const actor=f.browserCookies[0];assert.ok(actor);
   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[actor]});assert.ok(browser);const b=browser;
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{window.__hints=0;const E=window.EventSource;window.EventSource=function(...a){const es=new E(...a);es.addEventListener('workbench.activity.changed',()=>{window.__hints++;});return es;};window.EventSource.prototype=E.prototype;Object.assign(window.EventSource,{CONNECTING:0,OPEN:1,CLOSED:2});})()"});
+  // Explicit synthetic seams for two review cases the fixture cannot produce (4 sessions max): a failing online read, and 55 colleagues.
+  await b.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{window.__onlineFail=false;window.__onlineMany=false;const o=window.fetch.bind(window);window.fetch=async(i,n)=>{if(String(i)==='/api/workbench/online'){if(window.__onlineFail)return new Response('{}',{status:503,headers:{'content-type':'application/json'}});if(window.__onlineMany){const people=Array.from({length:50},(_,k)=>({display_name:'同事'+String(k).padStart(2,'0')+'（合成）',status:k<2?'EDITING':k<5?'VIEWING':'ONLINE'}));return new Response(JSON.stringify({schema_version:1,people,total:55}),{status:200,headers:{'content-type':'application/json'}});}}return o(i,n);};})()"});
   await b.command('Page.reload');
   const live="document.querySelector('[data-realtime-status=live]')!==null";
   const capture=async(name:string)=>{await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name+'.png'),bytes);screenshots.push({file:name+'.png',sha256:createHash('sha256').update(bytes).digest('hex'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)});};
@@ -89,6 +91,21 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   const burst=requests.slice(from),online=burst.filter(row=>row.path==='/api/workbench/online'),batch=burst.filter(row=>row.path==='/api/workbench/activity/batch-view');
   metrics.network={seconds:60,onlineReads:online.length,batchReads:batch.length,unpaired:online.filter(row=>!batch.some(other=>Math.abs(other.at-row.at)<100)).length};
   assert.ok(online.length>0&&online.length<=30,JSON.stringify(metrics.network));assert.equal(object(metrics.network).unpaired,0,'every online read leaves with a batch read');
+  // Codex review: a failing online refresh keeps the last result at most 30 s after the last success, then hides it; it retries and recovers.
+  await b.evaluate('window.__onlineFail=true');const failFrom=Date.now();await chen.hold(editTarget,'VIEWING');
+  await delay(8000);assert.equal(await b.evaluate("document.querySelector('[data-online-colleagues]')!==null"),true,'kept while the failure is recent');
+  await b.waitFor("document.querySelector('[data-online-colleagues]')===null");metrics.failure={hiddenAfterMs:Date.now()-failFrom};
+  assert.ok(Number(object(metrics.failure).hiddenAfterMs)<=40000,JSON.stringify(metrics.failure));
+  await b.evaluate('window.__onlineFail=false');await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')!==null");
+  // Codex review: 55 colleagues (synthetic) — 「+N」 counts everyone, the panel stays inside the viewport and its list scrolls.
+  await b.evaluate('window.__onlineMany=true');await chen.hold(editTarget,'EDITING');
+  await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')?.textContent==='55'");
+  await clickWorkbenchControl(b,'[data-online-colleagues] button');await b.waitFor("document.querySelector('.ds-online-panel')!==null");
+  metrics.many=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-online-panel'),l=p.querySelector('.ds-online-list');return {more:document.querySelector('.ds-presence-stack-more')?.textContent,top:Math.round(p.getBoundingClientRect().top),scrolls:l.scrollHeight>l.clientHeight,listed:l.children.length,extra:p.querySelector('.ds-online-more')?.textContent,firstStatus:p.querySelector('.ds-online-status').textContent};})()"));
+  const many=object(metrics.many);assert.deepEqual({...many,top:Number(many.top)>=0},{more:'+52',top:true,scrolls:true,listed:50,extra:'另有 5 人在线',firstStatus:'正在编辑'});
+  await capture('sidebar-popover-55-synthetic');
+  for(const type of ['keyDown','keyUp'] as const)await b.command('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape'});
+  await b.evaluate('window.__onlineMany=false');await chen.hold(editTarget,'VIEWING');await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')?.textContent==='2'");
   // Collapsed sidebar: icon + count badge with a title.
   await clickWorkbenchControl(b,'button[aria-label="收起侧栏"]');
   await b.waitFor("document.querySelector('.ds-online-collapsed')!==null");
@@ -96,5 +113,5 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   assert.equal(object(metrics.collapsed).font,'11px');assert.match(String(object(metrics.collapsed).title),/^在线同事 \d+ 人$/u);
   await capture('sidebar-collapsed');
  }catch(error){failure=error;}
- finally{await closeBrowserTestResources([async()=>{if(failure&&browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));},()=>writeFile(join(directory,'receipt.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS',platform:process.platform,metrics,screenshots},null,2)),()=>{for(const one of [chen,zhou,shen])one.stop();f.runtime.server.off('request',observe);},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+ finally{await closeBrowserTestResources([async()=>{if(failure&&browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));},()=>writeFile(join(directory,'receipt.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS',synthetic:['online read failure (window.__onlineFail)','55 colleagues (window.__onlineMany)'],platform:process.platform,metrics,screenshots},null,2)),()=>{for(const one of [chen,zhou,shen])one.stop();f.runtime.server.off('request',observe);},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
 },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchInternalNotesEnabled:true,presencePeerSessions:true}));
