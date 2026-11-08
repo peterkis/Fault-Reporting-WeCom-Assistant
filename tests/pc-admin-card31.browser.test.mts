@@ -25,6 +25,7 @@ function colleague(origin:string,cookie:string){
   async connect(){const controller=new AbortController();stream=controller;const response=await fetch(origin+'/api/realtime/events?scope=workbench',{headers:{cookie,accept:'text/event-stream'},signal:controller.signal});assert.equal(response.status,200);const reader=response.body?.getReader();void (async()=>{try{while(reader&&!(await reader.read()).done){/* keep the stream open */}}catch{/* closed */}})();},
   disconnect(){stream?.abort();stream=null;},
   async hold(id:string,mode:'VIEWING'|'EDITING'){held.set(id,mode);await renew(id,mode);},
+  async release(id:string){held.delete(id);await ready();const browser=browsers.get(id);if(!browser)return;const response=await fetch(origin+'/api/workbench/activity',{method:'POST',headers:{cookie,origin,'content-type':'application/json','x-csrf-token':csrf},body:JSON.stringify({schema_version:1,browser_id:browser,action:'RELEASE',target:{kind:'ticket',id}})});assert.equal(response.status,200);},
   stop(){clearInterval(timer);stream?.abort();},
  };
 }
@@ -92,11 +93,15 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   metrics.network={seconds:60,onlineReads:online.length,batchReads:batch.length,unpaired:online.filter(row=>!batch.some(other=>Math.abs(other.at-row.at)<100)).length};
   assert.ok(online.length>0&&online.length<=30,JSON.stringify(metrics.network));assert.equal(object(metrics.network).unpaired,0,'every online read leaves with a batch read');
   // Codex review: a failing online refresh keeps the last result at most 30 s after the last success, then hides it; it retries and recovers.
-  await b.evaluate('window.__onlineFail=true');const failFrom=Date.now();await chen.hold(editTarget,'VIEWING');
+  // No cached ticket presence, so only the online retry path can recover (Codex review: retries must survive hiding).
+  await chen.release(editTarget);await chen.release(viewTarget);await zhou.release(viewTarget);await zhou.release(editTarget);
+  await b.waitFor("document.querySelector('.ds-presence-tags')===null");
+  await b.evaluate('window.__onlineFail=true');const failFrom=Date.now();await shen.connect();await delay(500);shen.disconnect();
   await delay(8000);assert.equal(await b.evaluate("document.querySelector('[data-online-colleagues]')!==null"),true,'kept while the failure is recent');
   await b.waitFor("document.querySelector('[data-online-colleagues]')===null");metrics.failure={hiddenAfterMs:Date.now()-failFrom};
-  assert.ok(Number(object(metrics.failure).hiddenAfterMs)<=40000,JSON.stringify(metrics.failure));
-  await b.evaluate('window.__onlineFail=false');await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')!==null");
+  assert.ok(Number(object(metrics.failure).hiddenAfterMs)<=30000,JSON.stringify(metrics.failure));
+  await delay(6000);assert.equal(await b.evaluate("document.querySelector('.ds-presence-tags')===null"),true);
+  await b.evaluate('window.__onlineFail=false');const recoverFrom=Date.now();await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')!==null");metrics.recoveredAfterMs=Date.now()-recoverFrom;assert.ok(Number(metrics.recoveredAfterMs)<=6000,'retries continue after hiding');
   // Codex review: 55 colleagues (synthetic) — 「+N」 counts everyone, the panel stays inside the viewport and its list scrolls.
   await b.evaluate('window.__onlineMany=true');await chen.hold(editTarget,'EDITING');
   await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')?.textContent==='55'");

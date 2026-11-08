@@ -301,9 +301,12 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
             const principal=await query.principal(authContext);
             if(!principalIds.length)return {self:principal.principal_id,visible:[]};
             const rows=(await pool.query<{principal_id:string;display_name:string}>(`SELECT p.id::text AS principal_id,left(p.display_name,128) AS display_name FROM pilot_ticket.pilot_principal p
-              WHERE p.id=ANY($2::uuid[]) AND p.is_active AND p.id<>$1::uuid AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member mine
+              WHERE EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal me WHERE me.id=$1::uuid AND me.is_active) AND p.id=ANY($2::uuid[]) AND p.is_active AND p.id<>$1::uuid AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member mine
                 JOIN pilot_ticket.pilot_team_member theirs ON theirs.team_id=mine.team_id JOIN pilot_ticket.resolver_team team ON team.team_id=mine.team_id AND team.is_active
                 WHERE mine.principal_id=$1::uuid AND theirs.principal_id=p.id)`,[principal.principal_id,[...principalIds]])).rows;
+            // Codex review (AGENTS.md final check after await): the requester must still resolve to the same account, roles and teams.
+            const current=await query.principal(authContext);
+            if(current.principal_id!==principal.principal_id||JSON.stringify([...current.roles].sort())!==JSON.stringify([...principal.roles].sort())||JSON.stringify([...current.team_ids].sort())!==JSON.stringify([...principal.team_ids].sort()))failP2016('FORBIDDEN',403);
             return {self:principal.principal_id,visible:rows.filter(row=>row.display_name.trim()).map(row=>({principal_id:row.principal_id,display_name:row.display_name}))};
           }});
           realtime.setOnlineChange(()=>activity?.onlineChanged());

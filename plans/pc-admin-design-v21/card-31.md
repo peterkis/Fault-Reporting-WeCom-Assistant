@@ -57,6 +57,9 @@
 - Codex P1（组件边界）：按 AGENTS.md「UI 只组合 design/components」，侧栏行、弹出层、折叠态与样式移到 `design/components/OnlineColleagues`（`OnlineColleaguesView`，只接收数据）；`features/activity/OnlineColleagues.tsx` 只负责订阅在线数据与接线。
 - Codex P2（总数上限）：宽限期内断开的账号仍在在线集合中、其连接名额可被他人复用，`total` 可超过连接上限；去掉解析层与 Schema 中 `total ≤ 64` 的限制（只要求不小于 `people` 条数的安全整数）。新增单元用例：70 个可见账号返回 `total` 70、列出 50 人且符合 Schema。
 
+- Codex P1（await 后复核请求人）：在线名单查询加「请求人仍为启用账号」条件，查询返回后再次解析请求人，账号、角色、团队任一变化即 403，不返回名单。
+- Codex P2（隐藏后恢复）：在线读取失败状态在隐藏旧名单后继续保持，5 秒检查持续重试直到成功、侧栏卸载或在场被清空；隐藏改为在 30 秒前的最后一次检查执行，保证不超过 30 秒。浏览器用例在无任何在场缓存时验证：失败后约 27 秒隐藏，端点恢复后约 4 秒重新显示。
+
 ## 回退
 
 删除 `GET /api/workbench/online`、activity `setOnline`/`online`、SSE 在线跟踪、前端 `OnlineColleagues`、`PresenceStack` 与存储中的在线部分即可；卡 30A / 30B 行为不变。

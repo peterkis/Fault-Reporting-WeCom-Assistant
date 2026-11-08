@@ -56,7 +56,9 @@ function syncExpiry(){
  */
 function expire(){
   // Card 31 F3 (Codex review): a failing online refresh retries here and hides its last result 30 s after the last success.
-  if(onlineFailing){if(Date.now()-onlineAt>ONLINE_STALE_MS){onlineFailing=false;putOnline(null);syncExpiry();}else if(onlineWanted)schedule(0);}
+  // The 5-second check hides at the last tick before 30 s, so the stale list never outlives the limit.
+  // Codex review: hiding the stale list does not end recovery; retries continue until a read succeeds, the row unmounts or presence is cleared.
+  if(onlineFailing){if(!onlineWanted){onlineFailing=false;syncExpiry();}else{if(online&&Date.now()-onlineAt>ONLINE_STALE_MS-PRESENCE_EXPIRY_CHECK_MS)putOnline(null);schedule(0);}}
   const now=BigInt(Date.now());for(const [key,value] of [...people])put(key,value.filter(person=>alive(person,now)));
   let nearest:bigint|null=null;for(const value of people.values())for(const person of value){const at=BigInt(person.expires_epoch_ms);if(nearest===null||at<nearest)nearest=at;}
   if(nearest!==null&&nearest-now<BigInt(PRESENCE_REFRESH_MARGIN_MS))schedule(PRESENCE_HINT_DELAY_MS);
@@ -98,7 +100,7 @@ async function readOnline(owner:Principal){
     onlineAt=Date.now();onlineFailing=false;putOnline(result);syncExpiry();
   }catch{
     if(controller.signal.aborted)return;
-    if(Date.now()-onlineAt>ONLINE_STALE_MS){onlineFailing=false;putOnline(null);}else if(online){onlineFailing=true;}/* A failed read keeps the last result for up to 30 s. */
+    onlineFailing=true;if(Date.now()-onlineAt>ONLINE_STALE_MS)putOnline(null);/* A failed read keeps the last result for up to 30 s, then hides it; retries continue. */
     syncExpiry();
   }
   finally{if(onlineRequest===controller)onlineRequest=null;}
