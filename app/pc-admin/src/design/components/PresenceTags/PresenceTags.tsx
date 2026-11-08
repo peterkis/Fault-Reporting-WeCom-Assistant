@@ -1,6 +1,7 @@
 import {Pencil} from 'lucide-react';
 import type {WorkbenchActivityField,WorkbenchActivityPerson} from '../../../../../../contracts/workbench_activity_contracts';
 import {Avatar} from '../Avatar/Avatar';
+import {withPresentationKeys} from '../../presentation-keys';
 import './presence-tags.css';
 
 export const presenceFieldLabels:Readonly<Record<WorkbenchActivityField,string>>={'internal-note':'内部备注','ticket-handling':'处理记录','ticket-completion':'完成记录','manual-review':'人工复核'};
@@ -19,8 +20,8 @@ export function PresenceTags({people,className=''}:{people:readonly WorkbenchAct
   if(!people.length)return null;
   const shown=people.length<=2?people:people.slice(0,1),rest=people.length-shown.length,description=presenceDescription(people),listed=people.slice(0,8);
   return <span className={'ds-presence-tags '+className} role="img" aria-label={description} data-presence-count={people.length}>
-    {shown.map(person=><span key={person.display_name+person.mode} className="ds-presence-tag" data-mode={person.mode==='EDITING'?'editing':'viewing'} aria-hidden="true">{person.mode==='EDITING'?<Pencil aria-hidden="true"/>:null}{shortPresenceName(person.display_name)}</span>)}
+    {withPresentationKeys(shown).map(({key,item:person})=><span key={key} className="ds-presence-tag" data-mode={person.mode==='EDITING'?'editing':'viewing'} aria-hidden="true">{person.mode==='EDITING'?<Pencil aria-hidden="true"/>:null}{shortPresenceName(person.display_name)}</span>)}
     {rest>0?<span className="ds-presence-tag" data-mode="more" aria-hidden="true">+{rest}</span>:null}
-    <span className="ds-presence-tooltip" aria-hidden="true">{listed.map(person=><span key={person.display_name+person.mode} className="ds-presence-tooltip-row"><Avatar name={person.display_name} size={20} className="ds-presence-tooltip-avatar" aria-hidden="true"/><strong>{person.display_name}</strong><span>{presenceAction(person)}</span></span>)}{people.length>listed.length?<span className="ds-presence-tooltip-more">另有 {people.length-listed.length} 人</span>:null}</span>
+    <span className="ds-presence-tooltip" aria-hidden="true">{withPresentationKeys(listed).map(({key,item:person})=><span key={key} className="ds-presence-tooltip-row"><Avatar name={person.display_name} size={20} className="ds-presence-tooltip-avatar" aria-hidden="true"/><strong>{person.display_name}</strong><span>{presenceAction(person)}</span></span>)}{people.length>listed.length?<span className="ds-presence-tooltip-more">另有 {people.length-listed.length} 人</span>:null}</span>
   </span>;
 }

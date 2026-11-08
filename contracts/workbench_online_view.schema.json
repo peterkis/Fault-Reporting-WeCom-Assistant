@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_online_view.schema.json",
+  "title": "Card 31 online colleagues",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "people",
+    "total"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "people": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "display_name",
+          "status"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "status": {
+            "enum": [
+              "EDITING",
+              "VIEWING",
+              "ONLINE"
+            ]
+          }
+        }
+      }
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "All visible online colleagues, including accounts within the 15 s grace period; not bounded by the stream limit."
+    }
+  }
+}

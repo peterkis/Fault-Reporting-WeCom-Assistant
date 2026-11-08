@@ -2,7 +2,7 @@ import {ApiError,captureWorkbenchRead,readWorkbench} from '../../api/client';
 import {isWorkbenchVisible} from '../../desktop/host';
 import {presenceTransport} from './presence-store';
 import type {Principal} from '../../api/client';
-import type {WorkbenchActivityBatchView,WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView} from '../../../../../contracts/workbench_activity_contracts';
+import type {WorkbenchActivityBatchView,WorkbenchActivityCommand,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchActivityField,WorkbenchActivityReceipt,WorkbenchActivityView,WorkbenchOnlineView} from '../../../../../contracts/workbench_activity_contracts';
 function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function epoch(value:unknown){if(typeof value!=='string'||!/^[1-9][0-9]{0,18}$/u.test(value)||BigInt(value)>9223372036854775807n)throw new ApiError(502,'INVALID_RESPONSE');return value;}
 const isActivityField=(value:unknown):value is WorkbenchActivityField=>value==='internal-note'||value==='ticket-handling'||value==='ticket-completion'||value==='manual-review';
@@ -28,6 +28,12 @@ export function parseActivityBatchView(value:unknown):WorkbenchActivityBatchView
     return {kind:item.kind,id:item.id,people:item.people.map(person)};
   })};
 }
+/** Card 31: online colleagues (display name + coarse status only). */
+export function parseOnlineView(value:unknown):WorkbenchOnlineView{
+  const v=record(value);if(Object.keys(v).length!==3||v.schema_version!==1||!Array.isArray(v.people)||v.people.length>50||typeof v.total!=='number'||!Number.isSafeInteger(v.total)||v.total<v.people.length)throw new ApiError(502,'INVALID_RESPONSE');
+  return {schema_version:1,total:v.total,people:v.people.map(value=>{const p=record(value);if(Object.keys(p).length!==2||typeof p.display_name!=='string'||!p.display_name.length||p.display_name.length>128||(p.status!=='EDITING'&&p.status!=='VIEWING'&&p.status!=='ONLINE'))throw new ApiError(502,'INVALID_RESPONSE');return {display_name:p.display_name,status:p.status};})};
+}
+export const readOnlineView=(signal:AbortSignal)=>readWorkbench('/api/workbench/online',signal,parseOnlineView);
 /** Card 30B: ADR-0057 batch read for the rendered cards (1–100 targets, read-only). */
 export async function readActivityBatch(principal:Principal,targets:readonly WorkbenchActivityTarget[],signal:AbortSignal):Promise<WorkbenchActivityBatchView>{
   const current=captureWorkbenchRead(signal);

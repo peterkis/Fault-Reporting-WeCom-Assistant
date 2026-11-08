@@ -294,6 +294,30 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
         };
         activity=createWorkbenchActivity({enabled:true,authorize:authorizeActivity,wakeup:realtime.wakeup});
         realtime.setWorkbenchActivity?.(async authContext=>{try{return await activity?.signature(authContext)??null;}catch{activity?.releaseAuthentication(authContext);return null;}});
+        // Card 31: online colleagues share one team with the requester (both active, team active); no per-item authorization.
+        if(realtime.onlinePrincipals&&realtime.setOnlineChange){
+          const onlinePrincipals=realtime.onlinePrincipals;
+          activity.setOnline({principals:()=>onlinePrincipals(),resolve:async(authContext,principalIds)=>{
+            const principal=await query.principal(authContext);
+            if(!principalIds.length)return {self:principal.principal_id,visible:[]};
+            const rows=(await pool.query<{principal_id:string;display_name:string}>(`SELECT p.id::text AS principal_id,left(p.display_name,128) AS display_name FROM pilot_ticket.pilot_principal p
+              WHERE EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal me WHERE me.id=$1::uuid AND me.is_active) AND p.id=ANY($2::uuid[]) AND p.is_active AND p.id<>$1::uuid AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_team_member mine
+                JOIN pilot_ticket.pilot_team_member theirs ON theirs.team_id=mine.team_id JOIN pilot_ticket.resolver_team team ON team.team_id=mine.team_id AND team.is_active
+                WHERE mine.principal_id=$1::uuid AND theirs.principal_id=p.id)`,[principal.principal_id,[...principalIds]])).rows;
+            // Codex review (AGENTS.md final check after await): the requester must still resolve to the same account, roles and teams.
+            const current=await query.principal(authContext);
+            if(current.principal_id!==principal.principal_id||JSON.stringify([...current.roles].sort())!==JSON.stringify([...principal.roles].sort())||JSON.stringify([...current.team_ids].sort())!==JSON.stringify([...principal.team_ids].sort()))failP2016('FORBIDDEN',403);
+            // Codex review: the Cookie session must also still hold authority (same check as activity authorization).
+            const context=authContext&&typeof authContext==='object'?authContext as Record<string,unknown>:{};
+            if(typeof context.expires_epoch_ms==='string'&&(!/^\d+$/u.test(context.expires_epoch_ms)||BigInt(context.expires_epoch_ms)<=BigInt(Date.now())))failP2016('FORBIDDEN',403);
+            if(typeof context.session_id==='string'){
+              const session=await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()",[context.session_id,principal.principal_id]);
+              if(session.rowCount!==1)failP2016('FORBIDDEN',403);
+            }
+            return {self:principal.principal_id,visible:rows.filter(row=>row.display_name.trim()).map(row=>({principal_id:row.principal_id,display_name:row.display_name}))};
+          }});
+          realtime.setOnlineChange(()=>activity?.onlineChanged());
+        }
       }
       const activityHttp=createWorkbenchActivityHttp(activity);
       const reminders=workbenchRemindersEnabled||h5?.enabled?createWorkbenchReminders({pool,query,enabled:true,followEnabled:workbenchFollowEnabled,webReportsEnabled:h5?.enabled===true}):null;

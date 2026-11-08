@@ -47,3 +47,7 @@ export interface WorkbenchActivityBatchViewItem extends WorkbenchActivityTarget 
 export interface WorkbenchActivityBatchView { schema_version: 1; items: WorkbenchActivityBatchViewItem[] }
 /** Ephemeral named SSE hint, no id field and no durable event/cursor allocation. */
 export interface WorkbenchActivityHint { schema_version: 1 }
+/** Card 31: same-team colleagues with an open workbench stream (15 s grace), never the requester; at most 50 people, `total` counts all. */
+export type WorkbenchOnlineStatus = 'EDITING' | 'VIEWING' | 'ONLINE';
+export interface WorkbenchOnlinePerson { display_name: string; status: WorkbenchOnlineStatus }
+export interface WorkbenchOnlineView { schema_version: 1; people: WorkbenchOnlinePerson[]; total: number }

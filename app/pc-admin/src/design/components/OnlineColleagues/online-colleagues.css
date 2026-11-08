@@ -1,0 +1,26 @@
+/* Card 31 F1/F2: sidebar 「在线同事」 row and its popover. */
+.ds-online-colleagues {position: relative; margin-bottom: var(--space-1);}
+.ds-online-row {display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: var(--control-h-md); padding: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-secondary); font: inherit; font-size: var(--fs-xs); text-align: left; cursor: pointer;}
+.ds-online-row:hover {background: var(--bg-hover);}
+.ds-online-row:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
+.ds-online-row.is-empty {cursor: default;}
+.ds-online-row.is-empty:hover {background: transparent;}
+.ds-online-title {flex: none;}
+.ds-online-none {color: var(--text-tertiary);}
+.ds-online-count {margin-left: auto; color: var(--text-secondary); font-variant-numeric: tabular-nums;}
+.ds-online-panel {--radius-online: calc(var(--radius-md) + var(--space-0-5)); position: absolute; bottom: calc(100% + var(--space-1)); left: 0; z-index: var(--z-dropdown); display: flex; flex-direction: column; width: calc(var(--space-5) * 13); max-height: calc(100dvh - var(--space-16) * 2 - var(--space-8)); padding: var(--space-1-5); border-radius: var(--radius-online); background: var(--bg-canvas); box-shadow: var(--shadow-3);}
+.ds-online-panel-title {margin: 0; padding: var(--space-1) var(--space-2); color: var(--text-secondary); font-size: var(--fs-xs);}
+/* Codex review: with up to 50 colleagues the panel stays inside the viewport and the list scrolls. */
+.ds-online-list {flex: 1 1 auto; min-height: 0; margin: 0; padding: 0; overflow-y: auto; list-style: none;}
+.ds-online-panel-title,.ds-online-more,.ds-online-note {flex: none;}
+.ds-online-person {display: flex; align-items: center; gap: var(--space-2); height: calc(var(--space-8) + var(--space-1)); padding: 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--fs-sm);}
+.ds-online-panel .ds-online-avatar {width: calc(var(--space-5) + var(--space-0-5)); height: calc(var(--space-5) + var(--space-0-5)); min-width: calc(var(--space-5) + var(--space-0-5));}
+.ds-online-name {min-width: 0; overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap;}
+.ds-online-status {margin-left: auto; flex: none; color: var(--text-secondary); font-size: var(--fs-xs);}
+.ds-online-status[data-status=EDITING] {color: var(--tone-attention-fg);}
+.ds-online-status[data-status=VIEWING] {color: var(--brand);}
+.ds-online-more {margin: var(--space-1) 0 0; padding: 0 var(--space-2); color: var(--text-secondary); font-size: var(--fs-xs);}
+.ds-online-note {margin: var(--space-1) 0 0; padding: var(--space-1) var(--space-2) var(--space-0-5); color: var(--text-tertiary); font-size: var(--fs-xs); box-shadow: inset 0 1px 0 var(--border-hair);}
+.ds-online-collapsed {position: relative; display: grid; place-items: center; width: var(--control-h-md); height: var(--control-h-md); margin: 0 auto; color: var(--text-secondary);}
+.ds-online-collapsed>svg {width: var(--icon-md); height: var(--icon-md);}
+.ds-online-badge {position: absolute; top: 0; right: 0; min-width: var(--space-4); height: var(--space-4); padding: 0 var(--space-1); border-radius: var(--radius-full); background: var(--tone-success-fg); color: var(--text-inverse); font-size: var(--fs-2xs); line-height: var(--space-4); text-align: center; font-variant-numeric: tabular-nums;}

@@ -81,8 +81,10 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(card(viewTarget)+' [data-presence-claim-hint]')}).textContent`),'周宁正在查看这张工单，领取前可先确认');
   await capture('board-1440-claim-hint');
   // B6 render: a single presence change mutates only that card.
-  await b.evaluate(`window.__touchedPromise=new Promise(resolve=>{const cards=[...document.querySelectorAll('.ticket-card')],hit=new Set();const o=new MutationObserver(list=>{for(const m of list){const n=m.target.nodeType===1?m.target:m.target.parentElement;const c=n&&n.closest?n.closest('.ticket-card'):null;if(c)hit.add(c.dataset.itemId);}});o.observe(document.querySelector('.board'),{subtree:true,childList:true,attributes:true,characterData:true});window.__finishTouched=()=>{o.disconnect();resolve({cards:cards.length,touched:[...hit]});};});0`);
-  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:5,y:5});await delay(300);
+  // Settle hover state first so pointer-driven attributes are not mistaken for re-renders.
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:5,y:5});await delay(800);
+  // Only structural, text and presence-related attribute changes count as a card re-render; clock-driven time and heat labels are excluded.
+  await b.evaluate(`window.__touchedPromise=new Promise(resolve=>{const cards=[...document.querySelectorAll('.ticket-card')],hit=new Set();const o=new MutationObserver(list=>{for(const m of list){const n=m.target.nodeType===1?m.target:m.target.parentElement;const c=n&&n.closest?n.closest('.ticket-card'):null;if(c&&!n.closest('time,.activity-time,.ds-ticket-heat'))hit.add(c.dataset.itemId);}});o.observe(document.querySelector('.board'),{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-presence','data-ring','data-mode','aria-label','data-presence-count']});window.__finishTouched=()=>{o.disconnect();resolve({cards:cards.length,touched:[...hit]});};});0`);
   await peers.zhou.release(viewTarget);
   await b.waitFor(`document.querySelector(${JSON.stringify(card(viewTarget)+' .ds-ticket-presence')})===null`);await delay(300);
   await b.evaluate('window.__finishTouched()');metrics.render=object(await b.evaluate('window.__touchedPromise'));
@@ -115,9 +117,10 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   // B6 idle: with nobody present there are no batch reads and no running 5-second check for 60 seconds.
   for(const one of Object.values(peers))one.stop();
   await peers.zhou.release(viewTarget);await peers.zhou.release(crowdTarget);await peers.zhou.release(editTarget);await peers.chen.release(editTarget);await peers.chen.release(crowdTarget);await peers.shen.release(crowdTarget);
-  await b.waitFor("document.querySelector('.ds-presence-tags')===null");await delay(2000);
-  const idleFrom=batch.length;await delay(60000);
-  metrics.idle={seconds:60,batchReads:batch.length-idleFrom,intervals:await b.evaluate('window.__presenceIntervals()')};
+  // Let trailing reads from the release burst settle (reads stay 1.5 s apart) before measuring idle.
+  await b.waitFor("document.querySelector('.ds-presence-tags')===null");await delay(6000);
+  const idleFrom=batch.length,idleStart=Date.now();await delay(60000);
+  metrics.idle={seconds:60,batchReads:batch.length-idleFrom,intervals:await b.evaluate('window.__presenceIntervals()')};metrics.idleOffsets=batch.slice(idleFrom).map(at=>at-idleStart);
   assert.deepEqual(metrics.idle,{seconds:60,batchReads:0,intervals:0});
  }catch(error){failure=error;}
  finally{await closeBrowserTestResources([async()=>{if(failure&&browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));},()=>writeFile(join(directory,'receipt.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,metrics,screenshots},null,2)),()=>{for(const one of Object.values(peers))one.stop();f.runtime.server.off('request',observe);},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}

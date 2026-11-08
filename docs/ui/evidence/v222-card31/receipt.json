@@ -1,0 +1,112 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS",
+  "synthetic": [
+    "online read failure (window.__onlineFail)",
+    "55 colleagues (window.__onlineMany)"
+  ],
+  "platform": "darwin",
+  "metrics": {
+    "row": {
+      "label": "在线同事 3 人",
+      "avatars": 3,
+      "dots": 3,
+      "avatar": 20,
+      "overlap": 5,
+      "dot": 7,
+      "font": "12px",
+      "aboveAccount": true
+    },
+    "panel": {
+      "width": 260,
+      "radius": "10px",
+      "padding": "6px",
+      "title": "在线同事 · 3",
+      "rows": [
+        {
+          "name": "陈悦",
+          "status": "正在编辑",
+          "height": 36
+        },
+        {
+          "name": "周宁",
+          "status": "正在查看工单",
+          "height": 36
+        },
+        {
+          "name": "沈然",
+          "status": "在线",
+          "height": 36
+        }
+      ],
+      "note": "只显示同团队、当前打开工作台的同事",
+      "above": true
+    },
+    "reload": {
+      "total": 3,
+      "hints": 0
+    },
+    "grace": {
+      "presentAt10s": true,
+      "goneAt16s": true
+    },
+    "renderOnOnlineChange": [],
+    "network": {
+      "seconds": 60,
+      "onlineReads": 30,
+      "batchReads": 30,
+      "unpaired": 0
+    },
+    "failure": {
+      "hiddenAfterMs": 27555
+    },
+    "slowBatchAppearedAfterMs": 7067,
+    "recoveredAfterMs": 6968,
+    "many": {
+      "more": "+52",
+      "top": 36,
+      "scrolls": true,
+      "listed": 50,
+      "extra": "另有 5 人在线",
+      "firstStatus": "正在编辑",
+      "duplicates": 2
+    },
+    "collapsed": {
+      "title": "在线同事 2 人",
+      "badge": "2",
+      "font": "11px"
+    },
+    "teamDisabledHiddenAfterMs": 7595
+  },
+  "screenshots": [
+    {
+      "file": "sidebar-empty.png",
+      "sha256": "345c1c1772652b942ce1cc29c11a44d99a3cb9758b32ae2350ca63b7336ccaed",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-online.png",
+      "sha256": "a8eb072b972c8c6e1d687e8bfb5b6711dacb3f60a64c43d773b0267acc67fdb4",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-popover.png",
+      "sha256": "fde979fd45d683acda10340743de11bdc6e16c661f6d849396f3201717b4f298",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-popover-55-synthetic.png",
+      "sha256": "07af90cb2666246247838f1d111ff14588b473f3c89de9e9f846e662dc283298",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "sidebar-collapsed.png",
+      "sha256": "06d677b4e4987bdbe57be7cfd04b519d4253e9ade233e15179308151317e0339",
+      "width": 1440,
+      "height": 1000
+    }
+  ]
+}
