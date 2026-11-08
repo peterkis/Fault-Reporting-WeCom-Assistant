@@ -16,10 +16,11 @@
 .ds-presence-capsule {--radius-capsule: calc(var(--radius-md) + var(--space-1) + 1px); display: inline-flex; align-items: center; gap: var(--space-1-5); height: calc(var(--space-6) + var(--space-0-5)); padding: 0 var(--space-2) 0 var(--space-1); border-radius: var(--radius-capsule); background: var(--bg-subtle);}
 .ds-presence-capsule-label {color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap;}
 .ds-presence-capsule .ds-presence-tooltip {top: calc(100% + var(--space-2));}
-/* Card 32 A5: the banner joins the top of the input frame: same width, shared outer border, top corners = composer corners, no gap. */
-[data-presence-banner-host]:is([data-presence-banner-anchor],[data-activity-field]) {position: relative; margin-top: calc(var(--space-6) + var(--space-1));}
+/* Card 32 A5: the banner joins the top of the input frame: same width, shared outer border, top corners = composer corners, no gap.
+   It rises into the space above the frame (footer and body padding) instead of pushing the input down while someone is typing. */
+[data-presence-banner-host]:is([data-presence-banner-anchor],[data-activity-field]) {position: relative;}
 [data-presence-banner-host=frame][data-presence-banner-anchor] {border-top-left-radius: 0; border-top-right-radius: 0;}
-.ds-presence-field-banner {position: absolute; right: -1px; bottom: calc(100% + 1px); left: -1px; display: flex; align-items: center; gap: var(--space-1-5); height: calc(var(--space-6) + var(--space-1)); padding: 0 var(--space-3); border: 1px solid var(--border-default); border-bottom: 0; border-radius: var(--radius-drawer-soft, var(--radius-md)) var(--radius-drawer-soft, var(--radius-md)) 0 0; background: var(--tone-attention-bg); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; overflow: hidden; pointer-events: none;}
+.ds-presence-field-banner {position: absolute; right: -1px; bottom: calc(100% + 1px); left: -1px; z-index: var(--z-sticky); display: flex; align-items: center; gap: var(--space-1-5); height: calc(var(--space-6) + var(--space-1)); padding: 0 var(--space-3); border: 1px solid var(--border-default); border-bottom: 0; border-radius: var(--radius-drawer-soft, var(--radius-md)) var(--radius-drawer-soft, var(--radius-md)) 0 0; background: var(--tone-attention-bg); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; overflow: hidden; pointer-events: none;}
 [data-presence-banner-host=area]>.ds-presence-field-banner {border-bottom: 1px solid var(--border-default); border-radius: var(--radius-sm);}
 .ds-presence-field-banner>span {min-width: 0; overflow: hidden; text-overflow: ellipsis;}
 .ds-presence-field-banner>svg {width: var(--space-3); height: var(--space-3); flex: none; color: var(--presence-editing); stroke-width: 1.75;}

@@ -24,12 +24,20 @@
     "claimHover": {
       "text": "沈然正在查看这张工单，领取前可先确认",
       "onTop": true,
-      "height": 30
+      "height": 28
+    },
+    "claimPlacement": {
+      "inside": true,
+      "besideClaim": true,
+      "sameRow": true,
+      "truncated": false,
+      "moreClickable": true,
+      "gapToMore": 17
     },
     "claimFocus": {
       "text": "沈然正在查看这张工单，领取前可先确认",
       "onTop": true,
-      "height": 30
+      "height": 28
     },
     "subgroup": {
       "background": "rgb(251, 251, 250)",
@@ -59,6 +67,15 @@
         "color": "rgb(107, 105, 101)",
         "secondary": "rgb(107, 105, 101)"
       }
+    },
+    "bannerOverlap": {
+      "onTop": true,
+      "clearOfContent": true
+    },
+    "bannerFrame": {
+      "withBanner": 868.91,
+      "withoutBanner": 868.91,
+      "again": 868.91
     },
     "capsuleColour": "rgb(154, 74, 10)",
     "banner": {
@@ -124,31 +141,31 @@
       "file": "board-1440-presence.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "00828446befb8ab48ed9c08b707f4b121636561768c7000180c62397862c4a22"
+      "sha256": "e2f354552a9852d69809868afaec7a95e83f12f62c7e45cfe3dcce26c8197a69"
     },
     {
       "file": "board-1440-claim-hint.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "6e545fa3970eaae9b8edef118246253aba0ebc35873c198176ea0c815117d700"
+      "sha256": "6dcd2bea51b51d753fc057f879723a3d16dbf0f31e9b1c0099160ff08f898c33"
     },
     {
       "file": "list-1440-subgroup.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "3bc0eccda20444b339de653d2f45c283f416fdd00125abbc985c5c33db982eee"
+      "sha256": "f6a1aa5b7bb9a487b781a419f04299fccb2347e6f729a267f603cac2a5da120c"
     },
     {
       "file": "list-1440-subgroup-hover.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "068efc9cd5448712a80c6383da08cacfa37bf53fc01a8c1667f5b2e2bf32adf8"
+      "sha256": "99a4c43382b622f24533cf4093da7ea299d78e2cbea364e737518c0173eaccb8"
     },
     {
       "file": "list-1440-more.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "5d602e388cdf794739dc19e48dd067cf6f3051ed584dc42ffe9cb4f2e8a45ee2"
+      "sha256": "1bab0f3e7b8833e04d86a48b52aab59cec9767b3b26edc9f6592782f86328695"
     },
     {
       "file": "list-1440-more-expanded.png",
@@ -160,25 +177,25 @@
       "file": "drawer-1440-banner.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "f6a9665d0020871d67d952640e5bdff7ce880d88b65897e245b92696d93c0c5d"
+      "sha256": "c35e079a9997516c7917e53c01d7801e36fc2a74f3f6c3a96520fccd25bb33d0"
     },
     {
       "file": "drawer-1440-banner-two.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "b0a8a89408a1cd1afaff2798aa30390be92434f728b9fa88699b6cb72597e976"
+      "sha256": "a19a5747b4dd032c362d233f6bf64ffe77cea889679b661ef7a375bb7d8dd44d"
     },
     {
       "file": "sidebar-online.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "d3b024597bee809cc61682dbfba8a0708aea5905b7cf339dd8cc3c3e38712369"
+      "sha256": "3fb49c561a3e473022c31b9611f7d7daf727d181b2a2455f8afa7f35cf00304e"
     },
     {
       "file": "sidebar-online-popover.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "091e3e40028cf4261ba72b65cde7bf68efd16acefca06714e4376fc87c03793e"
+      "sha256": "ba09dd3262f3328bf51b8c61332b6cdfa3483cbc274a43d84f504a56062aae42"
     }
   ]
 }

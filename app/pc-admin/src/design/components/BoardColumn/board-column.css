@@ -27,6 +27,3 @@
 .ds-board-column .empty p {margin: 0;}
 /* Card 30B B2: presence tags sit 9px above a card; the group body clips (HeroUI disclosure), so its first card gets 10px of room. */
 .ds-board-group .disclosure__body-inner {padding-top: calc(var(--space-2) + var(--space-0-5));}
-/* Card 32 A4: the claim hint sits below its card. While it shows, the settled group body must not clip it, and since the body is its own
-   stacking context (HeroUI `will-change: height, opacity`), it is raised above the column footer and later groups. */
-.ds-board-group .disclosure__content:has(.ds-ticket-card:is(:hover,:focus-within) .ds-presence-claim-hint) {position: relative; z-index: var(--z-sticky); overflow: visible;}
