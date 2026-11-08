@@ -37,13 +37,22 @@ const worker=(p:Principal)=>p.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].
 const canClose=(item:WorkbenchCard)=>item.kind==='ticket'?['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'].includes(item.status):item.column==='pending';
 const subject=(item:WorkbenchCard)=>({kind:item.kind==='ticket'?'ticket' as const:'intake' as const,id:item.kind==='ticket'?item.id:item.intake_id});
 
+/**
+ * Card 32 B3: a 「⋯」 menu item that opens this dialog closes its menu first and hands focus to the menu's trigger, before the modal
+ * mounts; the modal then restores focus to 「⋯」 when it closes instead of to a hidden menu item.
+ */
+function collapseTriggerMenu(){
+ const active=document.activeElement instanceof HTMLElement?document.activeElement:null,menu=active?.closest('details[open]');
+ if(!(menu instanceof HTMLDetailsElement))return;
+ menu.open=false;menu.querySelector<HTMLElement>(':scope>summary')?.focus();
+}
 export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,children}:{principal:Principal;otherBlocked:boolean;onBlockedChange:(value:boolean)=>void;children:ReactNode}){
  const [target,setTarget]=useState<Target|null>(null),[blocked,setBlocked]=useState(false),[highlighted,setHighlighted]=useState<string|null>(null),[success,setSuccess]=useState<{action:Action;revision:number;column:string}|null>(null);
  const report=useCallback((value:boolean)=>{setBlocked(value);onBlockedChange(value);},[onBlockedChange]);
  useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),1200);return()=>clearTimeout(timer);},[highlighted]);
  const sameClosedTarget=(item:WorkbenchCard,action:Action)=>Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id);
  const canOpen=(item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||sameClosedTarget(item,action));
- return <ClosureScope.Provider value={{request:(item,action,initial=emptyClosureForm)=>{if(canOpen(item,action))setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});},canOpen,highlighted,blocked:blocked||otherBlocked}}>
+ return <ClosureScope.Provider value={{request:(item,action,initial=emptyClosureForm)=>{if(canOpen(item,action)){collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}},canOpen,highlighted,blocked:blocked||otherBlocked}}>
   {children}{success?<ToastFeedback source={success.action==='close'?'ticket-waiting-cancel':'closure-restore'} revision={success.revision} state="succeeded" title={success.action==='close'?'已关闭':'已恢复'}>{success.action==='close'?'可在「已处理 · 已关闭」中恢复':'已回到'+success.column}</ToastFeedback>:null}{target?<ClosureActionDialog key={target.item.kind+':'+target.item.id+':'+target.action} target={target} principal={principal} otherBlocked={otherBlocked} onBlockedChange={report} onClose={()=>setTarget(value=>value?{...value,open:false}:null)} onSuccess={column=>{if(target.action==='restore')setHighlighted(target.item.intake_id);setSuccess({action:target.action,revision:Date.now(),column});setTarget(null);}}/>:null}
  </ClosureScope.Provider>;
 }

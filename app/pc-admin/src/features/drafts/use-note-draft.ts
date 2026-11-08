@@ -59,7 +59,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   async function write(value:AuthorizedDraftValue<T,C>){
     if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
     const token=generation.current,text=encode(value);
-    setStatus('saving');setMessage('正在保存恢复副本…');
+    setStatus('saving');setMessage('正在保存草稿…');
     const task=queue.current.catch(()=>{}).then(async()=>{
       if(generation.current!==token||!handle.current)throw new DraftError('DRAFT_CHANGED');
       if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
@@ -152,7 +152,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   useEffect(()=>{
     if(!writeEnabled){cancelTimer();return;}
     if(!enabled||!initialized||!handle.current||pending||!hasInput(value)||encode(latest.current)===lastSaved.current)return;
-    setStatus('saving');setMessage('正在保存恢复副本…');
+    setStatus('saving');setMessage('正在保存草稿…');
     // Keep the first timer: continuous typing starts one bounded save every 500 ms.
     if(timer.current===null)timer.current=setTimeout(()=>{timer.current=null;void write({...latest.current}).catch(()=>{});},500);
   },[enabled,writeEnabled,value,pending,initialized,refreshIndex]);

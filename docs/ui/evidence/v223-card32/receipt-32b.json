@@ -1,0 +1,93 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "metrics": {
+    "assignee": {
+      "routine": 2,
+      "routineText": [
+        "草稿仅在当前浏览器恢复，最长24小时。",
+        "草稿仅在当前浏览器恢复，最长24小时。"
+      ],
+      "visibleIcons": 0,
+      "labelTop": 248
+    },
+    "menuOnOpen": {
+      "open": false,
+      "panelVisible": false
+    },
+    "draft": [
+      "草稿仅在当前浏览器恢复，最长24小时。|草稿仅在当前浏览器恢复，最长24小时。",
+      "正在保存草稿…|正在保存草稿…正在保存草稿…",
+      "草稿仅在当前浏览器恢复，最长24小时。|草稿仅在当前浏览器恢复，最长24小时。",
+      "已保存恢复副本；最长24小时。|草稿已保存已保存恢复副本；最长24小时。"
+    ],
+    "comboboxRest": {
+      "border": "1px solid",
+      "borderColor": "rgba(55, 53, 47, 0.16)",
+      "outline": "none",
+      "shadow": "none",
+      "input": {
+        "outline": "none",
+        "border": "0px",
+        "shadow": "none"
+      },
+      "focused": false
+    },
+    "comboboxFocus": {
+      "border": "1px solid",
+      "borderColor": "brand",
+      "outline": "2px brand -1px",
+      "shadow": "none",
+      "input": {
+        "outline": "none",
+        "border": "0px",
+        "shadow": "none"
+      },
+      "focused": true
+    },
+    "focusReturn": {
+      "activeIsMenuTrigger": true,
+      "menuOpen": false
+    },
+    "timeline": {
+      "badge": "已关闭",
+      "subtext": " · 重复报修 · 关联 IT-20261108-0004",
+      "reasons": 1,
+      "legacy": false
+    },
+    "restore": {
+      "panel": true,
+      "panelOpacity": 1,
+      "backdropOpacity": 1,
+      "onTop": true,
+      "running": 0
+    }
+  },
+  "screenshots": [
+    {
+      "file": "drawer-1440-assignee.png",
+      "sha256": "d41408145930eabd87df7050134b1a06806a7b094f93bfd55bad6db61394164a",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "close-dialog-reason.png",
+      "sha256": "615889b0965aae8d793a6a9294225c080c2a21738a6e3387a738a12c8fc4b75f",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "drawer-1440-closed-timeline.png",
+      "sha256": "6379c232eb648568cda13413888b22c5e72e8bf793dc2b895867c8b41c8f7aeb",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "restore-confirm.png",
+      "sha256": "88f4923307c3a6758f9960ada453cb20d4304f5c451c049b0edabc229032908b",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "real_sends": 0
+}
