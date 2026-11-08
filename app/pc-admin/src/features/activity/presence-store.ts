@@ -19,7 +19,7 @@ let principal:Principal|null=null,live=false,environmentBound=false;
 let readTimer:ReturnType<typeof setTimeout>|null=null,readAt=0,firstTriggerAt=0,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
 let reads=0,onlineReads=0;
 // Card 31: online colleagues share this store's gate and debounce; only the sidebar row subscribes.
-let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing=false,onlineRequest:AbortController|null=null;
+let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing=false,onlineQueued=false,onlineRequest:AbortController|null=null;
 const onlineListeners=new Set<()=>void>();
 export const ONLINE_STALE_MS=30000;
 function putOnline(next:WorkbenchOnlineView|null){if(next===online)return;online=next;for(const listener of onlineListeners)listener();}
@@ -39,7 +39,7 @@ function put(key:string,next:People){
 }
 function enabled(){return Boolean(principal?.activity_enabled&&live&&typeof document!=='undefined'&&!document.hidden&&navigator.onLine&&isWorkbenchVisible());}
 function clear(){
-  request?.abort();request=null;onlineRequest?.abort();onlineRequest=null;onlineFailing=false;putOnline(null);
+  request?.abort();request=null;onlineRequest?.abort();onlineRequest=null;onlineQueued=false;onlineFailing=false;putOnline(null);
   if(readTimer!==null){clearTimeout(readTimer);readTimer=null;}
   for(const key of [...people.keys()]){people.delete(key);emit(key);}
   syncExpiry();
@@ -93,7 +93,9 @@ async function readPresence(owner:Principal,targets:WorkbenchActivityTarget[]){
   finally{if(request===controller)request=null;}
 }
 async function readOnline(owner:Principal){
-  onlineRequest?.abort();const controller=new AbortController();onlineRequest=controller;onlineReads++;
+  // Codex review: never cancel an in-flight online read (a slow but healthy endpoint must be able to answer); queue one follow-up instead.
+  if(onlineRequest){onlineQueued=true;return;}
+  const controller=new AbortController();onlineRequest=controller;onlineReads++;
   try{
     const result=await readOnlineView(controller.signal);
     if(controller.signal.aborted||identity(principal)!==identity(owner)||!enabled())return;
@@ -103,7 +105,9 @@ async function readOnline(owner:Principal){
     onlineFailing=true;if(Date.now()-onlineAt>ONLINE_STALE_MS)putOnline(null);/* A failed read keeps the last result for up to 30 s, then hides it; retries continue. */
     syncExpiry();
   }
-  finally{if(onlineRequest===controller)onlineRequest=null;}
+  finally{
+    if(onlineRequest===controller){onlineRequest=null;if(onlineQueued&&enabled()&&onlineWanted&&principal){onlineQueued=false;void readOnline(principal);}}
+  }
 }
 function environment(){if(enabled())schedule(0);else clear();}
 function bindEnvironment(){

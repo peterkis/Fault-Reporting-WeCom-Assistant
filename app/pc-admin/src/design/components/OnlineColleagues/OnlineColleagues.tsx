@@ -3,6 +3,7 @@ import {Users} from 'lucide-react';
 import type {WorkbenchOnlineStatus,WorkbenchOnlineView} from '../../../../../../contracts/workbench_activity_contracts';
 import {Avatar} from '../Avatar/Avatar';
 import {PresenceStack} from '../PresenceStack/PresenceStack';
+import {withPresentationKeys} from '../../presentation-keys';
 import './online-colleagues.css';
 
 const statusLabels:Readonly<Record<WorkbenchOnlineStatus,string>>={EDITING:'正在编辑',VIEWING:'正在查看工单',ONLINE:'在线'};
@@ -28,7 +29,7 @@ export function OnlineColleaguesView({view,collapsed}:{view:WorkbenchOnlineView;
     </button>
     {open?<div className="ds-online-panel" id={panelId} role="dialog" aria-label={'在线同事 · '+total}>
       <p className="ds-online-panel-title">在线同事 · {total}</p>
-      <ul className="ds-online-list">{view.people.map(person=><li key={person.display_name} className="ds-online-person"><Avatar name={person.display_name} size={24} className="ds-online-avatar" aria-hidden="true"/><span className="ds-online-name">{person.display_name}</span><span className="ds-online-status" data-status={person.status}>{statusLabels[person.status]}</span></li>)}</ul>
+      <ul className="ds-online-list">{withPresentationKeys(view.people).map(({key,item:person})=><li key={key} className="ds-online-person"><Avatar name={person.display_name} size={24} className="ds-online-avatar" aria-hidden="true"/><span className="ds-online-name">{person.display_name}</span><span className="ds-online-status" data-status={person.status}>{statusLabels[person.status]}</span></li>)}</ul>
       {total>view.people.length?<p className="ds-online-more">另有 {total-view.people.length} 人在线</p>:null}
       <p className="ds-online-note">只显示同团队、当前打开工作台的同事</p>
     </div>:null}

@@ -64,6 +64,9 @@
 
 - Codex P1（await 后复核 Cookie 会话）：在线名单返回前再按活动授权同样的规则核对会话（上下文未过期，且 `workbench_auth_session` 仍为该账号的 ACTIVE、未过期记录），否则 403。新增集成用例 `wbint-t39-online-session`（真实 Cookie 会话）：有效会话 200，撤销后 4xx 且不返回名单；查询进行中被撤销的竞态无法从外部确定性触发，由返回前的最终核对覆盖。
 
+- Codex P2（重试取消慢响应）：在线读取进行中时不再中止它，新的读取请求排队、在当前请求结束后补读一次。用例：端点恢复但每次需 6 秒（长于 5 秒检查）时约 10 秒内恢复显示。
+- Codex P2（同名同事）：名单与名牌改用「姓名#出现次数」作为渲染键（`design/presentation-keys.ts`），同名不冲突且不暴露任何标识；卡 30B 名牌一并更正。用例：55 人合成名单含两位同名同事，两行都显示。
+
 ## 回退
 
 删除 `GET /api/workbench/online`、activity `setOnline`/`online`、SSE 在线跟踪、前端 `OnlineColleagues`、`PresenceStack` 与存储中的在线部分即可；卡 30A / 30B 行为不变。

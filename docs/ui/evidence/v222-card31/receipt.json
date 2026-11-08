@@ -57,16 +57,17 @@
       "unpaired": 0
     },
     "failure": {
-      "hiddenAfterMs": 26822
+      "hiddenAfterMs": 26812
     },
-    "recoveredAfterMs": 4048,
+    "recoveredAfterMs": 10010,
     "many": {
       "more": "+52",
       "top": 36,
       "scrolls": true,
       "listed": 50,
       "extra": "另有 5 人在线",
-      "firstStatus": "正在编辑"
+      "firstStatus": "正在编辑",
+      "duplicates": 2
     },
     "collapsed": {
       "title": "在线同事 2 人",
@@ -77,31 +78,31 @@
   "screenshots": [
     {
       "file": "sidebar-empty.png",
-      "sha256": "253f1322c858a839728c6e776a260356e5a795d9b7f88031161ea24aa60e793b",
+      "sha256": "714e2e0967f5bee9ed95e01e858b67b56b34179f2fd88a1836f5ec79af4012a3",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-online.png",
-      "sha256": "82dd4300f8c924f5e4b1cbdbf3cde839fb3bb77a7a2e470a240be1b72b2fd6fd",
+      "sha256": "04a16674bb109c7cc408061b08353a57c9905845d02a0f64f5060de29f0b4adb",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover.png",
-      "sha256": "6346c2c21be36a620a874a91e441dfd2d9dcd5515ee80a0c574db64580872b2f",
+      "sha256": "b2a261e64f7153a2ab043c032da019aeb86a8daa8a837916f66c454cd20d1bf0",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover-55-synthetic.png",
-      "sha256": "a65adfad104d47bb41afd9bdcb64fe691f7c27fd9b9432e6718fa69a26929d24",
+      "sha256": "e4067e6908f87b240e03be38f6083f8dc11497bba727dfada20e6bcb136e0cea",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-collapsed.png",
-      "sha256": "3ba288f5babe925b836ac7f3d73c1d8e62a9cb4dba932fd4069b0803ff5a6b8f",
+      "sha256": "04308f145632d11bc1cb225a61227204e6fef640b40145b5662f5ab587751ae9",
       "width": 1440,
       "height": 1000
     }
