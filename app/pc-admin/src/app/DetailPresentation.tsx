@@ -13,7 +13,7 @@ import {StatusBadge} from '../design/components/StatusBadge/StatusBadge';
 import {statusTones} from '../design/status-map';
 import type {Principal,WorkbenchDetail} from '../api/client';
 import {statusLabels} from '../api/client';
-import {closureReasonText,externalTicketNumber} from '../design/components/TicketCard/closure-presentation';
+import {ClosureFacts} from '../design/components/TicketCard/TicketCard';
 import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMaterial';
 import {groupActivityRecords} from './activity-time.mjs';
 import {activityActorName} from './activity-actors.mjs';
@@ -43,11 +43,6 @@ export function ActivityTimeline({records,principal,item,active,now,children,des
   </Section>;
 }
 const closingStatuses=new Set(['CANCELLED','DUPLICATE_LINKED','IGNORED']);
-/** 「重复报修 · 关联 IT-…」 / 「非 IT 范围 · 业务咨询」 for the current closure. */
-function closureSubtext(closure:WorkbenchDetail['item']['closure']){
-  if(!closure)return null;const original=externalTicketNumber(closure.duplicate_of?.display_no);
-  return closureReasonText(closure)+(original?' · 关联 '+original:'');
-}
 function ActivityRecord({record,principal,item,active,now,closure=false}:{record:WorkbenchDetail['records'][number];principal:Principal;item:WorkbenchDetail['item'];active:boolean;now:number;closure?:boolean}){
   const [expanded,setExpanded]=useState(false),name=activityActorName(record),kind=recordKind(record);
   const text=record.text??(kind==='status'?'更新状态':'已记录处理操作。');
@@ -57,7 +52,8 @@ function ActivityRecord({record,principal,item,active,now,closure=false}:{record
     <HButton tone="ghost" className="record-content" aria-expanded={expanded} title={expanded?'收起记录':'展开完整记录'} onPress={()=>setExpanded(value=>!value)}>
       {bubble?<span className="record-heading"><span className="record-name">{name}</span>{kind==='report'?<><span className="record-report-separator" aria-hidden="true">·</span>{time}<span className="record-action sr-only">提交报修</span></>:<><span className="record-action">{record.audience==='INTERNAL'?'添加内部备注':'对外说明'}</span>{audience}{time}</>}</span>:<span className="record-name">{name}</span>}
       {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{text}</span>}
-      {kind==='status'?<span className="record-status-change"><StatusBadge showStageGlyph={false} data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge showStageGlyph={false} data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge>{closure&&closureSubtext(item.closure)?<span className="record-closure-reason" data-record-closure-reason> · {closureSubtext(item.closure)}</span>:null}</span>:null}
+      {kind==='status'?<span className="record-status-change"><StatusBadge showStageGlyph={false} data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge showStageGlyph={false} data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge></span>:null}
     </HButton>
+    {closure&&item.closure?<div className="record-closure-facts" data-record-closure-reason><ClosureFacts closure={item.closure}/></div>:null}
   </TimelineItem>;
 }

@@ -59,14 +59,19 @@ export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:Work
 }
 
 export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;closed_at:string|null;closed_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null}
+/** Reason tag + 「原单 IT-…」 link, shared by the closure record and (Card 32 B6) the closing line of the activity timeline. */
+export function ClosureFacts({closure}:{closure:Pick<ClosureRecordEntry,'reason_code'|'reason_label'|'secondary_reason'|'duplicate_of'>}){
+  const original=externalTicketNumber(closure.duplicate_of?.display_no);
+  return <><Tag className="ds-closure-entry-reason">{closureReasonText(closure)}</Tag>
+    {original?<span className="ds-closure-entry-original"><span>原单</span><ClosureOriginalLink number={original}/></span>:null}</>;
+}
 /** Card 29 D3: one compact closure entry; empty values are omitted instead of shown as placeholders. */
 export function ClosureRecord({entry,now}:{entry:ClosureRecordEntry;now?:number}){
-  const name=entry.closed_by_display_name,original=externalTicketNumber(entry.duplicate_of?.display_no);
+  const name=entry.closed_by_display_name;
   return <div className="ds-closure-entry" data-closure-record="true">
     <div className="ds-closure-entry-head">{entry.source==='SYSTEM'?<Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/>:name?<Avatar name={name} size={20} aria-hidden="true"/>:null}
       {name?<strong className="ds-closure-entry-name">{name}</strong>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.closed_at?<> · <BeijingTime value={entry.closed_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
-    <div className="ds-closure-entry-facts"><Tag className="ds-closure-entry-reason">{closureReasonText(entry)}</Tag>
-      {original?<span className="ds-closure-entry-original"><span>原单</span><ClosureOriginalLink number={original}/></span>:null}
+    <div className="ds-closure-entry-facts"><ClosureFacts closure={entry}/>
       {entry.notification_state==='SENT'?<span className="ds-closure-entry-notified">已通知报修人</span>:null}</div>
     {entry.note?<p className="ds-closure-entry-note">说明：{entry.note}</p>:null}
     {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restored_by_display_name?<strong>{entry.restored_by_display_name}</strong>:null}<span>恢复 · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}

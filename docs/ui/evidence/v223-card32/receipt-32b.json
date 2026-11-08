@@ -51,7 +51,12 @@
     },
     "timeline": {
       "badge": "已关闭",
-      "subtext": " · 重复报修 · 关联 IT-20261108-0004",
+      "truncated": [],
+      "badgeVisible": true,
+      "secondLine": true,
+      "reason": "重复报修",
+      "original": "IT-20261108-0004",
+      "linkOutsideRowButton": true,
       "reasons": 1,
       "legacy": false
     },
@@ -66,25 +71,25 @@
   "screenshots": [
     {
       "file": "drawer-1440-assignee.png",
-      "sha256": "d41408145930eabd87df7050134b1a06806a7b094f93bfd55bad6db61394164a",
+      "sha256": "bfd61b870a1dfd7f6937ed107db786842225564dcab55597972e337e04b8c019",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "close-dialog-reason.png",
-      "sha256": "615889b0965aae8d793a6a9294225c080c2a21738a6e3387a738a12c8fc4b75f",
+      "sha256": "a34ff1edd46b3529e80711ced94199ca3f24af385bb93f71e8f5f89d69a5462c",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "drawer-1440-closed-timeline.png",
-      "sha256": "6379c232eb648568cda13413888b22c5e72e8bf793dc2b895867c8b41c8f7aeb",
+      "sha256": "861736d856dba7f244e66ffa203b05c988c51cf93f94d534573ebf1227a25e55",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "restore-confirm.png",
-      "sha256": "88f4923307c3a6758f9960ada453cb20d4304f5c451c049b0edabc229032908b",
+      "sha256": "eb3d8a3321fa8f30af07d332696c457219105ede365e38f9e9ef1c7c752bc6d7",
       "width": 1440,
       "height": 1000
     }
