@@ -17,7 +17,7 @@ const listeners=new Map<string,Set<()=>void>>();
 const rendered=new Map<string,{target:WorkbenchActivityTarget;count:number}>();
 let principal:Principal|null=null,live=false,environmentBound=false;
 let readTimer:ReturnType<typeof setTimeout>|null=null,readAt=0,firstTriggerAt=0,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
-let reads=0,onlineReads=0;
+let reads=0,onlineReads=0,presenceQueued=false;
 // Card 31: online colleagues share this store's gate and debounce; only the sidebar row subscribes.
 let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing=false,onlineQueued=false,onlineRequest:AbortController|null=null;
 const onlineListeners=new Set<()=>void>();
@@ -39,7 +39,7 @@ function put(key:string,next:People){
 }
 function enabled(){return Boolean(principal?.activity_enabled&&live&&typeof document!=='undefined'&&!document.hidden&&navigator.onLine&&isWorkbenchVisible());}
 function clear(){
-  request?.abort();request=null;onlineRequest?.abort();onlineRequest=null;onlineQueued=false;onlineFailing=false;putOnline(null);
+  request?.abort();request=null;presenceQueued=false;onlineRequest?.abort();onlineRequest=null;onlineQueued=false;onlineFailing=false;putOnline(null);
   if(readTimer!==null){clearTimeout(readTimer);readTimer=null;}
   for(const key of [...people.keys()]){people.delete(key);emit(key);}
   syncExpiry();
@@ -82,7 +82,9 @@ async function read(){
   await Promise.all([targets.length?readPresence(owner,targets):null,onlineWanted?readOnline(owner):null]);
 }
 async function readPresence(owner:Principal,targets:WorkbenchActivityTarget[]){
-  request?.abort();const controller=new AbortController();request=controller;reads++;
+  // Codex review: never cancel an in-flight batch (retries or hints would starve a slow but healthy one); queue one follow-up.
+  if(request){presenceQueued=true;return;}
+  const controller=new AbortController();request=controller;reads++;
   try{
     const result=await readActivityBatch(owner,targets,controller.signal);
     if(controller.signal.aborted||identity(principal)!==identity(owner)||!enabled())return;
@@ -90,7 +92,10 @@ async function readPresence(owner:Principal,targets:WorkbenchActivityTarget[]){
     for(const item of result.items){const key=keyOf(item);seen.add(key);if(rendered.has(key))put(key,item.people.filter(person=>alive(person,now)));}
     for(const target of targets){const key=keyOf(target);if(!seen.has(key))put(key,EMPTY);}
   }catch{/* Silent: the next trigger retries; presence never blocks the workbench. */}
-  finally{if(request===controller)request=null;}
+  finally{
+    if(request===controller){request=null;
+      if(presenceQueued&&principal&&enabled()){presenceQueued=false;const next=[...rendered.values()].slice(0,PRESENCE_MAX_TARGETS).map(entry=>entry.target);if(next.length)void readPresence(principal,next);}}
+  }
 }
 async function readOnline(owner:Principal){
   // Codex review: never cancel an in-flight online read (a slow but healthy endpoint must be able to answer); queue one follow-up instead.
