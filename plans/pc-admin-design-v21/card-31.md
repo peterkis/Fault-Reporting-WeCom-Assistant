@@ -62,6 +62,8 @@
 
 - CI（head `2b2b7756`）：`pr-database` 中卡 30B 渲染测量在 CI 上记到 2 张卡（本卡修改了该测试文件因而被选中）。测量在开始观察后才移开鼠标，且计入了任意属性与随时钟变化的时间 / 热度文字。改为先移开鼠标并等待稳定，只统计结构、文字与在场相关属性的变化，排除时间与热度标签；本机连续 3 次只有 1 张卡。
 
+- Codex P1（await 后复核 Cookie 会话）：在线名单返回前再按活动授权同样的规则核对会话（上下文未过期，且 `workbench_auth_session` 仍为该账号的 ACTIVE、未过期记录），否则 403。新增集成用例 `wbint-t39-online-session`（真实 Cookie 会话）：有效会话 200，撤销后 4xx 且不返回名单；查询进行中被撤销的竞态无法从外部确定性触发，由返回前的最终核对覆盖。
+
 ## 回退
 
 删除 `GET /api/workbench/online`、activity `setOnline`/`online`、SSE 在线跟踪、前端 `OnlineColleagues`、`PresenceStack` 与存储中的在线部分即可；卡 30A / 30B 行为不变。

@@ -307,6 +307,13 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
             // Codex review (AGENTS.md final check after await): the requester must still resolve to the same account, roles and teams.
             const current=await query.principal(authContext);
             if(current.principal_id!==principal.principal_id||JSON.stringify([...current.roles].sort())!==JSON.stringify([...principal.roles].sort())||JSON.stringify([...current.team_ids].sort())!==JSON.stringify([...principal.team_ids].sort()))failP2016('FORBIDDEN',403);
+            // Codex review: the Cookie session must also still hold authority (same check as activity authorization).
+            const context=authContext&&typeof authContext==='object'?authContext as Record<string,unknown>:{};
+            if(typeof context.expires_epoch_ms==='string'&&(!/^\d+$/u.test(context.expires_epoch_ms)||BigInt(context.expires_epoch_ms)<=BigInt(Date.now())))failP2016('FORBIDDEN',403);
+            if(typeof context.session_id==='string'){
+              const session=await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()",[context.session_id,principal.principal_id]);
+              if(session.rowCount!==1)failP2016('FORBIDDEN',403);
+            }
             return {self:principal.principal_id,visible:rows.filter(row=>row.display_name.trim()).map(row=>({principal_id:row.principal_id,display_name:row.display_name}))};
           }});
           realtime.setOnlineChange(()=>activity?.onlineChanged());
