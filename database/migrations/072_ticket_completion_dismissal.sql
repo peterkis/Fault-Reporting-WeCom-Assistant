@@ -2,16 +2,33 @@ BEGIN;
 
 -- ADR-0058: 「完成」COMPLETED / 「关闭」DISMISSED. Development stage: no data mapping. Any legacy value fails the migration;
 -- clean the affected development / test database (ADR-0056 U7) and rebuild it from fixtures instead.
+-- Each probe runs through EXECUTE only after its table exists: a static query naming a missing table fails at planning
+-- time, before any `to_regclass(...) IS NOT NULL AND ...` guard could short-circuit (partial fixture chains lack later tables).
 DO $$
-DECLARE legacy text := '';
+DECLARE
+  legacy text := '';
+  probe record;
+  found boolean;
 BEGIN
-  IF to_regclass('pilot_ticket.ticket') IS NOT NULL AND EXISTS (SELECT 1 FROM pilot_ticket.ticket WHERE status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')) THEN legacy := legacy||' ticket.status'; END IF;
-  IF to_regclass('pilot_ticket.ticket_event') IS NOT NULL AND EXISTS (SELECT 1 FROM pilot_ticket.ticket_event
-      WHERE old_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') OR new_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
-         OR event_type IN ('ticket.closed','ticket.cancelled','ticket.duplicate_linked','ticket.unlinked')) THEN legacy := legacy||' ticket_event'; END IF;
-  IF to_regclass('intake.service_intake') IS NOT NULL AND EXISTS (SELECT 1 FROM intake.service_intake WHERE status='IGNORED') THEN legacy := legacy||' service_intake.status'; END IF;
-  IF to_regclass('intake.service_intake_event') IS NOT NULL AND EXISTS (SELECT 1 FROM intake.service_intake_event WHERE event_type='intake.closed') THEN legacy := legacy||' service_intake_event'; END IF;
-  IF to_regclass('communication.ticket_notification_binding') IS NOT NULL AND EXISTS (SELECT 1 FROM communication.ticket_notification_binding WHERE notification_type='TICKET_CLOSED') THEN legacy := legacy||' ticket_notification_binding'; END IF;
+  FOR probe IN SELECT * FROM (VALUES
+    ('pilot_ticket.ticket', ' ticket.status',
+     $q$SELECT EXISTS (SELECT 1 FROM pilot_ticket.ticket WHERE status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED'))$q$),
+    ('pilot_ticket.ticket_event', ' ticket_event',
+     $q$SELECT EXISTS (SELECT 1 FROM pilot_ticket.ticket_event
+        WHERE old_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') OR new_status IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
+           OR event_type IN ('ticket.closed','ticket.cancelled','ticket.duplicate_linked','ticket.unlinked'))$q$),
+    ('intake.service_intake', ' service_intake.status',
+     $q$SELECT EXISTS (SELECT 1 FROM intake.service_intake WHERE status='IGNORED')$q$),
+    ('intake.service_intake_event', ' service_intake_event',
+     $q$SELECT EXISTS (SELECT 1 FROM intake.service_intake_event WHERE event_type='intake.closed')$q$),
+    ('communication.ticket_notification_binding', ' ticket_notification_binding',
+     $q$SELECT EXISTS (SELECT 1 FROM communication.ticket_notification_binding WHERE notification_type='TICKET_CLOSED')$q$)
+  ) AS checks(relation, label, query)
+  LOOP
+    CONTINUE WHEN to_regclass(probe.relation) IS NULL;
+    EXECUTE probe.query INTO found;
+    IF found THEN legacy := legacy||probe.label; END IF;
+  END LOOP;
   IF legacy <> '' THEN RAISE EXCEPTION 'COMPLETION_DISMISSAL_LEGACY_DATA_PRESENT:%', legacy USING HINT = 'Clean this development/test database (ADR-0056 U7) and rebuild it from fixtures; 072 never rewrites data.'; END IF;
 END $$;
 

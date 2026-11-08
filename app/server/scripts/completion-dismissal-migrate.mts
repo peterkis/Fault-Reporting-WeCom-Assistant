@@ -49,12 +49,20 @@ export async function restoreCompletionDismissalBaseline(tx:Pick<PostgresTransac
 }
 
 /** Rows that hold the 072 vocabulary; rollback refuses while any exist because it never maps data back. */
-export const COMPLETION_DISMISSAL_NEW_VALUE_PROBES=[
- "SELECT 1 FROM pilot_ticket.ticket WHERE status IN ('COMPLETED','DISMISSED') LIMIT 1",
- "SELECT 1 FROM pilot_ticket.ticket_event WHERE new_status IN ('COMPLETED','DISMISSED') OR old_status IN ('COMPLETED','DISMISSED') OR event_type IN ('ticket.completed','ticket.dismissed') LIMIT 1",
- "SELECT 1 FROM intake.service_intake WHERE status='DISMISSED' LIMIT 1",
- "SELECT 1 FROM intake.service_intake_event WHERE event_type='intake.dismissed' LIMIT 1",
+const NEW_VALUE_PROBES=[
+ ['pilot_ticket.ticket',"SELECT 1 FROM pilot_ticket.ticket WHERE status IN ('COMPLETED','DISMISSED') LIMIT 1"],
+ ['pilot_ticket.ticket_event',"SELECT 1 FROM pilot_ticket.ticket_event WHERE new_status IN ('COMPLETED','DISMISSED') OR old_status IN ('COMPLETED','DISMISSED') OR event_type IN ('ticket.completed','ticket.dismissed') LIMIT 1"],
+ ['intake.service_intake',"SELECT 1 FROM intake.service_intake WHERE status='DISMISSED' LIMIT 1"],
+ ['intake.service_intake_event',"SELECT 1 FROM intake.service_intake_event WHERE event_type='intake.dismissed' LIMIT 1"],
 ] as const;
+/** True when any existing table holds a 072 value. A probe runs only once its table exists (partial fixture chains lack later tables). */
+export async function completionDismissalNewValuesPresent(tx:Pick<PostgresTransaction,'query'>):Promise<boolean>{
+ for(const [relation,query] of NEW_VALUE_PROBES){
+  if((await tx.query<{present:boolean}>('SELECT to_regclass($1) IS NOT NULL AS present',[relation])).rows[0]?.present!==true)continue;
+  if((await tx.query(query)).rowCount)return true;
+ }
+ return false;
+}
 
 export async function migrateCompletionDismissal({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'rollback'}){
  if(!databaseUrl||!['check','apply','rollback'].includes(mode))failP2016();
@@ -66,7 +74,7 @@ export async function migrateCompletionDismissal({databaseUrl,mode='check'}:{dat
    if(existing.checksum_sha256!==checksum||!await completionDismissalSchemaReady(tx))throw Error('COMPLETION_DISMISSAL_SCHEMA_DRIFT');
    if(mode!=='rollback')return {status:'NOOP_ALREADY_APPLIED',migration_id:COMPLETION_DISMISSAL_MIGRATION_ID};
    // Rollback restores the pre-072 vocabulary; it never maps data, so the database must hold no new-value rows.
-   for(const probe of COMPLETION_DISMISSAL_NEW_VALUE_PROBES)if((await tx.query(probe)).rowCount)throw Error('COMPLETION_DISMISSAL_ROLLBACK_REQUIRES_EMPTY_FIXTURE');
+   if(await completionDismissalNewValuesPresent(tx))throw Error('COMPLETION_DISMISSAL_ROLLBACK_REQUIRES_EMPTY_FIXTURE');
    await restoreCompletionDismissalBaseline(tx);
    await tx.query('DELETE FROM platform.schema_migration WHERE migration_id=$1',[COMPLETION_DISMISSAL_MIGRATION_ID]);
    return {status:'ROLLED_BACK',migration_id:COMPLETION_DISMISSAL_MIGRATION_ID};

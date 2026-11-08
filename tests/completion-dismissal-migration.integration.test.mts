@@ -5,15 +5,20 @@ import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../app/server/scripts/p2-016-migrate.mjs';
 import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal,applyCompletionDismissalSql} from '../app/server/scripts/completion-dismissal-migrate.mjs';
-import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {createPilotTicketCore,applyPilotTicketCoreMigration} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {applyChannelMessageInboxMigration} from '../app/server/src/p1-003-channel-message-inbox.mjs';
+import {applyServiceIntakeMigration} from '../app/server/src/p1-004-service-intake.mjs';
+import {applyTicketStateActionMigration} from '../app/server/src/p1-006-ticket-state-actions.mjs';
+import {applyPilotAccessMigration} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {releaseCompletionDismissal} from './helpers/completion-dismissal.mjs';
 
 type Pool=import('../app/server/src/platform/postgres-pool.mjs').PostgresPool;
 const VOCABULARY=`SELECT c.conname,pg_get_constraintdef(c.oid,true) AS definition FROM pg_constraint c
-  WHERE (c.conrelid='pilot_ticket.ticket'::regclass AND c.conname='ticket_status_check')
-     OR (c.conrelid='pilot_ticket.ticket_event'::regclass AND c.conname IN ('ticket_event_status_check','ticket_event_type_check'))
-     OR (c.conrelid='intake.service_intake'::regclass AND c.conname='service_intake_status_check')
-     OR (c.conrelid='intake.service_intake_event'::regclass AND c.conname='service_intake_event_type_check')
-     OR (c.conrelid='communication.ticket_notification_binding'::regclass AND c.contype='c' AND pg_get_constraintdef(c.oid,true) LIKE '%TICKET_%')
+  WHERE (c.conrelid=to_regclass('pilot_ticket.ticket') AND c.conname='ticket_status_check')
+     OR (c.conrelid=to_regclass('pilot_ticket.ticket_event') AND c.conname IN ('ticket_event_status_check','ticket_event_type_check'))
+     OR (c.conrelid=to_regclass('intake.service_intake') AND c.conname='service_intake_status_check')
+     OR (c.conrelid=to_regclass('intake.service_intake_event') AND c.conname='service_intake_event_type_check')
+     OR (c.conrelid=to_regclass('communication.ticket_notification_binding') AND c.contype='c' AND pg_get_constraintdef(c.oid,true) LIKE '%TICKET_%')
   ORDER BY c.conrelid::regclass::text,c.conname`;
 const definitions=async(pool:Pool)=>Object.fromEntries((await pool.query<{conname:string;definition:string}>(VOCABULARY)).rows.map(row=>[row.conname,row.definition]));
 const LEGACY=/'(CLOSED|CANCELLED|IGNORED|DUPLICATE_LINKED|ticket\.closed|ticket\.cancelled|ticket\.duplicate_linked|ticket\.unlinked|intake\.closed|TICKET_CLOSED)'/u;
@@ -65,4 +70,25 @@ test('072 completion / dismissal: legacy data blocks it, rewrites the vocabulary
  assert.equal((await pool.query("SELECT to_regclass('pilot_ticket.completion_dismissal_baseline') IS NULL AS gone")).rows[0]?.gone,true);
  assert.deepEqual(await migrateCompletionDismissal({databaseUrl,mode:'apply'}),{status:'APPLIED',migration_id:'072_ticket_completion_dismissal'});
  assert.deepEqual(await definitions(pool),after);
+}}));
+
+// Partial fixture chains (intake only, or the P1 chain without 031's communication tables) must still accept the 072 body:
+// a probe of a table that does not exist yet is skipped, never planned.
+test('072 body applies and releases on partial chains whose later tables do not exist yet',{timeout:240000},()=>withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'c32cd072p',run:async(context:{pool:Pool;databaseUrl:string})=>{
+ const {pool}=context;
+ const exists=async(relation:string)=>(await pool.query<{present:boolean}>('SELECT to_regclass($1) IS NOT NULL AS present',[relation])).rows[0]?.present===true;
+ await applyChannelMessageInboxMigration({pool});await applyServiceIntakeMigration({pool});
+ assert.equal(await exists('pilot_ticket.ticket'),false);assert.equal(await exists('communication.ticket_notification_binding'),false);
+ await applyCompletionDismissalSql(pool as never);
+ const intakeStatus=async()=>String((await pool.query<{definition:string}>("SELECT pg_get_constraintdef(oid,true) AS definition FROM pg_constraint WHERE conrelid=to_regclass('intake.service_intake') AND conname='service_intake_status_check'")).rows[0]?.definition);
+ assert.match(await intakeStatus(),/'DISMISSED'/u,'intake-only chain gains the new Intake vocabulary');assert.doesNotMatch(await intakeStatus(),/'IGNORED'/u);
+ await releaseCompletionDismissal(pool as never);assert.equal(await exists('pilot_ticket.completion_dismissal_baseline'),false);assert.match(await intakeStatus(),/'IGNORED'/u,'release restores the intake-only vocabulary');
+ await applyPilotTicketCoreMigration({pool});await applyTicketStateActionMigration({pool});await applyPilotAccessMigration({pool});
+ assert.equal(await exists('communication.ticket_notification_binding'),false,'the P1 chain has no 031 notification binding');
+ await applyCompletionDismissalSql(pool as never);
+ const p1=await definitions(pool);
+ assert.match(String(p1.ticket_status_check),/'COMPLETED'.*'DISMISSED'/u);
+ for(const [name,definition] of Object.entries(p1))assert.equal(LEGACY.test(definition),false,name+': '+definition);
+ await releaseCompletionDismissal(pool as never);
+ assert.ok(Object.values(await definitions(pool)).some(definition=>LEGACY.test(definition)),'release restores the original P1 vocabulary');
 }}));

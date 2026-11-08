@@ -1,4 +1,4 @@
-import {applyCompletionDismissalSql,restoreCompletionDismissalBaseline,COMPLETION_DISMISSAL_MIGRATION_ID,COMPLETION_DISMISSAL_NEW_VALUE_PROBES} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
+import {applyCompletionDismissalSql,restoreCompletionDismissalBaseline,COMPLETION_DISMISSAL_MIGRATION_ID,completionDismissalNewValuesPresent} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
@@ -25,6 +25,6 @@ export async function releaseCompletionDismissal(pool:Queryable&Pick<PostgresPoo
  const state=(await pool.query<{baseline:boolean;registry:boolean}>("SELECT to_regclass('pilot_ticket.completion_dismissal_baseline') IS NOT NULL AS baseline,to_regclass('platform.schema_migration') IS NOT NULL AS registry")).rows[0];
  if(!state?.baseline)return;
  if(state.registry&&(await pool.query('SELECT 1 FROM platform.schema_migration WHERE migration_id=$1',[COMPLETION_DISMISSAL_MIGRATION_ID])).rowCount)return;
- for(const probe of COMPLETION_DISMISSAL_NEW_VALUE_PROBES)if((await pool.query(probe)).rowCount)throw Error('COMPLETION_DISMISSAL_SHARED_FIXTURE_ROWS_REMAIN');
+ if(await completionDismissalNewValuesPresent(pool as never))throw Error('COMPLETION_DISMISSAL_SHARED_FIXTURE_ROWS_REMAIN');
  await transactionP2016(pool,tx=>restoreCompletionDismissalBaseline(tx));
 }
