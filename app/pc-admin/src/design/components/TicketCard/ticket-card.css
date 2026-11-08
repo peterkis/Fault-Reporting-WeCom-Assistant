@@ -195,3 +195,5 @@
 .ds-presence-claim-hint {position: absolute; top: calc(100% + var(--space-1)); right: 0; left: 0; z-index: var(--z-dropdown); display: none; align-items: center; gap: var(--space-1-5); margin: 0; padding: var(--space-1-5) var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); box-shadow: var(--shadow-2); font-size: var(--fs-xs); line-height: var(--lh-xs); pointer-events: none;}
 .ds-presence-claim-hint>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-presence-claim-hint {display: flex;}
+/* Card 32 A4: hover lifts the card into its own stacking context, so the next card painted over the hint; raise the hovered card above its neighbours. */
+.ds-ticket-card.ticket-card:has(.ds-presence-claim-hint):is(:hover,:focus-within) {z-index: var(--z-dropdown);}

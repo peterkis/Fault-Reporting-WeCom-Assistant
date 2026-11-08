@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {PresenceTags,presenceDescription,presenceFieldLabels} from '../../design/components/PresenceTags/PresenceTags';
+import {PresenceFieldBanner,PresenceTags,presenceDescription,presenceFieldBannerText} from '../../design/components/PresenceTags/PresenceTags';
 import type {RefObject} from 'react';
 import type {Principal} from '../../api/client';
 import type {WorkbenchActivityField,WorkbenchActivityPerson,WorkbenchActivityTarget} from '../../../../../contracts/workbench_activity_contracts';
@@ -31,20 +31,33 @@ export function ActivityPeople({principal,target,root,readReady,capsuleTarget=nu
     document.addEventListener('visibilitychange',visibility);window.addEventListener('offline',visibility);window.addEventListener('online',visibility);
     return()=>{observer.disconnect();own.dispose();for(const event of events)element.removeEventListener(event,touch);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('offline',visibility);window.removeEventListener('online',visibility);};
   },[principal.principal_id,principal.csrf_token,principal.authorization_revision,principal.activity_enabled,target.kind,target.id,readReady,root]);
-  // Card 30B B4: a colleague editing a field that is visible here marks that input area; input is never locked.
+  // Card 30B B4 / Card 32 A5: a colleague editing a field that is visible here marks that input area with a banner; input is never locked.
   const editing=principal.activity_enabled&&readReady?people.filter(person=>person.mode==='EDITING'&&person.field):[];
   const editingKey=editing.map(person=>person.display_name+'\u0000'+person.field).join('\u0001');
+  const [banners,setBanners]=useState<readonly {anchor:HTMLElement;text:string}[]>([]);
   useEffect(()=>{
     if(!editing.length||!root.current)return;
+    const fields=new Map<WorkbenchActivityField,WorkbenchActivityPerson[]>();
+    for(const person of editing)if(person.field)fields.set(person.field,[...(fields.get(person.field)??[]),person]);
     const marked=new Set<HTMLElement>();
     // Areas can mount later (an inline form or dialog opened after the colleague began editing), so re-apply on DOM changes while someone edits.
-    const apply=()=>{for(const person of editing){const field=person.field;if(!field)continue;for(const area of document.querySelectorAll<HTMLElement>('[data-activity-field="'+field+'"]')){if(area.hasAttribute('data-presence-editing'))continue;
-      area.setAttribute('data-presence-editing',person.display_name+'正在编辑'+presenceFieldLabels[field]+'，同时编辑可能互相覆盖');marked.add(area);}}};
+    const apply=()=>{
+      const next:{anchor:HTMLElement;text:string}[]=[];
+      for(const [field,editors] of fields){const text=presenceFieldBannerText(editors,field);for(const area of document.querySelectorAll<HTMLElement>('[data-activity-field="'+field+'"]')){
+        if(area.getAttribute('data-presence-editing')!==text)area.setAttribute('data-presence-editing',text);
+        // The composer marks its bordered input frame; other areas carry the banner on themselves.
+        const frame=area.querySelector<HTMLElement>('[data-presence-banner-anchor]'),anchor=frame??area,host=frame?'frame':'area';
+        if(anchor.getAttribute('data-presence-banner-host')!==host)anchor.setAttribute('data-presence-banner-host',host);
+        marked.add(area);marked.add(anchor);next.push({anchor,text});}}
+      for(const node of marked)if(!node.isConnected)marked.delete(node);
+      setBanners(current=>current.length===next.length&&current.every((banner,index)=>banner.anchor===next[index]?.anchor&&banner.text===next[index]?.text)?current:next);
+    };
     let frame=0;const observer=new MutationObserver(()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;apply();});});
     apply();observer.observe(document.body,{childList:true,subtree:true});
-    return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);for(const area of marked)area.removeAttribute('data-presence-editing');};
+    return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);for(const node of marked){node.removeAttribute('data-presence-editing');node.removeAttribute('data-presence-banner-host');}setBanners([]);};
   },[editingKey,root]);
+  const fieldBanners=banners.map((banner,index)=>createPortal(<PresenceFieldBanner text={banner.text}/>,banner.anchor,'field-banner-'+index));
   if(!principal.activity_enabled||!readReady||!people.length)return null;
   const capsule=<span className="ds-presence-capsule" data-workbench-activity role="status"><PresenceTags people={people}/><span className="ds-presence-capsule-label" aria-hidden="true">在看</span><span className="sr-only">{presenceDescription(people)}</span></span>;
-  return capsuleTarget?createPortal(capsule,capsuleTarget):capsule;
+  return <>{capsuleTarget?createPortal(capsule,capsuleTarget):capsule}{fieldBanners}</>;
 }

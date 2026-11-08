@@ -98,14 +98,14 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   // B4: drawer capsule replaces the body text; a same-field editor marks the internal note area without locking it.
   await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+editTarget});
   await b.waitFor(live+"&&document.querySelector('.detail-toolbar-actions [data-workbench-activity]')!==null&&document.querySelector('[data-activity-field=internal-note][data-presence-editing]')!==null");
-  metrics.drawer=object(await b.evaluate("(()=>{const c=document.querySelector('.detail-toolbar-actions [data-workbench-activity]'),s=getComputedStyle(c),area=document.querySelector('[data-activity-field=internal-note]'),input=area.querySelector('textarea');return {text:c.textContent,height:c.getBoundingClientRect().height,radius:s.borderRadius,bodyText:Boolean(document.querySelector('.detail-body [data-workbench-activity]')),banner:area.getAttribute('data-presence-editing'),before:getComputedStyle(area,'::before').content,locked:input?input.disabled||input.readOnly:null};})()"));
+  metrics.drawer=object(await b.evaluate("(()=>{const c=document.querySelector('.detail-toolbar-actions [data-workbench-activity]'),s=getComputedStyle(c),area=document.querySelector('[data-activity-field=internal-note]'),input=area.querySelector('textarea');return {text:c.textContent,height:c.getBoundingClientRect().height,radius:s.borderRadius,bodyText:Boolean(document.querySelector('.detail-body [data-workbench-activity]')),banner:area.getAttribute('data-presence-editing'),before:area.querySelector('[data-presence-field-banner]')?.textContent??null,pencil:Boolean(area.querySelector('[data-presence-field-banner] svg.lucide-pencil')),locked:input?input.disabled||input.readOnly:null};})()"));
   const drawer=object(metrics.drawer);
   assert.match(String(drawer.text),/在看/u);assert.match(String(drawer.text),/陈悦正在编辑内部备注/u);assert.equal(drawer.height,26);assert.equal(drawer.radius,'13px');assert.equal(drawer.bodyText,false);
-  assert.equal(drawer.banner,'陈悦正在编辑内部备注，同时编辑可能互相覆盖');assert.match(String(drawer.before),/同时编辑可能互相覆盖/u);assert.notEqual(drawer.locked,true);
+  assert.equal(drawer.banner,'陈悦正在编辑内部备注');assert.equal(drawer.before,'陈悦正在编辑内部备注');assert.equal(drawer.pencil,true);assert.notEqual(drawer.locked,true);
   await capture('drawer-1440-capsule-banner');
   // Codex review: an input area that mounts later (e.g. a dialog form) receives the warning without another presence change.
   await b.evaluate("(()=>{const n=document.createElement('div');n.id='card30b-late-area';n.setAttribute('data-activity-field','internal-note');document.querySelector('.detail-body').append(n);})()");
-  await b.waitFor("document.getElementById('card30b-late-area')?.getAttribute('data-presence-editing')==='陈悦正在编辑内部备注，同时编辑可能互相覆盖'");
+  await b.waitFor("document.getElementById('card30b-late-area')?.getAttribute('data-presence-editing')==='陈悦正在编辑内部备注'&&document.querySelector('#card30b-late-area>[data-presence-field-banner]')?.textContent==='陈悦正在编辑内部备注'");
   await b.evaluate("document.getElementById('card30b-late-area').remove()");metrics.lateMount=true;
   // B6 network: 20 presence hints within 10 seconds cause at most 10 batch reads.
   await b.command('Page.navigate',{url:f.origin+'/workbench/app/?range=all'});await b.waitFor(live+`&&document.querySelectorAll(${JSON.stringify(card(editTarget)+' .ds-presence-tag')}).length===2`);await delay(1500);

@@ -80,6 +80,7 @@
   /* 背景 */
   --bg-canvas:   var(--gray-0);    /* 主工作区 */
   --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
+  --bg-group:    var(--gray-25);   /* 卡32 A1 列表分组行：浅于行悬停，靠上下 hairline 区分 */
   --bg-stage-count: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
   --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
   --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
@@ -184,9 +185,10 @@
   --shadow-presence-stack-dot: 0 0 0 1.5px var(--bg-subtle);
   /* 卡30B 有人在场的卡片外圈 1.5px（outline 在 DPR 1 会取整为 1px，故用阴影扩展） */
   --shadow-presence-viewing: inset 0 0 0 1.5px var(--brand), 0 1px 2px rgba(15,15,15,.06);
-  --shadow-presence-editing: inset 0 0 0 1.5px var(--tone-attention-solid), 0 1px 2px rgba(15,15,15,.06);
+  --presence-editing: var(--tone-attention-solid); /* 卡32 A6 编辑态名牌、卡片外圈、抽屉胶囊共用；白字对比度 6.25:1 */
+  --shadow-presence-editing: inset 0 0 0 1.5px var(--presence-editing), 0 1px 2px rgba(15,15,15,.06);
   --shadow-presence-viewing-hover: inset 0 0 0 1.5px var(--brand), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
-  --shadow-presence-editing-hover: inset 0 0 0 1.5px var(--tone-attention-solid), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
+  --shadow-presence-editing-hover: inset 0 0 0 1.5px var(--presence-editing), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
   --shadow-2: 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);          /* 卡片悬停、分段选中 */
   --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
   --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */

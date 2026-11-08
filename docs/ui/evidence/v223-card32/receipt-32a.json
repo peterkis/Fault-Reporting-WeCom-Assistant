@@ -1,0 +1,184 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS",
+  "synthetic": [
+    "second internal-note editor 「周宁（合成）」 in the drawer activity read (window.__extraEditor)"
+  ],
+  "platform": "darwin",
+  "metrics": {
+    "categories": {
+      "tiles": 7,
+      "fallback": 0,
+      "categories": [
+        "DIAGNOSTIC",
+        "ENDPOINT_PRINT",
+        "NETWORK_INFRASTRUCTURE"
+      ],
+      "untriagedIntakes": 2,
+      "untriagedFallback": 2
+    },
+    "editingColour": {
+      "token": "rgb(154, 74, 10)",
+      "tag": "rgb(154, 74, 10)",
+      "outline": true
+    },
+    "claimHover": {
+      "text": "沈然正在查看这张工单，领取前可先确认",
+      "onTop": true,
+      "height": 30
+    },
+    "claimFocus": {
+      "text": "沈然正在查看这张工单，领取前可先确认",
+      "onTop": true,
+      "height": 30
+    },
+    "subgroup": {
+      "background": "rgb(251, 251, 250)",
+      "group": "rgb(251, 251, 250)",
+      "hover": "rgb(247, 247, 245)",
+      "hairlines": 2,
+      "header": "rgb(255, 255, 255)"
+    },
+    "subgroupHover": {
+      "row": "rgb(247, 247, 245)",
+      "subgroup": "rgb(251, 251, 250)"
+    },
+    "more": {
+      "before": {
+        "text": "显示剩余 2 项",
+        "icon": "lucide-chevron-down",
+        "size": 14,
+        "gap": "4px",
+        "color": "rgb(107, 105, 101)",
+        "secondary": "rgb(107, 105, 101)"
+      },
+      "after": {
+        "text": "收起",
+        "icon": "lucide-chevron-up",
+        "size": 14,
+        "gap": "4px",
+        "color": "rgb(107, 105, 101)",
+        "secondary": "rgb(107, 105, 101)"
+      }
+    },
+    "capsuleColour": "rgb(154, 74, 10)",
+    "banner": {
+      "one": {
+        "text": "陈悦正在编辑内部备注",
+        "height": 28,
+        "gap": 0,
+        "width": true,
+        "left": true,
+        "radius": "10px 10px 0px 0px",
+        "frameRadius": "10px",
+        "frameTop": "0px 0px",
+        "padding": "12px 12px",
+        "font": "12px",
+        "pencil": true,
+        "icon": 12,
+        "stroke": "1.75px",
+        "area": "陈悦正在编辑内部备注",
+        "locked": false,
+        "glyph": false
+      },
+      "two": {
+        "text": "陈悦等 2 人正在编辑内部备注",
+        "height": 28,
+        "gap": 0,
+        "width": true,
+        "left": true,
+        "radius": "10px 10px 0px 0px",
+        "frameRadius": "10px",
+        "frameTop": "0px 0px",
+        "padding": "12px 12px",
+        "font": "12px",
+        "pencil": true,
+        "icon": 12,
+        "stroke": "1.75px",
+        "area": "陈悦等 2 人正在编辑内部备注",
+        "locked": false,
+        "glyph": false
+      }
+    },
+    "onlineRow": [
+      20,
+      20,
+      20
+    ],
+    "onlinePopover": [
+      [
+        24,
+        24
+      ],
+      [
+        24,
+        24
+      ],
+      [
+        24,
+        24
+      ]
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "board-1440-presence.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "00828446befb8ab48ed9c08b707f4b121636561768c7000180c62397862c4a22"
+    },
+    {
+      "file": "board-1440-claim-hint.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "6e545fa3970eaae9b8edef118246253aba0ebc35873c198176ea0c815117d700"
+    },
+    {
+      "file": "list-1440-subgroup.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "3bc0eccda20444b339de653d2f45c283f416fdd00125abbc985c5c33db982eee"
+    },
+    {
+      "file": "list-1440-subgroup-hover.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "068efc9cd5448712a80c6383da08cacfa37bf53fc01a8c1667f5b2e2bf32adf8"
+    },
+    {
+      "file": "list-1440-more.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5d602e388cdf794739dc19e48dd067cf6f3051ed584dc42ffe9cb4f2e8a45ee2"
+    },
+    {
+      "file": "list-1440-more-expanded.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f53da87f5f4a99d5b8695aef8ab356ad7fa924040ba1416afc7ebffe0daf6a6a"
+    },
+    {
+      "file": "drawer-1440-banner.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f6a9665d0020871d67d952640e5bdff7ce880d88b65897e245b92696d93c0c5d"
+    },
+    {
+      "file": "drawer-1440-banner-two.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "b0a8a89408a1cd1afaff2798aa30390be92434f728b9fa88699b6cb72597e976"
+    },
+    {
+      "file": "sidebar-online.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d3b024597bee809cc61682dbfba8a0708aea5905b7cf339dd8cc3c3e38712369"
+    },
+    {
+      "file": "sidebar-online-popover.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "091e3e40028cf4261ba72b65cde7bf68efd16acefca06714e4376fc87c03793e"
+    }
+  ]
+}
