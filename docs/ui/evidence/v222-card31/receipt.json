@@ -57,10 +57,10 @@
       "unpaired": 0
     },
     "failure": {
-      "hiddenAfterMs": 26786
+      "hiddenAfterMs": 27555
     },
-    "slowBatchAppearedAfterMs": 7068,
-    "recoveredAfterMs": 6923,
+    "slowBatchAppearedAfterMs": 7067,
+    "recoveredAfterMs": 6968,
     "many": {
       "more": "+52",
       "top": 36,
@@ -74,36 +74,37 @@
       "title": "在线同事 2 人",
       "badge": "2",
       "font": "11px"
-    }
+    },
+    "teamDisabledHiddenAfterMs": 7595
   },
   "screenshots": [
     {
       "file": "sidebar-empty.png",
-      "sha256": "1bfe99c75027494278b3f457f635fa388ab2ec4f96eb0af10bf41e5fd3718fc9",
+      "sha256": "345c1c1772652b942ce1cc29c11a44d99a3cb9758b32ae2350ca63b7336ccaed",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-online.png",
-      "sha256": "210659f6da473a2743cb716a3118fa886167b2eeea189a3ec82fe561e005de59",
+      "sha256": "a8eb072b972c8c6e1d687e8bfb5b6711dacb3f60a64c43d773b0267acc67fdb4",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover.png",
-      "sha256": "ee730216c089f434d9160a884d370b96c48ce0390694be04db825a2e01dcc69f",
+      "sha256": "fde979fd45d683acda10340743de11bdc6e16c661f6d849396f3201717b4f298",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-popover-55-synthetic.png",
-      "sha256": "368dfac723541619dda2d9d28a710faaa196883f681f66ad8b9eb2c2395c7a70",
+      "sha256": "07af90cb2666246247838f1d111ff14588b473f3c89de9e9f846e662dc283298",
       "width": 1440,
       "height": 1000
     },
     {
       "file": "sidebar-collapsed.png",
-      "sha256": "b173a101ddc5c8a617f5ad8a39bc2583ba11da4a6907717fe79ddd3d8294dafd",
+      "sha256": "06d677b4e4987bdbe57be7cfd04b519d4253e9ade233e15179308151317e0339",
       "width": 1440,
       "height": 1000
     }

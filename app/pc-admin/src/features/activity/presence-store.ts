@@ -17,12 +17,14 @@ const listeners=new Map<string,Set<()=>void>>();
 const rendered=new Map<string,{target:WorkbenchActivityTarget;count:number}>();
 let principal:Principal|null=null,live=false,environmentBound=false;
 let readTimer:ReturnType<typeof setTimeout>|null=null,readAt=0,firstTriggerAt=0,expiryTimer:ReturnType<typeof setInterval>|null=null,request:AbortController|null=null;
-let reads=0,onlineReads=0,presenceQueued=false;
+let reads=0,onlineReads=0,presenceQueued=false,requestAt=0,onlineRequestAt=0;
+/** A slow request may finish; one older than this is treated as hung and replaced, so it can never block later reads. */
+export const PRESENCE_REQUEST_HUNG_MS=15000;
 // Card 31: online colleagues share this store's gate and debounce; only the sidebar row subscribes.
 let online:WorkbenchOnlineView|null=null,onlineAt=0,onlineWanted=0,onlineFailing=false,onlineQueued=false,onlineRequest:AbortController|null=null;
 const onlineListeners=new Set<()=>void>();
-export const ONLINE_STALE_MS=30000;
-function putOnline(next:WorkbenchOnlineView|null){if(next===online)return;online=next;for(const listener of onlineListeners)listener();}
+export const ONLINE_STALE_MS=30000,ONLINE_REVALIDATE_MS=60000;
+function putOnline(next:WorkbenchOnlineView|null){if(next===online)return;online=next;for(const listener of onlineListeners)listener();syncExpiry();}
 export const PRESENCE_RENDER_DELAY_MS=500,PRESENCE_HINT_DELAY_MS=1000,PRESENCE_HINT_MAX_WAIT_MS=2000,PRESENCE_MIN_READ_GAP_MS=1500,PRESENCE_EXPIRY_CHECK_MS=5000,PRESENCE_REFRESH_MARGIN_MS=10000,PRESENCE_MAX_TARGETS=100;
 
 const keyOf=(target:WorkbenchActivityTarget)=>target.kind+':'+target.id;
@@ -46,7 +48,8 @@ function clear(){
 }
 // The 5-second check runs while someone is cached or while a failed online refresh is holding the last result.
 function syncExpiry(){
-  const needed=people.size>0||onlineFailing;
+  // Codex review: team visibility can change without any connection change, so a shown roster is revalidated on this same check.
+  const needed=people.size>0||onlineFailing||Boolean(onlineWanted&&online&&online.total>0);
   if(needed&&expiryTimer===null)expiryTimer=setInterval(expire,PRESENCE_EXPIRY_CHECK_MS);
   else if(!needed&&expiryTimer!==null){clearInterval(expiryTimer);expiryTimer=null;}
 }
@@ -58,6 +61,7 @@ function expire(){
   // Card 31 F3 (Codex review): a failing online refresh retries here and hides its last result 30 s after the last success.
   // The 5-second check hides at the last tick before 30 s, so the stale list never outlives the limit.
   // Codex review: hiding the stale list does not end recovery; retries continue until a read succeeds, the row unmounts or presence is cleared.
+  if(!onlineFailing&&onlineWanted&&online&&online.total>0&&principal&&enabled()&&Date.now()-onlineAt>=ONLINE_REVALIDATE_MS)void readOnline(principal);
   if(onlineFailing){if(!onlineWanted){onlineFailing=false;syncExpiry();}else{if(online&&Date.now()-onlineAt>ONLINE_STALE_MS-PRESENCE_EXPIRY_CHECK_MS)putOnline(null);schedule(0);}}
   const now=BigInt(Date.now());for(const [key,value] of [...people])put(key,value.filter(person=>alive(person,now)));
   let nearest:bigint|null=null;for(const value of people.values())for(const person of value){const at=BigInt(person.expires_epoch_ms);if(nearest===null||at<nearest)nearest=at;}
@@ -83,8 +87,8 @@ async function read(){
 }
 async function readPresence(owner:Principal,targets:WorkbenchActivityTarget[]){
   // Codex review: never cancel an in-flight batch (retries or hints would starve a slow but healthy one); queue one follow-up.
-  if(request){presenceQueued=true;return;}
-  const controller=new AbortController();request=controller;reads++;
+  if(request){if(Date.now()-requestAt<PRESENCE_REQUEST_HUNG_MS){presenceQueued=true;return;}request.abort();request=null;}
+  const controller=new AbortController();request=controller;requestAt=Date.now();reads++;
   try{
     const result=await readActivityBatch(owner,targets,controller.signal);
     if(controller.signal.aborted||identity(principal)!==identity(owner)||!enabled())return;
@@ -99,8 +103,8 @@ async function readPresence(owner:Principal,targets:WorkbenchActivityTarget[]){
 }
 async function readOnline(owner:Principal){
   // Codex review: never cancel an in-flight online read (a slow but healthy endpoint must be able to answer); queue one follow-up instead.
-  if(onlineRequest){onlineQueued=true;return;}
-  const controller=new AbortController();onlineRequest=controller;onlineReads++;
+  if(onlineRequest){if(Date.now()-onlineRequestAt<PRESENCE_REQUEST_HUNG_MS){onlineQueued=true;return;}onlineRequest.abort();onlineRequest=null;}
+  const controller=new AbortController();onlineRequest=controller;onlineRequestAt=Date.now();onlineReads++;
   try{
     const result=await readOnlineView(controller.signal);
     if(controller.signal.aborted||identity(principal)!==identity(owner)||!enabled())return;
@@ -149,7 +153,7 @@ export function usePresence(target:WorkbenchActivityTarget,active:boolean):Peopl
 /** Test and evidence hooks; no production caller depends on them. */
 /** Card 31: only the sidebar row subscribes; board and list cards never re-render for online changes. */
 export function useOnlineColleagues():WorkbenchOnlineView|null{
-  useEffect(()=>{onlineWanted++;if(!online)schedule(0);return()=>{onlineWanted--;};},[]);
+  useEffect(()=>{onlineWanted++;if(!online)schedule(0);syncExpiry();return()=>{onlineWanted--;syncExpiry();};},[]);
   return useSyncExternalStore(callback=>{onlineListeners.add(callback);return()=>{onlineListeners.delete(callback);};},()=>online,()=>null);
 }
 export const presenceDiagnostics={onlineReads:()=>onlineReads,lastReadAt:()=>readAt,reads:()=>reads,expiryRunning:()=>expiryTimer!==null,size:()=>people.size,rendered:()=>rendered.size};

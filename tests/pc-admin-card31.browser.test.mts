@@ -11,7 +11,7 @@ import {object} from './helpers/t42-board-browser-fixture.mjs';
 import type {WorkbenchOnlineView} from '../contracts/workbench_activity_contracts.js';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
-interface Fixture {origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:import('node:http').Server}}
+interface Fixture {origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:import('node:http').Server};pool:{query:(sql:string,values?:unknown[])=>Promise<unknown>}}
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
 /** A colleague's open workbench page: one real SSE stream (O1), plus optional presence leases. */
@@ -122,6 +122,11 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   metrics.collapsed=object(await b.evaluate("(()=>{const c=document.querySelector('.ds-online-collapsed');return {title:c.getAttribute('title'),badge:c.querySelector('.ds-online-badge')?.textContent,font:getComputedStyle(c.querySelector('.ds-online-badge')).fontSize};})()"));
   assert.equal(object(metrics.collapsed).font,'11px');assert.match(String(object(metrics.collapsed).title),/^在线同事 \d+ 人$/u);
   await capture('sidebar-collapsed');
+  // Codex review: team visibility can change with no connection change; a shown roster is revalidated within ~65 s.
+  await chen.connect();await b.waitFor("Boolean(document.querySelector('.ds-online-badge'))");
+  const teamOff=Date.now();await f.pool.query('UPDATE pilot_ticket.resolver_team SET is_active=false');
+  await b.waitFor("document.querySelector('.ds-online-badge')===null",{timeoutMs:80000});metrics.teamDisabledHiddenAfterMs=Date.now()-teamOff;
+  assert.ok(Number(metrics.teamDisabledHiddenAfterMs)<=70000,'roster revalidated after team visibility change');
  }catch(error){failure=error;}
  finally{await closeBrowserTestResources([async()=>{if(failure&&browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));},()=>writeFile(join(directory,'receipt.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG_WITH_REAL_SSE_STREAMS',synthetic:['online read failure (window.__onlineFail)','55 colleagues (window.__onlineMany)'],platform:process.platform,metrics,screenshots},null,2)),()=>{for(const one of [chen,zhou,shen])one.stop();f.runtime.server.off('request',observe);},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
 },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchInternalNotesEnabled:true,presencePeerSessions:true}));
