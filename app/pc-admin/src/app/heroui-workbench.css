@@ -57,7 +57,9 @@
 :where([data-slot="checkbox-content"],[data-slot="radio-content"],[data-slot="switch-content"])[data-focus-visible="true"] {background:var(--bg-hover);border-radius:var(--radius-sm)}
 
 /* The app scope beats feature rules; body also covers HeroUI's portal roots. */
-html body :is(a,summary,button,input,textarea,select,[tabindex],[role="button"]):focus-visible:not(:disabled):not([aria-disabled="true"]) {outline:2px solid var(--border-focus);outline-offset:2px}
+/* Card 32C-T: the closure combobox draws its own single focus frame, so its inner input is excluded here instead of out-specified later.
+   :where() keeps this rule's original specificity, so quieter focus rules (e.g. programmatic focus on [tabindex="-1"]) still win. */
+html body :is(a,summary,button,input,textarea,select,[tabindex],[role="button"]):focus-visible:not(:disabled):not([aria-disabled="true"]):not(:where(.ds-closure-combobox input)) {outline:2px solid var(--border-focus);outline-offset:2px}
 html body .date-input-group:focus-within {background:var(--bg-canvas);border-color:var(--border-focus)}
 .workbench-drawer-backdrop {z-index:var(--z-drawer)}
 
