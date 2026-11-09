@@ -15,6 +15,7 @@ import {migrateP2016} from '../../app/server/scripts/p2-016-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
 import {ensureCompletionDismissal} from './completion-dismissal.mjs';
+import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -25,7 +26,7 @@ export async function withT08Fixture(run:(fixture:T08Fixture)=>Promise<void>,opt
  const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t08slice',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
   await applyThrough030(context);const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
-  await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});if(options.migration!==false)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.pool);
+  await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});if(options.migration!==false)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.pool);
   const access=createPilotAccessService({pool:context.pool});
   const roleSets:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
   const members=await Promise.all(roleSets.map((roles,index)=>access.upsertPrincipal({wecomUserId:'t08-slice-'+index+'-'+randomUUID(),displayName:'T08 合成内部人员 '+index,roles,resolverTeamIds:['PILOT_IT']})));

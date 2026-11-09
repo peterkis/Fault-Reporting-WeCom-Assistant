@@ -17,15 +17,17 @@ import {
   createServiceIntakeProcessor,
   mapServiceIntakeMigrationFailure,
 } from '../app/server/src/p1-004-service-intake.mjs';
-import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const testIntakeIds = new Set();
-const pool = databaseUrl
-  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
-  : null;
+// Each run gets its own database at the current schema (through 071 / 072); PILOT_DATABASE_URL only creates and drops it.
+let pool = null;
+let admin = null;
+const isolatedName = `p1_004_${randomUUID().replaceAll('-', '_')}`;
 
 function normalizedMessage(msgId, {
   text = 'HIS 登录失败，提示权限错误',
@@ -117,15 +119,22 @@ function assertEventIntakeIdentity(response) {
 }
 
 before(async () => {
-  if (pool) {
-    // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
-    await releaseCompletionDismissal(pool);
-    await applyChannelMessageInboxMigration({ pool });
-    await applyServiceIntakeMigration({ pool });
-    // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
-    await migrateCurrentBaseline({ databaseUrl });
-    await ensureCompletionDismissal(pool);
+  if (!databaseUrl) {
+    return;
   }
+  admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000 });
+  await admin.query(`CREATE DATABASE "${isolatedName}" TEMPLATE template0`);
+  const isolated = new URL(databaseUrl);
+  isolated.pathname = `/${isolatedName}`;
+  const isolatedUrl = isolated.toString();
+  pool = createPostgresPool({ connectionString: isolatedUrl, max: 8, connectionTimeoutMillis: 2_000 });
+  await applyChannelMessageInboxMigration({ pool });
+  await applyServiceIntakeMigration({ pool });
+  // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
+  await migrateCurrentBaseline({ databaseUrl: isolatedUrl });
+  // Intake dismissal writes intake.dismissed: the 071 event vocabulary as renamed by 072.
+  await migrateServiceClosure({ databaseUrl: isolatedUrl, mode: 'apply' });
+  await migrateCompletionDismissal({ databaseUrl: isolatedUrl, mode: 'apply' });
 });
 
 after(async () => {
@@ -144,9 +153,15 @@ after(async () => {
       ['WECOM_AIBOT', [...testMessageIds]],
     );
   }
-  // Restore the shared database's original vocabulary once this file's own rows are gone.
-  await releaseCompletionDismissal(pool);
   await pool.end();
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const remaining = await admin.query('SELECT count(*)::integer AS count FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [isolatedName]);
+    if (remaining.rows[0].count === 0) break;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [isolatedName]);
+  await admin.query(`DROP DATABASE IF EXISTS "${isolatedName}"`);
+  await admin.end();
 });
 
 integrationTest('creates one Service Intake, primary message relation and received audit event', async () => {
@@ -581,10 +596,16 @@ integrationTest('standalone thanks is CHATTER without an unnecessary clarificati
   assert.equal(response.ok, true);
   assert.equal(response.result.intake.request_type, 'CHATTER');
   assert.equal(response.result.intake.status, 'DISMISSED');
+  // Since card 27C a system-dismissed Intake records its closure (ADR-0056); ADR-0058 names the event intake.dismissed.
   assert.deepEqual(
     response.result.events.map((event) => event.event_type),
-    ['intake.received'],
+    ['intake.received', 'intake.dismissed'],
   );
+  const closure = (await pool.query(
+    "SELECT source,reason_code,secondary_reason_code FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL",
+    [response.result.intake.id],
+  )).rows;
+  assert.deepEqual(closure, [{ source: 'SYSTEM', reason_code: 'NOT_IT_SCOPE', secondary_reason_code: 'ACKNOWLEDGED' }]);
 });
 
 integrationTest('aggregate privacy is strongest, retention is earliest, and Inbox snapshots contain no report summary', async () => {

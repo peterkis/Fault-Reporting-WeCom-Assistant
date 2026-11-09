@@ -59,7 +59,9 @@ test('T14 all eight lawful conclusions preserve the original Decision and classi
     for(const [resolution,requestType,status] of outcomes){
       const {input,review}=await freshReview(fixture),original=await read('/api/manual-reviews/'+review.id);
       const command={client_command_id:randomUUID(),expected_row_version:original.row_version,expected_material_basis:(original.material_basis as {current_hash:string}).current_hash,
-        resolution_code:resolution,resolution_reason_code:'EXPLICIT_HUMAN_CHOICE'};
+        resolution_code:resolution,resolution_reason_code:'EXPLICIT_HUMAN_CHOICE',
+        // Since card 27C an out-of-scope resolution is a closure: NOT_IT_SCOPE with its secondary reason, which the resolution reason repeats.
+        ...(resolution==='MARK_OUT_OF_SCOPE'?{reason_code:'NOT_IT_SCOPE',secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED',resolution_reason_code:'OUT_OF_SCOPE_CONFIRMED'}:{})};
       const accepted=await post(review.id,command,bootstrap.csrf_token);assert.equal(accepted.status,200,await accepted.clone().text());
       const current=await read('/api/manual-reviews/'+review.id);assert.deepEqual(current.safe_result,original.safe_result);assert.deepEqual(current.allowed_resolutions,[]);
       const intake=(await fixture.pool.query<{request_type:string;status:string;pilot_ticket_id:string|null}>('SELECT request_type,status,pilot_ticket_id::text FROM intake.service_intake WHERE id=$1::uuid',[input.intakeId])).rows[0];
@@ -67,7 +69,9 @@ test('T14 all eight lawful conclusions preserve the original Decision and classi
       if(intake?.pilot_ticket_id)assert.equal((await fixture.pool.query<{request_type:string}>('SELECT request_type FROM pilot_ticket.ticket WHERE id=$1::uuid',[intake.pilot_ticket_id])).rows[0]?.request_type,requestType);
       const replay=await post(review.id,command,bootstrap.csrf_token);assert.equal(replay.status,200);assert.equal((await replay.json() as {replayed:boolean}).replayed,true);
       assert.equal((await fixture.pool.query<{count:number}>("SELECT count(*)::integer AS count FROM intake.deterministic_decision WHERE journey_id=$1::uuid AND status='HUMAN_OVERRIDDEN'",[original.journey_id])).rows[0]?.count,1);
-      assert.equal((await post(review.id,{...command,resolution_reason_code:'CHANGED_INTENT'},bootstrap.csrf_token)).status,409);
+      // Same command id, different intent: an out-of-scope closure must keep its reason pair valid, so it changes the closure note instead.
+      const changed=resolution==='MARK_OUT_OF_SCOPE'?{...command,note:'合成：改变后的关闭说明'}:{...command,resolution_reason_code:'CHANGED_INTENT'};
+      assert.equal((await post(review.id,changed,bootstrap.csrf_token)).status,409);
     }
     const {review}=await freshReview(fixture),original=await read('/api/manual-reviews/'+review.id),base={client_command_id:randomUUID(),expected_row_version:original.row_version,resolution_reason_code:'UNSUPPORTED'};
     assert.equal((await post(review.id,{...base,resolution_code:'LINK_EXISTING_JOURNEY'},bootstrap.csrf_token)).status,403);

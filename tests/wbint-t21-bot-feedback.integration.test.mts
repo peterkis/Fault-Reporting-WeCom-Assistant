@@ -60,7 +60,7 @@ test('original Bot reporter explicitly reopens its genuine staff-completed Ticke
       const path='/api/reporter/tickets/'+original.public_ref;
       const detail=await member.request(path);assert.equal(detail.status,200,detail.text);
       const current=object(detail.json());assert.equal(current.public_ref,original.public_ref);assert.equal(current.ticket_no,completed.ticket_no);
-      assert.equal(current.external_status,'已关闭');assert.equal(current.version,completed.version);
+      assert.equal(current.external_status,'已完成');assert.equal(current.version,completed.version);
       assert.ok(current.feedback_context,'the actual Bot owner detail must advertise completed-round feedback');
       const eligibility=object(current.feedback_context);
       assert.deepEqual(Object.keys(eligibility).sort(),['can_feedback','completed_round_no','completed_round_ref','rejection','schema_version','ticket_version']);

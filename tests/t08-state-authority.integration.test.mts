@@ -16,7 +16,7 @@ test('public unassign rejects unowned, started, waiting, resumed and terminal Ti
   await action('request-information',3);await refuse(path,'WAITING_REQUESTER');await action('resume',4);await refuse(path,'IN_PROGRESS');
   await action('wait-vendor',5);await refuse(path,'WAITING_VENDOR');await action('resume',6);await refuse(path,'IN_PROGRESS');
   await action('resolve',7);await refuse(path,'RESOLVED');await action('confirm',8,admin);await refuse(path,'COMPLETED');await action('reopen',9);await refuse(path,'REOPENED');
-  const cancelled='/api/tickets/'+await fixture.createTicket();assert.equal((await admin.post(cancelled+'/dismiss',{client_command_id:randomUUID(),expected_version:1,reason_code:'T08_REAL_CANCEL'})).status,200);await refuse(cancelled,'DISMISSED');
+  const cancelled='/api/tickets/'+await fixture.createTicket();assert.equal((await admin.post(cancelled+'/dismiss',{client_command_id:randomUUID(),expected_version:1,reason_code:'FALSE_REPORT_OR_TEST'})).status,200);await refuse(cancelled,'DISMISSED');
  });
 });
 
