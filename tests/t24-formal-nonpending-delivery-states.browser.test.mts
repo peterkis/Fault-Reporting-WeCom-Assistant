@@ -108,10 +108,16 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
         (SELECT count(*)::int FROM pilot_ticket.reporter_access_grant) AS grants`)).rows[0];
       const baseline=await physical();assert.ok(baseline);assert.equal(baseline.grants,0);
       for(const item of actual.items)assert.ok(baseline.deliveries.includes(item.delivery_id));
+      // The row shows the shared short Beijing time (MM-DD HH:mm, with the year only outside the current one); the full instant
+      // stays on <time datetime>, which is asserted below alongside the visible text.
+      const beijingShort=(value:string)=>value.slice(value.slice(0,4)===String(new Date(Date.now()+8*3600000).getUTCFullYear())?5:0,16);
+      const firstAt=String(actual.items.find(x=>x.node==='FIRST_RESPONSIBILITY')?.created_at),staffAt=String(staff.sent_at??staff.created_at);
       const expected:DomRow[]=[
-        {node:'首次责任通知',lines:['原报修人单聊','待发送','0 次尝试 · 尚未尝试','产生于 '+actual.items.find(x=>x.node==='FIRST_RESPONSIBILITY')?.created_at]},
-        {node:'完工通知',lines:['原报修人单聊',scenario.label,'1 次尝试 · '+scenario.effectLabel,(staff.sent_at?'发送于 '+staff.sent_at:'产生于 '+staff.created_at)]},
+        {node:'首次责任通知',lines:['原报修人单聊','待发送','0 次尝试 · 尚未尝试',beijingShort(firstAt)]},
+        {node:'完工通知',lines:['原报修人单聊',scenario.label,'1 次尝试 · '+scenario.effectLabel,beijingShort(staffAt)]},
       ].sort((a,b)=>a.node<b.node?-1:a.node>b.node?1:0);
+      const instants=`JSON.stringify([...document.querySelectorAll('[role="region"][aria-label="报修人通知"] .notification-delivery')].map(d=>({prefix:d.querySelector('time')?.parentElement?.firstChild?.textContent??'',at:d.querySelector('time')?.getAttribute('datetime')??''})).sort((a,b)=>(a.at+a.prefix)<(b.at+b.prefix)?-1:(a.at+a.prefix)>(b.at+b.prefix)?1:0))`;
+      const expectedInstants=[{prefix:'产生于 ',at:firstAt.replace(' ','T')+'+08:00'},{prefix:staff.sent_at?'发送于 ':'产生于 ',at:staffAt.replace(' ','T')+'+08:00'}].sort((a,b)=>(a.at+a.prefix)<(b.at+b.prefix)?-1:(a.at+a.prefix)>(b.at+b.prefix)?1:0);
       const rendered=()=>`JSON.stringify(${domRows()})===JSON.stringify(${JSON.stringify(expected)})`;
       const cookie=context.browserCookies[2];assert.ok(cookie);if(typeof cookie.url!=='string')throw Error('T24_REAL_READER_COOKIE_REQUIRED');
       let browser:Browser|undefined,error:unknown;
@@ -122,6 +128,7 @@ test('formal compiled PC reads and refreshes actual SENT, failed and UNKNOWN sta
         assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(region)}).querySelector('details'))`),false,'real notification nodes are visible without a disclosure');
         await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.querySelector('li')?.checkVisibility()===true`);
         await browser.waitFor(rendered());
+        assert.equal(await browser.evaluate(instants),JSON.stringify(expectedInstants),'each row keeps its full Beijing instant and send/produce prefix');
         assert.deepEqual(await browser.evaluate(domRows()),expected);
         assert.equal(await browser.evaluate('globalThis.__t24PCBootstrap.at(-1).body.ticket_round_notifications_enabled'),true);
         const reads=await browser.evaluate('globalThis.__t24PCReads') as Read[];assert.ok(reads.length);

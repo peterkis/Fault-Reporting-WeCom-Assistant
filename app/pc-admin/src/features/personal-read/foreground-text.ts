@@ -1,5 +1,6 @@
 import {isWorkbenchForeground} from '../../desktop/host';
-function foregroundModal(){return Array.from(document.querySelectorAll('[role=dialog].detail-action-dialog,[role=dialog].detail-media-dialog,[role=dialog].detail-dialog.ds-drawer')).filter(element=>!element.closest('[data-exiting]')).at(-1);}
+// The unified close / restore dialogs (card 27C) cover material like the other detail dialogs, so text behind them stays unread.
+function foregroundModal(){return Array.from(document.querySelectorAll('[role=dialog].detail-action-dialog,[role=dialog].detail-media-dialog,[role=dialog].ds-closure-dialog,[role=dialog].detail-dialog.ds-drawer')).filter(element=>!element.closest('[data-exiting]')).at(-1);}
 /** Re-observe foreground material when modal ownership changes, including a drawer closing. */
 export function observeForegroundOverlays(onChange:()=>void):()=>void{
   let current=foregroundModal();

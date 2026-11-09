@@ -91,7 +91,10 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
  const changedRange=await get('/api/workbench/search?'+new URLSearchParams({column:'closed',range:'all',closure_kind:'dismissed',cursor,limit:'1'}));ratedRequests++;
  assert.equal(changedRange.status,400,await changedRange.clone().text());assert.equal(object(object(await changedRange.json()).error).code,'P2_016_CURSOR_INVALID');
  const unrestricted=await read('/api/workbench/search?column=all&range=all&closure_kind=dismissed&limit=100');
- const unknown=items(unrestricted.items).find(item=>item.id===seeded.unknown);assert.ok(unknown);assert.equal(object(unknown.closure).closed_at,null);
+ const unknown=items(unrestricted.items).find(item=>item.id===seeded.unknown);assert.ok(unknown);
+ // ADR-0056 (card 27C): every dismissed item carries its closure record, so the instant is that record's, never null.
+ const unknownRecord=(await f.pool.query<{closed_at:string}>("SELECT to_char(closed_at,'YYYY-MM-DD HH24:MI:SS') AS closed_at FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid AND restored_at IS NULL",[seeded.unknown])).rows;
+ assert.equal(unknownRecord.length,1);assert.equal(object(unknown.closure).closed_at,unknownRecord[0]?.closed_at);
  const currentCriteria=object(unrestricted.criteria);assert.equal(Object.hasOwn(currentCriteria,'closed_from'),false);assert.equal(Object.hasOwn(currentCriteria,'closed_to'),false);
  const mixed=await read(path({column:'all',closure_kind:'dismissed'}));
  const unfinished=(page:Record<string,unknown>)=>items(page.items).filter(item=>item.column!=='closed').map(item=>String(item.kind)+':'+String(item.id)).sort();

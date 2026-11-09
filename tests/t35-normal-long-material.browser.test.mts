@@ -60,14 +60,18 @@ test('T35 an open cancellation dialog pauses otherwise visible source reading un
     await browser.waitFor(`document.querySelector('.activity-list')?.textContent.includes(${JSON.stringify(text)})&&document.querySelector('[data-action=cancel]')?.disabled===false`);
     await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("Boolean(document.querySelector('.detail-cancel-dialog'))");
     await clickWorkbenchControl(browser,'.detail-cancel-dialog textarea');
-    assert.equal(await browser.evaluate("document.querySelector('.ds-drawer-more').open"),true,'child dialog pointer interaction preserves its visible menu trigger');
+    // Card 32B B3: choosing 「关闭事项…」 closes the 「⋯」 menu before its dialog opens; pointer work in that dialog keeps the trigger itself.
+    assert.deepEqual(await browser.evaluate("({open:document.querySelector('.ds-drawer-more').open,trigger:document.querySelector('.ds-drawer-more>summary')?.checkVisibility()===true})"),{open:false,trigger:true},'child dialog pointer interaction preserves its visible menu trigger');
     await browser.evaluate(`(()=>{globalThis.__material=[...document.querySelectorAll('.activity-list .record-text')].find(p=>p.textContent===${JSON.stringify(text)});globalThis.__material.closest('.record-content').click();globalThis.__material.scrollIntoView({block:'center'});globalThis.__visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('scroll'));})()`);
     await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     assert.deepEqual(await browser.evaluate('globalThis.__readPosts'),[]);assert.equal(await position(),'0','visible source behind the modal remains unread');
     assert.equal(await browser.evaluate("document.activeElement.closest('[data-workbench-overlay]')===document.querySelector('.detail-cancel-dialog')"),true);
     await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");
-    assert.equal(await browser.evaluate("document.activeElement===document.querySelector('[data-action=cancel]')"),true,'close restores trigger focus');
+    // Card 32B B3: the menu closed when the dialog opened, so closing the dialog returns focus to the visible 「⋯」 trigger.
+    // Focus returns after the modal unmounts (and after the page stops being inert), so wait for it within the browser bound.
+    await browser.waitFor("document.activeElement===document.querySelector('.ds-drawer-more>summary')");
+    assert.equal(await browser.evaluate("document.activeElement===document.querySelector('.ds-drawer-more>summary')"),true,'close restores trigger focus');
     await browser.evaluate("globalThis.__material.scrollIntoView({block:'center'});window.dispatchEvent(new Event('scroll'));window.dispatchEvent(new Event('focus'))");
     await browser.waitFor("globalThis.__readPosts.some(row=>row.revision==='2')");
     for(let attempt=0;attempt<100&&await position()!=='2';attempt++)await new Promise(resolve=>setTimeout(resolve,25));assert.equal(await position(),'2');
