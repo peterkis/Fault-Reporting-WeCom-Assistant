@@ -67,7 +67,7 @@ Review `CANCELLED` / `CANCEL_REVIEW`；通信投递、会话投递、公共故�
   - t25-disabled-historical-read 在 main 上失败，本分支通过。
 - 定向重跑：p1-009 4 / 0、p1-010 4 / 0、yxx-h5-runtime 19 / 0（新增 072 缺失与校验和错误的拒绝断言）、completion-dismissal-migration 1 / 0、pc-admin-card32c-d 1 / 0。
 - 共享库：中途发现 p1-004 / p1-009 / p1-010 把未登记的 072 留在了共享 `postgres` 库，导致 P2-012 目录校验漂移。该库没有任何工单或受理行，已按 072 基线恢复 5 个约束并删除基线表，恢复后确认无新值。之后三个测试改为开始前和结束后释放 072，重跑后共享库保持干净。
-- 截图：见 [证据 README](../../../docs/ui/evidence/v224-card32c/README.md)。PC 四张由新增浏览器测试产生，H5 一张来自 Vite DEV 合成预览。
+- 截图：见 [证据 README](../../docs/ui/evidence/v224-card32c/README.md)。PC 四张由新增浏览器测试产生，H5 一张来自 Vite DEV 合成预览。
 
 ## 回退
 
