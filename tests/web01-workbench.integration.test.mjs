@@ -5,6 +5,7 @@ import {formatEpochMsToShanghaiLocal} from '../app/server/src/platform/time-cont
 import {insertClosureRecord,normalizeClosureInput} from '../app/server/src/service-closure-records.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
@@ -78,7 +79,8 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const stylesheet=html.match(/href="([^"]+\.css)"/u)?.[1];assert.ok(stylesheet);
     const css=await (await get(stylesheet)).text(),fonts=[...css.matchAll(/url\(["']?(\/workbench\/app\/assets\/[^"')]+\.woff2)["']?\)/gu)].map(match=>match[1]);
     const favicon=html.match(/href="([^" ]*yixiaoxiu-favicon-[^" ]+\.svg)"/u)?.[1];assert.ok(favicon);
-    const logo=css.match(/url\(["']?(\/workbench\/app\/assets\/yixiaoxiu-logo-[^"')]+\.svg)["']?\)/u)?.[1];assert.ok(logo);
+    const inventory=JSON.parse(await readFile(new URL('../web/admin-workbench/asset-inventory.json',import.meta.url),'utf8'));
+    const logoFile=inventory.find(file=>/^assets\/yixiaoxiu-logo-[A-Za-z0-9_-]+\.svg$/u.test(file));assert.ok(logoFile);const logo='/workbench/app/'+logoFile;
     for(const image of [favicon,logo]){assert.equal((await fetch(origin+image)).status,401);const response=await get(image);assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/svg+xml');assert.match(await response.text(),/<svg\b/u);}
     assert.equal((await get('/workbench/app/assets/yixiaoxiu-logo-not-in-inventory.svg')).status,404);
     assert.equal((await get('/workbench/app/assets/arbitrary.svg')).status,404);
