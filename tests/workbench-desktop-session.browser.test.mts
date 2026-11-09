@@ -66,7 +66,7 @@ test('compiled login prepares once under the native cover, presents the same ifr
   const html=await (await fetch(origin+'/workbench/desktop/embedded')).text();
   const logo=html.match(/rel="icon" type="image\/svg\+xml" href="([^"]+)"/u)?.[1];assert.ok(logo);
   const image=await fetch(origin+logo);assert.equal(image.status,200);assert.equal(image.headers.get('content-type'),'image/svg+xml');
-  assert.deepEqual(Buffer.from(await image.arrayBuffer()),await readFile(path.resolve('app/pc-admin/src/assets/yixiaoxiu-logo.svg')));
+  assert.deepEqual(Buffer.from(await image.arrayBuffer()),await readFile(path.resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'app/pc-admin/src/assets/yixiaoxiu-logo.svg')));
   const head=await fetch(origin+logo,{method:'HEAD'});assert.equal(head.status,200);assert.equal((await head.arrayBuffer()).byteLength,0);
   assert.equal((await fetch(origin+'/workbench/desktop/assets/yixiaoxiu-logo-not-in-manifest.svg')).status,404);
   assert.equal((await fetch(origin+'/workbench/desktop/assets/arbitrary.svg')).status,400);
