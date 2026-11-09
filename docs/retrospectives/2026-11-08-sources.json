@@ -1,0 +1,1017 @@
+{
+  "schema_version": 1,
+  "timezone": "Asia/Shanghai",
+  "baseline": "7fbcb3dfe33a50d2ac39c27993714caf5ab93ac9",
+  "scope": "Recent local project sessions with normalized repository basename; previously indexed IDs excluded; fixed decoded prefix; replies are observed receipts",
+  "source_root": "Codex session storage",
+  "reviewed_records": 50,
+  "child_candidates_metadata_only": 84,
+  "sessions": [
+    {
+      "key": "N08-01",
+      "id": "01a19134-8df6-7c52-8400-24788dc030ee",
+      "relative_file": "sessions/2026/10/31/rollout-2026-10-31T17-05-03-01a19134-8df6-7c52-8400-24788dc030ee.jsonl.zst",
+      "timestamp": "2026-10-31T09:05:03.069Z",
+      "prefix_lines": 755,
+      "prefix_bytes": 2525051,
+      "prefix_sha256": "bdc4d8bc811292212ce8e74d9bd10baf152d78600367796ee3b53f27f083a767",
+      "user_lines": [
+        16,
+        150,
+        249
+      ],
+      "observed_reply_lines": [
+        141,
+        245,
+        755
+      ],
+      "topic": "PR126",
+      "observation": "旧工作树经归属与哈希核验后移除，媒体复盘另行发布；区分激活和后检时点。"
+    },
+    {
+      "key": "N08-02",
+      "id": "01a19299-6af2-73e2-b573-1c90203433d8",
+      "relative_file": "sessions/2026/10/31/rollout-2026-10-31T23-34-50-01a19299-6af2-73e2-b573-1c90203433d8.jsonl.zst",
+      "timestamp": "2026-10-31T15:34:50.533Z",
+      "prefix_lines": 746,
+      "prefix_bytes": 5234346,
+      "prefix_sha256": "80775a7f6a6f598d10de0a50c1af39b4008885873c7e10182e7d356679fd5a42",
+      "user_lines": [
+        15,
+        105,
+        417,
+        553
+      ],
+      "observed_reply_lines": [
+        413,
+        549,
+        746
+      ],
+      "topic": "设计卡0",
+      "observation": "视觉约束先做四宽真实按钮计数；双主按钮复现后改用 secondary，8/8。"
+    },
+    {
+      "key": "N08-03",
+      "id": "01a192b4-b1b7-7572-8089-bf7a70ac8af9",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T00-04-38-01a192b4-b1b7-7572-8089-bf7a70ac8af9.jsonl.zst",
+      "timestamp": "2026-10-31T16:04:38.146Z",
+      "prefix_lines": 609,
+      "prefix_bytes": 6306849,
+      "prefix_sha256": "3433ed24c82c5d76dc3e420959bddb4cda49024e02bf35da166010ec94e01ad8",
+      "user_lines": [
+        15,
+        211
+      ],
+      "observed_reply_lines": [
+        205,
+        609
+      ],
+      "topic": "设计卡1",
+      "observation": "Token 与 HeroUI 接线通过本地验证，Stylelint 591→515，仍有存量。"
+    },
+    {
+      "key": "N08-04",
+      "id": "01a192c8-3a70-7f70-b75f-b22a683a84ab",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T00-25-58-01a192c8-3a70-7f70-b75f-b22a683a84ab.jsonl.zst",
+      "timestamp": "2026-10-31T16:25:58.320Z",
+      "prefix_lines": 611,
+      "prefix_bytes": 6948574,
+      "prefix_sha256": "09c8a51e07af82a43d4a126955808e32e91ee07001b4c945ae045cc65cc2a692",
+      "user_lines": [
+        15
+      ],
+      "observed_reply_lines": [
+        611
+      ],
+      "topic": "设计卡2",
+      "observation": "CSS 裸值收敛至 0，复用类型门禁运行 Stylelint。"
+    },
+    {
+      "key": "N08-05",
+      "id": "01a19491-117e-7a80-94f1-e228237288a2",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T08-44-57-01a19491-117e-7a80-94f1-e228237288a2.jsonl.zst",
+      "timestamp": "2026-11-01T00:44:57.705Z",
+      "prefix_lines": 1126,
+      "prefix_bytes": 5691106,
+      "prefix_sha256": "a8e162c7b1e45d773f5b76375d06afe8bf0f7f6614b6271eeddbdc78409f30d1",
+      "user_lines": [
+        15
+      ],
+      "observed_reply_lines": [
+        1126
+      ],
+      "topic": "设计卡3",
+      "observation": "共享控件按四宽采集前后对照，保留卡0–2 的未提交改动。"
+    },
+    {
+      "key": "N08-06",
+      "id": "01a194c9-0104-73d0-b421-7da5a8eafb4e",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T09-46-03-01a194c9-0104-73d0-b421-7da5a8eafb4e.jsonl.zst",
+      "timestamp": "2026-11-01T01:46:03.507Z",
+      "prefix_lines": 1418,
+      "prefix_bytes": 6277396,
+      "prefix_sha256": "abdc5e8bdf0de932e3f6bb5ff739c024621338cb8b334ec195f8a1a12e026043",
+      "user_lines": [
+        15,
+        429
+      ],
+      "observed_reply_lines": [
+        1418
+      ],
+      "topic": "设计卡4",
+      "observation": "信息组件与看板接线，按规范逐文件保留验收和回退。"
+    },
+    {
+      "key": "N08-07",
+      "id": "01a1950c-1e49-7372-8161-0d0bafb3ac1b",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T10-59-21-01a1950c-1e49-7372-8161-0d0bafb3ac1b.jsonl.zst",
+      "timestamp": "2026-11-01T02:59:21.917Z",
+      "prefix_lines": 1300,
+      "prefix_bytes": 7901964,
+      "prefix_sha256": "a15c13246da624085cfdf8e0ade83af9c3463a10f95751af8daeb256235280ff",
+      "user_lines": [
+        15
+      ],
+      "observed_reply_lines": [
+        1300
+      ],
+      "topic": "设计卡5",
+      "observation": "详情与交互接线，17 个浏览器入口 42 项通过，仍属本地结果。"
+    },
+    {
+      "key": "N08-08",
+      "id": "01a19541-b8a9-70c3-b0ad-d829052ed7ae",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T11-57-54-01a19541-b8a9-70c3-b0ad-d829052ed7ae.jsonl.zst",
+      "timestamp": "2026-11-01T03:57:54.957Z",
+      "prefix_lines": 1435,
+      "prefix_bytes": 8619374,
+      "prefix_sha256": "397741b92d489ecb22817fe5ea427e5b32e1be3822d957298389d9c1e8c163ea",
+      "user_lines": [
+        15,
+        1022
+      ],
+      "observed_reply_lines": [
+        1016,
+        1435
+      ],
+      "topic": "设计卡6",
+      "observation": "会话与通知等视觉收敛，文案变动同步断言，保留授权和状态逻辑。"
+    },
+    {
+      "key": "N08-09",
+      "id": "01a195b1-6ef9-72a3-883d-9772279fd8d1",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T13-59-56-01a195b1-6ef9-72a3-883d-9772279fd8d1.jsonl.zst",
+      "timestamp": "2026-11-01T05:59:56.014Z",
+      "prefix_lines": 5417,
+      "prefix_bytes": 32883173,
+      "prefix_sha256": "86cd4ad809a1bd8fc308ad0119698eed026316e657841a6dd763b68510539c61",
+      "user_lines": [
+        15,
+        109,
+        5068,
+        5262
+      ],
+      "observed_reply_lines": [
+        5059,
+        5258,
+        5417
+      ],
+      "topic": "PR127",
+      "observation": "设计系统收口，修复对比度、断点和视觉选择器；合成预览另行停服清理。"
+    },
+    {
+      "key": "N08-10",
+      "id": "01a19786-7b71-7710-8480-81d690301fc9",
+      "relative_file": "sessions/2026/11/01/rollout-2026-11-01T22-32-15-01a19786-7b71-7710-8480-81d690301fc9.jsonl",
+      "timestamp": "2026-11-01T14:32:15.659Z",
+      "prefix_lines": 1912,
+      "prefix_bytes": 8027438,
+      "prefix_sha256": "c316380fbcf59121b7872988fa15031b8ab67c4b04cfef4e097da0e0dcee1217",
+      "user_lines": [
+        15
+      ],
+      "observed_reply_lines": [
+        1912
+      ],
+      "topic": "卡8／PR128",
+      "observation": "顶栏、账号和通知空态，合并后以 main 实测位置与边界。"
+    },
+    {
+      "key": "N08-11",
+      "id": "01a199a3-ffd9-7350-80c1-3be69aca5c4f",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T08-23-44-01a199a3-ffd9-7350-80c1-3be69aca5c4f.jsonl",
+      "timestamp": "2026-11-02T00:23:44.647Z",
+      "prefix_lines": 1166,
+      "prefix_bytes": 5212888,
+      "prefix_sha256": "576bcc9e099dfd72b3367eaefe15e1c40e4d74e90aa4d2ed8393c3ea66b5bb55",
+      "user_lines": [
+        15,
+        151,
+        288,
+        513
+      ],
+      "observed_reply_lines": [
+        1166
+      ],
+      "topic": "卡9／PR129",
+      "observation": "阶段、类别、描边等 71 个 Token 有统一入口，交付沿用既有门禁。"
+    },
+    {
+      "key": "N08-12",
+      "id": "01a199d8-3a9f-70f1-a656-b70ea33f15ba",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T09-20-47-01a199d8-3a9f-70f1-a656-b70ea33f15ba.jsonl",
+      "timestamp": "2026-11-02T01:20:47.383Z",
+      "prefix_lines": 3804,
+      "prefix_bytes": 19731292,
+      "prefix_sha256": "68d39a5ec324215e36681761eff1b95795c65c82446932cf386d8834bcb4bb21",
+      "user_lines": [
+        15,
+        140,
+        1641
+      ],
+      "observed_reply_lines": [
+        3804
+      ],
+      "topic": "卡10／PR130",
+      "observation": "看板分组和概况筛选，合并树与最终 CI 被测树核对一致。"
+    },
+    {
+      "key": "N08-13",
+      "id": "01a19a9b-a4d5-71f3-a40e-edf161414d7b",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T12-54-14-01a19a9b-a4d5-71f3-a40e-edf161414d7b.jsonl",
+      "timestamp": "2026-11-02T04:54:14.114Z",
+      "prefix_lines": 3152,
+      "prefix_bytes": 11418547,
+      "prefix_sha256": "2986f9d8deb91e72a3ec989630743c9ff3138c24cf62e17d0e1d56589ee3b98a",
+      "user_lines": [
+        15,
+        217
+      ],
+      "observed_reply_lines": [
+        211,
+        3152
+      ],
+      "topic": "卡11／PR131",
+      "observation": "服务和阶段进入时间是只读投影；来源冲突或失效按合同处理。"
+    },
+    {
+      "key": "N08-14",
+      "id": "01a19b5a-05bf-7be3-a47e-d47403ad0139",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T16-22-10-01a19b5a-05bf-7be3-a47e-d47403ad0139.jsonl",
+      "timestamp": "2026-11-02T08:22:10.740Z",
+      "prefix_lines": 4181,
+      "prefix_bytes": 15156064,
+      "prefix_sha256": "8ecf7adc78e2142feb931adbc79324edb77ee3b6f22025269e33914dc71da1cc",
+      "user_lines": [
+        15,
+        388,
+        3056,
+        4158
+      ],
+      "observed_reply_lines": [
+        4149,
+        4181
+      ],
+      "topic": "卡14／PR132",
+      "observation": "会话布局与摘要抽屉；T38 修测试准备及调度，原 39 条断言保留。"
+    },
+    {
+      "key": "N08-15",
+      "id": "01a19b5a-c09d-7793-ac1b-561d1e1594ad",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T16-22-58-01a19b5a-c09d-7793-ac1b-561d1e1594ad.jsonl",
+      "timestamp": "2026-11-02T08:22:58.656Z",
+      "prefix_lines": 1695,
+      "prefix_bytes": 6416928,
+      "prefix_sha256": "db1819b472c258545c3bc480dfa084b3cb7b01bab405a3f3e2ef20e62b0c6153",
+      "user_lines": [
+        15,
+        380,
+        1583,
+        1598
+      ],
+      "observed_reply_lines": [
+        1424,
+        1573,
+        1695
+      ],
+      "topic": "卡15／PR133",
+      "observation": "通知异常采用获准的安全摘要过渡，字段缺口分开登记；清理核对 129 个保护引用。"
+    },
+    {
+      "key": "N08-16",
+      "id": "01a19b6b-a590-70c3-8e47-bccf9c00ef6e",
+      "relative_file": "sessions/2026/11/02/rollout-2026-11-02T16-41-26-01a19b6b-a590-70c3-8e47-bccf9c00ef6e.jsonl",
+      "timestamp": "2026-11-02T08:41:26.238Z",
+      "prefix_lines": 4387,
+      "prefix_bytes": 18259607,
+      "prefix_sha256": "d99b87623267762acd2505eaf802d60a78da677dcd53f32f92bce6ae95e70d74",
+      "user_lines": [
+        15,
+        157,
+        1574,
+        2771
+      ],
+      "observed_reply_lines": [
+        1567,
+        2765,
+        4387
+      ],
+      "topic": "卡12／PR134",
+      "observation": "同步主线保留三组补丁，修复同步后暴露的 P1 后再复审。"
+    },
+    {
+      "key": "N08-17",
+      "id": "01a19dc7-1985-7df0-943d-645ab9f47c2c",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T03-40-33-01a19dc7-1985-7df0-943d-645ab9f47c2c.jsonl",
+      "timestamp": "2026-11-02T19:40:33.734Z",
+      "prefix_lines": 5450,
+      "prefix_bytes": 19488577,
+      "prefix_sha256": "68e3c4e8f0155d786f2aaeb3b2e237f3844ee17e9669c5d2613e0a3d23156163",
+      "user_lines": [
+        15,
+        4213,
+        4362
+      ],
+      "observed_reply_lines": [
+        5450
+      ],
+      "topic": "卡13／PR135",
+      "observation": "浮动详情、下一步与缺失资料，按权限展示入口；合并后核对主线。"
+    },
+    {
+      "key": "N08-18",
+      "id": "01a19dc7-d96b-7d31-b874-1ce30c26b6e5",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T03-41-23-01a19dc7-d96b-7d31-b874-1ce30c26b6e5.jsonl",
+      "timestamp": "2026-11-02T19:41:23.044Z",
+      "prefix_lines": 3292,
+      "prefix_bytes": 11889017,
+      "prefix_sha256": "97e2f245bba08ef42d13b17616c91e8c5aa48da35ef11dae8eb4c03c07417d19",
+      "user_lines": [
+        15,
+        366,
+        2598,
+        2791
+      ],
+      "observed_reply_lines": [
+        360,
+        3292
+      ],
+      "topic": "卡16／PR136",
+      "observation": "键盘、命令面板与减少动效；修复新卡置顶导致的详情相邻顺序丢失。"
+    },
+    {
+      "key": "N08-19",
+      "id": "01a19fb2-f796-77c2-a4b4-fdcf02246da6",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T12-37-48-01a19fb2-f796-77c2-a4b4-fdcf02246da6.jsonl",
+      "timestamp": "2026-11-03T04:37:48.684Z",
+      "prefix_lines": 1672,
+      "prefix_bytes": 7030690,
+      "prefix_sha256": "f05d75c00ce5db5e453746d22666b57ed87da6acf27bfefddcfe10c6e383deae",
+      "user_lines": [
+        15,
+        1383,
+        1607
+      ],
+      "observed_reply_lines": [
+        1377,
+        1672
+      ],
+      "topic": "PR138",
+      "observation": "普通 PR 按影响选验证入口，手动认证沿原合同；清理保留 stash 和祖先。"
+    },
+    {
+      "key": "N08-20",
+      "id": "01a1a021-adfc-7db1-ad9b-97cab3fc4069",
+      "relative_file": "archived_sessions/rollout-2026-11-03T14-38-44-01a1a021-adfc-7db1-ad9b-97cab3fc4069.jsonl",
+      "timestamp": "2026-11-03T06:38:44.425Z",
+      "prefix_lines": 258,
+      "prefix_bytes": 1920855,
+      "prefix_sha256": "3ffb72bb12d144c6b8aef960ae93d8bb5cba3a0bff4625825d132d4c0779f72a",
+      "user_lines": [
+        15,
+        174,
+        230
+      ],
+      "observed_reply_lines": [
+        168,
+        258
+      ],
+      "topic": "企业微信群名",
+      "observation": "按真实新事件后查询的顺序复测，两详情接口仍为 48002，群名能力未证实。"
+    },
+    {
+      "key": "N08-21",
+      "id": "01a1a087-e78d-7b81-b12b-3482c5b8c04a",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T16-30-23-01a1a087-e78d-7b81-b12b-3482c5b8c04a.jsonl",
+      "timestamp": "2026-11-03T08:30:23.737Z",
+      "prefix_lines": 3405,
+      "prefix_bytes": 27805089,
+      "prefix_sha256": "60464a9a84f14a956597a58dee01230fa8bee66e954811226e959fe33f8f87f5",
+      "user_lines": [
+        15,
+        126,
+        2708,
+        3344
+      ],
+      "observed_reply_lines": [
+        2704,
+        3340,
+        3405
+      ],
+      "topic": "卡17／PR139",
+      "observation": "视觉收口的复审与 CI 独立记录，合并后校验 tree 和主线。"
+    },
+    {
+      "key": "N08-22",
+      "id": "01a1a089-4fb4-74b1-b754-a5b28ddc4f16",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T16-31-55-01a1a089-4fb4-74b1-b754-a5b28ddc4f16.jsonl",
+      "timestamp": "2026-11-03T08:31:55.938Z",
+      "prefix_lines": 3154,
+      "prefix_bytes": 15620218,
+      "prefix_sha256": "eabb3a044f4098925f12d7c5c65bbb43e2e4d49d738a3315002989545af8aa04",
+      "user_lines": [
+        15,
+        118,
+        1938,
+        2311
+      ],
+      "observed_reply_lines": [
+        1931,
+        2307,
+        3154
+      ],
+      "topic": "卡18／PR140",
+      "observation": "吸收卡17后复测 390px 工具栏，合并树与验证候选一致。"
+    },
+    {
+      "key": "N08-23",
+      "id": "01a1a089-d926-7703-81e6-209033c794f3",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T16-32-31-01a1a089-d926-7703-81e6-209033c794f3.jsonl",
+      "timestamp": "2026-11-03T08:32:31.183Z",
+      "prefix_lines": 1176,
+      "prefix_bytes": 5337600,
+      "prefix_sha256": "353e738486f78509124d751e9ca0afd46db6e6900f9e4e2e62122dea5f95fb65",
+      "user_lines": [
+        15,
+        129,
+        837,
+        1115
+      ],
+      "observed_reply_lines": [
+        828,
+        1111,
+        1176
+      ],
+      "topic": "卡19／PR141",
+      "observation": "逐项处理视觉问题；目录被保护时交付带预检的人工清理脚本。"
+    },
+    {
+      "key": "N08-24",
+      "id": "01a1a1e5-c421-78e0-85a3-1cae51070ba6",
+      "relative_file": "sessions/2026/11/03/rollout-2026-11-03T22-52-32-01a1a1e5-c421-78e0-85a3-1cae51070ba6.jsonl",
+      "timestamp": "2026-11-03T14:52:32.301Z",
+      "prefix_lines": 524,
+      "prefix_bytes": 2190072,
+      "prefix_sha256": "85894ecba5141b165ca5cb6c3de68cca5799cd795864727e6d3fc9354edb4298",
+      "user_lines": [
+        15,
+        492
+      ],
+      "observed_reply_lines": [
+        483,
+        524
+      ],
+      "topic": "磁盘与证据",
+      "observation": "实际可用空间、删除逻辑体积和压缩分配量分列；脚本交付不等于执行。"
+    },
+    {
+      "key": "N08-25",
+      "id": "01a1a408-1c1c-7e02-b087-d95cfae4e0eb",
+      "relative_file": "sessions/2026/11/04/rollout-2026-11-04T08-49-17-01a1a408-1c1c-7e02-b087-d95cfae4e0eb.jsonl",
+      "timestamp": "2026-11-04T00:49:17.471Z",
+      "prefix_lines": 1505,
+      "prefix_bytes": 9492517,
+      "prefix_sha256": "40f1b11db7d8263ae1cf897f568c415c53602c5ce90a594e621d11cec798a16f",
+      "user_lines": [
+        15,
+        213,
+        1172,
+        1435
+      ],
+      "observed_reply_lines": [
+        1163,
+        1431,
+        1504
+      ],
+      "topic": "卡20／PR142",
+      "observation": "四宽视觉证据与合成数据分开保全；复合清理被拦后以实际路径核验收口。"
+    },
+    {
+      "key": "N08-26",
+      "id": "01a1a46b-4c47-73f2-9127-7cd4833aaf51",
+      "relative_file": "sessions/2026/11/04/rollout-2026-11-04T10-37-37-01a1a46b-4c47-73f2-9127-7cd4833aaf51.jsonl",
+      "timestamp": "2026-11-04T02:37:37.865Z",
+      "prefix_lines": 5241,
+      "prefix_bytes": 22895909,
+      "prefix_sha256": "e0b15e484b256ac59d9cf9996cefbf2bee77d97a55672ee5b6b064921e56eca1",
+      "user_lines": [
+        15,
+        1278,
+        2920,
+        5179
+      ],
+      "observed_reply_lines": [
+        2731,
+        5173,
+        5241
+      ],
+      "topic": "卡21／PR143、146、147",
+      "observation": "N3 来源字段另行建票，先实现获准的读取，再退役旧绿色入口。"
+    },
+    {
+      "key": "N08-27",
+      "id": "01a1a526-7c73-7db1-97e2-5e2b0b58067e",
+      "relative_file": "sessions/2026/11/04/rollout-2026-11-04T14-02-05-01a1a526-7c73-7db1-97e2-5e2b0b58067e.jsonl",
+      "timestamp": "2026-11-04T06:02:05.445Z",
+      "prefix_lines": 37,
+      "prefix_bytes": 249970,
+      "prefix_sha256": "0173d6279ea67b5c07cfa7512885e002e09d6e7d009f6bbfb1a5e41dd3dd1e1e",
+      "user_lines": [
+        3,
+        14
+      ],
+      "observed_reply_lines": [
+        37
+      ],
+      "topic": "N3 旁支",
+      "observation": "缺口是合同未返回工单号、标题和报修人姓名；按现有链接与摘要解释。"
+    },
+    {
+      "key": "N08-28",
+      "id": "01a1a658-8c45-71f2-b7e1-1e1495cd413e",
+      "relative_file": "sessions/2026/11/04/rollout-2026-11-04T19-36-23-01a1a658-8c45-71f2-b7e1-1e1495cd413e.jsonl",
+      "timestamp": "2026-11-04T11:36:23.498Z",
+      "prefix_lines": 1871,
+      "prefix_bytes": 7975899,
+      "prefix_sha256": "2d87afb56e853a30507197e7ff3c52be6a4f71bca65fad56c00cf5897bf6f059",
+      "user_lines": [
+        15,
+        788,
+        1750,
+        1766
+      ],
+      "observed_reply_lines": [
+        1490,
+        1871
+      ],
+      "topic": "早期启动视频",
+      "observation": "旧验证工作树按该次明确授权清理；历史尺寸试验与当前 #162 分开。"
+    },
+    {
+      "key": "N08-29",
+      "id": "01a1a723-2e3f-71f3-abb0-96182acd3499",
+      "relative_file": "sessions/2026/11/04/rollout-2026-11-04T23-17-43-01a1a723-2e3f-71f3-abb0-96182acd3499.jsonl",
+      "timestamp": "2026-11-04T15:17:43.386Z",
+      "prefix_lines": 1707,
+      "prefix_bytes": 8159264,
+      "prefix_sha256": "f2324fcbaa379ddd481a609e9d08876867723fdb4e73c0f0efc233e2b7d307c1",
+      "user_lines": [
+        15,
+        169,
+        1120,
+        1324
+      ],
+      "observed_reply_lines": [
+        1111,
+        1707
+      ],
+      "topic": "卡22／PR148",
+      "observation": "远程审查额度耗尽后按授权另行审查，保留其与远程结果的差别。"
+    },
+    {
+      "key": "N08-30",
+      "id": "01a1a917-9547-7492-ab9e-b2c171aa3380",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T08-24-17-01a1a917-9547-7492-ab9e-b2c171aa3380.jsonl",
+      "timestamp": "2026-11-05T00:24:17.616Z",
+      "prefix_lines": 2691,
+      "prefix_bytes": 12417232,
+      "prefix_sha256": "b93a766ec0092bf39d718459dab1876dc43b7fab1b825eb64123a907ab72030c",
+      "user_lines": [
+        15,
+        1136
+      ],
+      "observed_reply_lines": [
+        1130,
+        2691
+      ],
+      "topic": "卡23／PR149",
+      "observation": "Standards、Spec 分开复核；未覆盖 DTO 字段仍列为契约缺口。"
+    },
+    {
+      "key": "N08-31",
+      "id": "01a1a9b9-b415-73c2-9e32-77f892f47207",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T11-21-22-01a1a9b9-b415-73c2-9e32-77f892f47207.jsonl",
+      "timestamp": "2026-11-05T03:21:22.330Z",
+      "prefix_lines": 28,
+      "prefix_bytes": 240538,
+      "prefix_sha256": "06e0052a0a374d5b17b3397bfbd20605f0c6f5c6ccfc1417efcb948b8cd4b9ea",
+      "user_lines": [
+        3,
+        14
+      ],
+      "observed_reply_lines": [
+        28
+      ],
+      "topic": "依赖联接旁支",
+      "observation": "仅解除已核定的 junction，先核目标与共享锁文件哈希。"
+    },
+    {
+      "key": "N08-32",
+      "id": "01a1a9c4-3d82-7730-b7d4-ead1e86f9864",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T11-32-52-01a1a9c4-3d82-7730-b7d4-ead1e86f9864.jsonl",
+      "timestamp": "2026-11-05T03:32:52.977Z",
+      "prefix_lines": 5116,
+      "prefix_bytes": 18381958,
+      "prefix_sha256": "30cc6cb481daeac85068a46296da33194bcb8fd35722209d1c2a957e07e77099",
+      "user_lines": [
+        15,
+        126,
+        3258,
+        4484
+      ],
+      "observed_reply_lines": [
+        459,
+        2297,
+        5116
+      ],
+      "topic": "卡24／PR150",
+      "observation": "字体与细节对齐，独立核本地字体、制品与被测树。"
+    },
+    {
+      "key": "N08-33",
+      "id": "01a1ab59-5786-79e1-8475-aab1f6fbc5b4",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T18-55-21-01a1ab59-5786-79e1-8475-aab1f6fbc5b4.jsonl",
+      "timestamp": "2026-11-05T10:55:21.663Z",
+      "prefix_lines": 4831,
+      "prefix_bytes": 18833184,
+      "prefix_sha256": "8faf2cd8bbabd59e271885262ed0440bf97b678bf711c635cd178d338087b2d0",
+      "user_lines": [
+        15,
+        125,
+        2577,
+        3709
+      ],
+      "observed_reply_lines": [
+        2570,
+        3706,
+        4831
+      ],
+      "topic": "卡25B／PR152",
+      "observation": "summary 慢请求会阻断核心就绪；移入辅助刷新后保留 401/403 边界。"
+    },
+    {
+      "key": "N08-34",
+      "id": "01a1abe3-71a0-71f1-8fd6-056664e8ce4a",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T21-26-12-01a1abe3-71a0-71f1-8fd6-056664e8ce4a.jsonl",
+      "timestamp": "2026-11-05T13:26:12.321Z",
+      "prefix_lines": 73,
+      "prefix_bytes": 392899,
+      "prefix_sha256": "84deb16c15062a76304fb383a2d87d02cdb346aa037defa9470f0e9bb252a802",
+      "user_lines": [
+        3,
+        14
+      ],
+      "observed_reply_lines": [
+        73
+      ],
+      "topic": "清理旁支",
+      "observation": "分别核验两个副本是否存在及其进程，区分 junction 和真实依赖目录。"
+    },
+    {
+      "key": "N08-35",
+      "id": "01a1abe8-c7e5-7940-912c-be31b3c92afd",
+      "relative_file": "sessions/2026/11/05/rollout-2026-11-05T21-32-02-01a1abe8-c7e5-7940-912c-be31b3c92afd.jsonl",
+      "timestamp": "2026-11-05T13:32:02.035Z",
+      "prefix_lines": 29,
+      "prefix_bytes": 214203,
+      "prefix_sha256": "10b2fdb229f8900ced33191d12a6c234b080467543dfcb1962fb1ab1a27a67bb",
+      "user_lines": [
+        3,
+        14
+      ],
+      "observed_reply_lines": [
+        29
+      ],
+      "topic": "材料旁支",
+      "observation": "按交付白名单定位两份原型与八份提示词或走查文档。"
+    },
+    {
+      "key": "N08-36",
+      "id": "01a1ae49-9fab-7c42-92e9-028b85d60bc6",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T08-37-03-01a1ae49-9fab-7c42-92e9-028b85d60bc6.jsonl",
+      "timestamp": "2026-11-06T00:37:03.153Z",
+      "prefix_lines": 31571,
+      "prefix_bytes": 83409921,
+      "prefix_sha256": "a1b907c1d9687fca2bbaaab59ae17fbebeb5b76a7f2150711d12e54b1e0dd5fd",
+      "user_lines": [
+        15,
+        2965,
+        31428,
+        31528
+      ],
+      "observed_reply_lines": [
+        29902,
+        31315,
+        31518
+      ],
+      "topic": "本会话／PR162",
+      "observation": "完整首播和登录准备分离；按 Windows 同覆盖先通过再切 Linux 路由；合并后主检出保留。"
+    },
+    {
+      "key": "N08-37",
+      "id": "01a1ae54-f8cf-7fa3-abb3-0dbc4b081bca",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T08-49-27-01a1ae54-f8cf-7fa3-abb3-0dbc4b081bca.jsonl",
+      "timestamp": "2026-11-06T00:49:27.061Z",
+      "prefix_lines": 3422,
+      "prefix_bytes": 14329638,
+      "prefix_sha256": "ce672b09b24a22437dd55268eb7473276bc5deacd2bb04f4c6a5d5304139174e",
+      "user_lines": [
+        15,
+        2235,
+        3081
+      ],
+      "observed_reply_lines": [
+        2229,
+        3077,
+        3422
+      ],
+      "topic": "卡26／PR153",
+      "observation": "隔离前端收尾，核八项设计与既有事实边界，合并与现场验收分列。"
+    },
+    {
+      "key": "N08-38",
+      "id": "01a1ae56-3222-7a50-9159-ebf32d6b44a7",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T08-50-47-01a1ae56-3222-7a50-9159-ebf32d6b44a7.jsonl",
+      "timestamp": "2026-11-06T00:50:47.154Z",
+      "prefix_lines": 4768,
+      "prefix_bytes": 16811860,
+      "prefix_sha256": "2cadfc1c83492c2f65e63d603564c7af840ccb153b076f0e17616754e1ac6969",
+      "user_lines": [
+        15,
+        1964,
+        3065,
+        4529
+      ],
+      "observed_reply_lines": [
+        3061,
+        4525,
+        4768
+      ],
+      "topic": "卡27A／PR154",
+      "observation": "搜索保留原 2 秒预算；兼容测试等待实际详情而非加载壳；只提交白名单。"
+    },
+    {
+      "key": "N08-39",
+      "id": "01a1af86-9747-7e11-a623-8f61a8ccdeba",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T14-23-15-01a1af86-9747-7e11-a623-8f61a8ccdeba.jsonl",
+      "timestamp": "2026-11-06T06:23:15.942Z",
+      "prefix_lines": 24,
+      "prefix_bytes": 216151,
+      "prefix_sha256": "f4dcaf544ea1887ddf836759a9ab27e93135f5924c41071f06ee735b575c0477",
+      "user_lines": [
+        5,
+        16
+      ],
+      "observed_reply_lines": [
+        24
+      ],
+      "topic": "Electron 集成旁支",
+      "observation": "三个客户端、三个合成身份、一个场景；独立标真实扫码与现场验收。"
+    },
+    {
+      "key": "N08-40",
+      "id": "01a1afad-f661-7ec3-9288-46ec100ab116",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T15-06-16-01a1afad-f661-7ec3-9288-46ec100ab116.jsonl",
+      "timestamp": "2026-11-06T07:06:16.182Z",
+      "prefix_lines": 4653,
+      "prefix_bytes": 17877822,
+      "prefix_sha256": "c7b9297ccd79b2c126cc6a8b4a1f90273f3458f27ed807b2442fa2463749dd7f",
+      "user_lines": [
+        15,
+        109,
+        3991,
+        4476
+      ],
+      "observed_reply_lines": [
+        3987,
+        4472,
+        4653
+      ],
+      "topic": "卡27B／PR157",
+      "observation": "三路审查覆盖 64 文件；旧 QUEUED 映射和页面停留语义分开核对。"
+    },
+    {
+      "key": "N08-41",
+      "id": "01a1afb6-c68a-7a42-8a20-eacf2489341b",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T15-15-53-01a1afb6-c68a-7a42-8a20-eacf2489341b.jsonl",
+      "timestamp": "2026-11-06T07:15:53.798Z",
+      "prefix_lines": 4385,
+      "prefix_bytes": 64314442,
+      "prefix_sha256": "0c25ff3999b720982a38c51dfe915876233595786d8576f5fe54f9dc35a423ff",
+      "user_lines": [
+        15,
+        2367,
+        2554,
+        4065
+      ],
+      "observed_reply_lines": [
+        2550,
+        4059,
+        4385
+      ],
+      "topic": "H5／PR155",
+      "observation": "真实 Router 行为、窄屏与主题语言组合走已编译入口，21 文件 363/363。"
+    },
+    {
+      "key": "N08-42",
+      "id": "01a1b038-2b72-7691-8098-c1a903ff458f",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T17-37-13-01a1b038-2b72-7691-8098-c1a903ff458f.jsonl",
+      "timestamp": "2026-11-06T09:37:13.772Z",
+      "prefix_lines": 2222,
+      "prefix_bytes": 8096001,
+      "prefix_sha256": "fdb600bded842f5285c707fb526e12673d980e0fa0e2a3ba75cd983da66b82c9",
+      "user_lines": [
+        15,
+        52,
+        1920,
+        2157
+      ],
+      "observed_reply_lines": [
+        1916,
+        2153,
+        2222
+      ],
+      "topic": "H5／PR156",
+      "observation": "修复 QUEUED 映射，保留 PC 侧 64 文件；手动清理以目录与登记读回核实。"
+    },
+    {
+      "key": "N08-43",
+      "id": "01a1b11c-0409-7b50-9f50-452f33b23c83",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T21-46-05-01a1b11c-0409-7b50-9f50-452f33b23c83.jsonl",
+      "timestamp": "2026-11-06T13:46:05.840Z",
+      "prefix_lines": 10483,
+      "prefix_bytes": 36173497,
+      "prefix_sha256": "1ec22fc599f958d97794e13ea98b189081ba15848d5d39002bead8dda424cb05",
+      "user_lines": [
+        15,
+        185,
+        4982,
+        9629
+      ],
+      "observed_reply_lines": [
+        4979,
+        10483
+      ],
+      "topic": "卡27C-A／PR159",
+      "observation": "关闭读取保留 2 秒预算；窄屏指针先验证布局稳定和命中，原断言保留。"
+    },
+    {
+      "key": "N08-44",
+      "id": "01a1b11e-8da0-7460-99ff-13ec6c9561a7",
+      "relative_file": "sessions/2026/11/06/rollout-2026-11-06T21-48-52-01a1b11e-8da0-7460-99ff-13ec6c9561a7.jsonl",
+      "timestamp": "2026-11-06T13:48:52.107Z",
+      "prefix_lines": 4293,
+      "prefix_bytes": 18651434,
+      "prefix_sha256": "116144686cf0f2caab5159ac98e91d8002271eeebec0dd7ac78bca78418b6b02",
+      "user_lines": [
+        15,
+        187,
+        1501,
+        4227
+      ],
+      "observed_reply_lines": [
+        1492,
+        4214,
+        4293
+      ],
+      "topic": "卡28／PR158",
+      "observation": "原生单表与自适应列；用隔离工作树验证和同步，保全主目录并行 27C。"
+    },
+    {
+      "key": "N08-45",
+      "id": "01a1b3ff-8358-70b3-960a-f99c9120cbe7",
+      "relative_file": "sessions/2026/11/07/rollout-2026-11-07T11-13-49-01a1b3ff-8358-70b3-960a-f99c9120cbe7.jsonl",
+      "timestamp": "2026-11-07T03:13:49.551Z",
+      "prefix_lines": 5563,
+      "prefix_bytes": 18557528,
+      "prefix_sha256": "18e95931d3ec00567ec83f30e8f55bf14790929af2a689a5511578691b0f67cf",
+      "user_lines": [
+        18,
+        111,
+        3276,
+        4245
+      ],
+      "observed_reply_lines": [
+        3272,
+        4241,
+        5563
+      ],
+      "topic": "卡27C-B／PR160",
+      "observation": "四条发现逐条修复、复审并关闭线程；恢复草稿与 review prefill 顺序有回归。"
+    },
+    {
+      "key": "N08-46",
+      "id": "01a1b401-44dc-7511-995b-39f00922791c",
+      "relative_file": "sessions/2026/11/07/rollout-2026-11-07T11-15-44-01a1b401-44dc-7511-995b-39f00922791c.jsonl",
+      "timestamp": "2026-11-07T03:15:44.634Z",
+      "prefix_lines": 2483,
+      "prefix_bytes": 6663127,
+      "prefix_sha256": "07a697d7738433e41b88fe7c3f8f8fcf0ca9e059f9174766de299c7263d64eee",
+      "user_lines": [
+        18,
+        439,
+        2083,
+        2393
+      ],
+      "observed_reply_lines": [
+        2074,
+        2389,
+        2483
+      ],
+      "topic": "卡27C-H／PR161",
+      "observation": "固定 Reporter 中文测试环境；纯验收记录与线上运行分开。"
+    },
+    {
+      "key": "N08-47",
+      "id": "01a1b51f-88cc-71d3-b278-c9ce213fb8a3",
+      "relative_file": "sessions/2026/11/07/rollout-2026-11-07T16-28-25-01a1b51f-88cc-71d3-b278-c9ce213fb8a3.jsonl",
+      "timestamp": "2026-11-07T08:28:25.334Z",
+      "prefix_lines": 32,
+      "prefix_bytes": 188437,
+      "prefix_sha256": "db4d6857f0d0186d8dc6e7f878b39af442866806aaefbbb82c18cd38c6652acd",
+      "user_lines": [
+        3,
+        12
+      ],
+      "observed_reply_lines": [
+        32
+      ],
+      "topic": "PR160 状态旁支",
+      "observation": "当时 OPEN 且 CLEAN，仅可合并；后续合并以主会话回执为准。"
+    },
+    {
+      "key": "N08-48",
+      "id": "01a1b564-cfe5-75f3-86fd-a4808bfd5bf1",
+      "relative_file": "sessions/2026/11/07/rollout-2026-11-07T17-44-05-01a1b564-cfe5-75f3-86fd-a4808bfd5bf1.jsonl",
+      "timestamp": "2026-11-07T09:44:05.622Z",
+      "prefix_lines": 42,
+      "prefix_bytes": 232387,
+      "prefix_sha256": "88057323030a737e2e22512b069725c0a76ff09781d4f6f62602f04ff452b76a",
+      "user_lines": [
+        3,
+        12
+      ],
+      "observed_reply_lines": [
+        42
+      ],
+      "topic": "PostgreSQL 清理旁支",
+      "observation": "提供了停服、监听、归属与重解析点预检的手动脚本，当时仅只读核对。"
+    },
+    {
+      "key": "N08-49",
+      "id": "01a1b630-f338-7990-9604-bc1f5f8cfc9e",
+      "relative_file": "sessions/2026/11/07/rollout-2026-11-07T21-27-03-01a1b630-f338-7990-9604-bc1f5f8cfc9e.jsonl",
+      "timestamp": "2026-11-07T13:27:03.895Z",
+      "prefix_lines": 20,
+      "prefix_bytes": 179892,
+      "prefix_sha256": "d93fa6d0c189aed8e316b560c7b32f2fdd0e233c250ded3c5154e7c422d0cc9d",
+      "user_lines": [
+        5,
+        14
+      ],
+      "observed_reply_lines": [
+        20
+      ],
+      "topic": "图形 CI 旁支",
+      "observation": "Windows 桌面图形与 Linux 服务端/通用浏览器职责分开，具体迁移以主会话回执为准。"
+    },
+    {
+      "key": "N08-50",
+      "id": "01a1b6d2-be69-7d62-8df9-f17f1f2f448d",
+      "relative_file": "sessions/2026/11/08/rollout-2026-11-08T00-23-47-01a1b6d2-be69-7d62-8df9-f17f1f2f448d.jsonl",
+      "timestamp": "2026-11-07T16:23:47.193Z",
+      "prefix_lines": 41,
+      "prefix_bytes": 269263,
+      "prefix_sha256": "36f657e93feb3e5aa350fc25f2444569dfdef653b7511b5d78f0ce504004b984",
+      "user_lines": [
+        3,
+        12
+      ],
+      "observed_reply_lines": [
+        41
+      ],
+      "topic": "PR162 工作树旁支",
+      "observation": "卡分支删除、证据归档；当前主检出保护的 detached 工作树保留。"
+    }
+  ]
+}
