@@ -491,6 +491,13 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
       const result=await originalQuery.call(this,sql,values);
       if(!waitingBoundary&&typeof sql==='string'&&sql.includes('SELECT * FROM projected_sources')){
         waitingBoundary=true;
+        // contact_journey_time_check needs retention_until > reported_at at second precision; a Journey reported in the
+        // current second cannot expire yet, so wait (bounded) for the next second instead of moving any other fact.
+        for(const until=Date.now()+3000;;){
+          const ready=(await originalQuery.call(this,`SELECT platform.local_from_epoch_ms(platform.physical_epoch_ms()-1)>j.reported_at AS ready
+            FROM intake.contact_journey j WHERE j.id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1::uuid)`,[manual.review.id])).rows[0]?.ready;
+          if(ready===true)break;assert.ok(Date.now()<until,'JOURNEY_EXPIRY_INSTANT_NOT_REACHED');await new Promise(resolve=>setTimeout(resolve,50));
+        }
         await originalQuery.call(this,`WITH expiry AS (SELECT platform.physical_epoch_ms()-1 AS epoch)
           UPDATE intake.contact_journey SET retention_until_epoch_ms=expiry.epoch,retention_until=platform.local_from_epoch_ms(expiry.epoch)
           FROM expiry WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1::uuid)`,[manual.review.id]);

@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
 import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from '../app/server/src/platform/postgres-types.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
@@ -22,9 +23,10 @@ const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const testIntakeIds = new Set();
-const pool = databaseUrl
-  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
-  : null;
+// Each run gets its own database at the current schema (through 071); PILOT_DATABASE_URL only creates and drops it.
+let pool = null;
+let admin = null;
+const isolatedName = `p1_004_${randomUUID().replaceAll('-', '_')}`;
 
 function normalizedMessage(msgId, {
   text = 'HIS 登录失败，提示权限错误',
@@ -116,12 +118,21 @@ function assertEventIntakeIdentity(response) {
 }
 
 before(async () => {
-  if (pool) {
-    await applyChannelMessageInboxMigration({ pool });
-    await applyServiceIntakeMigration({ pool });
-    // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
-    await migrateCurrentBaseline({ databaseUrl });
+  if (!databaseUrl) {
+    return;
   }
+  admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000 });
+  await admin.query(`CREATE DATABASE "${isolatedName}" TEMPLATE template0`);
+  const isolated = new URL(databaseUrl);
+  isolated.pathname = `/${isolatedName}`;
+  const isolatedUrl = isolated.toString();
+  pool = createPostgresPool({ connectionString: isolatedUrl, max: 8, connectionTimeoutMillis: 2_000 });
+  await applyChannelMessageInboxMigration({ pool });
+  await applyServiceIntakeMigration({ pool });
+  // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
+  await migrateCurrentBaseline({ databaseUrl: isolatedUrl });
+  // A system-dismissed Intake writes intake.closed and its closure record (071, card 27C).
+  await migrateServiceClosure({ databaseUrl: isolatedUrl, mode: 'apply' });
 });
 
 after(async () => {
@@ -141,6 +152,14 @@ after(async () => {
     );
   }
   await pool.end();
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const remaining = await admin.query('SELECT count(*)::integer AS count FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [isolatedName]);
+    if (remaining.rows[0].count === 0) break;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [isolatedName]);
+  await admin.query(`DROP DATABASE IF EXISTS "${isolatedName}"`);
+  await admin.end();
 });
 
 integrationTest('creates one Service Intake, primary message relation and received audit event', async () => {
@@ -575,10 +594,16 @@ integrationTest('standalone thanks is CHATTER without an unnecessary clarificati
   assert.equal(response.ok, true);
   assert.equal(response.result.intake.request_type, 'CHATTER');
   assert.equal(response.result.intake.status, 'IGNORED');
+  // Since card 27C a system-dismissed Intake records its closure (ADR-0056).
   assert.deepEqual(
     response.result.events.map((event) => event.event_type),
-    ['intake.received'],
+    ['intake.received', 'intake.closed'],
   );
+  const closure = (await pool.query(
+    "SELECT source,reason_code,secondary_reason_code FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL",
+    [response.result.intake.id],
+  )).rows;
+  assert.deepEqual(closure, [{ source: 'SYSTEM', reason_code: 'NOT_IT_SCOPE', secondary_reason_code: 'ACKNOWLEDGED' }]);
 });
 
 integrationTest('aggregate privacy is strongest, retention is earliest, and Inbox snapshots contain no report summary', async () => {

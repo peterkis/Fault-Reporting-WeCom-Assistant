@@ -5,6 +5,7 @@ import { createServer } from 'node:net';
 import { withP2012Database, applyThrough031, assertNoP2012Residual } from './p2-012-postgres-harness.mjs';
 import { migrateP2012 } from '../../app/server/scripts/p2-012-migrate.mjs';
 import { migrateCurrentBaselineWithYxx } from '../../app/server/scripts/migrate-current-baseline.mjs';
+import { migrateServiceClosure } from '../../app/server/scripts/service-closure-migrate.mjs';
 import { createP2012Runtime } from '../../app/server/src/p2-012-workbench-assembly.mjs';
 import { createP2016OrchestrationWorker } from '../../app/server/src/p2-016-orchestration-adapters.mjs';
 import { createP2012PersonDestinationAuthorizer, createP2012DynamicWeComSender } from '../../app/server/src/p2-012-live-reporter-scope.mjs';
@@ -23,6 +24,7 @@ export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketN
     await withP2012Database({ databaseUrl, purpose: 'g2runtime', run: async ({ pool, databaseUrl: isolated }) => {
       if(webSchema)await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
       else {await applyThrough031({ pool, databaseUrl: isolated }); await migrateP2012({ databaseUrl: isolated });}
+      await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
       const admin = await createPilotAccessService({ pool }).upsertPrincipal({ wecomUserId: 'synthetic-g2-admin',
         displayName: '合成G2坐席', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT'] });
       const principals=[admin];
