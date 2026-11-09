@@ -47,3 +47,11 @@ Status: Accepted for implementation by the user's card 32C request (`pc-admin-v2
 - 正向：读取当前约束定义，整词替换后重建 Ticket 状态、事件新旧状态、事件类型、Intake 状态、Intake 事件类型与通知类型约束；替换依赖旧值的完工守卫与通知触发函数；原定义存入回退基线表并登记 `platform.schema_migration`。
 - 回退：要求库中不存在新值数据，恢复基线中的约束与函数定义，删除登记与基线表。
 - 运行角色启动前要求 072 已应用；测试 harness 在各自迁移序列末尾应用 072。
+
+## SS-010 受限运行时的目录核验
+
+SS-010 受限写入运行时启动前，会把 Intake 目录与冻结的 033 / 034 快照（`contracts/yxx_self_service_catalog.json`）逐项比对。它启动的当前角色要求 071 与 072，而这两个迁移会改写 Intake 的两条约束，所以自卡27C 起该运行时在任何数据库上都无法启动（2026-11-09 确认，由用户决定「允许后续迁移」）。
+
+- 冻结快照不变，迁移器自身的 033 / 034 阶段核验仍严格比对。
+- 新增 `contracts/yxx_self_service_catalog_successors.json`：在隔离库上实测得到，仅含 071、071+072 之后 `service_intake_event_type_check` 与 `service_intake_status_check` 的准确定义。
+- 运行时只接受与登记表一致的组合：未登记后继、仅 071、071+072；每个后继都按自身 SQL 核对校验和，072 不能脱离 071。比对时只替换这两条约束，其余任何差异（其它约束、索引、列、表、时区列）照旧拒绝。

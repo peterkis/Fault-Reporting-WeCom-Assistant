@@ -52,6 +52,22 @@ export function validateYxxCatalog(inventory,{stage='034'}={}){
   if(!['033','034'].includes(stage)||!isDeepStrictEqual(inventory,EXPECTED_CATALOG[stage]))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
   return inventory;
 }
+// SS-010 limited runtime only. The frozen 034 catalog stays the contract; registered successors 071 (unified closure) and
+// 072 (completion / dismissal, ADR-0058) may replace exactly the constraint entries recorded for them, nothing else.
+const SUCCESSOR_CATALOG=JSON.parse(readFileSync(new URL('../../../contracts/yxx_self_service_catalog_successors.json',import.meta.url),'utf8'));
+/** @param {unknown} inventory @param {{successors?: readonly string[]}} [options] */
+export function validateYxxCatalogWithSuccessors(inventory,{successors=[]}={}){
+  const profile=JSON.stringify(successors);
+  if(!['[]','["071"]','["071","072"]'].includes(profile))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
+  const expected=structuredClone(EXPECTED_CATALOG['034']);
+  for(const replacement of successors.length?SUCCESSOR_CATALOG[successors.at(-1)]:[]){
+    const index=expected.constraints.findIndex(item=>item.relation===replacement.relation&&item.name===replacement.name);
+    if(index<0)fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
+    expected.constraints[index]=replacement;
+  }
+  if(!isDeepStrictEqual(inventory,expected))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
+  return inventory;
+}
 
 function migrationBody(sql, code) {
   const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];

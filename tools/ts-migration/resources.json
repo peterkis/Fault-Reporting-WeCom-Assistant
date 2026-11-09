@@ -337,6 +337,7 @@
     "contracts/yxx_self_service_bootstrap.schema.json",
     "contracts/yxx_current_migration_catalog.v2.json",
     "contracts/yxx_self_service_catalog.json",
+    "contracts/yxx_self_service_catalog_successors.json",
     "contracts/yxx_self_service_contracts.d.ts",
     "contracts/yxx_self_service_error.schema.json",
     "contracts/yxx_self_service_feedback_command.schema.json",

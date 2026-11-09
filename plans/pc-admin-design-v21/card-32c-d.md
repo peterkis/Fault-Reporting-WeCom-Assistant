@@ -36,6 +36,7 @@
 - 接入：运行角色（`human-workbench-role`、`p2-016-process-role`）启动前要求 072；运行时就绪把 072 并入 `service_closure_schema` 检查（不新增健康检查键）；构建资源登记 072；web01 夹具在 071 之后应用 072。
 - 测试夹具：自建迁移链的夹具在最后一次迁移后调用 `ensureCompletionDismissal`（不登记）。p1-004 / p1-009 / p1-010 直接迁移共享 `PILOT_DATABASE_URL`，开始前和 `after` 中调用 `releaseCompletionDismissal`，按基线恢复未登记的 072，共享库不留改动；已登记的 072 不碰，残留新值行时失败而不改写。
 - `yxx_current_migration_catalog.v2.json` 与 `yxx_self_service_catalog.json` 是 ADR-0045 / 历史就绪范围的固定快照（49 个 SQL），不纳入 072，未改。
+- SS-010 受限运行时：冻结快照不变；新增 `yxx_self_service_catalog_successors.json`（只含 071、071+072 改写的两条 Intake 约束），运行时按登记表与校验和只接受这两条约束的已知改写，其余漂移照旧拒绝（见 ADR-0058「SS-010 受限运行时的目录核验」，用户 2026-11-09 决定）。
 
 ## 不改的同名值（D1-6 及其它聚合）
 
