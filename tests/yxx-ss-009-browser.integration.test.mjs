@@ -12,6 +12,8 @@ import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui
 import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
+import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {origin,secret,flags,config,oauthOptions,browser,post} from './helpers/yxx-ss-009-http-fixture.mjs';
@@ -20,6 +22,8 @@ test('retired V1 client fixture SS-009 real browser and PostgreSQL submit supple
   const screenshots=[];
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ui',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl});
+    // The current Ticket lifecycle writes closure records (071) in the 072 completion / dismissal vocabulary.
+    await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});
     const identityMapping=await createYxxDelegatedIdentityMapping({config,accessTokenProvider:async()=> 'synthetic',fetchImpl:async()=>new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'member-a',open_userid:'synthetic-A'},{userid:'member-b',open_userid:'synthetic-B'}]}))});
     let runtime,fixture,tab,staffRuntime,proof,primaryError=null;
     try{
