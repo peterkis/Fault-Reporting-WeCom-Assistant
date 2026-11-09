@@ -45,6 +45,10 @@ export function ActivityPeople({principal,target,root,readReady,capsuleTarget=nu
       const next:{anchor:HTMLElement;text:string}[]=[];
       for(const [field,editors] of fields){const text=presenceFieldBannerText(editors,field);for(const area of document.querySelectorAll<HTMLElement>('[data-activity-field="'+field+'"]')){
         if(area.getAttribute('data-presence-editing')!==text)area.setAttribute('data-presence-editing',text);
+        // Anchor contract (Card 32C-T): the banner is portalled into the element marked `data-presence-banner-anchor`. TicketNotes renders that
+        // marker on its bordered input frame (`.ds-note-input`); any restructuring of TicketNotes must keep the marker on the frame, or the
+        // banner falls back to the area itself. When an anchor unmounts, the MutationObserver below re-runs `apply`, which drops it from
+        // `banners` (React then removes the portal) and from `marked`; the effect cleanup clears the remaining attributes.
         // The composer marks its bordered input frame; other areas carry the banner on themselves.
         const frame=area.querySelector<HTMLElement>('[data-presence-banner-anchor]'),anchor=frame??area,host=frame?'frame':'area';
         if(anchor.getAttribute('data-presence-banner-host')!==host)anchor.setAttribute('data-presence-banner-host',host);

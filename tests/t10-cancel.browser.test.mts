@@ -5,6 +5,7 @@ import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -83,7 +84,7 @@ test('Card 27C-B six closure reasons, original links, history and board/list res
    await browser.command('Page.bringToFront');await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1400,deviceScaleFactor:1,mobile:false});
    const evidence=process.env.CARD29_EVIDENCE_DIR??join(tmpdir(),'card27cb-ui-'+randomUUID()),shots:{file:string;sha256:string;width:number;height:number}[]=[];
    // Card 32 B5: capture only after running enter/exit animations settle, so dialogs are not shot half transparent.
-   const shot=async(name:string)=>{if(evidence){await mkdir(evidence,{recursive:true});await browser.evaluate('Promise.all(document.getAnimations().filter(a=>a.playState==="running"&&a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>null))).then(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))');const bytes=Buffer.from(await browser.screenshot(),'base64');await writeFile(join(evidence,name),bytes);shots.push({file:name,sha256:createHash('sha256').update(bytes).digest('hex'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)});}};
+   const shot=async(name:string)=>{if(evidence){await mkdir(evidence,{recursive:true});await waitForAnimationsSettled(browser);const bytes=Buffer.from(await browser.screenshot(),'base64');await writeFile(join(evidence,name),bytes);shots.push({file:name,sha256:createHash('sha256').update(bytes).digest('hex'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)});}};
    const open=async()=>{await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("document.querySelector('.detail-cancel-dialog')?.checkVisibility()===true");};
    const choose=async(reason:string)=>{await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value='+reason+']');await browser.waitFor(`document.querySelector('.detail-cancel-dialog input[value=${reason}]')?.checked===true`);};
    await open();assert.equal(await browser.evaluate("document.querySelectorAll('.detail-cancel-dialog fieldset[aria-label=关闭原因] input[type=radio]').length"),6);

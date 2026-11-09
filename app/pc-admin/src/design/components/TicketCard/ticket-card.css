@@ -139,7 +139,7 @@
 .ds-closure-combobox:focus-within {border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: -1px;}
 .ds-closure-combobox>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
 .ds-closure-combobox input {flex: 1; min-width: 0; height: calc(var(--control-h-md) - 2px); border: 0; outline: 0; background: transparent; font: inherit; color: var(--text-primary);}
-html body .ds-modal .ds-closure-combobox input:is(:focus,:focus-visible):not(:disabled):not([aria-disabled="true"]) {outline: 0; box-shadow: none;}
+.ds-modal .ds-closure-combobox input:is(:focus,:focus-visible) {outline: 0; box-shadow: none;}
 .ds-closure-combobox.is-selected {color: var(--text-secondary);}
 .ds-closure-combobox.is-selected .ds-closure-number {flex: none; color: var(--text-primary); font-size: var(--fs-xs);}
 .ds-closure-selected-title {flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);}

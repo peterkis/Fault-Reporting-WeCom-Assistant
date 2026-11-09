@@ -8,6 +8,7 @@ import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {object} from './helpers/t42-board-browser-fixture.mjs';
 
 test('Card 32B draft copy, single combobox frame, menu closes before the dialog, no orphan info icons, opaque restore confirm and closing labels',{timeout:240000},async()=>{
@@ -19,8 +20,7 @@ test('Card 32B draft copy, single combobox frame, menu closes before the dialog,
    const directory=process.env.CARD32B_EVIDENCE_DIR??join(tmpdir(),'card32b-'+randomUUID()),screenshots:{file:string;sha256:string;width:number;height:number}[]=[],metrics:Record<string,unknown>={};
    await mkdir(directory,{recursive:true});
    // B5: shots wait until running enter/exit animations settle.
-   const settle='Promise.all(document.getAnimations().filter(a=>a.playState==="running"&&a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>null))).then(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))';
-   const shot=async(name:string)=>{await browser.evaluate(settle);const bytes=Buffer.from(await browser.screenshot(),'base64');await writeFile(join(directory,name+'.png'),bytes);screenshots.push({file:name+'.png',sha256:createHash('sha256').update(bytes).digest('hex'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)});};
+   const shot=async(name:string)=>{await waitForAnimationsSettled(browser);const bytes=Buffer.from(await browser.screenshot(),'base64');await writeFile(join(directory,name+'.png'),bytes);screenshots.push({file:name+'.png',sha256:createHash('sha256').update(bytes).digest('hex'),width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)});};
    const dialog='.detail-cancel-dialog',menu='details.ds-drawer-more:has(>summary[aria-label="更多工单操作"])',summary=menu+'>summary';
    await browser.waitFor("document.querySelector('.ds-next-step [data-action=request-information],.ds-next-step [data-action=wait-vendor],.ds-next-step button')!==null&&document.querySelector('[data-waiting-purpose][data-routine-draft=true]')!==null");
    // B4: the routine draft notices of the waiting controllers are present but draw nothing above 「处理人」.
@@ -77,7 +77,7 @@ test('Card 32B draft copy, single combobox frame, menu closes before the dialog,
    // B5: the restore confirm is opaque, above the board and presence tags, once its entrance settles.
    await browser.evaluate("document.querySelector('.ds-next-step [data-action=restore-closed]').scrollIntoView({block:'center'})");
    await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-closed]');await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('处理中')");
-   await browser.evaluate(settle);
+   await waitForAnimationsSettled(browser);
    metrics.restore=object(await browser.evaluate("(()=>{const d=document.querySelector('[data-restore-confirmation]').closest('[role=dialog]'),c=d.closest('.ds-modal-container'),bd=c.parentElement,s=getComputedStyle(d),r=d.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2),opacity=n=>{let o=1;for(let x=n;x;x=x.parentElement)o*=Number(getComputedStyle(x).opacity);return o;},p=document.createElement('span');p.style.backgroundColor='var(--bg-canvas)';document.body.append(p);const canvas=getComputedStyle(p).backgroundColor;p.remove();return {panel:s.backgroundColor===canvas,panelOpacity:opacity(d),backdropOpacity:opacity(bd),onTop:Boolean(hit&&d.contains(hit)),running:document.getAnimations().filter(a=>a.playState==='running'&&a.effect?.getComputedTiming().iterations!==Infinity).length};})()"));
    assert.deepEqual(metrics.restore,{panel:true,panelOpacity:1,backdropOpacity:1,onTop:true,running:0});
    await shot('restore-confirm');

@@ -7,6 +7,7 @@ import {t11Http,withT11Fixture} from './helpers/t11-completion-fixture.mjs';
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 
@@ -23,6 +24,8 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     assert.equal(await b.evaluate("document.querySelector('.ds-next-step').textContent.includes('你当前为只读')"),false);
     await b.evaluate('globalThis.__card13ReleaseContext()');
     await b.waitFor("document.querySelector('.ds-next-step [data-action=take-and-start]')?.disabled===false");
+    // Card 32C-T: the drawer slides in (ds-drawer-enter, translateX 16px → 0); geometry is asserted only after it settles.
+    await waitForAnimationsSettled(b,'.ds-drawer-content');
     assert.equal(await b.evaluate("document.querySelector('.ds-next-step [data-tone=primary]').textContent"),'领取并开始');
     assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-next-step [data-tone=secondary]')].filter(n=>n.checkVisibility()).length<=2"),true);
     assert.equal(await b.evaluate("document.querySelectorAll('.ds-detail-hero .ds-ticket-category').length"),1);
@@ -30,8 +33,18 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     assert.equal(await b.evaluate("document.body.innerText.includes('当前范围的记录已加载完毕')"),false);
     const click=(selector:string)=>clickWorkbenchControl(b,selector);
     const fill=async(selector:string,text:string)=>{await b.waitFor(`document.querySelector(${JSON.stringify(selector)})?.checkVisibility()===true`);await b.evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);await b.command('Input.insertText',{text});};
+    // Card 32C-T control: with reduced motion the entry animation is disabled, so without waiting the drawer is exactly in place.
+    await b.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+    for(const width of [1920,1440]){
+      await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+      assert.deepEqual(await b.evaluate("(()=>{const r=document.querySelector('.ds-drawer').getBoundingClientRect();return {width:r.width,top:r.top,right:innerWidth-r.right,running:document.querySelector('.ds-drawer-content').getAnimations({subtree:true}).filter(a=>a.animationName==='ds-drawer-enter').length};})()"),{width:720,top:8,right:8,running:0},'reduced-motion control at '+width);
+    }
+    await b.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
     for(const width of [1920,1440,1280,900]){
       await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+      // A width change can replay the entry animation; wait for it, then the drawer must rest exactly in place (no residual transform).
+      await waitForAnimationsSettled(b,'.ds-drawer-content');
+      assert.ok(['none','matrix(1, 0, 0, 1, 0, 0)'].includes(String(await b.evaluate("getComputedStyle(document.querySelector('.ds-drawer-content')).transform"))),'entry animation ends at its resting position at '+width);
       assert.deepEqual(await b.evaluate("(()=>{const r=document.querySelector('.ds-drawer').getBoundingClientRect();return {width:r.width,top:r.top,right:innerWidth-r.right,radius:getComputedStyle(document.querySelector('.ds-drawer')).borderRadius,overflow:document.documentElement.scrollWidth>innerWidth};})()"),{width:720,top:8,right:8,radius:'14px',overflow:false});
       assert.equal(await b.evaluate("document.querySelector('[data-action=save-internal-note]').getBoundingClientRect().bottom<=innerHeight"),true);
       assert.equal(await b.evaluate("document.querySelector('.ds-detail-missing').getBoundingClientRect().height<=64"),true,'missing fields occupy one compact row at '+width);
@@ -52,7 +65,7 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
 
     assert.equal(await b.evaluate("(()=>{const step=document.querySelector('.ds-next-step'),style=getComputedStyle(step);return step.dataset.status==='WAITING_VENDOR'&&style.backgroundColor==='rgb(253, 246, 236)'&&style.borderTopWidth==='0px'&&style.boxShadow.includes('rgb(242, 217, 184)')&&style.boxShadow.includes('inset');})()"),true,'waiting uses the prototype warm surface and inset ring without changing its stage');
     const reviewEvidence=process.env.PC_ADMIN_CARD18_REVIEW_EVIDENCE_DIR;
-    if(reviewEvidence){await mkdir(reviewEvidence,{recursive:true});for(const width of [1920,1440,1280,900]){await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await writeFile(join(reviewEvidence,'waiting-'+width+'.png'),Buffer.from(await b.screenshot(),'base64'));}}
+    if(reviewEvidence){await mkdir(reviewEvidence,{recursive:true});for(const width of [1920,1440,1280,900]){await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await waitForAnimationsSettled(b,'.ds-drawer-content');await writeFile(join(reviewEvidence,'waiting-'+width+'.png'),Buffer.from(await b.screenshot(),'base64'));}}
 
     await click('[data-action=resume]');await fill('form[aria-label=恢复处理] textarea','合成厂商已回复，恢复本轮处理');await click('form[aria-label=恢复处理] button[type=submit]');
     await b.waitFor("document.querySelector('.ds-next-step [data-tone=primary]')?.textContent==='登记完工'");assert.equal((await http.detail(first.ticket.id)).status,'IN_PROGRESS');
@@ -73,11 +86,14 @@ test('Card 13 next step preserves original commands, inline wait/resume, note UU
     assert.equal(await b.evaluate("(()=>{const style=getComputedStyle(document.querySelector('.detail-description'));return style.borderTopWidth==='0px'&&style.borderBottomWidth==='0px'&&getComputedStyle(document.querySelector('.ds-detail-tabs')).columnGap==='20px';})()"),true,'the tab baseline is the only description-area divider');
     assert.equal(await b.evaluate("(()=>{const input=document.querySelector('.ds-note-input'),frame=input.getBoundingClientRect(),count=input.querySelector('[data-note-count]').getBoundingClientRect(),button=input.querySelector('[data-action=save-internal-note]').getBoundingClientRect(),style=getComputedStyle(input);return style.backgroundColor==='rgb(255, 253, 246)'&&button.bottom<frame.bottom&&button.right<frame.right&&count.left>frame.left&&count.bottom<frame.bottom&&Math.abs((count.top+count.bottom)/2-(button.top+button.bottom)/2)<=1&&button.height===28;})()"),true,'Card 20 S9 keeps the warm-white surface, counter and original save action inside one footer row');
     assert.equal(await b.evaluate("document.querySelector('#detail-tab-trigger-attachments').textContent.includes(' 0')"),false);
+    // Card 32C-T: the selected tab's underline colour transitions in; assert its resting style once the transition ends.
+    await waitForAnimationsSettled(b,'.ds-detail-tabs');
     assert.equal(await b.evaluate("(()=>{const tab=document.querySelector('[role=tab][aria-selected=true]'),style=getComputedStyle(tab);return style.fontWeight==='600'&&style.borderBottomWidth==='2px'&&style.borderBottomColor===style.color&&style.backgroundColor==='rgba(0, 0, 0, 0)';})()"),true,'selected tab has a two-pixel primary-text underline');
     assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-detail time[datetime]')].every(node=>/^((\\d{4}-)?\\d{2}-\\d{2} \\d{2}:\\d{2})$/.test(node.textContent)&&/\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}（北京时间）/.test(node.title))"),true,'short times have full Beijing tooltips');
     const evidence=process.env.PC_ADMIN_CARD18_EVIDENCE_DIR;
     if(evidence){await mkdir(evidence,{recursive:true});for(const width of [1920,1440,1280,900]){
       await b.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
+      await waitForAnimationsSettled(b,'.ds-drawer-content');
       assert.equal(await b.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
       await writeFile(join(evidence,'after-'+width+'.png'),Buffer.from(await b.screenshot(),'base64'));
     }}
