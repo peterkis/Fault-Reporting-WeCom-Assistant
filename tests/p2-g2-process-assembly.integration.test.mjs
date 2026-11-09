@@ -8,6 +8,7 @@ import path from 'node:path';
 import { initializeG2SendBudget, openG2SendBudget } from '../app/server/src/p2-g2-send-budget.mjs';
 import { withP2012Database, applyThrough031, assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
 import { g2CandidateInventory, G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
@@ -29,6 +30,8 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
   const databaseUrl = process.env.PILOT_DATABASE_URL;
   try { await withP2012Database({ databaseUrl, purpose: 'g2process', max: 1, run: async ({ pool, databaseUrl: isolated }) => {
     await applyThrough031({ pool, databaseUrl: isolated }); await migrateP2012({ databaseUrl: isolated });
+    // The process roles require the 071 closure schema before readiness.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
     const access = createPilotAccessService({ pool }), principals = [];
     for (const [index, role] of ['ADMIN', 'DISPATCHER', 'HANDLER'].entries()) principals.push(await access.upsertPrincipal({
       wecomUserId: 'synthetic-g2-process-agent-' + index, displayName: '合成G2坐席' + index, roles: [role], resolverTeamIds: ['PILOT_IT'] }));

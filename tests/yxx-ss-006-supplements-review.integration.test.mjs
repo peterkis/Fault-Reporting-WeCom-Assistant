@@ -9,6 +9,7 @@ import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-r
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -164,6 +165,8 @@ test('SS-006 preserves review history across both resolution orders and keeps on
 test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart', { skip: !databaseUrl, timeout: 240_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx006life', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The lifecycle case closes a Ticket, which writes a closure record (071, card 27C).
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
     const memberScope = scope('lifecycle');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const member = commandFor(store, memberScope);
@@ -197,7 +200,7 @@ test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and sur
     const cancelledResult = await process().processOne({ requestRef: cancelledAccepted.receipt.request_ref });
     const cancelledState = (await pool.query('SELECT version FROM pilot_ticket.ticket WHERE id=$1::uuid', [cancelledResult.ticket_id])).rows[0];
     assert.equal((await actions.perform({ ticketId: cancelledResult.ticket_id, action: 'cancel', expectedVersion: cancelledState.version,
-      actor: { type: 'SYSTEM', id: null }, reasonCode: 'SS006_CANCEL', traceId: 'yxx:ss006:cancel' })).ok, true);
+      actor: { type: 'SYSTEM', id: null }, reasonCode: 'REPORTER_WITHDREW', traceId: 'yxx:ss006:cancel' })).ok, true);
     const cancelledSupplement = supplement('取消后补充', 1);
     await assert.rejects(member.supplement.accept({ request: member.request(cancelledSupplement.client_command_id), input: cancelledSupplement,
       requestRef: cancelledAccepted.receipt.request_ref }), { code: 'YXX_NOT_FOUND' });

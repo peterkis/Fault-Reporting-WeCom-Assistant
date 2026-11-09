@@ -19,6 +19,7 @@ import type {WeComOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {config,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {t21ChineseBrowser} from './helpers/t21-bot-feedback-current-scope-fixture.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Wire{path:string;method:string;status:number;body:unknown;response_keys:string[];body_error:boolean;body_error_name:string|null;request_aborted:boolean;command:unknown;headers:{idempotency_key:string|null;if_match:string|null;csrf_present:boolean}}
@@ -100,11 +101,13 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       }});
       assert.ok(fixture);
       fixture.setMember('open-a');tab=await fixture.launch({path:'/synthetic-start',width:1440,height:900});assert.ok(tab);
+      // These assertions read Chinese Reporter copy; pin the browser language instead of inheriting the runner's locale.
+      await t21ChineseBrowser(tab);
       await tab.command('Page.enable');await tab.command('Page.addScriptToEvaluateOnNewDocument',{source:observe});
       // Real OAuth/state/Cookie middleware and official mapping Stub; no Cookie
       // insertion, Grant, fixed historical App ownership, fabricated Delivery.
       await tab.evaluate('location.assign('+JSON.stringify(pagePath)+')',{awaitPromise:false});
-      await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='已关闭'");
+      await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='已完成'");
       await waitDetail(tab,detailPath);
       const firstWire=records(await tab.evaluate('globalThis.__t21Wire')),detail=verifiedDetail(firstWire,detailPath);
       assert.ok(detail,'the production page must obtain its own actual Bot detail');
@@ -130,7 +133,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       assert.deepEqual(bootstrap.body,{schema_version:1,write_enabled:true,csrf_token_shape:true});
       await tab.evaluate('('+feedbackControl+').click()');
       await tab.waitFor('globalThis.__t21Wire.some(row=>row.method==="POST"&&row.path==='+JSON.stringify(detailPath+'/feedback')+'&&row.status===200)');
-      await tab.waitFor("document.querySelector('#state')?.textContent==='重新处理中'");
+      await tab.waitFor("document.querySelector('#state')?.textContent==='等待重新承接'");
       const wire=records(await tab.evaluate('globalThis.__t21Wire')),posts=wire.filter(row=>row.method==='POST'&&row.path.endsWith('/feedback'));
       assert.equal(posts.length,1);assert.ok(posts[0]);const post=posts[0],command=object(post.command),result=object(post.body);
       assert.equal(post.path,detailPath+'/feedback');assert.deepEqual(Object.keys(command).sort(),['client_command_id','completed_round_ref','expected_ticket_version','feedback','schema_version']);
@@ -146,7 +149,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
       assert.equal(ack.status,200);assert.deepEqual(ack.body,{client_command_id:command.client_command_id,public_ref:original.public_ref,state:'COMMITTED',result:{...result,replayed:true}});
       await capture('same-ticket-reopened-1440.png');
       const previousTime=await tab.evaluate('performance.timeOrigin');await tab.command('Page.reload');await tab.waitFor('performance.timeOrigin!=='+String(previousTime)+'&&document.readyState==="complete"');
-      await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='重新处理中'");
+      await tab.waitFor("document.querySelector('#ticket')?.hidden===false&&document.querySelector('#state')?.textContent==='等待重新承接'");
       await waitDetail(tab,detailPath);
       const after=records(await tab.evaluate('globalThis.__t21Wire')),fresh=verifiedDetail(after,detailPath);assert.ok(fresh);
       const freshBody=object(fresh.body);assert.equal(freshBody.public_ref,original.public_ref);assert.equal(freshBody.ticket_no,completed.ticket_no);assert.equal(freshBody.version,completed.version+1);assert.equal(object(freshBody.feedback_context).can_feedback,false);
