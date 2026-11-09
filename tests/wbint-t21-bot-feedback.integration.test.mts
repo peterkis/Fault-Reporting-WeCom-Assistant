@@ -38,7 +38,7 @@ test('original Bot reporter explicitly reopens its genuine staff-completed Ticke
     const completedResponse=await staff.post(ticketId,'complete',staff.command(active));
     assert.equal(completedResponse.status,200,await completedResponse.text());
     const completed=await staff.detail(ticketId);
-    assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+    assert.equal(completed.status,'COMPLETED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
     const completedCycle=completed.handling_cycle;
     assert.ok(completedCycle);
     // Single App at every stage: the staff App is stopped before the member App.

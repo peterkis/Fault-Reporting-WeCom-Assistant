@@ -30,7 +30,7 @@ test('two Bot member tabs with different UUIDs create one new cycle; an old comp
    assert.equal(awaiting.handling_cycle?.first_responsibility_event_id,null);
    const started=await staff.start(f.ticketId);assert.equal(started.status,'IN_PROGRESS');
    assert.equal((await staff.post(f.ticketId,'complete',staff.command(started))).status,200);
-   const closed=await staff.detail(f.ticketId);assert.equal(closed.status,'CLOSED');nextVersion=closed.version;
+   const closed=await staff.detail(f.ticketId);assert.equal(closed.status,'COMPLETED');nextVersion=closed.version;
    assert.equal(closed.handling_cycle?.cycle_no,(f.completed.handling_cycle?.cycle_no??0)+1);
   });
   app=await f.replaceMember();first=browser(app.server);await login(first);

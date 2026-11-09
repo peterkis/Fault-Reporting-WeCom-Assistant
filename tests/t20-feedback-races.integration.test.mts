@@ -55,7 +55,7 @@ test('public feedback transaction port leaves caller rollback, cycles, events an
   finally{await tx.query('ROLLBACK');tx.release();}
   assert.equal((await f.member.request(f.path+'/feedback/commands/'+f.command.client_command_id)).status,200);
   assert.equal(t20Object((await f.member.request(f.path+'/feedback/commands/'+f.command.client_command_id)).json()).state,'UNKNOWN');
-  assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'CLOSED');
+  assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'COMPLETED');
   assert.equal((await f.context.pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid',[f.ticketId])).rows[0]?.n,0);
   assert.equal((await f.send()).status,200,'the original UUID remains lawful after a caller rollback');
  });

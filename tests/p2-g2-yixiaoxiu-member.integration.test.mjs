@@ -119,7 +119,7 @@ test('YXX member HTTP ownership, cookie bypass, retention, conditional responses
         assert.equal((await browser.request(path+'/timeline?limit=1&limit=2')).status,400);
       });
       await t.test('YXX-11 closed retained Ticket stays readable and member query does not reopen it',async()=>{
-        const before=await businessDigest(pool),response=await browser.request(path);assert.equal(response.status,200);assert.equal((await response.json()).external_status,'已关闭');
+        const before=await businessDigest(pool),response=await browser.request(path);assert.equal(response.status,200);assert.equal((await response.json()).external_status,'已完成');
         assert.deepEqual(await businessDigest(pool),before);
       });
       await t.test('YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification',async()=>{

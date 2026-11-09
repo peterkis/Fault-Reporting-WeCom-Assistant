@@ -10,6 +10,7 @@ import { createYxxDelegatedIdentityMapping } from '../app/server/src/p2-g2-yixia
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from '../app/server/src/p2-006-workbench-authorization.mjs';
 import { listAuthorizedRealtimeEvents, normalizeRealtimeAuthorization } from '../app/server/src/p2-003-realtime-event-log.mjs';
@@ -59,7 +60,7 @@ test('SS-008 FULL readiness requires both Web migrations only when the extension
   await withP2016IsolatedDatabase({databaseUrl,purpose:'ss008ready',run:async({pool,databaseUrl:isolated})=>{
     // 033/034 always precede 071 in a real database, and the current roles require 071; build that full schema once and
     // take the two Web migrations out of the registry (the readiness source) for the phases where they are absent.
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});
     const webMigrations=['033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check'];
     const registerWeb=async present=>{for(const id of webMigrations)await pool.query('UPDATE platform.schema_migration SET migration_id=$2 WHERE migration_id=$1',present?[id+'_ss008_absent',id]:[id,id+'_ss008_absent']);};
     await registerWeb(false);
@@ -164,7 +165,7 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
   assert.ok(databaseUrl,'isolated PostgreSQL configuration required');
   assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
   await withP2016IsolatedDatabase({databaseUrl,purpose:'g2ss008',run:async({pool,databaseUrl:isolated})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});
     const identityMapping=await mapping();
     const options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret};
     // This V1 API assembly explicitly mounts the current formal H5 presentation.
@@ -210,8 +211,8 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
         const command={client_command_id:randomUUID(),expected_version:detail.json().version,reason_code:'SS008_'+action.toUpperCase()};
         const result=await staff.request('/api/tickets/'+ticket.id+'/'+action,post(command,csrf));assert.equal(result.status,200,result.text);
       }
-      const detail=(await a.request('/api/yixiaoxiu/requests/'+ref)).json();assert.equal(detail.ticket.status,'CLOSED');
-      assert.equal((await member.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
+      const detail=(await a.request('/api/yixiaoxiu/requests/'+ref)).json();assert.equal(detail.ticket.status,'COMPLETED');
+      assert.equal((await member.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'COMPLETED');
       assert.equal((await staff.request('/api/tickets/'+ticket.id+'/responsibility')).json().conversations.length,0);
       const access=createPilotAccessService({pool});
       const handler=await access.upsertPrincipal({wecomUserId:'ss008-handler',displayName:'Synthetic Handler',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});

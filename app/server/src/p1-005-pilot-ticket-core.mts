@@ -23,10 +23,9 @@ export type TicketStatus =
   | 'WAITING_REQUESTER'
   | 'WAITING_VENDOR'
   | 'RESOLVED'
-  | 'CLOSED'
+  | 'COMPLETED'
   | 'REOPENED'
-  | 'CANCELLED'
-  | 'DUPLICATE_LINKED';
+  | 'DISMISSED';
 export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type IntakeStatus =
   | 'RECEIVED'
@@ -35,7 +34,7 @@ export type IntakeStatus =
   | 'WAITING_TRIAGE'
   | 'LINKED_INCIDENT'
   | 'COMPLETED'
-  | 'IGNORED'
+  | 'DISMISSED'
   | 'FAILED';
 export type IntakeSourceChannel = 'WECOM_GROUP' | 'WECOM_DIRECT' | 'PORTAL' | 'MANUAL';
 export type IntakeEventType =
@@ -44,7 +43,7 @@ export type IntakeEventType =
   | 'intake.message_added'
   | 'intake.clarification_added'
   | 'intake.ticket_created'
-  | 'intake.closed'
+  | 'intake.dismissed'
   | 'intake.restored';
 export type PilotTicketErrorCode =
   | 'PILOT_TICKET_INTAKE_ID_REQUIRED'
@@ -69,10 +68,9 @@ const TICKET_STATUSES = new Set<TicketStatus>([
   'WAITING_REQUESTER',
   'WAITING_VENDOR',
   'RESOLVED',
-  'CLOSED',
+  'COMPLETED',
   'REOPENED',
-  'CANCELLED',
-  'DUPLICATE_LINKED',
+  'DISMISSED',
 ]);
 const PRIORITIES = new Set<TicketPriority>(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 
@@ -84,10 +82,9 @@ export const EXTERNAL_TICKET_STATUS: Readonly<Record<TicketStatus, string>> = Ob
   WAITING_REQUESTER: '待您补充',
   WAITING_VENDOR: '处理中',
   RESOLVED: '已处理，待确认',
-  CLOSED: '已关闭',
+  COMPLETED: '已完成',
   REOPENED: '重新处理中',
-  CANCELLED: '已撤销',
-  DUPLICATE_LINKED: '已关联公共故障',
+  DISMISSED: '已关闭',
 });
 
 export class PilotTicketInputError extends Error {

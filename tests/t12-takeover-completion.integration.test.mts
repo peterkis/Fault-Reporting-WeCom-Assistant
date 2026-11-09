@@ -21,12 +21,12 @@ test('a currently visible non-owner HANDLER takes actual self-team responsibilit
       communication_choice:'RETAIN_CURRENT',sessions:[],internal_process:'INTERNAL_T12_CANARY：核实合成设备并完成内部处置。',
       external_summary:'服务已恢复，请重新尝试。',external_summary_confirmed:true};
     const response=await s.b.post(s.path+'/takeover-and-complete',command);assert.equal(response.status,200,JSON.stringify(response.value));
-    const after=await s.b.get(s.path);assert.equal(after.status,200);assert.equal(after.value.status,'CLOSED');
+    const after=await s.b.get(s.path);assert.equal(after.status,200);assert.equal(after.value.status,'COMPLETED');
     assert.equal(after.value.version,command.expected_version+2);assert.equal(after.value.assignee_id,s.actor.id);assert.equal(after.value.resolver_team_id,'T07_NETWORK');
     assert.equal(after.value.intake_id,s.first.intake.intakeId);assert.equal(current.value.intake_id,s.first.intake.intakeId);const ended=object(after.value.handling_cycle);
     assert.equal(ended.id,cycle.id);assert.equal(ended.cycle_no,cycle.cycle_no);assert.equal(ended.first_responsibility_event_id,cycle.first_responsibility_event_id);
     const events=await s.a.get(s.path+'/events');assert.equal(events.status,200);const old=rows(beforeEvents.value.items),all=rows(events.value.items);
-    assert.deepEqual(all.slice(0,old.length),old);assert.deepEqual(all.slice(old.length).map(e=>e.event_type),['ticket.assignment_transferred','ticket.closed']);
+    assert.deepEqual(all.slice(0,old.length),old);assert.deepEqual(all.slice(old.length).map(e=>e.event_type),['ticket.assignment_transferred','ticket.completed']);
     const closed=all.at(-1);assert.ok(closed);assert.equal(ended.staff_completion_event_id,closed.event_id);
     const basis=object(response.value.completion);assert.equal(basis.basis,'STAFF_COMPLETED');assert.equal(basis.event_id,closed.event_id);
     const staff=await s.b.get('/api/workbench/items/ticket/'+s.first.ticket.id);assert.equal(staff.status,200);

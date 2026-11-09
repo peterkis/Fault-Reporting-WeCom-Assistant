@@ -16,6 +16,7 @@ import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workb
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateWorkbenchAuth} from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
 import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
+import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 
 interface DesktopProcess {child:ChildProcess;command:(action:string,expression?:string)=>Promise<unknown>;evaluate:(expression:string)=>Promise<unknown>;wait:(expression:string)=>Promise<void>;close:()=>Promise<void>}
 async function launchDesktop(root:string,stage:string,spki:string,name:string):Promise<DesktopProcess>{
@@ -43,7 +44,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
  assert.ok(existsSync(path.join(root,'.local/electron/stage/main.mjs')),'desktop Build must prepare an allowlisted stage');
  const authMigration={databaseUrl:f.databaseUrl,mode:'apply'};
  await migrateWorkbenchAuth(authMigration);
- await migrateServiceClosure({databaseUrl:f.databaseUrl,mode:'apply'});
+ await migrateServiceClosure({databaseUrl:f.databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl:f.databaseUrl,mode:'apply'});
  const access=createPilotAccessService({pool:f.pool}),principals:string[]=[];
  for(let i=0;i<3;i++)principals.push((await access.upsertPrincipal({wecomUserId:'desktop-staff-'+i,displayName:'桌面合成人员'+i,roles:['DISPATCHER','HANDLER'],resolverTeamIds:['PILOT_IT']})).id);
  let actor=0,auth:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined,runtime:P2016EnabledRuntime|undefined;
@@ -135,7 +136,7 @@ test('Windows Electron official fallback uses real staff sessions and formal bun
   const transfer=object(await winner.evaluate(jsonPost(route+'/transfer-assignment',{client_command_id:randomUUID(),expected_version:version(current.version),reason_code:'WORKBENCH_ASSIGN',target_principal_id:principals[2],resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})));
   assert.equal(transfer.status,200);const assigned=await get(admin,route);assert.equal(assigned.assignee_id,principals[2]);
   const finished=object(await c.evaluate(jsonPost(route+'/complete',{client_command_id:randomUUID(),expected_version:version(assigned.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(object(assigned.handling_cycle).id),internal_process:'合成检查打印连接并修复',external_summary:'合成设备已恢复',external_summary_confirmed:true})));
-  assert.equal(finished.status,200);assert.equal((await get(admin,route)).status,'CLOSED');
+  assert.equal(finished.status,200);assert.equal((await get(admin,route)).status,'COMPLETED');
   await a.evaluate(`(()=>{const original=window.fetch;window.__desktopReminderReads=[];window.fetch=async function(input,init){const url=new URL(input instanceof Request?input.url:String(input),location.href);const response=await original.call(this,input,init);if(url.pathname==='/api/workbench/reminders'){await response.clone().json();window.__desktopReminderReads.push({after:url.searchParams.has('after_event_id'),status:response.status});}return response;};})()`);
   await a.evaluate('document.querySelector("[data-action=open-user-menu][data-menu-location=sidebar]").click()');
   await a.wait('document.querySelector("[data-action=open-settings]")?.checkVisibility()===true');

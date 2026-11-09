@@ -255,7 +255,7 @@ export function createYxxSelfServiceNativeHttp({
       return {view,request_ref:ref};
     }
     if(view==='reports'||view==='department'){
-      const filters=parseH5ReportFilters({search:url.searchParams.get('search'),status:url.searchParams.get('status') as 'OPEN'|'ACTIVE'|'COMPLETED'|'CLOSED_OUT'|null});
+      const filters=parseH5ReportFilters({search:url.searchParams.get('search'),status:url.searchParams.get('status') as 'OPEN'|'ACTIVE'|'COMPLETED'|'DISMISSED'|null});
       if(view==='department')return {view,...filters};
       const source=url.searchParams.get('source');if(source!==null&&source!=='WEB'&&source!=='BOT')throw error('YXX_INPUT_INVALID');
       return {view,source,...filters};

@@ -55,7 +55,7 @@ test('T14 all eight lawful conclusions preserve the original Decision and classi
     const {read,post}=http(fixture),bootstrap=await read('/api/lifecycle/bootstrap');
     const outcomes=[['CONFIRM_TICKET_ELIGIBLE','INCIDENT','TICKET_CREATED'],['CLASSIFY_SERVICE_REQUEST','SERVICE_REQUEST','TICKET_CREATED'],
       ['REQUEST_DESCRIPTION','UNKNOWN','WAITING_DESCRIPTION'],['CLASSIFY_BUSINESS_CONSULTATION','QUESTION','COMPLETED'],['ACKNOWLEDGE','CHATTER','COMPLETED'],
-      ['MARK_OUT_OF_SCOPE','UNKNOWN','IGNORED'],['KEEP_INCIDENT_REVIEW_CANDIDATE','UNKNOWN','WAITING_TRIAGE'],['CANCEL_REVIEW','UNKNOWN','WAITING_TRIAGE']];
+      ['MARK_OUT_OF_SCOPE','UNKNOWN','DISMISSED'],['KEEP_INCIDENT_REVIEW_CANDIDATE','UNKNOWN','WAITING_TRIAGE'],['CANCEL_REVIEW','UNKNOWN','WAITING_TRIAGE']];
     for(const [resolution,requestType,status] of outcomes){
       const {input,review}=await freshReview(fixture),original=await read('/api/manual-reviews/'+review.id);
       const command={client_command_id:randomUUID(),expected_row_version:original.row_version,expected_material_basis:(original.material_basis as {current_hash:string}).current_hash,

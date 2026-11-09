@@ -9,6 +9,7 @@ import { initializeG2SendBudget, openG2SendBudget } from '../app/server/src/p2-g
 import { withP2012Database, applyThrough031, assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
 import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
 import { g2CandidateInventory, G2_ROOT } from '../app/server/src/p2-g2-candidate.mjs';
@@ -30,8 +31,8 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
   const databaseUrl = process.env.PILOT_DATABASE_URL;
   try { await withP2012Database({ databaseUrl, purpose: 'g2process', max: 1, run: async ({ pool, databaseUrl: isolated }) => {
     await applyThrough031({ pool, databaseUrl: isolated }); await migrateP2012({ databaseUrl: isolated });
-    // The process roles require the 071 closure schema before readiness.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
+    // The process roles require 071 and 072 before readiness.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' });
     const access = createPilotAccessService({ pool }), principals = [];
     for (const [index, role] of ['ADMIN', 'DISPATCHER', 'HANDLER'].entries()) principals.push(await access.upsertPrincipal({
       wecomUserId: 'synthetic-g2-process-agent-' + index, displayName: '合成G2坐席' + index, roles: [role], resolverTeamIds: ['PILOT_IT'] }));
@@ -199,7 +200,7 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
         assert.equal(response.status,200,await response.text());
       }
       await until(async()=>(await pool.query(`SELECT d.status FROM communication.ticket_notification_binding b
-        JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1 AND b.notification_type='TICKET_CLOSED'`,[groupTicket.id])).rows[0]?.status==='SENT');
+        JOIN communication.delivery d ON d.id=b.delivery_id WHERE b.ticket_id=$1 AND b.notification_type='TICKET_COMPLETED'`,[groupTicket.id])).rows[0]?.status==='SENT');
       const receiptText=readFileSync(path.join(budgetDirectory,'webhook-receipts.jsonl'),'utf8'),receipts=receiptText.trim().split('\n').map(JSON.parse);
       assert.equal(receipts.length,1);assert.equal(receipts[0].record.provider_errcode,0);assert.equal(receipts[0].record.outcome,'ACKED');
       assert.doesNotMatch(receiptText,/synthetic-process-unused|reporter-a|qyapi/u);

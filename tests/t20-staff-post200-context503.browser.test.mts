@@ -23,7 +23,7 @@ test('production HANDLER retains original reopen UUID when a delivered POST200 i
    const http=await t11Http(current,2),bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {roles:string[];ticket_reopen_draft_recovery_enabled:boolean};
    assert.deepEqual(bootstrap.roles,['HANDLER']);assert.equal(bootstrap.ticket_reopen_draft_recovery_enabled,false);
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);
-   const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'CLOSED');assert.equal(typeof cookie.url,'string');
+   const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'COMPLETED');assert.equal(typeof cookie.url,'string');
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
    await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&document.querySelector('#reopen-reason')?.matches(':disabled')===false");
    const ticketPath='/api/tickets/'+ticketId;

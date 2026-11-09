@@ -21,7 +21,7 @@ test('production PC reminds its currently authorized previous HANDLER after a ge
    assert.deepEqual(t20Object(await (await http.get('/api/lifecycle/bootstrap')).json()).roles,['HANDLER']);
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);const closed=await http.detail(ticketId);
    const cookie=started.cookies[2];assert.ok(cookie);assert.equal(typeof cookie.url,'string');tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
-   await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已关闭')");
+   await tab.waitFor("document.querySelector('#detail-title')&&document.querySelector('.properties')?.textContent.includes('已完成')");
    const posted=await http.post(ticketId,'reopen',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'STAFF_REOPEN',note:'上轮人员核实仍需重新承接'});assert.equal(posted.status,200);
    await writeFile(join(directory,'original-post-observation.json'),JSON.stringify({path:'/api/tickets/'+ticketId+'/reopen',status:posted.status,body:t20Object(await posted.json())}));
    const fresh=t20Object(await (await http.get('/api/tickets/'+ticketId)).json());assert.deepEqual(fresh.reopen_follow_up,{origin:'STAFF',is_previous_handler:true,awaiting_acceptance:true});assert.equal(fresh.assignee_id,null);assert.equal(fresh.resolver_team_id,closed.resolver_team_id);

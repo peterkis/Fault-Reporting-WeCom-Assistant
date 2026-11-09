@@ -73,7 +73,7 @@ test('N3 projects current Ticket facts and only retained identity-bound Session 
   const observer=observeExceptionQueries(f);
   try{observer.reset();assert.equal((await f.get(path+'?limit=1')).status,200);const one=observer.counts();observer.reset();assert.equal((await f.get(path+'?limit=50')).status,200);assert.deepEqual(observer.counts(),one);assert.equal(one.finals,1);console.log('N3_QUERY_BUDGET '+JSON.stringify(one));}finally{observer.close();}
   const ticket=rows.find(row=>row.domain==='TICKET'&&row.parent_id!==f.tickets[0]?.ticket.id);assert.ok(ticket);
-  await f.pool.query("UPDATE pilot_ticket.ticket SET status='CLOSED' WHERE id=$1::uuid",[ticket.parent_id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED' WHERE id=$1::uuid",[ticket.parent_id]);
   await f.pool.query("WITH stamp AS(SELECT platform.physical_epoch_ms()-1 AS epoch) UPDATE intake.service_intake i SET retention_until_epoch_ms=stamp.epoch,retention_until=platform.local_from_epoch_ms(stamp.epoch) FROM stamp,pilot_ticket.ticket t WHERE t.source_intake_id=i.id AND t.id=$1::uuid",[ticket.parent_id]);
   const retained=await f.get(path+'/ticket/'+t32Text(ticket.parent_id)+'/'+t32Text(ticket.delivery_id));assert.equal(retained.status,200);assert.equal(retained.body.ticket_no,ticket.ticket_no);assert.equal(retained.body.ticket_title,ticket.ticket_title);
   const session=rows.find(row=>row.domain==='SESSION');assert.ok(session);const sessionPath=path+'/session/'+seed.sessionId+'/'+t32Text(session.delivery_id);

@@ -40,7 +40,7 @@ test('default-off public Worker preserves a committed FIRST until explicit enabl
   for(const key of ['messages','outboxes','deliveries','bindings','rounds'] as const)assert.equal(afterFirst[key].length,before[key].length+1);
   assert.deepEqual(afterFirst.attempts,before.attempts);assert.deepEqual(afterFirst.grants,before.grants);
   assert.equal((await producer.post(id,'complete',{...producer.command(started),internal_process:canary+'：仅合成内部处置'})).status,200);
-  assert.equal((await context.runtime.roundNotifications.runOnce()).created,1);const completed=await producer.detail(id);assert.equal(completed.status,'CLOSED');
+  assert.equal((await context.runtime.roundNotifications.runOnce()).created,1);const completed=await producer.detail(id);assert.equal(completed.status,'COMPLETED');
   const readerId=context.principals[1]?.id;assert.ok(readerId);assert.notEqual(completed.assignee_id,readerId,'reader is not the owner, so owner access cannot hide removed role/group authority');
   const principal=(await context.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[readerId])).rows[0];assert.ok(principal);
   const path='/api/tickets/'+id+'/deliveries',read=async()=>{const response=await reader.get(path);assert.equal(response.status,200);const reply=await response.json() as Reply;safe(reply);return reply;};

@@ -220,11 +220,11 @@ async function recordWebSupplement({ transaction, ticketId: id, traceId, realtim
     `SELECT id::text,status,version,source_intake_id::text AS intake_id
        FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE`, [id],
   );
-  if (current.rowCount !== 1 || ['CLOSED', 'CANCELLED'].includes((current.rows[0] as Pick<SupplementTicket,'id'|'version'|'status'>).status)) return null;
+  if (current.rowCount !== 1 || ['COMPLETED', 'DISMISSED'].includes((current.rows[0] as Pick<SupplementTicket,'id'|'version'|'status'>).status)) return null;
   const updated = await transaction.query<SupplementTicket>(
     `UPDATE pilot_ticket.ticket
         SET version=version+1,updated_at=GREATEST(created_at,platform.local_now())
-      WHERE id=$1::uuid AND status NOT IN ('CLOSED','CANCELLED')
+      WHERE id=$1::uuid AND status NOT IN ('COMPLETED','DISMISSED')
       RETURNING id::text,status,version,source_intake_id::text AS intake_id`, [id],
   );
   if (updated.rowCount !== 1) return null;
@@ -347,7 +347,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
       return await withTransaction(pool, async (transaction) => {
         await realtimeProjector?.lock?.(transaction);
         const { row: root, submissions } = await loadWebRoot(transaction, requestRef);
-        if(root.status==='IGNORED')return {processed:false,reason:'INTAKE_CLOSED',request_ref:requestRef};
+        if(root.status==='DISMISSED')return {processed:false,reason:'INTAKE_CLOSED',request_ref:requestRef};
         if (Number(root.processed_revision) >= Number(root.input_revision)) return { processed: false, replayed: true, request_ref: requestRef };
         const latest = (submissions.at(-1) as WebSubmission);
         const text = sourceText(submissions);
@@ -461,7 +461,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
       const candidates = await pool.query<{request_ref:string}>(
         `SELECT b.request_ref FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
           WHERE b.input_revision>b.processed_revision AND b.revoked_at IS NULL
-            AND b.retention_until>platform.local_now() AND i.status<>'IGNORED'
+            AND b.retention_until>platform.local_now() AND i.status<>'DISMISSED'
             AND (b.next_attempt_epoch_ms IS NULL OR b.next_attempt_epoch_ms<=$1::bigint)
           ORDER BY COALESCE(b.next_attempt_epoch_ms,0),b.intake_id LIMIT $2`, [nowEpochMs, batchSize],
       );

@@ -12,6 +12,8 @@ import {createRetiredSelfServiceFixture} from './helpers/retired-self-service-ui
 import {createYxxDelegatedIdentityMapping} from '../app/server/src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
+import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {origin,secret,flags,config,oauthOptions,browser,post} from './helpers/yxx-ss-009-http-fixture.mjs';
@@ -20,6 +22,8 @@ test('retired V1 client fixture SS-009 real browser and PostgreSQL submit supple
   const screenshots=[];
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ui',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl});
+    // The current Ticket lifecycle writes closure records (071) in the 072 completion / dismissal vocabulary.
+    await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});
     const identityMapping=await createYxxDelegatedIdentityMapping({config,accessTokenProvider:async()=> 'synthetic',fetchImpl:async()=>new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'member-a',open_userid:'synthetic-A'},{userid:'member-b',open_userid:'synthetic-B'}]}))});
     let runtime,fixture,tab,staffRuntime,proof,primaryError=null;
     try{
@@ -42,7 +46,7 @@ test('retired V1 client fixture SS-009 real browser and PostgreSQL submit supple
       const resolved=await staff.request('/api/manual-reviews/'+review.id+'/resolve',post({client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'SS009_SYNTHETIC'},csrf));assert.equal(resolved.status,200,resolved.text);
       const ticket=(await pool.query('SELECT pilot_ticket_id::text AS id FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE b.request_ref=$1',[reviewRef])).rows[0];assert.ok(ticket.id);
       for(const action of ['queue','accept','start','resolve','confirm']){const d=(await staff.request('/api/tickets/'+ticket.id)).json();if(action==='queue'&&d.status==='QUEUED')continue;const r=await staff.request('/api/tickets/'+ticket.id+'/'+action,post({client_command_id:randomUUID(),expected_version:d.version,reason_code:'SS009_'+action.toUpperCase()},csrf));assert.equal(r.status,200,r.text);}
-      await tab.evaluate('location.reload()',{awaitPromise:false});await tab.waitFor("document.querySelector('#detail-status')?.textContent.includes('关闭')");
+      await tab.evaluate('location.reload()',{awaitPromise:false});await tab.waitFor("document.querySelector('#detail-status')?.textContent.includes('完成')");
       assert.equal((await pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0].n,2);
       const screenshotDirectory=join(tmpdir(),'ss009-ui-'+randomUUID());mkdirSync(screenshotDirectory,{recursive:true});
       for(const [width,height] of [[390,844],[1440,900]]){await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);const bytes=Buffer.from(await tab.screenshot(),'base64'),file=join(screenshotDirectory,randomUUID()+'.png');writeFileSync(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});}

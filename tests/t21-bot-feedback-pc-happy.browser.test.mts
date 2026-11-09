@@ -83,7 +83,7 @@ test('staged production Bot Reporter PC explicitly reopens its own completed Tic
     const original=await transactionP2016(context.pool,transaction=>access.ensurePublicRefInTransaction({transaction,ticketId:ticket.id,reporterBindingHash:textHashP2016(JSON.stringify(['WECOM_AIBOT','bot-test','user-test']))}));
     const staff=await t11Http(context),active=await staff.start(ticket.id),completion=await staff.post(ticket.id,'complete',staff.command(active));
     assert.equal(completion.status,200,await completion.text());
-    const completed=await staff.detail(ticket.id);assert.equal(completed.status,'CLOSED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
+    const completed=await staff.detail(ticket.id);assert.equal(completed.status,'COMPLETED');assert.ok(completed.handling_cycle?.staff_completion_event_id);
     const completedCycle=completed.handling_cycle;assert.ok(completedCycle);
     await context.runtime.stop();assert.equal(context.runtime.server.listening,false);
     const botConfig={...config,reporterUserIds:['user-test','other-user-test']};

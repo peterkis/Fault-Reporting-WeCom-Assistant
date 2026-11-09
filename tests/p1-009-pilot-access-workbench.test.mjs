@@ -28,6 +28,7 @@ import {
   createPilotWorkbenchServer,
   listenPilotWorkbenchServer,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -83,11 +84,14 @@ before(async () => {
   if (!pool) {
     return;
   }
+  // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
+  await releaseCompletionDismissal(pool);
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
   await applyTicketStateActionMigration({ pool });
   await applyPilotAccessMigration({ pool });
+  await ensureCompletionDismissal(pool);
 });
 
 after(async () => {
@@ -116,6 +120,8 @@ after(async () => {
       ['WECOM_AIBOT', [...messageIds]],
     );
   }
+  // Restore the shared database's original vocabulary once this file's own rows are gone.
+  await releaseCompletionDismissal(pool);
   await pool.end();
 });
 
@@ -198,10 +204,10 @@ integrationTest('Pilot roles isolate teams, enable audited handling, and keep in
   });
   const handlerAutoClose = await createTicketActionService({ pool }).perform({
     ticketId: ticket.id,
-    action: 'auto-close',
+    action: 'auto-complete',
     actor: { type: 'PILOT_USER', id: handler.id },
     expectedVersion: resolved.ticket.version,
-    traceId: 'trace-p1-009-handler-auto-close',
+    traceId: 'trace-p1-009-handler-auto-complete',
   });
   assert.deepEqual(handlerAutoClose, {
     ok: false,
@@ -215,7 +221,7 @@ integrationTest('Pilot roles isolate teams, enable audited handling, and keep in
     traceId: 'trace-p1-009-confirm',
   });
   assert.equal(confirmed.ok, true);
-  assert.equal(confirmed.ticket.status, 'CLOSED');
+  assert.equal(confirmed.ticket.status, 'COMPLETED');
 });
 
 integrationTest('the minimum local Pilot workbench exposes an injected authenticated mobile-friendly work view', async () => {
@@ -249,7 +255,7 @@ integrationTest('the minimum local Pilot workbench exposes an injected authentic
     const page = await fetch(`http://127.0.0.1:${address.port}/`);
     const work = await fetch(`http://127.0.0.1:${address.port}/api/pilot/work`);
     const automaticClose = await fetch(
-      `http://127.0.0.1:${address.port}/api/pilot/tickets/${ticket.id}/actions/auto-close`,
+      `http://127.0.0.1:${address.port}/api/pilot/tickets/${ticket.id}/actions/auto-complete`,
       { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' },
     );
 
@@ -289,7 +295,7 @@ integrationTest('Pilot HTTP actions preserve authenticated ownership and reject 
       assert.equal(response.status, 409);
       assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
     }
-    const accepted = await send(JSON.stringify({ ticketId: randomUUID(), action: 'auto-close', actor: { type: 'SYSTEM', id: null }, expectedVersion: ticket.version, traceId: 'synthetic-http-owner' }));
+    const accepted = await send(JSON.stringify({ ticketId: randomUUID(), action: 'auto-complete', actor: { type: 'SYSTEM', id: null }, expectedVersion: ticket.version, traceId: 'synthetic-http-owner' }));
     assert.equal(accepted.status, 200);
     const result = await accepted.json();
     assert.equal(result.ticket.id, ticket.id);

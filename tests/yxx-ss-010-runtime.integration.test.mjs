@@ -56,7 +56,7 @@ test('SS011 single Reporter HTTP flow preserves staff scope replay quotas logout
         const result=await staff.request('/api/tickets/'+ticket+'/'+action,post({client_command_id:randomUUID(),expected_version:detail.version,reason_code:'SS011_SYNTHETIC_'+action.toUpperCase()},staffCsrf));
         assert.equal(result.status,200,action+': '+result.text);
       }
-      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'COMPLETED');
       assert.equal((await a.request('/wecom/yixiaoxiu/logout',{method:'POST',body:{},headers:{'content-type':'application/json'}})).status,200);
       assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).status,401);
       assert.equal((await a.request('/api/yixiaoxiu/requests',post(body,csrf))).status,401);
@@ -90,7 +90,7 @@ test('SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access 
         const result=await staff.request('/api/tickets/'+ticket+'/'+action,post({client_command_id:randomUUID(),expected_version:detail.version,reason_code:'SS010_'+action.toUpperCase()},csrf));
         assert.equal(result.status,200,action+': '+result.text);
       }
-      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'COMPLETED');
       assert.equal((await staff.request('/api/tickets/'+randomUUID()+'/accept',post({client_command_id:randomUUID(),expected_version:'1',reason_code:'SS010'},csrf))).status,403);
       assert.equal((await staff.request('/api/conversations/'+randomUUID()+'/claim',post({client_command_id:randomUUID()},csrf))).status,403);
       assert.equal((await startLimitedRuntime({...fixture,stateDirectory:path.join(tmpdir(),'ss010-competing-'+randomUUID()),synthetic:true}).then(()=>null,e=>e.code)),'SS010_COMPETING_RUNTIME');

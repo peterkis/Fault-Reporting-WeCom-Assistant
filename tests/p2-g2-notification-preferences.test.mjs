@@ -5,10 +5,10 @@ import { ticketNotificationP2016 } from '../app/server/src/p2-016-ticket-notific
 test('default private progress policy sends accepted and final closed only',()=>{
   const events=[['ticket.created','NEW'],['ticket.accepted','ACCEPTED'],['ticket.started','IN_PROGRESS'],
     ['ticket.waiting_requester','WAITING_REQUESTER'],['ticket.waiting_vendor','WAITING_VENDOR'],
-    ['ticket.resumed','IN_PROGRESS'],['ticket.resolved','RESOLVED'],['ticket.closed','CLOSED'],
-    ['ticket.reopened','ACCEPTED'],['ticket.cancelled','CANCELLED'],['ticket.auto_close_reminder','RESOLVED']];
+    ['ticket.resumed','IN_PROGRESS'],['ticket.resolved','RESOLVED'],['ticket.completed','COMPLETED'],
+    ['ticket.reopened','ACCEPTED'],['ticket.dismissed','DISMISSED'],['ticket.auto_close_reminder','RESOLVED']];
   assert.deepEqual(events.filter(([event_type,new_status])=>ticketNotificationP2016({event_type,new_status})).map(([type])=>type),
-    ['ticket.accepted','ticket.closed']);
+    ['ticket.accepted','ticket.completed']);
 });
 
 test('previous lifecycle events remain explicitly configurable',()=>{

@@ -28,7 +28,7 @@ test('T12 alone exposes its current cycle and canonical choices without enabling
    assert.equal((await b.post(s.path+'/complete',{client_command_id:randomUUID(),expected_version:version(started.version),reason_code:'STAFF_COMPLETED',handling_cycle_id:text(basis.id),internal_process:'独立合成过程',external_summary:'服务恢复。',external_summary_confirmed:true})).status,503);
    const command={client_command_id:randomUUID(),expected_version:version(started.version),reason_code:'STAFF_COMPLETED',resolver_team_id:'T07_NETWORK',handling_cycle_id:text(basis.id),communication_choice:'RETAIN_CURRENT',sessions:[],internal_process:'T12_ONLY_PRIVATE',external_summary:'服务已经恢复。',external_summary_confirmed:true};
    const committed=await b.post(s.path+'/takeover-and-complete',command);assert.equal(committed.status,200,JSON.stringify(committed.value));
-   assert.equal((await b.get(s.path)).value.status,'CLOSED');assert.equal((await b.get(s.path+'/takeover-completion/commands/'+command.client_command_id)).value.state,'COMMITTED');
+   assert.equal((await b.get(s.path)).value.status,'COMPLETED');assert.equal((await b.get(s.path+'/takeover-completion/commands/'+command.client_command_id)).value.state,'COMMITTED');
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
  });
  }catch(error){const cause=error instanceof Error?error.cause:null;console.log('T12_PROFILE_PHASE '+JSON.stringify({phase,error:error instanceof Error?error.name:'UNKNOWN',cause_code:typeof cause==='object'&&cause!==null&&typeof Reflect.get(cause,'code')==='string'?Reflect.get(cause,'code'):null}));throw error;}

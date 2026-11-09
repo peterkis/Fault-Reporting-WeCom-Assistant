@@ -15,7 +15,7 @@ function timeline(value:unknown):{items:{text:string;occurred_at:string}[];next_
 function detail(value:unknown,ref:string):Json{
  const raw=object(value);if(raw.public_ref!==ref)throw new ReporterError(404);
  for(const field of ['ticket_no','suffix','title','external_status','created_at','updated_at','guidance'])text(raw[field]);
- if(typeof raw.status!=='string'||!['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','CLOSED','REOPENED','CANCELLED','DUPLICATE_LINKED'].includes(raw.status))throw new ReporterError(502);
+ if(typeof raw.status!=='string'||!['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','COMPLETED','REOPENED','DISMISSED'].includes(raw.status))throw new ReporterError(502);
  if(raw.closure_text!==null)text(raw.closure_text);
  if(!Number.isSafeInteger(raw.version)||Number(raw.version)<1)throw new ReporterError(502);
  if(raw.incident_milestones!==undefined){if(!Array.isArray(raw.incident_milestones)||raw.incident_milestones.length>100)throw new ReporterError(502);for(const value of raw.incident_milestones){const item=object(value);text(item.text);text(item.occurred_at,32);}}

@@ -25,7 +25,7 @@
 
 现有 `personDestinationAuthorizer` 独立检查私聊资格；不以某一路拒绝改变另一条可信目的地，不转投别的 Bot、任意群或应用。失效/未证明的源不造猜测 Delivery；UI 不把缺路或一条 SENT 解释为全部完成。
 
-`WeComMessagePushAdapter.send` 复用现有 Communication Sender 请求/结果。现有 `createWorkbenchGroupNotificationSender` 已由P2016 Sender/runtime可选配置接线，默认关闭。它沿 delivery_id/idempotency_key 重查真实 SENDING Delivery、exact 031/轮次/event 链、原 group/Reporter、不可变 content 和 retention，在异步资格/beforeSend等待后重新核验真实SENDING链与原源，再使用服务器保存的精确 `(bot_id,group_id)` 配置。显式resolveMentionUserId提供经核验的消息推送命名空间ID；默认null，不猜Bot userid跨命名空间等价。无需第二 Worker、receipt或目标登记事实源。既有 `createP2016GroupClosureWebhookSender` 仅处理旧 TICKET_CLOSED 模板，不满足新首次责任/双路合同，不能直接宣称通用 T26 adapter。
+`WeComMessagePushAdapter.send` 复用现有 Communication Sender 请求/结果。现有 `createWorkbenchGroupNotificationSender` 已由P2016 Sender/runtime可选配置接线，默认关闭。它沿 delivery_id/idempotency_key 重查真实 SENDING Delivery、exact 031/轮次/event 链、原 group/Reporter、不可变 content 和 retention，在异步资格/beforeSend等待后重新核验真实SENDING链与原源，再使用服务器保存的精确 `(bot_id,group_id)` 配置。显式resolveMentionUserId提供经核验的消息推送命名空间ID；默认null，不猜Bot userid跨命名空间等价。无需第二 Worker、receipt或目标登记事实源。既有 `createP2016GroupClosureWebhookSender` 仅处理旧完成通知 `TICKET_COMPLETED`（ADR-0058 前为 `TICKET_CLOSED`）模板，不满足新首次责任/双路合同，不能直接宣称通用 T26 adapter。
 
 群内容闭合为 `transport=WECOM_MESSAGE_PUSH,node,suffix,status,occurred_at`：suffix严格4位数字；首次责任只接受权威 QUEUED/ACCEPTED，完工只接受 CLOSED；time为Asia/Shanghai无offset时间。固定渲染分别是“工单尾号 {suffix} 已有人员处理。”及“工单尾号 {suffix} 处理完成。”；无患者信息、报修原文、内部过程、任意自由摘要、原身份或公开链接。真正提及所需 Reporter ID 来自发送时精确源校验，不能写进群正文或由普通文本 `@姓名` 代替；禁止 @all。实际官方请求/响应、精确群配置与发送资格需在适配器实施时核对官方资料和现有能力证据，合成验证只证明结构和状态处理。原生强 @、客户端可见和真实 Bot 私聊送达另行授权验证。
 

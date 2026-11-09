@@ -31,7 +31,7 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
   const events=await tx.query<{event_type:string;event_ordinal:number;aggregate_version:number;old_status:string|null;new_status:string;operator_id:string|null;assignment_metadata:{old_assignee_id:string|null;new_assignee_id:string|null;old_team_id:string;new_team_id:string}|null}>(`SELECT event_type,event_ordinal,aggregate_version,old_status,new_status,operator_id,assignment_metadata
     FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type IN (
       'ticket.assignment_transferred','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed',
-      'ticket.unassigned','ticket.reopened','ticket.closed','ticket.cancelled') ORDER BY event_ordinal DESC LIMIT 201`,[ticket.id]);
+      'ticket.unassigned','ticket.reopened','ticket.completed','ticket.dismissed') ORDER BY event_ordinal DESC LIMIT 201`,[ticket.id]);
   let owner=ticket.assignee_id,team=ticket.resolver_team_id,freshAcceptance=false;
   for(const event of events.rows.slice(0,200)){
     if(!Number.isSafeInteger(event.event_ordinal)||event.event_ordinal<1||!Number.isInteger(event.aggregate_version)||event.aggregate_version>ticket.version)return false;
@@ -42,7 +42,7 @@ export async function unassignEligible(tx:PostgresTransaction,principal:Workbenc
       return freshAcceptance&&event.operator_id!==null&&['QUEUED','ACCEPTED'].includes(event.old_status??'')&&event.new_status==='QUEUED'
         &&metadata!==null&&metadata.old_assignee_id!==null&&metadata.new_assignee_id===null&&metadata.old_team_id===team&&metadata.new_team_id===team;
     }
-    if(['ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.reopened','ticket.closed','ticket.cancelled'].includes(event.event_type))return false;
+    if(['ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.reopened','ticket.completed','ticket.dismissed'].includes(event.event_type))return false;
     if(event.event_type==='ticket.accepted'){
       if(event.operator_id!==owner||event.old_status!=='QUEUED'||event.new_status!=='ACCEPTED')return false;
       // An explicit accept after assignment does not erase an earlier started segment.

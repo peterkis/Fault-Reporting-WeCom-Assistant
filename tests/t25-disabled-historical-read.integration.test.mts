@@ -50,7 +50,7 @@ test('notification shutdown stops new App intents while independently authentica
    const detail=await current.request('/api/reporter/tickets/'+publicRef),body=t25Object(await detail.json());console.log('T25_DISABLED_READ_TRACE '+JSON.stringify({app_enabled:false,status:detail.status,body,sends,qualifications}));assert.equal(detail.status,200,'notification enablement must not grant or revoke independent own-history READ');assert.equal(body.external_status,'已完成');
    for(const privateValue of [memberA,memberB,canonical,bindingProof,'T25_DISABLED_APP_ACCOUNT'])assert.equal(JSON.stringify(body).includes(privateValue),false);
    const other=httpBrowser('http://127.0.0.1:'+listening.port);await loginYxx(other,{path:cardPath,code:'disabled-b-app-off'});assert.equal((await other.request('/api/reporter/tickets/'+publicRef)).status,404);
-   assert.equal((await current.request('/api/reporter/tickets/'+publicRef+'/timeline')).status,200);assert.equal(qualifications,qualificationBaseline);assert.equal(sends,1);assert.equal(closed.status,'CLOSED');
+   assert.equal((await current.request('/api/reporter/tickets/'+publicRef+'/timeline')).status,200);assert.equal(qualifications,qualificationBaseline);assert.equal(sends,1);assert.equal(closed.status,'COMPLETED');
   }finally{await app.stop();assert.equal(app.server.listening,false);}
  },source.directory,{reporterOrigin:entryOrigin,appNotifications,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode}});
 });

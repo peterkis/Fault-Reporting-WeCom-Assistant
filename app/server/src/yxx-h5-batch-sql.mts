@@ -76,13 +76,13 @@ export function h5DepartmentReportsSql(withFilters:boolean,mode:'single'|'group'
       SELECT ${withFilters?"i.intake_id,t.id,t.ticket_no,date_trunc('second',t.created_at) AS created_at,":''}t.status
       ${withFilters?'FROM authorized_source_keys i':sources}
       ${tickets}
-      ${withFilters?`WHERE (${p.p7}::text IS NULL OR CASE WHEN ${p.p7}='COMPLETED' THEN t.status IN ('CLOSED','RESOLVED') WHEN ${p.p7}='CLOSED_OUT' THEN t.status IN ('CANCELLED','DUPLICATE_LINKED') WHEN ${p.p7}='ACTIVE' THEN t.status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR') ELSE t.status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
+      ${withFilters?`WHERE (${p.p7}::text IS NULL OR CASE WHEN ${p.p7}='COMPLETED' THEN t.status IN ('COMPLETED','RESOLVED') WHEN ${p.p7}='DISMISSED' THEN t.status IN ('DISMISSED') WHEN ${p.p7}='ACTIVE' THEN t.status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR') ELSE t.status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
        AND (${p.p6}::text IS NULL OR strpos(lower(t.ticket_no||' '||COALESCE((SELECT s.safe_content->>'service_code' FROM intake.web_submission s WHERE s.intake_id=i.intake_id AND s.kind='SUBMIT'
          AND s.retention_until_epoch_ms>${DEPARTMENT_FRESH_EPOCH_SQL} ORDER BY s.input_revision LIMIT 1),'')||' '||COALESCE((SELECT p.summary FROM pilot_ticket.ticket_public_progress p WHERE p.ticket_id=t.id ORDER BY p.ticket_version DESC LIMIT 1),'')),lower(${p.p6}))>0)`:''}
       ${withFilters?'':retained}
     )`;}
 export function h5DepartmentPageSql(mode:'single'|'group'='single'){const p=mode==='single'?departmentSingle:departmentGroup;return h5DepartmentReportsSql(true,mode)+`,
-      counts AS(SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED'))::integer AS active_count FROM reports),
+      counts AS(SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('COMPLETED','DISMISSED','RESOLVED'))::integer AS active_count FROM reports),
       page AS MATERIALIZED(SELECT * FROM reports WHERE (${p.p8}::timestamp without time zone IS NULL OR (created_at,id)<(${p.p8}::timestamp without time zone,${p.p9}::uuid)) ORDER BY created_at DESC,id DESC LIMIT ${p.p10})
       SELECT counts.*,COALESCE((SELECT jsonb_agg(row_to_json(display) ORDER BY display.created_at DESC,display.id DESC) FROM (
         SELECT page.id,page.ticket_no,page.status,to_char(page.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
@@ -95,13 +95,13 @@ export function h5DepartmentPageSql(mode:'single'|'group'='single'){const p=mode
       ) display),'[]'::jsonb) AS items FROM counts`;}
 export function h5DepartmentSummarySql(mode:'single'|'group'='single'){
   if(mode==='group')return `WITH eligible_reporters AS MATERIALIZED (SELECT pg_catalog.unnest(group_input.eligible_reporters) AS reporter_identity_hash)
-      SELECT count(*)::integer AS total,count(*) FILTER(WHERE t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED'))::integer AS active_count
+      SELECT count(*)::integer AS total,count(*) FILTER(WHERE t.status NOT IN ('COMPLETED','DISMISSED','RESOLVED'))::integer AS active_count
       ${departmentSourcesSql('uuid-residual')}
       JOIN (SELECT id,status FROM pilot_ticket.ticket OFFSET 0) t ON t.id=i.pilot_ticket_id
       
       ${departmentRetainedSql(departmentGroup)}`;
   return h5DepartmentReportsSql(false,mode)+`
-      SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED','RESOLVED'))::integer AS active_count FROM reports`;
+      SELECT count(*)::integer AS total,count(*) FILTER(WHERE status NOT IN ('COMPLETED','DISMISSED','RESOLVED'))::integer AS active_count FROM reports`;
 }
 
 export type H5BatchShape='home'|'department';

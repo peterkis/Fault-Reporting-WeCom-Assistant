@@ -18,11 +18,11 @@ async function read(f:Fixture,path:string){const response=await request(f,path);
 
 test('T41 all/closed/status/number search preserves the default completed and ignored canonical board membership',async()=>{
  await withWeb01Fixture(async(f:Fixture)=>{
-  for(const status of ['COMPLETED','IGNORED']){
-   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status+'（合成）',status:status==='IGNORED'?'WAITING_DESCRIPTION':status});
-   if(status==='IGNORED'){
-    const closed=(await f.pool.query<{version:number}>("UPDATE intake.service_intake SET status='IGNORED',version=version+1 WHERE id=$1::uuid RETURNING version",[intake.intakeId])).rows[0];assert.ok(closed);
-    const event=await appendIntakeClosureEvent(f.pool,{intakeId:intake.intakeId,version:closed.version,type:'intake.closed',oldStatus:'WAITING_DESCRIPTION',newStatus:'IGNORED',actor:null,traceId:'t41-current-read-ignored（合成）'});
+  for(const status of ['COMPLETED','DISMISSED']){
+   const intake=await seedPersistedIntake({pool:f.pool,text:'T41 retained '+status+'（合成）',status:status==='DISMISSED'?'WAITING_DESCRIPTION':status});
+   if(status==='DISMISSED'){
+    const closed=(await f.pool.query<{version:number}>("UPDATE intake.service_intake SET status='DISMISSED',version=version+1 WHERE id=$1::uuid RETURNING version",[intake.intakeId])).rows[0];assert.ok(closed);
+    const event=await appendIntakeClosureEvent(f.pool,{intakeId:intake.intakeId,version:closed.version,type:'intake.dismissed',oldStatus:'WAITING_DESCRIPTION',newStatus:'DISMISSED',actor:null,traceId:'t41-current-read-ignored（合成）'});
     await insertClosureRecord({transaction:f.pool,subjectType:'INTAKE',subjectId:intake.intakeId,beforeStatus:'WAITING_DESCRIPTION',beforeVersion:closed.version-1,beforeSnapshot:{request_type:'UNKNOWN',reviews:[],journeys:[]},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code:'ACKNOWLEDGED'}),intakeEventId:event});
    }
    const detail=await read(f,'/api/workbench/items/intake/'+intake.intakeId),item=object(detail.item);

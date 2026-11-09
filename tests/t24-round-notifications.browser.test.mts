@@ -29,7 +29,7 @@ test('production Ticket detail reads actual personal round Delivery facts and ex
     await consumer.runOnce();
     assert.equal((await http.post(id,'complete',{...http.command(started),internal_process:'INTERNAL_T24_BROWSER_CANARY：仅内部合成排查过程',external_summary:'合成打印服务已恢复。'})).status,200);
     await consumer.runOnce();
-    const completed=await http.detail(id);assert.equal(completed.status,'CLOSED');
+    const completed=await http.detail(id);assert.equal(completed.status,'COMPLETED');
     const path='/api/tickets/'+id+'/deliveries',response=await http.get(path);assert.equal(response.status,200);
     const actual=await response.json() as DeliveryReply;
     assert.deepEqual(actual.items.map(row=>({node:row.node,cycle:row.cycle_no,route:row.destination_type,status:row.status,attempts:row.attempt_count,effect:row.side_effect_state,sent:row.sent_at})).sort((a,b)=>a.node.localeCompare(b.node)),[
@@ -60,7 +60,7 @@ test('production Ticket detail reads actual personal round Delivery facts and ex
       assert.equal(reread.path,path);assert.equal(reread.status,200);assert.deepEqual(reread.body.items.map(row=>row.delivery_id).sort(),actual.items.map(row=>row.delivery_id).sort());
       assert.deepEqual(await browser.evaluate('globalThis.__t24UIWrites'),[]);
       for(const marker of ['INTERNAL_T24_BROWSER_CANARY','user-test','bot-test']){assert.equal(visible.includes(marker),false);assert.equal(JSON.stringify(reread.body).includes(marker),false);}
-      const after=await http.detail(id);assert.equal(after.status,'CLOSED');assert.equal(after.version,completed.version);
+      const after=await http.detail(id);assert.equal(after.status,'COMPLETED');assert.equal(after.version,completed.version);
       const counts=(await context.pool.query<{messages:number;outboxes:number;deliveries:number;grants:number}>(`SELECT
         (SELECT count(*)::int FROM communication.message) AS messages,(SELECT count(*)::int FROM communication.outbox) AS outboxes,
         (SELECT count(*)::int FROM communication.delivery) AS deliveries,(SELECT count(*)::int FROM pilot_ticket.reporter_access_grant) AS grants`)).rows[0];

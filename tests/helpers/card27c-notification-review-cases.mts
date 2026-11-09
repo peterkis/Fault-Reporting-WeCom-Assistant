@@ -54,7 +54,7 @@ async function intakePost(f:T11Fixture,subject:Subject,action:'close'|'restore',
 async function transition(f:T11Fixture,subject:Subject,restoring=false){
  const before=await subjectState(f,subject),body={client_command_id:randomUUID(),expected_version:before.version,reason_code:restoring?'RESTORE_CLOSED':'REPORTER_WITHDREW',...(restoring?{}:{note:INTERNAL})};
  if(subject.kind==='INTAKE')await intakePost(f,subject,restoring?'restore':'close',body);
- else {const http=await t11Http(f,0,{closeConnections:true});await json(await http.post(subject.id,restoring?'restore':'cancel',body));}
+ else {const http=await t11Http(f,0,{closeConnections:true});await json(await http.post(subject.id,restoring?'restore':'dismiss',body));}
  return subjectState(f,subject);
 }
 
@@ -119,7 +119,7 @@ test('Card 27C-A review R4 final closure basis rechecks real close or restore tr
   const notice=await preparedNotice(f,kind,restoring);
   const h=senderHarness(f,{qualify:async()=>{await transition(f,notice.subject,!restoring);return true;}});
   await h.worker.deliver({deliveryId:notice.deliveryId});assert.equal(h.qualifications,1);assert.equal(h.payloads.length,0);await assertUnsent(f,notice.deliveryId);
-  assert.equal((await subjectState(f,notice.subject)).status,restoring?(kind==='TICKET'?'CANCELLED':'IGNORED'):(kind==='TICKET'?'QUEUED':'RECEIVED'));
+  assert.equal((await subjectState(f,notice.subject)).status,restoring?'DISMISSED':(kind==='TICKET'?'QUEUED':'RECEIVED'));
  });
 },fixtureOptions));
 
@@ -142,7 +142,7 @@ test('Card 27C-A review R5 reconciliation of an earlier UNKNOWN close never enqu
   const reconciled=await createCommunicationReconciliationPort({pool:f.pool}).reconcileUnknownDelivery({deliveryId:notice.deliveryId,expectedStatus:'RECONCILIATION_REQUIRED',resolution:'CONFIRMED_SENT',reasonCode:'CARD27C_SYNTHETIC_CONFIRMED_SENT',authorized:true});assert.ok(reconciled&&'status'in reconciled);assert.equal(reconciled.status,'SENT');
   await f.runtime.notifications.projectPendingClosures({pool:f.pool});await f.runtime.notifications.projectPendingClosures({pool:f.pool});
   const old=await closure(f,notice.record.id);assert.equal(old.restoration_notification_message_id,null);assert.ok(old.restoration_notification_processed_at,'superseded work is durably consumed');
-  assert.equal((await subjectState(f,notice.subject)).status,kind==='TICKET'?'CANCELLED':'IGNORED');assert.deepEqual(ack.payloads.map(wireText),[CLOSE_TEXT]);
+  assert.equal((await subjectState(f,notice.subject)).status,'DISMISSED');assert.deepEqual(ack.payloads.map(wireText),[CLOSE_TEXT]);
  });
 },fixtureOptions));
 
@@ -158,5 +158,5 @@ test('Card 27C-A review R5 an Intake restoration cannot announce acceptance afte
  const notice=await preparedNotice(f,'INTAKE',true);
  const promoted=await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:notice.subject.intakeId,occurredAt:notice.subject.receivedAt,traceId:'canonical-ticket-关闭通知（合成）'});assert.ok(promoted.ticket);
  const canonical:Subject={...notice.subject,kind:'TICKET',id:promoted.ticket.id};await transition(f,canonical);
- const h=senderHarness(f);await h.worker.deliver({deliveryId:notice.deliveryId});assert.equal(h.payloads.length,0);await assertUnsent(f,notice.deliveryId);assert.equal((await subjectState(f,canonical)).status,'CANCELLED');
+ const h=senderHarness(f);await h.worker.deliver({deliveryId:notice.deliveryId});assert.equal(h.payloads.length,0);await assertUnsent(f,notice.deliveryId);assert.equal((await subjectState(f,canonical)).status,'DISMISSED');
 },fixtureOptions));

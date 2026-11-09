@@ -42,7 +42,7 @@ async function currentSegmentStarted(tx:PostgresTransaction,ticket:P2016TicketRo
  const events=await tx.query<ResponsibilityEvent>(`SELECT event_type,event_ordinal,aggregate_version,old_status,new_status,operator_id,assignment_metadata
    FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type IN (
    'ticket.assignment_transferred','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed',
-   'ticket.unassigned','ticket.returned_to_dispatch','ticket.reopened','ticket.resolved','ticket.closed','ticket.cancelled','ticket.queued','ticket.created')
+   'ticket.unassigned','ticket.returned_to_dispatch','ticket.reopened','ticket.resolved','ticket.completed','ticket.dismissed','ticket.queued','ticket.created')
    ORDER BY event_ordinal DESC LIMIT 201`,[ticket.id]);
  let status:string=ticket.status,owner=ticket.assignee_id,team=ticket.resolver_team_id,ordinal=Number.MAX_SAFE_INTEGER,version=ticket.version;
  for(const event of events.rows.slice(0,200)) {

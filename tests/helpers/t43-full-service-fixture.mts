@@ -48,6 +48,7 @@ import {createYxxDelegatedIdentityMapping} from '../../app/server/src/p2-g2-yixi
 import type {TicketAppNotificationOptions} from '../../contracts/workbench_app_notification_contracts.js';
 import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
 import {p2016TicketSourceIntake} from '../../app/server/src/p2-016-guided-journey.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -86,7 +87,7 @@ export interface T43Fixture {
 export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>,{syntheticDelivery=false}:{syntheticDelivery?:boolean}={}):Promise<void>{
  let outer:unknown;
  try{await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t43full',max:4,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
-  await migrateCurrentBaselineWithYxx({databaseUrl});
+  await migrateCurrentBaselineWithYxx({databaseUrl});await ensureCompletionDismissal(databaseUrl);
   for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateWorkbenchVerifiedManualReports,migrateTicketUnassign,migrateTicketReopenRounds,migrateWorkbenchPersonalRead,migrateBotReporterFeedback,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchFollowUpSchedules,migrateTicketReturnToDispatch,migrateWorkbenchFollowUpDueSignals,migrateWorkbenchSourceGroups,migrateIncidentInternalNotes,migrateIncidentPublicProgress,migrateIncidentOwnerTransfer,migrateIncidentDeliveryControl,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool}),principals:string[]=[];
   for(let index=0;index<4;index++){

@@ -84,7 +84,7 @@ test('a real staff reopen and same-C2 T05 acceptance gain one source-bound FIRST
   const active=await get(path,handlerCookie),c1=cycle(active.handling_cycle);assert.equal(active.status,'IN_PROGRESS');assert.equal(active.assignee_id,handler.id);assert.equal(c1.cycle_no,1);assert.equal(typeof c1.first_responsibility_event_id,'string');
   const completion=await post(path+'/complete',{client_command_id:randomUUID(),expected_version:active.version,reason_code:'STAFF_COMPLETED',handling_cycle_id:c1.id,
    internal_process:'INTERNAL_T24_LC1_COMPLETION_CANARY: synthetic internal work',external_summary:'合成故障已处理，请核对。',external_summary_confirmed:true},handlerCookie,handlerBootstrap.csrf_token);
-  const closed=await get(path),closedC1=cycle(closed.handling_cycle);assert.equal(closed.status,'CLOSED');assert.equal(closedC1.id,c1.id);assert.equal(closedC1.staff_completion_event_id,completion.ticket_event_id);
+  const closed=await get(path),closedC1=cycle(closed.handling_cycle);assert.equal(closed.status,'COMPLETED');assert.equal(closedC1.id,c1.id);assert.equal(closedC1.staff_completion_event_id,completion.ticket_event_id);
   const productionWorker=context.runtime.roundNotifications; // The actual production factory/Port from runtime assembly; no internal project() or consume HTTP route.
   // Defer the round Worker until C2 is committed. Legacy exact-basis 031 may already exist; 041 is still absent for this Ticket.
   const c1Deliveries=rows((await get(path+'/deliveries')).items);assert.deepEqual(await nodeFacts(context.pool,id),[]);

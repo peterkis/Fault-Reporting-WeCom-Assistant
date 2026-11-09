@@ -23,7 +23,7 @@ test('closing only T09 writes and raw recovery retains original safe ACK while c
  const clientFacts=()=>({transport:'node_http_agent_false',request_count:freshRequestCount,sockets_created:createdSocketCount,sockets_closed:closedSocketCount,active_requests:freshRequests.size,active_sockets:freshSockets.size,peak_active_sockets:peakActiveSockets,max_response_body_bytes:maxResponseBodyBytes,request_timeout_ms:requestTimeoutMs,case_budget_ms:240000});
  type Phase='FIXTURE_SETUP'|'ORIGINAL_AUTH'|'ORIGINAL_ASSIGN_START'|'ORIGINAL_RETURN'|'OTHER_PURPOSE'|'ORIGINAL_BASELINE'|'ORIGINAL_STOP'|'CLOSED_CREATE'|'CLOSED_LISTEN'|'CLOSED_AUTH'|'CLOSED_BASELINE'|'CLOSED_WRITE_OFF_ACK'|'CLOSED_SCOPE_READS'|'CURRENT_READ_REVOKE'|'CLOSED_STOP';
  let phase:Phase='FIXTURE_SETUP',expectedLoopbackPort:number|null=null,lastFetch:Record<string,unknown>|null=null,fetchFailure:Record<string,unknown>|null=null;
- const hosts:{label:'ORIGINAL'|'CLOSED';server:Server}[]=[],lifecycle:Record<string,unknown>[]=[];
+ const hosts:{label:'ORIGINAL'|'COMPLETED';server:Server}[]=[],lifecycle:Record<string,unknown>[]=[];
  const hostFacts=()=>hosts.map(({label,server})=>{const address=server.address(),loopback=address!==null&&typeof address!=='string'&&['127.0.0.1','::1'].includes(address.address);return{label,listening:server.listening,loopback,address_port:loopback&&address&&typeof address!=='string'?address.port:null,expected_loopback_port:expectedLoopbackPort};});
  const mark=(next:Phase)=>{phase=next;lifecycle.push({phase,hosts:hostFacts()});};
  const safeCode=(value:unknown)=>typeof value==='string'&&/^[A-Za-z0-9_.-]{1,64}$/u.test(value)?value:typeof value==='number'&&Number.isSafeInteger(value)&&value>=0&&value<=2147483647?value:null;
@@ -85,7 +85,7 @@ test('closing only T09 writes and raw recovery retains original safe ACK while c
   await fixture.runtime.stop();assert.equal(fixture.runtime.server.listening,false);
   mark('CLOSED_CREATE');
   const port=Number(new URL(fixture.origin).port),closed=createP2016Runtime({pool:fixture.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:fixture.origin,listenPort:port,principalIds:[fixture.admin,fixture.dispatcher,fixture.handler,fixture.otherHandler],externalSendEnabled:false,closePoolOnStop:false,ticketReturnToDispatchEnabled:false,workbenchDraftRecoveryEnabled:false});assert.ok('server' in closed);
-  hosts.push({label:'CLOSED',server:closed.server});mark('CLOSED_LISTEN');
+  hosts.push({label:'COMPLETED',server:closed.server});mark('CLOSED_LISTEN');
   try{
    await listenConversationWorkbenchServer(closed.server,{port});
   mark('CLOSED_AUTH');

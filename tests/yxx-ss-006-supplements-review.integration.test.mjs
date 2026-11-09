@@ -10,6 +10,7 @@ import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-
 import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -165,8 +166,9 @@ test('SS-006 preserves review history across both resolution orders and keeps on
 test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart', { skip: !databaseUrl, timeout: 240_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx006life', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
-    // The lifecycle case closes a Ticket, which writes a closure record (071, card 27C).
+    // The lifecycle case dismisses a Ticket: closure records (071) in the 072 vocabulary.
     await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
+    await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' });
     const memberScope = scope('lifecycle');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const member = commandFor(store, memberScope);
@@ -199,7 +201,7 @@ test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and sur
     const cancelledAccepted = await member.command.accept({ request: member.request(cancelledRoot.client_command_id), input: cancelledRoot });
     const cancelledResult = await process().processOne({ requestRef: cancelledAccepted.receipt.request_ref });
     const cancelledState = (await pool.query('SELECT version FROM pilot_ticket.ticket WHERE id=$1::uuid', [cancelledResult.ticket_id])).rows[0];
-    assert.equal((await actions.perform({ ticketId: cancelledResult.ticket_id, action: 'cancel', expectedVersion: cancelledState.version,
+    assert.equal((await actions.perform({ ticketId: cancelledResult.ticket_id, action: 'dismiss', expectedVersion: cancelledState.version,
       actor: { type: 'SYSTEM', id: null }, reasonCode: 'REPORTER_WITHDREW', traceId: 'yxx:ss006:cancel' })).ok, true);
     const cancelledSupplement = supplement('取消后补充', 1);
     await assert.rejects(member.supplement.accept({ request: member.request(cancelledSupplement.client_command_id), input: cancelledSupplement,

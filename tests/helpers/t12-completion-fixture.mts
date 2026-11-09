@@ -2,12 +2,15 @@ import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import type {T11Fixture} from './t11-completion-fixture.mjs';
 import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
 import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 /** Test-only SOURCE preparation: forward the planned false-default option; no production implementation. */
 export async function withT12Fixture(run:(context:T11Fixture)=>Promise<void>){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();
     await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});
+    // 040 is applied after the shared chain's 072, so its completion guard is brought into the 072 vocabulary again.
+    await ensureCompletionDismissal(f.pool);
     const options={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:f.origin,
       listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],
       externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,

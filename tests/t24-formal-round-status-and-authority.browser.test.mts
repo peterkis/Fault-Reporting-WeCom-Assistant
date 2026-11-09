@@ -47,7 +47,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
     await context.runtime.roundNotifications.runOnce();
     assert.equal((await producer.post(id,'complete',{...producer.command(started),internal_process:'INTERNAL_T24_PC_CANARY：仅内部合成过程',external_summary:'合成服务已恢复。'})).status,200);
     await context.runtime.roundNotifications.runOnce();
-    const completed=await producer.detail(id);assert.equal(completed.status,'CLOSED');
+    const completed=await producer.detail(id);assert.equal(completed.status,'COMPLETED');
     const path='/api/tickets/'+id+'/deliveries',response=await reader.get(path);assert.equal(response.status,200);
     const actual=await response.json() as Reply;
     assert.deepEqual(actual.items.map(x=>({node:x.node,cycle:x.cycle_no,route:x.destination_type,status:x.status,attempts:x.attempt_count,effect:x.side_effect_state,sent:x.sent_at})).sort((a,b)=>a.node.localeCompare(b.node)),[
@@ -93,7 +93,7 @@ test('formal compiled PC reads actual round states, explicitly requeries, evicts
       const rejected=await browser.evaluate('globalThis.__t24PCReads.at(-1)') as {path:string;status:number};assert.equal(rejected.path,path);assert.ok([401,403,404].includes(rejected.status));
       const negative=await receiptScreenshot(browser);
       assert.deepEqual(await browser.evaluate('globalThis.__t24PCWrites'),[]);assert.deepEqual(await physical(),baseline);
-      const after=await producer.detail(id);assert.equal(after.status,'CLOSED');assert.equal(after.version,completed.version);
+      const after=await producer.detail(id);assert.equal(after.status,'COMPLETED');assert.equal(after.version,completed.version);
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',scope:'T24_FORMAL_LIST_REFRESH_AUTH',screenshots:[positive,negative]}));
     }catch(failure){
       error=failure;try{if(browser){await screenshot(browser,directory,'failure');await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,reads:globalThis.__t24PCReads,writes:globalThis.__t24PCWrites})')));}}

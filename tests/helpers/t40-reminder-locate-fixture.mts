@@ -7,6 +7,7 @@ import {migrateWorkbenchManualReports} from '../../app/server/scripts/workbench-
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-migrate.mjs';
 import {withT37Fixture,object,text,type T37Http} from './t37-follow-up-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export {object,text};
 export function version(value:unknown):number {
@@ -41,7 +42,7 @@ export async function withT40LocateFixture(run:(fixture:T40LocateFixture)=>Promi
     const migration={databaseUrl:String(databaseUrl),mode:'apply' as const};
     await migrateWorkbenchManualReports(migration);
     await migrateWorkbenchPersonalRead(migration);
-    await migrateWorkbenchFollow(migration);
+    await migrateWorkbenchFollow(migration);await ensureCompletionDismissal(migration.databaseUrl);
     const options={
       pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},
       publicOrigin:base.origin,listenPort:Number(new URL(base.origin).port),

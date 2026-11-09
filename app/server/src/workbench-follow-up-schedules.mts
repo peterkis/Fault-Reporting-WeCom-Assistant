@@ -15,7 +15,7 @@ import {followUpDueSchemaReady} from '../scripts/workbench-follow-up-due-migrate
 const OPEN_STATES=['NEW','QUEUED','ACCEPTED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','REOPENED'];
 const purpose='WORKBENCH_FOLLOW_UP_SCHEDULE';
 interface CurrentRow {ticket_id:string;schedule_version:string;due_at:string|null;due_epoch_ms:string|null;scheduled_event_id:string|null;active:boolean}
-interface HistoryRow {schedule_version:string;action:'SET'|'CANCEL'|'ENDED';due_at:string;occurred_at:string;ticket_event_id:string;end_reason:'CLOSED'|'CANCELLED'|null}
+interface HistoryRow {schedule_version:string;action:'SET'|'CANCEL'|'ENDED';due_at:string;occurred_at:string;ticket_event_id:string;end_reason:'COMPLETED'|'DISMISSED'|null}
 export function followUpRevision(value:unknown,allowZero=true):string{
   if(typeof value!=='string'||!/^(0|[1-9][0-9]{0,18})$/u.test(value)||BigInt(value)>9223372036854775807n||(!allowZero&&value==='0'))failP2016();return value;
 }
@@ -32,9 +32,9 @@ async function maintainable(principal:WorkbenchPrincipal,ticket:P2016TicketRow,c
   if(principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')||ticket.assignee_id===principal.principal_id)return true;
   return currentCommunicator();
 }
-export const FOLLOW_UP_ACTIVE_SQL=`s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED') AND NOT EXISTS(
+export const FOLLOW_UP_ACTIVE_SQL=`s.scheduled_event_id IS NOT NULL AND t.status NOT IN ('COMPLETED','DISMISSED') AND NOT EXISTS(
       SELECT 1 FROM pilot_ticket.ticket_event end_event WHERE end_event.ticket_id=t.id AND end_event.event_ordinal>start_event.event_ordinal
-        AND (end_event.new_status IN ('CLOSED','CANCELLED') OR end_event.event_type='ticket.reopened'))`;
+        AND (end_event.new_status IN ('COMPLETED','DISMISSED') OR end_event.event_type='ticket.reopened'))`;
 async function readCurrents(transaction:PostgresTransaction,ticketIds:readonly string[],lock=false):Promise<CurrentRow[]>{
   if(ticketIds.length>100)failP2016();
   if(!ticketIds.length)return [];
@@ -61,7 +61,7 @@ async function readHistory(transaction:PostgresTransaction,ticketId:string):Prom
     SELECT r.schedule_version,'ENDED',r.due_at,ended.created_at,ended.event_id,ended.new_status,ended.event_ordinal
       FROM pilot_ticket.follow_up_schedule_revision r JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=r.ticket_id AND start_event.event_id=r.ticket_event_id
       JOIN LATERAL (SELECT e.event_id,e.created_at,e.new_status,e.event_ordinal FROM pilot_ticket.ticket_event e
-        WHERE e.ticket_id=r.ticket_id AND e.event_ordinal>start_event.event_ordinal AND e.new_status IN ('CLOSED','CANCELLED')
+        WHERE e.ticket_id=r.ticket_id AND e.event_ordinal>start_event.event_ordinal AND e.new_status IN ('COMPLETED','DISMISSED')
           AND NOT EXISTS(SELECT 1 FROM pilot_ticket.follow_up_schedule_revision later JOIN pilot_ticket.ticket_event later_event ON later_event.ticket_id=later.ticket_id AND later_event.event_id=later.ticket_event_id
             WHERE later.ticket_id=r.ticket_id AND later_event.event_ordinal>start_event.event_ordinal AND later_event.event_ordinal<e.event_ordinal)
         ORDER BY e.event_ordinal LIMIT 1) ended ON TRUE WHERE r.ticket_id=$1::uuid AND r.action='SET'
@@ -93,9 +93,9 @@ export function createWorkbenchFollowUpSchedules({pool,query,enabled=false,realt
         const candidates=await pool.query<{ticket_id:string;schedule_version:string}>(`SELECT s.ticket_id::text,s.schedule_version::text
           FROM pilot_ticket.follow_up_schedule s JOIN pilot_ticket.ticket t ON t.id=s.ticket_id
           JOIN pilot_ticket.ticket_event start_event ON start_event.ticket_id=s.ticket_id AND start_event.event_id=s.scheduled_event_id
-          WHERE s.due_epoch_ms<=platform.physical_epoch_ms() AND t.status NOT IN ('CLOSED','CANCELLED','DUPLICATE_LINKED')
+          WHERE s.due_epoch_ms<=platform.physical_epoch_ms() AND t.status NOT IN ('COMPLETED','DISMISSED')
             AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_event ended WHERE ended.ticket_id=t.id AND ended.event_ordinal>start_event.event_ordinal
-              AND (ended.new_status IN ('CLOSED','CANCELLED') OR ended.event_type='ticket.reopened'))
+              AND (ended.new_status IN ('COMPLETED','DISMISSED') OR ended.event_type='ticket.reopened'))
             AND NOT EXISTS(SELECT 1 FROM pilot_ticket.follow_up_due_signal signal WHERE signal.ticket_id=s.ticket_id AND signal.schedule_version=s.schedule_version)
           ORDER BY s.due_epoch_ms,s.ticket_id LIMIT $1`,[limit]);
         let emitted=0;

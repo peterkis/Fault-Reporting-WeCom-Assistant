@@ -31,7 +31,9 @@
 .ds-timeline .record-status-change .ds-status-badge {color:var(--text-secondary);font-size:var(--fs-sm);font-weight:var(--fw-regular);}
 .ds-timeline .record-status-change :is([data-status=NEW],[data-status=QUEUED],[data-status=ACCEPTED],[data-status=REOPENED])>.ds-status-dot {background:var(--stage-intake-accent);}
 .ds-timeline .record-status-change :is([data-status=IN_PROGRESS],[data-status=WAITING_REQUESTER],[data-status=WAITING_VENDOR])>.ds-status-dot {background:var(--stage-active-accent);}
-.ds-timeline .record-status-change :is([data-status=RESOLVED],[data-status=CLOSED],[data-status=CANCELLED],[data-status=DUPLICATE_LINKED],[data-status=IGNORED])>.ds-status-dot {background:var(--stage-done-accent);}
+.ds-timeline .record-status-change :is([data-status=RESOLVED],[data-status=COMPLETED])>.ds-status-dot {background:var(--stage-done-accent);}
+/* ADR-0058 / card 32C D3: 「已关闭」 is not completion; its dot is neutral gray. */
+.ds-timeline .record-status-change [data-status=DISMISSED]>.ds-status-dot {background:var(--stage-dismissed-accent);}
 /* Card 32 B6: every closing status reads 「已关闭」 and is never truncated; reason and original ticket go on a second line, as in 关闭记录. */
 .ds-timeline .record-status-change,.ds-timeline .record-status-change .ds-status-badge {flex:none;}
 .ds-timeline .ds-timeline-item.detail-record>.record-closure-facts {grid-column:2 / -1;grid-row:2;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1-5) var(--space-2);min-width:0;margin-top:calc(-1 * var(--space-1));font-size:var(--fs-xs);}

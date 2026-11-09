@@ -69,7 +69,7 @@ test('H5 signed reporter material survives source expiry and closed Ticket aging
   await profiles.runOnce();assert.equal(calls,2);
   const retained=(await readTicketReporterProfiles(f.pool,[ticket.id])).get(ticket.id);assert.equal(retained?.name,'永久H5合成报修人');assert.equal(retained?.department,'永久H5合成科室');assert.equal(retained?.source,'LATER_LOOKUP');
   assert.deepEqual((await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1',[ticket.intake_id])).rows[0],original);
-  await f.pool.query("UPDATE pilot_ticket.ticket SET status='CLOSED' WHERE id=$1",[ticket.id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED' WHERE id=$1",[ticket.id]);
   await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1',[ticket.intake_id]);
   await profiles.runOnce();assert.equal(calls,2);
   const query=createWeb01WorkbenchQuery({pool:f.pool,query:f.runtime.query,reporterProfilesEnabled:true}),authContext={principal_id:f.principals[0]?.id??'',auth_method:'COOKIE' as const,expires_epoch_ms:String(future+600000)};
@@ -170,7 +170,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     const evaluation={schema_version:1,client_command_id:randomUUID(),expected_ticket_version:detail.evaluation.ticket_version,completed_round_ref:detail.evaluation.completed_round_ref,rating:5,comment:'合成评价'};
     assert.equal((await lifecycle.evaluate({scope:a,requestRef:ref,input:evaluation})).purpose,'EVALUATION');assert.equal((await lifecycle.evaluate({scope:a,requestRef:ref,input:evaluation})).replayed,true);
     await assert.rejects(lifecycle.evaluate({scope:a,requestRef:ref,input:{...evaluation,client_command_id:randomUUID()}}),{code:'YXX_EVALUATION_ALREADY_SUBMITTED'});
-    const afterEvaluation=await http.detail(ticket.id);assert.equal(afterEvaluation.status,'CLOSED');assert.equal(afterEvaluation.version,detail.evaluation.ticket_version);
+    const afterEvaluation=await http.detail(ticket.id);assert.equal(afterEvaluation.status,'COMPLETED');assert.equal(afterEvaluation.version,detail.evaluation.ticket_version);
     const progressReceipt=await lifecycle.publicProgressReceipt({ticketId:ticket.id,actorPrincipalId:actor,clientCommandId:p.client_command_id,onAuthorize:async tx=>{await f.runtime.query.authorizedTicket({authContext:{principal_id:actor},ticketId:ticket.id,transaction:tx});return true;}});assert.equal(progressReceipt.state,'COMMITTED');
     const feedback=createYxxSelfServiceFeedback({pool:f.pool,scopeSecret:secret});
     await feedback.accept({scope:a,requestRef:ref,input:{schema_version:1,client_command_id:randomUUID(),expected_ticket_version:evaluation.expected_ticket_version,completed_round_ref:evaluation.completed_round_ref,feedback:'STILL_UNRESOLVED'}});
@@ -199,18 +199,19 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
     // Card 27C-A / U5: exercise the ordinary reader, profile counts and both
     // batched entry paths against the same real, authorized PostgreSQL facts.
     const departmentBefore=await profile.departmentSummary(a),closureCases:{ref:string;id:string;status:string}[]=[];
-    for(const status of ['CLOSED','RESOLVED','CANCELLED','DUPLICATE_LINKED','QUEUED','IN_PROGRESS']){
-      const receipt=(await store.accept({scope:a,input:{...request('关闭统计 '+status+'（合成）'),media_refs:[]}})).receipt;
+    // ADR-0058: both dismissal paths end in DISMISSED — a staff dismissal over HTTP and a system duplicate dismissal with a closure record.
+    for(const [status,path] of [['COMPLETED',null],['RESOLVED',null],['DISMISSED','HTTP'],['DISMISSED','SYSTEM_DUPLICATE'],['QUEUED',null],['IN_PROGRESS',null]] as const){
+      const receipt=(await store.accept({scope:a,input:{...request('关闭统计 '+status+(path?' '+path:'')+'（合成）'),media_refs:[]}})).receipt;
       assert.equal((await orchestrator.processOne({requestRef:receipt.request_ref})).processed,true);
       const t=(await f.pool.query<{id:string}>('SELECT pilot_ticket_id::text AS id FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];assert.ok(t);
-      if(['CLOSED','RESOLVED','IN_PROGRESS'].includes(status))await http.start(t.id);
+      if(['COMPLETED','RESOLVED','IN_PROGRESS'].includes(status))await http.start(t.id);
       const current=await http.detail(t.id);
-      if(status==='CLOSED')assert.equal((await http.post(t.id,'complete',http.command(current))).status,200);
+      if(status==='COMPLETED')assert.equal((await http.post(t.id,'complete',http.command(current))).status,200);
       if(status==='RESOLVED')assert.equal((await http.post(t.id,'resolve',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'SYNTHETIC_RESOLVED',note:'处理结果（合成）',external_visible:true})).status,200);
-      if(status==='CANCELLED')assert.equal((await http.post(t.id,'cancel',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
-      if(status==='DUPLICATE_LINKED'){
-        const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='DUPLICATE_LINKED',version=version+1 WHERE id=$1::uuid RETURNING version",[t.id])).rows[0];assert.ok(changed);
-        const event=await appendTicketEvent({transaction:f.pool,ticket:{...current,status:'DUPLICATE_LINKED',version:changed.version},eventType:'ticket.duplicate_linked',oldStatus:current.status,actor:{type:'SYSTEM',id:null},traceId:'card27c-h5-duplicate-input'});
+      if(path==='HTTP')assert.equal((await http.post(t.id,'dismiss',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
+      if(path==='SYSTEM_DUPLICATE'){
+        const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='DISMISSED',version=version+1 WHERE id=$1::uuid RETURNING version",[t.id])).rows[0];assert.ok(changed);
+        const event=await appendTicketEvent({transaction:f.pool,ticket:{...current,status:'DISMISSED',version:changed.version},eventType:'ticket.dismissed',oldStatus:current.status,actor:{type:'SYSTEM',id:null},traceId:'card27c-h5-duplicate-input'});
         await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:t.id,beforeStatus:current.status,beforeAssignee:current.assignee_id,beforeTeam:current.resolver_team_id,beforeVersion:current.version,beforeSnapshot:{},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'DUPLICATE'}),ticketEventId:event.event_id});
       }
       closureCases.push({ref:receipt.request_ref,id:t.id,status});
@@ -224,9 +225,9 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
       const view=await grantReader.detail({sessionToken:'绑定会话（合成）',publicRef:item.ref});
       await assertP2016Schema('p2_016_reporter_ticket_view',view);
       assert.equal(view.status,item.status);assert.equal(authorizationChecks,2);
-      assert.equal(view.closure_text!==null,['CANCELLED','DUPLICATE_LINKED'].includes(item.status));
+      assert.equal(view.closure_text!==null,item.status==='DISMISSED');
       assert.equal(JSON.stringify(view).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
-      if(item.status==='CANCELLED'){
+      if(item.status==='DISMISSED'){
         let revocationChecks=0;
         const revokedReader=createP2016ReporterTimeline({pool:f.pool,enabled:true,access:{authenticate:async()=>{
           if(++revocationChecks===2)throw Object.assign(new Error('绑定会话已撤销（合成）'),{code:'P2_016_REPORTER_UNAUTHENTICATED'});
@@ -245,7 +246,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
               assert.equal((await http.post(item.id,'restore',{client_command_id:randomUUID(),reason_code:'RESTORE_CLOSED',expected_version:current.version})).status,200);
               if(reclose){
                 const restored=await http.detail(item.id);
-                assert.equal((await http.post(item.id,'cancel',{client_command_id:randomUUID(),expected_version:restored.version,reason_code:'REPORTER_WITHDREW',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
+                assert.equal((await http.post(item.id,'dismiss',{client_command_id:randomUUID(),expected_version:restored.version,reason_code:'REPORTER_WITHDREW',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
               }
             }
             return result;
@@ -258,18 +259,18 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
           assert.equal(JSON.stringify(fresh).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
           if(reclose)assert.equal((await http.post(item.id,'restore',{client_command_id:randomUUID(),reason_code:'RESTORE_CLOSED',expected_version:actual.version})).status,200);
           const open=await http.detail(item.id);
-          assert.equal((await http.post(item.id,'cancel',{client_command_id:randomUUID(),expected_version:open.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
+          assert.equal((await http.post(item.id,'dismiss',{client_command_id:randomUUID(),expected_version:open.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
         }
       }
     }
-    const completed=await query.list({request:req,v2:true,status:'COMPLETED'}),closedOut=await query.list({request:req,v2:true,status:'CLOSED_OUT'});
-    assert.deepEqual(completed.items.map(x=>x.ticket?.status).sort(),['CLOSED','RESOLVED']);assert.deepEqual(closedOut.items.map(x=>x.ticket?.status).sort(),['CANCELLED','DUPLICATE_LINKED']);
-    const departmentCompleted=await profile.department(a,{status:'COMPLETED'}),departmentClosed=await profile.department(a,{status:'CLOSED_OUT'}),departmentAll=await profile.department(a),summary=await profile.departmentSummary(a);
+    const completed=await query.list({request:req,v2:true,status:'COMPLETED'}),closedOut=await query.list({request:req,v2:true,status:'DISMISSED'});
+    assert.deepEqual(completed.items.map(x=>x.ticket?.status).sort(),['COMPLETED','RESOLVED']);assert.deepEqual(closedOut.items.map(x=>x.ticket?.status).sort(),['DISMISSED','DISMISSED']);
+    const departmentCompleted=await profile.department(a,{status:'COMPLETED'}),departmentClosed=await profile.department(a,{status:'DISMISSED'}),departmentAll=await profile.department(a),summary=await profile.departmentSummary(a);
     assert.equal(departmentCompleted.total,2);assert.equal(departmentCompleted.active_count,0);assert.equal(departmentClosed.total,2);assert.equal(departmentClosed.active_count,0);assert.equal(departmentAll.total,departmentBefore.total+6);assert.equal(departmentAll.active_count,departmentBefore.active_count+2);assert.deepEqual(summary,{total:departmentAll.total,active_count:departmentAll.active_count,membership_revision:departmentBefore.membership_revision});
     const bootstrap={authenticated:true as const,identity_mode:'MEMBER_SELF_SERVICE' as const,read_only:false,can_submit:true,can_supplement:true,csrf_token:'h5-synthetic-csrf',recovery_scope:'h5-closure-synthetic-scope'};
-    const home=await query.h5Entry({request:req,input:{view:'home'},bootstrap}),departmentEntry=await query.h5Entry({request:req,input:{view:'department'},bootstrap}),completedEntry=await query.h5Entry({request:req,input:{view:'department',status:'COMPLETED'},bootstrap}),closedEntry=await query.h5Entry({request:req,input:{view:'reports',status:'CLOSED_OUT'},bootstrap});
+    const home=await query.h5Entry({request:req,input:{view:'home'},bootstrap}),departmentEntry=await query.h5Entry({request:req,input:{view:'department'},bootstrap}),completedEntry=await query.h5Entry({request:req,input:{view:'department',status:'COMPLETED'},bootstrap}),closedEntry=await query.h5Entry({request:req,input:{view:'reports',status:'DISMISSED'},bootstrap});
     assert.ok(home.view==='home'&&departmentEntry.view==='department'&&completedEntry.view==='department'&&closedEntry.view==='reports');assert.equal(home.data.department_summary?.total,departmentAll.total);assert.equal(home.data.department_summary?.active_count,departmentAll.active_count);assert.equal(departmentEntry.data.department.total,departmentAll.total);assert.equal(departmentEntry.data.department.active_count,departmentAll.active_count);assert.equal(completedEntry.data.department.total,2);assert.equal(completedEntry.data.department.active_count,0);assert.equal(closedEntry.data.reports.items.length,2);
-    const canceled=closureCases.find(x=>x.status==='CANCELLED');assert.ok(canceled);const closedDetail=await query.getWebRequest({request:req,requestRef:canceled.ref,v2:true}),detailEntry=await query.h5Entry({request:req,input:{view:'request',request_ref:canceled.ref},bootstrap});assert.equal(closedDetail.closure_text,'您的报修已关闭。如仍需处理，请重新报修。');assert.ok(detailEntry.view==='request');assert.equal(detailEntry.data.detail.closure_text,closedDetail.closure_text);assert.equal(JSON.stringify([closedDetail,detailEntry]).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
+    const canceled=closureCases.find(x=>x.status==='DISMISSED');assert.ok(canceled);const closedDetail=await query.getWebRequest({request:req,requestRef:canceled.ref,v2:true}),detailEntry=await query.h5Entry({request:req,input:{view:'request',request_ref:canceled.ref},bootstrap});assert.equal(closedDetail.closure_text,'您的报修已关闭。如仍需处理，请重新报修。');assert.ok(detailEntry.view==='request');assert.equal(detailEntry.data.detail.closure_text,closedDetail.closure_text);assert.equal(JSON.stringify([closedDetail,detailEntry]).includes('H5_INTERNAL_CLOSURE_CANARY'),false);
     await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=ANY($1::text[])',[closureCases.map(x=>x.ref)]);
     assert.deepEqual(await profile.departmentSummary(a),departmentBefore);
     readable=false;await assert.rejects(query.getWebRequest({request:req,requestRef:ref,v2:true}),{code:'YXX_MEMBER_AUTH_REQUIRED'});readable=true;req.destroy();

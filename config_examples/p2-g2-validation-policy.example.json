@@ -3,7 +3,7 @@
   "gate": "P2-G2",
   "member_directory": {"enabled": false, "internal_member_ids_confirmed": false},
   "ticket_notification_additional_events": [],
-  "default_private_progress_events": ["ticket.accepted", "ticket.closed"],
+  "default_private_progress_events": ["ticket.accepted", "ticket.completed"],
   "group_closure_transport": "WECOM_GROUP_WEBHOOK",
   "webhook_routes_require_owner_binding": true,
   "default_feature_flags": {

@@ -8,7 +8,7 @@ import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} 
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
-const purposes:Record<WaitingAction,string>={'request-information':'waiting-requester','wait-vendor':'waiting-vendor',resume:'waiting-resume',cancel:'waiting-cancel'};
+const purposes:Record<WaitingAction,string>={'request-information':'waiting-requester','wait-vendor':'waiting-vendor',resume:'waiting-resume',dismiss:'waiting-cancel'};
 export interface WaitingCopy {value:string;pending:WaitingCommand|null}
 export interface WaitingFence {signal:AbortSignal;requireCurrent:()=>void}
 export const serialiseWaiting=(copy:WaitingCopy)=>JSON.stringify({schema:1,note:copy.value,pending:copy.pending});

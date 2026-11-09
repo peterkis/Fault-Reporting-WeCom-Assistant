@@ -23,7 +23,7 @@ export function followUpInput(value:string):LocalDateTime{const due=datetime(val
 function history(value:unknown):SharedFollowUpHistoryEntry{
  const v=closed(value,['schedule_version','action','due_at','occurred_at','ticket_event_id','end_reason']);
  if(v.action!=='SET'&&v.action!=='CANCEL'&&v.action!=='ENDED')return invalid();
- const endReason=v.end_reason;if(endReason!==null&&endReason!=='CLOSED'&&endReason!=='CANCELLED')return invalid();
+ const endReason=v.end_reason;if(endReason!==null&&endReason!=='COMPLETED'&&endReason!=='DISMISSED')return invalid();
  if(v.action==='ENDED'?endReason===null:endReason!==null)return invalid();
  return {schedule_version:revision(v.schedule_version,true),action:v.action,due_at:v.due_at===null?null:datetime(v.due_at),occurred_at:datetime(v.occurred_at),ticket_event_id:id(v.ticket_event_id),end_reason:endReason};
 }

@@ -123,7 +123,8 @@ ticket.waiting_vendor
 ticket.information_added
 ticket.resolved
 ticket.auto_close_reminder
-ticket.closed
+ticket.completed
+ticket.dismissed
 ticket.reopened
 ```
 

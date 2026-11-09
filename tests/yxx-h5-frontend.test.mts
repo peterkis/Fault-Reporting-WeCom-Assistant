@@ -49,9 +49,9 @@ test('H5 optional display query discards a late response after cancellation or a
  const loader=createH5PureModuleLoader(),{displayProfileOptions}=await import(await loader.moduleUrl('api/display-profile.ts')),transport=await import(await loader.moduleUrl('api/client.ts'));
  let release:(value:Response)=>void=()=>{throw Error('PROFILE_NOT_PENDING');};
  t.mock.method(globalThis,'fetch',()=>new Promise<Response>(resolve=>{release=resolve;}));
- for(const reason of ['cancel','generation']){
+ for(const reason of ['dismiss','generation']){
   const controller=new AbortController(),pending=displayProfileOptions('scope-a','r').queryFn({signal:controller.signal});
-  if(reason==='cancel')controller.abort();else transport.advanceAuthGeneration();
+  if(reason==='dismiss')controller.abort();else transport.advanceAuthGeneration();
   release(Response.json({schema_version:1,recovery_scope:'scope-a',profile:{name:'OLD_SYNTHETIC',department:'OLD_DEPARTMENT'}}));await assert.rejects(pending,{name:'AbortError'});
  }
 });
@@ -287,7 +287,7 @@ test('H5 timeline keeps external safe summaries and orders loaded facts by their
 test('H5 timeline presents closed-out Ticket updates as report closed and the next active update as accepted again',async()=>{
  const timeline=await import(await moduleUrl('lib/timeline.ts'));
  const at=(event_type:string,status:string|null,epoch:string,summary='工单状态已更新')=>({event_type,summary,occurred_epoch_ms:epoch,occurred_at:'2026-10-20 14:32:00',ticket:status===null?null:{ticket_no:'SYNTHETIC',status}});
- const created=at('TICKET_CREATED','QUEUED','100','工单已创建'),firstClose=at('TICKET_UPDATED','CANCELLED','200'),restored=at('TICKET_UPDATED','IN_PROGRESS','300'),duplicate=at('TICKET_UPDATED','DUPLICATE_LINKED','400');
+ const created=at('TICKET_CREATED','QUEUED','100','工单已创建'),firstClose=at('TICKET_UPDATED','DISMISSED','200'),restored=at('TICKET_UPDATED','IN_PROGRESS','300'),duplicate=at('TICKET_UPDATED','DISMISSED','400');
  const input=[duplicate,restored,firstClose,created],snapshot=structuredClone(input);
  assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',true),[{titleKey:'eventClosed',summary:'公开重复说明（合成）'},{titleKey:'eventRestored',summary:''},{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},{titleKey:'eventCreated',summary:'工单已创建'}]);
  assert.deepEqual(input,snapshot,'presentation must not mutate the cached API page');
@@ -297,7 +297,7 @@ test('H5 timeline presents closed-out Ticket updates as report closed and the ne
  assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',false)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},'unloaded newer pages keep the neutral text');
  assert.deepEqual(timeline.timelinePresentations([duplicate,created],null)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'});
  // A completion or an intake fact after a closure is not a restore; unrelated Ticket updates keep their safe summary.
- const completed=at('TICKET_UPDATED','CLOSED','500','工作人员已完成本轮处理：（合成）'),processing=at('PROCESSING',null,'250','报修正在处理中'),started=at('TICKET_UPDATED','IN_PROGRESS','260');
+ const completed=at('TICKET_UPDATED','COMPLETED','500','工作人员已完成本轮处理：（合成）'),processing=at('PROCESSING',null,'250','报修正在处理中'),started=at('TICKET_UPDATED','IN_PROGRESS','260');
  assert.deepEqual(timeline.timelinePresentations([completed,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','eventClosed']);
  assert.deepEqual(timeline.timelinePresentations([started,processing,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','processing','eventClosed']);
  assert.deepEqual(timeline.timelinePresentations([started,created]),[{titleKey:'eventUpdated',summary:'工单状态已更新'},{titleKey:'eventCreated',summary:'工单已创建'}]);
@@ -658,9 +658,9 @@ test('H5 installed SDK natural play completion clears only its matching preview 
  value.controller.dispose();const next=value.makeController(),two=await record(next,10000.75);await next.playNative(two);assert.notEqual(one.localId,two.localId);assert.equal(value.subscriptions.filter(name=>name==='onVoicePlayEnd').length,1,'SDK has no off API: controller lifetimes share one native event subscription');ended({localId:one.localId});next.remove(two.id);for(let attempt=0;attempt<20&&!value.pendingBridge.has('stopVoice');attempt+=1)await new Promise<void>(resolve=>setImmediate(resolve));assert.ok(value.pendingBridge.has('stopVoice'),'An old localId end must not clear a new preview');value.pendingBridge.get('stopVoice')?.({err_msg:'stopVoice:ok'});await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(next.getBusy(),false);
  next.dispose();const count=value.calls.length;ended({localId:two.localId});await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.calls.length,count,'Disposed controller subscriptions cannot issue new native work');
 });
-for(const action of ['release','cancel','hide','dispose','lost','clear']as const)test('H5 '+action+' cancels a native preview-stop wait and a late ACK cannot start recording',async t=>{
+for(const action of ['release','dismiss','hide','dispose','lost','clear']as const)test('H5 '+action+' cancels a native preview-stop wait and a late ACK cannot start recording',async t=>{
  const value=await pendingPreviewStop(t),next=value.controller.start();for(let attempt=0;attempt<20&&!value.pendingBridge.has('stopVoice');attempt+=1)await new Promise<void>(resolve=>setImmediate(resolve));assert.ok(value.pendingBridge.has('stopVoice'));
- if(action==='release')value.controller.release();else if(action==='cancel')value.controller.release(true);else if(action==='hide'){value.document.visibilityState='hidden';value.document.dispatchEvent(new Event('visibilitychange'));}else if(action==='dispose')value.controller.dispose();else if(action==='lost')value.authLost.dispatchEvent(new Event('lost'));else value.controller.clear();
+ if(action==='release')value.controller.release();else if(action==='dismiss')value.controller.release(true);else if(action==='hide'){value.document.visibilityState='hidden';value.document.dispatchEvent(new Event('visibilitychange'));}else if(action==='dispose')value.controller.dispose();else if(action==='lost')value.authLost.dispatchEvent(new Event('lost'));else value.controller.clear();
  await next;assert.equal(value.calls.filter(name=>name==='startRecord').length,1);assert.equal(value.controller.getBusy(),false);assert.equal(value.controller.getRecording().recording,false);assert.equal(value.controller.getError(),action==='release'?'voice:tooShort':null);
  value.pendingBridge.get('stopVoice')?.({err_msg:'stopVoice:ok'});await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(value.calls.filter(name=>name==='startRecord').length,1,'Late native cleanup ACK cannot revive a canceled capture');
 });
@@ -762,8 +762,8 @@ test('H5 detail ETA follows the canonical queued DTO and excludes terminal state
    "export async function renderClosure(status,language,text){await i18n.changeLanguage(language);const value={display_status:status===null?'NOT_SERVICE':'TICKET_CREATED',ticket:status===null?null:{ticket_no:'SYNTHETIC',status},intake_no:'SYNTHETIC-INTAKE',safe_description:'报修（合成）',created_epoch_ms:'1792641600000',closure_text:text,note:'INTERNAL_NOTE（合成）',can_supplement:true,h5:{intent:'FAULT',ticket_version:1,evaluation:{rating:null,can_evaluate:false}}};return{html:renderToStaticMarkup(h(I18nProvider,null,h(Overview,{value}))),actions:detailActionVisibility(value,true)};}export async function render(status){await i18n.changeLanguage('zh-CN');const client=new QueryClient(),value={display_status:'TICKET_CREATED',ticket:{ticket_no:'SYNTHETIC',status}},state=reportState(value),progress={summary:'Synthetic public progress',updated_epoch_ms:'1792641600000',estimated_epoch_ms:'1792642500000'};try{return{state,html:renderToStaticMarkup(h(QueryClientProvider,{client},h(I18nProvider,null,h(DetailTimeline,{requestRef:'11111111111111111111111111111111',progress,state}))))};}finally{client.clear();}}"
   ].join('\n')
  }}),{render,renderClosure}=await import(await loader.moduleUrl('eta-render-test.ts'));
- for(const[status,visible]of [['QUEUED',true],['NEW',true],['OPEN',true],['ACCEPTED',true],['IN_PROGRESS',true],['REOPENED',true],['RESOLVED',false],['CLOSED',false],['CANCELLED',false],['DUPLICATE_LINKED',false]]as const){const view=await render(status);assert.equal(view.html.includes('预计修复时间'),visible,status);if(status==='QUEUED')assert.equal(view.state,'queued');}
- for(const status of ['CANCELLED','DUPLICATE_LINKED',null])for(const language of ['zh-CN','en']){
+ for(const[status,visible]of [['QUEUED',true],['NEW',true],['OPEN',true],['ACCEPTED',true],['IN_PROGRESS',true],['REOPENED',true],['RESOLVED',false],['COMPLETED',false],['DISMISSED',false]]as const){const view=await render(status);assert.equal(view.html.includes('预计修复时间'),visible,status);if(status==='QUEUED')assert.equal(view.state,'queued');}
+ for(const status of ['DISMISSED',null])for(const language of ['zh-CN','en']){
   const view=await renderClosure(status,language,'已按您的要求撤销本次报修。');assert.match(view.html,/data-h5-closure-text/);
   const order=['data-h5-closure-text','报修（合成）'].map(marker=>view.html.indexOf(marker));assert.ok(order[1]>=0&&order[0]>order[1],'closure note follows the title at the bottom of the header card');assert.match(view.html,/class="detail-closure-note selectable"/);
   assert.match(view.html,/data-h5-status-icon="closed"/,'closed badge carries the CircleX mark');assert.ok(view.html.includes(language==='en'?'Closed':'已关闭'));assert.ok(view.html.includes('已按您的要求撤销本次报修。'));assert.doesNotMatch(view.html,/INTERNAL_NOTE/);assert.deepEqual(view.actions,{supplement:false,urge:false,evaluation:false,feedback:false});
@@ -772,7 +772,7 @@ test('H5 detail ETA follows the canonical queued DTO and excludes terminal state
   const escaped=await renderClosure(status,language,'<img src=x onerror=alert(1)>');assert.match(escaped.html,/&lt;img/);assert.doesNotMatch(escaped.html,/<img src=x/);
  }
  const {reportState,reportTone}=await import(await moduleUrl('lib/report.ts'));
- for(const status of ['CANCELLED','DUPLICATE_LINKED']){assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'closed');assert.equal(reportTone('closed'),'neutral');}
+ for(const status of ['DISMISSED']){assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'closed');assert.equal(reportTone('closed'),'neutral');}
  assert.equal(reportState({ticket:null,display_status:'NOT_SERVICE',closure_text:null}),'notService');
- for(const status of ['CLOSED','RESOLVED'])assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'completed');
+ for(const status of ['COMPLETED','RESOLVED'])assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'completed');
 });

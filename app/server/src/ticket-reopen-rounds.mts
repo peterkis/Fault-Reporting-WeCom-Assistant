@@ -20,7 +20,7 @@ export async function unassignedReopenedRound(tx:PostgresTransaction,ticketId:st
   WHERE t.id=$1::uuid AND t.status='REOPENED' AND t.assignee_id IS NULL
    AND c.first_responsibility_event_id IS NULL AND c.staff_completion_event_id IS NULL
    AND c.cycle_no=prior.cycle_no+1 AND c.source_intake_id=t.source_intake_id AND c.cycle_start_event_id=r.reopen_event_id
-   AND e.event_type='ticket.reopened' AND e.old_status='CLOSED' AND e.new_status='REOPENED'`,[ticketId]);
+   AND e.event_type='ticket.reopened' AND e.old_status='COMPLETED' AND e.new_status='REOPENED'`,[ticketId]);
  return selected.rowCount===1;
 }
 export async function reopenedRoundFollowUp(tx:PostgresTransaction,ticketId:string,principalId:string):Promise<{origin:TicketReopenOrigin;is_previous_handler:boolean;awaiting_acceptance:true}|null>{
@@ -44,9 +44,9 @@ export async function completedTicketRound(tx:PostgresTransaction,ticketId:strin
    JOIN pilot_ticket.ticket_event e ON e.event_id=c.staff_completion_event_id AND e.ticket_id=t.id
    JOIN pilot_ticket.staff_completion_notification_commitment n ON n.cycle_id=c.id AND n.ticket_id=t.id
      AND n.ticket_event_id=e.event_id AND n.source_intake_id=t.source_intake_id
-   WHERE t.id=$1::uuid AND c.source_intake_id=t.source_intake_id AND t.status='CLOSED'
-     AND e.event_type='ticket.closed' AND e.reason_code='STAFF_COMPLETED' AND e.operator_type='PILOT_USER'
-     AND e.old_status='IN_PROGRESS' AND e.new_status='CLOSED'
+   WHERE t.id=$1::uuid AND c.source_intake_id=t.source_intake_id AND t.status='COMPLETED'
+     AND e.event_type='ticket.completed' AND e.reason_code='STAFF_COMPLETED' AND e.operator_type='PILOT_USER'
+     AND e.old_status='IN_PROGRESS' AND e.new_status='COMPLETED'
      AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket_cycle_reopen r WHERE r.completed_cycle_id=c.id)`,[ticketId]);
  return selected.rows[0]??null;
 }

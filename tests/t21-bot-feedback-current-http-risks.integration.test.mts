@@ -63,7 +63,7 @@ async function unchangedStaff(f:T21DraftFixture){
     const detail=await staff.detail(f.ticketId);
     assert.equal(detail.id,f.ticketId);
     assert.equal(detail.ticket_no,f.completed.ticket_no);
-    assert.equal(detail.status,'CLOSED');
+    assert.equal(detail.status,'COMPLETED');
     assert.equal(detail.version,f.completed.version);
     assert.equal(detail.assignee_id,f.completed.assignee_id);
     assert.equal(detail.resolver_team_id,f.completed.resolver_team_id);

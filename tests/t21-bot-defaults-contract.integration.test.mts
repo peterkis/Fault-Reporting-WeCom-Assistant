@@ -18,7 +18,7 @@ test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write
     const page=await member.request('/wecom/yixiaoxiu/tickets/'+f.publicRef);assert.equal(page.status,profile==='OAUTH_ONLY'?404:200);if(profile==='MEMBER_TICKET_READONLY')assert.equal(page.text.includes('/reporter/bot-feedback.js'),false);
    }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
   }
-  await f.verifyStaff(async staff=>{const detail=await staff.detail(f.ticketId);assert.equal(detail.status,'CLOSED');assert.equal(detail.version,f.completed.version);assert.deepEqual(detail.handling_cycle,f.completed.handling_cycle);});
+  await f.verifyStaff(async staff=>{const detail=await staff.detail(f.ticketId);assert.equal(detail.status,'COMPLETED');assert.equal(detail.version,f.completed.version);assert.deepEqual(detail.handling_cycle,f.completed.handling_cycle);});
  });
 });
 test('current Bot schema readiness is conditional and the default runtime keeps its original readiness without 050',async()=>{

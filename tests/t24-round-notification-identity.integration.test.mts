@@ -48,7 +48,7 @@ test('same-round handoffs, command replay and a fresh consumer with a new templa
     const current=await http.detail(id),completionCommand=http.command(current);
     assert.equal((await http.post(id,'complete',completionCommand)).status,200);
     await context.runtime.roundNotifications.runOnce();
-    const completed=await http.detail(id);assert.equal(completed.status,'CLOSED');
+    const completed=await http.detail(id);assert.equal(completed.status,'COMPLETED');
     const both=await readDeliveries();
     assert.deepEqual(both.items.map(row=>({node:row.node,cycle:row.cycle_no,route:row.destination_type,status:row.status})).sort((a,b)=>a.node.localeCompare(b.node)),[
       {node:'FIRST_RESPONSIBILITY',cycle:1,route:'PERSON',status:'PENDING'},
@@ -58,7 +58,7 @@ test('same-round handoffs, command replay and a fresh consumer with a new templa
     assert.equal((await http.post(id,'complete',completionCommand)).status,200);
     await useFreshConsumer('wbint-round-notification/3');
     const replayed=await readDeliveries();assert.deepEqual(replayed.items,both.items);
-    const afterReplay=await http.detail(id);assert.equal(afterReplay.status,'CLOSED');assert.equal(afterReplay.version,completed.version);
+    const afterReplay=await http.detail(id);assert.equal(afterReplay.status,'COMPLETED');assert.equal(afterReplay.version,completed.version);
     const two=(await context.pool.query<{messages:number;outboxes:number;deliveries:number;grants:number;unsafe:boolean}>(`SELECT
       (SELECT count(*)::int FROM communication.message) AS messages,(SELECT count(*)::int FROM communication.outbox) AS outboxes,
       (SELECT count(*)::int FROM communication.delivery) AS deliveries,(SELECT count(*)::int FROM pilot_ticket.reporter_access_grant) AS grants,

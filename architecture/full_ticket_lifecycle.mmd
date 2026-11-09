@@ -8,12 +8,18 @@ stateDiagram-v2
   IN_PROGRESS --> WAITING_VENDOR: wait-vendor
   WAITING_VENDOR --> IN_PROGRESS: resume
   IN_PROGRESS --> RESOLVED: resolve
-  RESOLVED --> CLOSED: confirm / auto-close
+  IN_PROGRESS --> COMPLETED: complete
+  RESOLVED --> COMPLETED: confirm / auto-complete
   RESOLVED --> REOPENED: reopen
-  CLOSED --> REOPENED: reopen
+  COMPLETED --> REOPENED: reopen
   REOPENED --> IN_PROGRESS: start
-  QUEUED --> CANCELLED: cancel
-  ACCEPTED --> CANCELLED: cancel
+  QUEUED --> DISMISSED: dismiss
+  ACCEPTED --> DISMISSED: dismiss
+  IN_PROGRESS --> DISMISSED: dismiss
+  note right of DISMISSED
+    dismiss from any open status (ADR-0058)
+    restore returns to the status before dismissal
+  end note
   note right of IN_PROGRESS
     add-note preserves current status
     every action appends Ticket Event

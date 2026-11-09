@@ -364,7 +364,7 @@ export function createTicketClosureService({
       );
       return;
     }
-    if (['confirm', 'reopen', 'auto-close'].includes(action)) {
+    if (['confirm', 'reopen', 'auto-complete'].includes(action)) {
       await transaction.query(
         `UPDATE pilot_ticket.ticket
             SET auto_close_at = NULL,
@@ -631,10 +631,10 @@ export function createTicketClosureService({
       for (const ticket of selected.rows) {
         const result = await actionService.performInTransaction({
           ticketId: ticket.id,
-          action: 'auto-close',
+          action: 'auto-complete',
           actor: { type: 'SYSTEM', id: null },
           expectedVersion: ticket.version,
-          traceId: `auto-close:${ticket.id}:${ticket.version}`,
+          traceId: `auto-complete:${ticket.id}:${ticket.version}`,
         }, transaction);
         if (result.ok) {
           closedTicketIds.push(ticket.id);

@@ -14,6 +14,7 @@ import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
 import {migrateP2016} from '../../app/server/scripts/p2-016-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function rows(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(object);}
@@ -25,7 +26,7 @@ export async function withT08Fixture(run:(fixture:T08Fixture)=>Promise<void>,opt
  const databaseUrl=process.env.PILOT_DATABASE_URL;assert.equal(typeof databaseUrl,'string');
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t08slice',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
   await applyThrough030(context);const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
-  await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});if(options.migration!==false)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});
+  await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});if(options.migration!==false)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.pool);
   const access=createPilotAccessService({pool:context.pool});
   const roleSets:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
   const members=await Promise.all(roleSets.map((roles,index)=>access.upsertPrincipal({wecomUserId:'t08-slice-'+index+'-'+randomUUID(),displayName:'T08 合成内部人员 '+index,roles,resolverTeamIds:['PILOT_IT']})));
@@ -42,7 +43,7 @@ export async function withT08Fixture(run:(fixture:T08Fixture)=>Promise<void>,opt
     const csrf=(await get('/api/lifecycle/bootstrap')).value.csrf_token;
     const post=async(path:string,body:Record<string,unknown>)=>{const version=body.expected_row_version??body.expected_version;const response=await fetch(origin+path,{method:'POST',headers:{cookie,origin,'content-type':'application/json','x-csrf-token':text(csrf),'idempotency-key':text(body.client_command_id),'if-match':'"'+version+'"'},body:JSON.stringify(body)});return {status:response.status,value:object(await response.json())};};return {get,post,cookie};};
    const createTicket=async()=>{const intake=object(await seedPersistedIntake({pool:context.pool,text:'T08 隔离合成报修 '+randomUUID(),requestType:'INCIDENT',status:'RECEIVED'}));const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:text(intake.intakeId),occurredAt:assertLocalDateTime(intake.receivedAt),traceId:'t08-slice-public-core'});assert.ok(created.ticket);return created.ticket.id;};
-   await run({pool:context.pool,origin,runtime,admin:admin.id,dispatcher:dispatcher.id,handler:handler.id,otherHandler:otherHandler.id,http,createTicket,migrateUnassign:mode=>{assert.ok(callbackActive,'T08_FIXTURE_CLOSED');return migrateTicketUnassign({databaseUrl:context.databaseUrl,mode});}});
+   await run({pool:context.pool,origin,runtime,admin:admin.id,dispatcher:dispatcher.id,handler:handler.id,otherHandler:otherHandler.id,http,createTicket,migrateUnassign:async mode=>{assert.ok(callbackActive,'T08_FIXTURE_CLOSED');const result=await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode});if(mode==='apply')await ensureCompletionDismissal(context.pool);return result;}});
   }finally{callbackActive=false;await runtime.stop();assert.equal(runtime.server.listening,false);assert.equal(await new Promise<number>((resolve,reject)=>runtime.server.getConnections((error,count)=>error?reject(error):resolve(count))),0);assert.equal((await runtime.observability.metrics()).sse_clients,0);}
  }});
 }

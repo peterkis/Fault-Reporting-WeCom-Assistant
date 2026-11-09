@@ -16,7 +16,7 @@ export interface ClosureEvidence {
   record_id?:string;secondary_reason_code?:string|null;duplicate_of_ref?:string|null;
 }
 export function projectWorkbenchClosure(status:string,evidence:ClosureEvidence|null,canRestore=false):WorkbenchCard['closure'] {
-  const completed=['RESOLVED','CLOSED','COMPLETED'].includes(status),dismissed=['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status);
+  const completed=['RESOLVED','COMPLETED'].includes(status),dismissed=status==='DISMISSED';
   if(!completed&&!dismissed)return null;
   if(dismissed&&(!evidence?.record_id||!evidence.closed_at||!evidence.reason_code||!Object.hasOwn(CLOSURE_REASONS,evidence.reason_code)))failP2016('ACTION_FAILED',503);
   const source=evidence?.source??null,reason=evidence?.reason_code;
@@ -28,16 +28,16 @@ export function projectWorkbenchClosure(status:string,evidence:ClosureEvidence|n
   const reasonCode=typeof reason==='string'&&Object.hasOwn(labels,reason)?reason:null;
   const secondary=evidence?.secondary_reason_code;
   return {kind:completed?'COMPLETED':'DISMISSED',source,reason_code:reasonCode,
-    reason_label:reasonCode?labels[reasonCode]??null:'已关闭',
+    reason_label:reasonCode?labels[reasonCode]??null:completed?'已完成':'已关闭',
     secondary_reason:reasonCode==='NOT_IT_SCOPE'&&typeof secondary==='string'&&Object.hasOwn(CLOSURE_SECONDARY_REASONS,secondary)?{code:secondary,label:CLOSURE_SECONDARY_REASONS[secondary as keyof typeof CLOSURE_SECONDARY_REASONS]}:null,
     reason_note:note,closed_by_display_name:source==='MANUAL'?actor:null,
     closed_at:evidence?.closed_at==null?null:localP2016(evidence.closed_at),duplicate_of:evidence?.duplicate_of_ref?{display_no:evidence.duplicate_of_ref}:null,
-    can_restore:dismissed?canRestore:['RESOLVED','CLOSED'].includes(status)&&canRestore};
+    can_restore:dismissed?canRestore:['RESOLVED','COMPLETED'].includes(status)&&canRestore};
 }
 export function workbenchCanRestore(kind:string,status:string,evidence:ClosureEvidence|null,principal?:WorkbenchPrincipal):boolean {
-  if(['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status))return Boolean(evidence?.record_id&&principal?.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))
+  if(status==='DISMISSED')return Boolean(evidence?.record_id&&principal?.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))
     &&(kind!=='ticket'||typeof evidence.resolver_team_id==='string'&&ticketActionAllowedP2016(principal,{status,resolver_team_id:evidence.resolver_team_id,assignee_id:evidence.assignee_id??null},'restore')));
-  return kind==='ticket'&&['RESOLVED','CLOSED'].includes(status)&&typeof evidence?.resolver_team_id==='string'
+  return kind==='ticket'&&['RESOLVED','COMPLETED'].includes(status)&&typeof evidence?.resolver_team_id==='string'
     &&ticketActionAllowedP2016(principal,{status,resolver_team_id:evidence.resolver_team_id,assignee_id:evidence.assignee_id??null},'reopen');
 }
 
@@ -226,8 +226,8 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
   const countsPredicate=counts?pageParameters(counts.predicate):null;
   const expectedPageParameter=8+session.values.length+(counts?.values.length??0);
   const countsSql=counts&&countsPredicate?`,(SELECT jsonb_build_object(
-    'completed',count(*) FILTER(WHERE status IN ('RESOLVED','CLOSED','COMPLETED'))::integer,
-    'dismissed',count(*) FILTER(WHERE status IN ('CANCELLED','DUPLICATE_LINKED','IGNORED'))::integer)
+    'completed',count(*) FILTER(WHERE status IN ('RESOLVED','COMPLETED'))::integer,
+    'dismissed',count(*) FILTER(WHERE status IN ('DISMISSED'))::integer)
     FROM cards WHERE ${countsPredicate}) AS group_counts,
     COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',page.kind,'id',page.id,'order_group',page.order_group,'order_at',page.order_at)
       ORDER BY page.order_group DESC,page.order_at DESC,page.kind DESC,page.id DESC)

@@ -17,7 +17,7 @@ test('feedback rechecks source retention after a real Ticket lock wait before co
    await waitUntil(async()=>Boolean((await f.context.pool.query<{expired:boolean}>('SELECT platform.physical_epoch_ms()>=$1::bigint AS expired',[expiry])).rows[0]?.expired));
    await lock.query('COMMIT');const result=await pending;assert.equal(result.status,404,result.text);
    const facts=(await f.context.pool.query<{status:string;version:number;cycles:number;feedback:number}>(`SELECT t.status,t.version,(SELECT count(*)::int FROM pilot_ticket.ticket_handling_cycle c WHERE c.ticket_id=t.id) AS cycles,(SELECT count(*)::int FROM intake.web_command_receipt WHERE command_kind='FEEDBACK') AS feedback FROM pilot_ticket.ticket t WHERE t.id=$1::uuid`,[f.ticketId])).rows[0];
-   assert.deepEqual(facts,{status:'CLOSED',version:f.completed.version,cycles:1,feedback:0});
+   assert.deepEqual(facts,{status:'COMPLETED',version:f.completed.version,cycles:1,feedback:0});
   }finally{await lock.query('ROLLBACK');lock.release();await pending;}
  });
 });
@@ -33,7 +33,7 @@ for(const mode of ['logout','write-off','revocation'] as const){
     else if(mode==='write-off')f.options.featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED=false;
     else await lock.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1',[f.requestRef]);
     await lock.query('COMMIT');const result=await pending;assert.equal(result.status,{logout:503,'write-off':403,revocation:404}[mode],result.text);
-    assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'CLOSED');
+    assert.equal((await f.context.pool.query<{status:string}>('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'COMPLETED');
     assert.equal((await f.context.pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid',[f.ticketId])).rows[0]?.n,0);
    }finally{await lock.query('ROLLBACK');lock.release();await pending;}
   });
@@ -47,7 +47,7 @@ test('feedback failure after Core reopen or after its receipt insert rolls back 
    await f.context.pool.query('CREATE TRIGGER t20_feedback_fail BEFORE '+event+' ON '+table+' FOR EACH ROW WHEN ('+condition+') EXECUTE FUNCTION public.t20_feedback_fail()');
    try{
     const response=await f.send();assert.equal(response.status,503,response.text);
-    assert.equal((await f.context.pool.query<{status:string;version:number}>('SELECT status,version FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'CLOSED');
+    assert.equal((await f.context.pool.query<{status:string;version:number}>('SELECT status,version FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.ticketId])).rows[0]?.status,'COMPLETED');
     assert.equal((await f.context.pool.query<{n:number}>('SELECT count(*)::int AS n FROM pilot_ticket.ticket_cycle_reopen WHERE ticket_id=$1::uuid',[f.ticketId])).rows[0]?.n,0);
     const receipt=await f.member.request(f.path+'/feedback/commands/'+f.command.client_command_id);assert.equal(receipt.status,200);assert.equal(t20Object(receipt.json()).state,'UNKNOWN');
    }finally{await f.context.pool.query('DROP TRIGGER t20_feedback_fail ON '+table);await f.context.pool.query('DROP FUNCTION public.t20_feedback_fail()');}

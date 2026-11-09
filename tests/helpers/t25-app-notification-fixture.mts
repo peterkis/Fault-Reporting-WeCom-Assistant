@@ -10,6 +10,7 @@ import {migrateTicketRoundNotifications} from '../../app/server/scripts/ticket-r
 import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
 import {migrateBotReporterFeedback} from '../../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 /** Real migration/admission/Core/HTTP; only scheduled consumption is omitted in this explicit Port fixture. */
 export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<void>,directory:ManualReporterDirectoryOptions,memberOptions:Pick<P2016RuntimeOptions,'reporterOrigin'|'reporterMemberEntry'|'identityMapping'|'wecomWebOAuth'|'yxxSelfService'|'appNotifications'|'botReporterFeedbackEnabled'>={}){
@@ -29,6 +30,6 @@ export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<voi
  },{ticketSelfHandlingEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
   await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});
   await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
-  if(memberOptions.botReporterFeedbackEnabled){await migrateTicketReopenRounds({databaseUrl:databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl:databaseUrl,mode:'apply'});}
+  if(memberOptions.botReporterFeedbackEnabled){await migrateTicketReopenRounds({databaseUrl:databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl:databaseUrl,mode:'apply'});}await ensureCompletionDismissal(databaseUrl);
  }});
 }

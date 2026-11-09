@@ -20,7 +20,7 @@ export type WorkbenchGroupStatusContent=Readonly<{
   transport:'WECOM_MESSAGE_PUSH';
   node:WorkbenchGroupNotificationNode;
   suffix:string;
-  status:'QUEUED'|'ACCEPTED'|'CLOSED';
+  status:'QUEUED'|'ACCEPTED'|'COMPLETED';
   occurred_at:LocalDateTime;
 }>;
 

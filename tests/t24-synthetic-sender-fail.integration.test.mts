@@ -30,7 +30,7 @@ test('synthetic definitely-not-applied Sender failure leaves one actual terminal
  await withT24Fixture(async context=>{
   const http=await t11Http(context),id=context.ticketId;await http.start(id);await context.runtime.roundNotifications.runOnce();
   const current=await http.detail(id);assert.equal((await http.post(id,'complete',http.command(current))).status,200);await context.runtime.roundNotifications.runOnce();
-  const closed=await http.detail(id);assert.equal(closed.status,'CLOSED');const before=await deliveryFacts(http,id);assert.equal(before.length,2);
+  const closed=await http.detail(id);assert.equal(closed.status,'COMPLETED');const before=await deliveryFacts(http,id);assert.equal(before.length,2);
   const staff=before.find(row=>row.node==='STAFF_COMPLETED');assert.ok(staff);assert.equal(typeof staff.delivery_id,'string');
   const beforeIds=await physical(context.pool),beforeBindings=await bindings(context.pool);let calls=0;
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender:{send:async request=>{

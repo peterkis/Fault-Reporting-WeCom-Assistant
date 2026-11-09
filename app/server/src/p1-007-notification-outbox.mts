@@ -24,9 +24,9 @@ export type NotificationEventType = Extract<TicketEventType,
   | 'ticket.waiting_vendor'
   | 'ticket.resumed'
   | 'ticket.resolved'
-  | 'ticket.closed'
+  | 'ticket.completed'
   | 'ticket.reopened'
-  | 'ticket.cancelled'
+  | 'ticket.dismissed'
   | 'ticket.note_added'
   | 'ticket.information_added'
   | 'ticket.auto_close_reminder'>;
@@ -136,7 +136,7 @@ const TEMPLATE_CODES: Readonly<Partial<Record<TicketEventType, string>>> = Objec
   'ticket.waiting_requester': 'TICKET_INFORMATION_REQUESTED',
   'ticket.waiting_vendor': 'TICKET_WAITING_VENDOR',
   'ticket.resolved': 'TICKET_RESOLVED',
-  'ticket.closed': 'TICKET_CLOSED',
+  'ticket.completed': 'TICKET_COMPLETED',
   'ticket.reopened': 'TICKET_REOPENED',
   'ticket.information_added': 'TICKET_INFORMATION_ADDED',
   'ticket.auto_close_reminder': 'TICKET_AUTO_CLOSE_REMINDER',
@@ -150,9 +150,9 @@ const NOTIFICATION_MATRIX: Readonly<Partial<Record<TicketEventType, Notification
   'ticket.waiting_vendor': Object.freeze({ reporter: false, team: true }),
   'ticket.resumed': Object.freeze({ reporter: false, team: true }),
   'ticket.resolved': Object.freeze({ reporter: true, team: true }),
-  'ticket.closed': Object.freeze({ reporter: true, team: true }),
+  'ticket.completed': Object.freeze({ reporter: true, team: true }),
   'ticket.reopened': Object.freeze({ reporter: true, team: true }),
-  'ticket.cancelled': Object.freeze({ reporter: false, team: false }),
+  'ticket.dismissed': Object.freeze({ reporter: false, team: false }),
   'ticket.note_added': Object.freeze({ reporter: false, team: true }),
   'ticket.information_added': Object.freeze({ reporter: false, team: true }),
   'ticket.auto_close_reminder': Object.freeze({ reporter: true, team: true }),
@@ -313,7 +313,7 @@ export function createNotificationOutbox({
       const requestedTargets=await targetsForEvent({transaction,ticket,event});
       // A disabled legacy cancellation is an intentional no-op, before an
       // Outbox is committed. Other events retain their nonempty-target guard.
-      if(event.event_type==='ticket.cancelled'&&Array.isArray(requestedTargets)&&requestedTargets.length===0)return null;
+      if(event.event_type==='ticket.dismissed'&&Array.isArray(requestedTargets)&&requestedTargets.length===0)return null;
       const targets=validateTargets(requestedTargets);
       const templateCode = templateCodeFor(event.event_type);
       const payload = {

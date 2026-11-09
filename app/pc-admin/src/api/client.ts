@@ -100,7 +100,7 @@ function decodeCardService(value:unknown):NonNullable<WorkbenchCard['service']> 
 function decodeCardClosure(value:unknown,column:BoardColumn,status:string):WorkbenchCard['closure'] {
   if(column!=='closed'){if(value!==null)throw new ApiError(502,'INVALID_RESPONSE');return null;}
   const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','secondary_reason','closed_by_display_name','closed_at','duplicate_of','can_restore'];
-  const expected=['RESOLVED','CLOSED','COMPLETED'].includes(status)?'COMPLETED':['CANCELLED','DUPLICATE_LINKED','IGNORED'].includes(status)?'DISMISSED':null;
+  const expected=['RESOLVED','COMPLETED'].includes(status)?'COMPLETED':status==='DISMISSED'?'DISMISSED':null;
   if(Object.keys(v).length!==keys.length||keys.some(key=>!Object.hasOwn(v,key))||expected===null||v.kind!==expected
     ||v.source!==null&&v.source!=='MANUAL'&&v.source!=='SYSTEM'||typeof v.can_restore!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
   const bounded=(value:unknown,maximum:number)=>{if(value===null)return null;const result=text(value);if(!result.trim()||Array.from(result).length>maximum)throw new ApiError(502,'INVALID_RESPONSE');return result;};
@@ -233,7 +233,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
     const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no'),hasRoute=Object.hasOwn(row,'route_kind');
     const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[]),...(hasRoute?['route_kind']:[])];
     if(hasNode!==hasCycle||Object.keys(row).length!==keys.length||Object.keys(row).some(key=>!keys.includes(key))
-      ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
+      ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_COMPLETED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
       ||!['PERSON','GROUP'].includes(text(row.destination_type))||!['PENDING','LEASED','SENDING','SENT','DEAD_LETTER','RECONCILIATION_REQUIRED','CANCELLED'].includes(text(row.status))
       ||!['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'].includes(text(row.side_effect_state))
       ||hasRoute&&(row.route_kind!=='YIXIAOXIU_APP'||row.destination_type!=='PERSON')
@@ -291,7 +291,7 @@ export async function postTicketCommand<T>(ticketId:string,action:string,command
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
-        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(action==='cancel'?('reason_code' in command&&['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(command.reason_code)?command:{client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'OTHER',note:'note' in command?command.note:null}):command)});
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(action==='dismiss'?('reason_code' in command&&['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(command.reason_code)?command:{client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'OTHER',note:'note' in command?command.note:null}):command)});
       current();if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const v=object(await response.json());current();
@@ -375,7 +375,7 @@ export const api={
       if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();return {...completed,communication_choice:command.communication_choice,conversations};
     });requireCurrent();return result;}catch(error){requireCurrent();throw error;}
   },
-  closeTicket:(ticketId:string,command:ClosureCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'cancel',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
+  closeTicket:(ticketId:string,command:ClosureCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'dismiss',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
   restoreClosedTicket:(ticketId:string,command:RestoreCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'restore',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
   waitingAction:(ticketId:string,action:WaitingAction,command:WaitingCommand,csrfToken:string|null,signal:AbortSignal):Promise<WaitingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
     if(Object.keys(v).length!==7||!Object.hasOwn(v,'handling_cycle_id'))throw new UnknownCommandOutcome();
@@ -609,7 +609,7 @@ export const api={
     }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
   },
 };
-export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',CLOSED:'已关闭',CANCELLED:'已关闭',DUPLICATE_LINKED:'已关闭'};
+export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',COMPLETED:'已完成',DISMISSED:'已关闭'};
 export const sourceLabels:Record<string,string>={WECOM_GROUP:'群聊报修',WECOM_DIRECT:'Bot 私聊',YIXIAOXIU_WEB:'医小修',WEB_REQUEST:'医小修'};
 export function errorMessage(error:unknown):string {
   if(error instanceof ApiError){if(error.code==='SEARCH_REFRESH_REQUIRED')return '事项资料已变化，请重新提交搜索或点击刷新。';if(error.status===401)return '会话已失效，请重新进入工作台。';if(error.status===403)return '当前账号无法执行此操作。';if(error.status===404)return '找不到这条事项，或您目前无法查看。';if(error.status===409)return '资料已被其他人修改，请重新读取后再保存。';return '服务请求失败（'+error.status+'），请重试。';}

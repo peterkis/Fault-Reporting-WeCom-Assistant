@@ -16,6 +16,7 @@ import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030,assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
+import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 
 async function fixture(pool) {
@@ -39,12 +40,12 @@ async function fixture(pool) {
   const query=createP2016TicketQuery({pool,enabled:true});
   return {admin,other,handler,outsider,ticket,session,query,control,facade:createP2016TicketCommandFacade({pool,enabled:true,controlService:control,query})};
 }
-const command=(ticket,action,extra={})=>({action,ticket_id:ticket.id,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:action==='cancel'?'OTHER':'SYNTHETIC_TEST',...(action==='cancel'?{note:'取消原因（合成）'}:{}),...extra});
+const command=(ticket,action,extra={})=>({action,ticket_id:ticket.id,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:action==='dismiss'?'OTHER':'SYNTHETIC_TEST',...(action==='dismiss'?{note:'取消原因（合成）'}:{}),...extra});
 
 test('P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility',async()=>{
   assert.ok(databaseUrl,'database required');
   await withP2016IsolatedDatabase({databaseUrl,purpose:'p2016cmd',run:async({pool,databaseUrl:isolated})=>{
-    await applyThrough030({pool,databaseUrl:isolated});await migrateP2016({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});
+    await applyThrough030({pool,databaseUrl:isolated});await migrateP2016({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await ensureCompletionDismissal(pool);
     const f=await fixture(pool),authContext={principal_id:f.admin.id};
     let ticket=await f.ticket();
     const once=command(ticket,'accept');
@@ -61,7 +62,7 @@ test('P2-016 Ticket lifecycle, command persistence, authorization and independen
     }
     const events=await f.query.events({authContext,ticketId:ticket.id});
     assert.deepEqual(events.items.map(e=>e.event_ordinal),Array.from({length:12},(_,i)=>i+1));
-    ticket=await f.query.detail({authContext,ticketId:ticket.id});assert.equal(ticket.status,'CLOSED');
+    ticket=await f.query.detail({authContext,ticketId:ticket.id});assert.equal(ticket.status,'COMPLETED');
     const invalidCommand=command(ticket,'accept');
     const invalid=await f.facade.perform({authContext,command:invalidCommand});
     assert.equal(invalid.error.code,'INVALID_STATE_TRANSITION');
@@ -71,9 +72,9 @@ test('P2-016 Ticket lifecycle, command persistence, authorization and independen
     assert.equal((await f.query.detail({authContext,ticketId:ticket.id})).version,ticket.version);
     assert.equal((await f.query.events({authContext,ticketId:ticket.id})).items.length,events.items.length);
     await assert.rejects(f.query.detail({authContext:{principal_id:f.outsider.id},ticketId:ticket.id}),{code:'P2_016_NOT_FOUND'});
-    const listed=await f.query.list({authContext,state:'closed',limit:1});assert.equal(listed.items[0].id,ticket.id);
+    const listed=await f.query.list({authContext,state:'completed',limit:1});assert.equal(listed.items[0].id,ticket.id);
     assert.equal((await f.query.list({authContext,state:'mine',limit:1})).items.length,1);
-    let cancelled=await f.ticket();assert.equal((await f.facade.perform({authContext,command:command(cancelled,'cancel')})).ok,true);
+    let cancelled=await f.ticket();assert.equal((await f.facade.perform({authContext,command:command(cancelled,'dismiss')})).ok,true);
     const concurrent=await f.ticket();
     const race=await Promise.all([f.admin,f.other].map(p=>f.facade.perform({authContext:{principal_id:p.id},command:command(concurrent,'accept')})));
     assert.equal(race.filter(r=>r.ok).length,1);

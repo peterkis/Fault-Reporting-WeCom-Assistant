@@ -48,7 +48,7 @@ test('original same-Reporter fragments use normal media/text Frames and one pers
       assert.equal(rows.length, 1);
       if (expected.ticket) assert.ok(rows[0].linked_ticket_id);
       if (firstTicketId) assert.equal(rows[0].linked_ticket_id, firstTicketId);
-      assert.ok(rows.every(r => !['CLOSED', 'RESOLVED'].includes(r.status)));
+      assert.ok(rows.every(r => !['COMPLETED', 'RESOLVED'].includes(r.status)));
       for (const observation of decisions) {
         const reviews = (await f.pool.query('SELECT id::text FROM intake.manual_review_item WHERE decision_id=$1 AND status=\'PENDING\'', [observation.decision_id])).rows;
         if (['MANUAL_REVIEW_REQUIRED', 'INCIDENT_REVIEW_CANDIDATE', 'BUSINESS_CONSULTATION'].includes(observation.result_code)) assert.equal(reviews.length, 1);

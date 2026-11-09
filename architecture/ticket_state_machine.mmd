@@ -8,10 +8,8 @@ stateDiagram-v2
     IN_PROGRESS --> WAITING_VENDOR: wait_vendor
     WAITING_VENDOR --> IN_PROGRESS: vendor_replied
     IN_PROGRESS --> RESOLVED: resolve
-    RESOLVED --> CLOSED: confirm/auto_close
+    RESOLVED --> COMPLETED: confirm/auto_complete
     RESOLVED --> REOPENED: still_broken
     REOPENED --> IN_PROGRESS: resume
-    QUEUED --> CANCELLED: cancel
-    ACCEPTED --> CANCELLED: cancel
-    QUEUED --> DUPLICATE_LINKED: link_incident
-    DUPLICATE_LINKED --> REOPENED: unlink_or_reopen
+    QUEUED --> DISMISSED: dismiss
+    ACCEPTED --> DISMISSED: dismiss

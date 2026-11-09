@@ -97,7 +97,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
             ORDER BY decision.decision_ordinal DESC LIMIT 1
          ) latest ON true
         WHERE intake.source_provider <> 'YIXIAOXIU_WEB'
-          AND intake.status <> 'IGNORED'
+          AND intake.status <> 'DISMISSED'
           AND (journey.id IS NULL OR (journey.status IN ('OPEN','WAITING_DESCRIPTION','WAITING_REVIEW','TICKET_LINKED')
           AND journey.evaluation_due_epoch_ms <= $1::bigint
           AND COALESCE(latest.source_window_end_sequence,0) < intake.message_count))
@@ -111,7 +111,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
         if (beforeClaim) await beforeClaim(transaction);
         const claim = await transaction.query(
           `SELECT current_intake.id::text FROM intake.service_intake current_intake WHERE current_intake.id=$1::uuid
-            AND current_intake.status<>'IGNORED'
+            AND current_intake.status<>'DISMISSED'
             FOR UPDATE SKIP LOCKED`, [candidate.id],
         );
         if (claim.rowCount !== 1) return null;

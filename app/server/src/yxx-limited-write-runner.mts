@@ -11,7 +11,7 @@ import path from 'node:path';
 import {createServer} from 'node:net';
 import {request as httpRequest} from 'node:http';
 import {createPostgresPool} from './platform/postgres-pool.mjs';
-import {yxxCatalogInventory,validateYxxCatalog,YXX_MIGRATION_ID,YXX_CORRECTIVE_MIGRATION_ID} from '../scripts/yxx-self-service-migrate.mjs';
+import {yxxCatalogInventory,validateYxxCatalogWithSuccessors,YXX_MIGRATION_ID,YXX_CORRECTIVE_MIGRATION_ID} from '../scripts/yxx-self-service-migrate.mjs';
 import {minimalG2Environment} from './p2-g2-validation-config.mjs';
 import {createLimitedGuard} from './yxx-limited-write-guard.mjs';
 import {validateLimitedManifest,databaseIdentity,digest,reject} from './yxx-limited-write-contract.mjs';
@@ -69,11 +69,16 @@ export async function startLimitedRuntime({manifest,configuration,stateDirectory
     const current=(await controller.query('SELECT current_database() AS name,(SELECT oid::text FROM pg_database WHERE datname=current_database()) AS oid')).rows[0];
     if((current as Record<string,unknown>).name!==manifest.database.name||(current as Record<string,unknown>).oid!==manifest.database.oid)reject('DATABASE_IDENTITY_MISMATCH');
     if(!((await controller.query("SELECT pg_try_advisory_lock(hashtextextended('SS010_RUNTIME',0)) AS acquired")).rows[0] as Record<string,unknown>).acquired)reject('COMPETING_RUNTIME');
-    validateYxxCatalog(await yxxCatalogInventory(controller));
-    for(const id of [YXX_MIGRATION_ID,YXX_CORRECTIVE_MIGRATION_ID]){
-      const marker=(await controller.query('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[id])).rows[0];
-      if(marker?.checksum_sha256!==digest(readFileSync(new URL('../../../database/migrations/'+id+'.sql',import.meta.url),'utf8')))reject('MIGRATION_NOT_READY');
-    }
+    const marker=async(id:string)=>(await controller?.query('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[id]))?.rows[0] as {checksum_sha256?:string}|undefined;
+    const exact=(id:string,row:{checksum_sha256?:string}|undefined)=>row?.checksum_sha256===digest(readFileSync(new URL('../../../database/migrations/'+id+'.sql',import.meta.url),'utf8'));
+    // The current roles require 071 and 072; only those registered successors may change the frozen 034 catalog, each
+    // checked against its own SQL, and 072 never stands without 071.
+    const successors:string[]=[];
+    const closure=await marker('071_unified_service_closure'),completion=await marker('072_ticket_completion_dismissal');
+    if(closure){if(!exact('071_unified_service_closure',closure))reject('MIGRATION_NOT_READY');successors.push('071');}
+    if(completion){if(!closure||!exact('072_ticket_completion_dismissal',completion))reject('MIGRATION_NOT_READY');successors.push('072');}
+    validateYxxCatalogWithSuccessors(await yxxCatalogInventory(controller),{successors});
+    for(const id of [YXX_MIGRATION_ID,YXX_CORRECTIVE_MIGRATION_ID])if(!exact(id,await marker(id)))reject('MIGRATION_NOT_READY');
     const counts=await guard.inspect(controller,{empty:!resume});
     if(state?.counts&&Object.entries(counts).some(([key,value])=>value<(((state as StateInput).counts as Record<string,number>)[key as keyof LimitedCounts] as number)))reject('RESUME_COUNTS_DECREASED');
     if(resume&&state?.status==='STOPPED_WITH_FAILURE')reject('RESUME_RECONCILIATION_REQUIRED');

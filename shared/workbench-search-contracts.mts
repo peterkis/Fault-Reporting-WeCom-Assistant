@@ -1,7 +1,7 @@
 import type {WorkbenchSearchCriteria,WorkbenchSearchRequest,WorkbenchSearchStatus,WorkbenchSearchSource} from '../contracts/workbench_search_contracts.js';
 export type {WorkbenchSearchCriteria,WorkbenchSearchRequest,WorkbenchSearchPage} from '../contracts/workbench_search_contracts.js';
 
-export const SEARCH_STATUSES:readonly WorkbenchSearchStatus[]=['NEW','QUEUED','ACCEPTED','REOPENED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED','COMPLETED','IGNORED'];
+export const SEARCH_STATUSES:readonly WorkbenchSearchStatus[]=['NEW','QUEUED','ACCEPTED','REOPENED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','COMPLETED','DISMISSED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'];
 export const SEARCH_SOURCES:readonly WorkbenchSearchSource[]=['WECOM_DIRECT','WECOM_GROUP','WEB_REQUEST','MANUAL_PHONE','MANUAL_ON_SITE'];
 export const SEARCH_KEYS=['q','column','range','scope','responsibility','resolver_team_id','assignee_id','sources','source_group_ref','statuses','supplement','schedule','closure_kind','closed_from','closed_to'] as const;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;

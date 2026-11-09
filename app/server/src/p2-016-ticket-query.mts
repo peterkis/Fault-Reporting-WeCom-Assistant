@@ -48,9 +48,9 @@ export function ticketPredicateP2016(principal: WorkbenchPrincipal,start=1) {
 }
 export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null;status?:string },action: string) {
   if(!principal?.is_active)return false;
-  if(action==='transfer-assignment'&&['RESOLVED','CLOSED','CANCELLED','DUPLICATE_LINKED'].includes(ticket.status??''))return false;
-  if(action==='auto-close'||action==='complete')return false;
-  if(action==='cancel'||action==='restore')return principal.roles.some(role=>['ADMIN','DISPATCHER'].includes(role))||principal.roles.includes('HANDLER')&&principal.team_ids.includes(ticket.resolver_team_id);
+  if(action==='transfer-assignment'&&['RESOLVED','COMPLETED','DISMISSED'].includes(ticket.status??''))return false;
+  if(action==='auto-complete'||action==='complete')return false;
+  if(action==='dismiss'||action==='restore')return principal.roles.some(role=>['ADMIN','DISPATCHER'].includes(role))||principal.roles.includes('HANDLER')&&principal.team_ids.includes(ticket.resolver_team_id);
   if(BROAD(principal))return true;
   if(!principal.roles.includes('HANDLER')||!principal.team_ids.includes(ticket.resolver_team_id))return false;
   if(action==='accept')return true;
@@ -143,7 +143,7 @@ export function createP2016TicketQuery({pool,enabled=false,workbenchAssignmentHi
     },
     async list({authContext,state='queued',cursor=null,limit}: { authContext: unknown; state?: string; cursor?: unknown; limit?: unknown }) {
       const p=await principal(authContext),n=limitP2016(limit),predicate=ticketPredicateP2016(p);
-      const aliases: Record<string, TicketStatus>={queued:'QUEUED',accepted:'ACCEPTED',in_progress:'IN_PROGRESS',waiting_requester:'WAITING_REQUESTER',waiting_vendor:'WAITING_VENDOR',resolved:'RESOLVED',closed:'CLOSED',reopened:'REOPENED',cancelled:'CANCELLED'};
+      const aliases: Record<string, TicketStatus>={queued:'QUEUED',accepted:'ACCEPTED',in_progress:'IN_PROGRESS',waiting_requester:'WAITING_REQUESTER',waiting_vendor:'WAITING_VENDOR',resolved:'RESOLVED',completed:'COMPLETED',reopened:'REOPENED',dismissed:'DISMISSED'};
       if(!Object.hasOwn(aliases,state)&&!['unassigned','mine','failed_delivery'].includes(state))failP2016();
       const page=cursor?decodeCursorP2016(cursor,['v','state','at','id']):null;
       if(page&&(page.v!==1||page.state!==state))failP2016('CURSOR_INVALID');

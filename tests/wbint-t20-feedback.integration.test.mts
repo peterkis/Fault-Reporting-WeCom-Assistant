@@ -55,7 +55,7 @@ test('original Web reporter explicitly reopens its genuinely completed same Tick
       const http=await t11Http({...context,runtime:staff,cookies:started.cookies.map(cookie=>cookie.name+'='+cookie.value)});
       const active=await http.start(ticketId),completion=http.command(active);
       const response=await http.post(ticketId,'complete',completion);assert.equal(response.status,200);
-      const closed=await http.detail(ticketId);assert.equal(closed.status,'CLOSED');assert.ok(closed.handling_cycle);
+      const closed=await http.detail(ticketId);assert.equal(closed.status,'COMPLETED');assert.ok(closed.handling_cycle);
       completedVersion=closed.version;completedRound=closed.handling_cycle.cycle_no;ticketNumber=closed.ticket_no;
     }finally{await staff.stop();assert.equal(staff.server.listening,false);}
 

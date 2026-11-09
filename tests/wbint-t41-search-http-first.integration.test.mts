@@ -49,7 +49,7 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
  const closingEvents:readonly (readonly [string,string])[]=[[seeded.manual,from+' 00:00:00'],[seeded.duplicate,to+' 23:59:59'],[seeded.historical,'2026-02-27 23:59:59'],
   [lower.ticket.id,from+' 00:00:00'],[lastDay.ticket.id,to+' 23:59:59'],[upper.ticket.id,until]];
  for(const [id,at]of closingEvents){
-  await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type IN ('ticket.closed','ticket.cancelled','ticket.duplicate_linked')",[id,at]);
+  await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type IN ('ticket.completed','ticket.dismissed')",[id,at]);
   // Since card 27C a dismissal's closing instant is its current closure record, not the event row.
   await f.pool.query('UPDATE pilot_ticket.closure_record SET closed_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL',[id,at]);
  }

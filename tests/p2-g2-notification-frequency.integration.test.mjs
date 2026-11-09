@@ -34,11 +34,11 @@ for(const [chatType,providerCode] of [['single',0],['group',0],['group',45009],[
     }
     const rows=(await f.pool.query(`SELECT b.notification_type,b.destination_type,m.message_type,m.content FROM communication.ticket_notification_binding b
       JOIN communication.message m ON m.id=b.message_id ORDER BY m.created_at,m.id`)).rows;
-    assert.deepEqual(rows.map(r=>r.notification_type).sort(),chatType==='single'?['TICKET_ACCEPTED','TICKET_CLOSED']:['TICKET_CLOSED','TICKET_CREATED']);
+    assert.deepEqual(rows.map(r=>r.notification_type).sort(),chatType==='single'?['TICKET_ACCEPTED','TICKET_COMPLETED']:['TICKET_COMPLETED','TICKET_CREATED']);
     assert.ok(rows.every(r=>r.destination_type===(chatType==='single'?'PERSON':'GROUP')));
     if(chatType==='single')assert.ok(rows.every(r=>r.message_type==='template_card'&&r.content.public_ref));
     else {
-      assert.equal(rows.find(r=>r.notification_type==='TICKET_CLOSED').content.transport,'WECOM_GROUP_WEBHOOK');
+      assert.equal(rows.find(r=>r.notification_type==='TICKET_COMPLETED').content.transport,'WECOM_GROUP_WEBHOOK');
       const calls=[],audit=[];
       const sender=createP2012DynamicWeComSender({pool:f.pool,enabled:true,botId:f.botId,
         allowedTargetHashes:[textHashP2016(f.groupId)],approvedGroupHashes:[textHashP2016(f.groupId)],
@@ -49,13 +49,13 @@ for(const [chatType,providerCode] of [['single',0],['group',0],['group',45009],[
             if(providerCode===null)throw Error('SYNTHETIC_NETWORK_RESPONSE_LOST');
             return new Response(JSON.stringify({errcode:providerCode}),{status:200});}}});
       const delivery=createCommunicationDeliveryWorker({pool:f.pool,sender,enabled:true});
-      const id=(await f.pool.query("SELECT delivery_id FROM communication.ticket_notification_binding WHERE notification_type='TICKET_CLOSED'")).rows[0].delivery_id;
+      const id=(await f.pool.query("SELECT delivery_id FROM communication.ticket_notification_binding WHERE notification_type='TICKET_COMPLETED'")).rows[0].delivery_id;
       await delivery.deliver({deliveryId:id});
       assert.equal((await delivery.getDelivery({deliveryId:id})).status,providerCode===0?'SENT':providerCode===null?'RECONCILIATION_REQUIRED':'DEAD_LETTER');
       assert.equal(audit.length,1);assert.equal(audit[0].provider_errcode,providerCode);
       assert.equal(audit[0].operation,'send_msg');assert.equal(audit[0].outcome,providerCode===0?'ACKED':providerCode===null?'UNKNOWN':'REJECTED');
       assert.doesNotMatch(JSON.stringify(audit),/synthetic-unused|reporter-0|qyapi/u);
-      assert.deepEqual(calls,[{msgtype:'text',text:{content:rows.find(r=>r.notification_type==='TICKET_CLOSED').content.text,mentioned_list:[f.reporters[0]]}}]);
+      assert.deepEqual(calls,[{msgtype:'text',text:{content:rows.find(r=>r.notification_type==='TICKET_COMPLETED').content.text,mentioned_list:[f.reporters[0]]}}]);
       await delivery.deliver({deliveryId:id});assert.equal(calls.length,1);
     }
     assert.equal(f.providerCalls.length,0);

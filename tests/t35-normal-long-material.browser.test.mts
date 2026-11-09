@@ -48,7 +48,7 @@ test('T35 an open cancellation dialog pauses otherwise visible source reading un
   const selected=f.tickets[0];assert.ok(selected);const text='T35弹窗遮挡：'+'合成材料需要实际阅读。'.repeat(8);
   await appendReviewMaterial(f.pool,selected.intake.intakeId,text);
   const readPath='/api/workbench/items/ticket/'+selected.ticket.id+'/read-position';
-  const current=await f.get('/api/tickets/'+selected.ticket.id);assert.equal(current.status,200);assert.ok((await current.json() as {allowed_actions:string[]}).allowed_actions.includes('cancel'),'overlay scenario must use a legally cancellable Ticket');
+  const current=await f.get('/api/tickets/'+selected.ticket.id);assert.equal(current.status,200);assert.ok((await current.json() as {allowed_actions:string[]}).allowed_actions.includes('dismiss'),'overlay scenario must use a legally cancellable Ticket');
   const position=async()=>(await (await f.get(readPath)).json() as {sources:{last_read_position:string}[]}).sources[0]?.last_read_position;
   const directory=join(tmpdir(),'t35-modal-'+randomUUID());await mkdir(directory);
   let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;

@@ -19,6 +19,7 @@ import {migrateWorkbenchFollowUpSchedules} from '../../app/server/scripts/workbe
 import {migrateWorkbenchFollowUpDueSignals} from '../../app/server/scripts/workbench-follow-up-due-migrate.mjs';
 import {object,text} from './t09-fixture.mjs';
 import type {T09Http} from './t09-fixture.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export interface T09IndependentFixture {pool:PostgresPool;databaseUrl:string;origin:string;runtime:P2016EnabledRuntime;handler:string;http(index:number):Promise<T09Http>;createTicket():Promise<string>}
 /** T09 itself grants no T05/T06/T07/T08 consumer. Existing Core actions remain actual HTTP writes. */
@@ -28,7 +29,7 @@ export async function withT09IndependentFixture(run:(fixture:T09IndependentFixtu
   await applyThrough030(context);const legacyOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(legacyOptions);
   await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
   if(options.followUpEnabled){await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpDueSignals({databaseUrl:context.databaseUrl,mode:'apply'});}
-  if(options.applyReturn!==false)await migrateTicketReturnToDispatch({databaseUrl:context.databaseUrl,mode:'apply'});
+  if(options.applyReturn!==false)await migrateTicketReturnToDispatch({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.databaseUrl);
   const roles:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']],access=createPilotAccessService({pool:context.pool});
   const members=await Promise.all(roles.map((roles,index)=>access.upsertPrincipal({wecomUserId:'t09-independent-'+index+'-'+randomUUID(),displayName:'T09 独立合成内部人员 '+index,roles,resolverTeamIds:['PILOT_IT']})));const handler=members[2];assert.ok(handler);
   const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address!=='string');await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));

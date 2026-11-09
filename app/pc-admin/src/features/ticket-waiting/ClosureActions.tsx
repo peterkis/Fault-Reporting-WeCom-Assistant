@@ -107,7 +107,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  const request=useRef<AbortController|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),prefillApplied=useRef(false),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.closure_draft_recovery_enabled;
  const readContext=async(signal:AbortSignal)=>{
   const current=captureWorkbenchRead(signal);const fresh=await api.bootstrap(signal);current();if(fresh.principal_id!==principal.principal_id)throw new ApiError(401,'WORKBENCH_UNAUTHENTICATED');client.setQueryData(['session'],fresh);
-  if(s.kind==='ticket'){const context=await api.ticketCommandContext(s.id,signal);current();return {fresh,version:context.version,allowed:context.allowed_actions.includes(action==='close'?'cancel':'restore'),review:null};}
+  if(s.kind==='ticket'){const context=await api.ticketCommandContext(s.id,signal);current();return {fresh,version:context.version,allowed:context.allowed_actions.includes(action==='close'?'dismiss':'restore'),review:null};}
   const context=await closureApi.intakeContext(s.id,signal);current();const review=context.pending_review&&action==='close'?await reviewApi.detail(context.pending_review.id,signal):null;current();return {fresh,version:context.version,allowed:action==='close'?context.can_close:context.can_restore,review:review?{id:review.id,row_version:review.row_version,material_basis:review.material_basis.current_hash}:null};
  };
  const context=useQuery({queryKey:['closure-context',principal.principal_id,s.kind,s.id,action,principal.authorization_revision],queryFn:({signal})=>readContext(signal),retry:false,gcTime:0});
@@ -164,7 +164,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
   }finally{if(request.current===controller){request.current=null;setBusy(false);}}
  };
  const check=async()=>{if(!originalId||request.current)return;const controller=new AbortController(),current=captureWorkbenchRead(controller.signal);request.current=controller;setBusy(true);
-  try{await readContext(controller.signal);current();const result=s.kind==='intake'?await closureApi.intakeReceipt(s.id,action,originalId,controller.signal):action==='restore'?await closureApi.ticketRestoreReceipt(s.id,originalId,controller.signal):await api.waitingAcknowledgement(s.id,'cancel',originalId,controller.signal);current();
+  try{await readContext(controller.signal);current();const result=s.kind==='intake'?await closureApi.intakeReceipt(s.id,action,originalId,controller.signal):action==='restore'?await closureApi.ticketRestoreReceipt(s.id,originalId,controller.signal):await api.waitingAcknowledgement(s.id,'dismiss',originalId,controller.signal);current();
    if(result.state==='UNKNOWN'){setMessage('提交结果仍待核对；原操作标识保留。');return;}await finish(originalId,result.state,current);
   }catch(error){if(!controller.signal.aborted&&!denied(error))setMessage('核对暂未完成，未重复提交。');}finally{if(request.current===controller){request.current=null;setBusy(false);}}
  };

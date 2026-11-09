@@ -52,12 +52,12 @@ ADR-0048的工单资料能力显式开启后，可增加`retained_profile:{name,
 | `POST /api/tickets/{ticketId}/resolve` | 解决 |
 | `POST /api/tickets/{ticketId}/confirm` | 确认恢复 |
 | `POST /api/tickets/{ticketId}/reopen` | 重新打开 |
-| `POST /api/tickets/{ticketId}/cancel` | 取消 |
+| `POST /api/tickets/{ticketId}/dismiss` | 关闭（ADR-0058，原 `/cancel`；见[关闭 / 恢复](closure.md)） |
 | `POST /api/tickets/{ticketId}/notes` | 既有兼容 facade action=`add-note`；保留可选 note／external_visible，默认内部；自由备注不进入外部通知／Reporter 时间线 |
 | `POST /api/tickets/{ticketId}/internal-notes` | 默认关闭的专用内部备注；必需非空白 note 和 external_visible=false，详见下文 |
 | `POST /api/tickets/{ticketId}/transfer` | facade action=`transfer-assignment`；必需 `target_principal_id:UUID`，可选 `resolver_team_id` |
 
-具体状态迁移和角色由 [Action 服务](../../../app/server/src/p1-006-ticket-state-actions.mts) 与 query 的 allowed_actions 决定；不要用前端枚举绕过状态检查。`auto-close` 只在获授权 SYSTEM job，未开放 HTTP。
+具体状态迁移和角色由 [Action 服务](../../../app/server/src/p1-006-ticket-state-actions.mts) 与 query 的 allowed_actions 决定；不要用前端枚举绕过状态检查。`auto-complete`（原 `auto-close`）只在获授权 SYSTEM job，未开放 HTTP。
 
 200 成功结果：`{ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id,replayed}`。失败 ledger 结果：`{ok:false,error:{code,retryable},replayed}`；HTTP 按结果映射为 403/409/503。每次 receipt 查找先重查活动身份和对象可读权限；新写入另查当前动作权限和版本。已 COMMITTED／FAILED 的 receipt 重放只读取原结果，不再次写入，也不重新执行动作许可检查。仅失去写动作但仍可读时可核对旧收据；身份失效或对象失权拒绝收据。改 payload 不能沿用同一 ID。
 
@@ -213,7 +213,7 @@ W 的 `POST /api/tickets/{ticketId}/complete` 使用宿主 `ticketStaffCompletio
 
 服务器在行锁后重新核对活动主体、ADMIN/DISPATCHER/HANDLER、活动当前组与实际成员，且固定为当前 assignee；ADMIN/BROAD可见性不能绕过责任。body轮次须为Ticket真实当前轮次，具有首次责任event且未结束。IN_PROGRESS通过明确 Core complete Action关闭；WAITING_REQUESTER/VENDOR在同事务合法resume→complete并保留两事件。ACCEPTED、REOPENED、无轮次历史状态、legacy RESOLVED及所有终态拒绝。另一个同事需使用独立T12，不提供隐式接管。
 
-同一 command ledger 事务追加实际 PILOT_USER、业务时间与 STAFF_COMPLETED 的ticket.closed，分别保存internal_note/external_note，关联同Ticket/同cycle事件、唯一工作人员结束event、引用原source的持久通知承诺、安全实时投影与COMMITTEDreceipt。六处写入任一失败回滚全部业务事实与等待态resume，仅保留FAILED审计；同UUID/原hash重放不重新执行，改正文/版本/轮次拒绝。完工启用profile的既有Facade与新service均在receipt外键锁之前取得同一实时流mutex，再获权；旧false profile保持原顺序。
+同一 command ledger 事务追加实际 PILOT_USER、业务时间与 STAFF_COMPLETED 的ticket.completed，分别保存internal_note/external_note，关联同Ticket/同cycle事件、唯一工作人员结束event、引用原source的持久通知承诺、安全实时投影与COMMITTEDreceipt。六处写入任一失败回滚全部业务事实与等待态resume，仅保留FAILED审计；同UUID/原hash重放不重新执行，改正文/版本/轮次拒绝。完工启用profile的既有Facade与新service均在receipt外键锁之前取得同一实时流mutex，再获权；旧false profile保持原顺序。
 
 200结果仅 `ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,replayed:boolean,completion:{cycle_id,cycle_no,event_id,basis:'STAFF_COMPLETED'}`，无处理正文、目标或身份。401/403/404清可信授权范围；409保持独立输入，GET读当前事实后由用户明确新操作；网络、畸形响应或未核定终态保持UNKNOWN，不创建新UUID、不自动重发。
 
@@ -267,7 +267,7 @@ bootstrap的 `ticket_assignment_draft_recovery_enabled` 为assignment能力AND r
 | ACCEPTED | 人和组交接，仍ACCEPTED，保留原可空轮次/依据 | 须有效current cycle及已有非空first basis；交接后原Core合法start→IN_PROGRESS |
 | IN_PROGRESS | 人和组交接，仍IN_PROGRESS | 409，不重复started |
 | WAITING_REQUESTER / WAITING_VENDOR | 人和组交接，保留等待 | 409，不把resume混为start |
-| NEW / REOPENED / RESOLVED / CLOSED / CANCELLED / DUPLICATE_LINKED，或无当前处理人 | 409 | 409 |
+| NEW / REOPENED / RESOLVED / COMPLETED / DISMISSED，或无当前处理人 | 409 | 409 |
 
 仅接管沿已集成T06合法transfer的当前状态/责任事实；`current_handling_cycle_id=null`且不存在已有cycle时允许交接并返回`handling_cycle:null`，不为旧活跃事实虚构轮次或历史首次责任。原有效cycle及其可空first basis保持原值；有cycle才追加该真实责任事件的cycle link。损坏current pointer、指向他Ticket的cycle，或current为空但存在孤立cycle均fail-closed/409，不以null掩盖损坏。一步开始独立要求有效current cycle及已有非空first basis；缺此依据409，不自动历史回填、创轮次或补首次通知。
 

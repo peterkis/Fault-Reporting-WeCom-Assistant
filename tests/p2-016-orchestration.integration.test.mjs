@@ -12,9 +12,10 @@ import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
+import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 test('P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016orch',run:async({pool,databaseUrl})=>{
-    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
+    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});await ensureCompletionDismissal(pool);
     const notifications=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true}),realtime=createP2016RealtimeProjector({pool,enabled:true});
     const workerEpoch=String(BigInt((await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch)+10800000n);
     const worker=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:'synthetic-only-identity-hmac-key',
@@ -37,12 +38,12 @@ test('P2-016 existing rule worker creates Ticket notifications, safe group/direc
     const authContext={principal_id:principal.id};
     for(const action of ['accept','start','resolve']){const ticket=await query.detail({authContext,ticketId});const result=await facade.perform({authContext,command:{ticket_id:ticketId,action,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:'SYNTHETIC_CLOSURE'}});assert.equal(result.ok,true,JSON.stringify(result));}
     const current=await query.detail({authContext,ticketId});
-    await assert.rejects(facade.perform({authContext,command:{ticket_id:ticketId,action:'auto-close',expected_version:current.version,client_command_id:randomUUID(),reason_code:'FORBIDDEN'}}),{code:'P2_016_INPUT_INVALID'});
+    await assert.rejects(facade.perform({authContext,command:{ticket_id:ticketId,action:'auto-complete',expected_version:current.version,client_command_id:randomUUID(),reason_code:'FORBIDDEN'}}),{code:'P2_016_INPUT_INVALID'});
     clock+=45*3600000;assert.deepEqual((await closure.runAutoCloseReminders()).reminded_ticket_ids,[ticketId]);
     clock+=4*3600000;
-    const system=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
+    const system=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
     assert.deepEqual((await closure.runAutoClose({actionService:system})).closed_ticket_ids,[ticketId]);
-    assert.equal((await query.detail({authContext,ticketId})).status,'CLOSED');
+    assert.equal((await query.detail({authContext,ticketId})).status,'COMPLETED');
     assert.deepEqual((await closure.runAutoClose({actionService:system})).closed_ticket_ids,[]);
   }});
 });

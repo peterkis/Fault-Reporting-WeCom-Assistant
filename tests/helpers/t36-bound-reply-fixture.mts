@@ -16,6 +16,7 @@ import {createDecisionStore} from '../../app/server/src/p2-015-decision-store.mj
 import {createManualReviewStore} from '../../app/server/src/p2-015-manual-review.mjs';
 import {createServiceIntakeDecisionPort} from '../../app/server/src/p2-015-service-intake-decision-port.mjs';
 import {createSafeActionExecutor,createExistingTicketCommandPort,createP2004FixedCommunicationPort} from '../../app/server/src/p2-015-safe-action-executor.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export interface T36BoundReplyFixture {
@@ -35,7 +36,7 @@ export interface T36BoundReplyFixture {
  read<T>(path:string):Promise<T>;
 }
 export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>,{recovery=false}:{recovery?:boolean}={}){return withT35Fixture(async base=>{
- await base.runtime.stop();await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});
+ await base.runtime.stop();await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});await ensureCompletionDismissal(base.databaseUrl);
  const admin=base.principals[0];assert.ok(admin);
  const makeRuntime=(supplementEnabled:boolean)=>{const next=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
   listenPort:Number(new URL(base.origin).port),principalIds:[admin.id],externalSendEnabled:false,

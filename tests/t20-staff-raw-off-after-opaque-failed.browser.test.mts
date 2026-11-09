@@ -29,7 +29,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    const http=await t11Http(current,2),bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {roles:string[];principal_id:string;ticket_reopen_draft_recovery_enabled:boolean};
    assert.deepEqual(bootstrap.roles,['HANDLER']);assert.equal(bootstrap.ticket_reopen_draft_recovery_enabled,true);
    const ticketId=await t11NewTicket(current),active=await http.start(ticketId);assert.equal((await http.post(ticketId,'complete',http.command(active))).status,200);
-   const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'CLOSED');assert.equal(typeof cookie.url,'string');
+   const closed=await http.detail(ticketId),cookie=started.cookies[2];assert.ok(cookie);assert.equal(closed.status,'COMPLETED');assert.equal(typeof cookie.url,'string');
    const ticketPath='/api/tickets/'+ticketId,scope=JSON.stringify([bootstrap.principal_id,'ticket',ticketId,'staff-reopen']);
    tab=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+ticketId,width:1920,height:1080,cookies:[{...cookie,url:cookie.url as string}]});assert.ok(tab);
    await tab.waitFor("document.querySelector('.ticket-reopen')?.textContent.includes('工单版本')&&document.querySelector('#reopen-reason')?.matches(':disabled')===false");
@@ -37,7 +37,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    await tab.evaluate(observe);
    // Real public concurrent note increments version while keeping CLOSED; no receipt/SQL seeding.
    const note=await http.post(ticketId,'internal-notes',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'LIFECYCLE_RACE',note:'合成同时协作备注，仅推进工单版本',external_visible:false});
-   assert.equal(note.status,200,await note.clone().text());const changed=await http.detail(ticketId);assert.equal(changed.status,'CLOSED');assert.equal(changed.version,closed.version+1);
+   assert.equal(note.status,200,await note.clone().text());const changed=await http.detail(ticketId);assert.equal(changed.status,'COMPLETED');assert.equal(changed.version,closed.version+1);
    await tab.evaluate("(()=>{const input=document.querySelector('#reopen-reason');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'原工作人员重开原因');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
    await tab.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
    await tab.waitFor("globalThis.__t20Posts.length===1&&document.querySelector('[data-reopen-state]')?.textContent.includes('结果未知')");
@@ -71,7 +71,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    const counts=await tab.evaluate(countsExpression);await writeFile(join(directory,'raw-off-new-input-store-counts.json'),JSON.stringify(counts));
    assert.deepEqual(counts,{sensitive:0,opaque:0},'raw-write OFF must stay OFF after an old opaque operation is settled');
    assert.equal(await tab.evaluate('globalThis.__t20Posts.length'),0,'new text alone is not a business command');
-   const finalResponse=await native.request(ticketPath);assert.equal(finalResponse.status,200);const final=finalResponse.json() as P2016TicketDetail;assert.equal(final.status,'CLOSED');assert.equal(final.version,changed.version);assert.equal(final.handling_cycle?.id,changed.handling_cycle?.id);
+   const finalResponse=await native.request(ticketPath);assert.equal(finalResponse.status,200);const final=finalResponse.json() as P2016TicketDetail;assert.equal(final.status,'COMPLETED');assert.equal(final.version,changed.version);assert.equal(final.handling_cycle?.id,changed.handling_cycle?.id);
    await writeFile(join(directory,'terminal.png'),Buffer.from(await tab.screenshot(),'base64'));
   }catch(failure){error=failure;try{if(tab){await writeFile(join(directory,'failure.png'),Buffer.from(await tab.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await tab.evaluate('({text:document.body.innerText,posts:globalThis.__t20Posts,reads:globalThis.__t20Reads})')));}}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
   await closeBrowserTestResources([async()=>{await tab?.close();if(tab)assert.deepEqual(tab.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},async()=>{await runtime.stop();assert.equal(runtime.server.listening,false);}],error);

@@ -35,7 +35,7 @@ export interface H5PerformanceTrace {
   id:string;trace_key:string;path:string;view:string|null;started_ms:number;elapsed_ms:number;sql:number;business_selects:number;sql_ms:number;
   provider_calls:number;provider_ms:number;provider_outcomes:{completed:number;aborted:number;error:number};
   member_verifications:PerformanceMemberVerificationOperation[];
-  http_response_outcome:'PENDING'|'FINISHED'|'CLOSED';
+  http_response_outcome:'PENDING'|'FINISHED'|'COMPLETED';
   pool_wait_ms:number;pool_connections:number;other_ms:number;status:number;
   sql_errors:{sha256:string;code:string;statement_id:string;owner:'REQUEST'|'BATCH'|'SETUP'}[];
   sql_statement_ids:string[];shared_statement_ids:string[];read_dependencies:PerformanceReadDependency[];
@@ -128,7 +128,7 @@ export class H5PerformanceSqlLedger {
     for(const trace of this.operationTraces.get(checkout)??[]){if(checkout.kind==='BATCH')trace.pool_wait_shared_dependency_ms+=checkout.wait_ms;else trace.pool_wait_ms+=checkout.wait_ms;}
   }
   finishTrace(request:IncomingMessage,trace:H5PerformanceTrace,status:number,complete=true):void {
-    trace.elapsed_ms=this.now()-trace.started_ms;trace.status=status;trace.http_response_outcome=complete?'FINISHED':'CLOSED';
+    trace.elapsed_ms=this.now()-trace.started_ms;trace.status=status;trace.http_response_outcome=complete?'FINISHED':'COMPLETED';
     this.refreshTiming(request,trace);
     // The legacy residual includes shared work and local admission; it is never renamed as a queue measurement.
     trace.other_ms=Math.max(0,trace.elapsed_ms-trace.sql_ms-trace.provider_ms-trace.pool_wait_ms);

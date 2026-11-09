@@ -31,6 +31,7 @@ import {createYxxH5Runtime,mediaVideoToolsReady} from '../src/yxx-h5-runtime.mjs
 import {createWorkbenchReporterDirectory} from '../src/workbench-reporter-directory.mjs';
 import {createTicketReporterProfileWorker,ticketReporterProfilesSchemaReady} from '../src/ticket-reporter-profiles.mjs';
 import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
+import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -101,7 +102,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(role==='GATEWAY'){
  const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
  return runGateway({
-  beforeReady:requireServiceClosureSchema,
+  beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);},
   intakeFactory:({pool})=>{
    const scope=memberAdmission?null:createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
@@ -131,6 +132,8 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
  const access=(pool:PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
  return runWorker({deliveryAttemptAdmissionFactory:()=>createMvpNotificationAdmission(),reportCycleHealth:true,beforeReady:async({pool})=>{
   await requireServiceClosureSchema({pool});
+  // ADR-0058: the closure vocabulary is checked after the role's own schema checks, on every path.
+  await (async()=>{
   if(s.actorAvatars?.rootRef&&!await actorAvatarSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:actor_avatar_cache');
   if(directory&&!await ticketReporterProfilesSchemaReady(pool))throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:ticket_reporter_profiles_schema');
   if(!h5Options.enabled)return;
@@ -139,6 +142,8 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   if(h5Options.compressionEnabled&&!await h5ImageCompressionAvailable())configurationError('h5_image_codec');
   const migrations=['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',...(h5Options.performanceEnabled===true||h5Options.employeeReadEnabled?['066_yixiaoxiu_h5_media_previews']:[]),...(h5Options.employeeReadEnabled?['070_workbench_media_video_thumbnails']:[]),...(h5Options.compressionEnabled===true?['069_h5_media_conversion_diagnostics']:[])];
   if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
+  })();
+  await requireCompletionDismissalSchema({pool});
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
@@ -150,7 +155,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   const closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async(input:ClosureNotificationInput)=>{
    const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
-  const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
+  const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
   return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await notifications.projectPendingClosures({pool});await profiles?.runOnce();await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();await avatars?.runOnce().catch(()=>{});},close:async()=>{await avatars?.close();await h5.close();}};
  }});
 }

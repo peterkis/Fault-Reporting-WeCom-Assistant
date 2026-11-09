@@ -21,7 +21,7 @@ export type SharedFollowUpHistoryEntry = Readonly<{
   due_at:LocalDateTime|null;
   occurred_at:LocalDateTime;
   ticket_event_id:string;
-  end_reason:'CLOSED'|'CANCELLED'|null;
+  end_reason:'COMPLETED'|'DISMISSED'|null;
 }>;
 export type SharedFollowUpView = Readonly<{
   ticket_id:string;

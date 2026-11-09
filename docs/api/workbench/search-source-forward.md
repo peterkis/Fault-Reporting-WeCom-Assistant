@@ -46,7 +46,7 @@ GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选
 
 响应恰含 `items / next_cursor / column / range / criteria`。`items` 沿当前安全 WorkbenchCard，kind 为 `ticket / review / intake`，每卡必有 closure（非第三列为 null，第三列沿 [结束方式合同](board.md#结束方式与分组计数卡-27a)）；可附原 attention／supplement_follow_up／follow_up_schedule／reporter_profile／web_report_urge 及既有 reporter_department。service/stage_entered_at 仍不在搜索形状。每页不超过 limit，无匹配时空数组、next_cursor 为 null。range 包含 mode、from、until、`Asia/Shanghai`，custom的from为起日零时、until为止日次日零时，组成包含所选结束日的半开窗口；recent/all保留原近期窗口元数据，all不因此缩小获权集合。搜索不返回看板的 group_counts，也没有 total、hidden_count、内部匹配片段或未经 READ 的材料。
 
-第三列默认同时纳入 COMPLETED 与 DISMISSED，包括 CANCELLED。已关闭按可证明的关闭时间进入近期范围，未知时间只在 all 可见；不存在 include_* / closure_groups 新兼容开关。closure_kind 与其它条件取交集；custom日期对加入规范criteria和游标身份。今天、近7天、本月由前端换算明确的起止日期，同一参数支持手填范围，不在客户端筛已加载页代替完整查询。所有时间、缺事实处理、内部原因读取权与 can_restore 语义沿 ADR-0055，不增加写入能力。
+第三列默认同时纳入 COMPLETED 与 DISMISSED（ADR-0058）。已关闭按可证明的关闭时间进入近期范围，未知时间只在 all 可见；不存在 include_* / closure_groups 新兼容开关。closure_kind 与其它条件取交集；custom日期对加入规范criteria和游标身份。今天、近7天、本月由前端换算明确的起止日期，同一参数支持手填范围，不在客户端筛已加载页代替完整查询。所有时间、缺事实处理、内部原因读取权与 can_restore 语义沿 ADR-0055，不增加写入能力。
 
 合成请求：
 

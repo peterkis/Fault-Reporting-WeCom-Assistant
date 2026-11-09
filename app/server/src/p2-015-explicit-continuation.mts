@@ -26,7 +26,7 @@ export async function resolveExplicitContinuation({transaction:tx,intakeId,repor
     JOIN intake.contact_journey j ON j.id=source_leg.journey_id AND j.linked_ticket_id=t.id
     WHERE r.public_ref=$1 AND r.status='ACTIVE' AND r.reporter_binding_hash=$2
       AND origin.source_provider=$3 AND origin.source_bot_id=$4 AND origin.reporter_wecom_userid=$5
-      AND j.reporter_identity_hash=$6 AND j.status<>'ENDED' AND t.status NOT IN ('CLOSED','CANCELLED')
+      AND j.reporter_identity_hash=$6 AND j.status<>'ENDED' AND t.status NOT IN ('COMPLETED','DISMISSED')
       AND source_leg.reporter_identity_hash=j.reporter_identity_hash
       AND origin.retention_until_epoch_ms>$7::bigint AND j.retention_until_epoch_ms>$7::bigint
     LIMIT 2 FOR UPDATE OF j,r`,[claim.public_ref,binding,current.source_provider,current.source_bot_id,

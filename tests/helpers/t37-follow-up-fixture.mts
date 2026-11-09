@@ -19,6 +19,7 @@ import {migrateP2012} from '../../app/server/scripts/p2-012-migrate.mjs';
 import {migrateYxxSelfService} from '../../app/server/scripts/yxx-self-service-migrate.mjs';
 import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
 import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{
@@ -45,9 +46,7 @@ export async function withT37Fixture(run:(fixture:T37Fixture)=>Promise<void>,opt
     if(options.ticketAssignmentEnabled===true||options.ticketUnassignEnabled===true||options.lifecycleEnabled===true)await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.ticketUnassignEnabled===true)await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
     if(options.lifecycleEnabled===true){await migrateTicketStaffCompletion({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl:context.databaseUrl,mode:'apply'});}
-    if(options.workbenchFollowUpSchedulesEnabled===true){await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpDueSignals({databaseUrl:context.databaseUrl,mode:'apply'});}
-    // Terminal actions write closure records (071, card 27C); apply it after every other migration.
-    await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});
+    if(options.workbenchFollowUpSchedulesEnabled===true){await migrateWorkbenchFollowUpSchedules({databaseUrl:context.databaseUrl,mode:'apply'});await migrateWorkbenchFollowUpDueSignals({databaseUrl:context.databaseUrl,mode:'apply'});}await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.databaseUrl);
     const access=createPilotAccessService({pool:context.pool});
     const dispatcher=await access.upsertPrincipal({wecomUserId:'t37-dispatcher-'+randomUUID(),displayName:'T37 合成调度员',roles:['DISPATCHER'],resolverTeamIds:['PILOT_IT']});
     const handlerUserId='t37-handler-'+randomUUID();

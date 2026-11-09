@@ -13,6 +13,7 @@ import {migrateIncidentPublicProgress} from '../../app/server/scripts/incident-p
 import {migrateIncidentOwnerTransfer} from '../../app/server/scripts/incident-owner-transfer-migrate.mjs';
 import {withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual} from './p2-012-postgres-harness.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export interface Browser {evaluate(expression:string):Promise<unknown>;waitFor(expression:string):Promise<unknown>;command(method:string,params?:Record<string,unknown>):Promise<unknown>;screenshot():Promise<unknown>;close():Promise<void>;ownedResourceState():{processes:number;profiles:number;commandTimers:number;sockets:number}}
 export function record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -26,7 +27,7 @@ export async function candidateBrowser(options:{purpose:string;recovery?:boolean
     // The frozen T29 caller explicitly selects this synthetic host profile.
     // Other callers keep the original032 setup and the production default OFF.
     const ownerTransferProfile=options.purpose==='t29owner';
-    if(ownerTransferProfile){const ownerMigrationInput={databaseUrl,mode:'apply' as const};await migrateIncidentInternalNotes(ownerMigrationInput);await migrateIncidentPublicProgress(ownerMigrationInput);await migrateIncidentOwnerTransfer(ownerMigrationInput);}
+    if(ownerTransferProfile){const ownerMigrationInput={databaseUrl,mode:'apply' as const};await migrateIncidentInternalNotes(ownerMigrationInput);await migrateIncidentPublicProgress(ownerMigrationInput);await migrateIncidentOwnerTransfer(ownerMigrationInput);}await ensureCompletionDismissal(databaseUrl);
     const reporters=options.reporters??3;assert.ok(Number.isInteger(reporters)&&reporters>=3&&reporters<=100);const f=await fixtureP2012(pool,{reporters}),candidateId=text(record(await f.newCandidate()).id);await options.setup?.({pool,f,candidateId});
     const probe=createServer();await new Promise<void>(resolve=>probe.listen(0,'127.0.0.1',resolve));const address=probe.address();assert.ok(address&&typeof address==='object');const port=address.port;
     await new Promise<void>((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));

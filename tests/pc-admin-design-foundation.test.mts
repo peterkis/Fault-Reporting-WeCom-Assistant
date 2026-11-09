@@ -179,9 +179,9 @@ function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
 const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,secondary_reason:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
 test('Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at',()=>{
   const now=Date.parse('2026-11-06T12:00:00+08:00');
-  for(const status of ['CLOSED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
-  for(const status of ['CANCELLED','DUPLICATE_LINKED','IGNORED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='IGNORED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
-  assert.equal(matchesBoardSummary(boardCard({status:'IGNORED',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
+  for(const status of ['COMPLETED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
+  for(const status of ['DISMISSED','DISMISSED','DISMISSED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='DISMISSED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
+  assert.equal(matchesBoardSummary(boardCard({status:'DISMISSED',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
   assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:'2026-11-06 08:00:00',closure:null}),'today',now),false);
 });
 
@@ -270,14 +270,13 @@ const summaryCopy:Record<string,readonly [string,string]>={
   WAITING_REQUESTER:['等待报修人补充 · 已等待 12 分钟','等待报修人补充 · 已等待 12 分钟'],
   WAITING_VENDOR:['等待厂商回复 · 已等待 12 分钟','等待厂商回复 · 已等待 12 分钟'],
   RESOLVED:['已解决，等待报修人确认','已解决，等待报修人确认'],
-  CLOSED:['工单已关闭 · 同一故障仍未解决时可重新打开','工单已关闭 · 同一故障仍未解决时可重新打开'],
-  CANCELLED:['工单已关闭 · 请查看关闭记录','工单已关闭 · 请查看关闭记录'],
+  COMPLETED:['工单已完成 · 同一故障仍未解决时可重开','工单已完成 · 同一故障仍未解决时可重开'],
+  DISMISSED:['工单已关闭 · 请查看关闭记录','工单已关闭 · 请查看关闭记录'],
   REOPENED:['同一故障仍未解决 · 请重新领取','同一故障仍未解决 · 请重新领取'],
   PENDING:['规则无法判断 · 需要人工复核','规则无法判断 · 需要人工复核'],
   RECEIVED:['报修已受理 · 等待建立工单','报修已受理 · 等待建立工单'],
   WAITING_TRIAGE:['报修待判断 · 请核对报修材料','报修待判断 · 请核对报修材料'],
   WAITING_DESCRIPTION:['等待补充报修描述','等待补充报修描述'],
-  DUPLICATE_LINKED:['已关联已有工单 · 请查看关联处理进展','已关联已有工单 · 请查看关联处理进展'],
   FAILED:['受理处理失败 · 请核对报修材料','受理处理失败 · 请核对报修材料'],
 };
 for(const [status,expected] of Object.entries(summaryCopy))for(const self of [true,false])test('Card 18 next step '+status+' '+(self?'self':'other'),()=>{

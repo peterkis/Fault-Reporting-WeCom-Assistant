@@ -10,11 +10,12 @@ import {listenConversationWorkbenchServer} from '../../app/server/src/p2-006-wor
 import {entryConfig,entryKey} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {createP2016WeComSender} from '../../app/server/src/p2-016-wecom-sender.mjs';
 import {migrateWorkbenchSourceGroups} from '../../app/server/scripts/workbench-source-groups-migrate.mjs';
+import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 export function t26Object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export async function withT26Fixture(run:(context:T11Fixture)=>Promise<void>,{roundLifecycle=false,sourceGroups=false}:{roundLifecycle?:boolean;sourceGroups?:boolean}={}){
  await withT24Fixture(async original=>{
   await original.runtime.stop();
-  if(sourceGroups)await migrateWorkbenchSourceGroups({databaseUrl:original.databaseUrl,mode:'apply'});
+  if(sourceGroups)await migrateWorkbenchSourceGroups({databaseUrl:original.databaseUrl,mode:'apply'});await ensureCompletionDismissal(original.databaseUrl);
   const options={pool:original.pool,publicOrigin:original.origin,listenPort:Number(new URL(original.origin).port),principalIds:[original.principals[0]?.id??'',original.outsider.id,original.principals[1]?.id??''],
    flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:true,
    ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,ticketAssignmentEnabled:roundLifecycle,ticketUnassignEnabled:roundLifecycle,ticketReopenRoundsEnabled:roundLifecycle,sourceGroupDirectoryEnabled:sourceGroups,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,

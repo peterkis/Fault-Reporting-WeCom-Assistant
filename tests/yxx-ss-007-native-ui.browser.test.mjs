@@ -1112,7 +1112,7 @@ test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endl
 
 test('SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
-  const statuses = ['IN_PROGRESS', 'WAITING_REQUESTER', 'RESOLVED', 'CLOSED'];
+  const statuses = ['IN_PROGRESS', 'WAITING_REQUESTER', 'RESOLVED', 'COMPLETED'];
   try {
     f.state.ticketStatus = statuses[0]; f.state.timelineTicketStatus = statuses[0];
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,

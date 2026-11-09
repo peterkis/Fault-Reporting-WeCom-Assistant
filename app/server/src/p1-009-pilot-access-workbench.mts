@@ -33,7 +33,7 @@ const MIGRATION_URL = new URL('../../../database/migrations/006_p1_009_pilot_acc
 const ROLES = new Set<PilotRole>(['REPORTER', 'HANDLER', 'DISPATCHER', 'ADMIN']);
 const HANDLER_ACTIONS = new Set([
   'accept', 'start', 'request-information', 'resume', 'wait-vendor',
-  'resolve', 'cancel', 'add-note',
+  'resolve', 'dismiss', 'add-note',
 ]);
 const REPORTER_ACTIONS = new Set(['confirm', 'reopen']);
 
@@ -227,7 +227,7 @@ export function createPilotAccessService({ pool }: { pool?: PostgresPool } = {})
 
     authorizeAction: async ({ transaction, ticket, action, actor }) => {
       if (!transaction || !ticket || !actor?.id) {
-        return actor?.type === 'SYSTEM' && action === 'auto-close';
+        return actor?.type === 'SYSTEM' && action === 'auto-complete';
       }
       const principal = await loadPrincipal(transaction, String(actor.id));
       if (principal === null || !principal.is_active) {
@@ -451,7 +451,7 @@ export function createPilotWorkbenchServer({ access, actions, authenticate }: Pi
       }
       const actionMatch = pathname.match(/^\/api\/pilot\/tickets\/([0-9a-f-]{36})\/actions\/([a-z-]+)$/iu);
       if (request.method === 'POST' && actionMatch) {
-        if (actionMatch[2] === 'auto-close') {
+        if (actionMatch[2] === 'auto-complete') {
           sendJson(response, 403, { ok: false, error: { code: 'FORBIDDEN', retryable: false } });
           return;
         }

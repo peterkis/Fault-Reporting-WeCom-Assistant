@@ -47,7 +47,7 @@ test('same UUID has one commit, changed intent and stale versions conflict, and 
  },{ticketAssignmentEnabled:true});
 });
 test('terminal Ticket neither advertises nor accepts arbitrary transfers through either public assignment path',async()=>{
- await withWeb01Fixture(async(context:Fixture)=>{const ticket=context.tickets[9],target=context.principals[1];assert.ok(ticket&&target);const a=await http(context),path='/api/tickets/'+ticket.ticket.id,before=await facts(context,ticket.ticket.id),detail=(await a.get(path)).value;assert.equal(detail.status,'CLOSED');
+ await withWeb01Fixture(async(context:Fixture)=>{const ticket=context.tickets[9],target=context.principals[1];assert.ok(ticket&&target);const a=await http(context),path='/api/tickets/'+ticket.ticket.id,before=await facts(context,ticket.ticket.id),detail=(await a.get(path)).value;assert.equal(detail.status,'COMPLETED');
   const modern=await a.post(path+'/transfer-assignment',command(target.id));const legacy=await a.post(path+'/transfer',{client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_TRANSFER',target_principal_id:target.id,resolver_team_id:'PILOT_IT'});
   console.log('T06_TERMINAL_PUBLIC '+JSON.stringify({new_status:modern.status,legacy_status:legacy.status,allowed_actions:detail.allowed_actions}));assert.deepEqual({advertised:Array.isArray(detail.allowed_actions)&&detail.allowed_actions.includes('transfer-assignment'),new_status:modern.status,legacy_status:legacy.status},{advertised:false,new_status:409,legacy_status:409});assert.deepEqual(await facts(context,ticket.ticket.id),before);
  },{ticketAssignmentEnabled:true});

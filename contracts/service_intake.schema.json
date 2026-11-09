@@ -99,7 +99,7 @@
         "WAITING_TRIAGE",
         "LINKED_INCIDENT",
         "COMPLETED",
-        "IGNORED",
+        "DISMISSED",
         "FAILED"
       ]
     },

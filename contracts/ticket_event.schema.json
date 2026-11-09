@@ -37,9 +37,9 @@
         "ticket.waiting_requester",
         "ticket.waiting_vendor",
         "ticket.resolved",
-        "ticket.closed",
+        "ticket.completed",
         "ticket.reopened",
-        "ticket.cancelled",
+        "ticket.dismissed",
         "ticket.linked_incident",
         "ticket.restored",
         "ticket.handling_aborted"

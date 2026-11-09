@@ -139,3 +139,7 @@ Ticket 人工关闭事件沿用 `ticket.cancelled`；新增 `ticket.restored` �
 ## 2026-11-07 Bot / Grant H5 详情前向接入
 
 用户授权更新旧 Bot / Grant 详情对应的 H5 接口和页面。既有 Reporter READ 接口同步扩展 status / closure_text，复用当前安全关闭投影和 H5 状态展示。保留原 publicRef 链接、成员与 Grant 授权语义，Grant 查询后复核绑定会话。页面与解析、Schema、声明在同次交付更新。该增量不新增关闭命令或数据库迁移，执行与验证见卡 27C-H 的后继记录。
+
+## 2026-11-08 前向替代指针
+
+A0-1 中「`DUPLICATE_LINKED` … 保留既有公共故障关联含义」一句、人工关闭进入 `CANCELLED` / 事件 `ticket.cancelled` / `intake.closed`、H5 筛选 `CLOSED_OUT` 的命名，已被 [ADR-0058](0058_completion_and_dismissal_language.md) 前向替代：人工关闭为 `DISMISSED`（`ticket.dismissed` / `intake.dismissed`），`DUPLICATE_LINKED` 删除，H5 筛选为 `DISMISSED`。关闭原因、通知矩阵与恢复规则不变。上文原文保留不改。

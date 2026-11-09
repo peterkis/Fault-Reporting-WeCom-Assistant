@@ -5,7 +5,6 @@ import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
 import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
-import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from '../app/server/src/platform/postgres-types.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
@@ -18,12 +17,14 @@ import {
   createServiceIntakeProcessor,
   mapServiceIntakeMigrationFailure,
 } from '../app/server/src/p1-004-service-intake.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const testIntakeIds = new Set();
-// Each run gets its own database at the current schema (through 071); PILOT_DATABASE_URL only creates and drops it.
+// Each run gets its own database at the current schema (through 071 / 072); PILOT_DATABASE_URL only creates and drops it.
 let pool = null;
 let admin = null;
 const isolatedName = `p1_004_${randomUUID().replaceAll('-', '_')}`;
@@ -131,8 +132,9 @@ before(async () => {
   await applyServiceIntakeMigration({ pool });
   // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
   await migrateCurrentBaseline({ databaseUrl: isolatedUrl });
-  // A system-dismissed Intake writes intake.closed and its closure record (071, card 27C).
+  // Intake dismissal writes intake.dismissed: the 071 event vocabulary as renamed by 072.
   await migrateServiceClosure({ databaseUrl: isolatedUrl, mode: 'apply' });
+  await migrateCompletionDismissal({ databaseUrl: isolatedUrl, mode: 'apply' });
 });
 
 after(async () => {
@@ -593,11 +595,11 @@ integrationTest('standalone thanks is CHATTER without an unnecessary clarificati
 
   assert.equal(response.ok, true);
   assert.equal(response.result.intake.request_type, 'CHATTER');
-  assert.equal(response.result.intake.status, 'IGNORED');
-  // Since card 27C a system-dismissed Intake records its closure (ADR-0056).
+  assert.equal(response.result.intake.status, 'DISMISSED');
+  // Since card 27C a system-dismissed Intake records its closure (ADR-0056); ADR-0058 names the event intake.dismissed.
   assert.deepEqual(
     response.result.events.map((event) => event.event_type),
-    ['intake.received', 'intake.closed'],
+    ['intake.received', 'intake.dismissed'],
   );
   const closure = (await pool.query(
     "SELECT source,reason_code,secondary_reason_code FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL",
@@ -1104,7 +1106,7 @@ test('Service Intake JSON Schema freezes the domain boundary and P1-004 version 
     'WAITING_TRIAGE',
     'LINKED_INCIDENT',
     'COMPLETED',
-    'IGNORED',
+    'DISMISSED',
     'FAILED',
   ]);
   assert.equal(schema.properties.version.minimum, 1);

@@ -127,7 +127,7 @@ function webDisplayStatus(row:Pick<ReportRow,'ticket_no'|'input_revision'|'proce
   if (String(row.input_revision) !== String(row.processed_revision)) return 'RECEIVED_PROCESSING';
   if (row.status === 'WAITING_DESCRIPTION') return 'WAITING_FOR_DETAILS';
   if (row.status === 'WAITING_REVIEW' || row.status === 'WAITING_TRIAGE' || row.has_pending_review) return 'UNDER_REVIEW';
-  if (row.status === 'IGNORED' || row.status === 'COMPLETED') return 'NOT_SERVICE';
+  if (row.status === 'DISMISSED' || row.status === 'COMPLETED') return 'NOT_SERVICE';
   return 'RECEIVED_PROCESSING';
 }
 
@@ -208,7 +208,7 @@ function safeWebDetail(row:WebDetailRow):YxxRequestDetail {
     ticket: ticketSummary(row),
     safe_clarification: row.safe_clarification ?? null,
     can_supplement: BigInt(row.input_revision) < 50n
-      && !['CLOSED', 'CANCELLED'].includes(row.ticket_status ?? '')
+      && !['COMPLETED', 'DISMISSED'].includes(row.ticket_status ?? '')
       && row.revoked_at === null,
   });
 }
@@ -289,7 +289,7 @@ async function listRows(transaction:PostgresTransaction,context:ActiveContext,se
     SELECT * FROM report_rows
      WHERE ($3::text IS NULL OR kind=CASE WHEN $3='WEB' THEN 'WEB_REQUEST' ELSE 'BOT_TICKET' END)
        AND ($13::text IS NULL OR strpos(lower(COALESCE(ticket_no,'')||' '||COALESCE(safe_summary,'')||' '||COALESCE(safe_location,'')),lower($13))>0)
-       AND ($14::text IS NULL OR CASE WHEN $14='COMPLETED' THEN ticket_status IN ('CLOSED','RESOLVED') WHEN $14='CLOSED_OUT' THEN ticket_status IN ('CANCELLED','DUPLICATE_LINKED')
+       AND ($14::text IS NULL OR CASE WHEN $14='COMPLETED' THEN ticket_status IN ('COMPLETED','RESOLVED') WHEN $14='DISMISSED' THEN ticket_status IN ('DISMISSED')
          WHEN $14='ACTIVE' THEN ticket_status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR')
          ELSE ticket_status IS NULL OR ticket_status IN ('NEW','QUEUED','ACCEPTED','REOPENED') END)
        AND created_at<=platform.local_from_epoch_ms($4::bigint)
@@ -521,7 +521,7 @@ export function createYxxSelfServiceQuery({
           const supplements=h5SupplementPage(row.supplement_items,context.scope,ref,row.input_revision,scopeSecret);
           const projection={source:row,round:row.completed_round,urge:row.urge_read,epoch:row.read_epoch,progress:row.progress_read,evaluation:row.evaluation_read};
           const detail:H5EntryDetail={...safeWebDetail({...row,supplement_items:supplements.items}),
-            can_supplement:BigInt(row.input_revision)<50n&&!['CLOSED','CANCELLED'].includes(row.ticket_status??'')&&context.write_flag&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED,
+            can_supplement:BigInt(row.input_revision)<50n&&!['COMPLETED','DISMISSED'].includes(row.ticket_status??'')&&context.write_flag&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED,
             supplements_cursor:supplements.next_cursor,
             ...(feedback?{feedback_context:feedback.contextFromAuthorizedProjection(context,ref,{source:row,round:row.completed_round,already_reopened:row.already_reopened})}:{}),
             h5:{...lifecycle.contextFromAuthorizedProjection(context,ref,projection),media:h5MediaEntry?await h5MediaEntry({transaction:tx,scope:context.scope,requestRef:ref}):[]}};

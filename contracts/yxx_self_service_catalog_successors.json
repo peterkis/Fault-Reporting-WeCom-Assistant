@@ -1,0 +1,34 @@
+{
+  "description": "SS-010 limited runtime only: the exact Yxx catalog constraint rewrites made by successor migrations 071 and 071+072 on top of the frozen 034 catalog (yxx_self_service_catalog.json, unchanged). Generated on an isolated database: current baseline with Yxx, then 071, then 072.",
+  "071": [
+    {
+      "relation": "intake.service_intake_event",
+      "name": "service_intake_event_type_check",
+      "type": "c",
+      "validated": true,
+      "deferrable": false,
+      "deferred": false,
+      "definition": "CHECK ((event_type = ANY (ARRAY['intake.received'::text, 'intake.needs_clarification'::text, 'intake.message_added'::text, 'intake.clarification_added'::text, 'intake.ticket_created'::text, 'intake.rule_decision_applied'::text, 'intake.manual_review_required'::text, 'intake.description_requested'::text, 'intake.web_received'::text, 'intake.web_supplement_added'::text])) OR (event_type = ANY (ARRAY['intake.closed'::text, 'intake.restored'::text])))"
+    }
+  ],
+  "072": [
+    {
+      "relation": "intake.service_intake",
+      "name": "service_intake_status_check",
+      "type": "c",
+      "validated": true,
+      "deferrable": false,
+      "deferred": false,
+      "definition": "CHECK (status = ANY (ARRAY['RECEIVED'::text, 'TICKET_CREATED'::text, 'WAITING_DESCRIPTION'::text, 'WAITING_TRIAGE'::text, 'LINKED_INCIDENT'::text, 'COMPLETED'::text, 'DISMISSED'::text, 'FAILED'::text]))"
+    },
+    {
+      "relation": "intake.service_intake_event",
+      "name": "service_intake_event_type_check",
+      "type": "c",
+      "validated": true,
+      "deferrable": false,
+      "deferred": false,
+      "definition": "CHECK ((event_type = ANY (ARRAY['intake.received'::text, 'intake.needs_clarification'::text, 'intake.message_added'::text, 'intake.clarification_added'::text, 'intake.ticket_created'::text, 'intake.rule_decision_applied'::text, 'intake.manual_review_required'::text, 'intake.description_requested'::text, 'intake.web_received'::text, 'intake.web_supplement_added'::text])) OR (event_type = ANY (ARRAY['intake.dismissed'::text, 'intake.restored'::text])))"
+    }
+  ]
+}

@@ -106,7 +106,7 @@ function classifyRequest(cleanText: string): TicketRequestType {
 
 function initialStatus(requestType: TicketRequestType, cleanText: string): IntakeStatus {
   if (requestType === 'CHATTER' && THANKS_PATTERN.test(cleanText)) {
-    return 'IGNORED';
+    return 'DISMISSED';
   }
   return ['FOLLOW_UP', 'CHATTER', 'UNKNOWN'].includes(requestType)
     ? 'WAITING_DESCRIPTION'
@@ -434,7 +434,7 @@ export function createServiceIntakeProcessor({
         (source.rows[0] as SourceRow).retention_until,
         requestType,
         summary,
-        status==='IGNORED'?'WAITING_DESCRIPTION':status,
+        status==='DISMISSED'?'WAITING_DESCRIPTION':status,
         channelMessageId,
       ],
     );
@@ -461,7 +461,7 @@ export function createServiceIntakeProcessor({
           explicit_aggregation_boundary: explicitAggregationBoundary,
           ...(selection?.boundaryReason ? { session_boundary_reason: selection.boundaryReason } : {}),
           request_type: requestType,
-        status:status==='IGNORED'?'WAITING_DESCRIPTION':status,
+        status:status==='DISMISSED'?'WAITING_DESCRIPTION':status,
       },
     });
     if (status === 'WAITING_DESCRIPTION') {
@@ -480,11 +480,11 @@ export function createServiceIntakeProcessor({
       }));
     }
 
-    if(status==='IGNORED'){
+    if(status==='DISMISSED'){
       const before=intake;
-      intake=(await transaction.query<IntakeRow>(`UPDATE intake.service_intake SET status='IGNORED',version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid RETURNING *`,[before.id])).rows[0]??before;
-      const closed=await insertEvent({transaction,eventType:'intake.closed',intake,occurredAt:iso(intake.updated_at),traceId,
-        payload:{intake_id:intake.id,old_status:before.status,new_status:'IGNORED',source:'SYSTEM'}});
+      intake=(await transaction.query<IntakeRow>(`UPDATE intake.service_intake SET status='DISMISSED',version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid RETURNING *`,[before.id])).rows[0]??before;
+      const closed=await insertEvent({transaction,eventType:'intake.dismissed',intake,occurredAt:iso(intake.updated_at),traceId,
+        payload:{intake_id:intake.id,old_status:before.status,new_status:'DISMISSED',source:'SYSTEM'}});
       events.push(...closed);
       await insertClosureRecord({transaction,subjectType:'INTAKE',subjectId:intake.id,beforeStatus:'WAITING_DESCRIPTION',beforeVersion:before.version,
         beforeSnapshot:{request_type:before.request_type,reviews:[],journeys:[]},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'NOT_IT_SCOPE',secondary_reason_code:'ACKNOWLEDGED'}),intakeEventId:closed[0]?.event_id??null});

@@ -18,7 +18,7 @@ async function seedClosingTimes(f:Fixture){
   const first=f.tickets[9],last=f.tickets[10],outside=f.tickets[11],resolved=f.tickets[12];assert.ok(first&&last&&outside&&resolved);
   // Only the isolated synthetic fixture changes; the filter must use completion events, not updated_at.
   for(const [id,at] of [[first.ticket.id,'2024-02-29 00:00:00'],[last.ticket.id,'2024-02-29 23:59:59'],[outside.ticket.id,'2024-03-01 00:00:00']]){
-    await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.closed'",[id,at]);
+    await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type='ticket.completed'",[id,at]);
   }
   // Card 27's canonical closure evidence now also orders RESOLVED. Keep this
   // date-independent pending-confirmation example deterministically before the window.
