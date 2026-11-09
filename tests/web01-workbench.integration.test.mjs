@@ -77,6 +77,11 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const html=await shell.text(),asset=html.match(/src="([^"]+\.js)"/u)?.[1];assert.ok(asset);assert.equal((await get(asset)).status,200);
     const stylesheet=html.match(/href="([^"]+\.css)"/u)?.[1];assert.ok(stylesheet);
     const css=await (await get(stylesheet)).text(),fonts=[...css.matchAll(/url\(["']?(\/workbench\/app\/assets\/[^"')]+\.woff2)["']?\)/gu)].map(match=>match[1]);
+    const favicon=html.match(/href="([^" ]*yixiaoxiu-favicon-[^" ]+\.svg)"/u)?.[1];assert.ok(favicon);
+    const logo=css.match(/url\(["']?(\/workbench\/app\/assets\/yixiaoxiu-logo-[^"')]+\.svg)["']?\)/u)?.[1];assert.ok(logo);
+    for(const image of [favicon,logo]){assert.equal((await fetch(origin+image)).status,401);const response=await get(image);assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/svg+xml');assert.match(await response.text(),/<svg\b/u);}
+    assert.equal((await get('/workbench/app/assets/yixiaoxiu-logo-not-in-inventory.svg')).status,404);
+    assert.equal((await get('/workbench/app/assets/arbitrary.svg')).status,404);
     assert.equal(new Set(fonts).size,99,'F1 all unicode-range shards remain separate local files');assert.equal(/url\(["']?data:font/iu.test(css),false);
     const font=fonts[0];assert.ok(font);assert.equal((await fetch(origin+font)).status,401,'font asset retains current workbench authentication');
     const fontResponse=await get(font);assert.equal(fontResponse.status,200);assert.equal(fontResponse.headers.get('content-type'),'font/woff2');assert.equal(Buffer.from(await fontResponse.arrayBuffer()).subarray(0,4).toString(),'wOF2');

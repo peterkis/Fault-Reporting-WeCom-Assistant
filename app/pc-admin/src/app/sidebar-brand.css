@@ -1,6 +1,5 @@
 .sidebar-brand {--fs-brand:calc(var(--fs-md) + var(--space-0-5) / 2);display:flex;align-items:center;gap:var(--space-2);height:var(--space-12);flex:none;padding:0 var(--space-2);margin-bottom:var(--space-2);}
-.sidebar-brand-icon {display:inline-grid;place-items:center;flex:none;width:var(--control-h-sm);height:var(--control-h-sm);border-radius:var(--radius-md);background:var(--brand);color:var(--on-brand);}
-.sidebar-brand-icon>svg {width:var(--icon-md);height:var(--icon-md);}
+.sidebar-brand-icon {display:block;flex:none;width:var(--control-h-sm);height:var(--control-h-sm);background: center / contain no-repeat url('../assets/yixiaoxiu-logo.svg');}
 .sidebar-brand-copy {display:flex;align-items:baseline;gap:var(--space-2);min-width:0;}
 .sidebar-brand-copy>strong {font-size:var(--fs-brand);font-weight:var(--fw-semibold);line-height:var(--lh-md);}
 .sidebar-brand-copy>span {font-size:var(--fs-xs);color:var(--text-secondary);line-height:var(--lh-xs);}

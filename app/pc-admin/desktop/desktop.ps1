@@ -108,20 +108,9 @@ try{
   $stagedFrames=Assert-DesktopPath (Join-Path $stage 'startup-frames')
   New-Item -ItemType Directory -Path $stagedFrames -Force | Out-Null
   foreach($file in $startupFrameFiles){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $stage $file) -Force}
-  foreach($file in @('unavailable.html','chrome.html','login-chrome.html','chrome.css','startup.html','startup.css','startup-video.mp4')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
+  foreach($file in @('unavailable.html','chrome.html','login-chrome.html','chrome.css','startup.html','startup.css','startup-video.mp4','icon.ico','icon.png')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
   @{schemaVersion=1;serverOrigin=$ServerOrigin}|ConvertTo-Json -Compress|Set-Content -LiteralPath (Join-Path $stage 'desktop.config.json') -Encoding utf8
   @{name='wecom-it-workbench';productName='医小修工作台';version=$versions.application;private=$true;type='module';main='main.mjs';description='信息科工单工作台';author='Hospital IT';license='UNLICENSED';dependencies=@{}}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $stage 'package.json') -Encoding utf8
-  Add-Type -AssemblyName System.Drawing
-  $bitmap=[Drawing.Bitmap]::new(256,256);$graphics=[Drawing.Graphics]::FromImage($bitmap)
-  try{
-    $graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $graphics.Clear([Drawing.Color]::FromArgb(30,65,57))
-    $pen=[Drawing.Pen]::new([Drawing.Color]::FromArgb(245,244,234),22)
-    try{$graphics.DrawEllipse($pen,48,48,160,160);$graphics.DrawLine($pen,128,83,128,173);$graphics.DrawLine($pen,83,128,173,128)}finally{$pen.Dispose()}
-    $bitmap.Save((Join-Path $stage 'icon.png'),[Drawing.Imaging.ImageFormat]::Png)
-    $png=[IO.File]::ReadAllBytes((Join-Path $stage 'icon.png'));$stream=[IO.File]::Create((Join-Path $stage 'icon.ico'));$writer=[IO.BinaryWriter]::new($stream)
-    try{$writer.Write([UInt16]0);$writer.Write([UInt16]1);$writer.Write([UInt16]1);$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([UInt16]1);$writer.Write([UInt16]32);$writer.Write([UInt32]$png.Length);$writer.Write([UInt32]22);$writer.Write($png)}finally{$writer.Dispose()}
-  }finally{$graphics.Dispose();$bitmap.Dispose()}
   if($Action -eq 'Dev'){& (Join-Path $desktopRoot 'node_modules/electron/dist/electron.exe') $stage;return}
   if($Action -eq 'Package'){
     $config=@{appId='cn.mobimedical.yixiaoxiu.workbench';productName='医小修工作台';electronVersion=$versions.electron;electronDist=(Join-Path $desktopRoot 'node_modules/electron/dist');electronDownload=@{cache=$env:electron_config_cache};asar=$true;directories=@{app=$stage;output=(Join-Path $desktopLocal 'releases')};files=(@('!node_modules/**/*','main.mjs','policy.mjs','startup-state.mjs','preload.cjs','unavailable.html','chrome.html','login-chrome.html','chrome.css','chrome.mjs','chrome-preload.cjs','startup.html','startup.css','startup.mjs','startup-preload.cjs','frame-playback.mjs','startup-video.mp4','desktop.config.json','icon.ico','icon.png','package.json')+$startupFrameFiles);win=@{target=@(@{target='nsis';arch=@('x64')});icon=(Join-Path $stage 'icon.ico')};nsis=@{oneClick=$false;perMachine=$false;allowToChangeInstallationDirectory=$true;createDesktopShortcut=$true;createStartMenuShortcut=$true;include=(Join-Path $PSScriptRoot 'installer.nsh')};artifactName='Yixiaoxiu-Workbench-${version}-${arch}-Setup.${ext}'}

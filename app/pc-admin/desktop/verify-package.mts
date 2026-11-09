@@ -15,7 +15,7 @@ for(const file of ['main.mjs','policy.mjs','startup-state.mjs','preload.cjs','ch
   if(!extractFile(archive,file).equals(readFileSync(path.join(root,'.local/electron/compiled',file))))throw Error('DESKTOP_PACKAGE_COMPILED_DRIFT:'+file);
 }
 const sha=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
-for(const file of ['unavailable.html','chrome.html','login-chrome.html','chrome.css','startup.html','startup.css','startup-video.mp4']){
+for(const file of ['unavailable.html','chrome.html','login-chrome.html','chrome.css','startup.html','startup.css','startup-video.mp4','icon.ico','icon.png']){
   if(!extractFile(archive,file).equals(readFileSync(path.join(root,'app/pc-admin/desktop',file))))throw Error('DESKTOP_PACKAGE_SOURCE_DRIFT:'+file);
 }
 const sourceVideo=readFileSync(path.join(root,'app/pc-admin/desktop/startup-video.mp4')),packagedVideo=extractFile(archive,'startup-video.mp4');

@@ -5,6 +5,7 @@ import {brotliCompressSync,constants,gzipSync,gunzipSync} from 'node:zlib';
 import {controlledBuildRoot,runNode,outputFiles,record,hash,safeFile,workspaceFiles,slash,isH5ProductionInput,h5OutputFiles,h5StartupMetrics} from './common.mjs';
 type WebProject = 'app/pc-admin' | 'app/h5';
 const ENV_ASSET=/^assets\/login-environment-v1-[A-Za-z0-9_-]+\.pmrem$/u;
+const BRAND_ASSET=/^assets\/yixiaoxiu-(?:logo|favicon)-[A-Za-z0-9_-]+\.svg$/u;
 function typecheckProject(root:string,relative:WebProject):void {
   const project=path.join(root,relative),code=relative==='app/h5'?'H5':'WEB01';
   const declared=record(JSON.parse(readFileSync(safeFile(project,'package.json'),'utf8')) as unknown);
@@ -45,7 +46,7 @@ export function buildWeb(root:string):void {
   const project=path.join(root,'app/pc-admin'),output=path.join(controlledBuildRoot(root),'emit/web/admin-workbench');
   runNode(root,[path.join(root,'node_modules/vite/bin/vite.js'),'build',project,'--outDir',output,'--emptyOutDir']);
   const files=outputFiles(output);
-  if(!files.includes('index.html')||!files.includes('.vite/manifest.json')||files.some(f=>!['index.html','.vite/manifest.json'].includes(f)&&!/^assets\/[A-Za-z0-9_-]+\.(js|css|woff2)$/u.test(f)))throw new Error('WEB01_BUILD_OUTPUT_INVALID');
+  if(!files.includes('index.html')||!files.includes('.vite/manifest.json')||files.some(f=>!['index.html','.vite/manifest.json'].includes(f)&&!/^assets\/[A-Za-z0-9_-]+\.(js|css|woff2)$/u.test(f)&&!BRAND_ASSET.test(f)))throw new Error('WEB01_BUILD_OUTPUT_INVALID');
   writeFileSync(path.join(output,'asset-inventory.json'),JSON.stringify(files)+'\n');
   const lock=record(JSON.parse(readFileSync(safeFile(root,'package-lock.json'),'utf8')) as unknown);
   writeFileSync(path.join(output,'dependency-inventory.json'),JSON.stringify({lock_sha256:hash(readFileSync(safeFile(root,'package-lock.json'))),packages:lock.packages})+'\n');
@@ -60,7 +61,7 @@ export function buildWeb(root:string):void {
 /** Shared by the ordinary web build and the isolated desktop-login producer. */
 export function finalizeDesktopLogin(root:string,loginOutput:string):void {
   const loginFiles=outputFiles(loginOutput);
-  if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2)$/u.test(file)&&!ENV_ASSET.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
+  if(!loginFiles.includes('.vite/manifest.json')||loginFiles.some(file=>file!=='.vite/manifest.json'&&!/^assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2)$/u.test(file)&&!ENV_ASSET.test(file)&&!BRAND_ASSET.test(file)))throw Error('DESKTOP_LOGIN_BUILD_OUTPUT_INVALID');
   const environments=loginFiles.filter(file=>ENV_ASSET.test(file));
   if(environments.length===0)throw Error('DESKTOP_LOGIN_ENVIRONMENT_MISSING');
   if(environments.length>1)throw Error('DESKTOP_LOGIN_ENVIRONMENT_LIMIT');

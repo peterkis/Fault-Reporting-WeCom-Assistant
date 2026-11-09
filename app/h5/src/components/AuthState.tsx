@@ -18,7 +18,7 @@ export default function AuthState({expired,blocked,returnTo,external=false}:{exp
   setIntent(mustConfirm?'confirmed':'manual');
  };
  return <main className="auth-state" aria-labelledby="auth-title" aria-busy={connecting}>
-  <a className="auth-brand" href="#/" aria-label={t('app')}><span className="brand-mark">修</span><span>{t('app')}</span></a>
+  <a className="auth-brand" href="#/" aria-label={t('app')}><span className="brand-mark" aria-hidden="true"/><span>{t('app')}</span></a>
   <section className="auth-message">
    <svg className={'auth-connection'+(connecting?' is-connecting':'')} viewBox="0 0 240 184" fill="none" aria-hidden="true">
     <circle cx="120" cy="92" r="79" className="auth-orbit"/>
