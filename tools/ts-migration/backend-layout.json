@@ -1553,31 +1553,31 @@
     {
       "source": "scripts/g0-webhook-message-capability-probe.mjs",
       "target": "app/server/scripts/g0-webhook-message-capability-probe.mjs",
-      "issue": 145,
+      "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     },
     {
       "source": "scripts/validate-p2-007-runtime.mjs",
       "target": "app/server/scripts/validate-p2-007-runtime.mjs",
-      "issue": 145,
+      "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     },
     {
       "source": "scripts/yxx-self-service-bind-evidence.mjs",
       "target": "app/server/scripts/yxx-self-service-bind-evidence.mjs",
-      "issue": 145,
+      "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     },
     {
       "source": "scripts/yxx-self-service-evidence-tamper-check.mjs",
       "target": "app/server/scripts/yxx-self-service-evidence-tamper-check.mjs",
-      "issue": 145,
+      "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     },
     {
       "source": "scripts/yxx-self-service-finalize.mjs",
       "target": "app/server/scripts/yxx-self-service-finalize.mjs",
-      "issue": 145,
+      "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     }
   ]

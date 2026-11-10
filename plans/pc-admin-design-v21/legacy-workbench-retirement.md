@@ -86,7 +86,7 @@ web/p2-workbench全部10个文件、专属preview脚本/两条npm命令、旧资
 | `validate-p2-007-runtime.mjs` | P2-007 完成时的一次性运行时校验 | 不需要：规则引擎、别名解析与服务目录由 `p2-007/*` 与 `p2-007-*` 测试覆盖 |
 | `yxx-self-service-bind-evidence.mjs`、`yxx-self-service-evidence-tamper-check.mjs`、`yxx-self-service-finalize.mjs` | SS-009 / SS-010 证据绑定、篡改检查与收口的一次性工具，结果已写入历史 Evidence | 不需要：当前证据读取与校验由 `yxx-current-evidence`、`yxx-self-service-verification` 及其测试承担 |
 
-`p2-g2-yixiaoxiu-bind-evidence.mjs` 属 P2-G2（暂停而非退役），不在本次范围。退役记录统一为 `HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED`。
+`p2-g2-yixiaoxiu-bind-evidence.mjs` 属 P2-G2（暂停而非退役），不在本次范围。退役记录统一为 `HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED`，`issue` 记为 PR #178（本批未单独建 Issue）。
 
 ### 布局校验
 
