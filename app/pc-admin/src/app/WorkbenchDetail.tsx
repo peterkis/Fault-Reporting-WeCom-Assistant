@@ -87,7 +87,7 @@ export function WorkbenchDetailDrawer(props:DetailProps){
   const close=()=>{if(blocked.current)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
   // Keep the overlay's focus/restore scope while each requested item owns fresh controllers.
   const content=<WorkbenchDetailContent key={props.principal.principal_id+':'+kind+':'+id} {...props} onNavigationBlocked={reportBlocked} onClose={close}/>;
-  return props.fullPage?<article className="detail-page ds-detail" aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
+  return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
 }
 
 function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocked,onClose}:DetailProps&{onClose:()=>void}){
@@ -136,7 +136,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   // Card 29 D1/D2: a dismissed item is gray 「已关闭」, not the completed stage, and its next step is the neutral restore card.
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
   const content=<DetailDialogProvider>
-    <div className="detail-navigation">
+    <div className="detail-navigation" data-toast-avoid="top">
       <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span><HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail} onPress={()=>{if(detail)void navigator.clipboard.writeText(detail.item.number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
       <div className="detail-toolbar-actions">
         <span className="ds-presence-capsule-slot" ref={setPresenceTarget}/>
@@ -172,7 +172,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
       </div>
       <div role="tabpanel" id="detail-tab-attachments" aria-labelledby="detail-tab-trigger-attachments" hidden={tab!=='attachments'}>      <ReportMaterialsSection key={principal.principal_id+':materials:'+detail.item.kind+':'+detail.item.id} principal={principal} kind={detail.item.kind} id={detail.item.id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} readReady={result.isSuccess&&!result.isError} reporterName={detail.item.reporter_name} otherBlocked={otherCommandsBlocked} onBlockedChange={setWebReportBlocked} onCountChange={setAttachmentCount} onMediaOpenChange={setMediaOpen} urgencyTarget={urgencyTarget}/></div>
       <div className="workflow-support" role="tabpanel" id="detail-tab-conversations" aria-labelledby="detail-tab-trigger-conversations" hidden={tab!=='conversations'}><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id} onCountChange={setConversationCount}/></div>
-      </div><div className="ds-detail-footer">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
+      </div><div className="ds-detail-footer" data-toast-avoid="bottom">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
     </div>:null}
   </DetailDialogProvider>;
   return content;

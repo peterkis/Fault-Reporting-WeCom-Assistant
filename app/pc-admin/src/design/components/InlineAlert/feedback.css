@@ -1,5 +1,7 @@
 /* Retained feedback layout contracts; visual primitives belong to the v2 components. */
-.workbench-toast-viewport {position:fixed;inset:64px 20px auto auto;z-index:var(--z-toast);display:flex;flex-direction:column;align-items:stretch;gap:var(--space-3);width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 96px);overflow-y:auto;padding:var(--space-1);pointer-events:none;overscroll-behavior:contain}
+/* Card 32D: bottom-right of the window or of the open detail container, above its bottom input area (variables from ToastFeedback). */
+/* Card 32D: placement defaults; ToastFeedback overrides them inline from the visible host. */
+.workbench-toast-viewport {--toast-right:20px;--toast-bottom:20px;--toast-left:auto;--toast-width:min(420px,calc(100vw - 32px));--toast-max-height:calc(100dvh - 96px);position:fixed;inset:auto var(--toast-right) var(--toast-bottom) auto;z-index:var(--z-toast);display:flex;flex-direction:column;justify-content:safe flex-end;align-items:stretch;gap:var(--space-3);width:var(--toast-width);max-height:var(--toast-max-height);overflow-y:auto;padding:var(--space-1);pointer-events:none;overscroll-behavior:contain}
 .workbench-toast {display:grid;grid-template-columns:20px minmax(0,1fr) 24px;align-items:start;gap:var(--space-3);padding:var(--space-4) var(--space-3) var(--space-4) var(--space-4);background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-3);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/1.5 var(--font-sans);animation:workbench-toast-enter var(--dur-base) ease-out}
 .workbench-toast[data-visible=false] {opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease-out}
 .workbench-toast .workbench-toast-content {display:flex;flex-direction:column;gap:var(--space-0-5);min-width:0;max-width:none;margin:0;padding:0;color:inherit;text-align:left;font-size:var(--fs-md);font-weight:var(--fw-regular);line-height:1.5;overflow-wrap:anywhere}
@@ -13,13 +15,13 @@
 .workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
 .workbench-toast.loading .workbench-toast-close {visibility:hidden}
 .workbench-draft-status {display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;color:var(--text-secondary);flex:none}
-.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;bottom:20px;max-height:40dvh}
+.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:20px;bottom:20px;width:min(420px,calc(100% - 40px));max-height:40dvh}
 @keyframes workbench-toast-enter {
-from{opacity:.65;translate:0 -6px}
+from{opacity:.65;translate:0 6px}
 to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){
 .workbench-toast{animation:none}
 .workbench-toast.loading .workbench-toast-icon svg{animation:none}}
 @media(max-width:640px){
-.workbench-toast-viewport{inset:12px 12px auto;width:calc(100vw - 24px);padding:0;max-height:calc(100dvh - 32px)}
+.workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto var(--toast-right) var(--toast-bottom) var(--toast-left);width:auto;padding:0}
 .workbench-toast{padding:var(--space-3) var(--space-3) var(--space-3) var(--space-3);gap:var(--space-2)}}
