@@ -46,7 +46,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
  try{
   browser=await launch(f,'/workbench/app/');const b=browser;
   await b.command('Page.enable');if(!process.env.CARD32D_NO_INTERCEPT)await b.command('Page.addScriptToEvaluateOnNewDocument',{source:interceptor});
-  const size=async(width:number)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height:width===900?820:1000,deviceScaleFactor:1,mobile:false});};
+  const size=async(width:number,height=width===900?820:1000)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});};
   const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
   const open=async(path:string)=>{await size(1440);await b.command('Page.navigate',{url:f.origin+path});await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
   // Success: a real follow toggle. Error and unknown: a note save answered with a conflict keeps the text and reports the conflict
@@ -60,14 +60,17 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await b.waitFor("[...document.querySelectorAll('.ds-detail-footer button')].some(button=>button.textContent.includes('保存')&&!button.disabled)");
    await b.evaluate("[...document.querySelectorAll('.ds-detail-footer button')].find(button=>button.textContent.includes('保存')&&!button.disabled).click()");
   };
-  const measure=async(scenario:string,width:number,names:Record<string,string>)=>{
+  const measure=async(scenario:string,width:number,names:Record<string,string>,height?:number)=>{
    // Resize and settle first; the 4s success notice is refreshed only then, so it is measured while visible.
-   await size(width);await waitForAnimationsSettled(b);await success();await waitForAnimationsSettled(b,'.workbench-toast');
+   await size(width,height);await waitForAnimationsSettled(b);await success();await waitForAnimationsSettled(b,'.workbench-toast');
    const found=await b.evaluate(controls(names)) as (Control&{missing?:boolean})[],toasts=await b.evaluate(toastRects) as (Rect&{kind:string;text:string})[];
+   // A stack taller than its limit scrolls inside the viewport; only the part inside the viewport can cover a control.
+   const stack=await b.evaluate("(()=>{const r=document.querySelector('.workbench-toast-viewport').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()") as Rect;
+   const visible=toasts.map(item=>{const x=Math.max(item.x,stack.x),y=Math.max(item.y,stack.y);return {...item,x,y,width:Math.max(0,Math.min(item.x+item.width,stack.x+stack.width)-x),height:Math.max(0,Math.min(item.y+item.height,stack.y+stack.height)-y)};});
    assert.deepEqual(toasts.map(t=>t.kind).sort(),['error','success','unknown'],scenario+' '+width+': one success, one error and one unknown notice '+JSON.stringify(toasts));
    for(const control of found){
     assert.ok(!control.missing,scenario+' '+width+': '+control.name+' is rendered');
-    const clear=toasts.every(t=>!intersects(t,control.rect));table.push({scenario,width,control:control.name,hit:control.hit,clear});
+    const clear=visible.every(t=>!intersects(t,control.rect));table.push({scenario,width,control:control.name,hit:control.hit,clear});
     assert.equal(control.hit,true,scenario+' '+width+': '+control.name+' is the hit target at its centre; found '+JSON.stringify((control as {at?:unknown}).at)+' rect '+JSON.stringify(control.rect)+' toasts '+JSON.stringify(toasts));assert.equal(clear,true,scenario+' '+width+': no notice overlaps '+control.name);
    }
   };
@@ -80,6 +83,10 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
    for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
+   // A short window cannot fit the three notices between the toolbar and the composer: the stack stops below the toolbar
+   // (data-toast-avoid="top") and scrolls, so the navigation, copy, follow, more and close controls and the composer stay
+   // reachable. The scrolling body between them has no free space at this height and is not part of this check.
+   const {'下一步主操作':_body,...bars}=detailControls;await measure(scenario+'-short',1440,{...bars,...extra},560);
   }
   // Closing dialog: the notices move into the dialog and dock above its own action bar. The follow button behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.

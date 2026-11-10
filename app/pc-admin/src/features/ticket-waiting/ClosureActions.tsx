@@ -178,7 +178,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  // Card 29 R2: three notice states. Restore notifies only after a closure that chose to notify, so the closure's own choice decides 「本次不发送」.
  const restoreNotice=!restore?'':!restore.notify_reporter?'关闭时未通知报修人，本次不发送':restore.notification_state==='SENT'?'关闭时已通知，将通知报修人已重新受理':'关闭通知尚未送达，恢复后将按送达结果决定是否通知';
  return <Modal.Backdrop isOpen={target.open} isDismissable={false} isKeyboardDismissDisabled={locked} onOpenChange={open=>{if(!open)void close();}}><Modal.Container size="sm" className="ds-restore-container"><Modal.Dialog className="ds-closure-dialog ds-restore-dialog" aria-label="恢复事项" data-workbench-overlay data-toast-host>
-  <header><Modal.Heading>恢复事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭恢复窗口" isDisabled={locked} onPress={()=>{void close();}}><X size={18}/></Button></header>
+  <header data-toast-avoid="top"><Modal.Heading>恢复事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭恢复窗口" isDisabled={locked} onPress={()=>{void close();}}><X size={18}/></Button></header>
   <p className="ds-closure-context"><span className="ds-closure-number">{item.number}</span> · {item.title}</p>
   {history.isPending?<p role="status">正在核对恢复目标…</p>:history.isError?<p role="alert">恢复目标暂不可读。<Button tone="ghost" onPress={()=>{void history.refetch();}}>重试</Button></p>:restore?<>
    <dl className="ds-restore-facts" data-restore-confirmation>

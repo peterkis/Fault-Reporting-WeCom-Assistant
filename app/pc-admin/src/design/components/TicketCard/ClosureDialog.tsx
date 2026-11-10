@@ -49,7 +49,7 @@ export function ClosureDialog({open,number,title,value,onChange,busy,locked,canS
   <ClosureReasonOptions label="具体情况" options={closureSecondaryReasons} value={value.secondary} isDisabled={disabled} onChange={next=>onChange({...value,secondary:next as ClosureSecondaryReasonCode})}/></div>;
  return <Modal.Backdrop isOpen={open} onOpenChange={next=>{if(!next&&!locked)onClose();}} isDismissable={false} isKeyboardDismissDisabled={locked}>
   <Modal.Container className="ds-closure-container"><Modal.Dialog className="ds-closure-dialog detail-cancel-dialog" aria-label="关闭事项" data-workbench-overlay data-toast-host>
-   <header><Modal.Heading id={titleId}>关闭事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭取消窗口" isDisabled={locked} onPress={onClose}><X size={18}/></Button></header>
+   <header data-toast-avoid="top"><Modal.Heading id={titleId}>关闭事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭取消窗口" isDisabled={locked} onPress={onClose}><X size={18}/></Button></header>
    <p className="ds-closure-context"><span className="ds-closure-number">{number}</span> · {title}</p>
    <form aria-label="取消工单" aria-labelledby={titleId} data-waiting-purpose="cancel" onSubmit={event=>{event.preventDefault();onSubmit();}}>
     <div className="ds-closure-field"><span className="ds-closure-field-label">关闭原因 <span aria-hidden="true">*</span></span><ClosureReasonOptions options={closureReasons} value={value.reason} isDisabled={disabled} nested={value.reason==='NOT_IT_SCOPE'?{after:'NOT_IT_SCOPE',content:secondary}:undefined} onChange={reason=>onChange({...value,reason:reason as ClosureReasonCode,secondary:'',duplicate:'',notify:false})}/></div>

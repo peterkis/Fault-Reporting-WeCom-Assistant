@@ -34,7 +34,8 @@ function toastHost(target:HTMLElement):HTMLElement|null{
 }
 /**
  * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
- * (`data-toast-avoid="bottom"`), so the toolbar, the composer and dialog actions stay reachable. Positions are written as CSS
+ * (`data-toast-avoid="bottom"`) and below its top control bar (`data-toast-avoid="top"`), so the toolbar, the composer and dialog
+ * actions stay reachable even when a short window limits the stack's height. Positions are written as CSS
  * variables only when the target, a size or the notices change; nothing polls per frame.
  */
 function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count:number){
@@ -49,7 +50,10 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
         const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
         const avoid=Array.from(host.querySelectorAll('[data-toast-avoid="bottom"]')).filter(shown).map(element=>element.getBoundingClientRect())
           .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
-        bottom=avoid.length?Math.min(...avoid.map(area=>area.top))-12:hostBottom-16;top=hostTop+16;
+        bottom=avoid.length?Math.min(...avoid.map(area=>area.top))-12:hostBottom-16;
+        const bars=Array.from(host.querySelectorAll('[data-toast-avoid="top"]')).filter(shown).map(element=>element.getBoundingClientRect())
+          .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
+        top=bars.length?Math.max(...bars.map(area=>area.bottom))+12:hostTop+16;
         if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(420,box.width-32,screen.width-32);}
       }
       const block=containingBlock(viewport),style=viewport.style;
@@ -61,7 +65,7 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
     place();
     const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);
-    const host=toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid="bottom"]'))resize.observe(area);}
+    const host=toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
     const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
     // A detail opening or closing settles through its own animation; recompute once when it ends.
     window.addEventListener('resize',schedule);document.addEventListener('animationend',schedule,true);document.addEventListener('transitionend',schedule,true);

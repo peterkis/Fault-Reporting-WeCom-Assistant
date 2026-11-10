@@ -132,7 +132,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   // Card 29 D1/D2: a dismissed item is gray 「已关闭」, not the completed stage, and its next step is the neutral restore card.
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
   const content=<DetailDialogProvider>
-    <div className="detail-navigation">
+    <div className="detail-navigation" data-toast-avoid="top">
       <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span><HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail} onPress={()=>{if(detail)void navigator.clipboard.writeText(detail.item.number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
       <div className="detail-toolbar-actions">
         <span className="ds-presence-capsule-slot" ref={setPresenceTarget}/>
