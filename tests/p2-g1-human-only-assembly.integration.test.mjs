@@ -31,7 +31,7 @@ import { createP2G1ProcessCluster } from '../app/server/src/p2-g1-process-cluste
 import { createP2G1Runtime } from '../app/server/src/p2-g1-runtime.mjs';
 import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
-import { submitP2G1ResourceInternalNote } from '../app/server/scripts/p2-g1-resource-observation.mjs';
+import { submitP2G1InternalNoteOverApi } from './helpers/p2-g1-internal-note-api.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_G1_INTEGRATION_DATABASE_REQUIRED');
@@ -357,7 +357,7 @@ test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node p
         (SELECT count(*)::int FROM communication.message WHERE purpose='INTERNAL_NOTE') messages,
         (SELECT count(*)::int FROM communication.outbox) outboxes,
         (SELECT count(*)::int FROM communication.delivery) deliveries`);
-      await submitP2G1ResourceInternalNote(started.origin, started.cookies[0], 'Synthetic bounded resource note');
+      await submitP2G1InternalNoteOverApi(started.origin, started.cookies[0], 'Synthetic bounded resource note');
       const afterNote = await pool.query(`SELECT
         (SELECT count(*)::int FROM communication.message WHERE purpose='INTERNAL_NOTE') messages,
         (SELECT count(*)::int FROM communication.outbox) outboxes,

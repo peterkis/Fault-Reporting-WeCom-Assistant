@@ -232,54 +232,6 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
       });
     }
 
-    async function selectFirstConversation() {
-      const evaluated = await command('Runtime.evaluate', {
-        expression: `(async () => {
-          const wait = (operation, timeout = 15000) => new Promise((resolve, reject) => {
-            const started = Date.now(); const timer = setInterval(() => {
-              try { const value = operation(); if (value) { clearInterval(timer); resolve(value); }
-              else if (Date.now() - started >= timeout) { clearInterval(timer); reject(new Error('timeout')); } }
-              catch (error) { clearInterval(timer); reject(error); }
-            }, 50);
-          });
-          const card = await wait(() => document.querySelector('.conversation-card'));
-          card.click();
-          await wait(() => document.querySelector('#conversation-view')?.hidden === false);
-          return { selected: true };
-        })()`,
-        awaitPromise: true,
-        returnByValue: true,
-      });
-      if (evaluated?.exceptionDetails || (evaluated?.result?.value as { selected?: boolean } | undefined)?.selected !== true) throw new Error('P2_G1_TEST_BROWSER_SELECTION_FAILED');
-      return Object.freeze({ selected: true, session_label: label });
-    }
-
-    async function submitInternalNote(text: unknown) {
-      if (typeof text !== 'string' || text.length < 1 || text.length > 20_480) throw new TypeError('P2_G1_TEST_BROWSER_NOTE_INVALID');
-      const evaluated = await command('Runtime.evaluate', {
-        expression: `(async () => {
-          const wait = (operation, timeout = 15000) => new Promise((resolve, reject) => {
-            const started = Date.now(); const timer = setInterval(() => {
-              try { const value = operation(); if (value) { clearInterval(timer); resolve(value); }
-              else if (Date.now() - started >= timeout) { clearInterval(timer); reject(new Error('timeout')); } }
-              catch (error) { clearInterval(timer); reject(error); }
-            }, 50);
-          });
-          if (document.querySelector('#conversation-view')?.hidden !== false) throw new Error('no-selection');
-          const status = document.querySelector('#status-live'); status.textContent = '';
-          document.querySelector('[data-compose="note"]').click();
-          const area = document.querySelector('#message-text'); area.value = ${JSON.stringify(text)}; area.dispatchEvent(new Event('input', { bubbles: true }));
-          document.querySelector('#composer').requestSubmit();
-          await wait(() => status.textContent.includes('内部备注已保存'));
-          return { submitted: true };
-        })()`,
-        awaitPromise: true,
-        returnByValue: true,
-      });
-      if (evaluated?.exceptionDetails || (evaluated?.result?.value as { submitted?: boolean } | undefined)?.submitted !== true) throw new Error('P2_G1_TEST_BROWSER_NOTE_FAILED');
-      return Object.freeze({ submitted: true, session_label: label });
-    }
-
     async function close() {
       try { await Promise.race([command('Browser.close'), delay(2_000)]); } catch { /* continue local cleanup */ }
       if (socket.readyState !== WebSocket.CLOSED) socket.close();
@@ -290,7 +242,7 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
       });
       await removeProfile(profile);
     }
-    return Object.freeze({ close, safeTelemetry, selectFirstConversation, submitInternalNote });
+    return Object.freeze({ close, safeTelemetry });
   } catch (error) {
     if (child.exitCode === null) child.kill();
     await removeProfile(profile).catch(() => {});
@@ -318,11 +270,6 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
   return Object.freeze({
     count: sessions.length,
     safeTelemetry: async () => Object.freeze(await Promise.all(sessions.map((session) => session.safeTelemetry()))),
-    selectFirstConversations: async () => Object.freeze(await Promise.all(sessions.map((session) => session.selectFirstConversation()))),
-    submitInternalNote: async ({ sessionIndex = 0, text }: { sessionIndex?: number; text?: string } = {}) => {
-      if (!Number.isInteger(sessionIndex) || sessionIndex < 0 || sessionIndex >= sessions.length) throw new TypeError('P2_G1_TEST_BROWSER_SESSION_INVALID');
-      return (sessions[sessionIndex] as Awaited<ReturnType<typeof launchOne>>).submitInternalNote(text);
-    },
     close: async () => {
       const results=await Promise.allSettled(sessions.map((session) => session.close()));
       if(requireCleanupSuccess&&results.some(r=>r.status==='rejected'))throw new Error('P2_G1_TEST_BROWSER_CLEANUP_FAILED');

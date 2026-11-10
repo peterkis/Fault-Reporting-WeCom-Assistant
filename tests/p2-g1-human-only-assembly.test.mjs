@@ -226,13 +226,13 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);
-  const resource = readFileSync('app/server/scripts/p2-g1-resource-observation.mjs', 'utf8');
-  assert.match(resource, /MINIMUM_DURATION_MS = 3_600_000/u);
-  assert.match(resource, /app_rss_bytes/u);
-  assert.match(resource, /worker_rss_bytes/u);
-  assert.match(resource, /gateway_rss_bytes/u);
-  assert.match(resource, /postgres_connection_utilization_percent/u);
-  assert.match(resource, /claim_24h_soak: false/u);
+  // The live resource observation script selected a conversation and saved a note through the retired legacy green
+  // workbench DOM (Issue #145); it stays retired with its npm commands, the browser helper keeps only launch, cookie,
+  // safe telemetry and cleanup, and the bounded resource case submits its note over the original HTTP API.
+  assert.equal(existsSync('app/server/scripts/p2-g1-resource-observation.mjs'), false);
+  assert.equal(Object.keys(pkg.scripts).some((name) => name.startsWith('p2:g1:resource')), false);
+  assert.doesNotMatch(browserSessions, /conversation-card|#conversation-view|#composer|selectFirstConversation|submitInternalNote/u);
+  assert.equal(['tests/helpers/p2-g1-internal-note-api.mts', 'tests/helpers/p2-g1-internal-note-api.mjs'].some((file) => existsSync(file)), true);
   // The Replay Gap browser script drove the retired legacy green workbench (Issue #145); it stays retired, with its npm
   // commands, and the current PC replacement coverage exists.
   assert.equal(existsSync('app/server/scripts/p2-g1-replay-gap-e2e.mjs'), false);

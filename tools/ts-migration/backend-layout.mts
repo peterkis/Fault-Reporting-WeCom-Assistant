@@ -92,11 +92,19 @@ export function assertBackendLayout(root:string,files:readonly string[],baseline
   const retirements='retired_sources' in value?value.retired_sources:[];
   if(!Array.isArray(retirements))throw Error('MIGRATION_LAYOUT_RETIREMENT_INVALID');
   const retired=new Set<string>();
-  // Issue #145 retired the legacy green workbench; only its preview and the P2-G1 Replay Gap browser script that drove it may
-  // leave the fixed history, each under its own reason.
+  // Issue #145 retired the legacy green workbench; its preview and the two P2-G1 scripts that drove its DOM (Replay Gap and
+  // resource observation) may leave the fixed history. Five historical scripts with no npm, CI, test or document entry
+  // (G0 probe, P2-007 runtime check, SS-009/010 evidence tools) were retired later. Each source keeps its own reason.
+  const noEntry='HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED';
   const allowed:Record<string,{target:string;reason:string}>={
     'scripts/p2-006-preview.mjs':{target:'app/server/scripts/p2-006-preview.mjs',reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'},
-    'scripts/p2-g1-replay-gap-e2e.mjs':{target:'app/server/scripts/p2-g1-replay-gap-e2e.mjs',reason:'LEGACY_GREEN_UI_REPLAY_GAP_RETIRED'}};
+    'scripts/p2-g1-replay-gap-e2e.mjs':{target:'app/server/scripts/p2-g1-replay-gap-e2e.mjs',reason:'LEGACY_GREEN_UI_REPLAY_GAP_RETIRED'},
+    'scripts/p2-g1-resource-observation.mjs':{target:'app/server/scripts/p2-g1-resource-observation.mjs',reason:'LEGACY_GREEN_UI_RESOURCE_OBSERVATION_RETIRED'},
+    'scripts/g0-webhook-message-capability-probe.mjs':{target:'app/server/scripts/g0-webhook-message-capability-probe.mjs',reason:noEntry},
+    'scripts/validate-p2-007-runtime.mjs':{target:'app/server/scripts/validate-p2-007-runtime.mjs',reason:noEntry},
+    'scripts/yxx-self-service-bind-evidence.mjs':{target:'app/server/scripts/yxx-self-service-bind-evidence.mjs',reason:noEntry},
+    'scripts/yxx-self-service-evidence-tamper-check.mjs':{target:'app/server/scripts/yxx-self-service-evidence-tamper-check.mjs',reason:noEntry},
+    'scripts/yxx-self-service-finalize.mjs':{target:'app/server/scripts/yxx-self-service-finalize.mjs',reason:noEntry}};
   for(const retirement of retirements){
     const rule=retirement&&typeof retirement==='object'&&'source' in retirement&&typeof retirement.source==='string'&&Object.hasOwn(allowed,retirement.source)?allowed[retirement.source]:undefined;
     if(!retirement||typeof retirement!=='object'||Object.keys(retirement).sort().join(',')!=='issue,reason,source,target'||!rule
