@@ -14,7 +14,9 @@ export function batchSelection(root: string, id: string): Selection {
   const groups = ['direct_tests', 'impacted_tests', 'baseline_tests', 'supplemental_tests'].map(key => strings(batch[key]));
   if (groups.slice(0, 3).some(group => !group.length)) throw new Error('MIGRATION_EMPTY_BATCH');
   const routes = loadRoutes(root);
-  const names = [...new Set(groups.flat())].sort();
+  // A registered retirement resolves to its declared current replacements, as legacy aliases do;
+  // any other missing name still fails closed.
+  const names = [...new Set(groups.flat().flatMap(name => routes.retired?.find(r => logical(r.path) === logical(name))?.replacements ?? [name]))].sort();
   return { label: id, flags: [], entries: names.map(name => {
     const entry = routes.entries.find(e => logical(e.path) === logical(name));
     if (!entry) throw new Error('MIGRATION_BATCH_UNKNOWN_TEST: ' + name);

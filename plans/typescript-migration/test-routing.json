@@ -1231,11 +1231,11 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/t25-h5-member-card.browser.test.mts",
+      "path": "tests/t25-h5-member-card.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
-      "requires_browser": true,
+      "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -1987,15 +1987,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/t20-member-privacy-store.browser.test.mts",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/t20-staff-recovery-boundaries.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -2041,15 +2032,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/t20-feedback-unknown.browser.test.mts",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/t20-staff-unknown.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -2064,15 +2046,6 @@
       "node_flags": [],
       "requires_database": true,
       "requires_browser": false,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/t20-feedback-recovery-first.browser.test.mts",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -2123,15 +2096,6 @@
     },
     {
       "path": "tests/t20-staff-first.browser.test.mts",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/t20-feedback-first.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
@@ -5288,24 +5252,6 @@
       "requires_pyyaml": false
     },
     {
-      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": false,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": false,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
       "path": "tests/yxx-ss-008-assembly.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -5329,15 +5275,6 @@
       "node_flags": [],
       "requires_database": false,
       "requires_browser": false,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/yxx-ss-009-browser.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
       "requires_powershell": false,
       "requires_pyyaml": false
     },
@@ -5406,15 +5343,6 @@
     },
     {
       "path": "tests/yxx-ss-009-review-regressions.integration.test.mjs",
-      "mode": "STAGED_RUNTIME",
-      "node_flags": [],
-      "requires_database": true,
-      "requires_browser": true,
-      "requires_powershell": false,
-      "requires_pyyaml": false
-    },
-    {
-      "path": "tests/yxx-ss-010-browser.integration.test.mjs",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
@@ -8029,7 +7957,6 @@
       "tests/t24-round-notifications.integration.test.mts",
       "tests/t24-round-notification-identity.integration.test.mts",
       "tests/t24-round-notifications.browser.test.mts",
-      "tests/t20-member-privacy-store.browser.test.mts",
       "tests/t20-staff-recovery-boundaries.browser.test.mts",
       "tests/t20-member-origin-hint.browser.test.mts",
       "tests/t20-staff-raw-off-after-opaque-failed.browser.test.mts",
@@ -8084,7 +8011,6 @@
       "tests/p2-g2-send-guard.integration.test.mjs",
       "tests/yxx-ss-010-contract.test.mjs",
       "tests/yxx-ss-010-runtime.integration.test.mjs",
-      "tests/yxx-ss-010-browser.integration.test.mjs",
       "tests/t11-completion.test.mts",
       "tests/t11-completion.integration.test.mts",
       "tests/t11-completion.browser.test.mts",
@@ -8101,17 +8027,14 @@
       "tests/t20-feedback-authority.integration.test.mts",
       "tests/t20-feedback-races.integration.test.mts",
       "tests/t20-feedback-locks.integration.test.mts",
-      "tests/t20-feedback-first.browser.test.mts",
       "tests/t20-staff-first.browser.test.mts",
       "tests/t20-next-accept.integration.test.mts",
       "tests/t20-staff-reopen-ack.integration.test.mts",
-      "tests/t20-feedback-unknown.browser.test.mts",
       "tests/t20-staff-unknown.browser.test.mts",
       "tests/t20-feedback-entry-boundaries.integration.test.mts",
       "tests/t20-feedback-defaults.integration.test.mts",
       "tests/t20-next-round-public-gaps.integration.test.mts",
       "tests/t20-staff-reopen-read-only.integration.test.mts",
-      "tests/t20-feedback-recovery-first.browser.test.mts",
       "tests/t20-staff-recovery-first.browser.test.mts",
       "tests/t20-staff-hint-first.browser.test.mts",
       "tests/t21-bot-feedback-pc-happy.browser.test.mts",
@@ -8365,11 +8288,8 @@
       "tests/yxx-ss-005-member-queries.integration.test.mjs",
       "tests/yxx-ss-006-supplements-review.integration.test.mjs",
       "tests/yxx-ss-007-native-http-errors.test.mjs",
-      "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
-      "tests/yxx-ss-007-native-ui.browser.test.mjs",
       "tests/yxx-ss-008-assembly.integration.test.mjs",
       "tests/yxx-ss-008-native-boundary.test.mjs",
-      "tests/yxx-ss-009-browser.integration.test.mjs",
       "tests/yxx-ss-009-capacity.integration.test.mjs",
       "tests/yxx-ss-009-catalog.integration.test.mjs",
       "tests/yxx-ss-009-crash.integration.test.mjs",
@@ -8378,7 +8298,6 @@
       "tests/yxx-ss-009-governance.test.mjs",
       "tests/yxx-ss-009-http-recovery.integration.test.mjs",
       "tests/yxx-ss-009-review-regressions.integration.test.mjs",
-      "tests/yxx-ss-010-browser.integration.test.mjs",
       "tests/yxx-ss-010-contract.test.mjs",
       "tests/yxx-ss-010-runtime.integration.test.mjs"
     ],
@@ -9262,6 +9181,49 @@
         "tests/workbench-detail-restructure.browser.test.mts",
         "tests/t10-unknown-recovery.browser.test.mts",
         "tests/p2-012-workbench.integration.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "issue": 179,
+      "reason": "LEGACY_V1_SELF_SERVICE_UI_RETIRED: retired V1 client-only DOM, storage and tab behavior; V1 API boundary moved to native HTTP, current H5 client behavior has independent coverage",
+      "replacements": [
+        "tests/yxx-h5-frontend.test.mts",
+        "tests/yxx-h5-page-runtime.test.mts",
+        "tests/yxx-h5-member-scheduler.test.mts",
+        "tests/yxx-h5-http.test.mts",
+        "tests/yxx-ss-007-native-http-errors.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "issue": 179,
+      "reason": "LEGACY_V1_SELF_SERVICE_UI_RETIRED: retired V1 client-only DOM, storage and tab behavior; V1 API boundary moved to native HTTP, current H5 client behavior has independent coverage",
+      "replacements": [
+        "tests/yxx-h5-frontend.test.mts",
+        "tests/yxx-h5-page-runtime.test.mts",
+        "tests/yxx-h5-member-scheduler.test.mts",
+        "tests/yxx-h5-http.test.mts",
+        "tests/yxx-ss-007-native-http-errors.test.mjs"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-browser.integration.test.mjs",
+      "issue": 179,
+      "reason": "LEGACY_V1_SELF_SERVICE_UI_RETIRED: retired V1 form drove the flow; the same HTTP/PG intake, supplement, review, lifecycle and logout have current coverage",
+      "replacements": [
+        "tests/yxx-h5-flow.integration.test.mts",
+        "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+        "tests/human-workbench-process.browser.test.mts"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-010-browser.integration.test.mjs",
+      "issue": 179,
+      "reason": "LEGACY_V1_SELF_SERVICE_UI_RETIRED: retired V1 form drove the flow; the same HTTP/PG intake, supplement, review, lifecycle and logout have current coverage",
+      "replacements": [
+        "tests/yxx-ss-010-runtime.integration.test.mjs",
+        "tests/yxx-h5-flow.integration.test.mts"
       ]
     }
   ]

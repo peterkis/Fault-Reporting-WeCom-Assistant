@@ -2,7 +2,7 @@
 
 返回 [导航](../README.md) · [路径索引](../endpoint-index.md) · [公共约定](../conventions.md)
 
-宿主 M：`MEMBER_SELF_SERVICE` 的替代 server，或 W 中 `FULL_SERVICE_LOOP` 的扩展。调用方：[新 H5](../../../app/h5/README.md)。2026-10-23 按 [ADR-0043](../../../adr/0043_h5_notification_entry_and_legacy_ui_retirement.md)移除旧 V1 页面和生产 fallback；以下 V1 API 仍保留，旧客户端仅作为[历史测试夹具](../../../tests/fixtures/retired-self-service/README.md)。实现：[native HTTP](../../../app/server/src/yxx-self-service-native-http.mts)、[runtime](../../../app/server/src/yxx-self-service-runtime.mts)、[command](../../../app/server/src/yxx-self-service-command.mts)、[supplement](../../../app/server/src/yxx-self-service-supplement.mts)、[query](../../../app/server/src/yxx-self-service-query.mts)、[authorization](../../../app/server/src/yxx-self-service-authorization.mts)。
+宿主 M：`MEMBER_SELF_SERVICE` 的替代 server，或 W 中 `FULL_SERVICE_LOOP` 的扩展。调用方：[新 H5](../../../app/h5/README.md)。2026-10-23 按 [ADR-0043](../../../adr/0043_h5_notification_entry_and_legacy_ui_retirement.md)移除旧 V1 页面和生产 fallback；以下 V1 API 仍保留，新 H5 仍调用这些 API；2026-11-10 起旧客户端测试夹具也已删除，见[退役记录](../../../plans/pc-admin-design-v21/legacy-h5-retirement.md)。实现：[native HTTP](../../../app/server/src/yxx-self-service-native-http.mts)、[runtime](../../../app/server/src/yxx-self-service-runtime.mts)、[command](../../../app/server/src/yxx-self-service-command.mts)、[supplement](../../../app/server/src/yxx-self-service-supplement.mts)、[query](../../../app/server/src/yxx-self-service-query.mts)、[authorization](../../../app/server/src/yxx-self-service-authorization.mts)。
 
 ## 身份、profile 与开关
 
