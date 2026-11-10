@@ -1,9 +1,10 @@
 import {WorkbenchButton as HButton} from './WorkbenchButton';
-import {useCallback,useEffect,useId,useRef,useState} from 'react';
+import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState} from 'react';
 import type {HTMLAttributes,SetStateAction} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import toast,{resolveValue,useToaster} from 'react-hot-toast/headless';
+import {overflowToasts,toastDuration} from './toast-policy';
 import {Check,CheckCircle2,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
 
 const loadingStates=new Set(['loading','reading','preparing','submitting','checking','sending','saving']);
@@ -12,6 +13,62 @@ const errorStates=new Set(['failed','error','denied','conflict','invalid']);
 const labels:Record<string,string>={'ticket-assignment':'派单','ticket-self-handling':'接单','ticket-conversation-handling':'接单','ticket-completion':'完工','ticket-notes':'内部备注','ticket-reopen':'重新打开工单','ticket-unassign':'解除分派','ticket-takeover':'接管工单','ticket-takeover-completion':'接管与完工','ticket-return-to-dispatch':'退回调度','ticket-waiting-cancel':'关闭事项','ticket-waiting-request-information':'等待补充','ticket-waiting-wait-vendor':'等待厂商','ticket-waiting-resume':'恢复处理','web-report':'公开进度','attachments':'报修资料','item-follow':'关注','board-actions':'看板操作','manual-report':'登记报修','manual-review':'报修复核','conversations':'会话操作','source-groups':'来源群','reminders':'提醒设置','supplement-follow-up':'补充材料','follow-up':'跟进安排','incident-candidates':'公共故障','draft':'恢复状态'};
 
 export function clearWorkbenchToasts(){toast.remove();}
+
+type Box={left:number;top:number;right:number;bottom:number;width:number};
+const viewportBox=():Box=>({left:0,top:0,right:window.innerWidth,bottom:window.innerHeight,width:window.innerWidth});
+/** A transformed / filtered / contained ancestor becomes the containing block of a fixed element; offsets are measured from it. */
+function containingBlock(element:HTMLElement):Box{
+  for(let node=element.parentElement;node&&node!==document.documentElement;node=node.parentElement){
+    const style=getComputedStyle(node),backdrop=style.getPropertyValue('backdrop-filter');
+    if(style.transform!=='none'||style.perspective!=='none'||style.filter!=='none'||(backdrop!==''&&backdrop!=='none')
+      ||/transform|perspective|filter/u.test(style.willChange)||/paint|layout|strict|content/u.test(style.contain)){const box=node.getBoundingClientRect();return {left:box.left,top:box.top,right:box.right,bottom:box.bottom,width:box.width};}
+  }
+  return viewportBox();
+}
+const shown=(element:Element)=>element instanceof HTMLElement&&element.checkVisibility()&&!element.closest('[aria-hidden="true"],[data-exiting]');
+/** The declared detail container (drawer, full page or closing dialog) whose bottom-right corner the notices dock to. */
+function toastHost(target:HTMLElement):HTMLElement|null{
+  if(target.matches('[data-toast-host]'))return target;
+  if(target!==document.body)return null;
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-toast-host]')).filter(host=>shown(host)&&!host.closest('[data-workbench-overlay]')).at(-1)??null;
+}
+/**
+ * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
+ * (`data-toast-avoid="bottom"`), so the toolbar, the composer and dialog actions stay reachable. Positions are written as CSS
+ * variables only when the target, a size or the notices change; nothing polls per frame.
+ */
+function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count:number){
+  useLayoutEffect(()=>{
+    if(!viewport)return;
+    let frame=0;
+    const place=()=>{
+      frame=0;
+      const host=toastHost(target),screen=viewportBox(),narrow=window.matchMedia('(max-width: 640px)').matches;
+      let left=narrow?12:screen.right-20-Math.min(420,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20,top=screen.top+16;
+      if(host){
+        const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
+        const avoid=Array.from(host.querySelectorAll('[data-toast-avoid="bottom"]')).filter(shown).map(element=>element.getBoundingClientRect())
+          .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
+        bottom=avoid.length?Math.min(...avoid.map(area=>area.top))-12:hostBottom-16;top=hostTop+16;
+        if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(420,box.width-32,screen.width-32);}
+      }
+      const block=containingBlock(viewport),style=viewport.style;
+      style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
+      style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
+      style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
+      viewport.dataset.toastHosted=host?'true':'false';
+    };
+    const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
+    place();
+    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);
+    const host=toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid="bottom"]'))resize.observe(area);}
+    const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
+    // A detail opening or closing settles through its own animation; recompute once when it ends.
+    window.addEventListener('resize',schedule);document.addEventListener('animationend',schedule,true);document.addEventListener('transitionend',schedule,true);
+    return()=>{if(frame)cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',schedule,true);document.removeEventListener('transitionend',schedule,true);};
+  },[viewport,target,count]);
+}
+
 export function useFeedbackState(initial=''){
   const [value,setValue]=useState({text:initial,revision:0});
   const update=useCallback((next:SetStateAction<string>)=>setValue(previous=>({text:typeof next==='function'?next(previous.text):next,revision:previous.revision+1})),[]);
@@ -27,7 +84,7 @@ export function ToastFeedback({children,source,state,enabled=true,persistent=fal
     const unknown=state==='unknown',loading=loadingStates.has(state??''),success=successStates.has(state??''),error=!unknown&&(role==='alert'||errorStates.has(state??''));
     const show=()=>{
       const content=<div {...latest.current} className={'workbench-toast-content '+(latest.current.className??'')} data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{title??labels[source]??'操作提示'}</strong><span>{children}</span></div>;
-      const options={id,duration:unknown||persistent||loading?Infinity:success?4500:error?8500:6000,removeDelay:180,className:unknown?'is-warning':'',ariaProps:{role:error?'alert' as const:'status' as const,'aria-live':live??(error?'assertive' as const:'polite' as const)}};
+      const options={id,duration:toastDuration({unknown,loading,error,persistent}),removeDelay:180,className:unknown?'is-warning':'',ariaProps:{role:error?'alert' as const:'status' as const,'aria-live':live??(error?'assertive' as const:'polite' as const)}};
       if(loading)toast.loading(content,options);else if(success)toast.success(content,options);else if(error)toast.error(content,options);else toast(content,options);
     };
     if(loading){toast.remove(id);const timer=window.setTimeout(show,200);return()=>window.clearTimeout(timer);}
@@ -53,7 +110,9 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
 export function WorkbenchToasts(){
   const {toasts,handlers}=useToaster(),location=useLocation();
   useEffect(()=>{if(!toasts.length)handlers.endPause();},[toasts.length,handlers.endPause]);
-  const [target,setTarget]=useState<HTMLElement>(document.body),priorFocus=useRef<HTMLElement|null>(null);
+  useEffect(()=>{for(const item of overflowToasts(toasts))toast.dismiss(item.id);},[toasts]);
+  const [target,setTarget]=useState<HTMLElement>(document.body),priorFocus=useRef<HTMLElement|null>(null),[viewport,setViewport]=useState<HTMLDivElement|null>(null);
+  useToastPlacement(viewport,target,toasts.length);
   useEffect(()=>{
     const update=()=>{
       const focused=document.activeElement?.closest<HTMLElement>('[data-workbench-overlay]');
@@ -68,8 +127,8 @@ export function WorkbenchToasts(){
     if(document.activeElement===button){const previous=priorFocus.current;if(previous?.isConnected&&previous.checkVisibility()&&!previous.matches(':disabled'))previous.focus({preventScroll:true});else target.querySelector<HTMLElement>('h2[tabindex]')?.focus({preventScroll:true});}
     toast.dismiss(id);
   };
-  return createPortal(<div className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
-    {toasts.map(item=><div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
+  return createPortal(<div ref={setViewport} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
+    {[...toasts].reverse().map(item=><div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
       <span className="workbench-toast-icon" aria-hidden="true">{item.type==='loading'?<LoaderCircle size={19}/>:item.type==='success'?<CheckCircle2 size={19}/>:item.type==='error'||item.className==='is-warning'?<TriangleAlert size={19}/>:<Info size={19}/>}</span>
       {resolveValue(item.message,item)}<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" isDisabled={item.type==='loading'} tabIndex={item.visible&&item.type!=='loading'?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>
     </div>)}

@@ -48,7 +48,7 @@ export function ClosureDialog({open,number,title,value,onChange,busy,locked,canS
  const secondary=<div className="ds-closure-secondary" role="group" aria-label="具体情况"><span className="ds-closure-secondary-title">具体情况 <span aria-hidden="true">*</span></span>
   <ClosureReasonOptions label="具体情况" options={closureSecondaryReasons} value={value.secondary} isDisabled={disabled} onChange={next=>onChange({...value,secondary:next as ClosureSecondaryReasonCode})}/></div>;
  return <Modal.Backdrop isOpen={open} onOpenChange={next=>{if(!next&&!locked)onClose();}} isDismissable={false} isKeyboardDismissDisabled={locked}>
-  <Modal.Container className="ds-closure-container"><Modal.Dialog className="ds-closure-dialog detail-cancel-dialog" aria-label="关闭事项" data-workbench-overlay>
+  <Modal.Container className="ds-closure-container"><Modal.Dialog className="ds-closure-dialog detail-cancel-dialog" aria-label="关闭事项" data-workbench-overlay data-toast-host>
    <header><Modal.Heading id={titleId}>关闭事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭取消窗口" isDisabled={locked} onPress={onClose}><X size={18}/></Button></header>
    <p className="ds-closure-context"><span className="ds-closure-number">{number}</span> · {title}</p>
    <form aria-label="取消工单" aria-labelledby={titleId} data-waiting-purpose="cancel" onSubmit={event=>{event.preventDefault();onSubmit();}}>
@@ -64,7 +64,7 @@ export function ClosureDialog({open,number,title,value,onChange,busy,locked,canS
     </div>:null}
     {inProgress?<p className="ds-closure-termination" data-closure-termination><TriangleAlert aria-hidden="true"/>进行中的跟进与提醒将一并终止</p>:null}
     {feedback}{recovery}
-    <footer><div className="ds-closure-draft">{draft}{onDiscard?<>{draft?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<Button tone="ghost" data-action="discard-cancel-draft" className="ds-closure-discard" onPress={onDiscard}>清空</Button></>:null}</div>
+    <footer data-toast-avoid="bottom"><div className="ds-closure-draft">{draft}{onDiscard?<>{draft?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<Button tone="ghost" data-action="discard-cancel-draft" className="ds-closure-discard" onPress={onDiscard}>清空</Button></>:null}</div>
      <div className="ds-closure-actions"><Button type="button" tone="secondary" isDisabled={locked} onPress={onClose}>取消</Button><Button type="submit" tone="primary" isDisabled={!canSubmit||disabled}>确认关闭</Button></div></footer>
    </form>
   </Modal.Dialog></Modal.Container>

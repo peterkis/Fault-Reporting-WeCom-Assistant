@@ -59,6 +59,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card32d-toast.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card32b.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -96,6 +105,15 @@
     },
     {
       "path": "tests/yxx-catalog-successors.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-toast-policy.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": false,

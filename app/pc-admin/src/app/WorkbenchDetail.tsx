@@ -83,7 +83,7 @@ export function WorkbenchDetailDrawer(props:DetailProps){
   const close=()=>{if(blocked.current)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
   // Keep the overlay's focus/restore scope while each requested item owns fresh controllers.
   const content=<WorkbenchDetailContent key={props.principal.principal_id+':'+kind+':'+id} {...props} onNavigationBlocked={reportBlocked} onClose={close}/>;
-  return props.fullPage?<article className="detail-page ds-detail" aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
+  return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
 }
 
 function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocked,onClose}:DetailProps&{onClose:()=>void}){
@@ -168,7 +168,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
       </div>
       <div role="tabpanel" id="detail-tab-attachments" aria-labelledby="detail-tab-trigger-attachments" hidden={tab!=='attachments'}>      <ReportMaterialsSection key={principal.principal_id+':materials:'+detail.item.kind+':'+detail.item.id} principal={principal} kind={detail.item.kind} id={detail.item.id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} readReady={result.isSuccess&&!result.isError} reporterName={detail.item.reporter_name} otherBlocked={otherCommandsBlocked} onBlockedChange={setWebReportBlocked} onCountChange={setAttachmentCount} onMediaOpenChange={setMediaOpen} urgencyTarget={urgencyTarget}/></div>
       <div className="workflow-support" role="tabpanel" id="detail-tab-conversations" aria-labelledby="detail-tab-trigger-conversations" hidden={tab!=='conversations'}><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id} onCountChange={setConversationCount}/></div>
-      </div><div className="ds-detail-footer">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
+      </div><div className="ds-detail-footer" data-toast-avoid="bottom">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
     </div>:null}
   </DetailDialogProvider>;
   return content;
