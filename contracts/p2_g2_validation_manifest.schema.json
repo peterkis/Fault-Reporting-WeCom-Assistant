@@ -172,7 +172,7 @@
               "ticket.completed",
               "ticket.reopened",
               "ticket.dismissed",
-              "ticket.auto_close_reminder"
+              "ticket.auto_complete_reminder"
             ]
           }
         },

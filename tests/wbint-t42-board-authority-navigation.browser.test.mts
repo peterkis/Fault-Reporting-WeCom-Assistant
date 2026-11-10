@@ -17,7 +17,7 @@ test('T42 full-page expansion preserves the original completion intent through a
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
       const card='[data-kind="ticket"][data-item-id="'+ticket.ticket.id+'"]';await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)}))`);
-      await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).click()`);
+      await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=handled]')}).click()`);
       await browser.waitFor("Boolean(document.querySelector('.detail-dialog [data-board-intent-panel]'))");
       await browser.evaluate("document.querySelector('.detail-dialog a[aria-label=展开完整页面]').click()");
       await browser.waitFor("Boolean(document.querySelector('.detail-page #completion-process'))");

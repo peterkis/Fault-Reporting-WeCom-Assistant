@@ -15,7 +15,7 @@ import {createP2016WeComSender} from '../src/p2-016-wecom-sender.mjs';
 import {createP2016InboundScope} from '../src/p2-016-inbound-scope.mjs';
 import {createChannelMessageInbox} from '../src/p1-003-channel-message-inbox.mjs';
 import {createP2016DirectIntakeProcessor} from '../src/p2-016-direct-intake.mjs';
-import {createTicketClosureService} from '../src/p1-010-ticket-closure.mjs';
+import {createTicketClosureService} from '../src/p1-010-ticket-auto-completion.mjs';
 import {createTicketActionService} from '../src/p1-006-ticket-state-actions.mjs';
 import {createWeComWorkbenchAuthentication} from '../src/p2-016-workbench-wecom-auth.mjs';
 import {createWeComAppTokenProvider} from '../src/p2-g2-wecom-app-token.mjs';
@@ -32,6 +32,7 @@ import {createWorkbenchReporterDirectory} from '../src/workbench-reporter-direct
 import {createTicketReporterProfileWorker,ticketReporterProfilesSchemaReady} from '../src/ticket-reporter-profiles.mjs';
 import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
+import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -102,7 +103,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(role==='GATEWAY'){
  const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
  return runGateway({
-  beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);},
+  beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);},
   intakeFactory:({pool})=>{
    const scope=memberAdmission?null:createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
@@ -144,6 +145,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
   })();
   await requireCompletionDismissalSchema({pool});
+  await requireNotificationVocabularySchema({pool});
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
@@ -156,7 +158,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
    const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
   const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
-  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await notifications.projectPendingClosures({pool});await profiles?.runOnce();await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();await avatars?.runOnce().catch(()=>{});},close:async()=>{await avatars?.close();await h5.close();}};
+  return {runOnce:async()=>{await orchestration.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});await notifications.projectPendingClosures({pool});await profiles?.runOnce();await closure.runAutoCompleteReminders({limit:20});await closure.runAutoComplete({actionService:actions,limit:20});await realtime.runOnce();await h5.runOnce();await avatars?.runOnce().catch(()=>{});},close:async()=>{await avatars?.close();await h5.close();}};
  }});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(error=>{

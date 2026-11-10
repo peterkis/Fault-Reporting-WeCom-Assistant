@@ -33,7 +33,7 @@
       "enum": [
         "pending",
         "active",
-        "closed"
+        "handled"
       ]
     },
     "range": {
@@ -88,7 +88,7 @@
       "if": {
         "properties": {
           "column": {
-            "const": "closed"
+            "const": "handled"
           }
         }
       },

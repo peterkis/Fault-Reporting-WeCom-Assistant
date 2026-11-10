@@ -48,9 +48,9 @@ export function ClosureReason({closure}:{closure:WorkbenchCard['closure']}){
 export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode;titleLink?:ReactNode}){
   const closure=item.closure;
   if(closure?.kind!=='DISMISSED')return null;
-  const name=closure.closed_by_display_name;
+  const name=closure.ended_by_display_name;
   return <div className="ds-ticket-body ds-ticket-dismissed-body has-category">
-    <div className="card-top"><span title={item.number}>{item.number}</span><span className="activity-time ds-ticket-closed" title={closure.closed_at?closure.closed_at+'（北京时间）':'关闭时间未记录'}><CircleX aria-hidden="true"/>{closure.closed_at?<time dateTime={closure.closed_at.replace(' ','T')+'+08:00'}>{formatListTime(closure.closed_at,now)} 关闭</time>:<span>时间未记录 关闭</span>}</span><TicketCategoryTile service={item.service}/></div>
+    <div className="card-top"><span title={item.number}>{item.number}</span><span className="activity-time ds-ticket-dismissed-at" title={closure.ended_at?closure.ended_at+'（北京时间）':'关闭时间未记录'}><CircleX aria-hidden="true"/>{closure.ended_at?<time dateTime={closure.ended_at.replace(' ','T')+'+08:00'}>{formatListTime(closure.ended_at,now)} 关闭</time>:<span>时间未记录 关闭</span>}</span><TicketCategoryTile service={item.service}/></div>
     <h3 title={item.title}>{titleLink??(item.title||'待补充的问题描述')}</h3>
     <footer className="card-footer"><div className="card-tags"><ClosureReason closure={closure}/>{followUp}</div><span className="ds-ticket-owner ds-ticket-closer" data-closure-source={closure.source??'unknown'}>
       {closure.source==='SYSTEM'?<><Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/><span className="ds-ticket-close-method">系统判定</span></>:closure.source==='MANUAL'?<>{name?<><Avatar name={name} size={20} aria-hidden="true"/><span className="owner-name" title={name}>{name}</span><span aria-hidden="true"> · </span></>:null}<span className="ds-ticket-close-method">人工关闭</span></>:name?<span className="owner-name" title={name}>{name}</span>:null}
@@ -58,7 +58,7 @@ export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:Work
   </div>;
 }
 
-export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;closed_at:string|null;closed_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null}
+export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;ended_at:string|null;ended_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null}
 /** Reason tag + 「原单 IT-…」 link, shared by the closure record and (Card 32 B6) the closing line of the activity timeline. */
 export function ClosureFacts({closure}:{closure:Pick<ClosureRecordEntry,'reason_code'|'reason_label'|'secondary_reason'|'duplicate_of'>}){
   const original=externalTicketNumber(closure.duplicate_of?.display_no);
@@ -67,10 +67,10 @@ export function ClosureFacts({closure}:{closure:Pick<ClosureRecordEntry,'reason_
 }
 /** Card 29 D3: one compact closure entry; empty values are omitted instead of shown as placeholders. */
 export function ClosureRecord({entry,now}:{entry:ClosureRecordEntry;now?:number}){
-  const name=entry.closed_by_display_name;
+  const name=entry.ended_by_display_name;
   return <div className="ds-closure-entry" data-closure-record="true">
     <div className="ds-closure-entry-head">{entry.source==='SYSTEM'?<Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/>:name?<Avatar name={name} size={20} aria-hidden="true"/>:null}
-      {name?<strong className="ds-closure-entry-name">{name}</strong>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.closed_at?<> · <BeijingTime value={entry.closed_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
+      {name?<strong className="ds-closure-entry-name">{name}</strong>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.ended_at?<> · <BeijingTime value={entry.ended_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
     <div className="ds-closure-entry-facts"><ClosureFacts closure={entry}/>
       {entry.notification_state==='SENT'?<span className="ds-closure-entry-notified">已通知报修人</span>:null}</div>
     {entry.note?<p className="ds-closure-entry-note">说明：{entry.note}</p>:null}

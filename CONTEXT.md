@@ -127,7 +127,7 @@ _Avoid_: 个人闹钟、第三套负责人、服务时限承诺
 **跟进到期（Follow-up Due）**：共享跟进安排已经到达行动时间且尚未明确完成或重新安排的状态。
 _Avoid_: 工单逾期、故障已解决、自动完成跟进
 
-**看板列（Board Column）**：工作台按当前处理阶段组织事项的展示分组；分组名称不替代工单自身的真实状态。
+**看板列（Board Column）**：工作台按当前处理阶段组织事项的展示分组；分组名称不替代工单自身的真实状态。列键 `pending`（待受理）/ `active`（处理中）/ `handled`（已处理，含已完成与已关闭）；已处理的日期筛选参数为 `handled_from` / `handled_to`，结束记录的时间与操作人为 `ended_at` / `ended_by_display_name`。
 _Avoid_: 新的工单状态、已解决即已完成
 
 **公共故障候选（Incident Candidate）**：多个报修可能共同指向一个公共故障的待确认线索。
@@ -227,10 +227,13 @@ _Avoid_: 泛泛的谢谢、客服标记解决、满意度评分
 **完成（Complete）**：本轮服务正常结束：处理人记录处理过程后完工、报修人确认恢复，或已解决后符合已生效的超时规则自动完成；工作人员完工不代表报修人已确认恢复。完成后可重开。
 _Avoid_: 关闭、已关闭、结案关闭、取消
 
+**自动完成（Auto-complete）**：已解决待确认的工单在报修人未回应时，按已生效的超时规则由系统完成；到期前先提醒一次。代码名：提醒事件 `ticket.auto_complete_reminder`、通知模板 `TICKET_AUTO_COMPLETE_REMINDER`、期限列 `auto_complete_at` / `auto_complete_reminder_at`（及各自 `_epoch_ms`）、服务 `runAutoComplete` / `runAutoCompleteReminders`（`p1-010-ticket-auto-completion`）；结果状态 `COMPLETED`。
+_Avoid_: 自动关闭、auto-close
+
 **关闭（Dismiss）**：没有完成服务就结束一张工单或一项受理事项，必须带一个关闭原因（误报或测试、重复报修、非 IT 范围、报修人撤回、无法联系报修人、其他）；中文「关闭」固定指这一结束方式，不再指正常完工。关闭后可恢复，回到关闭前的列与状态。
 _Avoid_: 取消、取消工单、作废、完成、已取消
 
-**恢复（Restore）**：撤销一次关闭，使工单或受理事项回到关闭前的列与状态；只作用于已关闭的事项。
+**恢复（Restore）**：撤销一次关闭，使工单或受理事项回到关闭前的列与状态；只作用于已关闭的事项。代码名：事件 `ticket.restored`、通知类型 `TICKET_RESTORED`（重开仍是 `TICKET_REOPENED`，关闭通知是 `TICKET_DISMISSED`）。
 _Avoid_: 重开
 
 **重开（Reopen Ticket）**：因同一故障仍未恢复或再次需要处置，使已解决或已完成工单重新进入处理流程、开启新一轮处理的动作；不作用于已关闭的工单。

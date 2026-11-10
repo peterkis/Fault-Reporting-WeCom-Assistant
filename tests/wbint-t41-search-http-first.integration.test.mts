@@ -51,7 +51,7 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
  for(const [id,at]of closingEvents){
   await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type IN ('ticket.completed','ticket.dismissed')",[id,at]);
   // Since card 27C a dismissal's closing instant is its current closure record, not the event row.
-  await f.pool.query('UPDATE pilot_ticket.closure_record SET closed_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL',[id,at]);
+  await f.pool.query('UPDATE pilot_ticket.closure_record SET ended_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL',[id,at]);
  }
  await f.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('B5_DATES_HIDDEN','B5日期不可读组（合成）')");
  await f.pool.query("UPDATE pilot_ticket.ticket SET resolver_team_id='B5_DATES_HIDDEN',assignee_id=NULL WHERE id=$1::uuid",[lower.ticket.id]);
@@ -64,7 +64,7 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
  const bootstrapResponse=await get('/api/lifecycle/bootstrap');assert.equal(bootstrapResponse.status,200);
  const csrf=object(await bootstrapResponse.json()).csrf_token;assert.ok(typeof csrf==='string');
  const post=(criteria:unknown,cursor:string|null=null,limit=100)=>fetch(f.origin+'/api/workbench/search',{method:'POST',headers:{cookie:f.cookies[0]??'',origin:f.origin,'content-type':'application/json','x-csrf-token':csrf},body:JSON.stringify({criteria,cursor,limit})});
- const path=(extra:Record<string,string>={})=>'/api/workbench/search?'+new URLSearchParams({column:'closed',range:'custom',closed_from:from,closed_to:to,limit:'100',...extra});
+ const path=(extra:Record<string,string>={})=>'/api/workbench/search?'+new URLSearchParams({column:'handled',range:'custom',handled_from:from,handled_to:to,limit:'100',...extra});
  let ratedRequests=0;
  const read=async(url:string,index=0)=>{const response=await get(url,index);assert.equal(response.status,200,await response.clone().text());if(index===0)ratedRequests++;return object(await response.json());};
  const ids=(page:Record<string,unknown>)=>items(page.items).map(item=>{assert.ok(typeof item.id==='string');return item.id;}).sort();
@@ -76,53 +76,53 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
  const resolvedItem=items(completed.items).find(item=>item.id===resolved.ticket.id);assert.ok(resolvedItem);assert.equal(resolvedItem.status,'RESOLVED');assert.equal(resolvedItem.completed_at,null,'custom dates preserve the existing unresolved-confirmation exception');
  const dismissed=await read(path({closure_kind:'dismissed'}));assert.deepEqual(ids(dismissed),expectedDismissed);
  assert.ok(items(dismissed.items).every(item=>object(item.closure).kind==='DISMISSED'));
- const criteria:WorkbenchSearchCriteria={q:'',column:'closed',range:'custom',scope:'team',responsibility:'any',resolver_team_id:null,assignee_id:null,
-  sources:[],source_group_ref:null,statuses:[],supplement:'any',schedule:'any',closure_kind:'dismissed',closed_from:from,closed_to:to};
+ const criteria:WorkbenchSearchCriteria={q:'',column:'handled',range:'custom',scope:'team',responsibility:'any',resolver_team_id:null,assignee_id:null,
+  sources:[],source_group_ref:null,statuses:[],supplement:'any',schedule:'any',closure_kind:'dismissed',handled_from:from,handled_to:to};
  assert.deepEqual(dismissed.criteria,criteria);
  const posted=await post(criteria);assert.equal(posted.status,200,await posted.clone().text());ratedRequests++;assert.deepEqual(await posted.json(),dismissed,'GET and read-only POST have the same exact date and closure result');
  const first=await read(path({closure_kind:'dismissed',limit:'1'}));assert.equal(items(first.items).length,1);assert.ok(typeof first.next_cursor==='string');
  const cursor=first.next_cursor,second=await read(path({closure_kind:'dismissed',limit:'1',cursor}));assert.equal(items(second.items).length,1);assert.equal(second.next_cursor,null);
  const paged=[...ids(first),...ids(second)];assert.equal(new Set(paged).size,2);assert.deepEqual(paged.sort(),expectedDismissed);
- const cursorChanges:Record<string,string>[]=[{closed_from:'2026-02-27'},{closed_to:'2026-03-02'},{closure_kind:'completed'}];
+ const cursorChanges:Record<string,string>[]=[{handled_from:'2026-02-27'},{handled_to:'2026-03-02'},{closure_kind:'completed'}];
  for(const change of cursorChanges){
   const response=await get(path({closure_kind:'dismissed',limit:'1',cursor,...change}));ratedRequests++;assert.equal(response.status,400,await response.clone().text());
   const denied=object(await response.json());assert.equal(object(denied.error).code,'P2_016_CURSOR_INVALID');assert.equal(Object.hasOwn(denied,'items'),false);
  }
- const changedRange=await get('/api/workbench/search?'+new URLSearchParams({column:'closed',range:'all',closure_kind:'dismissed',cursor,limit:'1'}));ratedRequests++;
+ const changedRange=await get('/api/workbench/search?'+new URLSearchParams({column:'handled',range:'all',closure_kind:'dismissed',cursor,limit:'1'}));ratedRequests++;
  assert.equal(changedRange.status,400,await changedRange.clone().text());assert.equal(object(object(await changedRange.json()).error).code,'P2_016_CURSOR_INVALID');
  const unrestricted=await read('/api/workbench/search?column=all&range=all&closure_kind=dismissed&limit=100');
  const unknown=items(unrestricted.items).find(item=>item.id===seeded.unknown);assert.ok(unknown);
  // ADR-0056 (card 27C): every dismissed item carries its closure record, so the instant is that record's, never null.
- const unknownRecord=(await f.pool.query<{closed_at:string}>("SELECT to_char(closed_at,'YYYY-MM-DD HH24:MI:SS') AS closed_at FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid AND restored_at IS NULL",[seeded.unknown])).rows;
- assert.equal(unknownRecord.length,1);assert.equal(object(unknown.closure).closed_at,unknownRecord[0]?.closed_at);
- const currentCriteria=object(unrestricted.criteria);assert.equal(Object.hasOwn(currentCriteria,'closed_from'),false);assert.equal(Object.hasOwn(currentCriteria,'closed_to'),false);
+ const unknownRecord=(await f.pool.query<{ended_at:string}>("SELECT to_char(ended_at,'YYYY-MM-DD HH24:MI:SS') AS ended_at FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid AND restored_at IS NULL",[seeded.unknown])).rows;
+ assert.equal(unknownRecord.length,1);assert.equal(object(unknown.closure).ended_at,unknownRecord[0]?.ended_at);
+ const currentCriteria=object(unrestricted.criteria);assert.equal(Object.hasOwn(currentCriteria,'handled_from'),false);assert.equal(Object.hasOwn(currentCriteria,'handled_to'),false);
  const mixed=await read(path({column:'all',closure_kind:'dismissed'}));
- const unfinished=(page:Record<string,unknown>)=>items(page.items).filter(item=>item.column!=='closed').map(item=>String(item.kind)+':'+String(item.id)).sort();
+ const unfinished=(page:Record<string,unknown>)=>items(page.items).filter(item=>item.column!=='handled').map(item=>String(item.kind)+':'+String(item.id)).sort();
  assert.deepEqual(unfinished(mixed),unfinished(unrestricted),'only the processed column is restricted by dates and closure kind');
- assert.deepEqual(items(mixed.items).filter(item=>item.column==='closed').map(item=>String(item.id)).sort(),expectedDismissed);
- const leap=await read(path({closed_from:'2024-02-29',closed_to:'2024-02-29',closure_kind:'completed'}));
+ assert.deepEqual(items(mixed.items).filter(item=>item.column==='handled').map(item=>String(item.id)).sort(),expectedDismissed);
+ const leap=await read(path({handled_from:'2024-02-29',handled_to:'2024-02-29',closure_kind:'completed'}));
  assert.deepEqual(leap.range,{mode:'custom',from:'2024-02-29 00:00:00',until:'2024-03-01 00:00:00',timezone:'Asia/Shanghai'});assert.deepEqual(ids(leap),[resolved.ticket.id]);
  const hiddenDetail=await get('/api/workbench/items/ticket/'+lower.ticket.id,2);assert.equal(hiddenDetail.status,404);
  const hiddenNumber=items(all.items).find(item=>item.id===lower.ticket.id)?.number;assert.ok(typeof hiddenNumber==='string');
  const hidden=await read(path({q:hiddenNumber,closure_kind:'completed'}),2);assert.deepEqual(hidden.items,[]);assert.equal(hidden.next_cursor,null);assert.ok(!JSON.stringify(hidden).includes(lower.ticket.id));
  const invalid=[
-  'column=closed&range=custom',
-  'range=custom&closed_from=2026-02-28',
-  'range=custom&closed_to=2026-03-01',
-  'range=custom&closed_from=2026-02-29&closed_to=2026-03-01',
-  'range=custom&closed_from=2026-2-28&closed_to=2026-03-01',
-  'range=custom&closed_from=0000-01-01&closed_to=2026-03-01',
-  'range=custom&closed_from=2026-03-02&closed_to=2026-03-01',
-  'range=custom&closed_from=9999-12-30&closed_to=9999-12-31',
-  'range=custom&closed_from=2026-02-28&closed_from=2026-02-27&closed_to=2026-03-01',
-  'range=all&closed_from=2026-02-28&closed_to=2026-03-01',
-  'range=recent&closed_from=',
+  'column=handled&range=custom',
+  'range=custom&handled_from=2026-02-28',
+  'range=custom&handled_to=2026-03-01',
+  'range=custom&handled_from=2026-02-29&handled_to=2026-03-01',
+  'range=custom&handled_from=2026-2-28&handled_to=2026-03-01',
+  'range=custom&handled_from=0000-01-01&handled_to=2026-03-01',
+  'range=custom&handled_from=2026-03-02&handled_to=2026-03-01',
+  'range=custom&handled_from=9999-12-30&handled_to=9999-12-31',
+  'range=custom&handled_from=2026-02-28&handled_from=2026-02-27&handled_to=2026-03-01',
+  'range=all&handled_from=2026-02-28&handled_to=2026-03-01',
+  'range=recent&handled_from=',
   'range=cancelled',
  ];
  for(const query of invalid){const response=await get('/api/workbench/search?'+query);assert.equal(response.status,400,query);const body=object(await response.json());assert.equal(Object.hasOwn(body,'items'),false);}
- const {closed_from:omittedFrom,closed_to:omittedTo,...withoutDates}=criteria;assert.equal(omittedFrom,from);assert.equal(omittedTo,to);
- for(const body of [{...withoutDates},{...criteria,closed_from:null},{...criteria,closed_to:'2026-02-27'},{...criteria,range:'all'},
-  {...withoutDates,range:'all',closed_from:null},{...criteria,closed_until:until}]){
+ const {handled_from:omittedFrom,handled_to:omittedTo,...withoutDates}=criteria;assert.equal(omittedFrom,from);assert.equal(omittedTo,to);
+ for(const body of [{...withoutDates},{...criteria,handled_from:null},{...criteria,handled_to:'2026-02-27'},{...criteria,range:'all'},
+  {...withoutDates,range:'all',handled_from:null},{...criteria,closed_until:until}]){
   const response=await post(body);assert.equal(response.status,400,JSON.stringify(body));assert.equal(Object.hasOwn(object(await response.json()),'items'),false);
  }
  assert.ok(ratedRequests<20,'the synthetic scenario stays below the unchanged search rate budget');

@@ -13,8 +13,8 @@ URL仅接受下表字段，每键最多一次。省略取默认，空白q规范�
 | 字段 | 合同 |
 | --- | --- |
 | q | trim后最多128 Unicode码点，字面子串；PG lower大小写匹配，不解释SQL通配符/正则。 |
-| column | all / pending / active / closed；默认all；分列看板明确传列，列表all覆盖所有细分状态。 |
-| range | recent / all / cancelled；默认all；只限制closed部分。recent沿现有Asia/Shanghai当日+前一日，RESOLVED仍是已解决待确认。 |
+| column | all / pending / active / handled；默认all；分列看板明确传列，列表all覆盖所有细分状态。 |
+| range | recent / all / cancelled；默认all；只限制handled部分。recent沿现有Asia/Shanghai当日+前一日，RESOLVED仍是已解决待确认。 |
 | scope | team / related；默认team。related复用T34获权并集；依赖关闭则拒绝该条件。 |
 | responsibility | any / handling / communication / following / unassigned；默认any。按调用者真实责任/关注；unassigned仅Ticket当前无处理人。 |
 | resolver_team_id | null或真实组ID；缩小当前可读Ticket，不按显示名认组。 |

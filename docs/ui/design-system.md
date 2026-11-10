@@ -68,7 +68,7 @@
 - `table-layout:fixed`、`box-sizing:border-box`，最小宽1080；七列为「类别 · 编号」192、「问题」自适应、「状态」108、「时效」124、「报修人 · 位置」188、「负责人」124、「最新活动」92px，均含左右各12px内边距。表头高36、fs-xs/500/secondary；底线选择最接近12%的既有 border-hair（9%），不新增颜色Token。
 - 阶段行上20/下8px，底线border-hair，24px ghost折叠按钮、14px箭头、同看板StatusBadge/StageGlyph（26px高）、13px计数。子分组高32、bg-group（卡32 A1）、上下hairline、12px/500/secondary及12px箭头，已关闭附「不计入完成数」。已处理两组读取看板同账号的会话级折叠偏好键；不写入业务资料。剩余项按钮位于各自子分组末尾，无子分组则在阶段末尾，12px/ghost/左对齐；下一页仍调用原分页入口。
 - 分类瓷砖24px/圆角6，沿category-map；编号mono/12px/secondary，完整显示。问题14px/600/primary、全文title、单行省略；催单、待复核、补充和共享跟进标签沿原事实与Tag，标签不收缩，先截断标题。状态使用Tag：待判断/待接单/资料不全neutral，处理中info，等待厂商/补充neutral并含Pause，已完成/待确认success；非Ticket受理的COMPLETED同样显示已完成，FAILED保留现有danger。已关闭原因沿reason_label与原单编号，不能推断缺失关联。
-- 活跃行时效复用看板TicketHeat、cardHeat与可见页面分钟时钟，无有效起点显示「—」；完成用Check与formatListTime后接「完成」，关闭用CircleX与formatListTime后接「关闭」，closed_at为空显示「已关闭」。报修人与位置合并，来源只显示图标（私聊User、其余沿SourceLabel），title保留三项完整事实；缺失为tertiary「—」。负责人20px头像、13px中文姓名完整显示，只省略括号后缀、title保留全名；未领取18px虚线圆，系统关闭显示Bot与「系统判定」。最新活动12px/secondary/右对齐，沿原相对时间规则。
+- 活跃行时效复用看板TicketHeat、cardHeat与可见页面分钟时钟，无有效起点显示「—」；完成用Check与formatListTime后接「完成」，关闭用CircleX与formatListTime后接「关闭」，ended_at为空显示「已关闭」。报修人与位置合并，来源只显示图标（私聊User、其余沿SourceLabel），title保留三项完整事实；缺失为tertiary「—」。负责人20px头像、13px中文姓名完整显示，只省略括号后缀、title保留全名；未领取18px虚线圆，系统关闭显示Bot与「系统判定」。最新活动12px/secondary/右对齐，沿原相对时间规则。
 - 数据行44px、垂直居中，分隔线由border-hair混合透明色为约7%；hover用bg-subtle，选中用brand-subtle与左侧2px品牌内描边，无整行边框。row-link沿原详情路由，整行可点击、Tab/Enter可达。悬停领取通过原BoardActionCard/BoardActions与当前命令权限终检，按钮只在原控制器确认可领取时出现；E继续调用原按钮。已关闭行瓷砖灰度1/透明度.55，编号tertiary、标题14px/500/secondary、无热度。
 - 列表工具栏第二行始终单行：左侧搜索与类别、处理人、结束方式（相邻间距8px），右侧日期分段；看板没有结束方式。列表结束搜索为搜索框右侧16px X按钮，aria-label和原onLeave保持，不另起一行；查询、游标与计数不变。
 - 结束方式all恢复三阶段；completed/dismissed只渲染已处理与对应子组，展开匹配组，显示「按结束方式筛选时只显示已处理事项」。该规则仅控制列表显示，不改原请求、服务端计数或看板分组。
@@ -81,7 +81,7 @@
 
 用户在首轮本地交付后授权补齐后端、合同及接口文档，支持结束方式与今天／近两天／近7天／本月／自定义／全部日期组合。沿既有BoardDatePresets、日期选择器和FilterChip，不增加依赖、Token、业务命令或权限。
 
-- 今天／近7天／本月继续解析为北京时间的明确起止自然日，与手填日期同用 `range=custom&closed_from=YYYY-MM-DD&closed_to=YYYY-MM-DD`；包含结束日，后端使用次日零时的半开上界。非custom不携带日期字段。
+- 今天／近7天／本月继续解析为北京时间的明确起止自然日，与手填日期同用 `range=custom&handled_from=YYYY-MM-DD&handled_to=YYYY-MM-DD`；包含结束日，后端使用次日零时的半开上界。非custom不携带日期字段。
 - 列表结束方式在所有有效日期范围均可操作；搜索／结束方式生效时仍显示同一日期控件。切换日期、结束方式、看板／列表及详情返回保留其余已提交条件，清分页游标；结束搜索保留当前有效日期及范围，不留下缺失边界的custom。
 - 日期和结束方式属于视图条件，更新它们不得抹掉搜索框中尚未提交的文字或其它条件草稿。原选择器、可见焦点、导航阻塞、失权清理与命令恢复保持。
 - 日期、结束方式或scope条件切换开始时即锁定其提交入口，直到目标URL提交且该次搜索settle；期间禁用日期、结束方式、scope、刷新及搜索提交/结束，q草稿保持可编辑。使用原禁用态，不增加Token/视觉模式，也不把此读取忙碌态接入核心回复或命令就绪屏障。切看板/列表仍保留目标条件，不能困住忙碌锁；不通过提高服务端限额或固定等待规避并发读取。

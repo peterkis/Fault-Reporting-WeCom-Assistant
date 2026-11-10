@@ -101,10 +101,24 @@ export function assertBackendLayout(root:string,files:readonly string[],baseline
     if(files.includes(retirement.target)||files.includes(retirement.target.slice(0,-4)+'.mts'))throw Error('MIGRATION_LAYOUT_RETIREMENT_RESURRECTED');
     retired.add(retirement.target);
   }
+  // ADR-0058 supplement (card 32D-L): the automatic-completion module keeps its historical identity under its current name.
+  const renames='renamed_sources' in value?value.renamed_sources:[];
+  if(!Array.isArray(renames))throw Error('MIGRATION_LAYOUT_RENAME_INVALID');
+  const renamed=new Set<string>();
+  for(const rename of renames){
+    if(!rename||typeof rename!=='object'||Object.keys(rename).sort().join(',')!=='reason,renamed_to,source,target'
+      ||!('source' in rename)||rename.source!=='src/p1-010-ticket-closure.mts'
+      ||!('target' in rename)||rename.target!=='app/server/src/p1-010-ticket-closure.mts'
+      ||!('renamed_to' in rename)||rename.renamed_to!=='app/server/src/p1-010-ticket-auto-completion.mts'
+      ||!('reason' in rename)||rename.reason!=='ADR_0058_AUTO_COMPLETION_VOCABULARY'||renamed.has(rename.target))throw Error('MIGRATION_LAYOUT_RENAME_INVALID');
+    if(files.includes(rename.target)||files.includes(rename.target.slice(0,-4)+'.mjs'))throw Error('MIGRATION_LAYOUT_RENAME_RESURRECTED');
+    if(!files.includes(rename.renamed_to))throw new Error('MIGRATION_LAYOUT_SOURCE_MISSING');
+    renamed.add(rename.target);
+  }
   if(files.some(file=>/^(?:src|scripts)\//u.test(file))||existsSync(path.join(root,'src'))||existsSync(path.join(root,'scripts')))throw new Error('MIGRATION_OLD_SOURCE_ROOT');
   // The forward map records placement. A later approved MJS-to-MTS conversion
   // keeps that identity; an already typed source cannot move back to MJS.
-  if(targets.some(file=>!files.includes(file)&&!(file.endsWith('.mjs')&&files.includes(file.slice(0,-4)+'.mts'))&&!retired.has(file)))throw new Error('MIGRATION_LAYOUT_SOURCE_MISSING');
+  if(targets.some(file=>!files.includes(file)&&!(file.endsWith('.mjs')&&files.includes(file.slice(0,-4)+'.mts'))&&!retired.has(file)&&!renamed.has(file)))throw new Error('MIGRATION_LAYOUT_SOURCE_MISSING');
   const logical=new Set<string>();
   for(const file of files.filter(isProductionSource)){
     const identity=logicalSource(file).replace(/\.mts$/u,'.mjs');

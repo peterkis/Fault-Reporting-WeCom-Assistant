@@ -16,16 +16,16 @@ paths:
       security: [{ InternalSession: [] }, { InternalBearer: [] }]
       x-reject-unknown-query: true
       description: >
-        Current authorized canonical cards. Every card contains closure (null outside the closed column).
-        The closed column returns completed and dismissed states (COMPLETED / RESOLVED and DISMISSED) by default;
+        Current authorized canonical cards. Every card contains closure (null outside the handled column).
+        The handled column returns completed and dismissed states (COMPLETED / RESOLVED and DISMISSED) by default;
         group_counts counts the same authorized range before pagination. Dismissed range membership
         uses a proven closure time; unknown times are excluded from dated windows. No include or closure-group compatibility parameter exists.
         The former cancelled range is rejected; use the dismissed group with the same date range. No business command is executed.
       parameters:
-        - { name: column, in: query, schema: { type: string, enum: [pending, active, closed], default: pending } }
+        - { name: column, in: query, schema: { type: string, enum: [pending, active, handled], default: pending } }
         - { name: range, in: query, schema: { type: string, enum: [recent, all, custom], default: recent } }
-        - { name: closed_from, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
-        - { name: closed_to, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
+        - { name: handled_from, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
+        - { name: handled_to, in: query, description: 'Required with custom range, inclusive Shanghai date', schema: { type: string, format: date } }
         - { name: scope, in: query, description: Accepted only with the existing Follow capability enabled, schema: { type: string, enum: [team, related], default: team } }
         - { name: cursor, in: query, schema: { type: string, minLength: 1, maxLength: 2048 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
@@ -49,16 +49,16 @@ paths:
         Existing current-authority search/list endpoint. Criteria and cursor retain their closed,
         scope-bound semantics. Every card contains closure. closure_kind optionally restricts only
         third-column states; pending and active state selection is unchanged. Omission returns both
-        completed and dismissed states (COMPLETED / RESOLVED and DISMISSED). Custom range requires both closed_from and
-        closed_to as real inclusive Shanghai dates with closed_from <= closed_to < 9999-12-31;
+        completed and dismissed states (COMPLETED / RESOLVED and DISMISSED). Custom range requires both handled_from and
+        handled_to as real inclusive Shanghai dates with handled_from <= handled_to < 9999-12-31;
         other ranges reject either date key. The server returns the exclusive next-day upper bound.
         All date fields and closure_kind bind the existing cursor. Requires the existing Search capability.
       parameters:
         - { name: q, in: query, schema: { type: string, maxLength: 128, default: '' } }
-        - { name: column, in: query, schema: { type: string, enum: [all, pending, active, closed], default: all } }
+        - { name: column, in: query, schema: { type: string, enum: [all, pending, active, handled], default: all } }
         - { name: range, in: query, schema: { type: string, enum: [recent, all, custom], default: all } }
-        - { name: closed_from, in: query, description: 'Required only with custom; inclusive real Shanghai date, no year zero, not after closed_to', schema: { type: string, format: date, pattern: '^(?!0000-)[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' } }
-        - { name: closed_to, in: query, description: 'Required only with custom; inclusive real Shanghai date below 9999-12-31', schema: { type: string, format: date, pattern: '^(?!0000-)(?!9999-12-31$)[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' } }
+        - { name: handled_from, in: query, description: 'Required only with custom; inclusive real Shanghai date, no year zero, not after handled_to', schema: { type: string, format: date, pattern: '^(?!0000-)[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' } }
+        - { name: handled_to, in: query, description: 'Required only with custom; inclusive real Shanghai date below 9999-12-31', schema: { type: string, format: date, pattern: '^(?!0000-)(?!9999-12-31$)[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' } }
         - { name: scope, in: query, schema: { type: string, enum: [team, related], default: team } }
         - { name: closure_kind, in: query, schema: { type: string, enum: [completed, dismissed] } }
         - { name: responsibility, in: query, schema: { type: string, enum: [any, handling, communication, following, unassigned], default: any } }
@@ -87,7 +87,7 @@ paths:
       operationId: searchWorkbenchCardsLongQuery
       security: [{ InternalSession: [] }, { InternalBearer: [] }]
       x-reject-unknown-query: true
-      description: Existing CSRF-protected long-query alternative with identical read-only criteria, including closure_kind and the custom-only closed_from/closed_to date pair; date validation and cursor binding are identical to GET.
+      description: Existing CSRF-protected long-query alternative with identical read-only criteria, including closure_kind and the custom-only handled_from/handled_to date pair; date validation and cursor binding are identical to GET.
       requestBody:
         required: true
         content:

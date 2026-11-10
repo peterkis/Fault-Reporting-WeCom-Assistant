@@ -49,7 +49,7 @@ ticketProcessor({ message, transaction });
 // @ts-expect-error -- The composed processor preserves the normalized message contract.
 ticketProcessor({ channelMessageId: '1', message: { idempotency_key: 'key', received_at: local }, transaction });
 
-import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { createPilotOperationalIntake } from '../../app/server/src/p1-011-pilot-operations-baseline.mjs';
 declare const closure: ReturnType<typeof createTicketClosureService>;
 const lifecycle = createTicketLifecycleProcessor({ serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }), closure });

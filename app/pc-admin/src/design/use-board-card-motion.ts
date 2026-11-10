@@ -4,7 +4,7 @@ function positions(){
   const result=new Map<string,{x:number;y:number;column:string}>();
   for(const card of document.querySelectorAll<HTMLElement>('.board .ticket-card')){
     const column=card.closest<HTMLElement>('.board-column')?.classList;
-    const stage=column?.contains('pending')?'pending':column?.contains('active')?'active':'closed';
+    const stage=column?.contains('pending')?'pending':column?.contains('active')?'active':'handled';
     const rect=card.getBoundingClientRect();result.set(card.dataset.kind+':'+card.dataset.itemId,{x:rect.left+scrollX,y:rect.top+scrollY,column:stage});
   }
   return result;

@@ -29,7 +29,7 @@ export type NotificationEventType = Extract<TicketEventType,
   | 'ticket.dismissed'
   | 'ticket.note_added'
   | 'ticket.information_added'
-  | 'ticket.auto_close_reminder'>;
+  | 'ticket.auto_complete_reminder'>;
 export type DeliveryStatus = 'PENDING' | 'SENDING' | 'SENT' | 'DEAD_LETTER';
 export interface NotificationTarget {
   channel: NotificationChannel;
@@ -139,7 +139,7 @@ const TEMPLATE_CODES: Readonly<Partial<Record<TicketEventType, string>>> = Objec
   'ticket.completed': 'TICKET_COMPLETED',
   'ticket.reopened': 'TICKET_REOPENED',
   'ticket.information_added': 'TICKET_INFORMATION_ADDED',
-  'ticket.auto_close_reminder': 'TICKET_AUTO_CLOSE_REMINDER',
+  'ticket.auto_complete_reminder': 'TICKET_AUTO_COMPLETE_REMINDER',
 });
 const NOTIFICATION_MATRIX: Readonly<Partial<Record<TicketEventType, NotificationPlan>>> = Object.freeze({
   'ticket.created': Object.freeze({ reporter: true, team: true }),
@@ -155,7 +155,7 @@ const NOTIFICATION_MATRIX: Readonly<Partial<Record<TicketEventType, Notification
   'ticket.dismissed': Object.freeze({ reporter: false, team: false }),
   'ticket.note_added': Object.freeze({ reporter: false, team: true }),
   'ticket.information_added': Object.freeze({ reporter: false, team: true }),
-  'ticket.auto_close_reminder': Object.freeze({ reporter: true, team: true }),
+  'ticket.auto_complete_reminder': Object.freeze({ reporter: true, team: true }),
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {

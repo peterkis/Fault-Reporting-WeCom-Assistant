@@ -115,7 +115,7 @@ test('T41 bounded Card28 dismissal and unassigned searches survive session JIT w
   try{
    const cookie=f.cookies[0];assert.ok(cookie);
    const cases=[
-    {name:'dismissed-all',query:'column=closed&range=all&closure_kind=dismissed&limit=100',ids:[seeded.manual,seeded.duplicate,seeded.unknown,seeded.historical,seeded.system,seeded.duplicateWith]},
+    {name:'dismissed-all',query:'column=handled&range=all&closure_kind=dismissed&limit=100',ids:[seeded.manual,seeded.duplicate,seeded.unknown,seeded.historical,seeded.system,seeded.duplicateWith]},
     {name:'pending-unassigned',query:'column=pending&range=all&responsibility=unassigned&limit=100',ids:seeded.pending},
    ];
    for(const sample of cases){

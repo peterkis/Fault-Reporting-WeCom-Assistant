@@ -58,7 +58,8 @@
         "TICKET_RESOLVED",
         "TICKET_COMPLETED",
         "TICKET_REOPENED",
-        "TICKET_CANCELLED"
+        "TICKET_RESTORED",
+        "TICKET_DISMISSED"
       ]
     },
     "source": {

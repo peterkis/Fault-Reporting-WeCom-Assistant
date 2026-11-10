@@ -12,12 +12,13 @@ import { createP2016WeComSender } from '../src/p2-016-wecom-sender.mjs';
 import { createP2016InboundScope } from '../src/p2-016-inbound-scope.mjs';
 import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
 import { createP2016DirectIntakeProcessor, P2016_DIRECT_IDLE_TIMEOUT_MS } from '../src/p2-016-direct-intake.mjs';
-import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../src/p1-010-ticket-auto-completion.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { P2016_LIVE_FUSES,P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
 import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
 import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
+import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
 
 const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET as string});
 export async function main(argv=process.argv.slice(2)){
@@ -41,7 +42,7 @@ export async function main(argv=process.argv.slice(2)){
     });
   }
   if(argv[0]==='--role=gateway')return runGateway({
-    beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);},
+    beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);},
     intakeFactory:({pool,identityHashKey})=>{
       const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:(process.env.P2_016_TEST_USER_TARGET_HASHES as string).split(','),group_hashes:(process.env.P2_016_TEST_GROUP_TARGET_HASHES as string).split(',')});
       const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey:identityHashKey});
@@ -50,7 +51,7 @@ export async function main(argv=process.argv.slice(2)){
     senderFactory:({pool,...options})=>createP2016WeComSender({...options,closureNotifications:{pool},cardEnabled:true,reporterAccess:access(pool),
       origin:process.env.P2_016_REPORTER_ORIGIN as string,allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
-  return runWorker({beforeReady:async input=>{await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);},extensionFactory:({pool})=>{
+  return runWorker({beforeReady:async input=>{await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);},extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});
     const realtime=createP2016RealtimeProjector({pool,enabled:true});
     const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string});
@@ -60,7 +61,7 @@ export async function main(argv=process.argv.slice(2)){
     const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
     return {runOnce:async()=>{
       await orchestrator.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});
-      await notifications.projectPendingClosures({pool});await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();
+      await notifications.projectPendingClosures({pool});await closure.runAutoCompleteReminders({limit:20});await closure.runAutoComplete({actionService:actions,limit:20});await realtime.runOnce();
     }};
   }});
 }

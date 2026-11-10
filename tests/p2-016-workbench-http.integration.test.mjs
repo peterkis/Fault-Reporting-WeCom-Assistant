@@ -10,6 +10,7 @@ import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-post
 import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
+import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import { migrateWorkbenchAuth } from '../app/server/scripts/p2-016-workbench-auth-migrate.mjs';
 import { migrateThirdPartyStaffDirectory } from '../app/server/scripts/p2-007-migrate.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
@@ -60,7 +61,7 @@ test('P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions
   assert.deepEqual(await createP2016Runtime().start(),{disabled:true});
   assert.throws(()=>createP2016Runtime({flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},gatewayEnabled:true}),{code:'P2_016_LIVE_APPROVAL_REQUIRED'});
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016http',run:async({pool,databaseUrl})=>{
-    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});
+    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'synthetic-p2016-http',displayName:'合成测试坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const intake=await seedPersistedIntake({pool,text:'合成故障',requestType:'INCIDENT',status:'RECEIVED'});
     const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'synthetic-http'})).ticket;

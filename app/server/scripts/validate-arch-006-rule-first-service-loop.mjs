@@ -301,7 +301,9 @@ try {
 } catch {
   errors.push('unable to inspect approved logical source changes against origin/main');
 }
-const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-ticket-closure.mjs','src/p2-004-communication-delivery-worker.mjs',
+// ADR-0058 supplement (card 32D-L): the notification outbox (auto-complete reminder template) and the operations baseline
+// (auto-completion module import) are authorized seams of the current vocabulary.
+const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-007-notification-outbox.mjs','src/p1-011-pilot-operations-baseline.mjs','src/p1-010-ticket-closure.mjs','src/p1-010-ticket-auto-completion.mjs','src/p2-004-communication-delivery-worker.mjs',
   'src/p2-005-conversation-control.mjs','src/p2-006-workbench-http.mjs','src/p2-006-workbench-authorization.mjs']);
 // These exact predecessor seams have separately recorded P2-G2 repair authorization.
 const p2g2RepairSeams=new Set(['src/p1-004-service-intake.mjs','src/p2-006-workbench-command-facade.mjs','src/p2-007-rule-engine.mjs']);

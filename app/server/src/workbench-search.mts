@@ -124,8 +124,8 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
      CASE WHEN i.source_provider<>'STAFF_MANUAL_REPORT' OR ${manual?'TRUE':'FALSE'} THEN i.summary END,
      profile.value,web_text.value,${manualText})) AS search_text,
     CASE WHEN $5::text='all' THEN CASE WHEN cards.status IN ('RESOLVED','COMPLETED','DISMISSED') THEN 0 ELSE 1 END
-     ELSE CASE WHEN COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at') IS NOT NULL THEN 1 ELSE 0 END END AS order_group,
-    COALESCE(cards.completed_at,cards.closure_evidence->>'closed_at',cards.sort_at) AS order_at
+     ELSE CASE WHEN COALESCE(cards.completed_at,cards.closure_evidence->>'ended_at') IS NOT NULL THEN 1 ELSE 0 END END AS order_group,
+    COALESCE(cards.completed_at,cards.closure_evidence->>'ended_at',cards.sort_at) AS order_at
    FROM origins cards
    LEFT JOIN intake.service_intake i ON i.id=cards.origin_intake_id AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
    LEFT JOIN pilot_ticket.ticket handling ON cards.kind='ticket' AND handling.id=cards.id::uuid
@@ -148,11 +148,11 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
    ($4::text='' OR strpos(search_text,lower($4))>0)
    AND ($5::text='all' OR ($5='pending' AND status IN ('NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'))
     OR ($5='active' AND status IN ('IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'))
-    OR ($5='closed' AND status IN ('RESOLVED','COMPLETED','DISMISSED')))
+    OR ($5='handled' AND status IN ('RESOLVED','COMPLETED','DISMISSED')))
    AND (status NOT IN ('RESOLVED','COMPLETED','DISMISSED')
     OR CASE WHEN $6::text='all' THEN TRUE ELSE
-      (status='RESOLVED' OR COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp>=$7::timestamp
-       AND COALESCE(completed_at,closure_evidence->>'closed_at')::timestamp<$8::timestamp) END)
+      (status='RESOLVED' OR COALESCE(completed_at,closure_evidence->>'ended_at')::timestamp>=$7::timestamp
+       AND COALESCE(completed_at,closure_evidence->>'ended_at')::timestamp<$8::timestamp) END)
    AND ($9::text='team' OR handling OR communication OR following)
    AND ($10::text='any' OR $10='handling' AND handling OR $10='communication' AND communication
     OR $10='following' AND following OR $10='unassigned' AND kind='ticket' AND handling_person IS NULL)
@@ -188,7 +188,7 @@ export function createWorkbenchSearch({pool,query,cards,enabled=false,localTestP
     // inclusive civil-date convention without another database round trip.
     const window=c.range==='custom'
      ?(await tx.query<Window>(`SELECT to_char($1::date,'YYYY-MM-DD HH24:MI:SS') AS "from",
-       to_char($2::date+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`,[c.closed_from,c.closed_to])).rows[0]
+       to_char($2::date+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`,[c.handled_from,c.handled_to])).rows[0]
      :(await tx.query<Window>(`SELECT to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
        to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`)).rows[0];if(!window)failP2016('ACTION_FAILED',503);
     if(cursor&&(cursor.binding!==bound||cursor.criteria!==criteria||cursor.from!==window.from||cursor.until!==window.until))failP2016('CURSOR_INVALID');

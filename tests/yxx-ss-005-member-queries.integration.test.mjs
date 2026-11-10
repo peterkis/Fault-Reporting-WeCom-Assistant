@@ -9,7 +9,7 @@ import { createYxxMemberCommandContext } from '../app/server/src/yxx-self-servic
 import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
-import { createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { createP2016RealtimeProjector } from '../app/server/src/p2-016-realtime-projector.mjs';
 import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-review-facade.mjs';
 import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';

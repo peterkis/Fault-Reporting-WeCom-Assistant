@@ -127,7 +127,7 @@ ticket_first_response_seconds
 ticket_accept_seconds
 ticket_resolve_seconds
 ticket_reopen_total
-ticket_auto_close_total
+ticket_auto_complete_total
 ```
 
 ### Notification

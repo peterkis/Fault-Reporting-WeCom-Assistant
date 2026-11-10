@@ -12,7 +12,7 @@ import { applyPilotTicketCoreMigration } from '../app/server/src/p1-005-pilot-ti
 import { applyTicketStateActionMigration } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration } from '../app/server/src/p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration, createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 import { applyConversationContractsMigration } from '../app/server/src/p2-001-conversation-contracts.mjs';
 import { applyTimelineProjectionMigration, mapChannelMessageTimelineSource } from '../app/server/src/p2-002-timeline-projector.mjs';
@@ -29,6 +29,7 @@ import { createP2G1InboundProjectionCoordinator, createP2G1TimelineProjector } f
 import { captureP2G1CatalogSnapshot } from '../app/server/src/p2-g1-observability.mjs';
 import { createP2G1ProcessCluster } from '../app/server/src/p2-g1-process-cluster.mjs';
 import { createP2G1Runtime } from '../app/server/src/p2-g1-runtime.mjs';
+import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
 import { runP2G1ReplayGap } from '../app/server/scripts/p2-g1-replay-gap-e2e.mjs';
 import { submitP2G1ResourceInternalNote } from '../app/server/scripts/p2-g1-resource-observation.mjs';
@@ -52,6 +53,8 @@ async function base(pool, isolatedDatabaseUrl) {
   await applyCommunicationMigration({ pool });
   await applyConversationControlMigration({ pool });
   await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
+  // The current Ticket services use the 072 / 073 vocabulary (auto_complete_* deadline columns).
+  await ensureCompletionDismissal(pool);
 }
 
 function frame({ msgId, sender, text, group = 'synthetic-p2-g1-group' }) {

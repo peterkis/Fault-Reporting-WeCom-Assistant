@@ -12,10 +12,10 @@
 `event_req_id` 共同限制回调。
 
 重复卡片事件返回 `card_action_receipt` 的首次响应快照；错误用户、错误 action 或过期
-任务不会修改 Ticket。解决后先在 `auto_close_reminder_at` 记录一次关闭前提醒，并通过
-Outbox 产生 `ticket.auto_close_reminder`；只有提醒已记录且到期后，才可由 `SYSTEM` 执行
-`auto-close`。关闭原因明确写为 `AUTO_TIMEOUT` 而非用户确认。确认关闭或重开会清除未到期
-的自动关闭/提醒时间。
+任务不会修改 Ticket。解决后先在 `auto_complete_reminder_at` 记录一次完成前提醒，并通过
+Outbox 产生 `ticket.auto_complete_reminder`（模板 `TICKET_AUTO_COMPLETE_REMINDER`）；只有提醒已记录且到期后，才可由 `SYSTEM` 执行
+`auto-complete`，结果为 `COMPLETED`。原因明确写为 `AUTO_TIMEOUT` 而非用户确认。确认完成或重开会清除未到期
+的自动完成/提醒时间。服务位于 `p1-010-ticket-auto-completion.mts`；073 之前的列、事件与模板名为 `auto_close_*` / `ticket.auto_close_reminder` / `TICKET_AUTO_CLOSE_REMINDER`（ADR-0058 补充）。
 
 ## 组合
 

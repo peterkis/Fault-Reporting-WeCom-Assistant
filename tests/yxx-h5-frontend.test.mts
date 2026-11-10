@@ -180,7 +180,7 @@ test('H5 official compiled catalogs preserve all 456 bilingual messages and thei
    const expected=message.replace(/\{\{\s*([\w]+)\s*\}\}/gu,(_token:string,name:string)=>{const value=parameters[name];assert.notEqual(value,undefined);return value??'';}),id=namespace+':'+key;assert.ok(Array.isArray(catalog[id]),'Browser catalog must be official precompiled data');assert.equal(i18n.t(id,{...parameters,lng}),expected,id+' '+lng);count++;
   }
  }
- assert.equal(count,474);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 237 keys in two languages, full literal text and interpolation; no browser/runtime compiler is invoked.');
+ assert.equal(count,472);assert.equal(i18n.language,language,'Explicit translation reads must not activate another page language');t.diagnostic('OFFICIAL_LINGUI_COMPILED_MESSAGE_CONTROLS: 236 keys in two languages (card 32D-L removed the duplicate closed key), full literal text and interpolation; no browser/runtime compiler is invoked.');
 });
 
 test('H5 catalog compiler fails closed on executable sources duplicate keys and malformed interpolation',async()=>{
@@ -289,17 +289,17 @@ test('H5 timeline presents closed-out Ticket updates as report closed and the ne
  const at=(event_type:string,status:string|null,epoch:string,summary='工单状态已更新')=>({event_type,summary,occurred_epoch_ms:epoch,occurred_at:'2026-10-20 14:32:00',ticket:status===null?null:{ticket_no:'SYNTHETIC',status}});
  const created=at('TICKET_CREATED','QUEUED','100','工单已创建'),firstClose=at('TICKET_UPDATED','DISMISSED','200'),restored=at('TICKET_UPDATED','IN_PROGRESS','300'),duplicate=at('TICKET_UPDATED','DISMISSED','400');
  const input=[duplicate,restored,firstClose,created],snapshot=structuredClone(input);
- assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',true),[{titleKey:'eventClosed',summary:'公开重复说明（合成）'},{titleKey:'eventRestored',summary:''},{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},{titleKey:'eventCreated',summary:'工单已创建'}]);
+ assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',true),[{titleKey:'eventDismissed',summary:'公开重复说明（合成）'},{titleKey:'eventRestored',summary:''},{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'},{titleKey:'eventCreated',summary:'工单已创建'}]);
  assert.deepEqual(input,snapshot,'presentation must not mutate the cached API page');
  // Partial history: the current note is never attached to an older loaded closure.
- assert.deepEqual(timeline.timelinePresentations([firstClose,created],'公开重复说明（合成）',false)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'});
- assert.deepEqual(timeline.timelinePresentations([restored,firstClose,created],'公开重复说明（合成）',true)[1],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},'a closure followed by a newer Ticket fact is not the current closure');
- assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',false)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'},'unloaded newer pages keep the neutral text');
- assert.deepEqual(timeline.timelinePresentations([duplicate,created],null)[0],{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'});
+ assert.deepEqual(timeline.timelinePresentations([firstClose,created],'公开重复说明（合成）',false)[0],{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'});
+ assert.deepEqual(timeline.timelinePresentations([restored,firstClose,created],'公开重复说明（合成）',true)[1],{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'},'a closure followed by a newer Ticket fact is not the current closure');
+ assert.deepEqual(timeline.timelinePresentations(input,'公开重复说明（合成）',false)[0],{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'},'unloaded newer pages keep the neutral text');
+ assert.deepEqual(timeline.timelinePresentations([duplicate,created],null)[0],{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'});
  // A completion or an intake fact after a closure is not a restore; unrelated Ticket updates keep their safe summary.
  const completed=at('TICKET_UPDATED','COMPLETED','500','工作人员已完成本轮处理：（合成）'),processing=at('PROCESSING',null,'250','报修正在处理中'),started=at('TICKET_UPDATED','IN_PROGRESS','260');
- assert.deepEqual(timeline.timelinePresentations([completed,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','eventClosed']);
- assert.deepEqual(timeline.timelinePresentations([started,processing,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','processing','eventClosed']);
+ assert.deepEqual(timeline.timelinePresentations([completed,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','eventDismissed']);
+ assert.deepEqual(timeline.timelinePresentations([started,processing,firstClose]).map((view:{titleKey:string|null})=>view.titleKey),['eventUpdated','processing','eventDismissed']);
  assert.deepEqual(timeline.timelinePresentations([started,created]),[{titleKey:'eventUpdated',summary:'工单状态已更新'},{titleKey:'eventCreated',summary:'工单已创建'}]);
  for(const absent of [null,undefined,'','已关闭'])assert.equal(timeline.reporterClosureNote(absent),null);
  assert.equal(timeline.reporterClosureNote('您反映的问题不属于信息科受理范围，建议联系相关部门处理。'),'您反映的问题不属于信息科受理范围，建议联系相关部门处理。');
@@ -766,13 +766,13 @@ test('H5 detail ETA follows the canonical queued DTO and excludes terminal state
  for(const status of ['DISMISSED',null])for(const language of ['zh-CN','en']){
   const view=await renderClosure(status,language,'已按您的要求撤销本次报修。');assert.match(view.html,/data-h5-closure-text/);
   const order=['data-h5-closure-text','报修（合成）'].map(marker=>view.html.indexOf(marker));assert.ok(order[1]>=0&&order[0]>order[1],'closure note follows the title at the bottom of the header card');assert.match(view.html,/class="detail-closure-note selectable"/);
-  assert.match(view.html,/data-h5-status-icon="closed"/,'closed badge carries the CircleX mark');assert.ok(view.html.includes(language==='en'?'Closed':'已关闭'));assert.ok(view.html.includes('已按您的要求撤销本次报修。'));assert.doesNotMatch(view.html,/INTERNAL_NOTE/);assert.deepEqual(view.actions,{supplement:false,urge:false,evaluation:false,feedback:false});
+  assert.match(view.html,/data-h5-status-icon="dismissed"/,'closed badge carries the CircleX mark');assert.ok(view.html.includes(language==='en'?'Closed':'已关闭'));assert.ok(view.html.includes('已按您的要求撤销本次报修。'));assert.doesNotMatch(view.html,/INTERNAL_NOTE/);assert.deepEqual(view.actions,{supplement:false,urge:false,evaluation:false,feedback:false});
   const generic=await renderClosure(status,language,'已关闭');assert.doesNotMatch(generic.html,/data-h5-closure-text/);assert.ok(generic.html.includes(language==='en'?'Closed':'已关闭'));
   for(const absent of [null,undefined])assert.doesNotMatch((await renderClosure(status,language,absent)).html,/data-h5-closure-text|INTERNAL_NOTE/);
   const escaped=await renderClosure(status,language,'<img src=x onerror=alert(1)>');assert.match(escaped.html,/&lt;img/);assert.doesNotMatch(escaped.html,/<img src=x/);
  }
  const {reportState,reportTone}=await import(await moduleUrl('lib/report.ts'));
- for(const status of ['DISMISSED']){assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'closed');assert.equal(reportTone('closed'),'neutral');}
+ for(const status of ['DISMISSED']){assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'dismissed');assert.equal(reportTone('dismissed'),'neutral');}
  assert.equal(reportState({ticket:null,display_status:'NOT_SERVICE',closure_text:null}),'notService');
  for(const status of ['COMPLETED','RESOLVED'])assert.equal(reportState({ticket:{status},display_status:'TICKET_CREATED'}),'completed');
 });

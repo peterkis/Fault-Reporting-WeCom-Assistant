@@ -122,7 +122,7 @@ ticket.waiting_requester
 ticket.waiting_vendor
 ticket.information_added
 ticket.resolved
-ticket.auto_close_reminder
+ticket.auto_complete_reminder
 ticket.completed
 ticket.dismissed
 ticket.reopened

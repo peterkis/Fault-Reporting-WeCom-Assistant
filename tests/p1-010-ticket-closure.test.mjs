@@ -33,7 +33,7 @@ import {
   applyTicketClosureMigration,
   createTicketClosureService,
   createTicketLifecycleProcessor,
-} from '../app/server/src/p1-010-ticket-closure.mjs';
+} from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -157,10 +157,10 @@ after(async () => {
   await pool.end();
 });
 
-test('runAutoClose without input preserves the explicit action-service validation error', async () => {
+test('runAutoComplete without input preserves the explicit action-service validation error', async () => {
   const closure = createTicketClosureService({ resolveReporterActor: () => null });
   await assert.rejects(
-    () => closure.runAutoClose(),
+    () => closure.runAutoComplete(),
     { name: 'TypeError', message: 'A Ticket Action service is required.' },
   );
 });
@@ -177,8 +177,8 @@ integrationTest('supplement, card confirmation, duplicate card protection, close
     resolveReporterActor: access.resolveReporterActor,
     now: () => new Date(clock),
     cardTtlMs: 10_000,
-    autoCloseAfterMs: 20_000,
-    autoCloseReminderLeadMs: 5_000,
+    autoCompleteAfterMs: 20_000,
+    autoCompleteReminderLeadMs: 5_000,
   });
   const actions = createTicketActionService({
     pool,
@@ -351,8 +351,8 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
     resolveReporterActor: access.resolveReporterActor,
     now: () => new Date(clock),
     cardTtlMs: 10_000,
-    autoCloseAfterMs: 20_000,
-    autoCloseReminderLeadMs: 10_000,
+    autoCompleteAfterMs: 20_000,
+    autoCompleteReminderLeadMs: 10_000,
   });
   const actions = createTicketActionService({
     pool,
@@ -388,12 +388,12 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
       WHERE ticket_event_id = $1::uuid AND action_key = 'confirm_resolved'`,
     [resolved.event.event_id],
   );
-  const beforeReminder = await closure.runAutoClose({ actionService: actions, limit: 5 });
+  const beforeReminder = await closure.runAutoComplete({ actionService: actions, limit: 5 });
   assert.deepEqual(beforeReminder.closed_ticket_ids, []);
   clock += 15_000;
-  const reminder = await closure.runAutoCloseReminders({ limit: 5 });
+  const reminder = await closure.runAutoCompleteReminders({ limit: 5 });
   assert.deepEqual(reminder.reminded_ticket_ids, [ticket.id]);
-  const repeatedReminder = await closure.runAutoCloseReminders({ limit: 5 });
+  const repeatedReminder = await closure.runAutoCompleteReminders({ limit: 5 });
   assert.deepEqual(repeatedReminder.reminded_ticket_ids, []);
   const reminderFacts = await pool.query(
     `SELECT count(event.event_id)::integer AS event_count,
@@ -401,10 +401,19 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
        FROM pilot_ticket.ticket_event AS event
        JOIN notification.outbox AS outbox ON outbox.ticket_event_id = event.event_id
       WHERE event.ticket_id = $1::uuid
-        AND event.event_type = 'ticket.auto_close_reminder'`,
+        AND event.event_type = 'ticket.auto_complete_reminder'`,
     [ticket.id],
   );
   assert.deepEqual(reminderFacts.rows, [{ event_count: 1, outbox_count: 1 }]);
+  // Card 32D-L: the reminder before automatic completion uses the auto-complete event and template names.
+  const reminderOutbox = await pool.query(
+    `SELECT outbox.event_type, outbox.template_code
+       FROM notification.outbox AS outbox
+       JOIN pilot_ticket.ticket_event AS event ON event.event_id = outbox.ticket_event_id
+      WHERE event.ticket_id = $1::uuid AND event.event_type = 'ticket.auto_complete_reminder'`,
+    [ticket.id],
+  );
+  assert.deepEqual(reminderOutbox.rows, [{ event_type: 'ticket.auto_complete_reminder', template_code: 'TICKET_AUTO_COMPLETE_REMINDER' }]);
   const expired = await closure.handleCardAction({
     taskId: confirmTask.rows[0].task_id,
     actionKey: 'confirm_resolved',
@@ -419,7 +428,7 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
   });
 
   clock += 10_000;
-  const automatic = await closure.runAutoClose({ actionService: actions, limit: 5 });
+  const automatic = await closure.runAutoComplete({ actionService: actions, limit: 5 });
   assert.deepEqual(automatic.closed_ticket_ids, [ticket.id]);
   const persisted = await pool.query(
     'SELECT status, closure_reason FROM pilot_ticket.ticket WHERE id = $1::uuid',

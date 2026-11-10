@@ -51,7 +51,7 @@ export type TicketEventType =
   | 'ticket.handling_aborted'
   | 'ticket.note_added'
   | 'ticket.information_added'
-  | 'ticket.auto_close_reminder'
+  | 'ticket.auto_complete_reminder'
   | 'ticket.assignment_transferred'
   | 'ticket.unassigned'
   | 'ticket.follow_up_scheduled'

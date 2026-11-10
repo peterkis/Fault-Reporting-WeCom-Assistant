@@ -9,7 +9,7 @@ import { applyPilotTicketCoreMigration, createPilotTicketCore } from '../app/ser
 import { applyTicketStateActionMigration } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration, createNotificationDeliveryWorker, createNotificationOutbox } from '../app/server/src/p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration, createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration, createTicketClosureService } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { applyPilotOperationsMigration, createPilotOperationalIntake } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 import { createPilotE2EHandler } from '../app/server/src/p1-012-pilot-e2e.mjs';
 import { verifyGroupBurstDatabaseFacts } from '../app/server/scripts/p1-012-live-e2e.mjs';

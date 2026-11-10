@@ -427,6 +427,7 @@
     "tests/fixtures/retired-self-service/self-service.js",
     "database/migrations/071_unified_service_closure.sql",
     "database/migrations/072_ticket_completion_dismissal.sql",
+    "database/migrations/073_notification_vocabulary.sql",
     "contracts/unified_closure_command.schema.json",
     "contracts/unified_restore_command.schema.json",
     "contracts/unified_closure_contracts.d.ts",

@@ -14,11 +14,12 @@ const original=sourceRoot();
 const mapping=record(JSON.parse(readFileSync(path.join(original,'tools/ts-migration/backend-layout.json'),'utf8')) as unknown);
 const baseline=git(original,['ls-tree','-r','--name-only',BACKEND_LAYOUT_BASE,'--','src','scripts']).split('\n');
 const entries=baseline.filter(file=>file!=='src/bot-reporter-static.mts').map(source=>({source,target:physicalSource(source)}));
+const RENAMED_FROM='app/server/src/p1-010-ticket-closure.mts',RENAMED_TO='app/server/src/p1-010-ticket-auto-completion.mts';
 function fixture(){
  const root=mkdtempSync(path.join(tmpdir(),'server-layout-negative-'));
  mkdirSync(path.join(root,'tools/ts-migration'),{recursive:true});
  writeFileSync(path.join(root,'tools/ts-migration/backend-layout.json'),JSON.stringify(mapping));
- return {root,files:entries.map(item=>item.target).filter(file=>file!=='app/server/scripts/p2-006-preview.mjs')};
+ return {root,files:entries.map(item=>item.target).filter(file=>file!=='app/server/scripts/p2-006-preview.mjs').map(file=>file===RENAMED_FROM?RENAMED_TO:file)};
 }
 test('server layout binds all 382 original files to unique physical and logical identities',()=>{
  const {root,files}=fixture();
@@ -40,6 +41,19 @@ test('only the explicitly retired green preview can be absent and its resurrecti
   writeFileSync(file,JSON.stringify({...mapping,retired_sources:[]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
   for(const retired of [[{source:'src/p1-005-pilot-ticket-core.mjs',target:'app/server/src/p1-005-pilot-ticket-core.mts',issue:145,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}],[{source:'scripts/p2-006-preview.mjs',target:'app/server/scripts/p2-006-preview.mjs',issue:0,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]]){
    writeFileSync(file,JSON.stringify({...mapping,retired_sources:retired}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
+  }
+ }finally{rmSync(root,{recursive:true,force:true});}
+});
+test('only the recorded automatic-completion rename may move a historical source, and the old name cannot come back',()=>{
+ const {root,files}=fixture();const file=path.join(root,'tools/ts-migration/backend-layout.json');
+ try{
+  assertBackendLayout(root,files,baseline);
+  assert.throws(()=>assertBackendLayout(root,[...files,RENAMED_FROM],baseline),/RENAME_RESURRECTED/u);
+  assert.throws(()=>assertBackendLayout(root,files.filter(item=>item!==RENAMED_TO),baseline),/SOURCE_MISSING/u);
+  writeFileSync(file,JSON.stringify({...mapping,renamed_sources:[]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
+  const rename={source:'src/p1-010-ticket-closure.mts',target:RENAMED_FROM,renamed_to:RENAMED_TO,reason:'ADR_0058_AUTO_COMPLETION_VOCABULARY'};
+  for(const renames of [[{...rename,renamed_to:'app/server/src/other.mts'}],[{...rename,source:'src/p1-005-pilot-ticket-core.mts',target:'app/server/src/p1-005-pilot-ticket-core.mts'}],[{...rename,reason:'X'}],[rename,rename],[{...rename,issue:1}]]){
+   writeFileSync(file,JSON.stringify({...mapping,renamed_sources:renames}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RENAME_INVALID/u);
   }
  }finally{rmSync(root,{recursive:true,force:true});}
 });

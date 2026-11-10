@@ -9,7 +9,7 @@ import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import { createServiceIntakeProcessor } from './p1-004-service-intake.mjs';
 import { createPilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
 import { createNotificationOutbox } from './p1-007-notification-outbox.mjs';
-import { createTicketClosureService } from './p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from './p1-010-ticket-auto-completion.mjs';
 import { createPilotOperationalIntake } from './p1-011-pilot-operations-baseline.mjs';
 
 export const P2_G1_LIVE_MODES = Object.freeze([

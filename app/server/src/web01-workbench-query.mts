@@ -21,18 +21,18 @@ import type {WorkbenchWebReportLifecyclePort} from './workbench-web-report.mjs';
 import {decodeWebUrge} from '../../../shared/workbench-web-report-browser-contracts.mjs';
 import {readTicketReporterProfiles} from './ticket-reporter-profiles.mjs';
 
-export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
+export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'handled'];
 const STATUS_COLUMNS = {
   pending: ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'],
   active: ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'],
-  closed: ['RESOLVED','COMPLETED','DISMISSED'],
+  handled: ['RESOLVED','COMPLETED','DISMISSED'],
 } as const;
 export function boardColumn(status: string): BoardColumn {
   for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
   failP2016();
 }
 interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'|'follow_up_schedule'|'closure'> { sort_at: string; closure_evidence:ClosureEvidence|null }
-interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; closedFrom?:string|null; closedTo?:string|null; cursor: unknown; limit: unknown }
+interface Input { authContext: unknown; column: string | null; range: string | null; scope?: string | null; handledFrom?:string|null; handledTo?:string|null; cursor: unknown; limit: unknown }
 const UUID_TEXT_PATTERN='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 const REPORTER_PROFILE_SQL=`LEFT JOIN LATERAL (SELECT j.profile_snapshot->'contact'->>'name' AS name,
    (SELECT string_agg(m->>'name','、' ORDER BY ord) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(j.profile_snapshot->'memberships')='array' THEN j.profile_snapshot->'memberships' ELSE '[]'::jsonb END) WITH ORDINALITY AS members(m,ord)) AS department
@@ -62,14 +62,14 @@ const INTAKE_CLOSURE_SQL=`LEFT JOIN LATERAL (SELECT e.event_type,e.occurred_at,e
    AND closing_review.resolved_by_principal_id::text=closing_decision.safe_result#>>'{human_override,principal_id}'
  LEFT JOIN pilot_ticket.pilot_principal closing_actor ON closing_actor.id=closing_review.resolved_by_principal_id
  LEFT JOIN pilot_ticket.closure_record intake_closure ON intake_closure.intake_id=i.id AND intake_closure.restored_at IS NULL
- LEFT JOIN pilot_ticket.pilot_principal intake_closing_actor ON intake_closing_actor.id::text=intake_closure.closed_by`;
-const INTAKE_CLOSURE_EVIDENCE_SQL=`CASE WHEN i.status='DISMISSED' THEN CASE WHEN intake_closure.id IS NOT NULL THEN jsonb_build_object('record_id',intake_closure.id::text,'source',intake_closure.source,'reason_code',intake_closure.reason_code,'secondary_reason_code',intake_closure.secondary_reason_code,'reason_note',intake_closure.note,'closed_by_display_name',intake_closing_actor.display_name,'closed_at',to_char(intake_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',intake_closure.duplicate_of_ref) END ELSE (CASE WHEN i.status='COMPLETED' THEN jsonb_build_object(
+ LEFT JOIN pilot_ticket.pilot_principal intake_closing_actor ON intake_closing_actor.id::text=intake_closure.ended_by`;
+const INTAKE_CLOSURE_EVIDENCE_SQL=`CASE WHEN i.status='DISMISSED' THEN CASE WHEN intake_closure.id IS NOT NULL THEN jsonb_build_object('record_id',intake_closure.id::text,'source',intake_closure.source,'reason_code',intake_closure.reason_code,'secondary_reason_code',intake_closure.secondary_reason_code,'reason_note',intake_closure.note,'ended_by_display_name',intake_closing_actor.display_name,'ended_at',to_char(intake_closure.ended_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',intake_closure.duplicate_of_ref) END ELSE (CASE WHEN i.status='COMPLETED' THEN jsonb_build_object(
   'source',CASE WHEN closing_review.id IS NOT NULL THEN 'MANUAL'
     WHEN closing_decision.status='RECORDED' AND closing_decision.safe_result->'human_override' IS NULL THEN 'SYSTEM'
     WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='DISMISSED' THEN 'SYSTEM' END,
   'reason_code',CASE WHEN closing_review.id IS NOT NULL THEN closing_decision.reason_code END,
-  'reason_note',NULL,'closed_by_display_name',closing_actor.display_name,
-  'closed_at',to_char(CASE WHEN closing_review.id IS NOT NULL THEN closing_review.resolved_at
+  'reason_note',NULL,'ended_by_display_name',closing_actor.display_name,
+  'ended_at',to_char(CASE WHEN closing_review.id IS NOT NULL THEN closing_review.resolved_at
     WHEN closing.event_type='intake.received' AND closing.aggregate_version=1 AND closing.event_ordinal=1 AND i.status='DISMISSED'
       THEN i.created_at END,'YYYY-MM-DD HH24:MI:SS')) END) END`;
 export const CARD_SQL = `WITH cards AS (
@@ -79,18 +79,18 @@ export const CARD_SQL = `WITH cards AS (
    review.review_reason_code AS review_reason,
    to_char(t.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
    to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
-   to_char(CASE WHEN t.status IN ('DISMISSED') THEN ticket_closure.closed_at WHEN t.status<>'RESOLVED' THEN ended.at END,'YYYY-MM-DD HH24:MI:SS') AS completed_at,
+   to_char(CASE WHEN t.status IN ('DISMISSED') THEN ticket_closure.ended_at WHEN t.status<>'RESOLVED' THEN ended.at END,'YYYY-MM-DD HH24:MI:SS') AS completed_at,
    to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS sort_at,
-   CASE WHEN t.status IN ('DISMISSED') THEN CASE WHEN ticket_closure.id IS NOT NULL THEN jsonb_build_object('record_id',ticket_closure.id::text,'source',ticket_closure.source,'reason_code',ticket_closure.reason_code,'secondary_reason_code',ticket_closure.secondary_reason_code,'reason_note',ticket_closure.note,'closed_by_display_name',ticket_closing_actor.display_name,'closed_at',to_char(ticket_closure.closed_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',ticket_closure.duplicate_of_ref,'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END WHEN t.status IN ('RESOLVED','COMPLETED') THEN jsonb_build_object(
+   CASE WHEN t.status IN ('DISMISSED') THEN CASE WHEN ticket_closure.id IS NOT NULL THEN jsonb_build_object('record_id',ticket_closure.id::text,'source',ticket_closure.source,'reason_code',ticket_closure.reason_code,'secondary_reason_code',ticket_closure.secondary_reason_code,'reason_note',ticket_closure.note,'ended_by_display_name',ticket_closing_actor.display_name,'ended_at',to_char(ticket_closure.ended_at,'YYYY-MM-DD HH24:MI:SS'),'duplicate_of_ref',ticket_closure.duplicate_of_ref,'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END WHEN t.status IN ('RESOLVED','COMPLETED') THEN jsonb_build_object(
      'source',CASE WHEN ended.operator_type IN ('PILOT_USER','REPORTER') THEN 'MANUAL' WHEN ended.operator_type='SYSTEM' THEN 'SYSTEM' END,
-     'reason_code',NULL,'reason_note',ended.internal_note,'closed_by_display_name',closing_actor.display_name,
-     'closed_at',to_char(ended.at,'YYYY-MM-DD HH24:MI:SS'),'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END AS closure_evidence
+     'reason_code',NULL,'reason_note',ended.internal_note,'ended_by_display_name',closing_actor.display_name,
+     'ended_at',to_char(ended.at,'YYYY-MM-DD HH24:MI:SS'),'resolver_team_id',t.resolver_team_id,'assignee_id',t.assignee_id::text) END AS closure_evidence
  FROM pilot_ticket.ticket t
  LEFT JOIN intake.service_intake i ON i.id=t.source_intake_id AND i.retention_until>platform.local_now()
  LEFT JOIN pilot_ticket.pilot_principal p ON p.id=t.assignee_id
  ${REPORTER_PROFILE_SQL}
  LEFT JOIN pilot_ticket.closure_record ticket_closure ON ticket_closure.ticket_id=t.id AND ticket_closure.restored_at IS NULL
- LEFT JOIN pilot_ticket.pilot_principal ticket_closing_actor ON ticket_closing_actor.id::text=ticket_closure.closed_by
+ LEFT JOIN pilot_ticket.pilot_principal ticket_closing_actor ON ticket_closing_actor.id::text=ticket_closure.ended_by
  LEFT JOIN LATERAL (SELECT e.created_at AS at,e.operator_type,e.operator_id,e.internal_note FROM pilot_ticket.ticket_event e
    WHERE t.status IN ('RESOLVED','COMPLETED','DISMISSED') AND e.ticket_id=t.id AND e.new_status=t.status
      AND e.old_status IS DISTINCT FROM e.new_status
@@ -257,14 +257,14 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
     if(typeof expiry!=='string'||!/^[1-9][0-9]{0,15}$/u.test(expiry))throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated,401);
     return {sql:`platform.physical_epoch_ms()<$${start}::bigint`,values:[expiry]};
   }
-  async function range(mode: BoardCompletionRange,closedFrom?:string|null,closedTo?:string|null): Promise<BoardPage['range']> {
+  async function range(mode: BoardCompletionRange,handledFrom?:string|null,handledTo?:string|null): Promise<BoardPage['range']> {
     if(mode==='custom'){
-      let from:string,to:string;try{from=assertLocalDate(closedFrom);to=assertLocalDate(closedTo);}catch{failP2016();}
+      let from:string,to:string;try{from=assertLocalDate(handledFrom);to=assertLocalDate(handledTo);}catch{failP2016();}
       if(from>to||to==='9999-12-31')failP2016();
       const result=await pool.query<{from:string;until:string}>(`SELECT to_char($1::date,'YYYY-MM-DD HH24:MI:SS') AS "from",to_char($2::date+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`,[from,to]);
       const row=result.rows[0];if(!row)failP2016();return {...row,mode,timezone:'Asia/Shanghai'};
     }
-    if(closedFrom!=null||closedTo!=null)failP2016();
+    if(handledFrom!=null||handledTo!=null)failP2016();
     const r=await pool.query<{from:string;until:string}>(`SELECT
       to_char(date_trunc('day',platform.local_now())-interval '1 day','YYYY-MM-DD HH24:MI:SS') AS "from",
       to_char(date_trunc('day',platform.local_now())+interval '1 day','YYYY-MM-DD HH24:MI:SS') AS until`);
@@ -308,7 +308,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       if((boardScope!=='team'&&boardScope!=='related')||(!workbenchFollowEnabled&&input.scope!=null))failP2016();
       if(!WEB01_COLUMNS.includes(column as BoardColumn)||!['recent','all','custom'].includes(mode))failP2016();
       const selectedColumn=column as BoardColumn,selectedRange=mode as BoardCompletionRange,custom=selectedRange==='custom';
-      const window=await range(selectedRange,input.closedFrom,input.closedTo),limit=limitP2016(input.limit??'50');
+      const window=await range(selectedRange,input.handledFrom,input.handledTo),limit=limitP2016(input.limit??'50');
       const page=input.cursor?decodeCursorP2016(input.cursor,['v','principal','scope','column','range','from',...(custom?['until']:[]),'at','kind','id','order_group']):null;
       // Bind cursors to both filters and the current authorized scope, including a changed team/role.
       const scopeKey=JSON.stringify(workbenchFollowEnabled?[authorized.values,boardScope]:authorized.values);
@@ -319,26 +319,26 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null,workbenc
       const states=STATUS_COLUMNS[selectedColumn];
       if(follow&&!await follow.ready())failP2016('DISABLED',503);
       const related=boardScope==='related'?` AND (${RELATED_CARD_SQL}${follow?` OR ${FOLLOW_CARD_SQL}`:''})`:'';
-      const closedAt=`COALESCE(completed_at,closure_evidence->>'closed_at')`;
+      const handledAt=`COALESCE(completed_at,closure_evidence->>'ended_at')`;
       const predicate=`status=ANY($4::text[]) AND ($5::boolean OR status='RESOLVED'
-        OR (${closedAt})::timestamp>=$6::timestamp AND (${closedAt})::timestamp<$7::timestamp)${related}`;
-      const filterValues=[states,selectedColumn!=='closed'||selectedRange!=='recent'&&!custom,window.from,window.until];
+        OR (${handledAt})::timestamp>=$6::timestamp AND (${handledAt})::timestamp<$7::timestamp)${related}`;
+      const filterValues=[states,selectedColumn!=='handled'||selectedRange!=='recent'&&!custom,window.from,window.until];
       const pageSql=` SELECT * FROM (SELECT *,
-        CASE WHEN $12::boolean AND ${closedAt} IS NOT NULL THEN 1 ELSE 0 END AS order_group,
-        CASE WHEN $12::boolean AND ${closedAt} IS NOT NULL THEN ${closedAt} ELSE sort_at END AS order_at FROM cards) cards
+        CASE WHEN $12::boolean AND ${handledAt} IS NOT NULL THEN 1 ELSE 0 END AS order_group,
+        CASE WHEN $12::boolean AND ${handledAt} IS NOT NULL THEN ${handledAt} ELSE sort_at END AS order_at FROM cards) cards
         WHERE ${predicate}
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`;
-      const pageValues=[...filterValues,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null];
+      const pageValues=[...filterValues,at,page?.kind??null,id,limit+1,selectedColumn==='handled',page?.order_group??null];
       const r=await pool.query<CardRow & {order_at:string;order_group:number}>(CARD_SQL+pageSql,[...authorized.values,...pageValues]);
       // Recheck the ordered prefix including the limit+1 sentinel. Checking only
       // the returned cards cannot detect a newly matching row or a stale has_more.
-      const groupCounts:WorkbenchReadAccess['groupCounts']=selectedColumn==='closed'?{predicate,pageSql,values:pageValues,
+      const groupCounts:WorkbenchReadAccess['groupCounts']=selectedColumn==='handled'?{predicate,pageSql,values:pageValues,
         expectedPage:r.rows.map(({kind,id,order_group,order_at})=>({kind,id,order_group,order_at})),
         value:null}:undefined;
       const rows=r.rows.slice(0,limit),decorated=await decorate(rows.map(row=>card(row)),input.authContext,true,true),last=rows.at(-1);
       const items=await readWorkbenchCardProjections(pool,CARD_SQL,{authority:()=>scope(input.authContext),session:start=>sessionProof(input.authContext,start),...(groupCounts?{groupCounts}:{})},decorated,serviceCatalog,manualReportsEnabled);
-      const counts=groupCounts?.value;if(selectedColumn==='closed'&&!counts)failP2016('ACTION_FAILED',503);
+      const counts=groupCounts?.value;if(selectedColumn==='handled'&&!counts)failP2016('ACTION_FAILED',503);
       return publicP2016({items,column:selectedColumn,range:window,...(counts?{group_counts:counts}:{}),next_cursor:r.rows.length>limit&&last?cursorP2016({v:custom?2:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,...(custom?{until:window.until}:{}),at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },

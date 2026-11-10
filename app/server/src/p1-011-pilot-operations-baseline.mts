@@ -7,7 +7,7 @@ import {
   shanghaiLocalToEpochMs,
 } from './platform/time-contract.mjs';
 import { createChannelMessageInbox } from './p1-003-channel-message-inbox.mjs';
-import { createTicketLifecycleProcessor } from './p1-010-ticket-closure.mjs';
+import { createTicketLifecycleProcessor } from './p1-010-ticket-auto-completion.mjs';
 
 import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { LocalDateTime } from '../../../contracts/time_contracts.js';

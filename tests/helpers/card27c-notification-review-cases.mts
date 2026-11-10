@@ -12,6 +12,9 @@ import {createMvpNotificationAdmission} from '../../app/server/src/mvp-group-rep
 import {appendCommunication} from '../../app/server/src/p2-004-communication-core.mjs';
 import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
 import {formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
+import {ticketNotificationP2016} from '../../app/server/src/p2-016-ticket-notification-policy.mjs';
+import {createP2016TicketNotificationProjector} from '../../app/server/src/p2-016-ticket-notification-projector.mjs';
+import {appendTicketEvent} from '../../app/server/src/p1-006-ticket-state-actions.mjs';
 import type {LocalDateTime} from '../../contracts/time_contracts.js';
 
 // Review R4/R5. All provider calls below terminate in this file's synthetic SDK.
@@ -59,7 +62,7 @@ async function transition(f:T11Fixture,subject:Subject,restoring=false){
 }
 
 async function latest(f:T11Fixture,subject:Subject){
- const row=(await f.pool.query<Closure>(`SELECT id::text,notification_message_id::text,restoration_notification_message_id::text,restoration_notification_processed_at::text FROM pilot_ticket.closure_record WHERE ${subject.kind==='TICKET'?'ticket_id':'intake_id'}=$1::uuid ORDER BY (restored_at IS NULL) DESC,closed_at DESC,id DESC LIMIT 1`,[subject.id])).rows[0];assert.ok(row);return row;
+ const row=(await f.pool.query<Closure>(`SELECT id::text,notification_message_id::text,restoration_notification_message_id::text,restoration_notification_processed_at::text FROM pilot_ticket.closure_record WHERE ${subject.kind==='TICKET'?'ticket_id':'intake_id'}=$1::uuid ORDER BY (restored_at IS NULL) DESC,ended_at DESC,id DESC LIMIT 1`,[subject.id])).rows[0];assert.ok(row);return row;
 }
 async function closure(f:T11Fixture,id:string){
  const row=(await f.pool.query<Closure>('SELECT id::text,notification_message_id::text,restoration_notification_message_id::text,restoration_notification_processed_at::text FROM pilot_ticket.closure_record WHERE id=$1::uuid',[id])).rows[0];assert.ok(row);return row;
@@ -100,6 +103,40 @@ test('Card 27C-A review R4 real Bot sender qualifies closure and restoration tex
   assert.deepEqual(h.payloads.map(wireText),[CLOSE_TEXT,RESTORE_TEXT]);assert.equal(h.qualifications,2);
   assert.equal(await h.worker.deliver({deliveryId:notice.deliveryId}),null);assert.equal(await h.worker.deliver({deliveryId:restoredDelivery}),null);assert.equal(h.payloads.length,2);
  });
+},fixtureOptions));
+
+// Card 32D-L / ADR-0058 supplement: the persisted binding of each closure-side notice carries its own type; restoration no longer
+// borrows TICKET_REOPENED, and the dismissal notice is never TICKET_CANCELLED.
+test('Card 32D-L dismissal and restoration notices bind TICKET_DISMISSED and TICKET_RESTORED; reopening keeps TICKET_REOPENED',{timeout:300000},async()=>withT24Fixture(async f=>{
+ const notice=await preparedNotice(f,'TICKET'),h=senderHarness(f);
+ const sent=await h.worker.deliver({deliveryId:notice.deliveryId});assert.ok(sent&&'status'in sent);assert.equal(sent.status,'SENT');
+ await transition(f,notice.subject,true);const restored=await closure(f,notice.record.id);await delivery(f,restored.restoration_notification_message_id);
+ const ids=(await f.pool.query<{closure:string;restoration:string}>('SELECT closure_ticket_event_id::text AS closure,restoration_event_id::text AS restoration FROM pilot_ticket.closure_record WHERE id=$1::uuid',[notice.record.id])).rows[0];
+ assert.ok(ids?.closure&&ids.restoration);
+ const bindings=(await f.pool.query<{ticket_event_id:string;notification_type:string;message_id:string}>('SELECT ticket_event_id::text,notification_type,message_id::text FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid ORDER BY created_at,id',[notice.subject.id])).rows;
+ const typeOf=(eventId:string)=>bindings.filter(row=>row.ticket_event_id===eventId).map(row=>row.notification_type);
+ assert.deepEqual(typeOf(ids.closure),['TICKET_DISMISSED'],'the dismissal notice');
+ assert.deepEqual(typeOf(ids.restoration),['TICKET_RESTORED'],'the restoration notice has its own type');
+ assert.deepEqual(bindings.filter(row=>row.message_id===restored.restoration_notification_message_id).map(row=>row.notification_type),['TICKET_RESTORED']);
+ assert.equal(bindings.some(row=>['TICKET_CANCELLED','TICKET_REOPENED'].includes(row.notification_type)),false,JSON.stringify(bindings));
+ // Reopening a completed Ticket and the reminder before automatic completion keep their own policy types.
+ const policy=(event_type:string,new_status:string)=>ticketNotificationP2016({event_type,new_status},{additionalEventTypes:[event_type]})?.notification_type;
+ assert.equal(policy('ticket.reopened','REOPENED'),'TICKET_REOPENED');assert.equal(policy('ticket.restored','QUEUED'),'TICKET_RESTORED');
+ assert.equal(policy('ticket.dismissed','DISMISSED'),'TICKET_DISMISSED');assert.equal(policy('ticket.auto_complete_reminder','RESOLVED'),'TICKET_RESOLVED');
+ assert.equal(ticketNotificationP2016({event_type:'ticket.auto_close_reminder',new_status:'RESOLVED'}),null,'the old reminder event is not a ticket notification');
+},fixtureOptions));
+
+test('Card 32D-L a reopened completed Ticket persists a TICKET_REOPENED binding through the current notification projector',{timeout:300000},async()=>withT24Fixture(async f=>{
+ const subject=await seedSubject(f,'TICKET');
+ const reopened=(await f.pool.query<{status:string;version:number}>("UPDATE pilot_ticket.ticket SET status='REOPENED',version=version+1 WHERE id=$1::uuid RETURNING *",[subject.id])).rows[0];assert.ok(reopened);
+ // Same synthetic writer as the closure cases: the reopen fact of a completed Ticket, then the real projector and binding table.
+ await appendTicketEvent({transaction:f.pool,ticket:reopened as never,eventType:'ticket.reopened',oldStatus:'COMPLETED',actor:{type:'SYSTEM',id:null},traceId:'c32dl-reopened'});
+ const eventId=String((await f.pool.query<{id:string}>("SELECT event_id::text AS id FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.reopened'",[subject.id])).rows[0]?.id);
+ const projector=createP2016TicketNotificationProjector({enabled:true,mvpPolicy:true,reporterAccess:f.runtime.reporterAccess,additionalEventTypes:['ticket.reopened']});
+ const result=await transactionP2016(f.pool,transaction=>projector.project({transaction,ticket:{id:subject.id},event:{event_id:eventId}}));
+ assert.equal((result as {created?:boolean}).created,true,JSON.stringify(result));
+ const bindings=(await f.pool.query<{notification_type:string}>('SELECT notification_type FROM communication.ticket_notification_binding WHERE ticket_id=$1::uuid AND ticket_event_id=$2::uuid',[subject.id,eventId])).rows;
+ assert.deepEqual(bindings.map(row=>row.notification_type),['TICKET_REOPENED'],'reopening keeps its own type, never TICKET_RESTORED');
 },fixtureOptions));
 
 test('Card 27C-A review R4 closure qualification denial and changed source binding never reach the synthetic SDK',{timeout:300000},async t=>withT24Fixture(async f=>{

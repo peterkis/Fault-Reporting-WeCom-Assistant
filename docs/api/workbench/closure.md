@@ -56,11 +56,11 @@ UNKNOWN 使用原 UUID 查询同用途回执，不生成新 UUID 盲重试；等
 
 ## 投影和通知
 
-DISMISSED closure 必须有关闭记录；缺失是数据错误，不回退旧事件、自由文本或 created_at。保留原 kind/source/reason_code/reason_label/reason_note/closed_by_display_name/closed_at/duplicate_of/can_restore，增加 secondary_reason:{code,label}|null。COMPLETED 保留原完工/重开规则。
+DISMISSED closure 必须有关闭记录；缺失是数据错误，不回退旧事件、自由文本或 created_at。保留原 kind/source/reason_code/reason_label/reason_note/ended_by_display_name/ended_at/duplicate_of/can_restore，增加 secondary_reason:{code,label}|null。COMPLETED 保留原完工/重开规则。
 
 通知使用服务端固定模板与逐原因矩阵；内部 note 不参与模板。Ticket 关闭同事务投影，系统 Intake 关闭由当前 runtime 通知批次消费，不增加定时器。Web / 手工代录沿原 app-only 短路；旧 P1 取消 reporter/team 默认均关闭。
 
-恢复通知须有对应关闭通知的 SENT + ACKNOWLEDGED 与 Attempt 证据；只进入 outbox 不算已通知。尚未尝试的关闭通知按原取消审计终止；SENDING / UNKNOWN 保留，等既有投递/人工核对完成后由当前批次处理，不改成未发送、不盲重发。
+关闭通知绑定类型为 `TICKET_DISMISSED`，恢复通知为 `TICKET_RESTORED`（重开另用 `TICKET_REOPENED`，ADR-0058 补充）。恢复通知须有对应关闭通知的 SENT + ACKNOWLEDGED 与 Attempt 证据；只进入 outbox 不算已通知。尚未尝试的关闭通知按原取消审计终止；SENDING / UNKNOWN 保留，等既有投递/人工核对完成后由当前批次处理，不改成未发送、不盲重发。
 
 恢复通知投影与发送前均检查最新关闭版本及当前开放状态；后续再次关闭，或 Intake 对应的权威 Ticket 已结束时，旧恢复通知停止。Bot 文本通路只接受与关闭记录、原报修人和固定模板绑定的通知，沿现有成员资格，资格等待后重新校验绑定；普通文本不能使用此通路。
 

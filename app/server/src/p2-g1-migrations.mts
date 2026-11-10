@@ -5,7 +5,7 @@ import { applyPilotTicketCoreMigration } from './p1-005-pilot-ticket-core.mjs';
 import { applyTicketStateActionMigration } from './p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration } from './p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration } from './p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from './p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration } from './p1-010-ticket-auto-completion.mjs';
 import { applyPilotOperationsMigration } from './p1-011-pilot-operations-baseline.mjs';
 import { applyConversationContractsMigration } from './p2-001-conversation-contracts.mjs';
 import { applyTimelineProjectionMigration } from './p2-002-timeline-projector.mjs';

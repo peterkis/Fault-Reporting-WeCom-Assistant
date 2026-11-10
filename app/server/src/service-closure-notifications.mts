@@ -88,6 +88,6 @@ export async function projectServiceClosureNotification({transaction:tx,recordId
  const deliveryId=message.delivery_ids[0];if(message.outbox_id===null||!deliveryId)failP2016('NOTIFICATION_FAILED',503);
  await tx.query(`UPDATE pilot_ticket.closure_record SET ${messageColumn}=$2::uuid,${processedColumn}=platform.local_now() WHERE id=$1::uuid`,[record.id,message.message_id]);
  if(record.ticket_id)await tx.query(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
-  VALUES($1::uuid,$2::uuid,$3,$4,'PERSON','service-closure/1',$5::uuid,$6::uuid,$7::uuid)`,[restoring?record.restoration_event_id:record.closure_ticket_event_id,record.ticket_id,restoring?'TICKET_REOPENED':'TICKET_CANCELLED',textHashP2016(JSON.stringify(['WECOM_AIBOT',source.source_bot_id,source.reporter_wecom_userid])),message.message_id,message.outbox_id,deliveryId]);
+  VALUES($1::uuid,$2::uuid,$3,$4,'PERSON','service-closure/1',$5::uuid,$6::uuid,$7::uuid)`,[restoring?record.restoration_event_id:record.closure_ticket_event_id,record.ticket_id,restoring?'TICKET_RESTORED':'TICKET_DISMISSED',textHashP2016(JSON.stringify(['WECOM_AIBOT',source.source_bot_id,source.reporter_wecom_userid])),message.message_id,message.outbox_id,deliveryId]);
  return {created:true,message_id:message.message_id,outbox_id:message.outbox_id,delivery_id:deliveryId};
 }

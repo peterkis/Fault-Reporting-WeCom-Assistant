@@ -1538,5 +1538,13 @@
       "issue": 145,
       "reason": "LEGACY_GREEN_UI_PREVIEW_RETIRED"
     }
+  ],
+  "renamed_sources": [
+    {
+      "source": "src/p1-010-ticket-closure.mts",
+      "target": "app/server/src/p1-010-ticket-closure.mts",
+      "renamed_to": "app/server/src/p1-010-ticket-auto-completion.mts",
+      "reason": "ADR_0058_AUTO_COMPLETION_VOCABULARY"
+    }
   ]
 }

@@ -55,7 +55,7 @@ test('cold startup paints before JavaScript and overlaps session validation with
       assert.equal(sessionRequests,1,'session loading stays deduplicated across the UI boundary');
       sessionGate.release();
       await observed(()=>boardColumns.size===3);
-      assert.deepEqual([...boardColumns].sort(),['active','closed','pending'],'all three independent reads start without waiting for another column');
+      assert.deepEqual([...boardColumns].sort(),['active','handled','pending'],'all three independent reads start without waiting for another column');
       await browser.waitFor('document.querySelectorAll(".board .skeleton").length===9');
       await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
       assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".board .skeleton")).animationName'),'none');

@@ -2,7 +2,7 @@ import { createFirstAcknowledgementService } from '../../app/server/src/p1-008-f
 import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
 import { createServiceIntakeProcessor } from '../../app/server/src/p1-004-service-intake.mjs';
 import { createPilotTicketCore } from '../../app/server/src/p1-005-pilot-ticket-core.mjs';
-import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService, createTicketLifecycleProcessor } from '../../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { createNotificationDeliveryWorker } from '../../app/server/src/p1-007-notification-outbox.mjs';
 import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 

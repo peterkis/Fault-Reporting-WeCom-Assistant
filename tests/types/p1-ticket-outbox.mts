@@ -34,7 +34,7 @@ import {
   type NotificationTarget,
 } from '../../app/server/src/p1-007-notification-outbox.mjs';
 import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
-import { createTicketClosureService } from '../../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../../app/server/src/p1-010-ticket-auto-completion.mjs';
 
 declare const transaction: PostgresPoolClient;
 declare const restrictedTransaction: PostgresTransaction;

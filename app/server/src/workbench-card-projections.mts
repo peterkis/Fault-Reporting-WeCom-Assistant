@@ -11,27 +11,27 @@ import {CLOSURE_REASONS,CLOSURE_SECONDARY_REASONS} from './service-closure-recor
 /** Existing terminal-event evidence, selected only through the canonical READ relation. */
 export interface ClosureEvidence {
   source:'MANUAL'|'SYSTEM'|null; reason_code:string|null; reason_note:string|null;
-  closed_by_display_name:string|null; closed_at:string|null;
+  ended_by_display_name:string|null; ended_at:string|null;
   resolver_team_id?:string; assignee_id?:string|null;
   record_id?:string;secondary_reason_code?:string|null;duplicate_of_ref?:string|null;
 }
 export function projectWorkbenchClosure(status:string,evidence:ClosureEvidence|null,canRestore=false):WorkbenchCard['closure'] {
   const completed=['RESOLVED','COMPLETED'].includes(status),dismissed=status==='DISMISSED';
   if(!completed&&!dismissed)return null;
-  if(dismissed&&(!evidence?.record_id||!evidence.closed_at||!evidence.reason_code||!Object.hasOwn(CLOSURE_REASONS,evidence.reason_code)))failP2016('ACTION_FAILED',503);
+  if(dismissed&&(!evidence?.record_id||!evidence.ended_at||!evidence.reason_code||!Object.hasOwn(CLOSURE_REASONS,evidence.reason_code)))failP2016('ACTION_FAILED',503);
   const source=evidence?.source??null,reason=evidence?.reason_code;
   // Legacy commands accept nonempty whitespace. It carries no displayable
   // reason/name; retain the original Event while keeping the read DTO valid.
   const note=evidence?.reason_note?.trim()?evidence.reason_note:null;
-  const actor=evidence?.closed_by_display_name?.trim()?evidence.closed_by_display_name:null;
+  const actor=evidence?.ended_by_display_name?.trim()?evidence.ended_by_display_name:null;
   const labels:Readonly<Record<string,string>>=completed?CLOSURE_SECONDARY_REASONS:CLOSURE_REASONS;
   const reasonCode=typeof reason==='string'&&Object.hasOwn(labels,reason)?reason:null;
   const secondary=evidence?.secondary_reason_code;
   return {kind:completed?'COMPLETED':'DISMISSED',source,reason_code:reasonCode,
     reason_label:reasonCode?labels[reasonCode]??null:completed?'已完成':'已关闭',
     secondary_reason:reasonCode==='NOT_IT_SCOPE'&&typeof secondary==='string'&&Object.hasOwn(CLOSURE_SECONDARY_REASONS,secondary)?{code:secondary,label:CLOSURE_SECONDARY_REASONS[secondary as keyof typeof CLOSURE_SECONDARY_REASONS]}:null,
-    reason_note:note,closed_by_display_name:source==='MANUAL'?actor:null,
-    closed_at:evidence?.closed_at==null?null:localP2016(evidence.closed_at),duplicate_of:evidence?.duplicate_of_ref?{display_no:evidence.duplicate_of_ref}:null,
+    reason_note:note,ended_by_display_name:source==='MANUAL'?actor:null,
+    ended_at:evidence?.ended_at==null?null:localP2016(evidence.ended_at),duplicate_of:evidence?.duplicate_of_ref?{display_no:evidence.duplicate_of_ref}:null,
     can_restore:dismissed?canRestore:['RESOLVED','COMPLETED'].includes(status)&&canRestore};
 }
 export function workbenchCanRestore(kind:string,status:string,evidence:ClosureEvidence|null,principal?:WorkbenchPrincipal):boolean {

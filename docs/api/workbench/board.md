@@ -11,7 +11,7 @@ T42 [合法动作与原表单路由](board-legal-actions-design.md)已完成本�
 | METHOD + PATH | 请求 | 200 响应 |
 | --- | --- | --- |
 | `GET /api/lifecycle/bootstrap` | 无 query | 内部 principal_id,display_name,roles 等，见 [工单](tickets.md) |
-| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|closed`；range 默认 recent：`recent\|all\|custom`；custom 必须同时提供 `closed_from`、`closed_to`（`YYYY-MM-DD`，含起止两天）；cursor?；limit 默认50/最大100；仅 `workbenchFollowEnabled=true` 接纳 scope=`team\|related`、默认team，见下文当前验证状态 | BoardPage |
+| `GET /api/workbench/board` | column 默认 pending：`pending\|active\|handled`；range 默认 recent：`recent\|all\|custom`；custom 必须同时提供 `handled_from`、`handled_to`（`YYYY-MM-DD`，含起止两天）；cursor?；limit 默认50/最大100；仅 `workbenchFollowEnabled=true` 接纳 scope=`team\|related`、默认team，见下文当前验证状态 | BoardPage |
 | `GET /api/workbench/items/{kind}/{id}` | kind=`ticket\|review\|intake`，id UUID；cursor?；limit 默认50/最大100 | WorkbenchDetail |
 
 仅允许表内query，重复参数也拒绝。board列表cursor绑定principal、当前授权范围、column/range/时间窗口；责任查询能力开启时另绑定team/related，切换范围或能力须重置。关注开关false时所有显式scope均拒绝；日期范围与关注开关独立。detail cursor绑定kind/id/at/record_id，访问仍每次授权。权限过滤先于LIMIT；不能用intake卡片旁路读到不可见工单。
@@ -24,7 +24,7 @@ source_label提供统一来源显示，source_group提供管理员登记群名�
 
 | 对象 | 字段 |
 | --- | --- |
-| BoardPage | items:WorkbenchCard[]、next_cursor:string或null、column、range:{mode,from,until,timezone:'Asia/Shanghai'}；closed 列必有 group_counts:{completed:number,dismissed:number}，其它列不带 |
+| BoardPage | items:WorkbenchCard[]、next_cursor:string或null、column、range:{mode,from,until,timezone:'Asia/Shanghai'}；handled 列必有 group_counts:{completed:number,dismissed:number}，其它列不带 |
 | WorkbenchCard | kind,id,intake_id,number,title,status,column,priority,source,source_label,source_group,location,reporter_name,reporter_department,assignee_name,review_reason,created_at,updated_at,completed_at、必填 closure:WorkbenchClosure或null |
 | WorkbenchDetail | item:WorkbenchCard、description、reported_at?:string或null、records:WorkbenchRecord[]、next_cursor、responsibility:{ticket_assignee_name,conversation_assignees:string[]} |
 | WorkbenchRecord | id,at,type,text,audience:`REPORT\|INTERNAL\|EXTERNAL`,actor,old_status,new_status |
@@ -33,9 +33,9 @@ source_label提供统一来源显示，source_group提供管理员登记群名�
 
 ### 结束方式与分组计数（卡 27A）
 
-沿 [ADR-0055](../../../adr/0055_workbench_closure_kind_projection.md)，第一、二列 closure=null；第三列包含 kind、source、reason_code、reason_label、reason_note、closed_by_display_name、closed_at、duplicate_of、can_restore。RESOLVED/COMPLETED 为 COMPLETED，DISMISSED 为 DISMISSED（Ticket 与 Intake 共用，[ADR-0058](../../../adr/0058_completion_and_dismissal_language.md)）。除 kind/can_restore 外均可按合同为 null；时间采用相同北京时间 LocalDateTime。
+沿 [ADR-0055](../../../adr/0055_workbench_closure_kind_projection.md)，第一、二列 closure=null；第三列包含 kind、source、reason_code、reason_label、reason_note、ended_by_display_name、ended_at、duplicate_of、can_restore。RESOLVED/COMPLETED 为 COMPLETED，DISMISSED 为 DISMISSED（Ticket 与 Intake 共用，[ADR-0058](../../../adr/0058_completion_and_dismissal_language.md)）。除 kind/can_restore 外均可按合同为 null；时间采用相同北京时间 LocalDateTime。
 
-原因只读已有事实；纯空白内部说明或人员名投影为 null，原记录不改。reason_note 仅在当前账号原可读时给出，Intake 的任意自由文本不外扩。人工 Intake 用匹配 Review.resolved_at；自动后续分类仅记录旧输入时间、无法证明实际关闭时刻时 closed_at=null，不能用 updated_at 推断；严格证明初始创建即 IGNORED 时用该创建事实的 created_at。duplicate_of 当前无原单事实为 null；DISMISSED 无恢复，can_restore=false，完成 Ticket 的原 reopen 权限独立判断。
+原因只读已有事实；纯空白内部说明或人员名投影为 null，原记录不改。reason_note 仅在当前账号原可读时给出，Intake 的任意自由文本不外扩。人工 Intake 用匹配 Review.resolved_at；自动后续分类仅记录旧输入时间、无法证明实际关闭时刻时 ended_at=null，不能用 updated_at 推断；严格证明初始创建即 DISMISSED（原 IGNORED）时用该创建事实的 created_at。duplicate_of 当前无原单事实为 null；DISMISSED 无恢复，can_restore=false，完成 Ticket 的原 reopen 权限独立判断。
 
 group_counts 使用当前获权完整匹配集合，分页前计算；不能以 items.length 替代。最终同一 SQL 同时保留原身份/角色/会话/对象 READ 终检，并复核当前有序页、排序键及 limit+1 后续页标志；等待期间新增/移出匹配事项或排序边界变化时返回 `409 P2_016_VERSION_CONFLICT`，不返回混合快照，调用方刷新重读。默认没有 include_* / closure_groups 兼容参数；当前严格解析与后端同批更新。卡27B 实现前端分组，移除 cancelled 参数值；旧值请求返回400。
 

@@ -55,3 +55,28 @@ SS-010 受限写入运行时启动前，会把 Intake 目录与冻结的 033 / 0
 - 冻结快照不变，迁移器自身的 033 / 034 阶段核验仍严格比对。
 - 新增 `contracts/yxx_self_service_catalog_successors.json`：在隔离库上实测得到，仅含 071、071+072 之后 `service_intake_event_type_check` 与 `service_intake_status_check` 的准确定义。
 - 运行时只接受与登记表一致的组合：未登记后继、仅 071、071+072；每个后继都按自身 SQL 核对校验和，072 不能脱离 071。比对时只替换这两条约束，其余任何差异（其它约束、索引、列、表、时区列）照旧拒绝。
+
+## 补充：通知类型与自动完成
+
+卡 32D-L 清理 072 之后仍残留在代码标识里的「完成 / 关闭」旧说法。面向用户的通知文案不变；开发阶段不做数据映射，也不保留旧值兼容。
+
+| 旧标识 | 新标识 | 范围 |
+| --- | --- | --- |
+| 通知类型 `TICKET_CANCELLED` | `TICKET_DISMISSED` | 关闭通知的绑定类型 |
+| 恢复借用的 `TICKET_REOPENED` | `TICKET_RESTORED` | 恢复通知自有类型；重开仍是 `TICKET_REOPENED` |
+| 事件 `ticket.auto_close_reminder`、模板 `TICKET_AUTO_CLOSE_REMINDER` | `ticket.auto_complete_reminder`、`TICKET_AUTO_COMPLETE_REMINDER` | 自动完成前的提醒 |
+| 列 `auto_close_at` / `auto_close_epoch_ms` / `auto_close_reminder_at` / `auto_close_reminder_epoch_ms`，索引 `ticket_auto_close_idx` / `pilot_ticket_auto_close_epoch_idx` | `auto_complete_*`，索引 `ticket_auto_complete_idx` / `pilot_ticket_auto_complete_epoch_idx` | 自动完成期限；ARCH-005 本地 / 纪元同步触发器按新列名重建 |
+| 服务 `runAutoClose` / `runAutoCloseReminders`、源文件 `p1-010-ticket-closure.mts` | `runAutoComplete` / `runAutoCompleteReminders`、`p1-010-ticket-auto-completion.mts` | 自动完成服务；`tools/ts-migration/backend-layout.json` 以唯一的 `renamed_sources` 记录保留其历史身份 |
+| 看板列键 `closed`，参数 `closed_from` / `closed_to` | `handled`、`handled_from` / `handled_to` | 第三列「已处理」 |
+| 结束记录 `closed_at` / `closed_by_display_name`，`closure_record.closed_at` / `closed_by` | `ended_at` / `ended_by_display_name`，`closure_record.ended_at` / `ended_by` | 完成与关闭共用的结束时间与操作人 |
+| H5 结果 `closed`、文案键 `eventClosed` / `eventClosedDefault` | `dismissed`、`eventDismissed` / `eventDismissedDefault` | H5 进度 |
+| 界面标记 `restore-closed` / `confirm-restore-closed`、`open-closed-date-filter`、`ds-ticket-closed`，H5 `status-icon-closed` / `timeline-icon-closed` / `data-h5-status-icon="closed"`，看板 `.board-column.closed` / `data-stage=closed` 等 | `restore-dismissed` / `confirm-restore-dismissed`、`open-handled-date-filter`、`ds-ticket-dismissed-at`，`status-icon-dismissed` / `timeline-icon-dismissed` / `data-h5-status-icon="dismissed"`，`.board-column.handled` / `data-stage=handled` 等 | 测试选择器随业务词汇同次改名，见 [验证规则](../docs/agents/validation.md) |
+
+迁移 073（`notification-vocabulary-migrate`）沿 072 的做法：
+
+- 前置检查：库内存在 `ticket.auto_close_reminder` 事件、`TICKET_CANCELLED` 绑定、恢复记录上的 `TICKET_REOPENED` 绑定（`service-closure/1` 且事件为恢复事件），或 `ticket.auto_close_reminder` / `TICKET_AUTO_CLOSE_REMINDER` 发件记录时直接失败，按 ADR-0056 U7 清理开发 / 测试库后从夹具重建。
+- 正向：重写事件类型与通知绑定约束，改列名、索引名并重建两条同步触发器，改结束记录两列；原定义、原名称与原触发器定义存入 `pilot_ticket.notification_vocabulary_baseline` 并登记 `platform.schema_migration`。语句体可重复执行：之后重跑的历史迁移若加回空的旧期限列会被删除，有值则失败。
+- 回退：要求库中不存在新值数据，按基线恢复约束、列名、索引名与触发器，删除登记与基线表。
+- 人工工作台与 P2016 角色启动前要求 073 已应用；073 不改 Intake 目录，SS-010 受限运行时的目录核验不变。
+
+不改：公共故障 `CLOSED` / `closed_at`、渠道腿 `closed_at`、Electron 窗口 `closed` 事件；历史证据文件名与测试文件名（如 `web01-closed-range`）保留原名。

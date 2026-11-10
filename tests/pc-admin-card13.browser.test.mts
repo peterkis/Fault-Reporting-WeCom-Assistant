@@ -142,7 +142,7 @@ test('Card 13 read-only drawer has no primary workflow action and tab navigation
     const reader=await t11Http(f);let activeId='',closedId='';
     for(const candidate of f.tickets){const facts=await reader.detail(candidate.ticket.id);if(facts.status==='IN_PROGRESS'&&!activeId)activeId=candidate.ticket.id;if(facts.status==='COMPLETED'&&!closedId)closedId=candidate.ticket.id;if(activeId&&closedId)break;}
     assert.ok(activeId&&closedId);
-    for(const target of [{stage:'active',id:activeId},{stage:'closed',id:closedId}]){
+    for(const target of [{stage:'active',id:activeId},{stage:'handled',id:closedId}]){
       await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+target.id});
       await browser.waitFor("Boolean(document.querySelector('.ds-stage-pill [data-stage-glyph="+target.stage+"]'))");
       assert.equal(await browser.evaluate("(()=>{const glyph=document.querySelector('.ds-stage-pill [data-stage-glyph="+target.stage+"]');return glyph.getBoundingClientRect().width===13&&glyph.getBoundingClientRect().height===13&&glyph.getAttribute('viewBox')==='0 0 16 16'&&glyph.querySelector('path')!==null&&!document.querySelector('.ds-stage-pill>.ds-status-dot')?.checkVisibility();})()"),true,'drawer stage geometry '+target.stage);

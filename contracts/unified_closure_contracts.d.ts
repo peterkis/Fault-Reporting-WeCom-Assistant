@@ -12,7 +12,7 @@ export type ClosureReceipt={state:'UNKNOWN'}|{state:'FAILED';error:{code:string;
 export interface ClosureHistoryEntry {
  id:string;before_version:number;reason_code:ClosureReasonCode;reason_label:string;
  secondary_reason:{code:ClosureSecondaryReasonCode;label:string}|null;note:string|null;
- duplicate_of:{display_no:string}|null;source:'MANUAL'|'SYSTEM';closed_at:string;closed_by_display_name:string|null;
+ duplicate_of:{display_no:string}|null;source:'MANUAL'|'SYSTEM';ended_at:string;ended_by_display_name:string|null;
  notification_state:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at:string|null;restored_by_display_name:string|null;
 }
 export interface ClosureHistoryPage {
