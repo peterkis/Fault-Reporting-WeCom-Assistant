@@ -87,6 +87,12 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    // (data-toast-avoid="top") and scrolls, so the navigation, copy, follow, more and close controls and the composer stay
    // reachable. The scrolling body between them has no free space at this height and is not part of this check.
    const {'下一步主操作':_body,...bars}=detailControls;await measure(scenario+'-short',1440,{...bars,...extra},560);
+   // The overflowing stack stays scrollable: every notice, the oldest included, can be scrolled into view and closed.
+   const reachable=await b.evaluate(`[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>{const close=node.querySelector('.workbench-toast-close');close.scrollIntoView({block:'nearest'});
+    const r=close.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return Boolean(hit&&(hit===close||close.contains(hit)));})`) as boolean[];
+   const overflowing=await b.evaluate("(()=>{const v=document.querySelector('.workbench-toast-viewport');return v.scrollHeight>v.clientHeight;})()");
+   assert.equal(overflowing,true,scenario+' short window: the three notices overflow their limit');
+   assert.deepEqual(reachable,reachable.map(()=>true),scenario+' short window: every close button can be scrolled into view and hit');
   }
   // Closing dialog: the notices move into the dialog and dock above its own action bar. The follow button behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.

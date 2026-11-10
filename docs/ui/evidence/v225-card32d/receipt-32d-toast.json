@@ -540,25 +540,25 @@
       "file": "toast-drawer-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "8e600108b7bf95cd8112c05d8bfaadf1f7ec6307671916b017e416df8271ef1e"
+      "sha256": "102c5f816fe7f61f10b7191d56b0f6b87e6dca182b475e1649169febdd71422c"
     },
     {
       "file": "toast-drawer-900.png",
       "width": 900,
       "height": 820,
-      "sha256": "e317ecead8ff27f5991769aa5e06e66dc4f97935d41043f76e25837841c8d166"
+      "sha256": "d9020e9049ad866d502a9bd4a05ed6a761b4f1dcc3a96f65459d18a249eaaf78"
     },
     {
       "file": "toast-fullpage-1280.png",
       "width": 1280,
       "height": 1000,
-      "sha256": "57fac1d7a521ed06d29518984c7bfc4b072e4c9d5deabf1a7b912f48e51904a6"
+      "sha256": "949b43d9e85c9d1f0d915b0f4c46e81cc4d5c7c2ac7380162b8374a446c156a5"
     },
     {
       "file": "toast-dialog-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "b9222ce3f44503418d2b76070d7db267f15dca157dd9ed6744a5f055e81f2598"
+      "sha256": "912f170488f6c93cee898ec362c476a379078bc4ac2adf4f3476d97c357a0ca5"
     }
   ]
 }
