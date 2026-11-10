@@ -51,9 +51,14 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   const open=async(path:string)=>{await size(1440);await b.command('Page.navigate',{url:f.origin+path});await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
   // Success: a real follow toggle. Error and unknown: a note save answered with a conflict keeps the text and reports the conflict
   // (error), and the draft guard reports that the original operation must be checked (unknown); both stay until closed.
-  const success=async()=>{const before=await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')");
+  // The follow toggle re-reads its state after each command and after a resize; press it only once it is enabled again.
+  const success=async()=>{await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false&&!document.querySelector('[data-action=toggle-item-follow]').closest('[aria-busy=true]')");
+   const before=await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')");
    await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");
-   await b.waitFor(`document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')!==${JSON.stringify(before)}&&${kindCount('success')}>=1`);};
+   try{await b.waitFor(`document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')!==${JSON.stringify(before)}&&${kindCount('success')}>=1`);}
+   catch(error){const state=await b.evaluate(`(()=>{const f=document.querySelector('[data-action=toggle-item-follow]');return {before:${JSON.stringify(before)},pressed:f?.getAttribute('aria-pressed'),disabled:f?.disabled,
+    size:[innerWidth,innerHeight],toasts:[...document.querySelectorAll('.workbench-toast')].map(n=>n.className+'|'+n.dataset.visible+'|'+n.textContent.slice(0,40))};})()`);
+    throw Error('CARD32D_SUCCESS_TOAST_TIMEOUT '+JSON.stringify(state),{cause:error});}};
   const note=async(mode:'conflict',text:string)=>{
    await b.evaluate(`globalThis.__toastMode['/internal-notes']=${JSON.stringify(mode)}`);
    const area='.ds-detail-footer textarea';await clickWorkbenchControl(b,area);await b.command('Input.insertText',{text});
