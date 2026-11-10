@@ -56,16 +56,21 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=pending] .ds-summary-value').textContent"),String(pages[0].items.length));
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value').textContent"),String(mine.length));
       assert.ok(mine.length>0);
-      assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-summary-filter]')].every(n=>n.title.includes('基于已加载的 '+"+loaded.length+"+' 项'))"),true);
-      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=overdue]').title.includes('处理中暂未计入')"),true);
+      // 「全部」 states the loaded count directly; every other summary card says the count is based on the loaded items.
+      assert.equal(await browser.evaluate("document.querySelector('.ds-summary-card[data-summary-filter=all]').title.includes('已加载 '+"+loaded.length+"+' 项')"),true);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ds-summary-card[data-summary-filter]:not([data-summary-filter=all])')].every(n=>n.title.includes('基于已加载的 '+"+loaded.length+"+' 项'))"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=overdue]').title.includes('计入所有显示红色超时热度的事项')"),true);
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=pending]').getAttribute('aria-label')"),'待受理 '+pages[0].items.length);
       assert.equal(await browser.evaluate("document.querySelectorAll('[data-board-group=待接单] .ticket-card').length"),1,'three-or-more intakes cannot starve the nonempty Ticket group');
-      await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
-      await browser.waitFor("document.querySelector('[data-summary-filter=pending]').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('.board-column.active .ticket-card,.board-column.closed .ticket-card').length===0");
-      await browser.waitFor("getComputedStyle(document.querySelector('[data-summary-filter=pending]')).borderColor==='rgb(37, 99, 201)'");
-      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-summary-filter=pending]')).borderColor"),'rgb(37, 99, 201)','selected border survives the pointer hover after a real click');
+      // 「待受理」 is the column count now, not a summary filter. A local summary filter (已超时) is selected by a real click, marked
+      // with its underline, keeps the server query criteria, and restores every loaded card when cleared.
+      await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');
+      await browser.waitFor("document.querySelector('[data-summary-filter=overdue]').getAttribute('aria-pressed')==='true'");
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-summary-filter=overdue]'),'::after').content!=='none'"),true,'the selected summary filter keeps its underline after a real click');
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length<9");
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].filter(n=>n.checkVisibility()).every(n=>Boolean(n.querySelector('.ds-ticket-heat[data-tone=danger]')))"),true,'only cards with the red overdue marker stay visible');
       assert.equal(await browser.evaluate("location.search"),'','local summary does not replace server query criteria');
-      await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
+      await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');
       await browser.waitFor("document.querySelectorAll('.ticket-card').length===9");
       await clickWorkbenchControl(browser,'[data-board-group=待判断] .ds-board-group-trigger');
       await browser.waitFor("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').getAttribute('aria-expanded')==='false'");
@@ -80,7 +85,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       await clickWorkbenchControl(browser,'.board-column.closed .ds-column-sort');
       await browser.waitFor("Boolean(document.querySelector('[role=menu][aria-label=已处理排序方式]'))");
       await clickWorkbenchControl(browser,'[role=menu] [data-key=newest]');
-      await browser.waitFor("document.querySelector('.board-column.closed .ds-column-sort').textContent.includes('最新到达')");
+      await browser.waitFor("document.querySelector('.board-column.closed .ds-column-sort').textContent.includes('最新完成')");
       const expected=pages[2].items.toSorted((a,b)=>a.completed_at===null?1:b.completed_at===null?-1:b.completed_at.localeCompare(a.completed_at)).slice(0,3).map(item=>item.id);
       assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.closed .ticket-card')].map(n=>n.dataset.itemId)"),expected);
       await clickWorkbenchControl(browser,'[data-summary-filter=mine]');
@@ -89,7 +94,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       await clickWorkbenchControl(browser,'.view-tabs button[aria-pressed=false]');
       await browser.waitFor("Boolean(document.querySelector('.work-table'))");
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-pressed')"),'true');
-      assert.equal(await browser.evaluate("document.querySelectorAll('.work-table tbody tr').length"),mine.length);
+      assert.equal(await browser.evaluate("[...document.querySelectorAll('.work-table tbody tr.ds-work-row')].filter(n=>!n.hidden).length"),mine.length);
       assert.equal(reads.length,initialReads,'summary, sorting, grouping and view changes reuse loaded queries');
       assert.deepEqual(posts,[],'presentation controls never POST a business command');
     }catch(failure){error=failure;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
@@ -101,7 +106,8 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       await browser.waitFor("Boolean(document.querySelector('[data-action=new-report] kbd'))&&document.querySelectorAll('.ticket-card').length===9");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=new-report] kbd').textContent"),'N');
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-disabled')"),'true');
-      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value').textContent"),'—');
+      // An unavailable 「我负责」 shows no count rather than a placeholder value.
+      assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value')"),null);
       await assertWorkbenchPrimaryActions(browser);
       assert.equal(await browser.evaluate("document.querySelectorAll('[data-tone=primary]').length"),1);
       assert.equal(await browser.evaluate("document.documentElement.scrollWidth>innerWidth"),false);
@@ -143,20 +149,25 @@ for(const realtime of [false,true])test('v2.1 displayed order drives detail navi
 test('open workbench filters stay inside content bounds with reachable search and date controls',{timeout:120000},()=>withWeb01Fixture(async f=>{
   const directory=join(tmpdir(),'toolbar-filter-'+randomUUID());await mkdir(directory);const samples=[],screenshots=[],writes=[];
   const observe=request=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);let browser,error;
+  // The toolbar keeps its filters inline (类别 / 处理人 chips and date presets); its one disclosure is the 已处理 date picker,
+  // a popover aligned inside the toolbar. It must stay in bounds with its date controls reachable at every width.
   try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:900,cookies:[{...cookie,url:f.origin}]});assert.ok(browser);await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
     for(const collapsed of [false,true])for(const mode of ['board','search']){
-      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:900,deviceScaleFactor:1,mobile:false});await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'+(mode==='search'?'?search=1':'')});await browser.waitFor('Boolean(document.querySelector(".ds-toolbar-filters>summary"))');
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:900,deviceScaleFactor:1,mobile:false});await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'+(mode==='search'?'?search=1':'')});await browser.waitFor('Boolean(document.querySelector(".ds-toolbar-filters.ds-date-custom>summary"))');
       if((await browser.evaluate("document.querySelector('.app').classList.contains('sidebar-collapsed')"))!==collapsed)await clickWorkbenchControl(browser,'.topbar button[aria-label="收起侧栏"]');
-      await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
+      // The date picker ignores its summary while the board is still reading; open it once it is enabled.
+      await browser.waitFor("document.querySelector('.ds-toolbar-filters.ds-date-custom>summary')?.getAttribute('aria-disabled')!=='true'");
+      await clickWorkbenchControl(browser,'.ds-toolbar-filters.ds-date-custom>summary');
+      await browser.waitFor("document.querySelector('.ds-toolbar-filters.ds-date-custom')?.open===true");
       if(await browser.evaluate("Boolean(document.querySelector('.workbench-search .workbench-disclosure-trigger[aria-expanded=false]'))"))await clickWorkbenchControl(browser,'.workbench-search .workbench-disclosure-trigger');
       for(const width of [1920,1440,1280,1000,900,600,390]){
         await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
-        const sample=await browser.evaluate(`(()=>{const n=document.querySelector('.ds-toolbar-filter-content'),r=n.getBoundingClientRect(),t=document.querySelector('.ds-toolbar').getBoundingClientRect();return {width:${width},mode:${JSON.stringify(mode)},collapsed:${collapsed},left:r.left,right:r.right,toolbarLeft:t.left,toolbarRight:t.right,panelOverflow:n.scrollWidth>n.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>${width}+1};})()`);
-        assert.ok(sample.left>=0&&sample.right<=width+1);assert.ok(Math.abs(sample.left-sample.toolbarLeft)<=1&&sample.right<=sample.toolbarRight+1);assert.equal(sample.panelOverflow,false);assert.equal(sample.pageOverflow,false);samples.push(sample);
-        const reachable=await browser.evaluate(`(()=>{const panel=document.querySelector('.ds-toolbar-filter-content'),items=[...panel.querySelectorAll('input:not([type=hidden]):not(:disabled),button:not(:disabled),[role=spinbutton]')].filter(n=>{const r=n.getBoundingClientRect();return n.checkVisibility()&&r.width>8&&r.height>8;});return items.length>0;})()`);assert.equal(reachable,true);
-        await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),a=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility());a.at(-1)?.scrollIntoView({block:'nearest',inline:'nearest'});})()");
-        try{await browser.waitFor(`(async()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1);if(!n)return false;n.scrollIntoView({block:'nearest',inline:'nearest'});const before=n.getBoundingClientRect();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));if(!n.isConnected)return false;const r=n.getBoundingClientRect();if(['x','y','width','height'].some(key=>before[key]!==r[key]))return false;return r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()`);}catch(failure){console.log('WORKBENCH_FILTER_HIT_FAILURE '+JSON.stringify({width,mode,collapsed,geometry:await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect(),h=r?document.elementFromPoint(r.x+r.width/2,r.y+r.height/2):null;return {panel:p.getBoundingClientRect().toJSON(),scrollTop:p.scrollTop,scrollHeight:p.scrollHeight,button:r?.toJSON(),hitTag:h?.tagName,hitClass:h?.className,innerWidth,innerHeight};})()")}));throw failure;}
-        assert.equal(await browser.evaluate(`(()=>{const p=document.querySelector('.ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect();return Boolean(r&&r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)));})()`),true,'last filter/date action is visible and unobstructed at '+width);
+        const sample=await browser.evaluate(`(()=>{const n=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),r=n.getBoundingClientRect(),t=document.querySelector('.ds-toolbar').getBoundingClientRect();return {width:${width},mode:${JSON.stringify(mode)},collapsed:${collapsed},left:r.left,right:r.right,toolbarLeft:t.left,toolbarRight:t.right,panelOverflow:n.scrollWidth>n.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>${width}+1};})()`);
+        assert.ok(sample.left>=0&&sample.right<=width+1);assert.ok(sample.left>=sample.toolbarLeft-1&&sample.right<=sample.toolbarRight+1,'the date popover stays inside the toolbar '+JSON.stringify(sample));assert.equal(sample.panelOverflow,false);assert.equal(sample.pageOverflow,false);samples.push(sample);
+        const reachable=await browser.evaluate(`(()=>{const panel=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),items=[...panel.querySelectorAll('input:not([type=hidden]):not(:disabled),button:not(:disabled),[role=spinbutton]')].filter(n=>{const r=n.getBoundingClientRect();return n.checkVisibility()&&r.width>8&&r.height>8;});return items.length>0;})()`);assert.equal(reachable,true);
+        await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),a=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility());a.at(-1)?.scrollIntoView({block:'nearest',inline:'nearest'});})()");
+        try{await browser.waitFor(`(async()=>{const p=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1);if(!n)return false;n.scrollIntoView({block:'nearest',inline:'nearest'});const before=n.getBoundingClientRect();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));if(!n.isConnected)return false;const r=n.getBoundingClientRect();if(['x','y','width','height'].some(key=>before[key]!==r[key]))return false;return r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()`);}catch(failure){console.log('WORKBENCH_FILTER_HIT_FAILURE '+JSON.stringify({width,mode,collapsed,geometry:await browser.evaluate("(()=>{const p=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect(),h=r?document.elementFromPoint(r.x+r.width/2,r.y+r.height/2):null;return {panel:p.getBoundingClientRect().toJSON(),scrollTop:p.scrollTop,scrollHeight:p.scrollHeight,button:r?.toJSON(),hitTag:h?.tagName,hitClass:h?.className,innerWidth,innerHeight};})()")}));throw failure;}
+        assert.equal(await browser.evaluate(`(()=>{const p=document.querySelector('.ds-toolbar-filters.ds-date-custom .ds-toolbar-filter-content'),n=[...p.querySelectorAll('button:not(:disabled)')].filter(n=>n.checkVisibility()).at(-1),r=n?.getBoundingClientRect();return Boolean(r&&r.left>=0&&r.right<=${width}+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)));})()`),true,'last filter/date action is visible and unobstructed at '+width);
         if(!collapsed&&[1920,1440,1280,900,600,390].includes(width)){const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'filters-'+mode+'-'+width+'.png');await writeFile(file,bytes);screenshots.push({file,width,height:900,sha256:createHash('sha256').update(bytes).digest('hex')});}
       }
     }
@@ -345,6 +356,7 @@ test('a real object denial clears cached note actions even when the rejection bo
       await browser.waitFor("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))");
       await browser.evaluate("(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 denied synthetic note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
+      await browser.waitFor("document.querySelector('[data-action=save-internal-note]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
       await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('[aria-label=\"内部备注\"]')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
@@ -450,7 +462,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>card.querySelector('.ds-ticket-body')?.children.length===4&&card.querySelector('.card-meta .ds-source-label')&&!card.querySelector('.card-tags .ds-source-label'))"),true,'four rows and neutral source metadata');
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>[...card.querySelectorAll('.card-tags .ds-tag[data-tone]')].filter(tag=>tag.dataset.tone!=='neutral').length<=2)"),true,'at most two colored action tags');
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card .card-tags')].some(tags=>['待接单','处理中','已关闭'].some(label=>[...tags.querySelectorAll('.ds-tag')].some(tag=>tag.textContent===label)))"),false,'card does not repeat its column stage');
-      assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column')].every(column=>getComputedStyle(column).backgroundColor==='rgb(244, 243, 239)'&&column.querySelector('.column-heading .ds-status-dot')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')"),true,'v2.1 warm neutral columns with dot status headings');
+      assert.equal(await browser.evaluate("(()=>{const columns=[...document.querySelectorAll('.board-column')],stages=['pending','active','closed'];const surfaces=columns.map(column=>getComputedStyle(column).backgroundColor);return columns.length===3&&columns.every((column,index)=>column.classList.contains(stages[index])&&column.querySelector('.column-heading [data-stage-glyph='+stages[index]+']')&&getComputedStyle(column.querySelector('.stage-pill')).backgroundColor==='rgba(0, 0, 0, 0)')&&surfaces.every(color=>color!=='rgba(0, 0, 0, 0)')&&new Set(surfaces).size===3;})()"),true,'stage-tinted columns with stage glyph headings');
       await capture('new-board-1920.png');
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
@@ -510,10 +522,12 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await reload();await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog')");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
-      await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
-      await reload();await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
+      // The list caps each group like the board: shown item rows plus each 「显示剩余 N 项」 account for all 15 loaded items.
+      const listed="(()=>{const rows=[...document.querySelectorAll('tbody tr.ds-work-row')].filter(n=>!n.hidden).length,rest=[...document.querySelectorAll('tbody tr.ds-list-more')].filter(n=>!n.hidden).reduce((sum,n)=>sum+Number(/显示剩余 (\\d+) 项/u.exec(n.innerText)?.[1]??0),0);return rows>0&&rows+rest===15;})()";
+      await browser.waitFor(listed);
+      await reload();await browser.waitFor(listed);
       await capture('new-list-1920.png');
-      await expandAll();await browser.waitFor("document.querySelectorAll('tbody tr').length===15");
+      await expandAll();await browser.waitFor("[...document.querySelectorAll('tbody tr.ds-work-row')].filter(n=>!n.hidden).length===15");
       await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await capture('new-list-900.png');
@@ -531,8 +545,10 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       // The existing test-auth port issues a distinct cookie name per principal.
       await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
-      await browser.waitFor("document.body.innerText.includes('这里暂时没有工单')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      // The list view persists: an account that sees nothing gets the list's empty groups, then the empty board.
+      await browser.waitFor("document.querySelector('.work-table')?.innerText.includes('暂无事项')&&document.querySelectorAll('tbody tr.ds-work-row').length===0");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('看板')).click()");
+      await browser.waitFor("document.body.innerText.includes('这里暂时没有工单')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
       await browser.waitFor("Boolean(document.querySelector('.board-column.closed [data-action=view-earlier]'))");
       await browser.evaluate("document.querySelector('.board-column.closed [data-action=view-earlier]').click()");
       await browser.waitFor("new URLSearchParams(location.search).get('range')==='all'&&document.querySelector('.range-bar')?.textContent.includes('已加载 0 项')");
@@ -610,7 +626,8 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
       await browser.waitFor("!document.querySelector('.detail-dialog')");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
-      await browser.waitFor(`document.querySelector('.work-table')?.innerText.includes(${JSON.stringify(literal)})`);
+      // The list shows the source as an icon; its title carries the group name as plain text.
+      await browser.waitFor(`[...document.querySelectorAll('.work-table .ds-source-label')].some(node=>node.title.includes(${JSON.stringify(literal)}))&&document.querySelectorAll('.work-table img').length===0`);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=(SELECT id FROM pilot_ticket.pilot_principal WHERE wecom_user_id='web01-synthetic-0') AND role='ADMIN'");
       await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) SELECT id,'HANDLER' FROM pilot_ticket.pilot_principal WHERE wecom_user_id='web01-synthetic-0'");
