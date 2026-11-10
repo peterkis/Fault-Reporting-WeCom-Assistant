@@ -92,11 +92,16 @@ export function assertBackendLayout(root:string,files:readonly string[],baseline
   const retirements='retired_sources' in value?value.retired_sources:[];
   if(!Array.isArray(retirements))throw Error('MIGRATION_LAYOUT_RETIREMENT_INVALID');
   const retired=new Set<string>();
+  // Issue #145 retired the legacy green workbench; only its preview and the P2-G1 Replay Gap browser script that drove it may
+  // leave the fixed history, each under its own reason.
+  const allowed:Record<string,{target:string;reason:string}>={
+    'scripts/p2-006-preview.mjs':{target:'app/server/scripts/p2-006-preview.mjs',reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'},
+    'scripts/p2-g1-replay-gap-e2e.mjs':{target:'app/server/scripts/p2-g1-replay-gap-e2e.mjs',reason:'LEGACY_GREEN_UI_REPLAY_GAP_RETIRED'}};
   for(const retirement of retirements){
-    if(!retirement||typeof retirement!=='object'||Object.keys(retirement).sort().join(',')!=='issue,reason,source,target'
-      ||!('source' in retirement)||retirement.source!=='scripts/p2-006-preview.mjs'
-      ||!('target' in retirement)||retirement.target!=='app/server/scripts/p2-006-preview.mjs'
-      ||!('reason' in retirement)||retirement.reason!=='LEGACY_GREEN_UI_PREVIEW_RETIRED'
+    const rule=retirement&&typeof retirement==='object'&&'source' in retirement&&typeof retirement.source==='string'&&Object.hasOwn(allowed,retirement.source)?allowed[retirement.source]:undefined;
+    if(!retirement||typeof retirement!=='object'||Object.keys(retirement).sort().join(',')!=='issue,reason,source,target'||!rule
+      ||!('target' in retirement)||retirement.target!==rule.target
+      ||!('reason' in retirement)||retirement.reason!==rule.reason
       ||!('issue' in retirement)||!Number.isSafeInteger(retirement.issue)||(retirement.issue as number)<1||retired.has(retirement.target))throw Error('MIGRATION_LAYOUT_RETIREMENT_INVALID');
     if(files.includes(retirement.target)||files.includes(retirement.target.slice(0,-4)+'.mts'))throw Error('MIGRATION_LAYOUT_RETIREMENT_RESURRECTED');
     retired.add(retirement.target);

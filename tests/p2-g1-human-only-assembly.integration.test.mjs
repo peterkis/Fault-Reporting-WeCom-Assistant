@@ -31,7 +31,6 @@ import { createP2G1ProcessCluster } from '../app/server/src/p2-g1-process-cluste
 import { createP2G1Runtime } from '../app/server/src/p2-g1-runtime.mjs';
 import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
-import { runP2G1ReplayGap } from '../app/server/scripts/p2-g1-replay-gap-e2e.mjs';
 import { submitP2G1ResourceInternalNote } from '../app/server/scripts/p2-g1-resource-observation.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -374,34 +373,8 @@ test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node p
   } });
 });
 
-test('P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch', { timeout: TIMEOUT }, async (t) => {
-  const result = await runP2G1ReplayGap({
-    databaseUrl,
-    identityHashKey: 'synthetic-p2-g1-replay-gap-hash-key',
-    liveCandidate: 'a'.repeat(40),
-    headless: true,
-  });
-  assert.equal(result.outcome, 'PASS');
-  assert.equal(result.database_scope, 'ISOLATED_POSTGRESQL_TEST_DATABASE');
-  assert.equal(result.pilot_database_mutated, false);
-  assert.equal(result.http_status, 410);
-  assert.equal(result.eventsource_last_event_id_used, true);
-  assert.ok(result.eventsource_http_410_count >= 1);
-  assert.equal(result.list_refetched, true);
-  assert.equal(result.detail_refetched, true);
-  assert.equal(result.timeline_refetched, true);
-  assert.equal(result.duplicate_timeline_item_count, 0);
-  assert.equal(result.process_count, 3);
-  assert.equal(result.combined_runtime, false);
-  assert.equal(result.browser_cleanup, true);
-  assert.equal(result.process_cleanup, true);
-  const residualPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
-  try {
-    const residual = await residualPool.query("SELECT count(*)::int AS count FROM pg_database WHERE datname LIKE 'p2_g1_isolated_replaygap_%'");
-    assert.equal(residual.rows[0].count, 0);
-  } finally { await residualPool.end(); }
-  t.diagnostic(JSON.stringify({ http_status: 410, last_event_id: true, refetch: ['LIST','DETAIL','TIMELINE'], process_count: 3, isolated_database_cleanup: true }));
-});
+// The isolated Replay Gap browser case drove the retired legacy green workbench DOM, which bare G1 no longer serves
+// (Issue #145). Its recovery behaviour is covered on the current PC by wbint-t38-gap.browser and over HTTP by p2-003.
 
 test('P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 500 deliveries with no catalog drift', { timeout: TIMEOUT }, async (t) => {
   await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1capacity', max: 4, run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
