@@ -58,3 +58,38 @@ web/p2-workbench全部10个文件、专属preview脚本/两条npm命令、旧资
 - `backend-layout.json` 增加第二条写死校验的退役记录（`LEGACY_GREEN_UI_REPLAY_GAP_RETIRED`，Issue 145），复活或缺登记仍失败。
 - 同文件另外 7 个 G1 用例保留不变。`p2-g1-browser-sessions` 仍被 P2-G1 / P2-012 / P2-016 现场脚本与资源观察脚本使用，不在本次范围；这些人工现场门禁不因本次退役自动执行。
 - 历史证据、CHANGELOG 与 P2-G1 交付文档中 2026-09-02 的 Replay Gap 通过记录如实保留。
+
+## 后续退役：P2-G1 资源观察脚本与五个无入口历史脚本（2026-11-10）
+
+范围由用户确认（批 A + B）；旧版 H5 夹具重放测试（批 C）另开 PR，不在本节。
+
+### A：P2-G1 资源观察脚本与旧 DOM 浏览器辅助
+
+背景：`app/server/scripts/p2-g1-resource-observation.mjs` 在启动两个浏览器后调用 `selectFirstConversations()`，由 `p2-g1-browser-sessions` 点击旧绿色工作台的 `.conversation-card` 并等待 `#conversation-view`；`submitInternalNote` 同样依赖 `#composer`。按 Issue #145，裸 G1 只保留 API / SSE，不提供页面，所以该脚本在 main 上必然以 `P2_G1_TEST_BROWSER_SELECTION_FAILED` 失败。P2-G1 已于 2026-09-02 通过，60 分钟受控观察的原始资源 Evidence（`evidence/p2-g1-resource-observation.jsonl`）保留不改。
+
+| 原内容 | 处理 / 当前覆盖 |
+| --- | --- |
+| 脚本里的 `submitP2G1ResourceInternalNote`（只走 HTTP：bootstrap CSRF、开放会话列表、row_version If-Match、Idempotency-Key） | 按原逻辑移到 `tests/helpers/p2-g1-internal-note-api.mts`（`submitP2G1InternalNoteOverApi`），`p2-g1-human-only-assembly.integration` 的三进程资源用例仍提交一条备注，并断言消息 +1、outbox / delivery 不增加 |
+| 三进程分角色资源指标（RSS、堆、PG 连接） | 同一集成用例继续断言 `cluster.metrics()` 各字段有界且总 RSS 等于三进程之和；`p2-g1-human-only-assembly.test` 继续检查进程资源接口不暴露 PID / 环境 |
+| 浏览器选中会话、经旧页面保存备注 | 旧页面专属流程，不迁移；当前 PC 的内部备注由 PC 测试覆盖（如 `wbint-t30-internal-note.browser`） |
+| `p2-g1-browser-sessions` 的打开浏览器、Cookie、安全遥测、清理 | 保留不变，`p2-g1-human-only-assembly-browser` 与 `p2-g1-live-e2e` 继续使用 |
+
+退役内容：删除脚本与 npm 命令 `p2:g1:resource`、`p2:g1:resource:observe`；删除 `p2-g1-browser-sessions` 中的 `selectFirstConversation(s)`、`submitInternalNote`；`p2-g1-check` 源码存在清单与 `scope.json` 的 `retained_existing_tooling` 去掉该脚本；静态测试改为断言脚本与命令已退役、浏览器辅助不再含旧 DOM 选择器、HTTP 辅助存在。`backend-layout.json` 退役记录 `LEGACY_GREEN_UI_RESOURCE_OBSERVATION_RETIRED`（Issue 145）。
+
+### B：五个无运行入口的历史脚本
+
+这些脚本没有 npm 命令、CI、测试、文档或代码引用，只出现在 `scope.json`、`backend-layout.json` 和历史证据的源码清单里。历史证明只在固定历史 checkout 上复现（候选清单按所在树现算指纹），不需要当前树保留它们。
+
+| 脚本 | 判定为历史的理由 | 替代覆盖 |
+| --- | --- | --- |
+| `g0-webhook-message-capability-probe.mjs` | G0 一次性真实 Webhook 能力探测，G0 已冻结 | 不需要：被测模块 `g0-webhook-message-capability` 仍由 `g0-webhook-message-capability.test` 覆盖 |
+| `validate-p2-007-runtime.mjs` | P2-007 完成时的一次性运行时校验 | 不需要：规则引擎、别名解析与服务目录由 `p2-007/*` 与 `p2-007-*` 测试覆盖 |
+| `yxx-self-service-bind-evidence.mjs`、`yxx-self-service-evidence-tamper-check.mjs`、`yxx-self-service-finalize.mjs` | SS-009 / SS-010 证据绑定、篡改检查与收口的一次性工具，结果已写入历史 Evidence | 不需要：当前证据读取与校验由 `yxx-current-evidence`、`yxx-self-service-verification` 及其测试承担 |
+
+`p2-g2-yixiaoxiu-bind-evidence.mjs` 属 P2-G2（暂停而非退役），不在本次范围。退役记录统一为 `HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED`。
+
+### 布局校验
+
+`backend-layout.mts` 的允许清单写死 8 条退役（原有 2 条 + 本次 6 条），每条绑定自己的 target 与 reason；缺登记仍报 `MIGRATION_LAYOUT_SOURCE_MISSING`，复活报 `RETIREMENT_RESURRECTED`，换用他项 reason 或重复登记报 `RETIREMENT_INVALID`。原 382 项映射不变。
+
+历史证据、CHANGELOG、`FILE_INDEX.md` 中的 Evidence 条目与 P2-G1 / P2-007 / SS-009 / SS-010 交付文档里的历史通过或失败记录如实保留。
