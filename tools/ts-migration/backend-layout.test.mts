@@ -14,7 +14,9 @@ const original=sourceRoot();
 const mapping=record(JSON.parse(readFileSync(path.join(original,'tools/ts-migration/backend-layout.json'),'utf8')) as unknown);
 const baseline=git(original,['ls-tree','-r','--name-only',BACKEND_LAYOUT_BASE,'--','src','scripts']).split('\n');
 const entries=baseline.filter(file=>file!=='src/bot-reporter-static.mts').map(source=>({source,target:physicalSource(source)}));
-const RETIRED=['app/server/scripts/p2-006-preview.mjs','app/server/scripts/p2-g1-replay-gap-e2e.mjs'];
+const RETIRED=['app/server/scripts/p2-006-preview.mjs','app/server/scripts/p2-g1-replay-gap-e2e.mjs','app/server/scripts/p2-g1-resource-observation.mjs',
+ 'app/server/scripts/g0-webhook-message-capability-probe.mjs','app/server/scripts/validate-p2-007-runtime.mjs','app/server/scripts/yxx-self-service-bind-evidence.mjs',
+ 'app/server/scripts/yxx-self-service-evidence-tamper-check.mjs','app/server/scripts/yxx-self-service-finalize.mjs'];
 function fixture(){
  const root=mkdtempSync(path.join(tmpdir(),'server-layout-negative-'));
  mkdirSync(path.join(root,'tools/ts-migration'),{recursive:true});
@@ -24,23 +26,28 @@ function fixture(){
 test('server layout binds all 382 original files to unique physical and logical identities',()=>{
  const {root,files}=fixture();
  try{
-  assert.equal(entries.length,382);assert.equal(files.length,380);assert.equal(new Set(files).size,380);
+  assert.equal(entries.length,382);assert.equal(files.length,374);assert.equal(new Set(files).size,374);
   assert.equal(files.filter(file=>file.startsWith('app/server/src/')).length,265);
-  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,103);
+  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,97);
   assert.equal(PC_MODULES.length,9);assert.equal(SHARED_MODULES.length,3);
   for(const entry of entries)assert.equal(logicalSource(entry.target),entry.source);
   assertBackendLayout(root,files,baseline);
  }finally{rmSync(root,{recursive:true,force:true});}
 });
 
-test('only the explicitly retired green preview can be absent and its resurrection is rejected',()=>{
+test('only the explicitly retired scripts can be absent and their resurrection is rejected',()=>{
  const {root,files}=fixture();const file=path.join(root,'tools/ts-migration/backend-layout.json');
  try{
   assertBackendLayout(root,files,baseline);
   for(const target of RETIRED)assert.throws(()=>assertBackendLayout(root,[...files,target],baseline),/RETIREMENT_RESURRECTED/u);
   const retiredSources=(mapping as {retired_sources:unknown[]}).retired_sources;
-  for(const index of [0,1])writeFileSync(file,JSON.stringify({...mapping,retired_sources:retiredSources.filter((_,i)=>i!==index)})),assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
-  writeFileSync(file,JSON.stringify({...mapping,retired_sources:[{...(retiredSources[1] as object),reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
+  assert.deepEqual(retiredSources.map(item=>(item as {target:string}).target),RETIRED);
+  for(const index of RETIRED.keys())writeFileSync(file,JSON.stringify({...mapping,retired_sources:retiredSources.filter((_,i)=>i!==index)})),assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
+  // Each retirement is bound to its own reason: swapping a reason, or claiming the no-entry reason for a green UI script, is refused.
+  for(const [index,reason] of [[1,'LEGACY_GREEN_UI_PREVIEW_RETIRED'],[2,'HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED'],[3,'LEGACY_GREEN_UI_RESOURCE_OBSERVATION_RETIRED']] as const){
+   writeFileSync(file,JSON.stringify({...mapping,retired_sources:retiredSources.map((item,i)=>i===index?{...(item as object),reason}:item)}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
+  }
+  writeFileSync(file,JSON.stringify({...mapping,retired_sources:[...retiredSources,retiredSources[7]]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
   writeFileSync(file,JSON.stringify(mapping));
   writeFileSync(file,JSON.stringify({...mapping,retired_sources:[]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
   for(const retired of [[{source:'src/p1-005-pilot-ticket-core.mjs',target:'app/server/src/p1-005-pilot-ticket-core.mts',issue:145,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}],[{source:'scripts/p2-006-preview.mjs',target:'app/server/scripts/p2-006-preview.mjs',issue:0,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]]){
