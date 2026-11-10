@@ -35,3 +35,26 @@ web/p2-workbench全部10个文件、专属preview脚本/两条npm命令、旧资
 43977c48候选的首次命名修正后直接检查33PASS/1FAIL保留；4cccc2cc438dd6b6b68fbfe7581de53610b040ce7b6b6122eecdb04c6b7d017d候选补齐真实SENT等待后，11入口45/45 PASS、0失败/取消/SKIP/TODO、NOT_RUN空，含现有桌面Session/登录/退出11例；布局生命周期12/12 PASS，72原别名全展开且无空集合。67个实际差异路径的显式文档链接检查issues=[]；固定导航检查另记，未用空committed diff代替差异覆盖。
 
 所选影响计划68入口，加入直接风险后去重并集71入口，工具层七类保护检查独立执行中；不预称最终整票PASS。原输出、失败/NOT_RUN、差异及源码身份见同一外部Evidence目录。新增UI只验证现有PC安全渲染和只读导航，不补回旧业务流；新PC/h5成员端/API底线仍由对应实际检查证明。
+
+## 后续退役：P2-G1 Replay Gap 浏览器用例（2026-11-10）
+
+背景：`tests/p2-g1-human-only-assembly.integration.test.mjs` 里的「P2-G1 isolated PostgreSQL Replay Gap drives real Edge…」仍由 `app/server/scripts/p2-g1-replay-gap-e2e.mjs` 驱动旧绿色工作台 DOM（`.conversation-card`、`#conversation-view`、`#composer`）。按本票决定裸 G1 只保留 API / SSE，不提供页面，`/workbench/app/` 返回 `WORKBENCH_NOT_FOUND`，所以该用例在 main 上必然以 `P2_G1_TEST_BROWSER_COMMAND_TIMEOUT` 失败；它只在测试文件被改动时被 CI 选中（卡32D-L #175）。
+
+替代覆盖（先补后退）：
+
+| 原用例断言 | 当前覆盖 |
+| --- | --- |
+| EventSource 带 Last-Event-ID 续传、遇保留期缺口返回 410 | `wbint-t38-gap.browser` 两例：真实清理保留期后，生产包续传携带旧游标并收到 410 |
+| 410 后重读列表 | 新增用例：看板 + 抽屉，在 410 之后实际 GET `/api/workbench/board` |
+| 410 后重读详情与时间线 | 两例：缺口后的事实出现在时间线；新增用例另断言 410 之后有该事项的详情 GET |
+| 时间线不出现重复条目 | 新增用例：缺口前后两条事实在时间线中各出现一次 |
+| 新连接不携带旧游标 | 两例：410 之后的 SSE 请求不带 Last-Event-ID |
+| HTTP 层 410 与回退 | `p2-003-realtime-event-log.integration`（`replay_gap_http_fallback`） |
+
+退役内容：
+
+- 删除该浏览器用例与 `app/server/scripts/p2-g1-replay-gap-e2e.mjs`，以及 npm 命令 `p2:g1:replay-gap` / `p2:g1:replay-gap:check`。
+- `p2-g1-check` 的源码存在清单去掉该脚本；`scope.json` 的 `retained_existing_tooling` 去掉该脚本；静态测试改为断言脚本与命令已退役、替代用例存在。
+- `backend-layout.json` 增加第二条写死校验的退役记录（`LEGACY_GREEN_UI_REPLAY_GAP_RETIRED`，Issue 145），复活或缺登记仍失败。
+- 同文件另外 7 个 G1 用例保留不变。`p2-g1-browser-sessions` 仍被 P2-G1 / P2-012 / P2-016 现场脚本与资源观察脚本使用，不在本次范围；这些人工现场门禁不因本次退役自动执行。
+- 历史证据、CHANGELOG 与 P2-G1 交付文档中 2026-09-02 的 Replay Gap 通过记录如实保留。

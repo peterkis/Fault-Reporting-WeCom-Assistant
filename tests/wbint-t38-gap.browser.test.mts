@@ -40,3 +40,43 @@ test('a real retained replay gap falls back to current GET facts and creates a f
     if(!error)await rmdir(directory);assert.equal((await runtime.observability.metrics()).sse_clients,0);
   },{workbenchRealtimeEnabled:true,ticketSelfHandlingEnabled:true,workbenchInternalNotesEnabled:true});
 });
+
+// Replacement coverage for the retired P2-G1 Replay Gap browser case (legacy green workbench, Issue #145): the current board
+// with its open drawer resumes with Last-Event-ID, meets the real retention floor (410), re-reads the board list, the detail and
+// its timeline from current GET facts, and shows every committed fact exactly once.
+test('a replay gap on the board with an open drawer re-reads the list, the detail and the timeline without duplicating facts',async()=>{
+  await withWeb01Fixture(async({pool,origin,cookies,browserCookies,tickets,runtime}:Fixture)=>{
+    const ticket=tickets[5],cookie=browserCookies[0];assert.ok(ticket&&cookie);let posts=0,sequence=0;
+    const requests:{seq:number;path:string;cursor:string|null;status:number}[]=[];
+    runtime.server.on('request',(request,response)=>{if(request.method==='POST')posts++;const path=(request.url??'').split('?')[0]??'';if(request.method!=='GET'||!path.startsWith('/api/'))return;
+      const row={seq:++sequence,path,cursor:typeof request.headers['last-event-id']==='string'?request.headers['last-event-id']:null,status:0};requests.push(row);
+      const writeHead=response.writeHead;response.writeHead=(status:number,...args:unknown[])=>{row.status=status;return Reflect.apply(writeHead,response,[status,...args]);};});
+    const read=async(path:string)=>{const response=await fetch(origin+path,{headers:{cookie:cookies[0]??''}});assert.equal(response.status,200);return response.json() as Promise<{csrf_token:string;version:number}>;};
+    const csrf=(await read('/api/lifecycle/bootstrap')).csrf_token;
+    const commit=async(note:string)=>{const version=(await read('/api/tickets/'+ticket.ticket.id)).version,command={client_command_id:randomUUID(),expected_version:version,reason_code:'WORKBENCH_INTERNAL_NOTE',note,external_visible:false};
+      const response=await fetch(origin+'/api/tickets/'+ticket.ticket.id+'/internal-notes',{method:'POST',headers:{cookie:cookies[0]??'',origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':command.client_command_id,'if-match':'"'+version+'"'},body:JSON.stringify(command)});assert.equal(response.status,200);};
+    const count=(text:string)=>`(document.querySelector(".activity-list")?.textContent??"").split(${JSON.stringify(text)}).length-1`;
+    let browser:Browser|undefined,error:unknown;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id,width:1440,height:900,cookies:[cookie]});
+      assert.ok(browser);
+      await browser.waitFor('Boolean(document.querySelector(".board-column"))&&Boolean(document.querySelector(".activity-list"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      await commit('T38 board pre-gap fact');await browser.waitFor(count('T38 board pre-gap fact')+'>=1');
+      const once=Number(await browser.evaluate(count('T38 board pre-gap fact')));assert.ok(once>=1);
+      runtime.disconnectRealtimePrincipal(0);await commit('T38 board post-gap fact');
+      const cleanup=await cleanupRealtimeRetention({pool,authorized:true,limit:REALTIME_MAX_CLEANUP_LIMIT,now_epoch_ms:String(Date.now()+8*24*3600000)});assert.ok(cleanup.deleted_count>0);
+      for(let i=0;i<200&&!requests.some(request=>request.path==='/api/realtime/events'&&request.cursor&&request.status===410);i++)await new Promise(resolve=>setTimeout(resolve,50));
+      const gap=requests.find(request=>request.path==='/api/realtime/events'&&request.cursor&&request.status===410);assert.ok(gap,'the resume carries Last-Event-ID and meets the real retention floor');
+      await browser.waitFor(count('T38 board post-gap fact')+'>=1&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+      const after=requests.filter(request=>request.seq>gap.seq&&request.status===200);
+      assert.ok(after.some(request=>request.path==='/api/workbench/board'),'the board list is re-read after the gap: '+JSON.stringify(after.map(request=>request.path)));
+      assert.ok(after.some(request=>request.path!=='/api/realtime/events'&&request.path.includes(ticket.ticket.id)),'the open detail is re-read after the gap: '+JSON.stringify(after.map(request=>request.path)));
+      assert.ok(after.some(request=>request.path==='/api/realtime/events'&&request.cursor===null),'the fresh stream does not carry the obsolete cursor');
+      assert.equal(Number(await browser.evaluate(count('T38 board pre-gap fact'))),once,'the pre-gap fact is not duplicated by the re-read');
+      assert.equal(Number(await browser.evaluate(count('T38 board post-gap fact'))),once,'the post-gap fact appears exactly once');
+      assert.equal(posts,2);
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    assert.equal((await runtime.observability.metrics()).sse_clients,0);
+  },{workbenchRealtimeEnabled:true,ticketSelfHandlingEnabled:true,workbenchInternalNotesEnabled:true});
+});

@@ -14,18 +14,19 @@ const original=sourceRoot();
 const mapping=record(JSON.parse(readFileSync(path.join(original,'tools/ts-migration/backend-layout.json'),'utf8')) as unknown);
 const baseline=git(original,['ls-tree','-r','--name-only',BACKEND_LAYOUT_BASE,'--','src','scripts']).split('\n');
 const entries=baseline.filter(file=>file!=='src/bot-reporter-static.mts').map(source=>({source,target:physicalSource(source)}));
+const RETIRED=['app/server/scripts/p2-006-preview.mjs','app/server/scripts/p2-g1-replay-gap-e2e.mjs'];
 function fixture(){
  const root=mkdtempSync(path.join(tmpdir(),'server-layout-negative-'));
  mkdirSync(path.join(root,'tools/ts-migration'),{recursive:true});
  writeFileSync(path.join(root,'tools/ts-migration/backend-layout.json'),JSON.stringify(mapping));
- return {root,files:entries.map(item=>item.target).filter(file=>file!=='app/server/scripts/p2-006-preview.mjs')};
+ return {root,files:entries.map(item=>item.target).filter(file=>!RETIRED.includes(file))};
 }
 test('server layout binds all 382 original files to unique physical and logical identities',()=>{
  const {root,files}=fixture();
  try{
-  assert.equal(entries.length,382);assert.equal(files.length,381);assert.equal(new Set(files).size,381);
+  assert.equal(entries.length,382);assert.equal(files.length,380);assert.equal(new Set(files).size,380);
   assert.equal(files.filter(file=>file.startsWith('app/server/src/')).length,265);
-  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,104);
+  assert.equal(files.filter(file=>file.startsWith('app/server/scripts/')).length,103);
   assert.equal(PC_MODULES.length,9);assert.equal(SHARED_MODULES.length,3);
   for(const entry of entries)assert.equal(logicalSource(entry.target),entry.source);
   assertBackendLayout(root,files,baseline);
@@ -36,7 +37,11 @@ test('only the explicitly retired green preview can be absent and its resurrecti
  const {root,files}=fixture();const file=path.join(root,'tools/ts-migration/backend-layout.json');
  try{
   assertBackendLayout(root,files,baseline);
-  assert.throws(()=>assertBackendLayout(root,[...files,'app/server/scripts/p2-006-preview.mjs'],baseline),/RETIREMENT_RESURRECTED/u);
+  for(const target of RETIRED)assert.throws(()=>assertBackendLayout(root,[...files,target],baseline),/RETIREMENT_RESURRECTED/u);
+  const retiredSources=(mapping as {retired_sources:unknown[]}).retired_sources;
+  for(const index of [0,1])writeFileSync(file,JSON.stringify({...mapping,retired_sources:retiredSources.filter((_,i)=>i!==index)})),assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
+  writeFileSync(file,JSON.stringify({...mapping,retired_sources:[{...(retiredSources[1] as object),reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);
+  writeFileSync(file,JSON.stringify(mapping));
   writeFileSync(file,JSON.stringify({...mapping,retired_sources:[]}));assert.throws(()=>assertBackendLayout(root,files,baseline),/SOURCE_MISSING/u);
   for(const retired of [[{source:'src/p1-005-pilot-ticket-core.mjs',target:'app/server/src/p1-005-pilot-ticket-core.mts',issue:145,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}],[{source:'scripts/p2-006-preview.mjs',target:'app/server/scripts/p2-006-preview.mjs',issue:0,reason:'LEGACY_GREEN_UI_PREVIEW_RETIRED'}]]){
    writeFileSync(file,JSON.stringify({...mapping,retired_sources:retired}));assert.throws(()=>assertBackendLayout(root,files,baseline),/RETIREMENT_INVALID/u);

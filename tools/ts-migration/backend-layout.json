@@ -1537,6 +1537,12 @@
       "target": "app/server/scripts/p2-006-preview.mjs",
       "issue": 145,
       "reason": "LEGACY_GREEN_UI_PREVIEW_RETIRED"
+    },
+    {
+      "source": "scripts/p2-g1-replay-gap-e2e.mjs",
+      "target": "app/server/scripts/p2-g1-replay-gap-e2e.mjs",
+      "issue": 145,
+      "reason": "LEGACY_GREEN_UI_REPLAY_GAP_RETIRED"
     }
   ]
 }
