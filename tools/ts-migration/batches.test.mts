@@ -5,7 +5,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { testEnvironment } from './routing.mjs';
+import { loadRoutes, testEnvironment } from './routing.mjs';
 import { batchSelection } from './batches.mjs';
 import { record, sourceRoot, workspaceFiles } from './common.mjs';
 import { findNpmLauncher, runNpm } from './npm-launcher.mjs';
@@ -84,6 +84,14 @@ test('the Foundation npm seam accepts real wrappers and JavaScript symlinks', as
 test('T04-05 closes the entire P1 stage and retains the personnel and boundary baselines', () => {
   const selected = batchSelection(original, 'T04-05');
   for (const name of ['tests/p1-001-pilot-foundation.test.mjs', 'tests/p1-008-first-acknowledgement.test.mjs', 'tests/p1-011-encrypted-backup.test.mjs', 'tests/p1-012-pilot-e2e-integration.test.mjs', 'tests/p1-012-live-e2e-script.test.mjs', 'tests/p1-009-pilot-access-workbench.test.mjs', 'tests/p1-foundation-cli.test.mts', 'tests/p1-migration-compatibility.test.mts', 'tests/p2-007-third-party-staff-directory.integration.test.mjs']) assert.ok(selected.entries.some(e => e.path === name));
+});
+test('a historical batch naming a registered retirement runs its declared replacements and nothing retired', () => {
+  const routes = loadRoutes(original), retired = routes.retired?.find(r => r.path === 'tests/yxx-ss-007-native-ui.browser.test.mjs');
+  assert.ok(retired);
+  const selected = batchSelection(original, 'T04-05');
+  for (const replacement of retired.replacements) assert.ok(selected.entries.some(e => e.path === replacement), replacement);
+  assert.ok(selected.entries.every(e => !routes.retired?.some(r => r.path === e.path)));
+  assert.equal(new Set(selected.entries.map(e => e.path)).size, selected.entries.length);
 });
 test('T04-04 selection covers SDK, Intake, access, subprocesses and the retained baseline', () => {
   const selected = batchSelection(original, 'T04-04');

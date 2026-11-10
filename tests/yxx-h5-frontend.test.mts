@@ -344,6 +344,35 @@ test('H5 recovery requires the same original UUID and never treats UNKNOWN or an
  assert.equal(receipts.confirmedReceipt({state:'COMMITTED',result:{ok:true}},id),false);
  assert.equal(receipts.confirmedReceipt({ok:true,receipt},id),true);
 });
+// Replaces the retired V1 fixture feedback cases (Issue 179): the current H5 Web feedback
+// sends one guarded POST, and a lost response recovers only by GET on the original UUID.
+test('H5 Web reporter feedback posts once with its original UUID and a lost response recovers only by GET on the same purpose receipt',async t=>{
+ const loader=createH5PureModuleLoader(),client=await import(await loader.moduleUrl('api/client.ts')),{detailReceipt}=await import(await loader.moduleUrl('hooks/detail-command-receipt.ts'));
+ const id='33333333-3333-4333-8333-333333333333',other='44444444-4444-4444-8444-444444444444',ref='f'.repeat(32),round='c'.repeat(32);
+ const input={schema_version:1 as const,client_command_id:id,feedback:'STILL_UNRESOLVED' as const,expected_ticket_version:7,completed_round_ref:round};
+ const result={ok:true,replayed:false,request_ref:ref,completed_round_ref:round,reopened_round_no:2,ticket:{ticket_no:'T-SYNTHETIC',status:'REOPENED',version:8}};
+ const calls:{url:string;options:RequestInit}[]=[];let respond:(url:string)=>Promise<Response>=async()=>{throw new TypeError('SIMULATED_COMMITTED_RESPONSE_LOSS');};
+ t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],options:RequestInit={})=>{calls.push({url:String(input),options});return respond(String(input));});
+ const lost=await client.api.feedback(ref,input,'csrf-feedback').then(()=>null,(error:unknown)=>error);
+ assert.ok(lost,'a lost response must not resolve as a result');assert.equal(client.isUnknownResult(lost),true,'a lost committed response stays UNKNOWN rather than rejected');
+ assert.equal(calls.length,1);const post=calls[0];assert.ok(post);
+ assert.equal(post.url,'/api/yixiaoxiu/requests/'+ref+'/feedback');assert.equal(post.options.method,'POST');
+ const headers=new Headers(post.options.headers);assert.equal(headers.get('x-csrf-token'),'csrf-feedback');assert.equal(headers.get('idempotency-key'),id);assert.equal(headers.get('if-match'),'"7"');
+ assert.deepEqual(JSON.parse(String(post.options.body)),input);
+ respond=async()=>Response.json({client_command_id:id,request_ref:ref,state:'COMMITTED',result:{...result,replayed:true}});
+ const recovered=await client.api.feedbackCommand(ref,id);
+ assert.equal(calls.length,2);const get=calls[1];assert.ok(get);
+ assert.equal(get.url,'/api/yixiaoxiu/requests/'+ref+'/feedback/commands/'+id);assert.equal(get.options.method??'GET','GET');assert.equal(get.options.body??null,null);
+ assert.equal(calls.filter(call=>call.options.method==='POST').length,1,'recovery never sends the feedback again');
+ const confirm=detailReceipt(id,ref,'FEEDBACK',round);
+ assert.equal(confirm(recovered,'recover'),true);
+ assert.equal(confirm(result,'execute'),true);
+ assert.equal(confirm({client_command_id:id,request_ref:ref,state:'UNKNOWN'},'recover'),false,'UNKNOWN is never committed');
+ assert.equal(confirm({...(recovered as object),client_command_id:other},'recover'),false,'another UUID is never this command');
+ assert.equal(confirm({...(recovered as object),request_ref:'g'.repeat(32)},'recover'),false,'another request is never this command');
+ assert.equal(confirm({client_command_id:id,request_ref:ref,state:'COMMITTED',result:{...result,completed_round_ref:'d'.repeat(32)}},'recover'),false,'another completed round is never this feedback');
+ assert.equal(detailReceipt(id,ref,'FEEDBACK',round)({...result,completed_round_ref:'d'.repeat(32)},'execute'),false);
+});
 test('H5 V2 transport uses current routes, source filters, CSRF and the original command UUID',async()=>{
  const client=await import(await moduleUrl('api/client.ts'));
  const originalFetch=globalThis.fetch;

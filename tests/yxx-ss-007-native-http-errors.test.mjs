@@ -1,9 +1,16 @@
-// Explicit retired V1 UI fixture regression; not new-H5 or production-page acceptance.
+// V1 native HTTP API contracts still used by the current H5. Pages use a data-free shell
+// stub in place of the compiled H5 presentation; the retired V1 page fixture is gone (Issue 179).
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
-import { createYxxSelfServiceNativeHttpWithRetiredUi as createYxxSelfServiceNativeHttp } from './helpers/retired-self-service-ui.mjs';
+import { createYxxSelfServiceNativeHttp as createActualNativeHttp } from '../app/server/src/yxx-self-service-native-http.mjs';
 import { createServiceCatalog } from '../app/server/src/p2-007-service-catalog.mjs';
+import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
+import { createH5ShellStub, H5_SHELL_MARKER } from './helpers/h5-shell-stub.mjs';
+
+const SHELL = new RegExp(H5_SHELL_MARKER, 'u');
+const SHELL_OR_FORM = new RegExp(H5_SHELL_MARKER + '|<form', 'u');
+const createYxxSelfServiceNativeHttp = options => createActualNativeHttp({ ...options, h5Static: createH5ShellStub() });
 
 const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
 
@@ -72,11 +79,15 @@ test('SS-007 native write UI requires an explicit member write flag while read A
         command: { accept() { writes++; } }, supplement: { accept() { writes++; } },
         query: { list: () => ({ items: [] }), detailWithEtag: () => ({ status: 200, body: {} }), timeline() {}, commandStatus() {} } });
       for (writeFlag of [false, undefined, 'true']) {
-        for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/', '/wecom/yixiaoxiu/reports/new', `/wecom/yixiaoxiu/reports/${'A'.repeat(32)}`]) {
+        for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/reports/new', `/wecom/yixiaoxiu/reports/${'A'.repeat(32)}`]) {
           const response = await fetch(origin + path, { headers });
           assert.equal(response.status, 403, `${profile} ${String(writeFlag)} ${path}`);
-          assert.doesNotMatch(await response.text(), /self-service\.js|<form/u);
+          assert.doesNotMatch(await response.text(), SHELL_OR_FORM);
         }
+        // The root is the data-free H5 shell; its entry/bootstrap APIs above own the write gate.
+        const root = await fetch(origin + '/wecom/yixiaoxiu/', { headers });
+        assert.equal(root.status, 200, `${profile} ${String(writeFlag)} root shell`);
+        assert.match(await root.text(), SHELL);
         for (const path of ['/api/yixiaoxiu/requests', `/api/yixiaoxiu/requests/${'A'.repeat(32)}/supplements`]) {
           assert.equal((await fetch(origin + path, { method: 'POST', headers, body: '{}' })).status, 403);
         }
@@ -194,14 +205,18 @@ test('SS-007 dependency failures remain terminal service or permission failures'
   try {
     for (const status of [503, 403]) {
       failure = Object.assign(new Error('private dependency detail'), { status, code: status === 503 ? 'DEPENDENCY_DOWN' : 'MEMBER_DENIED' });
-      for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/', '/wecom/yixiaoxiu/reports/new']) {
+      for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/reports/new']) {
         const response = await fetch(origin + path, { headers: { cookie: '__Host-wecom_session=synthetic' }, redirect: 'manual' });
         assert.equal(response.status, status, path);
         assert.equal(response.headers.has('location'), false);
         const text = await response.text();
         assert.doesNotMatch(text, /private dependency detail|DEPENDENCY_DOWN|MEMBER_DENIED/);
         if (status === 403 && path !== '/api/yixiaoxiu/bootstrap') assert.match(text, /当前账号没有此项权限/u);
+        assert.doesNotMatch(text, SHELL);
       }
+      const root = await fetch(origin + '/wecom/yixiaoxiu/', { headers: { cookie: '__Host-wecom_session=synthetic' }, redirect: 'manual' });
+      assert.equal(root.status, 200, 'the data-free shell does not consult the failing member dependency');
+      assert.doesNotMatch(await root.text(), /private dependency detail|DEPENDENCY_DOWN|MEMBER_DENIED/);
     }
     failure = new Error('private database error');
     assert.equal((await fetch(origin + '/api/yixiaoxiu/bootstrap', { headers: { cookie: '__Host-wecom_session=synthetic' } })).status, 503);
@@ -317,8 +332,8 @@ test('SS-007 direct detail pages enforce ownership before rendering the shell', 
       const response = await fetch(origin + '/wecom/yixiaoxiu/reports/' + 'A'.repeat(32), { headers: { cookie: '__Host-wecom_session=synthetic', 'if-none-match': 'untrusted' }, redirect: 'manual' });
       assert.equal(response.status, status);
       const html = await response.text();
-      if (status === 200) assert.match(html, /self-service.js/);
-      else assert.doesNotMatch(html, /self-service.js|private ownership detail/);
+      if (status === 200) assert.match(html, SHELL);
+      else assert.doesNotMatch(html, new RegExp(H5_SHELL_MARKER + '|private ownership detail', 'u'));
       assert.equal(response.headers.has('location'), false);
     }
     assert.equal(calls, 3);
@@ -463,4 +478,211 @@ test('SS-007 logout rejects unknown query and body fields without clearing sessi
     assert.deepEqual(loggedOut, ['synthetic']);
     assert.match(accepted.headers.get('set-cookie'), /__Host-wecom_session=;.*Max-Age=0/);
   } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+// Moved from the retired yxx-ss-007-native-ui browser file: its only HTTP-only case.
+const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
+const REFS = Object.freeze({ A: 'A'.repeat(32), B: 'B'.repeat(32) });
+const RECOVERY_SECRET = 'ss007-recovery-secret-0123456789abcdef';
+const csrfFor = token => `csrf-${token}-012345678901234567890123`;
+
+function adaptSyntheticSession(request, response, url) {
+  request.headers.cookie = (request.headers.cookie ?? '').split(';').map(part => part.trim())
+    .map(part => part.startsWith('yxx_session=') ? `__Host-wecom_session=${part.slice('yxx_session='.length)}` : part).filter(Boolean).join('; ');
+  if (request.method === 'POST' && url.pathname === '/wecom/yixiaoxiu/logout') {
+    const writeHead = response.writeHead.bind(response);
+    response.writeHead = (status, headers = {}) => {
+      const existing = headers['set-cookie'] ?? [];
+      const cookies = Array.isArray(existing) ? existing : [existing];
+      return writeHead(status, { ...headers, 'set-cookie': [...cookies, 'yxx_session=; Path=/; SameSite=Lax; Max-Age=0'] });
+    };
+  }
+}
+
+function fixture(origin) {
+  const service=(code,name,enabled=true)=>({service_code:code,name_zh:name,enabled,aliases:[],required_fields:[],transaction_stages:[],common_symptom_codes:[],default_owner_team:'PRIVATE_TEAM'});
+  const serviceCatalog=createServiceCatalog({schema_version:'1.0.0',catalog_id:'private-fixture-catalog',catalog_version:'native-catalog-v1',
+    domains:[{domain_code:'CLINICAL',name_zh:'临床应用',services:[service('CLINICAL.OUTPATIENT_WORKSTATION','门诊医生工作站'),
+      service('CLINICAL.XSS','<img src=x onerror=window.__xss=1>'),service('CLINICAL.DISABLED','禁用服务',false)]}],taxonomies:{symptom_codes:[]}});
+  const state = { commandCalls: [], supplementCalls: [], listCalls: [], detailCalls: [], timelineCalls: [],
+    commandStatusCalls: [], next: 0, supplementConflict: false, writeFlag: true };
+  const memberFor = (request) => (request.headers.cookie ?? '').includes('member-b') ? 'B' : 'A';
+  const oauth = {
+    authenticate(token) {
+      if (!['member-a', 'member-b'].includes(token)) throw new Error('expired');
+      return { userid: token };
+    },
+    logout() {},
+    begin() { return { location: `${origin}/wecom/yixiaoxiu/login?state=synthetic`, browserToken: 'synthetic-browser-token' }; },
+  };
+  const context = async ({ sessionToken }) => {
+    state.contextCalls = (state.contextCalls ?? 0) + 1;
+    if (state.contextGate) await state.contextGate;
+    if (state.contextError) throw state.contextError;
+    return { profile: 'MEMBER_SELF_SERVICE', write_flag: state.writeFlag, flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
+      canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
+      source_corp_scope: 'corp-local', source_app_scope: 'app-local' };
+  };
+  const receipt = (requestRef, clientCommandId, acceptedRevision = '1') => ({ client_command_id: clientCommandId,
+    status: 'ACCEPTED', request_ref: requestRef, intake_no: 'INT-20260917-0001', accepted_revision: acceptedRevision,
+    accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
+  const ticket = status => status ? { ticket_no: 'TCK-20260917-0001', status, updated_at: '2026-09-17 09:00:00' } : null;
+  const command = {
+    async accept({ request, input }) {
+      if (state.commandError) throw state.commandError;
+      state.commandCalls.push({ member: memberFor(request), input });
+      const requestRef = state.next++ % 2 === 0 ? REFS.A : REFS.B;
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id) };
+    },
+  };
+  const supplement = {
+    async accept({ request, requestRef, input }) {
+      state.supplementCalls.push({ member: memberFor(request), requestRef, input });
+      if (state.supplementGate) await state.supplementGate;
+      if (state.supplementError) throw state.supplementError;
+      if (state.supplementConflict) { const error = new Error('version'); error.code = 'YXX_VERSION_CONFLICT'; throw error; }
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id, String(Number(input.expected_input_revision) + 1)) };
+    },
+  };
+  const query = {
+    async list({ request, cursor, source }) {
+      const member = memberFor(request);
+      state.listCalls.push({ member, cursor, source });
+      if (state.listError) throw state.listError;
+      if (state.sourcePages && member === 'A') {
+        const page = state.sourcePages[source ?? 'ALL']?.[cursor ?? 'first'];
+        if (!page) { const value = new Error('cursor'); value.code = 'YXX_CURSOR_INVALID'; value.status = 400; throw value; }
+        return page;
+      }
+      if (state.paginatedLists && member === 'A') {
+        if (cursor === 'page-2') return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.B, intake_no: 'YXX-PAGE-2', display_status: 'UNDER_REVIEW', created_at: '2026-09-16 22:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
+        return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.A, intake_no: 'YXX-PAGE-1', display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: 'page-2' };
+      }
+      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
+    },
+    async detailWithEtag({ request, requestRef, ifNoneMatch }) {
+      const member = memberFor(request);
+      state.detailCalls.push({ member, requestRef, ifNoneMatch });
+      if (state.detailNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      if (state.enforceOwnership && requestRef !== REFS[member]) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      const revision = state.detailRevision ?? '1';
+      const etag = `"${requestRef}-v${revision}"`;
+      if (ifNoneMatch === etag) return { status: 304, body: null, etag };
+      return { status: 200, etag, body: { source_kind: 'WEB_REQUEST', request_ref: requestRef,
+        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
+        needs_action: state.needsAction === undefined ? '请补充故障现象' : state.needsAction, updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
+        created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
+        safe_location: state.safeLocation === undefined ? '护士站' : state.safeLocation, safe_clarification: state.safeClarification ?? null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
+    },
+    async timeline({ request, requestRef, limit, cursor, before }) {
+      state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
+      if (state.timelineNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      const older = cursor !== null && cursor !== undefined;
+      return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
+        occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: ticket(state.timelineTicketStatus ?? state.ticketStatus) }],
+        next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-0001' };
+    },
+    async commandStatus({ request, clientCommandId }) {
+      state.commandStatusCalls.push({ member: memberFor(request), clientCommandId });
+      if (state.commandStatusDelayMs) await new Promise(resolve => setTimeout(resolve, state.commandStatusDelayMs));
+      if (state.commandStatusResponses?.length) { const value = state.commandStatusResponses.shift(); if (value instanceof Error) throw value; return value; }
+      if (state.commandStatusError) throw state.commandStatusError;
+      return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) };
+    },
+  };
+  const oauthHttp = async ({ response }) => { response.writeHead(401, { 'content-type': 'text/html; charset=utf-8' }); response.end('<p>旧认证提示</p>'); return true; };
+  const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query, serviceCatalog,
+    authenticateMember: context, featureFlags: FLAGS, recoveryBindingSecret: RECOVERY_SECRET };
+  return { native: createYxxSelfServiceNativeHttp(config), config, state, oauth };
+}
+
+async function startFixture({ enabled = true } = {}) {
+  const reservation = createServer();
+  await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${reservation.address().port}`;
+  await new Promise(resolve => reservation.close(resolve));
+  const values = fixture(origin);
+  const native = enabled ? values.native : createYxxSelfServiceNativeHttp({ ...values.config, featureFlags: { YIXIAOXIU_MY_REPORTS_ENABLED: false, YIXIAOXIU_SELF_SERVICE_ENABLED: false } });
+  const server = createServer(async (request, response) => {
+    const url = new URL(request.url, origin);
+    adaptSyntheticSession(request, response, url);
+    if(url.pathname==='/api/yixiaoxiu/service-catalog'){
+      values.state.catalogRequests=(values.state.catalogRequests??0)+1;
+      if(values.state.catalogUnavailable){response.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});response.end(JSON.stringify({error:{code:'YXX_UNAVAILABLE',retryable:true}}));return;}
+    }
+    const override = values.state.successBodyOverride;
+    if (override && request.method === 'POST' && url.pathname === override.path) {
+      values.state.successBodyOverride = null;
+      const end = response.end.bind(response);
+      response.end = override.hang ? () => undefined : (body, ...rest) => end(override.transform(String(body)), ...rest);
+    }
+    const handled = await native.handler({ request, response, url });
+    if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
+  });
+  await new Promise(resolve => server.listen(Number(new URL(origin).port), '127.0.0.1', resolve));
+  return { origin, server, ...values };
+}
+
+async function closeServer(server) { await new Promise(resolve => server.close(resolve)); }
+
+test('SS-007 native HTTP serves the data-free H5 shell at the root and keeps the closed API boundary', async () => {
+  const fixtureState = await startFixture();
+  const disabledState = await startFixture({ enabled: false });
+  try {
+    const { origin, state } = fixtureState;
+    const get = (path, headers = {}) => fetch(origin + path, { headers });
+    const root = await get('/wecom/yixiaoxiu/', { cookie: 'yxx_session=member-a' });
+    assert.equal(root.status, 200);
+    // Current production: the compiled H5 shell renders without member data; its APIs own authentication.
+    const rootHtml = await root.text();
+    assert.match(rootHtml, SHELL);
+    assert.doesNotMatch(rootHtml, /YXX-A|csrf-member-a|护士站/u);
+    const bootstrap = await get('/api/yixiaoxiu/bootstrap', { cookie: 'yxx_session=member-a' });
+    assert.equal(bootstrap.status, 200);
+    const bootstrapBody = await bootstrap.json();
+    await assertP2016Schema('yxx_self_service_bootstrap', bootstrapBody);
+    assert.equal(bootstrapBody.identity_mode, 'MEMBER_SELF_SERVICE');
+    assert.equal(bootstrapBody.read_only, false);
+    assert.equal(bootstrapBody.can_submit, true);
+    assert.equal(typeof bootstrapBody.csrf_token, 'string');
+    assert.equal((await get('/api/yixiaoxiu/bootstrap')).status, 401);
+    const malformedCommand = await get('/api/yixiaoxiu/commands/00000000-0000-0000-0000-000000000000', { cookie: 'yxx_session=member-a' });
+    assert.equal(malformedCommand.status, 400);
+    assert.equal((await malformedCommand.json()).error.code, 'YXX_INPUT_INVALID');
+    const disabledRoot = await fetch(disabledState.origin + '/wecom/yixiaoxiu/', { headers: { cookie: 'yxx_session=member-a' } });
+    assert.equal(disabledRoot.status, 200);
+    const disabledHtml = await disabledRoot.text();
+    assert.match(disabledHtml, SHELL);
+    assert.doesNotMatch(disabledHtml, /YXX-A|csrf-member-a|护士站/u);
+    assert.equal((await fetch(disabledState.origin + '/api/yixiaoxiu/bootstrap', { headers: { cookie: 'yxx_session=member-a' } })).status, 403, 'disabled reads keep the API closed behind the shell');
+    assert.equal((await fetch(disabledState.origin + `/api/yixiaoxiu/requests/${REFS.A}`, { headers: { cookie: 'yxx_session=member-a' } })).status, 403);
+    const badOrigin = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin: 'https://attacker.invalid', 'content-type': 'application/json' }, body: '{}' });
+    assert.equal(badOrigin.status, 403);
+    const badCsrf = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000000', 'x-csrf-token': 'wrong', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000000', description: '普通描述', location: { text: '护士站', unknown: false } }) });
+    assert.equal(badCsrf.status, 403);
+    assert.equal(state.commandCalls.length, 0);
+    const accepted = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000001', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000001', description: '普通描述', location: { text: '护士站', unknown: false } }) });
+    assert.equal(accepted.status, 202);
+    assert.equal((await accepted.json()).location, `/wecom/yixiaoxiu/reports/${REFS.A}`);
+    assert.equal(state.commandCalls.length, 1);
+    for (const message of ['YXX_INPUT_INVALID', 'YXX_CURSOR_INVALID', 'YXX_LIMIT_INVALID']) {
+      state.commandError = new TypeError(message);
+      const rejected = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'x-csrf-token': csrfFor('member-a') }, body: '{}' });
+      assert.equal(rejected.status, 400, message);
+    }
+    state.commandError = null;
+    const detail = await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a' });
+    assert.equal(detail.status, 200);
+    const etag = detail.headers.get('etag');
+    assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a', 'if-none-match': etag })).status, 304);
+    assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}/timeline?limit=50`, { cookie: 'yxx_session=member-a' })).status, 200);
+    assert.equal(state.timelineCalls.at(-1).limit, 50);
+    const supplement = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000002', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000002', expected_input_revision: '1', text: '补充事实' }) });
+    assert.equal(supplement.status, 202);
+    assert.equal(state.supplementCalls.length, 1);
+    fixtureState.state.supplementConflict = true;
+    const conflict = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000003', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000003', expected_input_revision: '1', text: '旧版本' }) });
+    assert.equal(conflict.status, 409);
+    assert.equal((await fetch(origin + '/wecom/yixiaoxiu/logout', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, body: '{}' })).status, 200);
+  } finally { await closeServer(fixtureState.server); await closeServer(disabledState.server); }
 });
