@@ -37,7 +37,7 @@ export async function runP2G1Check({ env = process.env } = {}) {
     'app/server/src/p2-g1-wecom-gateway.mjs','app/server/src/p2-g1-wecom-sender.mjs','app/server/src/p2-g1-test-authentication.mjs',
     'app/server/src/p2-g1-runtime.mjs','app/server/src/p2-g1-observability.mjs','app/server/src/p2-g1-browser-sessions.mjs',
     'app/server/src/p2-g1-process-cluster.mjs','app/server/src/p2-g1-process-metrics.mjs','app/server/src/p2-g1-isolated-postgres.mjs',
-    'app/server/src/p2-g1-migrations.mjs','app/server/scripts/p2-g1-process-role.mjs','app/server/scripts/p2-g1-replay-gap-e2e.mjs',
+    'app/server/src/p2-g1-migrations.mjs','app/server/scripts/p2-g1-process-role.mjs',
     'app/server/scripts/p2-g1-resource-observation.mjs',
   ].every((physicalPath) => {
     const logicalPath = physicalPath.slice('app/server/'.length);

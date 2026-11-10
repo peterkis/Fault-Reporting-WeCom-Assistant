@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -233,8 +233,11 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(resource, /gateway_rss_bytes/u);
   assert.match(resource, /postgres_connection_utilization_percent/u);
   assert.match(resource, /claim_24h_soak: false/u);
-  const replayGap = readFileSync('app/server/scripts/p2-g1-replay-gap-e2e.mjs', 'utf8');
-  assert.match(replayGap, /P2_G1_ISOLATED_REPLAY_GAP_APPROVED/u);
-  assert.match(replayGap, /pilot_database_mutated: false/u);
-  assert.match(replayGap, /withP2G1IsolatedPostgres/u);
+  // The Replay Gap browser script drove the retired legacy green workbench (Issue #145); it stays retired, with its npm
+  // commands, and the current PC replacement coverage exists.
+  assert.equal(existsSync('app/server/scripts/p2-g1-replay-gap-e2e.mjs'), false);
+  assert.equal(Object.keys(pkg.scripts).some((name) => name.startsWith('p2:g1:replay-gap')), false);
+  const replacement = ['tests/wbint-t38-gap.browser.test.mts', 'tests/wbint-t38-gap.browser.test.mjs'].find((file) => existsSync(file));
+  assert.ok(replacement, 'the current PC replay-gap replacement test exists');
+  assert.match(readFileSync(replacement, 'utf8'), /re-reads the list, the detail and the timeline without duplicating facts/u);
 });
