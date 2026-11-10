@@ -204,10 +204,10 @@ test('compiled parent and three compiled roles wire real OAuth sessions, bootstr
    await clickWorkbenchControl(browser,'[data-action=toggle-item-follow]');
    await browser.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
    assert.equal((await relatedItems()).filter(item=>item.id===groupTicketId).length,1);
-   // The follow toast opens over the top-right toolbar and pauses while hovered; the pointer that pressed 「关注」 is still there.
-   // Move it away as a person would, then let the toast close on its own before reaching 「关闭详情」 underneath.
-   await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:8,y:8});
-   await browser.waitFor("(()=>{const b=document.querySelector('button[aria-label=关闭详情]');if(!b)return false;const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit!==null&&(hit===b||b.contains(hit));})()");
+   // Card 32D-T: the follow toast docks at the detail's bottom right, away from the toolbar. With it still visible and the pointer still
+   // on 「关注」, 「关闭详情」 is reachable at once and closes the detail.
+   await browser.waitFor("document.querySelector('[data-toast-source=item-follow]')?.closest('.workbench-toast')?.dataset.visible==='true'");
+   assert.equal(await browser.evaluate("(()=>{const follow=document.querySelector('[data-action=toggle-item-follow]').getBoundingClientRect();return document.elementFromPoint(follow.x+follow.width/2,follow.y+follow.height/2)?.closest('[data-action=toggle-item-follow]')!==null;})()"),true,'the pointer is still on 「关注」 and nothing covers it');
    await clickWorkbenchControl(browser,'button[aria-label=关闭详情]');await browser.waitFor("Boolean(document.querySelector('[data-action=related-scope]'))");
    await clickWorkbenchControl(browser,'[data-action=related-scope]');
    await browser.command('Page.bringToFront');
