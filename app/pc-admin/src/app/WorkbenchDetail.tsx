@@ -6,7 +6,7 @@ import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,CircleX,Cl
 import { useCallback,useEffect,useLayoutEffect,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams } from 'react-router';
 import type { Principal,WorkbenchCard,WorkbenchDetail } from '../api/client';
-import { api,statusLabels } from '../api/client';
+import { api,ApiError,errorMessage,statusLabels } from '../api/client';
 import { Button,Button as HButton } from '../design/components/Button/Button';
 import { Drawer,DrawerMoreActions } from '../design/components/Drawer/Drawer';
 import { DrawerTabs } from '../design/components/Drawer/DrawerTabs';
@@ -51,8 +51,12 @@ import { WorkbenchLink as Link } from './WorkbenchLink';
 
 
 import { itemLink,Owner,Status,useReporterProfile } from './WorkbenchItemPresentation';
+// A denied or missing item reads as such (design-system card 6 copy table); only other read failures ask to check the network.
+function readFailure(error:unknown):string{
+  return error instanceof ApiError&&[401,403,404].includes(error.status)?errorMessage(error):'加载失败，请检查网络后重试';
+}
 function Message({text,retry}:{text:string;retry?:()=>void}){
-  return retry?<InlineAlert className="state-message" tone="danger" action={<Button tone="ghost" onPress={retry}>重试</Button>}>加载失败，请检查网络后重试</InlineAlert>:<div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p></div>;
+  return retry?<InlineAlert className="state-message" tone="danger" action={<Button tone="ghost" onPress={retry}>重试</Button>}>{text}</InlineAlert>:<div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p></div>;
 }
 function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:Principal}){
   const item=detail.item,profile=useReporterProfile(item,principal),requested=detail.requested_item;
@@ -142,8 +146,8 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
         <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={commandsBlocked} onClick={close} tone="ghost">{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
       </div>
     </div>
-    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text="加载失败，请检查网络后重试" retry={()=>{void result.refetch();}}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body">
-      {result.isError?<><Message text="加载失败，请检查网络后重试" retry={()=>{void result.refetch();}}/><p role="status" className="confirmed-facts">以下为最近已确认资料；连接恢复后重新核验。</p></>:null}
+    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={readFailure(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body">
+      {result.isError?<><Message text={readFailure(result.error)} retry={()=>{void result.refetch();}}/><p role="status" className="confirmed-facts">以下为最近已确认资料；连接恢复后重新核验。</p></>:null}
       <header className="detail-heading ds-detail-hero"><TicketCategoryTile service={detail.item.service}/><div><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2><div className="ds-detail-state">{dismissed?<span className="ds-status-badge ds-stage-pill ds-dismissed-pill" data-tone="neutral" data-closure-state="dismissed"><CircleX aria-hidden="true"/><span className="ds-status-text">已关闭</span></span>:<DrawerStageGlyph stage={detail.item.column}/>}<span className="ds-drawer-status" data-waiting={detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'} hidden={Boolean(dismissed)||statusLabels[detail.item.status]===stagePresentation[detail.item.column].label}>{detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'?<Pause className="ds-drawer-pause-glyph" aria-hidden="true"/>:null}<Status item={detail.item}/></span>{heat?<Tag className="ds-ticket-heat" tone={heat.tone}><Clock3 size={14}/>{heat.label}</Tag>:null}<div className="ds-drawer-urgency" ref={setUrgencyTarget}/><span>报修于 {detail.reported_at?<BeijingTime value={detail.reported_at} now={now}/>: '时间未记录'} · {detail.item.source_label}</span></div></div></header>
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError} capsuleTarget={presenceTarget}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}

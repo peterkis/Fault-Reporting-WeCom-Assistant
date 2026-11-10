@@ -289,6 +289,22 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     assert.deepEqual(selected.map(e=>e.path).sort(),strings(first.replacements).sort());
     assert.ok(selected.every(e=>!routes.retired?.some(r=>r.path===e.path)));
   });
+  await t.test('V1 self-service UI retirement is a separate class bound to the original page driver',()=>{
+    const doc=record(JSON.parse(raw) as unknown);assert.ok(Array.isArray(doc.retired_entries));
+    const entries=doc.retired_entries.map(value=>record(value)),green=entries.findIndex(r=>String(r.reason).startsWith('LEGACY_GREEN_UI_RETIRED:')),v1=entries.findIndex(r=>String(r.reason).startsWith('LEGACY_V1_SELF_SERVICE_UI_RETIRED:'));
+    assert.ok(green>=0&&v1>=0);const v1Entry=entries[v1],greenEntry=entries[green];assert.ok(v1Entry&&greenEntry);
+    // A V1 page file cannot borrow the green class, and a green workbench file cannot borrow the V1 class.
+    for(const [index,reason] of [[v1,'LEGACY_GREEN_UI_RETIRED: borrowed'],[green,'LEGACY_V1_SELF_SERVICE_UI_RETIRED: borrowed']] as const){
+      const altered=entries.map((r,i)=>i===index?{...r,reason}:r);
+      alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,retired_entries:altered}),()=>assert.throws(()=>loadRoutes(root),/RETIREMENT_NOT_LEGACY_UI/u));
+    }
+    const withoutV1=entries.filter((_,i)=>i!==v1);
+    alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,retired_entries:withoutV1}),()=>assert.throws(()=>loadRoutes(root),/LEGACY_TEST_REMOVED/u));
+    const selected=expandPatterns([String(v1Entry.path)],routes.entries,routes.retired);
+    assert.deepEqual(selected.map(e=>e.path).sort(),strings(v1Entry.replacements).sort());
+    assert.ok(routes.retired?.some(r=>r.path==='tests/yxx-ss-007-native-ui.browser.test.mjs'));
+    assert.ok(select(routes,'alias','test:yxx:ss:007').entries.some(e=>e.path==='tests/yxx-ss-007-native-http-errors.test.mjs'));
+  });
   await t.test('removed, duplicate and unregistered tests are rejected',()=>{
     const doc=record(JSON.parse(raw) as unknown);assert.ok(Array.isArray(doc.entries));
     for(const entries of [doc.entries.slice(1),[...doc.entries,doc.entries[0]]])alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,entries}),()=>assert.throws(()=>loadRoutes(root),/INVENTORY/u));

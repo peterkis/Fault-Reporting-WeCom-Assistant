@@ -93,3 +93,17 @@ web/p2-workbench全部10个文件、专属preview脚本/两条npm命令、旧资
 `backend-layout.mts` 的允许清单写死 8 条退役（原有 2 条 + 本次 6 条），每条绑定自己的 target 与 reason；缺登记仍报 `MIGRATION_LAYOUT_SOURCE_MISSING`，复活报 `RETIREMENT_RESURRECTED`，换用他项 reason 或重复登记报 `RETIREMENT_INVALID`。原 382 项映射不变。
 
 历史证据、CHANGELOG、`FILE_INDEX.md` 中的 Evidence 条目与 P2-G1 / P2-007 / SS-009 / SS-010 交付文档里的历史通过或失败记录如实保留。
+
+## 后续处理：测试策略历史项 `wbint-t39-activity-boundaries`（2026-11-10）
+
+`plans/testing-policy.json` 曾把 `tests/wbint-t39-activity-boundaries.browser.test.mts` 整份列为历史专用（applicable:false，替代为空）。在 main（55260a8c）实测三例：
+
+| 用例 | 当前结果 | 处理 |
+| --- | --- | --- |
+| 生产详情在实时连接就绪前已可见、真实重连后无需额外操作即登记 VIEWING，并复用同一条 SSE | 通过 | 保留 |
+| 复核输入登记 EDITING 且归属当前 Ticket | 失败（`P2_006_BROWSER_WAIT_TIMEOUT`）：用 ArrowDown 操作原生 `复核结论` 下拉框，当前 PC 已换成 HeroUI Select，该控件与操作不存在 | 按用户决定只退役此例；EDITING 归属当前 Ticket、复核结束即消失仍由 `wbint-t39-related-review-activity.integration`（真实 HTTP）覆盖，编辑过期与失权由 `wbint-t39-activity-service` 覆盖 |
+| 仅活动请求变慢时，实时连接与授权内部备注仍可用 | 通过（恢复类） | 保留 |
+
+保留的两例都运行在当前 PC 上，不再属于历史专用：从 `testing-policy.json` 的 `history` 移除该项，并把文件加入 presence 按需集合 `wbint-t39-whole-boundaries`（改到 presence 实现或 `tests/wbint-t39-*` 时选中）；原 `wbint-t39-review-fixes` 集合不变。“正在查看 / 编辑”仍是首版必达清单之外的增强协作，不进入默认 PR 集合。
+
+另记（未处理，范围外）：PC 只在原生 input / textarea / select 收到可信 input / change 时登记 EDITING，HeroUI Select 以点击选择，复核结论的选择可能不再登记 EDITING。是否属于产品缺口另行判断。

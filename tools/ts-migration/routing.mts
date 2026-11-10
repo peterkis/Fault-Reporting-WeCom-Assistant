@@ -7,6 +7,10 @@ export type Entry = { path: string; mode: Host; node_flags: string[]; requires_d
 export type Selection = { entries: Entry[]; flags: string[]; label: string };
 export type RetiredEntry = {path:string;replacements:string[]};
 export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown>; frozen: Record<string, unknown>; subprocesses: Record<string, unknown>;retired?:RetiredEntry[] };
+// Each retirement class names the legacy UI its original queued file must have driven.
+const RETIREMENT_KINDS:readonly {prefix:string;legacy:(prior:string)=>boolean}[]=[
+  {prefix:'LEGACY_GREEN_UI_RETIRED:',legacy:prior=>prior.includes('launchSystemBrowser')&&prior.includes('/workbench')},
+  {prefix:'LEGACY_V1_SELF_SERVICE_UI_RETIRED:',legacy:prior=>(prior.includes('launchSystemBrowser')||prior.includes('createYxxBrowserFixture'))&&prior.includes('/wecom/yixiaoxiu/')}];
 export const logical = (p: string): string => p.endsWith('.mts') ? p.slice(0, -4) + '.mjs' : p;
 const hostNames = new Set(['SOURCE_HOST', 'STAGED_RUNTIME', 'MIXED_EXPLICIT_ROOTS']);
 export function flags(value: unknown): string[] {
@@ -36,10 +40,10 @@ export function loadRoutes(root: string): Routes {
     const r=record(value),replacement=strings(r.replacements);
     if(Object.keys(r).sort().join(',')!=='issue,path,reason,replacements'||typeof r.path!=='string'
       ||!required.includes(r.path)||declared.map(logical).includes(logical(r.path))
-      ||!Number.isSafeInteger(r.issue)||(r.issue as number)<1||typeof r.reason!=='string'||!r.reason.startsWith('LEGACY_GREEN_UI_RETIRED:')
+      ||!Number.isSafeInteger(r.issue)||(r.issue as number)<1||typeof r.reason!=='string'||!RETIREMENT_KINDS.some(kind=>(r.reason as string).startsWith(kind.prefix))
       ||!replacement.length||new Set(replacement).size!==replacement.length||replacement.some(p=>!declared.includes(p)))throw Error('MIGRATION_RETIREMENT_INVALID');
-    const prior=git(root,['show',ROUTING_BASE+':'+r.path]);
-    if(!prior.includes('launchSystemBrowser')||!prior.includes('/workbench'))throw Error('MIGRATION_RETIREMENT_NOT_LEGACY_UI');
+    const prior=git(root,['show',ROUTING_BASE+':'+r.path]),kind=RETIREMENT_KINDS.find(item=>(r.reason as string).startsWith(item.prefix));
+    if(!kind?.legacy(prior))throw Error('MIGRATION_RETIREMENT_NOT_LEGACY_UI');
     return {path:r.path,replacements:replacement};
   });
   if(new Set(retired.map(r=>r.path)).size!==retired.length)throw Error('MIGRATION_RETIREMENT_INVALID');

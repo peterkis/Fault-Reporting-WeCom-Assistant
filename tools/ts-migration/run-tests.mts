@@ -93,7 +93,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
     if (!nodeFlags.some(f => f.startsWith('--test-concurrency='))) nodeFlags.push('--test-concurrency=1');
     const sourceHook = !options.reference && entry.mode === 'SOURCE_HOST' ? ['--import', pathToFileURL(path.join(root, '.build/tools/source-hook.mjs')).href] : [];
     // Preserve the serial browser recovery and two 360-second capacity case budgets.
-    const timeoutMs = ['tests/yxx-ss-007-native-ui.browser.test.mjs', 'tests/yxx-ss-009-capacity.integration.test.mjs'].includes(entry.path) ? 900_000 : 240_000;
+    const timeoutMs = entry.path === 'tests/yxx-ss-009-capacity.integration.test.mjs' ? 900_000 : 240_000;
     const prefix = String(index + 1).padStart(3, '0') + '-' + path.basename(entry.path);
     const casePath = prefix + '.cases.jsonl';
     const reporterRoot = options.reference ? root : path.join(root, '.build/runtime');
