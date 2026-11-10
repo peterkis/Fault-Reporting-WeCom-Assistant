@@ -8849,7 +8849,8 @@
       "tests/wbint-t39-online-session.integration.test.mts",
       "tests/wbint-t39-activity-capacity.test.mts",
       "tests/wbint-t39-online-colleagues.test.mts",
-      "tests/wbint-t39-activity-lifecycle.browser.test.mts"
+      "tests/wbint-t39-activity-lifecycle.browser.test.mts",
+      "tests/wbint-t39-activity-boundaries.browser.test.mts"
     ],
     "wbint-t41-search-http-first": [
       "tests/wbint-t41-search-http-first.integration.test.mts"
