@@ -239,13 +239,6 @@
       ]
     },
     {
-      "path": "tests/wbint-t39-activity-boundaries.browser.test.mts",
-      "risk": "Presence VIEWING/EDITING uses old disclosure/control operations; activity faults must not block the note command",
-      "applicable": false,
-      "disposition": "Old control/disclosure browser scenario is historical-only by default. Enhanced presence remains on demand via wbint-t39-activity and wbint-t39-whole-boundaries when its implementation changes; current note/authority checks remain in pr-pc/pr-core.",
-      "replacement": []
-    },
-    {
       "path": "tests/yxx-ss-009-capacity.integration.test.mjs",
       "risk": "Original SS009 candidate capacity and repeated full-app setup",
       "applicable": false,

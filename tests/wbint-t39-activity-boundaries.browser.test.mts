@@ -37,23 +37,9 @@ test('production detail visible before live and after a real reconnect registers
   },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,manualProjection:true});
 });
 
-test('trusted production Review input reports editing on the currently displayed canonical Ticket',async()=>{
-  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets}:Fixture)=>{
-    const ticket=tickets[0]?.ticket,cookie=browserCookies[0],viewer=cookies[2];assert.ok(ticket&&cookie&&viewer);let browser:Browser|undefined,error:unknown;
-    try{
-      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
-      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.disabled===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
-      await browser.evaluate('(()=>{const input=document.querySelector("[aria-label=复核结论]");input.scrollIntoView({block:"center"});input.focus();})()');
-      for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40,nativeVirtualKeyCode:40});
-      await browser.waitFor('document.querySelector("[aria-label=复核结论]")?.value!==""');
-      const until=Date.now()+8000;let editing=false;
-      do{editing=(await currentPeople(origin,viewer,ticket.id)).some(person=>person.display_name==='林舟'&&person.mode==='EDITING');if(!editing)await new Promise(resolve=>setTimeout(resolve,100));}while(!editing&&Date.now()<until);
-      assert.equal(editing,true,'a current authorized linked Review field belongs to the canonical Ticket activity');
-      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-review-result]"))'),false,'editing presence must not submit the Review');
-    }catch(failure){error=failure;try{console.log('T39_REVIEW_EDIT_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,value:document.querySelector("[aria-label=复核结论]")?.value})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
-  },{workbenchRealtimeEnabled:true,workbenchActivityEnabled:true,workbenchManualReviewEnabled:true,manualProjection:true});
-});
+// The trusted Review input case drove the native 复核结论 <select> with ArrowDown; the current PC Review conclusion is a HeroUI
+// Select, so that control and operation no longer exist. It is retired by user decision (2026-11-10); the canonical Ticket
+// ownership of Review edit activity stays covered over real HTTP by wbint-t39-related-review-activity.integration.
 
 test('slow activity alone leaves production realtime and an authorized human note usable',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,runtime}:Fixture)=>{
