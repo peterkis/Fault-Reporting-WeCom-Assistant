@@ -58,7 +58,7 @@ export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:Work
   </div>;
 }
 
-export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;ended_at:string|null;ended_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null}
+export interface ClosureRecordEntry {source:'MANUAL'|'SYSTEM'|null;reason_code:string|null;reason_label:string|null;secondary_reason:{code:string;label:string}|null;note:string|null;duplicate_of:{display_no:string}|null;ended_at:string|null;ended_by_display_name:string|null;notification_state?:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at?:string|null;restored_by_display_name?:string|null;restore_source?:'MANUAL'|'SYSTEM'|null}
 /** Reason tag + 「原单 IT-…」 link, shared by the closure record and (Card 32 B6) the closing line of the activity timeline. */
 export function ClosureFacts({closure}:{closure:Pick<ClosureRecordEntry,'reason_code'|'reason_label'|'secondary_reason'|'duplicate_of'>}){
   const original=externalTicketNumber(closure.duplicate_of?.display_no);
@@ -74,7 +74,7 @@ export function ClosureRecord({entry,now}:{entry:ClosureRecordEntry;now?:number}
     <div className="ds-closure-entry-facts"><ClosureFacts closure={entry}/>
       {entry.notification_state==='SENT'?<span className="ds-closure-entry-notified">已通知报修人</span>:null}</div>
     {entry.note?<p className="ds-closure-entry-note">说明：{entry.note}</p>:null}
-    {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restored_by_display_name?<strong>{entry.restored_by_display_name}</strong>:null}<span>恢复 · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}
+    {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restore_source==='SYSTEM'?null:entry.restored_by_display_name?<strong>{entry.restored_by_display_name}</strong>:null}<span>{entry.restore_source==='SYSTEM'?'系统自动恢复（报修人补充后）':'恢复'} · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}
   </div>;
 }
 

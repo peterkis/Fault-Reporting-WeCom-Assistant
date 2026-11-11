@@ -22,13 +22,14 @@ const reasonCodes=['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_W
 const secondaryCodes=['HUMAN_CONFIRMED','INFORMATION_INSUFFICIENT','BUSINESS_CONSULTATION_CONFIRMED','ACKNOWLEDGED','OUT_OF_SCOPE_CONFIRMED','SERVICE_REQUEST_CONFIRMED','INCIDENT_REVIEW_PENDING','STALE_REVIEW_CANCELLED'];
 export function decodeClosureHistory(value:unknown,subjectId:string):ClosureHistoryPage{
  const v=exact(value,['subject_id','version','items','next_before_version','restore_target']);if(uuid(v.subject_id)!==subjectId||!Array.isArray(v.items)||v.items.length>20)invalid();
- const items:ClosureHistoryEntry[]=v.items.map(value=>{const r=exact(value,['id','before_version','reason_code','reason_label','secondary_reason','note','duplicate_of','source','ended_at','ended_by_display_name','notification_state','restored_at','restored_by_display_name']);
+ const items:ClosureHistoryEntry[]=v.items.map(value=>{const r=exact(value,['id','before_version','reason_code','reason_label','secondary_reason','note','duplicate_of','source','ended_at','ended_by_display_name','notification_state','restored_at','restored_by_display_name','restore_source']);
   if(!reasonCodes.includes(String(r.reason_code))||(r.source!=='MANUAL'&&r.source!=='SYSTEM'))invalid();
+  if(r.restored_at===null?r.restore_source!==null:r.restore_source!=='MANUAL'&&r.restore_source!=='SYSTEM')invalid();
   let secondary:ClosureHistoryEntry['secondary_reason']=null,duplicate:ClosureHistoryEntry['duplicate_of']=null;
   if(r.secondary_reason!==null){const s=exact(r.secondary_reason,['code','label']);if(r.reason_code!=='NOT_IT_SCOPE'||!secondaryCodes.includes(String(s.code)))invalid();secondary={code:s.code as ClosureSecondaryReasonCode,label:text(s.label,128)};}
   if(r.duplicate_of!==null){const d=exact(r.duplicate_of,['display_no']);if(r.reason_code!=='DUPLICATE')invalid();duplicate={display_no:text(d.display_no,128)};}
   return {id:uuid(r.id),before_version:version(r.before_version),reason_code:r.reason_code as ClosureReasonCode,reason_label:text(r.reason_label,128),secondary_reason:secondary,note:nullableText(r.note,2000),duplicate_of:duplicate,source:r.source,
-   ended_at:time(r.ended_at),ended_by_display_name:nullableText(r.ended_by_display_name,128),notification_state:notification(r.notification_state),restored_at:r.restored_at===null?null:time(r.restored_at),restored_by_display_name:nullableText(r.restored_by_display_name,128)};
+   ended_at:time(r.ended_at),ended_by_display_name:nullableText(r.ended_by_display_name,128),notification_state:notification(r.notification_state),restored_at:r.restored_at===null?null:time(r.restored_at),restored_by_display_name:nullableText(r.restored_by_display_name,128),restore_source:r.restore_source as ClosureHistoryEntry['restore_source']};
  });
  if(new Set(items.map(item=>item.id)).size!==items.length||items.some((item,index)=>index>0&&item.before_version>=(items[index-1]?.before_version??0)))invalid();
  let target:ClosureHistoryPage['restore_target']=null;

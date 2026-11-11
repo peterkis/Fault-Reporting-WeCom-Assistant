@@ -19,6 +19,7 @@ import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-weco
 import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
 import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
+import {requireSystemClosureRestoreSchema} from './system-closure-restore-migrate.mjs';
 
 const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET as string});
 export async function main(argv=process.argv.slice(2)){
@@ -42,7 +43,7 @@ export async function main(argv=process.argv.slice(2)){
     });
   }
   if(argv[0]==='--role=gateway')return runGateway({
-    beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);},
+    beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);},
     intakeFactory:({pool,identityHashKey})=>{
       const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:(process.env.P2_016_TEST_USER_TARGET_HASHES as string).split(','),group_hashes:(process.env.P2_016_TEST_GROUP_TARGET_HASHES as string).split(',')});
       const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS,identityHmacKey:identityHashKey});
@@ -51,7 +52,7 @@ export async function main(argv=process.argv.slice(2)){
     senderFactory:({pool,...options})=>createP2016WeComSender({...options,closureNotifications:{pool},cardEnabled:true,reporterAccess:access(pool),
       origin:process.env.P2_016_REPORTER_ORIGIN as string,allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
-  return runWorker({beforeReady:async input=>{await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);},extensionFactory:({pool})=>{
+  return runWorker({beforeReady:async input=>{await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);},extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});
     const realtime=createP2016RealtimeProjector({pool,enabled:true});
     const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string});
