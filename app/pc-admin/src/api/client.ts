@@ -98,24 +98,24 @@ function decodeCardService(value:unknown):NonNullable<WorkbenchCard['service']> 
   return {code:bounded(v.code,64),name_zh:bounded(v.name_zh,80),category:bounded(v.category,64),category_name_zh:bounded(v.category_name_zh,80),source:v.source as NonNullable<WorkbenchCard['service']>['source']};
 }
 function decodeCardClosure(value:unknown,column:BoardColumn,status:string):WorkbenchCard['closure'] {
-  if(column!=='closed'){if(value!==null)throw new ApiError(502,'INVALID_RESPONSE');return null;}
-  const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','secondary_reason','closed_by_display_name','closed_at','duplicate_of','can_restore'];
+  if(column!=='handled'){if(value!==null)throw new ApiError(502,'INVALID_RESPONSE');return null;}
+  const v=object(value),keys=['kind','source','reason_code','reason_label','reason_note','secondary_reason','ended_by_display_name','ended_at','duplicate_of','can_restore'];
   const expected=['RESOLVED','COMPLETED'].includes(status)?'COMPLETED':status==='DISMISSED'?'DISMISSED':null;
   if(Object.keys(v).length!==keys.length||keys.some(key=>!Object.hasOwn(v,key))||expected===null||v.kind!==expected
     ||v.source!==null&&v.source!=='MANUAL'&&v.source!=='SYSTEM'||typeof v.can_restore!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
   const bounded=(value:unknown,maximum:number)=>{if(value===null)return null;const result=text(value);if(!result.trim()||Array.from(result).length>maximum)throw new ApiError(502,'INVALID_RESPONSE');return result;};
-  const actor=bounded(v.closed_by_display_name,128);
+  const actor=bounded(v.ended_by_display_name,128);
   if(v.source!=='MANUAL'&&actor!==null)throw new ApiError(502,'INVALID_RESPONSE');
   let duplicate:NonNullable<WorkbenchCard['closure']>['duplicate_of']=null;
   let secondary:NonNullable<WorkbenchCard['closure']>['secondary_reason']=null;
   if(v.secondary_reason!==null){const s=object(v.secondary_reason),code=bounded(s.code,64),label=bounded(s.label,128);if(Object.keys(s).length!==2||code===null||label===null||v.reason_code!=='NOT_IT_SCOPE')throw new ApiError(502,'INVALID_RESPONSE');secondary={code,label};}
   if(v.duplicate_of!==null){const d=object(v.duplicate_of);if(Object.keys(d).length!==1||!Object.hasOwn(d,'display_no'))throw new ApiError(502,'INVALID_RESPONSE');const display=bounded(d.display_no,128);if(display===null||v.reason_code!=='DUPLICATE')throw new ApiError(502,'INVALID_RESPONSE');duplicate={display_no:display};}
-  if(expected==='DISMISSED'&&(!['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(String(v.reason_code))||v.closed_at===null||v.source===null))throw new ApiError(502,'INVALID_RESPONSE');
+  if(expected==='DISMISSED'&&(!['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(String(v.reason_code))||v.ended_at===null||v.source===null))throw new ApiError(502,'INVALID_RESPONSE');
   return {kind:expected,source:v.source as NonNullable<WorkbenchCard['closure']>['source'],reason_code:bounded(v.reason_code,64),reason_label:bounded(v.reason_label,128),reason_note:bounded(v.reason_note,2000),
-    secondary_reason:secondary,closed_by_display_name:actor,closed_at:v.closed_at===null?null:notificationDatetime(v.closed_at),duplicate_of:duplicate,can_restore:v.can_restore};
+    secondary_reason:secondary,ended_by_display_name:actor,ended_at:v.ended_at===null?null:notificationDatetime(v.ended_at),duplicate_of:duplicate,can_restore:v.can_restore};
 }
 function decodeCard(value:unknown):WorkbenchCard {
-  const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
+  const v=object(value);if(Object.hasOwn(v,'follow_up_schedule')&&v.kind!=='ticket')throw new ApiError(502,'INVALID_RESPONSE');if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','handled'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
   let reporterProfile:WorkbenchCard['reporter_profile'];
   if(Object.hasOwn(v,'reporter_profile')){
     const p=object(v.reporter_profile);
@@ -137,10 +137,10 @@ function decodeCard(value:unknown):WorkbenchCard {
 }
 function decodePage(value:unknown):BoardPage {
   const v=object(value),r=object(v.range);
-  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','closed'].includes(text(v.column))||!['recent','all','custom'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
+  if(!Array.isArray(v.items)||v.items.length>100||!['pending','active','handled'].includes(text(v.column))||!['recent','all','custom'].includes(text(r.mode))||r.timezone!=='Asia/Shanghai')throw new ApiError(502,'INVALID_RESPONSE');
   const column=v.column as BoardColumn,items=v.items.map(decodeCard);if(items.some(item=>item.column!==column))throw new ApiError(502,'INVALID_RESPONSE');
   let counts:BoardPage['group_counts'];
-  if(column==='closed'){
+  if(column==='handled'){
     const group=object(v.group_counts);if(Object.keys(group).length!==2||!['completed','dismissed'].every(key=>Object.hasOwn(group,key)&&typeof group[key]==='number'&&Number.isSafeInteger(group[key])&&group[key]>=0))throw new ApiError(502,'INVALID_RESPONSE');
     counts={completed:group.completed as number,dismissed:group.dismissed as number};
   }else if(Object.hasOwn(v,'group_counts'))throw new ApiError(502,'INVALID_RESPONSE');
@@ -154,8 +154,8 @@ function decodeSearchPage(value:unknown,expected:WorkbenchSearchCriteria):Workbe
  let criteria:WorkbenchSearchCriteria;try{criteria=normalizeSearchCriteria(page.criteria);}catch{throw new ApiError(502,'INVALID_RESPONSE');}
  if(searchCriteriaKey(criteria)!==searchCriteriaKey(expected)||page.column!==criteria.column||range.mode!==criteria.range)throw new ApiError(502,'INVALID_RESPONSE');
  if(criteria.range==='custom'){
-  const until=new Date(Date.parse(criteria.closed_to+'T00:00:00Z')+86_400_000).toISOString().slice(0,10)+' 00:00:00';
-  if(range.from!==criteria.closed_from+' 00:00:00'||range.until!==until)throw new ApiError(502,'INVALID_RESPONSE');
+  const until=new Date(Date.parse(criteria.handled_to+'T00:00:00Z')+86_400_000).toISOString().slice(0,10)+' 00:00:00';
+  if(range.from!==criteria.handled_from+' 00:00:00'||range.until!==until)throw new ApiError(502,'INVALID_RESPONSE');
  }
  const allowed=['kind','id','intake_id','number','title','status','column','priority','source','source_label','source_group','location','reporter_name','reporter_department','reporter_profile','assignee_name','review_reason','created_at','updated_at','completed_at','closure','service','stage_entered_at','attention','supplement_follow_up','follow_up_schedule','web_report_urge'];
  const items=page.items.map(value=>{
@@ -233,7 +233,7 @@ function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification
     const row=object(value),hasNode=Object.hasOwn(row,'node'),hasCycle=Object.hasOwn(row,'cycle_no'),hasRoute=Object.hasOwn(row,'route_kind');
     const keys=['notification_type','destination_type','delivery_id','status','side_effect_state','attempt_count','sent_at','created_at',...(hasNode?['node','cycle_no']:[]),...(hasRoute?['route_kind']:[])];
     if(hasNode!==hasCycle||Object.keys(row).length!==keys.length||Object.keys(row).some(key=>!keys.includes(key))
-      ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_COMPLETED','TICKET_REOPENED','TICKET_CANCELLED'].includes(text(row.notification_type))
+      ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_COMPLETED','TICKET_REOPENED','TICKET_RESTORED','TICKET_DISMISSED'].includes(text(row.notification_type))
       ||!['PERSON','GROUP'].includes(text(row.destination_type))||!['PENDING','LEASED','SENDING','SENT','DEAD_LETTER','RECONCILIATION_REQUIRED','CANCELLED'].includes(text(row.status))
       ||!['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN'].includes(text(row.side_effect_state))
       ||hasRoute&&(row.route_kind!=='YIXIAOXIU_APP'||row.destination_type!=='PERSON')
@@ -587,7 +587,7 @@ export const api={
     const receipt=decodeTicketReceipt(v,ticketId),cycle=decodeCycle(v.handling_cycle);if(cycle.first_responsibility_event_id===null)throw new UnknownCommandOutcome();
     return {...receipt,handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id}};
   }),
-  board:(column:BoardColumn,range:BoardCompletionRange,cursor:string|null,signal:AbortSignal,scope?:'team'|'related',dates?:{from:string;to:string})=>get('/api/workbench/board?'+new URLSearchParams({column,range,limit:'50',...(cursor?{cursor}:{}),...(scope?{scope}:{}),...(range==='custom'&&dates?{closed_from:dates.from,closed_to:dates.to}:{})}),signal,decodePage),
+  board:(column:BoardColumn,range:BoardCompletionRange,cursor:string|null,signal:AbortSignal,scope?:'team'|'related',dates?:{from:string;to:string})=>get('/api/workbench/board?'+new URLSearchParams({column,range,limit:'50',...(cursor?{cursor}:{}),...(scope?{scope}:{}),...(range==='custom'&&dates?{handled_from:dates.from,handled_to:dates.to}:{})}),signal,decodePage),
   detail:(kind:string,id:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/items/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{
     const detail=decodeDetail(value);if(detail.item.kind!==kind||detail.item.id.toLowerCase()!==id.toLowerCase()){
       if(kind!=='review'||detail.requested_item?.kind!==kind||detail.requested_item.id.toLowerCase()!==id.toLowerCase())throw new ApiError(502,'INVALID_RESPONSE');

@@ -9,13 +9,17 @@ import { createYxxMemberCommandContext } from '../app/server/src/yxx-self-servic
 import { createPilotTicketCore } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
-import { createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { createP2016RealtimeProjector } from '../app/server/src/p2-016-realtime-projector.mjs';
 import { createP2016ManualReviewFacade } from '../app/server/src/p2-016-manual-review-facade.mjs';
 import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
 import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
+import { migrateNotificationVocabulary } from '../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
@@ -120,6 +124,8 @@ test('SS-005 authorization denies OAUTH_ONLY before touching the database and fe
 test('SS-005 accepts catalog service codes with the existing receipt and idempotency contract', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxcatalog', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
     const memberScope = scope('catalog');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const input = { ...requestInput('门诊医生工作站打不开'), service_code: 'CLINICAL.OUTPATIENT_WORKSTATION' };
@@ -140,6 +146,8 @@ test('SS-005 accepts catalog service codes with the existing receipt and idempot
 test('SS-005 member list previews only retained initial Web descriptions and locations', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxpreview', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
     const a = scope('preview-a'), b = scope('preview-b');
     const contexts = { A: authContext(a), B: authContext(b) };
     const { authorization } = localAuthorization(contexts);
@@ -179,6 +187,8 @@ test('SS-005 member list previews only retained initial Web descriptions and loc
 test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail', { skip: !databaseUrl, timeout: 180_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
     const scopeA = scope('a');
     const scopeB = scope('b');
     const contexts = { A: authContext(scopeA), B: authContext(scopeB) };
@@ -214,6 +224,20 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
       input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '处方提交不了' } });
     const reopened = await orchestrator.processOne({ requestRef: autoOutOfScope.receipt.request_ref });
     assert.equal(reopened.processed, true);
+    // ADR-0056 supplement: the system out-of-scope closure is restored by the system once, with a full audit trail.
+    const systemRestore = (await pool.query(`SELECT c.source,c.restored_by,c.restore_source,c.restoration_notification_processed_at IS NOT NULL AS settled,
+        c.restoration_notification_message_id,e.event_type,e.payload
+      FROM pilot_ticket.closure_record c JOIN intake.web_request_binding b ON b.intake_id=c.intake_id
+      JOIN intake.service_intake_event e ON e.event_id=c.restoration_event_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows;
+    assert.equal(systemRestore.length, 1);
+    assert.deepEqual({ ...systemRestore[0], payload: undefined }, { source: 'SYSTEM', restored_by: null, restore_source: 'SYSTEM', settled: true,
+      restoration_notification_message_id: null, event_type: 'intake.restored', payload: undefined });
+    assert.equal(systemRestore[0].payload.restore_source, 'SYSTEM');
+    assert.equal(systemRestore[0].payload.trigger, 'REPORTER_SUPPLEMENT');
+    assert.equal(systemRestore[0].payload.input_revision, '2');
+    assert.equal(systemRestore[0].payload.actor_principal_id, null);
+    assert.deepEqual(await orchestrator.processOne({ requestRef: autoOutOfScope.receipt.request_ref }),
+      { processed: false, replayed: true, request_ref: autoOutOfScope.receipt.request_ref });
     assert.equal((await pool.query(`SELECT j.status,j.ended_at FROM intake.contact_journey j
       JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows[0].status, 'TICKET_LINKED');
     assert.equal((await pool.query(`SELECT j.ended_at FROM intake.contact_journey j
@@ -279,11 +303,20 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
       WHERE b.request_ref=$1 AND r.status='PENDING'`, [terminalReview.receipt.request_ref])).rows[0];
     const terminalResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: terminalRow.id,
       body: { client_command_id: randomUUID(), expected_row_version: terminalRow.row_version,
-        resolution_code: 'MARK_OUT_OF_SCOPE', resolution_reason_code: 'SS005_OUT_OF_SCOPE' },
+        resolution_code: 'MARK_OUT_OF_SCOPE', resolution_reason_code: 'OUT_OF_SCOPE_CONFIRMED',
+        reason_code: 'NOT_IT_SCOPE', secondary_reason_code: 'OUT_OF_SCOPE_CONFIRMED' },
     });
     assert.equal(terminalResolution.ok, true);
     assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
       JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid`, [terminalRow.id])).rows[0].status, 'ENDED');
+    // ADR-0056 supplement: a manual out-of-scope closure stays closed after a reporter supplement; only staff restore it.
+    await store.accept({ scope: scopeA, kind: 'SUPPLEMENT', requestRef: terminalReview.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '人工关闭后的补充' } });
+    assert.deepEqual(await orchestrator.processOne({ requestRef: terminalReview.receipt.request_ref }),
+      { processed: false, reason: 'INTAKE_CLOSED', request_ref: terminalReview.receipt.request_ref });
+    assert.equal((await pool.query(`SELECT count(*)::integer AS open FROM pilot_ticket.closure_record c
+      JOIN intake.web_request_binding b ON b.intake_id=c.intake_id WHERE b.request_ref=$1 AND c.restored_at IS NULL AND c.source='MANUAL'`,
+      [terminalReview.receipt.request_ref])).rows[0].open, 1);
     assert.ok(page.next_cursor);
     const allA = [...page.items];
     for (let next = page.next_cursor; next;) {
@@ -360,6 +393,8 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
 test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { skip: !databaseUrl, timeout: 240_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005mix', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
     const memberScope = scope('mixed');
     const contexts = { A: authContext(memberScope) };
     const { authorization } = localAuthorization(contexts);
@@ -449,6 +484,8 @@ test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { 
 test('SS-005 extends aggregate retention for a late accepted supplement', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005ret', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
     const memberScope = scope('retention');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET, retentionMs: 60_000 });
     const root = await store.accept({ scope: memberScope, input: requestInput('处方提交不了') });
@@ -484,6 +521,56 @@ test('SS-005 extends aggregate retention for a late accepted supplement', { skip
       WHERE intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [root.receipt.request_ref])).rows[0].submission_retention, after.binding_retention);
     assert.equal((await createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS })
       .processOne({ requestRef: root.receipt.request_ref })).processed, true);
+  } });
+  await assertNoP2016Residual({ databaseUrl });
+});
+
+test('SS-005 restores a system out-of-scope closure once when the reporter supplements it', { skip: !databaseUrl, timeout: 120_000 }, async () => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005rst', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
+    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    const memberScope = scope('restore');
+    const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
+    const realtime = createP2016RealtimeProjector({ pool, enabled: true });
+    const orchestrators = [0, 1].map(() => createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS, realtimeProjector: realtime }));
+    const closeBySystem = async () => {
+      const root = await store.accept({ scope: memberScope, input: requestInput('天气怎么样') });
+      assert.equal((await orchestrators[0].processOne({ requestRef: root.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
+      // Without a later supplement the closure stays closed.
+      assert.equal((await orchestrators[0].processOne({ requestRef: root.receipt.request_ref })).reason, 'INTAKE_CLOSED');
+      await store.accept({ scope: memberScope, kind: 'SUPPLEMENT', requestRef: root.receipt.request_ref,
+        input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '处方提交不了' } });
+      return root.receipt.request_ref;
+    };
+    const audit = async (requestRef) => (await pool.query(`SELECT
+        (SELECT count(*)::integer FROM pilot_ticket.closure_record c WHERE c.intake_id=b.intake_id AND c.restore_source='SYSTEM') AS system_restores,
+        (SELECT count(*)::integer FROM intake.service_intake_event e WHERE e.intake_id=b.intake_id AND e.event_type='intake.restored') AS restored_events,
+        i.status,i.pilot_ticket_id IS NOT NULL AS linked
+      FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1`, [requestRef])).rows[0];
+
+    // Concurrent processing of the same supplement restores once; the other run sees the processed revision.
+    const concurrent = await closeBySystem();
+    const results = await Promise.all(orchestrators.map((orchestrator) => orchestrator.processOne({ requestRef: concurrent })));
+    assert.deepEqual(results.map((result) => result.processed).sort(), [false, true]);
+    assert.ok(results.some((result) => result.replayed === true));
+    assert.deepEqual(await audit(concurrent), { system_restores: 1, restored_events: 1, status: 'TICKET_CREATED', linked: true });
+    assert.equal((await orchestrators[1].processOne({ requestRef: concurrent })).replayed, true);
+    assert.deepEqual(await audit(concurrent), { system_restores: 1, restored_events: 1, status: 'TICKET_CREATED', linked: true });
+
+    // The pump claims a system-closed Intake that has a pending supplement.
+    const pumped = await closeBySystem();
+    assert.ok((await orchestrators[0].processPending({ batchSize: 10 })).processed >= 1);
+    assert.deepEqual(await audit(pumped), { system_restores: 1, restored_events: 1, status: 'TICKET_CREATED', linked: true });
+
+    // A supplement that is judged out of scope again closes the restored Intake once more, as a new system closure.
+    const again = await store.accept({ scope: memberScope, input: requestInput('天气怎么样') });
+    assert.equal((await orchestrators[0].processOne({ requestRef: again.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
+    await store.accept({ scope: memberScope, kind: 'SUPPLEMENT', requestRef: again.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '明天下雨吗' } });
+    assert.equal((await orchestrators[0].processOne({ requestRef: again.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
+    assert.deepEqual((await pool.query(`SELECT c.restore_source FROM pilot_ticket.closure_record c JOIN intake.web_request_binding b ON b.intake_id=c.intake_id
+      WHERE b.request_ref=$1 ORDER BY c.ended_at,c.restored_at NULLS LAST`, [again.receipt.request_ref])).rows.map((row) => row.restore_source), ['SYSTEM', null]);
+    assert.equal((await audit(again.receipt.request_ref)).status, 'DISMISSED');
   } });
   await assertNoP2016Residual({ databaseUrl });
 });

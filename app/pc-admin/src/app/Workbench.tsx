@@ -62,8 +62,8 @@ import { WorkbenchLink as Link } from './WorkbenchLink';
 
 import { BoardColumnLoading } from './WorkbenchLoading';
 
-const names:Record<BoardColumn,string>={pending:stagePresentation.pending.label,active:stagePresentation.active.label,closed:stagePresentation.closed.label};
-const columns:readonly BoardColumn[]=['pending','active','closed'];
+const names:Record<BoardColumn,string>={pending:stagePresentation.pending.label,active:stagePresentation.active.label,handled:stagePresentation.handled.label};
+const columns:readonly BoardColumn[]=['pending','active','handled'];
 function conditionLocationKey(params:URLSearchParams){const next=new URLSearchParams(params);next.delete('view');next.delete('detail');next.sort();return next.toString();}
 function useColumn(principal:Principal,column:BoardColumn,range:BoardCompletionRange,scope?:'team'|'related',enabled=true,dates?:{from:string;to:string}){
   return useInfiniteQuery({queryKey:['board',principal.principal_id,column,range,...(scope?[scope,principal.authorization_revision,principal.expires_epoch_ms]:[]),...(dates?[dates.from,dates.to]:[])],initialPageParam:null as string|null,
@@ -101,7 +101,7 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
   const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
   const metadata=fields.length||sourceLabel?<p className="card-meta" title={[...fields,sourceLabel].filter(Boolean).join(' · ')}>{fields.length?<span className="ds-reporter-text">{fields.join(' · ')}</span>:null}{fields.length&&sourceLabel?<span aria-hidden="true">·</span>:null}{sourceLabel?<SourceLabel className="neutral-chip" source={item.source} label={sourceLabel}/>:null}</p>:null;
-  const incomplete=item.column!=='closed'&&!item.location?.trim()&&!name?.trim()&&!department?.trim(),tags=[...cardTags(item),...(incomplete?[{key:'incomplete',label:'待补位置',tone:'neutral' as const}]:[])];
+  const incomplete=item.column!=='handled'&&!item.location?.trim()&&!name?.trim()&&!department?.trim(),tags=[...cardTags(item),...(incomplete?[{key:'incomplete',label:'待补位置',tone:'neutral' as const}]:[])];
   const start=cardHeatStart(item);
   const heat=cardHeat(item,now);
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
@@ -110,7 +110,7 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
     <TicketPresence people={presence} unclaimed={item.column==='pending'&&!item.assignee_name}/>
     {item.closure?.kind==='DISMISSED'?<><div className="ds-dismissed-card-content"><DismissedTicketCardBody item={item} now={now} metadata={metadata} titleLink={<Link draggable={false} className="card-open ds-dismissed-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>{item.title}<span className="sr-only">查看详情</span></Link>}/></div><RestoreClosedItem item={item} principal={principal}/></>:<BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>
-      <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='closed'?item.completed_at:null}
+      <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='handled'?item.completed_at:null}
         metadata={metadata} tags={tags}
         followUp={<SharedFollowUpSummary value={item.follow_up_schedule} compact/>}
         owner={<span className="owner" title={item.assignee_name??'等待领取'}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/>{item.assignee_name?<span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span>:null}</span>}
@@ -185,14 +185,14 @@ function BoardSection({principal,query,column,label,search,selected,now,loaded,e
   const groupCounts=counts??{completed:completed.length,dismissed:dismissed.length};
   const group=(kind:'completed'|'dismissed',groupItems:WorkbenchCard[])=><ProcessedGroup key={kind} kind={kind} items={groupItems} count={groupCounts[kind]} principalId={principal.principal_id} renderCard={renderCard} error={query.isError}/>;
   const empty=!loaded.length?<div className="empty"><p>{filtered?'已加载的事项中暂无匹配结果':boardEmptyMessage(column,query.data?.pages[0]?.range)}</p>{query.isError||filtered?null:earlierAction}</div>:null;
-  const content=<BoardColumnView column={column} label={label} count={query.isError?'—':column==='closed'?groupCounts.completed+groupCounts.dismissed:loaded.length} countTitle={column==='closed'&&counts?'当前日期范围内的事项总数':'当前筛选后已加载的事项'} sort={sort} onSort={onSort} blocked={blocked||preserveOrder} newCount={newCount} onReveal={onReveal}>
-    {query.isPending?<BoardColumnLoading/>:query.isError&&!query.data?<Message text={errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">连接中断，显示最近已确认资料。</p>:null}<div className="column-cards" id={'cards-'+column}>{column==='closed'?<><BoardDropColumn column={column}><div className="ds-completed-drop-zone">{group('completed',completed)}</div></BoardDropColumn>{group('dismissed',dismissed)}</>:column==='pending'&&loaded.length?<><BoardGroup label="待判断" count={intakes.length}>{visible.filter(item=>item.kind!=='ticket').map(renderCard)}</BoardGroup><BoardGroup label="待接单" count={tickets.length}>{visible.filter(item=>item.kind==='ticket').map(renderCard)}</BoardGroup></>:visible.map(renderCard)}{empty}</div>{column!=='closed'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)} error={query.isError}/>:null}</>}
+  const content=<BoardColumnView column={column} label={label} count={query.isError?'—':column==='handled'?groupCounts.completed+groupCounts.dismissed:loaded.length} countTitle={column==='handled'&&counts?'当前日期范围内的事项总数':'当前筛选后已加载的事项'} sort={sort} onSort={onSort} blocked={blocked||preserveOrder} newCount={newCount} onReveal={onReveal}>
+    {query.isPending?<BoardColumnLoading/>:query.isError&&!query.data?<Message text={errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<>{query.isError?<p role="status" className="confirmed-facts">连接中断，显示最近已确认资料。</p>:null}<div className="column-cards" id={'cards-'+column}>{column==='handled'?<><BoardDropColumn column={column}><div className="ds-completed-drop-zone">{group('completed',completed)}</div></BoardDropColumn>{group('dismissed',dismissed)}</>:column==='pending'&&loaded.length?<><BoardGroup label="待判断" count={intakes.length}>{visible.filter(item=>item.kind!=='ticket').map(renderCard)}</BoardGroup><BoardGroup label="待接单" count={tickets.length}>{visible.filter(item=>item.kind==='ticket').map(renderCard)}</BoardGroup></>:visible.map(renderCard)}{empty}</div>{column!=='handled'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)} error={query.isError}/>:null}</>}
     {!query.isError&&!query.isPending?(query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null):null}
   </BoardColumnView>;
-  return column==='closed'?content:<BoardDropColumn column={column}>{content}</BoardDropColumn>;
+  return column==='handled'?content:<BoardDropColumn column={column}>{content}</BoardDropColumn>;
 }
 function ProcessedGroup({kind,items,count,principalId,renderCard,error}:{kind:'completed'|'dismissed';items:WorkbenchCard[];count:number;principalId:string;renderCard:(item:WorkbenchCard)=>ReactNode;error:boolean}){
-  const [expanded,setExpanded]=useState(false),id='cards-closed-'+kind;
+  const [expanded,setExpanded]=useState(false),id='cards-handled-'+kind;
   return <BoardGroup label={kind==='completed'?'已完成':'已关闭'} count={count} defaultExpanded={kind==='completed'} preferenceKey={'pc-admin:processed-group:'+principalId+':'+kind} {...(kind==='dismissed'?{note:'不计入完成数'}:{})}>
     <div id={id}>{(expanded?items:items.slice(0,3)).map(renderCard)}</div>
     <More expanded={expanded} count={items.length} controls={id} onClick={()=>setExpanded(value=>!value)} error={error}/>
@@ -203,7 +203,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const [detailNavigationBlocked,setNavigationBlocked]=useState(false),[claimNavigationBlocked,setClaimNavigationBlocked]=useState(false);
   const [closureBlocked,setClosureBlocked]=useState(false);
   const navigationBlocked=detailNavigationBlocked||claimNavigationBlocked||closureBlocked;
-  const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',closed:'newest'});
+  const [sorts,setSorts]=useState<Record<BoardColumn,BoardSort>>({pending:'oldest',active:'oldest',handled:'newest'});
   const [summarySelection,setSummarySelection]=useState<{scope:string;filter:BoardSummaryFilter|null}>({scope:'',filter:null});
   const [boardFilters,setBoardFilters]=useState({scope:'',category:'all',handler:'all'});
   const [conditionsTransition,setConditionsTransition]=useState(false),pendingConditionsRef=useRef<URLSearchParams|null>(null);
@@ -212,8 +212,8 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const locationMode=Boolean(selected.id&&params.get('locate')==='1');
   const validLocation=Boolean(principal.workbench_reminders_enabled&&locationMode&&['ticket','review','intake'].includes(selected.kind??'')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(selected.id??''));
   const view=params.get('view')==='list'?'list':'board',range:BoardCompletionRange=params.get('range')==='custom'?'custom':params.get('range')==='all'?'all':principal.workbench_search_enabled&&params.get('search')==='1'&&!params.has('range')?'all':'recent',fullPage=Boolean(!locationMode&&selected.id&&params.get('detail')==='page');
-  const closedDates=range==='custom'?{from:params.get('closed_from')??'',to:params.get('closed_to')??''}:undefined;
-  const rangeKey=range+':'+(closedDates?.from??'')+':'+(closedDates?.to??'');
+  const handledDates=range==='custom'?{from:params.get('handled_from')??'',to:params.get('handled_to')??''}:undefined;
+  const rangeKey=range+':'+(handledDates?.from??'')+':'+(handledDates?.to??'');
   const client=useQueryClient();
   const located=useQuery({queryKey:['reminder-locate',principal.principal_id,selected.kind,selected.id,principal.authorization_revision,principal.expires_epoch_ms],enabled:validLocation,retry:false,gcTime:0,
     queryFn:({signal})=>api.detail(selected.kind??'',selected.id??'',null,signal)});
@@ -240,12 +240,12 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     // query's own fetching state then keeps read controls locked until settle.
     pendingConditionsRef.current=null;setConditionsTransition(false);
   },[location]);
-  const basePending=useColumn(principal,'pending',range,scope,!searchMode,closedDates),baseActive=useColumn(principal,'active',range,scope,!searchMode,closedDates),baseClosed=useColumn(principal,'closed',range,scope,!searchMode,closedDates);
+  const basePending=useColumn(principal,'pending',range,scope,!searchMode,handledDates),baseActive=useColumn(principal,'active',range,scope,!searchMode,handledDates),baseHandled=useColumn(principal,'handled',range,scope,!searchMode,handledDates);
   const searchedColumn=(column:BoardColumn):ColumnQuery=>({...searched,isFetchingNextPage:searched.isFetching,
     data:searched.isError||parsed.error?undefined:searched.data?{pages:searched.data.pages.map(page=>({items:page.items.filter(item=>item.column===column),range:page.range}))}:undefined,
     refetch:searched.restart,fetchNextPage:()=>searched.isFetching?Promise.resolve():searched.fetchNextPage()});
-  const pending:ColumnQuery=searchMode?searchedColumn('pending'):basePending,active:ColumnQuery=searchMode?searchedColumn('active'):baseActive,closed:ColumnQuery=searchMode?searchedColumn('closed'):baseClosed;
-  const queries=[pending,active,closed],items=queries.flatMap(query=>query.data?.pages.flatMap(page=>page.items)??[]),fresh=[...new Map(items.map(item=>[item.kind+':'+item.id,item])).values()];
+  const pending:ColumnQuery=searchMode?searchedColumn('pending'):basePending,active:ColumnQuery=searchMode?searchedColumn('active'):baseActive,handled:ColumnQuery=searchMode?searchedColumn('handled'):baseHandled;
+  const queries=[pending,active,handled],items=queries.flatMap(query=>query.data?.pages.flatMap(page=>page.items)??[]),fresh=[...new Map(items.map(item=>[item.kind+':'+item.id,item])).values()];
   const summaryScope=JSON.stringify([rangeKey,scope,searchMode,searchKey,principal.authorization_revision]);
   const filterScope=principal.principal_id+':'+summaryScope;
   const categoryFilter=!searchMode&&catalog.isSuccess&&!catalog.isError&&boardFilters.scope===filterScope?boardFilters.category:'all';
@@ -257,7 +257,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   // One presentation sequence drives columns, filtered results and detail navigation.
   const ordered=view==='board'?columns.flatMap(column=>{
     const sorted=sortBoardItems(fresh.filter(item=>item.column===column),column,sorts[column]);
-    return column==='pending'?[...sorted.filter(item=>item.kind!=='ticket'),...sorted.filter(item=>item.kind==='ticket')]:column==='closed'?[...sorted.filter(item=>item.closure?.kind==='COMPLETED'),...sorted.filter(item=>item.closure?.kind==='DISMISSED')]:sorted;
+    return column==='pending'?[...sorted.filter(item=>item.kind!=='ticket'),...sorted.filter(item=>item.kind==='ticket')]:column==='handled'?[...sorted.filter(item=>item.closure?.kind==='COMPLETED'),...sorted.filter(item=>item.closure?.kind==='DISMISSED')]:sorted;
   }):orderWorkTableItems(fresh);
   let unique=ordered;
   const holdOrder=principal.realtime_sse_enabled&&Boolean(selected.id)&&!fullPage&&!locationMode;
@@ -271,10 +271,10 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     // Freeze within the visible hierarchy; new keys must not sit behind unrelated groups in navigation.
     unique=view==='list'?orderWorkTableItems(ranked):columns.flatMap(column=>{
       const stage=ranked.filter(item=>item.column===column);
-      return view==='board'&&column==='pending'?[...stage.filter(item=>item.kind!=='ticket'),...stage.filter(item=>item.kind==='ticket')]:view==='board'&&column==='closed'?[...stage.filter(item=>item.closure?.kind==='COMPLETED'),...stage.filter(item=>item.closure?.kind==='DISMISSED')]:stage;
+      return view==='board'&&column==='pending'?[...stage.filter(item=>item.kind!=='ticket'),...stage.filter(item=>item.kind==='ticket')]:view==='board'&&column==='handled'?[...stage.filter(item=>item.closure?.kind==='COMPLETED'),...stage.filter(item=>item.closure?.kind==='DISMISSED')]:stage;
     });
   }
-  const arrivals=useBoardArrivals(unique,orderingScope+':'+queries.map(query=>query.data?.pages.length??0).join(','),queries.every(query=>!query.isPending&&!query.isError)&&!(searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching),principal.realtime_sse_enabled===true&&view==='board'&&!searchMode&&!fullPage&&!locationMode&&!holdOrder);
+  const arrivals=useBoardArrivals(unique,orderingScope+':'+queries.map(query=>query.data?.pages.length??0).join(','),queries.every(query=>!query.isPending&&!query.isError)&&!(searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching),principal.realtime_sse_enabled===true&&view==='board'&&!searchMode&&!fullPage&&!locationMode&&!holdOrder);
   unique=arrivals.items;
   // The detail freeze must inherit the sequence actually presented after arrivals.
   if(!holdOrder)order.current={scope:orderingScope,keys:unique.map(item=>item.kind+':'+item.id)};
@@ -287,15 +287,15 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const update=(key:string,value:string)=>{const next=new URLSearchParams(key==='view'&&pendingConditionsRef.current?pendingConditionsRef.current:params);next.set(key,value);if(key==='scope')commitConditions(next);else setParams(next);};
   const applyClosedRange=(value:BoardCompletionRange,dates?:{from:string;to:string})=>{
     if(navigationBlocked)return;
-    const next=new URLSearchParams(params);next.set('range',value);for(const key of ['closed_from','closed_to','cursor','limit'])next.delete(key);
-    if(value==='custom'&&dates){next.set('closed_from',dates.from);next.set('closed_to',dates.to);}commitConditions(next);
+    const next=new URLSearchParams(params);next.set('range',value);for(const key of ['handled_from','handled_to','cursor','limit'])next.delete(key);
+    if(value==='custom'&&dates){next.set('handled_from',dates.from);next.set('handled_to',dates.to);}commitConditions(next);
   };
-  const refresh=()=>{if(searchConditionsBusy)return;if(searchMode){if(!searched.isFetching)void searched.restart();}else{void pending.refetch();void active.refetch();void closed.refetch();}};
+  const refresh=()=>{if(searchConditionsBusy)return;if(searchMode){if(!searched.isFetching)void searched.restart();}else{void pending.refetch();void active.refetch();void handled.refetch();}};
   const applySearch=(criteria:WorkbenchSearchCriteria)=>{
-    const next=new URLSearchParams(params);for(const key of SEARCH_KEYS)next.delete(key);for(const key of ['closed_from','closed_to','cursor','limit'])next.delete(key);
+    const next=new URLSearchParams(params);for(const key of SEARCH_KEYS)next.delete(key);for(const key of ['handled_from','handled_to','cursor','limit'])next.delete(key);
     for(const [key,value]of searchParameters(criteria))next.set(key,value);next.set('search','1');commitConditions(next);
   };
-  const leaveSearch=()=>{const next=new URLSearchParams(params),keep=new Set(['range','scope',...(range==='custom'?['closed_from','closed_to']:[])]);for(const key of SEARCH_KEYS)if(!keep.has(key))next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');commitConditions(next);};
+  const leaveSearch=()=>{const next=new URLSearchParams(params),keep=new Set(['range','scope',...(range==='custom'?['handled_from','handled_to']:[])]);for(const key of SEARCH_KEYS)if(!keep.has(key))next.delete(key);next.delete('search');next.delete('cursor');next.delete('limit');commitConditions(next);};
   const closureKind=searchMode?(parsed.criteria?.closure_kind??'all'):'all';
   const applyClosureKind=(value:string)=>{
     if(navigationBlocked)return;
@@ -307,7 +307,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const visibleItems=(loaded:WorkbenchCard[])=>loaded.filter(item=>(!locatedItem||item.kind!==locatedItem.kind||item.id!==locatedItem.id)&&(!summaryFilter||matchesBoardSummary(item,summaryFilter,now))&&(categoryFilter==='all'||(categoryFilter==='unclassified'?!item.service:item.service?.category===categoryFilter))&&(handlerFilter==='all'||(handlerFilter==='unassigned'?!item.assignee_name:handlerFilter==='name:'+item.assignee_name)));
   const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
-  useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseClosed.isFetching,orderingScope,arrivals.arrivalKeys);
+  useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching,orderingScope,arrivals.arrivalKeys);
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ClosureActionsProvider principal={principal} otherBlocked={detailNavigationBlocked||claimNavigationBlocked} onBlockedChange={setClosureBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <Toolbar className={'ds-board-toolbar'+(view==='list'?' ds-list-toolbar':'')}>
       <div className="ds-board-toolbar-top">
@@ -324,7 +324,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
         </div>
           {categoryFilter!=='all'&&handlerFilter!=='all'?<Button tone="ghost" data-action="clear-board-filters" isDisabled={navigationBlocked||searchMode} onPress={()=>setBoardFilters({scope:filterScope,category:'all',handler:'all'})}>清除</Button>:null}
         </div>
-        <BoardDatePresets range={range} dates={closedDates} now={now} blocked={navigationBlocked||searchConditionsBusy} onApply={applyClosedRange}/>
+        <BoardDatePresets range={range} dates={handledDates} now={now} blocked={navigationBlocked||searchConditionsBusy} onApply={applyClosedRange}/>
       </div>
     </Toolbar>
     {searchMode&&searched.isError?<p role="alert" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</p>:null}
@@ -332,17 +332,17 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
-    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='closed'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter||categoryFilter!=='all'||handlerFilter!=='all')} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter||categoryFilter!=='all'||handlerFilter!=='all')} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
       <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind}
         renderLink={(item,content)=><BoardActionCard item={item}><Link draggable={false} className="row-link card-open" to={itemLink(item,location.search)} state={{fromBoard:true}} title={item.title}>{content}</Link></BoardActionCard>}
         renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={relativeTime}
-        groups={columns.flatMap((column,index)=>{const query=queries[index];if(!query||closureKind!=='all'&&column!=='closed')return [];const loaded=visibleItems(unique.filter(item=>item.column===column));return [{column,label:label(column),items:loaded,count:query.isError?'—':loaded.length,
+        groups={columns.flatMap((column,index)=>{const query=queries[index];if(!query||closureKind!=='all'&&column!=='handled')return [];const loaded=visibleItems(unique.filter(item=>item.column===column));return [{column,label:label(column),items:loaded,count:query.isError?'—':loaded.length,
           feedback:query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError&&!query.data?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:query.isError?<p role="status" className="confirmed-facts">{errorMessage(query.error)} 显示最近已确认资料。</p>:null,
           nextPage:query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}];})}/></>}
 
     <div className="range-bar sr-only" data-loaded-count><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='closed'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='handled'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </BoardActions></ClosureActionsProvider></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){

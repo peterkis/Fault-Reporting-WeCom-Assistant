@@ -5,7 +5,7 @@ import {exactP2016,failP2016,localP2016} from './p2-016-domain-contracts.mjs';
 
 export const CLOSURE_REASONS:Readonly<Record<ClosureReasonCode,string>>=Object.freeze({FALSE_REPORT_OR_TEST:'误报或测试',DUPLICATE:'重复报修',NOT_IT_SCOPE:'非 IT 范围',REPORTER_WITHDREW:'报修人撤回',REPORTER_UNREACHABLE:'无法联系报修人',OTHER:'其他'});
 export const CLOSURE_SECONDARY_REASONS:Readonly<Record<ClosureSecondaryReasonCode,string>>=Object.freeze({HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'描述不足，需要补充',BUSINESS_CONSULTATION_CONFIRMED:'已核对为业务咨询',ACKNOWLEDGED:'确认收到',OUT_OF_SCOPE_CONFIRMED:'已核对为范围外诉求',SERVICE_REQUEST_CONFIRMED:'已核对为服务请求',INCIDENT_REVIEW_PENDING:'待公共故障审核',STALE_REVIEW_CANCELLED:'明确取消旧复核'});
-export interface ClosureRecord extends NormalizedClosureInput {id:string;subject_type:'TICKET'|'INTAKE';ticket_id:string|null;intake_id:string|null;before_status:string;before_assignee_id:string|null;before_team_id:string|null;before_version:number;before_cycle_id:string|null;before_snapshot:Record<string,unknown>;closed_by:string|null;source:'MANUAL'|'SYSTEM';closed_at:string;closure_ticket_event_id:string|null;closure_intake_event_id:string|null;notification_message_id:string|null;notification_processed_at:string|null;restored_at:string|null;restored_by:string|null;restoration_event_id:string|null}
+export interface ClosureRecord extends NormalizedClosureInput {id:string;subject_type:'TICKET'|'INTAKE';ticket_id:string|null;intake_id:string|null;before_status:string;before_assignee_id:string|null;before_team_id:string|null;before_version:number;before_cycle_id:string|null;before_snapshot:Record<string,unknown>;ended_by:string|null;source:'MANUAL'|'SYSTEM';ended_at:string;closure_ticket_event_id:string|null;closure_intake_event_id:string|null;notification_message_id:string|null;notification_processed_at:string|null;restored_at:string|null;restored_by:string|null;restoration_event_id:string|null}
 export function normalizeClosureInput(input:unknown):NormalizedClosureInput{
  const v=exactP2016(input,['reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'],['reason_code']);
  if(typeof v.reason_code!=='string'||!Object.hasOwn(CLOSURE_REASONS,v.reason_code))failP2016();
@@ -47,7 +47,7 @@ export function reporterClosureProjection(value:unknown,status:string|null):stri
  return reporterClosureText({reason_code:record.reason_code as ClosureReasonCode,duplicate_of_ref:record.duplicate_of_ref as string|null});
 }
 export async function insertClosureRecord({transaction:tx,subjectType,subjectId,beforeStatus,beforeAssignee=null,beforeTeam=null,beforeVersion,beforeCycle=null,beforeSnapshot={},actor,source,input,ticketEventId=null,intakeEventId=null}:{transaction:PostgresTransaction;subjectType:'TICKET'|'INTAKE';subjectId:string;beforeStatus:string;beforeAssignee?:string|null;beforeTeam?:string|null;beforeVersion:number;beforeCycle?:string|null;beforeSnapshot?:Record<string,unknown>;actor:string|null;source:'MANUAL'|'SYSTEM';input:NormalizedClosureInput;ticketEventId?:string|null;intakeEventId?:string|null}):Promise<ClosureRecord>{
- const r=await tx.query<ClosureRecord>(`INSERT INTO pilot_ticket.closure_record(subject_type,ticket_id,intake_id,reason_code,secondary_reason_code,note,duplicate_of_ref,notify_reporter,before_status,before_assignee_id,before_team_id,before_version,before_cycle_id,before_snapshot,closed_by,source,closure_ticket_event_id,closure_intake_event_id)
+ const r=await tx.query<ClosureRecord>(`INSERT INTO pilot_ticket.closure_record(subject_type,ticket_id,intake_id,reason_code,secondary_reason_code,note,duplicate_of_ref,notify_reporter,before_status,before_assignee_id,before_team_id,before_version,before_cycle_id,before_snapshot,ended_by,source,closure_ticket_event_id,closure_intake_event_id)
   VALUES($1,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9,$10::uuid,$11,$12,$13::uuid,$14::jsonb,$15,$16,$17::uuid,$18::uuid) RETURNING *`,
  [subjectType,subjectType==='TICKET'?subjectId:null,subjectType==='INTAKE'?subjectId:null,input.reason_code,input.secondary_reason_code,input.note,input.duplicate_of_ref,input.notify_reporter,beforeStatus,beforeAssignee,beforeTeam,beforeVersion,beforeCycle,JSON.stringify(beforeSnapshot),actor,source,ticketEventId,intakeEventId]);
  const record=r.rows[0];if(!record)failP2016('ACTION_FAILED',503);return record;
@@ -56,9 +56,37 @@ export async function currentClosure(tx:PostgresTransaction,kind:'TICKET'|'INTAK
  const row=(await tx.query<ClosureRecord>(`SELECT * FROM pilot_ticket.closure_record WHERE ${kind==='TICKET'?'ticket_id':'intake_id'}=$1::uuid AND restored_at IS NULL${lock?' FOR UPDATE':''}`,[id])).rows[0];
  if(!row)failP2016('ACTION_FAILED',503);return row;
 }
-export async function markClosureRestored(tx:PostgresTransaction,record:ClosureRecord,actor:string,eventId:string):Promise<void>{
- const r=await tx.query(`UPDATE pilot_ticket.closure_record SET restored_at=GREATEST(closed_at,date_trunc('second',clock_timestamp() AT TIME ZONE 'Asia/Shanghai')),restored_by=$2::uuid,restoration_event_id=$3::uuid WHERE id=$1::uuid AND restored_at IS NULL`,[record.id,actor,eventId]);
+/** actor null records a system restoration; 074 allows it only for a system out-of-scope Intake closure. */
+export async function markClosureRestored(tx:PostgresTransaction,record:ClosureRecord,actor:string|null,eventId:string):Promise<void>{
+ const r=await tx.query(`UPDATE pilot_ticket.closure_record SET restored_at=GREATEST(ended_at,date_trunc('second',clock_timestamp() AT TIME ZONE 'Asia/Shanghai')),restored_by=$2::uuid,restoration_event_id=$3::uuid WHERE id=$1::uuid AND restored_at IS NULL`,[record.id,actor,eventId]);
  if(r.rowCount!==1)failP2016('VERSION_CONFLICT',409);
+}
+export const RESTORABLE_INTAKE_STATUSES:readonly string[]=Object.freeze(['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED']);
+/** A system out-of-scope closure of an Intake; only this closure is restored by the system on a later reporter supplement. */
+export function systemRestorableIntakeClosure(record:ClosureRecord):boolean{
+ return record.subject_type==='INTAKE'&&record.source==='SYSTEM'&&record.ended_by===null&&record.reason_code==='NOT_IT_SCOPE'
+  &&record.secondary_reason_code==='OUT_OF_SCOPE_CONFIRMED'&&RESTORABLE_INTAKE_STATUSES.includes(record.before_status);
+}
+/**
+ * Puts a DISMISSED Intake back to its pre-closure snapshot and records the restoration. The caller holds the Intake row lock and the
+ * current closure record lock. actor null is a system restoration (ADR-0056 supplement, 074).
+ */
+export async function restoreIntakeClosure(tx:PostgresTransaction,{intakeId,version,requestType,record,actor,traceId,detail,reviewRestored}:{intakeId:string;version:number;requestType:string;record:ClosureRecord;actor:string|null;traceId:string;detail?:Record<string,unknown>;reviewRestored:(reviewId:string)=>Promise<void>}):Promise<string>{
+ const snapshot=record.before_snapshot;
+ if(!RESTORABLE_INTAKE_STATUSES.includes(record.before_status))failP2016('ACTION_FAILED',503);
+ await tx.query('UPDATE intake.service_intake SET status=$2,request_type=$3,version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid',[intakeId,record.before_status,snapshot.request_type??requestType]);
+ if(Array.isArray(snapshot.journeys))for(const j of snapshot.journeys){
+  if(!j||typeof j!=='object'||typeof j.id!=='string'||typeof j.status!=='string')failP2016('ACTION_FAILED',503);
+  await tx.query('UPDATE intake.contact_journey SET status=$2,ended_at=$3::timestamp,row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND linked_ticket_id IS NULL',[j.id,j.status,j.ended_at??null]);
+ }
+ if(Array.isArray(snapshot.reviews))for(const r of snapshot.reviews){
+  if(!r||typeof r!=='object'||typeof r.id!=='string'||r.status!=='PENDING')failP2016('ACTION_FAILED',503);
+  await tx.query(`UPDATE intake.manual_review_item SET status='PENDING',row_version=row_version+1,resolution_command_id=NULL,resolution_command_hash=NULL,resolution_code=NULL,resolution_reason_code=NULL,resolved_by_principal_id=NULL,resolution_decision_id=NULL,resolved_at=NULL,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND service_intake_id=$2::uuid`,[r.id,intakeId]);
+  await reviewRestored(r.id);
+ }
+ const event=await appendIntakeClosureEvent(tx,{intakeId,version:version+1,type:'intake.restored',oldStatus:'DISMISSED',newStatus:record.before_status,actor,traceId,...(detail?{detail}:{})});
+ await markClosureRestored(tx,record,actor,event);
+ return event;
 }
 export async function intakeClosureSnapshot(tx:PostgresTransaction,intakeId:string):Promise<Record<string,unknown>>{
  const journeys=(await tx.query(`SELECT j.id::text,j.status,j.ended_at FROM intake.contact_journey j WHERE j.origin_intake_id=$1::uuid OR EXISTS(SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=$1::uuid) ORDER BY j.id FOR UPDATE OF j`,[intakeId])).rows;
@@ -83,21 +111,21 @@ export async function terminateClosureFollowUps(tx:PostgresTransaction,record:Cl
  const features=(await tx.query<{supplements:boolean;schedules:boolean;deadlines:boolean;cards:boolean;urges:boolean}>(`SELECT
   to_regclass('pilot_ticket.workbench_supplement_disposition') IS NOT NULL AND to_regclass('intake.web_submission') IS NOT NULL AS supplements,
   to_regclass('pilot_ticket.follow_up_schedule') IS NOT NULL AS schedules,to_regclass('notification.card_action_task') IS NOT NULL AS cards,to_regclass('intake.web_report_urge') IS NOT NULL AS urges,
-  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket' AND column_name='auto_close_epoch_ms') AS deadlines`)).rows[0];
+  EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket' AND column_name='auto_complete_epoch_ms') AS deadlines`)).rows[0];
  if(features?.supplements)await tx.query(SUPPLEMENT_MATERIALS_SQL+` INSERT INTO pilot_ticket.closure_supplement_termination(closure_id,ticket_id,source_intake_id,source_ref,revision)
   SELECT $3::uuid,$2::uuid,m.source_intake_id,m.source_ref,m.revision FROM materials m WHERE NOT EXISTS(${SUPPLEMENT_RESOLUTION_SQL})`,[intakeId,record.ticket_id,record.id]);
  if(features?.schedules)await tx.query('UPDATE pilot_ticket.follow_up_schedule SET due_at=NULL,due_epoch_ms=NULL,scheduled_event_id=NULL WHERE ticket_id=$1::uuid',[record.ticket_id]);
  if(features?.urges)await tx.query(`UPDATE pilot_ticket.closure_record SET before_snapshot=before_snapshot||jsonb_build_object('urge_sequence',(SELECT COALESCE(max(sequence_no),0)::text FROM intake.web_report_urge WHERE ticket_id=$2::uuid)) WHERE id=$1::uuid`,[record.id,record.ticket_id]);
- if(features?.deadlines)await tx.query('UPDATE pilot_ticket.ticket SET auto_close_at=NULL,auto_close_epoch_ms=NULL,auto_close_reminder_at=NULL,auto_close_reminder_epoch_ms=NULL WHERE id=$1::uuid',[record.ticket_id]);
+ if(features?.deadlines)await tx.query('UPDATE pilot_ticket.ticket SET auto_complete_at=NULL,auto_complete_epoch_ms=NULL,auto_complete_reminder_at=NULL,auto_complete_reminder_epoch_ms=NULL WHERE id=$1::uuid',[record.ticket_id]);
  // A version-bound card is already fenced by the Ticket transition. Consuming it
  // also makes the termination explicit; existing receipts remain immutable.
  if(features?.cards)await tx.query('UPDATE notification.card_action_task SET consumed_at=COALESCE(consumed_at,platform.local_now()) WHERE ticket_id=$1::uuid AND consumed_at IS NULL',[record.ticket_id]);
 }
 /** Timestamp is the state-transition transaction's physical clock, never a source observation. */
-export async function appendIntakeClosureEvent(tx:PostgresTransaction,input:{intakeId:string;version:number;type:'intake.dismissed'|'intake.restored';oldStatus:string;newStatus:string;actor:string|null;traceId:string}):Promise<string>{
+export async function appendIntakeClosureEvent(tx:PostgresTransaction,input:{intakeId:string;version:number;type:'intake.dismissed'|'intake.restored';oldStatus:string;newStatus:string;actor:string|null;traceId:string;detail?:Record<string,unknown>}):Promise<string>{
  const row=(await tx.query<{id:string}>(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
   SELECT $2,'intake',$1::uuid,$3,COALESCE(max(event_ordinal),0)+1,date_trunc('second',clock_timestamp() AT TIME ZONE 'Asia/Shanghai'),$4,$5::jsonb FROM intake.service_intake_event WHERE intake_id=$1::uuid RETURNING event_id::text AS id`,
- [input.intakeId,input.type,input.version,input.traceId,JSON.stringify({old_status:input.oldStatus,new_status:input.newStatus,actor_principal_id:input.actor})])).rows[0];
+ [input.intakeId,input.type,input.version,input.traceId,JSON.stringify({...input.detail,old_status:input.oldStatus,new_status:input.newStatus,actor_principal_id:input.actor})])).rows[0];
  if(!row)failP2016('ACTION_FAILED',503);return row.id;
 }
 export function closureRecordTime(value:string):string{return localP2016(value);}

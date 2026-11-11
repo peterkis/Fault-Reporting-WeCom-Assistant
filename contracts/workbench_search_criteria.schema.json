@@ -29,7 +29,7 @@
         "all",
         "pending",
         "active",
-        "closed"
+        "handled"
       ]
     },
     "range": {
@@ -148,7 +148,7 @@
       ],
       "description": "Optional restriction of third-column states only; pending and active states retain their existing selection."
     },
-    "closed_from": {
+    "handled_from": {
       "allOf": [
         {
           "$ref": "local_date.schema.json"
@@ -160,7 +160,7 @@
       ],
       "description": "Only with custom range. Inclusive Shanghai date; runtime validates the real calendar and date order."
     },
-    "closed_to": {
+    "handled_to": {
       "allOf": [
         {
           "$ref": "local_date.schema.json"
@@ -187,8 +187,8 @@
       },
       "then": {
         "required": [
-          "closed_from",
-          "closed_to"
+          "handled_from",
+          "handled_to"
         ]
       },
       "else": {
@@ -211,5 +211,5 @@
       }
     }
   ],
-  "x-date-order-validation-required": "For custom range, closed_from <= closed_to; shared runtime calendar guards enforce this cross-field rule."
+  "x-date-order-validation-required": "For custom range, handled_from <= handled_to; shared runtime calendar guards enforce this cross-field rule."
 }

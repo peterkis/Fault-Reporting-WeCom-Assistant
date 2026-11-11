@@ -4,7 +4,7 @@ export type Tone='neutral'|'warning'|'info'|'success'|'attention'|'danger'|'revi
 export const stagePresentation={
   pending:{label:'待受理',tone:'warning'},
   active:{label:'处理中',tone:'info'},
-  closed:{label:'已处理',tone:'success'},
+  handled:{label:'已处理',tone:'success'},
 } as const satisfies Record<WorkbenchCard['column'],{label:string;tone:Tone}>;
 
 export const statusTones:Readonly<Record<string,Tone>>={

@@ -75,8 +75,8 @@ test('Card 32B draft copy, single combobox frame, menu closes before the dialog,
    await browser.evaluate("document.querySelector('[data-record-closure-reason]').scrollIntoView({block:'center'})");
    await shot('drawer-1440-closed-timeline');
    // B5: the restore confirm is opaque, above the board and presence tags, once its entrance settles.
-   await browser.evaluate("document.querySelector('.ds-next-step [data-action=restore-closed]').scrollIntoView({block:'center'})");
-   await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-closed]');await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('处理中')");
+   await browser.evaluate("document.querySelector('.ds-next-step [data-action=restore-dismissed]').scrollIntoView({block:'center'})");
+   await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-dismissed]');await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('处理中')");
    await waitForAnimationsSettled(browser);
    metrics.restore=object(await browser.evaluate("(()=>{const d=document.querySelector('[data-restore-confirmation]').closest('[role=dialog]'),c=d.closest('.ds-modal-container'),bd=c.parentElement,s=getComputedStyle(d),r=d.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2),opacity=n=>{let o=1;for(let x=n;x;x=x.parentElement)o*=Number(getComputedStyle(x).opacity);return o;},p=document.createElement('span');p.style.backgroundColor='var(--bg-canvas)';document.body.append(p);const canvas=getComputedStyle(p).backgroundColor;p.remove();return {panel:s.backgroundColor===canvas,panelOpacity:opacity(d),backdropOpacity:opacity(bd),onTop:Boolean(hit&&d.contains(hit)),running:document.getAnimations().filter(a=>a.playState==='running'&&a.effect?.getComputedTiming().iterations!==Infinity).length};})()"));
    assert.deepEqual(metrics.restore,{panel:true,panelOpacity:1,backdropOpacity:1,onTop:true,running:0});

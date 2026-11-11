@@ -9,7 +9,7 @@ import { validatePilotConfig } from '../src/p1-001-pilot-foundation.mjs';
 import { createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
 import { createNotificationDeliveryWorker, createNotificationOutbox } from '../src/p1-007-notification-outbox.mjs';
-import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../src/p1-010-ticket-auto-completion.mjs';
 import { createPilotOperationalIntake } from '../src/p1-011-pilot-operations-baseline.mjs';
 import { createPilotE2EHandler } from '../src/p1-012-pilot-e2e.mjs';
 

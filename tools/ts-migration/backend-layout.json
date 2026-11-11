@@ -1580,5 +1580,13 @@
       "issue": 178,
       "reason": "HISTORICAL_SCRIPT_WITHOUT_ENTRY_RETIRED"
     }
+  ],
+  "renamed_sources": [
+    {
+      "source": "src/p1-010-ticket-closure.mts",
+      "target": "app/server/src/p1-010-ticket-closure.mts",
+      "renamed_to": "app/server/src/p1-010-ticket-auto-completion.mts",
+      "reason": "ADR_0058_AUTO_COMPLETION_VOCABULARY"
+    }
   ]
 }

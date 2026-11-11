@@ -23,14 +23,14 @@
 
 ### 输入与组合含义
 
-GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选增加 closure_kind；range=custom 时另须包含 closed_from / closed_to；外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
+GET 缺省值见下表；POST 的 criteria 必须包含原 12 个字段，可选增加 closure_kind；range=custom 时另须包含 handled_from / handled_to；外层 cursor 为 `null` 或合法字符串、limit 为整数。未知键、重复 GET 键、重复数组成员、非法编码、控制字符和孤立 surrogate 均拒绝。
 
 | criteria 字段 | 类型／约束／GET 缺省 |
 | --- | --- |
 | `q` | 字符串，trim 后最多 128 个 Unicode 码点，缺省空串。按编号、描述、当前可读且留存的报修时资料／位置作不区分大小写的字面子串匹配，`%`／`_` 不变成通配符。 |
-| `column` | `all / pending / active / closed`；缺省 `all`。 |
+| `column` | `all / pending / active / handled`；缺省 `all`。 |
 | `range` | `recent / all / custom`；缺省 `all`。recent为近两天，custom为明确的北京时间自然日范围。 |
-| `closed_from` / `closed_to` | 仅custom必须同时提供，格式YYYY-MM-DD；真实日历日期且年份≥1、起日≤止日、止日<9999-12-31。非custom出现任一键即拒绝，空值/null/重复键也拒绝。 |
+| `handled_from` / `handled_to` | 仅custom必须同时提供，格式YYYY-MM-DD；真实日历日期且年份≥1、起日≤止日、止日<9999-12-31。非custom出现任一键即拒绝，空值/null/重复键也拒绝。 |
 | `closure_kind` | 可选 `completed / dismissed`，缺省不增加 criteria 键；只筛第三列状态，pending/active 保留其它条件的原结果。空值、重复值及其它枚举值拒绝。 |
 | `scope` | `team / related`；缺省 `team`，related 使用当前真实处理／沟通／显式关注关系。 |
 | `responsibility` | `any / handling / communication / following / unassigned`；缺省 `any`。 |
@@ -74,10 +74,10 @@ GET /api/workbench/search?q=printer&column=all&range=all&scope=team&limit=50
 合成GET示例：
 
 ```http
-GET /api/workbench/search?column=closed&range=custom&closed_from=2026-11-01&closed_to=2026-11-06&closure_kind=dismissed&limit=50
+GET /api/workbench/search?column=handled&range=custom&handled_from=2026-11-01&handled_to=2026-11-06&closure_kind=dismissed&limit=50
 ```
 
-对应POST把range、closed_from、closed_to、closure_kind放在原criteria中，外层仍只有criteria/cursor/limit。GET与POST使用同一normalize与日历/顺序守卫；当前请求与响应Schema、DTS、PC解码层同步支持custom。标准Schema约束形状、条件必填和日期格式；真实日历及跨字段顺序还须运行时校验，沿原local_date扩展约定。
+对应POST把range、handled_from、handled_to、closure_kind放在原criteria中，外层仍只有criteria/cursor/limit。GET与POST使用同一normalize与日历/顺序守卫；当前请求与响应Schema、DTS、PC解码层同步支持custom。标准Schema约束形状、条件必填和日期格式；真实日历及跨字段顺序还须运行时校验，沿原local_date扩展约定。
 
 服务端复用现有单条窗口SQL，以参数计算止日次日零时，不增加每页往返、不改变2000ms局部statement_timeout。原v1搜索游标已经包含criteria哈希及from/until，custom无需放宽签名或升级版本；旧recent/all不增加日期criteria键，旧请求形状保持。换日期/范围/结束方式后旧游标拒绝400，应清游标从首页重读。
 
@@ -85,7 +85,7 @@ GET /api/workbench/search?column=closed&range=custom&closed_from=2026-11-01&clos
 
 ### 当前权限、留存和稳定分页
 
-SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排序和 LIMIT。同 Ticket 的 Review 不重复；原详情仍可 READ、无 Ticket 且留存的 COMPLETED／IGNORED Intake 默认纳入相同 canonical 关系，不再靠 manualReview 字段选择协商。原活动看板的成员条件不变。资料来自原事实和报修时快照，不逐卡查询第三方目录；可读 Ticket 不使其已到期 Journey／材料重新可见。
+SQL 先得到当前获权且规范去重的全集，再执行条件、keyset 排序和 LIMIT。同 Ticket 的 Review 不重复；原详情仍可 READ、无 Ticket 且留存的 COMPLETED／DISMISSED Intake 默认纳入相同 canonical 关系，不再靠 manualReview 字段选择协商。原活动看板的成员条件不变。资料来自原事实和报修时快照，不逐卡查询第三方目录；可读 Ticket 不使其已到期 Journey／材料重新可见。
 
 游标由当前 App 临时 HMAC 签名，绑定 principal、真实 session、完整当前角色／团队、规范 criteria、时间窗口及 kind／id／排序锚。更换条件（含任一custom日期或closure_kind）、主体、session、权限、日期窗口，或锚已失权／到期／不再匹配时拒绝游标，须从首页明确重读；App 重启也会令旧签名失效。不允许用客户端传入的搜索页面 cursor／limit 作为导航条件。
 

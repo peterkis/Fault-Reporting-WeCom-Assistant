@@ -13,7 +13,7 @@ export function timelinePresentation(event:YxxTimelineEvent):TimelinePresentatio
 export function reporterClosureNote(text:string|null|undefined):string|null{
  return text&&text!=='已关闭'?text:null;
 }
-function closesReport(event:YxxTimelineEvent){return event.event_type==='TICKET_UPDATED'&&closedOut.has(event.ticket?.status??'');}
+function dismissesReport(event:YxxTimelineEvent){return event.event_type==='TICKET_UPDATED'&&closedOut.has(event.ticket?.status??'');}
 /**
  * Presentation for latest-first loaded events. A Ticket update into a closed-out status
  * reads as "report closed". The current reporter-visible note is bound only when the whole
@@ -23,13 +23,13 @@ function closesReport(event:YxxTimelineEvent){return event.event_type==='TICKET_
  * reordered or invented; unloaded pages keep the generic presentation.
  */
 export function timelinePresentations(events:readonly YxxTimelineEvent[],closureNote:string|null=null,complete=false):TimelinePresentation[]{
- const views=events.map(timelinePresentation),newestTicket=events.findIndex(event=>event.event_type.startsWith('TICKET_')),newest=complete&&newestTicket>=0&&closesReport(events[newestTicket] as YxxTimelineEvent)?newestTicket:-1;
- let previousClosed=false;
+ const views=events.map(timelinePresentation),newestTicket=events.findIndex(event=>event.event_type.startsWith('TICKET_')),newest=complete&&newestTicket>=0&&dismissesReport(events[newestTicket] as YxxTimelineEvent)?newestTicket:-1;
+ let previousDismissed=false;
  for(let index=events.length-1;index>=0;index--){
   const event=events[index];if(!event)continue;
-  if(closesReport(event)){views[index]=index===newest&&closureNote?{titleKey:'eventClosed',summary:closureNote}:{titleKey:'eventClosed',summary:'',summaryKey:'eventClosedDefault'};previousClosed=true;continue;}
-  if(previousClosed&&event.event_type==='TICKET_UPDATED'&&event.ticket&&!terminal.has(event.ticket.status))views[index]={titleKey:'eventRestored',summary:''};
-  previousClosed=false;
+  if(dismissesReport(event)){views[index]=index===newest&&closureNote?{titleKey:'eventDismissed',summary:closureNote}:{titleKey:'eventDismissed',summary:'',summaryKey:'eventDismissedDefault'};previousDismissed=true;continue;}
+  if(previousDismissed&&event.event_type==='TICKET_UPDATED'&&event.ticket&&!terminal.has(event.ticket.status))views[index]={titleKey:'eventRestored',summary:''};
+  previousDismissed=false;
  }
  return views;
 }

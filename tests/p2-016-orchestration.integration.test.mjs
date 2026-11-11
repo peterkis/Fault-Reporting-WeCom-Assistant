@@ -6,7 +6,7 @@ import { createP2016TicketNotificationProjector } from '../app/server/src/p2-016
 import { createP2016RealtimeProjector } from '../app/server/src/p2-016-realtime-projector.mjs';
 import { createP2016TicketCommandFacade } from '../app/server/src/p2-016-ticket-command-facade.mjs';
 import { createP2016TicketQuery } from '../app/server/src/p2-016-ticket-query.mjs';
-import { createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { createTicketActionService } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import { createPilotAccessService } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
@@ -39,11 +39,11 @@ test('P2-016 existing rule worker creates Ticket notifications, safe group/direc
     for(const action of ['accept','start','resolve']){const ticket=await query.detail({authContext,ticketId});const result=await facade.perform({authContext,command:{ticket_id:ticketId,action,expected_version:ticket.version,client_command_id:randomUUID(),reason_code:'SYNTHETIC_CLOSURE'}});assert.equal(result.ok,true,JSON.stringify(result));}
     const current=await query.detail({authContext,ticketId});
     await assert.rejects(facade.perform({authContext,command:{ticket_id:ticketId,action:'auto-complete',expected_version:current.version,client_command_id:randomUUID(),reason_code:'FORBIDDEN'}}),{code:'P2_016_INPUT_INVALID'});
-    clock+=45*3600000;assert.deepEqual((await closure.runAutoCloseReminders()).reminded_ticket_ids,[ticketId]);
+    clock+=45*3600000;assert.deepEqual((await closure.runAutoCompleteReminders()).reminded_ticket_ids,[ticketId]);
     clock+=4*3600000;
     const system=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
-    assert.deepEqual((await closure.runAutoClose({actionService:system})).closed_ticket_ids,[ticketId]);
+    assert.deepEqual((await closure.runAutoComplete({actionService:system})).closed_ticket_ids,[ticketId]);
     assert.equal((await query.detail({authContext,ticketId})).status,'COMPLETED');
-    assert.deepEqual((await closure.runAutoClose({actionService:system})).closed_ticket_ids,[]);
+    assert.deepEqual((await closure.runAutoComplete({actionService:system})).closed_ticket_ids,[]);
   }});
 });

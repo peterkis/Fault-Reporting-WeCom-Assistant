@@ -16,8 +16,8 @@ export interface WorkbenchSearchCriteria {
  readonly schedule:'any'|'active'|'due'|'none';
  /** Optional restriction of third-column states; it does not filter pending or active states. */
  readonly closure_kind?:'completed'|'dismissed';
- /** Only range=custom: inclusive real Shanghai dates, closed_from<=closed_to<9999-12-31. */
- readonly closed_from?:string;readonly closed_to?:string;
+ /** Only range=custom: inclusive real Shanghai dates, handled_from<=handled_to<9999-12-31. */
+ readonly handled_from?:string;readonly handled_to?:string;
 }
 export interface WorkbenchSearchRequest {readonly criteria:WorkbenchSearchCriteria;readonly cursor:string|null;readonly limit:number}
 /** Card 29 L6: search items carry the same optional service and stage timing projection as board cards. */

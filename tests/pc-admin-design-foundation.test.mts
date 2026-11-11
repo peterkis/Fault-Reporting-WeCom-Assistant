@@ -176,13 +176,13 @@ const {matchesBoardSummary,sortBoardItems}: {
 function boardCard(overrides:Partial<WorkbenchCard>={}):WorkbenchCard {
   return {kind:'ticket',id:'synthetic',intake_id:'synthetic-intake',number:'IT-test',title:'合成报修',status:'NEW',column:'pending',priority:null,source:'PORTAL',source_label:'H5报修',source_group:null,location:null,reporter_name:null,assignee_name:null,review_reason:null,created_at:'2026-11-02 06:00:00',updated_at:'2026-11-02 09:59:00',completed_at:null,closure:null,...overrides};
 }
-const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,secondary_reason:null,closed_by_display_name:null,closed_at:null,duplicate_of:null,can_restore:false};
+const completedClosure:NonNullable<WorkbenchCard['closure']>={kind:'COMPLETED',source:null,reason_code:null,reason_label:null,reason_note:null,secondary_reason:null,ended_by_display_name:null,ended_at:null,duplicate_of:null,can_restore:false};
 test('Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at',()=>{
   const now=Date.parse('2026-11-06T12:00:00+08:00');
-  for(const status of ['COMPLETED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
-  for(const status of ['DISMISSED','DISMISSED','DISMISSED'])assert.equal(matchesBoardSummary(boardCard({status,column:'closed',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='DISMISSED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
-  assert.equal(matchesBoardSummary(boardCard({status:'DISMISSED',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
-  assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:'2026-11-06 08:00:00',closure:null}),'today',now),false);
+  for(const status of ['COMPLETED','RESOLVED','COMPLETED'])assert.equal(matchesBoardSummary(boardCard({status,column:'handled',completed_at:'2026-11-06 08:00:00',closure:completedClosure}),'today',now),true,status+'（合成）');
+  for(const status of ['DISMISSED','DISMISSED','DISMISSED'])assert.equal(matchesBoardSummary(boardCard({status,column:'handled',completed_at:'2026-11-06 08:00:00',closure:{...completedClosure,kind:'DISMISSED',source:status==='DISMISSED'?'SYSTEM':'MANUAL'}}),'today',now),false,status+'（合成）');
+  assert.equal(matchesBoardSummary(boardCard({status:'DISMISSED',column:'handled',completed_at:null,closure:{...completedClosure,kind:'DISMISSED'}}),'today',now),false);
+  assert.equal(matchesBoardSummary(boardCard({column:'handled',completed_at:'2026-11-06 08:00:00',closure:null}),'today',now),false);
 });
 
 test('R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets',async()=>{
@@ -195,7 +195,7 @@ test('R2 a–e share civil-time starts, never substitute created_at for a missin
     [{column:'active',stage_entered_at:'2026-11-02 05:00:00'},'2026-11-02 05:00:00','danger'],
     [{column:'active',stage_entered_at:'2026-11-02 09:30:00'},'2026-11-02 09:30:00','warning'],
     [{column:'active',stage_entered_at:null,created_at:'2026-10-31 10:00:00'},null,null],
-    [{column:'closed',created_at:'2026-10-30 10:00:00',completed_at:'2026-11-02 09:00:00'},null,null],
+    [{column:'handled',created_at:'2026-10-30 10:00:00',completed_at:'2026-11-02 09:00:00'},null,null],
   ];
   for(const [fields,start,tone] of cases){const item=boardCard(fields);assert.equal(cardHeatStart(item),start);assert.equal(cardHeat(item,now)?.tone??null,tone);assert.equal(matchesBoardSummary(item,'overdue',now),tone==='danger');}
   assert.equal(cardHeat(boardCard({column:'active'}),now),null);
@@ -205,7 +205,7 @@ test('R2 board overdue follows the heat of pending and active cards of every ren
   assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 06:00:01'}),'overdue',now),false);
   for(const kind of ['ticket','intake','review'] as const)assert.equal(matchesBoardSummary(boardCard({kind}),'overdue',now),true);
   assert.equal(matchesBoardSummary(boardCard({column:'active',stage_entered_at:'2026-11-02 05:00:00'}),'overdue',now),true);
-  for(const item of [boardCard({column:'active',stage_entered_at:null}),boardCard({column:'closed'})])assert.equal(matchesBoardSummary(item,'overdue',now),false);
+  for(const item of [boardCard({column:'active',stage_entered_at:null}),boardCard({column:'handled'})])assert.equal(matchesBoardSummary(item,'overdue',now),false);
   assert.equal(matchesBoardSummary(boardCard({created_at:'2026-11-02 09:59:00',updated_at:'2020-01-01 00:00:00'}),'overdue',now),false);
 });
 test('board mine requires the caller-only HANDLING relation, never names, follow or conversation responsibility',()=>{
@@ -218,16 +218,16 @@ test('board mine requires the caller-only HANDLING relation, never names, follow
 });
 test('board today follows Shanghai midnight and completion time rather than activity time',()=>{
   for(const [completed,expected] of [['2026-11-01 23:59:59',false],['2026-11-02 00:00:00',true],['2026-11-02 10:00:00',true],['2026-11-02 10:00:01',false]] as const){
-    assert.equal(matchesBoardSummary(boardCard({column:'closed',completed_at:completed,closure:completedClosure}),'today',now),expected);
+    assert.equal(matchesBoardSummary(boardCard({column:'handled',completed_at:completed,closure:completedClosure}),'today',now),expected);
   }
   assert.equal(matchesBoardSummary(boardCard({column:'active',completed_at:'2026-11-02 00:00:00'}),'today',now),false);
-  assert.equal(matchesBoardSummary(boardCard({column:'closed'}),'today',now),false);
+  assert.equal(matchesBoardSummary(boardCard({column:'handled'}),'today',now),false);
 });
 test('board sorting leaves active order intact, uses completion for closed, and does not mutate DTOs',()=>{
   const older=boardCard({id:'older',created_at:'2026-11-01 00:00:00',completed_at:'2026-11-02 09:00:00'}),newer=boardCard({id:'newer',completed_at:'2026-11-01 09:00:00'}),items=[newer,older];
   assert.deepEqual(sortBoardItems(items,'pending','oldest'),[older,newer]);
   assert.deepEqual(sortBoardItems(items,'pending','newest'),[newer,older]);
-  assert.deepEqual(sortBoardItems(items,'closed','oldest'),[newer,older]);
+  assert.deepEqual(sortBoardItems(items,'handled','oldest'),[newer,older]);
   assert.deepEqual(sortBoardItems(items,'active','oldest'),items);
   assert.deepEqual(sortBoardItems(items,'active','newest'),items);
   assert.deepEqual(items,[newer,older]);
@@ -298,9 +298,9 @@ test('Card 20 T3 semantic colors reference the primitive palette and retire the 
 
 
 test('Card 27B dismissed sort uses proven closed_at and keeps unknown time last',()=>{
-  const manual=boardCard({id:'manual',column:'closed',completed_at:'2020-01-01 00:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 09:00:00'}});
-  const system=boardCard({id:'system',column:'closed',completed_at:null,closure:{...completedClosure,kind:'DISMISSED',closed_at:'2026-11-06 08:00:00'}});
-  const unknown=boardCard({id:'unknown',column:'closed',completed_at:'2026-11-06 10:00:00',closure:{...completedClosure,kind:'DISMISSED',closed_at:null}});
-  assert.deepEqual(sortBoardItems([unknown,system,manual],'closed','newest').map(item=>item.id),['manual','system','unknown']);
-  assert.deepEqual(sortBoardItems([unknown,manual,system],'closed','oldest').map(item=>item.id),['system','manual','unknown']);
+  const manual=boardCard({id:'manual',column:'handled',completed_at:'2020-01-01 00:00:00',closure:{...completedClosure,kind:'DISMISSED',ended_at:'2026-11-06 09:00:00'}});
+  const system=boardCard({id:'system',column:'handled',completed_at:null,closure:{...completedClosure,kind:'DISMISSED',ended_at:'2026-11-06 08:00:00'}});
+  const unknown=boardCard({id:'unknown',column:'handled',completed_at:'2026-11-06 10:00:00',closure:{...completedClosure,kind:'DISMISSED',ended_at:null}});
+  assert.deepEqual(sortBoardItems([unknown,system,manual],'handled','newest').map(item=>item.id),['manual','system','unknown']);
+  assert.deepEqual(sortBoardItems([unknown,manual,system],'handled','oldest').map(item=>item.id),['system','manual','unknown']);
 });

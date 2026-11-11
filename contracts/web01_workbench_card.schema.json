@@ -69,7 +69,7 @@
       "enum": [
         "pending",
         "active",
-        "closed"
+        "handled"
       ]
     },
     "priority": {
@@ -343,8 +343,8 @@
             "reason_code",
             "reason_label",
             "reason_note",
-            "closed_by_display_name",
-            "closed_at",
+            "ended_by_display_name",
+            "ended_at",
             "duplicate_of",
             "can_restore",
             "secondary_reason"
@@ -402,7 +402,7 @@
                 }
               ]
             },
-            "closed_by_display_name": {
+            "ended_by_display_name": {
               "oneOf": [
                 {
                   "type": "null"
@@ -415,7 +415,7 @@
                 }
               ]
             },
-            "closed_at": {
+            "ended_at": {
               "oneOf": [
                 {
                   "type": "null"
@@ -512,7 +512,7 @@
                       "SYSTEM"
                     ]
                   },
-                  "closed_at": {
+                  "ended_at": {
                     "$ref": "./local_datetime.schema.json"
                   }
                 }
@@ -531,7 +531,7 @@
       "if": {
         "properties": {
           "column": {
-            "const": "closed"
+            "const": "handled"
           }
         }
       },

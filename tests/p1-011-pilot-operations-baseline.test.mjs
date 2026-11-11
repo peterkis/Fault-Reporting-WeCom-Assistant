@@ -16,7 +16,7 @@ import {
   createPilotWorkbenchServer,
   listenPilotWorkbenchServer,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration, createTicketClosureService } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration, createTicketClosureService } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import {
   applyPilotOperationsMigration,
   createPilotAlertRegistry,

@@ -16,7 +16,7 @@ test('Card 27C-A Core and closure storage load in either entry order without eag
 test('WEB01 grouping preserves terminal meaning and rejects unknown states',()=>{
   for(const state of ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'])assert.equal(boardColumn(state),'pending');
   for(const state of ['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'])assert.equal(boardColumn(state),'active');
-  for(const state of ['COMPLETED','RESOLVED','DISMISSED'])assert.equal(boardColumn(state),'closed');
+  for(const state of ['COMPLETED','RESOLVED','DISMISSED'])assert.equal(boardColumn(state),'handled');
   assert.throws(()=>boardColumn('fabricated'),{code:'P2_016_INPUT_INVALID'});
 });
 
@@ -24,33 +24,33 @@ test('Card 27A closure maps all six states and both proven sources without inven
   const at='2026-11-06 08:09:10';
   // ADR-0058: Ticket COMPLETED and Intake COMPLETED share one status; RESOLVED is completed too; every dismissal is DISMISSED.
   for(const status of ['RESOLVED','COMPLETED','DISMISSED'])for(const source of ['MANUAL','SYSTEM'] as const){
-    const evidence:ClosureEvidence={record_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',source,reason_code:status==='DISMISSED'?'OTHER':'STAFF_COMPLETED',reason_note:'既有内部原因（合成）',closed_by_display_name:'操作人（合成）',closed_at:at};
+    const evidence:ClosureEvidence={record_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',source,reason_code:status==='DISMISSED'?'OTHER':'STAFF_COMPLETED',reason_note:'既有内部原因（合成）',ended_by_display_name:'操作人（合成）',ended_at:at};
     const closure=projectWorkbenchClosure(status,evidence,true);assert.ok(closure,status+' '+source);
     const completed=['RESOLVED','COMPLETED'].includes(status);
-    assert.deepEqual(Object.keys(closure).sort(),['kind','source','reason_code','reason_label','reason_note','secondary_reason','closed_by_display_name','closed_at','duplicate_of','can_restore'].sort());
+    assert.deepEqual(Object.keys(closure).sort(),['kind','source','reason_code','reason_label','reason_note','secondary_reason','ended_by_display_name','ended_at','duplicate_of','can_restore'].sort());
     assert.equal(closure.kind,completed?'COMPLETED':'DISMISSED');assert.equal(closure.source,source);assert.equal(closure.reason_code,completed?null:'OTHER','only the six persisted closure reasons describe dismissals');
     assert.equal(closure.reason_label,completed?'已完成':'其他');
-    assert.equal(closure.reason_note,'既有内部原因（合成）');assert.equal(closure.closed_by_display_name,source==='MANUAL'?'操作人（合成）':null);assert.equal(closure.closed_at,at);
+    assert.equal(closure.reason_note,'既有内部原因（合成）');assert.equal(closure.ended_by_display_name,source==='MANUAL'?'操作人（合成）':null);assert.equal(closure.ended_at,at);
     assert.equal(closure.duplicate_of,null);assert.equal(closure.can_restore,true,'the projection passes through the caller-proven restore / reopen authority');
   }
   for(const status of ['NEW','QUEUED','ACCEPTED','REOPENED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'])assert.equal(projectWorkbenchClosure(status,null),null,status);
   assert.throws(()=>projectWorkbenchClosure('DISMISSED',null),{code:'P2_016_ACTION_FAILED'});
-  const manual:ClosureEvidence={record_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',source:'MANUAL',reason_code:'NOT_IT_SCOPE',secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED',reason_note:null,closed_by_display_name:'人工复核人（合成）',closed_at:at};
+  const manual:ClosureEvidence={record_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',source:'MANUAL',reason_code:'NOT_IT_SCOPE',secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED',reason_note:null,ended_by_display_name:'人工复核人（合成）',ended_at:at};
   assert.equal(projectWorkbenchClosure('DISMISSED',manual)?.reason_label,'非 IT 范围');assert.equal(projectWorkbenchClosure('DISMISSED',manual)?.reason_code,'NOT_IT_SCOPE');assert.deepEqual(projectWorkbenchClosure('DISMISSED',manual)?.secondary_reason,{code:'OUT_OF_SCOPE_CONFIRMED',label:'已核对为范围外诉求'});
   assert.equal(projectWorkbenchClosure('COMPLETED',{...manual,reason_code:'ACKNOWLEDGED'})?.reason_label,'确认收到');
   assert.equal(projectWorkbenchClosure('COMPLETED',{...manual,reason_code:'BUSINESS_CONSULTATION_CONFIRMED'})?.reason_label,'已核对为业务咨询');
-  const blank=projectWorkbenchClosure('DISMISSED',{...manual,reason_note:' \n\t',closed_by_display_name:'  '});
-  assert.equal(blank?.reason_note,null);assert.equal(blank?.closed_by_display_name,null);assert.equal(blank?.source,'MANUAL');
+  const blank=projectWorkbenchClosure('DISMISSED',{...manual,reason_note:' \n\t',ended_by_display_name:'  '});
+  assert.equal(blank?.reason_note,null);assert.equal(blank?.ended_by_display_name,null);assert.equal(blank?.source,'MANUAL');
   assert.equal(projectWorkbenchClosure('DISMISSED',{...manual,reason_note:'  说明（合成）  '})?.reason_note,'  说明（合成）  ','nonblank original text is not trimmed');
   for(const [reason_code,reason_label] of Object.entries({HUMAN_CONFIRMED:'人工核对确认',INFORMATION_INSUFFICIENT:'描述不足，需要补充',SERVICE_REQUEST_CONFIRMED:'已核对为服务请求',INCIDENT_REVIEW_PENDING:'待公共故障审核',STALE_REVIEW_CANCELLED:'明确取消旧复核'})){
     const projected=projectWorkbenchClosure('DISMISSED',{...manual,secondary_reason_code:reason_code});assert.equal(projected?.reason_code,'NOT_IT_SCOPE');assert.equal(projected?.reason_label,'非 IT 范围');assert.deepEqual(projected?.secondary_reason,{code:reason_code,label:reason_label});
   }
-  assert.throws(()=>projectWorkbenchClosure('DISMISSED',{...manual,closed_at:'2026-02-30 08:09:10'}),{code:'LOCAL_DATETIME_INVALID'});
+  assert.throws(()=>projectWorkbenchClosure('DISMISSED',{...manual,ended_at:'2026-02-30 08:09:10'}),{code:'LOCAL_DATETIME_INVALID'});
 });
 
 test('Card 27A restore projection reuses the current Ticket action authority and never grants dismissed or Intake restoration',()=>{
   const principal={principal_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',display_name:'处理人（合成）',roles:['HANDLER'],team_ids:['PILOT_IT'],is_active:true};
-  const evidence:ClosureEvidence={source:'MANUAL',reason_code:null,reason_note:null,closed_by_display_name:null,closed_at:null,resolver_team_id:'PILOT_IT',assignee_id:principal.principal_id};
+  const evidence:ClosureEvidence={source:'MANUAL',reason_code:null,reason_note:null,ended_by_display_name:null,ended_at:null,resolver_team_id:'PILOT_IT',assignee_id:principal.principal_id};
   for(const status of ['RESOLVED','COMPLETED']){
     assert.equal(workbenchCanRestore('ticket',status,evidence,principal),true);
     assert.equal(workbenchCanRestore('ticket',status,{...evidence,assignee_id:null},principal),false);

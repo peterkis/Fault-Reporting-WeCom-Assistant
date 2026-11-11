@@ -76,7 +76,7 @@ export function RestoreClosedItem({item,principal,inline=false}:{item:WorkbenchC
  const [pending,setPending]=useState(false),target=subject(item);
  useEffect(()=>{if(!p)return;let active=true;void hasExistingDraft({principal:p.principal_id,...target,purpose:draftPurpose(target.kind,'restore')}).then(value=>{if(active)setPending(value);}).catch(()=>{});return()=>{active=false;};},[p?.principal_id,target.kind,target.id,item.status]);
  if(!scope||!p||!pending&&(!worker(p)||item.closure?.kind!=='DISMISSED'||!item.closure.can_restore))return null;
- return <Button tone={inline?'secondary':'ghost'} className={inline?'ds-closure-restore-inline':'ds-closure-restore'} data-action="restore-closed" isDisabled={!scope.canOpen(item,'restore')} onPress={()=>scope.request(item,'restore')}><Undo2 size={14}/>{pending?'核对恢复':'恢复'}</Button>;
+ return <Button tone={inline?'secondary':'ghost'} className={inline?'ds-closure-restore-inline':'ds-closure-restore'} data-action="restore-dismissed" isDisabled={!scope.canOpen(item,'restore')} onPress={()=>scope.request(item,'restore')}><Undo2 size={14}/>{pending?'核对恢复':'恢复'}</Button>;
 }
 
 function decodeDraft(text:string):{value:ClosureFormValue;pending:Pending|null}{
@@ -115,7 +115,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  // The target is captured while visible: after a committed restore the refreshed history no longer has one.
  const shownTarget=useRef<'pending'|'active'|null>(null);if(history.data?.restore_target)shownTarget.current=history.data.restore_target.column;
  // Recovering after a lost response mounts with no target; the confirmed current item then says where it is.
- const restoreColumn=()=>{const column=history.data?.restore_target?.column??shownTarget.current??(item.column==='closed'?null:item.column);return column==='active'?'处理中':column==='pending'?(s.kind==='ticket'?'待接单':'待判断'):'关闭前所在列';};
+ const restoreColumn=()=>{const column=history.data?.restore_target?.column??shownTarget.current??(item.column==='handled'?null:item.column);return column==='active'?'处理中':column==='pending'?(s.kind==='ticket'?'待接单':'待判断'):'关闭前所在列';};
  const clear=()=>{request.current?.abort();request.current=null;setValue(emptyClosureForm);setPending(null);setBusy(false);};
  const denied=(error:unknown)=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){clear();if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearClosureRead(client,principal.principal_id,s.kind,s.id,error).then(()=>clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error));onClose();return true;}return false;};
  const draft=useAuthorizedDraft<ClosureFormValue,Pending>({scope,enabled:raw,writeEnabled:raw&&context.data?.allowed===true,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:emptyClosureForm,hasInput:form=>Boolean(form.reason||form.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeDraft,commandId:command=>command.client_command_id,
@@ -187,6 +187,6 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
     <div><dt>通知</dt><dd>{restoreNotice}</dd></div>
    </dl>
    {restore.column==='active'?<p className="ds-restore-followups">已终止的跟进与提醒不会自动重建，需要时请重新发起。</p>:null}</>:<p>当前没有可恢复的关闭记录。</p>}
-  {feedback}{recovery}<footer data-toast-avoid="bottom"><div className="ds-closure-draft"/><div className="ds-closure-actions"><Button tone="secondary" isDisabled={locked} onPress={()=>{void close();}}>取消</Button><Button tone="primary" data-action="confirm-restore-closed" isDisabled={!enabled||locked||!restore||history.isError||history.isFetching} onPress={()=>{void submit();}}><Undo2 aria-hidden="true"/>确认恢复</Button></div></footer>
+  {feedback}{recovery}<footer data-toast-avoid="bottom"><div className="ds-closure-draft"/><div className="ds-closure-actions"><Button tone="secondary" isDisabled={locked} onPress={()=>{void close();}}>取消</Button><Button tone="primary" data-action="confirm-restore-dismissed" isDisabled={!enabled||locked||!restore||history.isError||history.isFetching} onPress={()=>{void submit();}}><Undo2 aria-hidden="true"/>确认恢复</Button></div></footer>
  </Modal.Dialog></Modal.Container></Modal.Backdrop>;
 }

@@ -1,8 +1,8 @@
 import type {ReportItem,RequestDetail} from '../api/types';
-export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>&Pick<RequestDetail,'closure_text'>):'received'|'processing'|'queued'|'completed'|'waiting'|'waitingVendor'|'review'|'closed'|'notService'|'reopened' {
+export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>&Pick<RequestDetail,'closure_text'>):'received'|'processing'|'queued'|'completed'|'waiting'|'waitingVendor'|'review'|'dismissed'|'notService'|'reopened' {
   const ticket=item.ticket?.status;
   if(ticket==='COMPLETED'||ticket==='RESOLVED')return 'completed';
-  if(ticket==='DISMISSED')return 'closed';
+  if(ticket==='DISMISSED')return 'dismissed';
   if(ticket==='WAITING_REQUESTER')return 'waiting';
   if(ticket==='WAITING_VENDOR')return 'waitingVendor';
   if(ticket==='REOPENED')return 'reopened';
@@ -10,7 +10,7 @@ export function reportState(item:Pick<ReportItem,'display_status'|'ticket'>&Pick
   if(ticket==='QUEUED'||ticket==='OPEN'||ticket==='NEW')return 'queued';
   if(item.display_status==='WAITING_FOR_DETAILS')return 'waiting';
   if(item.display_status==='UNDER_REVIEW')return 'review';
-  if(item.display_status==='NOT_SERVICE')return !ticket&&item.closure_text?'closed':'notService';
+  if(item.display_status==='NOT_SERVICE')return !ticket&&item.closure_text?'dismissed':'notService';
   return 'received';
 }
 export function reportTone(state:ReturnType<typeof reportState>):'queued'|'processing'|'done'|'neutral'|'danger' {

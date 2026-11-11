@@ -1,5 +1,5 @@
 .ds-stage-glyph {flex: none; width: var(--icon-sm); height: var(--icon-sm);}
 .ds-stage-glyph[data-stage-glyph=pending] {color: var(--stage-intake-accent);}
 .ds-stage-glyph[data-stage-glyph=active] {color: var(--stage-active-accent);}
-.ds-stage-glyph[data-stage-glyph=closed] {color: var(--stage-done-accent);}
+.ds-stage-glyph[data-stage-glyph=handled] {color: var(--stage-done-accent);}
 .ds-stage-check {stroke: var(--text-inverse);}

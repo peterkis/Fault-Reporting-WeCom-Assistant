@@ -49,7 +49,7 @@ const CARD_TO_ACTION = Object.freeze({
   still_broken: 'reopen',
 });
 type CardActionKey = keyof typeof CARD_TO_ACTION | 'add_information';
-type ClosureAction = TicketAction | 'create' | 'add-information' | 'auto-close-reminder';
+type ClosureAction = TicketAction | 'create' | 'add-information' | 'auto-complete-reminder';
 type ReporterActorResolver = (input: { wecomUserId: string }) => TicketActor | null | Promise<TicketActor | null>;
 type BeforeTransaction = (transaction: PostgresPoolClient) => void | Promise<void>;
 interface ClosureOptions {
@@ -58,8 +58,8 @@ interface ClosureOptions {
   resolveReporterActor?: ReporterActorResolver;
   now?: () => Date;
   cardTtlMs?: number;
-  autoCloseAfterMs?: number;
-  autoCloseReminderLeadMs?: number;
+  autoCompleteAfterMs?: number;
+  autoCompleteReminderLeadMs?: number;
   beforeTransaction?: BeforeTransaction | null;
 }
 interface ClosureTicketRow {
@@ -77,8 +77,8 @@ interface ClosureTicketRow {
   created_at: string;
   updated_at: string;
   version: number;
-  auto_close_at: string | null;
-  auto_close_reminder_at: string | null;
+  auto_complete_at: string | null;
+  auto_complete_reminder_at: string | null;
 }
 interface CardTaskRow {
   task_id: string;
@@ -141,9 +141,9 @@ interface ClosureService {
     traceId: string;
     actionService: TicketActionService;
   }): Promise<unknown>;
-  runAutoClose(): Promise<{ closed_ticket_ids: string[] }>;
-  runAutoClose(input: { actionService: TicketActionService; limit?: number }): Promise<{ closed_ticket_ids: string[] }>;
-  runAutoCloseReminders(input?: { limit?: number }): Promise<{ reminded_ticket_ids: string[] }>;
+  runAutoComplete(): Promise<{ closed_ticket_ids: string[] }>;
+  runAutoComplete(input: { actionService: TicketActionService; limit?: number }): Promise<{ closed_ticket_ids: string[] }>;
+  runAutoCompleteReminders(input?: { limit?: number }): Promise<{ reminded_ticket_ids: string[] }>;
 }
 
 class CardActionError extends Error {
@@ -189,8 +189,8 @@ function ticketFields(prefix = 'ticket') {
           ${prefix}.created_at,
           ${prefix}.updated_at,
           ${prefix}.version,
-          ${prefix}.auto_close_at,
-          ${prefix}.auto_close_reminder_at`;
+          ${prefix}.auto_complete_at,
+          ${prefix}.auto_complete_reminder_at`;
 }
 
 async function withTransaction<T>(
@@ -251,8 +251,8 @@ export function createTicketClosureService({
   resolveReporterActor,
   now = () => new Date(),
   cardTtlMs = 48 * 60 * 60 * 1_000,
-  autoCloseAfterMs = 48 * 60 * 60 * 1_000,
-  autoCloseReminderLeadMs = 4 * 60 * 60 * 1_000,
+  autoCompleteAfterMs = 48 * 60 * 60 * 1_000,
+  autoCompleteReminderLeadMs = 4 * 60 * 60 * 1_000,
   beforeTransaction = null,
 }: ClosureOptions = {}): ClosureService {
   if (beforeTransaction !== null && typeof beforeTransaction !== 'function') {
@@ -273,15 +273,15 @@ export function createTicketClosureService({
   const resolveActor = resolveReporterActor;
   for (const [name, value] of Object.entries({
     cardTtlMs,
-    autoCloseAfterMs,
-    autoCloseReminderLeadMs,
+    autoCompleteAfterMs,
+    autoCompleteReminderLeadMs,
   })) {
     if (!Number.isInteger(value) || value < 1) {
       throw new TypeError(`${name} must be a positive integer.`);
     }
   }
-  if (autoCloseReminderLeadMs >= autoCloseAfterMs) {
-    throw new TypeError('autoCloseReminderLeadMs must be shorter than autoCloseAfterMs.');
+  if (autoCompleteReminderLeadMs >= autoCompleteAfterMs) {
+    throw new TypeError('autoCompleteReminderLeadMs must be shorter than autoCompleteAfterMs.');
   }
   if (cardTtlMs < 1_000) {
     throw new TypeError('cardTtlMs must be at least one second.');
@@ -344,7 +344,7 @@ export function createTicketClosureService({
     return tasks;
   }
 
-  async function setAutoCloseDeadline({
+  async function setAutoCompleteDeadline({
     transaction,
     ticket,
     action,
@@ -356,21 +356,21 @@ export function createTicketClosureService({
     if (action === 'resolve') {
       await transaction.query(
         `UPDATE pilot_ticket.ticket
-            SET auto_close_epoch_ms = $2::bigint,
-                auto_close_reminder_at = NULL,
-                auto_close_reminder_epoch_ms = NULL
+            SET auto_complete_epoch_ms = $2::bigint,
+                auto_complete_reminder_at = NULL,
+                auto_complete_reminder_epoch_ms = NULL
           WHERE id = $1::uuid`,
-        [ticket.id, addEpochMilliseconds(validNow(now).epoch_ms, autoCloseAfterMs)],
+        [ticket.id, addEpochMilliseconds(validNow(now).epoch_ms, autoCompleteAfterMs)],
       );
       return;
     }
     if (['confirm', 'reopen', 'auto-complete'].includes(action)) {
       await transaction.query(
         `UPDATE pilot_ticket.ticket
-            SET auto_close_at = NULL,
-                auto_close_epoch_ms = NULL,
-                auto_close_reminder_at = NULL,
-                auto_close_reminder_epoch_ms = NULL
+            SET auto_complete_at = NULL,
+                auto_complete_epoch_ms = NULL,
+                auto_complete_reminder_at = NULL,
+                auto_complete_reminder_epoch_ms = NULL
           WHERE id = $1::uuid`,
         [ticket.id],
       );
@@ -400,11 +400,11 @@ export function createTicketClosureService({
     const sourceRow = source.rows[0];
     if (!sourceRow) throw new CardActionError('TICKET_INTAKE_NOT_FOUND');
     if (sourceRow.source_channel === 'PORTAL' && sourceRow.source_provider === 'YIXIAOXIU_WEB') {
-      await setAutoCloseDeadline({ transaction, ticket, action });
+      await setAutoCompleteDeadline({ transaction, ticket, action });
       return { card_tasks: [], notification: null, reason: 'WEB_APP_ONLY' };
     }
     const cardTasks = await createCardTasks({ transaction, ticket, event, action });
-    await setAutoCloseDeadline({ transaction, ticket, action });
+    await setAutoCompleteDeadline({ transaction, ticket, action });
     const notification = outbox
       ? await outbox.enqueueTicketEvent({ transaction, ticket, event, cardTasks })
       : null;
@@ -603,7 +603,7 @@ export function createTicketClosureService({
     }
   }
 
-  async function runAutoClose({
+  async function runAutoComplete({
     actionService,
     limit = 50,
   }: { actionService?: TicketActionService; limit?: number } = {}): Promise<{ closed_ticket_ids: string[] }> {
@@ -619,10 +619,10 @@ export function createTicketClosureService({
         `SELECT id::text, version
            FROM pilot_ticket.ticket
           WHERE status = 'RESOLVED'
-             AND auto_close_epoch_ms IS NOT NULL
-             AND auto_close_epoch_ms <= $1::bigint
-             AND auto_close_reminder_epoch_ms IS NOT NULL
-           ORDER BY auto_close_epoch_ms, id
+             AND auto_complete_epoch_ms IS NOT NULL
+             AND auto_complete_epoch_ms <= $1::bigint
+             AND auto_complete_reminder_epoch_ms IS NOT NULL
+           ORDER BY auto_complete_epoch_ms, id
           FOR UPDATE SKIP LOCKED
           LIMIT $2`,
         [closingAt.epoch_ms, limit],
@@ -648,25 +648,25 @@ export function createTicketClosureService({
     afterTicketAction,
     handleCardAction,
     recordSupplement,
-    runAutoCloseReminders: async ({ limit = 50 }: { limit?: number } = {}): Promise<{ reminded_ticket_ids: string[] }> => {
+    runAutoCompleteReminders: async ({ limit = 50 }: { limit?: number } = {}): Promise<{ reminded_ticket_ids: string[] }> => {
       if (!outbox) {
-        throw new TypeError('A notification outbox is required for auto-close reminders.');
+        throw new TypeError('A notification outbox is required for auto-complete reminders.');
       }
       if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
         throw new TypeError('limit must be an integer from 1 through 100.');
       }
       const reminderAt = validNow(now);
-      const reminderDeadline = addEpochMilliseconds(reminderAt.epoch_ms, autoCloseReminderLeadMs);
+      const reminderDeadline = addEpochMilliseconds(reminderAt.epoch_ms, autoCompleteReminderLeadMs);
       return transact(async (transaction) => {
         const selected = await transaction.query<ClosureTicketRow>(
           `SELECT ${ticketFields()}
              FROM pilot_ticket.ticket AS ticket
             WHERE ticket.status = 'RESOLVED'
-               AND ticket.auto_close_epoch_ms IS NOT NULL
-               AND ticket.auto_close_epoch_ms > $1::bigint
-               AND ticket.auto_close_epoch_ms <= $2::bigint
-               AND ticket.auto_close_reminder_epoch_ms IS NULL
-             ORDER BY ticket.auto_close_epoch_ms, ticket.id
+               AND ticket.auto_complete_epoch_ms IS NOT NULL
+               AND ticket.auto_complete_epoch_ms > $1::bigint
+               AND ticket.auto_complete_epoch_ms <= $2::bigint
+               AND ticket.auto_complete_reminder_epoch_ms IS NULL
+             ORDER BY ticket.auto_complete_epoch_ms, ticket.id
             FOR UPDATE SKIP LOCKED
             LIMIT $3`,
           [reminderAt.epoch_ms, reminderDeadline, limit],
@@ -675,9 +675,9 @@ export function createTicketClosureService({
         for (const row of selected.rows) {
           const marked = await transaction.query<ClosureTicketRow>(
             `UPDATE pilot_ticket.ticket
-                SET auto_close_reminder_epoch_ms = $2::bigint
+                SET auto_complete_reminder_epoch_ms = $2::bigint
               WHERE id = $1::uuid
-                AND auto_close_reminder_at IS NULL
+                AND auto_complete_reminder_at IS NULL
               RETURNING ${ticketFields('pilot_ticket.ticket')}`,
             [row.id, reminderAt.epoch_ms],
           );
@@ -690,25 +690,25 @@ export function createTicketClosureService({
           const rawEvent = await appendTicketEvent({
             transaction,
             ticket,
-            eventType: 'ticket.auto_close_reminder',
+            eventType: 'ticket.auto_complete_reminder',
             oldStatus: 'RESOLVED',
             newStatus: 'RESOLVED',
             actor: { type: 'SYSTEM', id: null },
-            traceId: `auto-close-reminder:${ticket.id}:${ticket.version}`,
+            traceId: `auto-complete-reminder:${ticket.id}:${ticket.version}`,
           });
           const event = rawEvent as ClosureEvent;
           await afterTicketAction({
             transaction,
             ticket,
             event,
-            action: 'auto-close-reminder',
+            action: 'auto-complete-reminder',
           });
           remindedTicketIds.push(ticket.id);
         }
         return { reminded_ticket_ids: remindedTicketIds };
       });
     },
-    runAutoClose,
+    runAutoComplete,
   });
 }
 

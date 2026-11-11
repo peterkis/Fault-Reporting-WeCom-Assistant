@@ -29,8 +29,8 @@ const headers=['类别 · 编号','问题','状态','时效','报修人 · 位�
 const present=(value:string|null|undefined)=>value?.trim()||null;
 /** Keep the server order within the table's stage and subgroup sequence. */
 export function orderWorkTableItems(items:readonly WorkbenchCard[]):WorkbenchCard[]{
-  const pending=items.filter(item=>item.column==='pending'),closed=items.filter(item=>item.column==='closed');
-  return [...pending.filter(item=>item.kind!=='ticket'),...pending.filter(item=>item.kind==='ticket'),...items.filter(item=>item.column==='active'),...closed.filter(item=>item.closure?.kind==='COMPLETED'),...closed.filter(item=>item.closure?.kind==='DISMISSED')];
+  const pending=items.filter(item=>item.column==='pending'),handled=items.filter(item=>item.column==='handled');
+  return [...pending.filter(item=>item.kind!=='ticket'),...pending.filter(item=>item.kind==='ticket'),...items.filter(item=>item.column==='active'),...handled.filter(item=>item.closure?.kind==='COMPLETED'),...handled.filter(item=>item.closure?.kind==='DISMISSED')];
 }
 
 function useFold(key:string,initial=true,preferInitial=false){
@@ -43,12 +43,12 @@ function ListStatus({item}:{item:WorkbenchCard}){
   const substatus=cardTags(item).find(tag=>tag.key==='substatus');
   const waiting=item.status==='WAITING_VENDOR'||item.status==='WAITING_REQUESTER';
   const label=waiting?(item.status==='WAITING_VENDOR'?'等待厂商':'等待补充'):item.status==='WAITING_DESCRIPTION'?'资料不全':substatus?.label??(item.kind!=='ticket'?'待判断':item.column==='pending'?'待接单':item.column==='active'?'处理中':'已完成');
-  return <Tag className="status-chip" tone={waiting||item.status==='WAITING_DESCRIPTION'?'neutral':substatus?.tone??(item.column==='active'?'info':item.column==='closed'?'success':'neutral')}>{waiting?<Pause aria-hidden="true"/>:null}{label}</Tag>;
+  return <Tag className="status-chip" tone={waiting||item.status==='WAITING_DESCRIPTION'?'neutral':substatus?.tone??(item.column==='active'?'info':item.column==='handled'?'success':'neutral')}>{waiting?<Pause aria-hidden="true"/>:null}{label}</Tag>;
 }
 function ListTime({item,now}:{item:WorkbenchCard;now:number}){
   const closure=item.closure;
-  if(closure?.kind==='DISMISSED')return <span className="ds-list-time is-dismissed"><CircleX aria-hidden="true"/>{closure.closed_at?formatListTime(closure.closed_at,now)+' 关闭':'已关闭'}</span>;
-  if(item.column==='closed')return item.completed_at?<span className="ds-list-time is-completed"><Check aria-hidden="true"/>{formatListTime(item.completed_at,now)} 完成</span>:<span className="ds-list-missing">—</span>;
+  if(closure?.kind==='DISMISSED')return <span className="ds-list-time is-dismissed"><CircleX aria-hidden="true"/>{closure.ended_at?formatListTime(closure.ended_at,now)+' 关闭':'已关闭'}</span>;
+  if(item.column==='handled')return item.completed_at?<span className="ds-list-time is-completed"><Check aria-hidden="true"/>{formatListTime(item.completed_at,now)} 完成</span>:<span className="ds-list-missing">—</span>;
   const heat=cardHeat(item,now),start=cardHeatStart(item),duration=formatWaitingTime(start,now);
   return heat?<TicketHeat heat={heat} heatStart={start}/>:duration?<span className="ds-list-time">{duration.label}</span>:<span className="ds-list-missing">—</span>;
 }
@@ -79,10 +79,10 @@ function Subgroup({label,items,preferenceKey,defaultExpanded=true,forced=false,n
   return <><tr className="ds-list-subgroup" data-board-group={label}><th colSpan={7} scope="rowgroup"><Button className="ds-board-group-trigger" tone="ghost" aria-expanded={expanded} aria-controls={items.length?items.slice(0,3).map(item=>'list-item-'+item.kind+'-'+item.id).join(' '):id+'-empty'} onPress={toggle}>{expanded?<ChevronDown aria-hidden="true"/>:<ChevronRight aria-hidden="true"/>}<span>{label}</span><span className="ds-board-group-count">{items.length}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></th></tr><ListRows {...props} items={items} expanded={expanded} id={id}/></>;
 }
 function Stage({group,principalId,closureKind,...props}:Omit<Props,'groups'>&{group:WorkTableGroup}){
-  const {column,label,items,count,feedback,nextPage}=group,[expanded,toggle]=useFold('pc-admin:list-stage:'+principalId+':'+column,true,column==='closed'&&closureKind!=='all'),id='list-'+column;
+  const {column,label,items,count,feedback,nextPage}=group,[expanded,toggle]=useFold('pc-admin:list-stage:'+principalId+':'+column,true,column==='handled'&&closureKind!=='all'),id='list-'+column;
   return <tbody className="list-group" aria-label={label} id={id}>
     <tr className="ds-list-stage" aria-label={label+'事项列表'}><th colSpan={7} scope="rowgroup"><div className="column-heading"><Button className="ds-list-stage-toggle" tone="ghost" isIconOnly aria-label={(expanded?'折叠':'展开')+label} aria-expanded={expanded} aria-controls={id} onPress={toggle}>{expanded?<ChevronDown aria-hidden="true"/>:<ChevronRight aria-hidden="true"/>}</Button><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-list-stage-count" title="当前筛选后已加载的事项">{count}</span></div></th></tr>
-    {expanded?<>{column==='closed'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{feedback?<tr className="ds-list-feedback"><td colSpan={7}>{feedback}</td></tr>:null}{feedback&&!items.length?null:column==='pending'&&items.length?<>{[false,true].map(ticket=><Subgroup key={String(ticket)} {...props} label={ticket?'待接单':'待判断'} preferenceKey={'pc-admin:list-pending:'+principalId+':'+(ticket?'ticket':'intake')} items={items.filter(item=>(item.kind==='ticket')===ticket)}/>)}</>:column==='closed'&&items.length?<>{(['completed','dismissed'] as const).filter(kind=>closureKind==='all'||closureKind===kind).map(kind=><Subgroup key={kind} {...props} label={kind==='completed'?'已完成':'已关闭'} items={items.filter(item=>item.closure?.kind===kind.toUpperCase())} preferenceKey={'pc-admin:processed-group:'+principalId+':'+kind} defaultExpanded={kind==='completed'} forced={closureKind===kind} {...(kind==='dismissed'?{note:'不计入完成数'}:{})}/>)}</>:<ListRows {...props} items={items} expanded id={id}/>} {nextPage?<tr className="ds-list-more"><td colSpan={7}>{nextPage}</td></tr>:null}</>:null}
+    {expanded?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{feedback?<tr className="ds-list-feedback"><td colSpan={7}>{feedback}</td></tr>:null}{feedback&&!items.length?null:column==='pending'&&items.length?<>{[false,true].map(ticket=><Subgroup key={String(ticket)} {...props} label={ticket?'待接单':'待判断'} preferenceKey={'pc-admin:list-pending:'+principalId+':'+(ticket?'ticket':'intake')} items={items.filter(item=>(item.kind==='ticket')===ticket)}/>)}</>:column==='handled'&&items.length?<>{(['completed','dismissed'] as const).filter(kind=>closureKind==='all'||closureKind===kind).map(kind=><Subgroup key={kind} {...props} label={kind==='completed'?'已完成':'已关闭'} items={items.filter(item=>item.closure?.kind===kind.toUpperCase())} preferenceKey={'pc-admin:processed-group:'+principalId+':'+kind} defaultExpanded={kind==='completed'} forced={closureKind===kind} {...(kind==='dismissed'?{note:'不计入完成数'}:{})}/>)}</>:<ListRows {...props} items={items} expanded id={id}/>} {nextPage?<tr className="ds-list-more"><td colSpan={7}>{nextPage}</td></tr>:null}</>:null}
   </tbody>;
 }
 /** Native row/column headers preserve table semantics for cross-column group rows. */

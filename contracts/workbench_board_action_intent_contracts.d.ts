@@ -1,5 +1,5 @@
 /** T42 presentation intent only. Never a Ticket/Review command or authority proof. */
-export type WorkbenchBoardColumn = 'pending' | 'active' | 'closed';
+export type WorkbenchBoardColumn = 'pending' | 'active' | 'handled';
 export interface WorkbenchBoardActionIntent {
   readonly kind: 'ticket' | 'review' | 'intake';
   readonly id: string;

@@ -18,12 +18,12 @@ test('T42 narrow long-content reduced-motion board has keyboard-equivalent actio
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).focus()`);
     await enter();
     await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}))`);
-    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).focus()`);
+    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=handled]')}).focus()`);
     for(const type of ['rawKeyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
-    assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}))`),false);
+    assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(card+' [data-board-action-target=handled]')}))`),false);
     assert.equal(await browser.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')})`),true);
     await enter();
-    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=closed]')}).focus()`);
+    await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=handled]')}).focus()`);
     await enter();
     await browser.waitFor("document.querySelector('[data-board-action-status]')?.textContent.includes('不能执行合法业务动作')");
     assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),false);

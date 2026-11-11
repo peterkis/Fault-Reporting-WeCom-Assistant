@@ -1,6 +1,6 @@
 import type { TicketStatus } from './p1-005-pilot-ticket-core.mjs';
 import type { SendTemplateCardMsgBody } from '@wecom/aibot-node-sdk';
-export interface CardModel { public_ref: string; suffix: string; status: TicketStatus; occurred_at: string; version: number; notification_type: 'TICKET_CREATED' | 'TICKET_ACCEPTED' | 'TICKET_IN_PROGRESS' | 'WAITING_REQUESTER' | 'WAITING_VENDOR' | 'TICKET_RESOLVED' | 'TICKET_COMPLETED' | 'TICKET_REOPENED' | 'TICKET_CANCELLED'; source: 'GROUP' | 'DIRECT' }
+export interface CardModel { public_ref: string; suffix: string; status: TicketStatus; occurred_at: string; version: number; notification_type: 'TICKET_CREATED' | 'TICKET_ACCEPTED' | 'TICKET_IN_PROGRESS' | 'WAITING_REQUESTER' | 'WAITING_VENDOR' | 'TICKET_RESOLVED' | 'TICKET_COMPLETED' | 'TICKET_REOPENED' | 'TICKET_RESTORED' | 'TICKET_DISMISSED'; source: 'GROUP' | 'DIRECT' }
 export type ReporterLinkMode = 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED';
 interface LinkOptions { origin: string; allowedHosts: readonly string[]; token?: string | undefined; publicRef?: string | undefined; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode }
 export interface CardOptions extends Omit<LinkOptions, 'publicRef'> { model: unknown }
@@ -13,7 +13,7 @@ export function validateP2016CardModel(input: unknown): CardModel {
   if(typeof v.public_ref!=='string'||typeof v.suffix!=='string'||typeof v.status!=='string'
     ||!/^[A-Za-z0-9_-]{32}$/u.test(v.public_ref)||!/^[0-9]{4}$/u.test(v.suffix)
     ||!Object.hasOwn(EXTERNAL_TICKET_STATUS,v.status)||!['GROUP','DIRECT'].includes(v.source as string)
-    ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_COMPLETED','TICKET_REOPENED','TICKET_CANCELLED'].includes(v.notification_type as string))failP2016('CARD_INVALID');
+    ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_COMPLETED','TICKET_REOPENED','TICKET_RESTORED','TICKET_DISMISSED'].includes(v.notification_type as string))failP2016('CARD_INVALID');
   versionP2016(v.version);localP2016(v.occurred_at);// Exact keys and all scalar/domain guards above establish the persisted model.
   return publicP2016(v) as CardModel & Record<string, unknown>;
 }

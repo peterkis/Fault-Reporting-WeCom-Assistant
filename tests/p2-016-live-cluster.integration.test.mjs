@@ -10,10 +10,12 @@ import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-post
 import { migrateP2016 } from '../app/server/scripts/p2-016-migrate.mjs';
 import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
+import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 
 test('P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls', {timeout:90000},async t=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016live',run:async({pool,databaseUrl})=>{
-    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});
+    await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
     const principals=[];for(const n of ['a','b'])principals.push(await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'synthetic-live-'+n,displayName:'合成坐席'+n,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
     const c={databaseUrl,identityHashKey:'synthetic-live-identity-hmac',principalIds:principals.map(p=>p.id),listenPort:port,

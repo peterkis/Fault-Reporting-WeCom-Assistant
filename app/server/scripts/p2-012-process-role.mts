@@ -16,7 +16,7 @@ import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adap
 import { createP2012ApprovedGroupReporterRegistry,createP2012DynamicWeComSender,createP2012LiveReporterScope,createP2012PersonDestinationAuthorizer } from '../src/p2-012-live-reporter-scope.mjs';
 import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.mjs';
 import { createP2016DirectIntakeProcessor, P2016_DIRECT_IDLE_TIMEOUT_MS } from '../src/p2-016-direct-intake.mjs';
-import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
+import { createTicketClosureService } from '../src/p1-010-ticket-auto-completion.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
 import { P2012_LIVE_FUSES,P2012_REPORTER_SCOPE_MODE,P2012_TEST_FLAGS } from '../src/p2-012-live-configuration.mjs';
@@ -36,7 +36,7 @@ export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,
   const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-complete',afterAction:closure.afterTicketAction});
   return {runOnce:async()=>{
     const rules=await orchestrator.processDueBatch({feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true},batch_size:20});
-    await closure.runAutoCloseReminders({limit:20});await closure.runAutoClose({actionService:actions,limit:20});await realtime.runOnce();const maintenance=await incident.runOnce();
+    await closure.runAutoCompleteReminders({limit:20});await closure.runAutoComplete({actionService:actions,limit:20});await realtime.runOnce();const maintenance=await incident.runOnce();
     return {rule_processed:rules.processed,...maintenance};
   }};
 }

@@ -1,4 +1,4 @@
-export type BoardColumn = 'pending' | 'active' | 'closed';
+export type BoardColumn = 'pending' | 'active' | 'handled';
 export type CompletionRange = 'recent' | 'all';
 export type BoardCompletionRange = CompletionRange | 'custom';
 export type WorkbenchKind = 'ticket' | 'review' | 'intake';
@@ -22,9 +22,9 @@ export interface WorkbenchClosure {
   kind: 'COMPLETED' | 'DISMISSED'; source: 'MANUAL' | 'SYSTEM' | null;
   reason_code: string | null; reason_label: string | null; reason_note: string | null;
   secondary_reason:{code:string;label:string}|null;
-  closed_by_display_name: string | null;
+  ended_by_display_name: string | null;
   /** Asia/Shanghai LocalDateTime, with the same second precision as the card timestamps. */
-  closed_at: string | null;
+  ended_at: string | null;
   duplicate_of: {display_no: string} | null; can_restore: boolean;
 }
 export interface WorkbenchCard {
@@ -49,7 +49,7 @@ export interface WorkbenchCard {
 }
 export interface BoardPage {
   items: WorkbenchCard[]; next_cursor: string | null; column: BoardColumn;
-  /** Required on the closed column, absent on the other columns; before pagination. */
+  /** Required on the handled column, absent on the other columns; before pagination. */
   group_counts?: {completed: number; dismissed: number};
   range: { mode: BoardCompletionRange; from: string; until: string; timezone: 'Asia/Shanghai' };
 }

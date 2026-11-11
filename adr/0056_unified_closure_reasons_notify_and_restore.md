@@ -143,3 +143,13 @@ Ticket 人工关闭事件沿用 `ticket.cancelled`；新增 `ticket.restored` �
 ## 2026-11-08 前向替代指针
 
 A0-1 中「`DUPLICATE_LINKED` … 保留既有公共故障关联含义」一句、人工关闭进入 `CANCELLED` / 事件 `ticket.cancelled` / `intake.closed`、H5 筛选 `CLOSED_OUT` 的命名，已被 [ADR-0058](0058_completion_and_dismissal_language.md) 前向替代：人工关闭为 `DISMISSED`（`ticket.dismissed` / `intake.dismissed`），`DUPLICATE_LINKED` 删除，H5 筛选为 `DISMISSED`。关闭原因、通知矩阵与恢复规则不变。上文原文保留不改。
+
+## 2026-11-11 补充：系统关闭后报修人补充自动恢复（迁移 074）
+
+用户规则：报修人的 Web 自助报修被**系统自动**判为非 IT 范围并关闭后，报修人再提交补充，系统自动恢复该事项并按补充重新判断；**人工关闭**仍保持关闭，只能由工作人员手动恢复。本节前向替代上文「分类 Port 不能将已关闭受理事项重新改为开放状态」在这一种关闭上的适用，其余关闭不变。
+
+- **适用范围**：只有同时满足以下条件的当前关闭会自动恢复：主体为 Intake、`source='SYSTEM'`、`reason_code='NOT_IT_SCOPE'`、`secondary_reason_code='OUT_OF_SCOPE_CONFIRMED'`、关闭前状态属于可恢复的受理状态、未关联任何 Ticket（`pilot_ticket_id`、`source_intake_id` 或 Journey 关联均无），并且关闭后有新的 Web 补充（`processed_revision < input_revision`）。人工关闭（任何原因）、其它原因的系统关闭、已关联工单的事项、Ticket 层面的关闭、没有新补充的重放，以及不走 Web 自助编排器的 Bot / 企业微信事项都不自动恢复，编排器仍返回 `INTAKE_CLOSED`。
+- **流程**：Web 自助编排器在同一事务内持有 Web binding、Intake 与当前关闭记录的行锁，复用人工恢复的同一恢复步骤（`restoreIntakeClosure`：状态、`request_type`、Journey 与待复核按关闭前快照恢复），写 `intake.restored` 事件（payload 增加 `restore_source:'SYSTEM'`、`trigger:'REPORTER_SUPPLEMENT'`、`closure_id`、`input_revision`，`actor_principal_id` 为空），关闭记录 `restored_by` 为空；随后按原问题加补充一起重新判断。重新判断仍为非 IT 范围时，生成一条新的系统关闭记录，下一次补充可以再次触发。关闭记录行锁与 `restored_at IS NULL` 条件保证同一条关闭只恢复一次；并发与重放由 binding 行锁和 `processed_revision` 判定。待处理泵同时领取带新补充的此类关闭事项。
+- **通知**：不发「已恢复」通知。Web 关闭和恢复本就沿 `WEB_APP_ONLY` 只在 App 内显示，补充本身进入重新判断，结果直接显示在「我的报修」里；恢复通知投影照常执行一次，记为已处理且不生成消息。
+- **PC 显示**：关闭历史接口返回 `restore_source`（`MANUAL` / `SYSTEM` / 未恢复时为 null），由 `restored_by` 是否为空推导；系统恢复显示「↶ 系统自动恢复（报修人补充后） · 时间」，不显示人名。
+- **迁移 074**（`system-closure-restore-migrate`，check / apply / rollback）：要求 071 与 073 已应用。新增由 `restored_at` / `restored_by` 推导的生成列 `restore_source`，已有恢复记录全部读作 `MANUAL`，不回填数据、不改人工恢复的写路径；把 `closure_restore_actor` 约束改为人工恢复必须有 `restored_by`，`restored_by` 为空只允许上述系统非 IT 范围 Intake 关闭。工作台与 P2016 进程在启动就绪检查中要求 074。回退在仍有系统恢复记录时拒绝（`SYSTEM_CLOSURE_RESTORE_ROLLBACK_REQUIRES_EMPTY_FIXTURE`），否则恢复原约束并删除生成列；不改写、不删除任何数据。不修改历史迁移 001–073。

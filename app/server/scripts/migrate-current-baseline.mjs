@@ -46,7 +46,7 @@ const LEGACY_MIGRATIONS = Object.freeze([
       SELECT 1 FROM pg_constraint
        WHERE conrelid = to_regclass('pilot_ticket.ticket_event')
          AND conname = 'ticket_event_type_check'
-         AND pg_get_constraintdef(oid, true) LIKE '%auto_close_reminder%'
+         AND pg_get_constraintdef(oid, true) ~ 'auto_(close|complete)_reminder'
     )`],
   ['009', new URL('../../../database/migrations/009_p1_011_pilot_operations_baseline.sql', import.meta.url), "to_regclass('operations.restore_drill') IS NOT NULL"],
   ['010', new URL('../../../database/migrations/010_p2_001_conversation_contracts.sql', import.meta.url), "to_regclass('conversation.session') IS NOT NULL"],

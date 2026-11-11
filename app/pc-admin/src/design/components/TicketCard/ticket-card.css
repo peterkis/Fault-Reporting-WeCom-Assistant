@@ -54,8 +54,8 @@
 .ds-ticket-dismissed-body .card-top {color: var(--text-tertiary);}
 .ds-ticket-dismissed-body h3 {font-weight: var(--fw-medium); color: var(--text-secondary);}
 .ds-ticket-dismissed-body .ds-ticket-category {filter: grayscale(1); opacity: .55;}
-.ds-ticket-dismissed-body .ds-ticket-closed {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-tertiary); font-family: var(--font-sans);}
-.ds-ticket-closed>svg {width: var(--space-3); height: var(--space-3); flex: none; stroke-width: 1.75;}
+.ds-ticket-dismissed-body .ds-ticket-dismissed-at {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-tertiary); font-family: var(--font-sans);}
+.ds-ticket-dismissed-at>svg {width: var(--space-3); height: var(--space-3); flex: none; stroke-width: 1.75;}
 .ds-ticket-dismissed-body .card-footer {flex-wrap: wrap; gap: var(--space-1) var(--space-2);}
 .ds-ticket-dismissed-body .card-tags {flex: 1 1 auto;}
 .ds-ticket-dismissed-body .ds-ticket-closer {display: inline-flex; align-items: center; justify-content: flex-end; flex: 0 1 auto; max-width: 100%; gap: var(--space-1); margin-left: auto; color: var(--text-tertiary);}
@@ -164,7 +164,7 @@
 .ds-restore-unassigned {color: var(--text-secondary);}
 .ds-restore-followups {margin: var(--space-2) 0 0; color: var(--text-tertiary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-restore-dialog footer {margin-top: var(--space-4);}
-.ds-restore-dialog .ds-button[data-action=confirm-restore-closed] svg {width: var(--icon-sm); height: var(--icon-sm);}
+.ds-restore-dialog .ds-button[data-action=confirm-restore-dismissed] svg {width: var(--icon-sm); height: var(--icon-sm);}
 /* B1: one tag for 「重复 · IT-…」. */
 .ds-ticket-closure-reason.ds-tag {display: inline-flex; align-items: center; gap: 0; min-width: 0;}
 .ds-closure-reason-label {flex: none;}

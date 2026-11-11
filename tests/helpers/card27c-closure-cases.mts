@@ -88,7 +88,7 @@ async function freshTicket(f:Fixture,status='QUEUED'){
  return {id:created.ticket.id,intakeId:intake.intakeId,http:admin,current:await admin.detail(created.ticket.id)};
 }
 const closeBody=(version:number,reason:ClosureReasonCode='OTHER',extra:Record<string,unknown>={})=>({client_command_id:randomUUID(),expected_version:version,reason_code:reason,note:CANARY,...(reason==='NOT_IT_SCOPE'?{secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED'}:{}),...extra});
-async function latest(f:Fixture,kind:'TICKET'|'INTAKE',id:string){const r=(await f.pool.query<ClosureRecord>(`SELECT * FROM pilot_ticket.closure_record WHERE ${kind==='TICKET'?'ticket_id':'intake_id'}=$1::uuid ORDER BY closed_at DESC,id DESC LIMIT 1`,[id])).rows[0];assert.ok(r);return r;}
+async function latest(f:Fixture,kind:'TICKET'|'INTAKE',id:string){const r=(await f.pool.query<ClosureRecord>(`SELECT * FROM pilot_ticket.closure_record WHERE ${kind==='TICKET'?'ticket_id':'intake_id'}=$1::uuid ORDER BY ended_at DESC,id DESC LIMIT 1`,[id])).rows[0];assert.ok(r);return r;}
 
 // Delay only the return from a real successful receipt INSERT; FK locks remain held.
 function holdClosureReceipt(pool:PostgresPool,commandId:string){
@@ -153,7 +153,7 @@ test('Card 27C-A six reasons close Tickets and Intakes, enforce the notification
   const target=kind==='TICKET'?await freshTicket(f):await seedPersistedIntake({pool:f.pool,text:'待判断事项（合成）',status:'WAITING_TRIAGE'});
   const id='id' in target?target.id:target.intakeId,version='current' in target?target.current.version:1;
   let expectedReview:Record<string,unknown>={};if(kind==='REVIEW'){await f.processReviewIntake(id);const review=(await f.pool.query<{row_version:string}>('SELECT row_version::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid AND status=\'PENDING\' ORDER BY created_at,id LIMIT 1',[id])).rows[0];assert.ok(review);expectedReview={expected_review_version:review.row_version};const current=(await f.pool.query<{version:number}>('SELECT version FROM intake.service_intake WHERE id=$1::uuid',[id])).rows[0];assert.ok(current);await responseJson(await post(f,'/api/intakes/'+id+'/close',closeBody(current.version,reason,expectedReview)));}else await responseJson(await post(f,kind==='TICKET'?'/api/tickets/'+id+'/dismiss':'/api/intakes/'+id+'/close',closeBody(version,reason)));
-  const record=await latest(f,kind==='TICKET'?'TICKET':'INTAKE',id);assert.equal(record.reason_code,reason);assert.equal(record.note,CANARY);assert.equal(record.notify_reporter,!['FALSE_REPORT_OR_TEST','OTHER'].includes(reason));assert.equal(record.source,'MANUAL');assert.match(record.closed_at,/^\d{4}-\d{2}-\d{2} /u);
+  const record=await latest(f,kind==='TICKET'?'TICKET':'INTAKE',id);assert.equal(record.reason_code,reason);assert.equal(record.note,CANARY);assert.equal(record.notify_reporter,!['FALSE_REPORT_OR_TEST','OTHER'].includes(reason));assert.equal(record.source,'MANUAL');assert.match(record.ended_at,/^\d{4}-\d{2}-\d{2} /u);
   const messages=(await f.pool.query<{content:Record<string,unknown>}>('SELECT content FROM communication.message WHERE id=$1::uuid',[record.notification_message_id])).rows;
   assert.equal(messages.length,record.notify_reporter?1:0);
   if(messages[0]){assert.equal(messages[0].content.text,expectedText[reason]);assert.ok(!JSON.stringify(messages[0]).includes(CANARY));}
@@ -275,7 +275,7 @@ test('Card 27C-A system classification records the physical close time and a pen
  await f.pool.query("UPDATE channel.message_inbox SET received_at=platform.local_now()-interval '2 days' WHERE id=$1::bigint",[system.messageId]);await f.pool.query("UPDATE intake.service_intake SET last_message_at=platform.local_now()-interval '2 days' WHERE id=$1::uuid",[system.intakeId]);
  const decisionStore=createDecisionStore(),orchestrator=createRuleFirstOrchestrator({pool:f.pool,identityHmacKey:'card27c-synthetic-identity-key-32-bytes',ruleEngine:createRuleEngine(),decisionStore,safeActionExecutor:createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),ticketCommandPort:createExistingTicketCommandPort({ticketCore:core}),manualReviewStore:createManualReviewStore(),decisionStore})});
  await orchestrator.processPersistedIntake({service_intake_id:system.intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
- const record=await latest(f,'INTAKE',system.intakeId);assert.equal(record.source,'SYSTEM');const near=(await f.pool.query<{fresh:boolean}>('SELECT $1::timestamp BETWEEN platform.local_now()-interval \'30 seconds\' AND platform.local_now()+interval \'1 second\' AS fresh',[record.closed_at])).rows[0];assert.equal(near?.fresh,true);
+ const record=await latest(f,'INTAKE',system.intakeId);assert.equal(record.source,'SYSTEM');const near=(await f.pool.query<{fresh:boolean}>('SELECT $1::timestamp BETWEEN platform.local_now()-interval \'30 seconds\' AND platform.local_now()+interval \'1 second\' AS fresh',[record.ended_at])).rows[0];assert.equal(near?.fresh,true);
  const thanksFrame=adaptWeComSdkFrame({cmd:'aibot_msg_callback',headers:{req_id:'thanks-（合成）-'+randomUUID()},body:{msgid:'感谢用例（合成）-'+randomUUID(),aibotid:'bot-test',chattype:'single',from:{userid:'thanks-synthetic-user'},msgtype:'text',text:{content:'谢谢'}}},{receivedAt:nowShanghaiLocal()});assert.ok(thanksFrame.ok);
  const expiry=String(Math.floor(Date.now()/1000)*1000+2592000000),thanks=await createChannelMessageInbox({pool:f.pool}).accept({message:thanksFrame.message,traceId:'card27c-initial-thanks',privacyClass:'INTERNAL',retentionUntil:formatEpochMsToShanghaiLocal(expiry),retentionUntilEpochMs:expiry},createServiceIntakeProcessor());
  const thanksIntake=object(object(object(thanks).result).intake);assert.equal(thanksIntake.status,'DISMISSED');assert.equal(typeof thanksIntake.id,'string');const thanksId=String(thanksIntake.id),thanksRecord=await latest(f,'INTAKE',thanksId);assert.equal(thanksRecord.before_status,'WAITING_DESCRIPTION');assert.equal(thanksRecord.source,'SYSTEM');await responseJson(await post(f,'/api/intakes/'+thanksId+'/restore',{client_command_id:randomUUID(),expected_version:thanksIntake.version,reason_code:'RESTORE_CLOSED'}));assert.equal((await f.pool.query<{status:string}>('SELECT status FROM intake.service_intake WHERE id=$1::uuid',[thanksId])).rows[0]?.status,'WAITING_DESCRIPTION');
@@ -317,7 +317,7 @@ test('Card 29 restore target reports a closure that chose not to notify, so rest
  const response=await target.http.get('/api/tickets/'+target.id+'/closure-history');assert.equal(response.status,200);const page=await (response.json() as Promise<ClosureHistoryPage>);
  assert.equal(page.restore_target?.notify_reporter,false);assert.equal(page.restore_target?.notification_state,'NOT_SENT');
  const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));
- const record=(await f.pool.query<{restoration_notification_message_id:string|null}>('SELECT restoration_notification_message_id::text FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid ORDER BY closed_at DESC LIMIT 1',[target.id])).rows[0];
+ const record=(await f.pool.query<{restoration_notification_message_id:string|null}>('SELECT restoration_notification_message_id::text FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid ORDER BY ended_at DESC LIMIT 1',[target.id])).rows[0];
  assert.equal(record?.restoration_notification_message_id,null,'a closure without notification restores without a reporter message');
 }));
 
@@ -333,7 +333,7 @@ test('Card 27C-B closure history reads real delivery facts, effective owners and
  page=await read();assert.equal(page.items[0]?.notification_state,'SENT');assert.equal(page.restore_target?.notification_state,'SENT');
  await f.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[owner]);page=await read();assert.deepEqual(page.restore_target,{status:'QUEUED',column:'pending',assignee_name:null,notify_reporter:true,notification_state:'SENT'});
  await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:page.version,reason_code:'RESTORE_CLOSED'}));
- page=await read();assert.equal(page.restore_target,null);assert.ok(page.items[0]?.restored_at);assert.ok(page.items[0]?.restored_by_display_name);
+ page=await read();assert.equal(page.restore_target,null);assert.ok(page.items[0]?.restored_at);assert.ok(page.items[0]?.restored_by_display_name);assert.equal(page.items[0]?.restore_source,'MANUAL');
  for(let index=0;index<20;index++){const current=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/dismiss',closeBody(current.version)));const closed=await target.http.detail(target.id);await responseJson(await post(f,'/api/tickets/'+target.id+'/restore',{client_command_id:randomUUID(),expected_version:closed.version,reason_code:'RESTORE_CLOSED'}));}
  page=await read();assert.equal(page.items.length,20);assert.equal(page.next_before_version,page.items.at(-1)?.before_version);assert.ok(page.items.every((item,index)=>index===0||item.before_version<(page.items[index-1]?.before_version??0)));
  const response=await target.http.get('/api/tickets/'+target.id+'/closure-history?before_version='+page.next_before_version);assert.equal(response.status,200);const tail=await response.json() as ClosureHistoryPage;assert.equal(tail.items.length,1);assert.equal(tail.next_before_version,null);assert.equal(tail.restore_target,null);assert.equal(new Set([...page.items,...tail.items].map(item=>item.id)).size,21);
@@ -351,17 +351,17 @@ test('Card 27C-B restore requires renewed confirmation when the closing delivery
  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST'&&request.url===path)posts++;};f.runtime.server.on('request',observe);
  try{
   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+target.id,width:1440,height:900,cookies:[{...cookie,url:cookieUrl}]});assert.ok(browser);
-  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('.ds-next-step [data-action=restore-closed]')?.disabled===false");
-  await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-closed]');
+  await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('.ds-next-step [data-action=restore-dismissed]')?.disabled===false");
+  await clickWorkbenchControl(browser,'.ds-next-step [data-action=restore-dismissed]');
   await browser.waitFor("Boolean(document.querySelector('[data-restore-confirmation]'))");
   assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('将通知报修人已重新受理')"),false);
   assert.equal(await browser.evaluate("document.querySelector('[data-restore-confirmation]').textContent.includes('关闭通知尚未送达，恢复后将按送达结果决定是否通知')"),true);
   const sender=createCommunicationDeliveryWorker({pool:f.pool,enabled:true,batchSize:20,sender:{send:async()=>({outcome:'ACKNOWLEDGED',provider_message_id:null,error_code:null,retryable:false})}});await sender.runOnce({limit:20});
   page=await responseJson(await target.http.get('/api/tickets/'+target.id+'/closure-history'));assert.equal(object(page.restore_target).notification_state,'SENT');
-  await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');
+  await clickWorkbenchControl(browser,'[data-action=confirm-restore-dismissed]');
   await browser.waitFor("document.querySelector('[data-restore-confirmation]')?.textContent.includes('关闭时已通知，将通知报修人已重新受理')&&document.body.innerText.includes('恢复目标或关闭通知状态已变化')");
   assert.equal(posts,0);assert.equal((await target.http.detail(target.id)).status,'DISMISSED');
-  await clickWorkbenchControl(browser,'[data-action=confirm-restore-closed]');await browser.waitFor("!document.querySelector('[data-restore-confirmation]')");
+  await clickWorkbenchControl(browser,'[data-action=confirm-restore-dismissed]');await browser.waitFor("!document.querySelector('[data-restore-confirmation]')");
   assert.equal(posts,1);assert.equal((await target.http.detail(target.id)).status,'QUEUED');
  }catch(failure){error=failure;}
  finally{f.runtime.server.removeListener('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}

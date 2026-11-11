@@ -13,4 +13,4 @@
 .ds-status-badge.ds-status-badge[data-stage] {height: calc(var(--space-6) + var(--space-0-5)); padding: 0 calc(var(--space-2) + var(--space-0-5)) 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--fs-sm); font-weight: var(--fw-semibold); line-height: var(--lh-sm);}
 .ds-status-badge[data-stage=pending] {background: var(--stage-intake-bg); color: var(--stage-intake-fg);}
 .ds-status-badge[data-stage=active] {background: var(--stage-active-bg); color: var(--stage-active-fg);}
-.ds-status-badge[data-stage=closed] {background: var(--stage-done-bg); color: var(--stage-done-fg);}
+.ds-status-badge[data-stage=handled] {background: var(--stage-done-bg); color: var(--stage-done-fg);}

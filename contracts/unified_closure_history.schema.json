@@ -35,11 +35,12 @@
           "note",
           "duplicate_of",
           "source",
-          "closed_at",
-          "closed_by_display_name",
+          "ended_at",
+          "ended_by_display_name",
           "notification_state",
           "restored_at",
-          "restored_by_display_name"
+          "restored_by_display_name",
+          "restore_source"
         ],
         "properties": {
           "id": {
@@ -131,10 +132,10 @@
               "SYSTEM"
             ]
           },
-          "closed_at": {
+          "ended_at": {
             "$ref": "local_datetime.schema.json"
           },
-          "closed_by_display_name": {
+          "ended_by_display_name": {
             "type": [
               "string",
               "null"
@@ -164,6 +165,13 @@
               "null"
             ],
             "maxLength": 128
+          },
+          "restore_source": {
+            "enum": [
+              null,
+              "MANUAL",
+              "SYSTEM"
+            ]
           }
         }
       }

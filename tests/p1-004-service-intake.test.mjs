@@ -19,6 +19,8 @@ import {
 } from '../app/server/src/p1-004-service-intake.mjs';
 import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
+import { migrateNotificationVocabulary } from '../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -134,7 +136,7 @@ before(async () => {
   await migrateCurrentBaseline({ databaseUrl: isolatedUrl });
   // Intake dismissal writes intake.dismissed: the 071 event vocabulary as renamed by 072.
   await migrateServiceClosure({ databaseUrl: isolatedUrl, mode: 'apply' });
-  await migrateCompletionDismissal({ databaseUrl: isolatedUrl, mode: 'apply' });
+  await migrateCompletionDismissal({ databaseUrl: isolatedUrl, mode: 'apply' });await migrateNotificationVocabulary({ databaseUrl: isolatedUrl, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolatedUrl, mode: 'apply' });
 });
 
 after(async () => {

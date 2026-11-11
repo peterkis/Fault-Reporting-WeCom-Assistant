@@ -120,7 +120,7 @@ export async function validateArch005TimeContract() {
     'app/server/src/p1-004-service-intake.mjs',
     'app/server/src/p1-005-pilot-ticket-core.mjs',
     'app/server/src/p1-006-ticket-state-actions.mjs',
-    'app/server/src/p1-010-ticket-closure.mjs',
+    'app/server/src/p1-010-ticket-auto-completion.mjs',
     'app/server/src/p1-011-pilot-operations-baseline.mjs',
     'app/server/src/p2-001-conversation-contracts.mjs',
     'app/server/src/p2-002-timeline-projector.mjs',

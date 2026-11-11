@@ -1,7 +1,7 @@
 import type {WorkbenchBoardActionIntent,WorkbenchBoardActionResolution,WorkbenchBoardColumn} from '../../../../contracts/workbench_board_action_intent_contracts.js';
 
-export const boardColumnNames:Record<WorkbenchBoardColumn,string>={pending:'待受理',active:'处理中',closed:'已关闭'};
-export const boardColumns:readonly WorkbenchBoardColumn[]=['pending','active','closed'];
+export const boardColumnNames:Record<WorkbenchBoardColumn,string>={pending:'待受理',active:'处理中',handled:'已关闭'};
+export const boardColumns:readonly WorkbenchBoardColumn[]=['pending','active','handled'];
 export function readBoardIntent(value:unknown):WorkbenchBoardActionIntent|null {
   if(!value||typeof value!=='object'||Array.isArray(value))return null;
   const v=value as Record<string,unknown>;
@@ -13,7 +13,7 @@ export function readBoardIntent(value:unknown):WorkbenchBoardActionIntent|null {
 export function planBoardAction(intent:WorkbenchBoardActionIntent):WorkbenchBoardActionResolution {
   if(intent.source_column===intent.target_column)return {state:'NO_CHANGE',intent};
   if(intent.source_column==='pending'&&intent.target_column==='active')return {state:'OPEN_EXISTING_FORM',intent,action:intent.kind==='ticket'?'SELF_HANDLE':'REVIEW_RESOLVE_AND_START'};
-  if(intent.kind==='ticket'&&intent.source_column==='active'&&intent.target_column==='closed')return {state:'OPEN_EXISTING_FORM',intent,action:'STAFF_COMPLETE'};
-  if(intent.kind==='ticket'&&intent.source_column==='closed'&&intent.target_column==='pending')return {state:'OPEN_EXISTING_FORM',intent,action:'STAFF_REOPEN'};
+  if(intent.kind==='ticket'&&intent.source_column==='active'&&intent.target_column==='handled')return {state:'OPEN_EXISTING_FORM',intent,action:'STAFF_COMPLETE'};
+  if(intent.kind==='ticket'&&intent.source_column==='handled'&&intent.target_column==='pending')return {state:'OPEN_EXISTING_FORM',intent,action:'STAFF_REOPEN'};
   return {state:'UNAVAILABLE',intent,reason:'INVALID_TRANSITION'};
 }

@@ -50,6 +50,8 @@ import {assertEpochMsString,formatEpochMsToShanghaiLocal} from '../../app/server
 import {p2016TicketSourceIntake} from '../../app/server/src/p2-016-guided-journey.mjs';
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
+import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 export function text(value:unknown):string{assert.equal(typeof value,'string');return value as string;}
@@ -91,7 +93,7 @@ export async function withT43Fixture(run:(f:T43Fixture)=>Promise<void>,{syntheti
   await migrateCurrentBaselineWithYxx({databaseUrl});
   for(const migrate of [migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateWorkbenchVerifiedManualReports,migrateTicketUnassign,migrateTicketReopenRounds,migrateWorkbenchPersonalRead,migrateBotReporterFeedback,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchFollowUpSchedules,migrateTicketReturnToDispatch,migrateWorkbenchFollowUpDueSignals,migrateWorkbenchSourceGroups,migrateIncidentInternalNotes,migrateIncidentPublicProgress,migrateIncidentOwnerTransfer,migrateIncidentDeliveryControl,migrateConversationDeliveryCommands])await migrate({databaseUrl,mode:'apply'});
   // The current roles require the 071 closure schema and the 072 vocabulary, registered, after every other migration.
-  await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});
+  await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
   const access=createPilotAccessService({pool}),principals:string[]=[];
   for(let index=0;index<4;index++){
    const p=await access.upsertPrincipal({wecomUserId:'t43-staff-'+index,displayName:'T43合成人员'+index,roles:index===0?['ADMIN']:index===2?['DISPATCHER']:['HANDLER'],resolverTeamIds:index===3?[]:['PILOT_IT']});principals.push(p.id);

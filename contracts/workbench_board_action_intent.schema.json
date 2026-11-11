@@ -8,7 +8,7 @@
   "properties": {
     "kind": {"enum": ["ticket", "review", "intake"]},
     "id": {"type": "string", "format": "uuid"},
-    "source_column": {"enum": ["pending", "active", "closed"]},
-    "target_column": {"enum": ["pending", "active", "closed"]}
+    "source_column": {"enum": ["pending", "active", "handled"]},
+    "target_column": {"enum": ["pending", "active", "handled"]}
   }
 }

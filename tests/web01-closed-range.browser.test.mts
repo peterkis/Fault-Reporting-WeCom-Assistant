@@ -13,7 +13,7 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 
 interface Fixture {pool:PostgresPool;origin:string;tickets:{ticket:{id:string}}[];cookies:string[];runtime:P2016EnabledRuntime}
-const selection='range=custom&closed_from=2024-02-29&closed_to=2024-02-29';
+const selection='range=custom&handled_from=2024-02-29&handled_to=2024-02-29';
 async function seedClosingTimes(f:Fixture){
   const first=f.tickets[9],last=f.tickets[10],outside=f.tickets[11],resolved=f.tickets[12];assert.ok(first&&last&&outside&&resolved);
   // Only the isolated synthetic fixture changes; the filter must use completion events, not updated_at.
@@ -31,22 +31,22 @@ async function page(f:Fixture,query:string,reader=0):Promise<BoardPage>{
   const value:unknown=await response.json();assert.ok(value&&typeof value==='object'&&'items' in value&&Array.isArray(value.items));return value as BoardPage;
 }
 test('custom completion dates include both Beijing days, bind both cursor edges and retain current READ and unfinished work',()=>withWeb01Fixture(async(f:Fixture)=>{
-  const ids=await seedClosingTimes(f),selected=await page(f,'column=closed&'+selection);
+  const ids=await seedClosingTimes(f),selected=await page(f,'column=handled&'+selection);
   assert.deepEqual(selected.range,{mode:'custom',from:'2024-02-29 00:00:00',until:'2024-03-01 00:00:00',timezone:'Asia/Shanghai'});
   assert.deepEqual(selected.items.map(item=>item.id),[ids.last,ids.first,ids.resolved]);
-  assert.deepEqual((await page(f,'column=closed&range=custom&closed_from=2024-03-01&closed_to=2024-03-01')).items.map(item=>item.id),[ids.outside,ids.resolved]);
-  assert.equal((await page(f,'column=closed&range=all')).items.length,4);
+  assert.deepEqual((await page(f,'column=handled&range=custom&handled_from=2024-03-01&handled_to=2024-03-01')).items.map(item=>item.id),[ids.outside,ids.resolved]);
+  assert.equal((await page(f,'column=handled&range=all')).items.length,4);
   for(const column of ['pending','active'])assert.deepEqual((await page(f,'column='+column+'&'+selection)).items.map(item=>item.id),(await page(f,'column='+column+'&range=all')).items.map(item=>item.id));
-  assert.deepEqual((await page(f,'column=closed&'+selection,1)).items,[]);
-  const first=await page(f,'column=closed&limit=1&'+selection);assert.ok(first.next_cursor);
-  const next=await page(f,'column=closed&limit=1&'+selection+'&cursor='+encodeURIComponent(first.next_cursor));assert.equal(next.items[0]?.id,ids.first);
+  assert.deepEqual((await page(f,'column=handled&'+selection,1)).items,[]);
+  const first=await page(f,'column=handled&limit=1&'+selection);assert.ok(first.next_cursor);
+  const next=await page(f,'column=handled&limit=1&'+selection+'&cursor='+encodeURIComponent(first.next_cursor));assert.equal(next.items[0]?.id,ids.first);
   for(const query of [
-    'range=custom','range=custom&closed_from=2024-02-29','range=custom&closed_from=2026-02-29&closed_to=2026-03-01',
-    'range=custom&closed_from=2024-03-01&closed_to=2024-02-29','range=custom&closed_from=0000-01-01&closed_to=2024-03-01',
-    'range=custom&closed_from=2024-03-01&closed_to=9999-12-31','range=all&closed_from=2024-02-29&closed_to=2024-03-01',
-    selection+'&closed_to=2024-03-01',selection.replace('closed_to=2024-02-29','closed_to=2024-03-01')+'&cursor='+encodeURIComponent(first.next_cursor),
-    selection.replace('closed_from=2024-02-29','closed_from=2024-02-28')+'&cursor='+encodeURIComponent(first.next_cursor),
-  ]){const response=await get(f,'column=closed&'+query);assert.equal(response.status,400,await response.text());}
+    'range=custom','range=custom&handled_from=2024-02-29','range=custom&handled_from=2026-02-29&handled_to=2026-03-01',
+    'range=custom&handled_from=2024-03-01&handled_to=2024-02-29','range=custom&handled_from=0000-01-01&handled_to=2024-03-01',
+    'range=custom&handled_from=2024-03-01&handled_to=9999-12-31','range=all&handled_from=2024-02-29&handled_to=2024-03-01',
+    selection+'&handled_to=2024-03-01',selection.replace('handled_to=2024-02-29','handled_to=2024-03-01')+'&cursor='+encodeURIComponent(first.next_cursor),
+    selection.replace('handled_from=2024-02-29','handled_from=2024-02-28')+'&cursor='+encodeURIComponent(first.next_cursor),
+  ]){const response=await get(f,'column=handled&'+query);assert.equal(response.status,400,await response.text());}
 }));
 
 test('formal board applies a selected date range, preserves it across view, scope and reload, and omits removed guidance',{timeout:120_000},()=>withWeb01Fixture(async(f:Fixture)=>{
@@ -57,9 +57,9 @@ test('formal board applies a selected date range, preserves it across view, scop
   f.runtime.server.on('request',(request:IncomingMessage)=>{if(request.method!=='GET')writes++;});
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?scope=team',width:1920,height:1080,cookies:[{name:cookieHeader.slice(0,separator),value:cookieHeader.slice(separator+1),url:f.origin+'/',httpOnly:true,secure:f.origin.startsWith('https:'),sameSite:'Lax'}]});assert.ok(browser);
-    await browser.waitFor('Boolean(document.querySelector(".processed-date-picker"))&&document.querySelectorAll(".board-column.closed .ticket-card").length===1');
+    await browser.waitFor('Boolean(document.querySelector(".processed-date-picker"))&&document.querySelectorAll(".board-column.handled .ticket-card").length===1');
     // Card 10 defaults to oldest-first; this date-boundary assertion retains its explicit newest-first sequence.
-    await clickWorkbenchControl(browser,'.board-column.closed .ds-column-sort');
+    await clickWorkbenchControl(browser,'.board-column.handled .ds-column-sort');
     await clickWorkbenchControl(browser,'[data-key=newest]');
     const capture=async(name:string)=>{assert.ok(browser);await browser.waitFor("(()=>{const card=document.querySelector('.board-column.pending .ticket-card'),link=card?.querySelector('.card-open'),time=card?.querySelector('.activity-time');if(!card||!link||!time)return false;const c=card.getBoundingClientRect(),l=link.getBoundingClientRect(),t=time.getBoundingClientRect();return Math.abs(c.width-l.width)<1&&Math.abs(l.right-parseFloat(getComputedStyle(link).paddingRight)-t.right)<1&&document.elementFromPoint(l.right-3,l.top+40)?.closest('.card-open')===link;})()");assert.equal(await browser.evaluate("(()=>{const card=document.querySelector('.board-column.pending .ticket-card'),link=card?.querySelector('.card-open'),time=card?.querySelector('.activity-time');if(!card||!link||!time)return false;const c=card.getBoundingClientRect(),l=link.getBoundingClientRect(),t=time.getBoundingClientRect();return Math.abs(c.width-l.width)<1&&Math.abs(l.right-parseFloat(getComputedStyle(link).paddingRight)-t.right)<1&&document.elementFromPoint(l.right-3,l.top+40)?.closest('.card-open')===link;})()"),true,'the complete card stays clickable and its timestamp stays right aligned at each viewport');const pixels=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name+'.png');await writeFile(file,pixels);screenshots.push({file,width:pixels.readUInt32BE(16),height:pixels.readUInt32BE(20),sha256:createHash('sha256').update(pixels).digest('hex')});};
     assert.equal(await browser.evaluate('Boolean(document.querySelector("select[aria-label=已关闭范围]"))'),false);
@@ -72,8 +72,8 @@ test('formal board applies a selected date range, preserves it across view, scop
     }
     await browser.waitFor("!document.querySelector('.processed-date-popover')");
     await clickWorkbenchControl(browser,'[aria-label="应用已处理日期"]');
-    await browser.waitFor('new URLSearchParams(location.search).get("range")==="custom"&&document.querySelectorAll(".board-column.closed .ticket-card").length===3');
-    assert.deepEqual(await browser.evaluate('[...document.querySelectorAll(".board-column.closed .ticket-card")].map(node=>node.dataset.itemId)'),[ids.last,ids.first,ids.resolved]);
+    await browser.waitFor('new URLSearchParams(location.search).get("range")==="custom"&&document.querySelectorAll(".board-column.handled .ticket-card").length===3');
+    assert.deepEqual(await browser.evaluate('[...document.querySelectorAll(".board-column.handled .ticket-card")].map(node=>node.dataset.itemId)'),[ids.last,ids.first,ids.resolved]);
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".workspace .workspace-footnote,.range-caption"))'),false);
     await capture('new-board-1920');
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("列表")).click()');
@@ -81,21 +81,21 @@ test('formal board applies a selected date range, preserves it across view, scop
     const priorDocument=await browser.evaluate('performance.timeOrigin');assert.equal(typeof priorDocument,'number');await browser.command('Page.reload');
     await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&Boolean(document.querySelector('.processed-date-picker'))`);
     await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
-    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('closed_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tr.ds-work-row').length===3`);
+    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('handled_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tr.ds-work-row').length===3`);
     await browser.waitFor('document.querySelector("[data-action=related-scope]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-action=related-scope]');
     await browser.waitFor('new URLSearchParams(location.search).get("scope")==="related"&&document.querySelector(".scope-tabs [data-action=related-scope]").getAttribute("aria-pressed")==="true"');
-    assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("closed_to")'),'2024-02-29');
+    assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("handled_to")'),'2024-02-29');
     await browser.waitFor('document.querySelector("[data-summary-filter=all]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-summary-filter=all]');
     await browser.waitFor('new URLSearchParams(location.search).get("scope")==="team"&&document.querySelectorAll(".list-group[aria-label=已处理] tr.ds-work-row").length===3');
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("看板")).click()');
     await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:960,deviceScaleFactor:1,mobile:false});
-    await browser.waitFor('document.querySelectorAll(".board-column.closed .ticket-card").length===3');
+    await browser.waitFor('document.querySelectorAll(".board-column.handled .ticket-card").length===3');
     assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);await capture('new-board-900');
     await typeWorkbenchDates(browser,'2024-03-02','2024-03-01');
     assert.equal(await browser.evaluate('document.querySelector("[aria-label=应用已处理日期]").disabled'),true);
-    assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("closed_from")'),'2024-02-29');
-    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.closed .ds-column-footer")?.title==="已加载 4 项"');
-    assert.equal(await browser.evaluate('new URLSearchParams(location.search).has("closed_from")||Boolean(document.querySelector("input[type=date]"))'),false);
+    assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("handled_from")'),'2024-02-29');
+    await clickWorkbenchControl(browser,'[aria-label="清除已处理日期和取消筛选"]');await browser.waitFor('new URLSearchParams(location.search).get("range")==="all"&&document.querySelector(".board-column.handled .ds-column-footer")?.title==="已加载 4 项"');
+    assert.equal(await browser.evaluate('new URLSearchParams(location.search).has("handled_from")||Boolean(document.querySelector("input[type=date]"))'),false);
     const emptyCookie=f.cookies[1];assert.ok(emptyCookie);const emptySeparator=emptyCookie.indexOf('=');assert.ok(emptySeparator>0);
     await browser.command('Network.deleteCookies',{name:cookieHeader.slice(0,separator),url:f.origin});
     await browser.command('Network.setCookies',{cookies:[{name:emptyCookie.slice(0,emptySeparator),value:emptyCookie.slice(emptySeparator+1),url:f.origin+'/',httpOnly:true,secure:f.origin.startsWith('https:'),sameSite:'Lax'}]});
@@ -104,8 +104,8 @@ test('formal board applies a selected date range, preserves it across view, scop
       ['2024-02-29','2024-02-29','02/29–02/29 没有已处理的工单'],
       ['2023-12-31','2024-01-01','12/31–01/01 没有已处理的工单'],
     ] as const){
-      await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?range=custom&closed_from='+from+'&closed_to='+to});
-      await browser.waitFor(`document.querySelector('.board-column.closed .empty p')?.textContent===${JSON.stringify(expected)}`);
+      await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?range=custom&handled_from='+from+'&handled_to='+to});
+      await browser.waitFor(`document.querySelector('.board-column.handled .empty p')?.textContent===${JSON.stringify(expected)}`);
       assert.equal(await browser.evaluate('document.querySelectorAll(".ticket-card").length'),0,'empty date presentation cannot widen current READ');
     }
     assert.equal(writes,0);console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',custom_range:true,read_only:true,dates_survive_scope_view_reload:true,screenshots}));

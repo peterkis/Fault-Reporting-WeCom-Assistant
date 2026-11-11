@@ -2,6 +2,8 @@ import {migrateWorkbenchFollow} from '../../app/server/scripts/workbench-follow-
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
+import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
 import {insertClosureRecord,normalizeClosureInput,appendIntakeClosureEvent} from '../../app/server/src/service-closure-records.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
@@ -72,7 +74,7 @@ export async function seedCard27Board(f){
       await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at="+(old?"date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours'":"platform.local_now()")+' WHERE event_id=$1::uuid',[event.event_id]);
       const input=normalizeClosureInput({reason_code:key==='duplicate'?'DUPLICATE':key==='manual'?'FALSE_REPORT_OR_TEST':key==='historical'?'REPORTER_WITHDREW':'OTHER',note:key==='unknown'?'其他关闭原因（合成）':key==='manual'?'与报修人核对为测试误报，保留内部关闭说明（合成）':null});
       const record=await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:id,beforeStatus:original.ticket.status,beforeAssignee:original.ticket.assignee_id??null,beforeTeam:original.ticket.resolver_team_id??'PILOT_IT',beforeVersion:original.ticket.version,beforeSnapshot:{},actor:actualSource==='PILOT_USER'?f.principals[0].id:null,source:actualSource==='PILOT_USER'?'MANUAL':'SYSTEM',input,ticketEventId:event.event_id});
-      if(old)await f.pool.query("UPDATE pilot_ticket.closure_record SET closed_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[record.id]);
+      if(old)await f.pool.query("UPDATE pilot_ticket.closure_record SET ended_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[record.id]);
     }
   }
   for(const original of f.tickets.slice(9,13)){
@@ -94,7 +96,7 @@ export async function seedCard28Board(f){
   await f.pool.query('UPDATE pilot_ticket.pilot_principal SET display_name=$2 WHERE id=$1::uuid',[f.principals[2].id,longOwnerName]);
   // Deterministic interleaving: a newer dismissal must follow completed rows in presentation.
   await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-interval '10 minutes' WHERE ticket_id=$1::uuid AND event_type='ticket.completed'",[f.tickets[9].ticket.id]);
-  await f.pool.query("UPDATE pilot_ticket.closure_record SET closed_at=platform.local_now()-interval '5 minutes' WHERE ticket_id=$1::uuid AND restored_at IS NULL",[closed.manual]);
+  await f.pool.query("UPDATE pilot_ticket.closure_record SET ended_at=platform.local_now()-interval '5 minutes' WHERE ticket_id=$1::uuid AND restored_at IS NULL",[closed.manual]);
 
   const core=createPilotTicketCore({pool:f.pool});
   for(const [index,minutes,service] of [[0,360,'NETWORK.ENDPOINT_ACCESS'],[1,90,'CLINICAL.INPATIENT_WORKSTATION'],[2,12,'DIAG.IMAGING_VIEWER'],[3,3,'PRINT.PRINTER_DEVICE']]){
@@ -176,7 +178,7 @@ export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((
     await beforeClosureMigration?.({pool,databaseUrl});
     await migrateServiceClosure({databaseUrl,mode:'apply'});
     // ADR-0058: 072 applies after every other migration of this chain (it rewrites the closure vocabulary in place).
-    await migrateCompletionDismissal({databaseUrl,mode:'apply'});
+    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});

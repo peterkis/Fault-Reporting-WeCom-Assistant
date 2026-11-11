@@ -6,7 +6,7 @@ import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.m
 import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration } from '../src/p1-010-ticket-auto-completion.mjs';
 import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;

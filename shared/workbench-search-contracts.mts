@@ -3,7 +3,7 @@ export type {WorkbenchSearchCriteria,WorkbenchSearchRequest,WorkbenchSearchPage}
 
 export const SEARCH_STATUSES:readonly WorkbenchSearchStatus[]=['NEW','QUEUED','ACCEPTED','REOPENED','IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','RESOLVED','COMPLETED','DISMISSED','PENDING','RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'];
 export const SEARCH_SOURCES:readonly WorkbenchSearchSource[]=['WECOM_DIRECT','WECOM_GROUP','WEB_REQUEST','MANUAL_PHONE','MANUAL_ON_SITE'];
-export const SEARCH_KEYS=['q','column','range','scope','responsibility','resolver_team_id','assignee_id','sources','source_group_ref','statuses','supplement','schedule','closure_kind','closed_from','closed_to'] as const;
+export const SEARCH_KEYS=['q','column','range','scope','responsibility','resolver_team_id','assignee_id','sources','source_group_ref','statuses','supplement','schedule','closure_kind','handled_from','handled_to'] as const;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 export class SearchInputError extends TypeError{constructor(readonly code:'INPUT_INVALID'|'LIMIT_INVALID'|'CURSOR_INVALID'='INPUT_INVALID'){super('WORKBENCH_SEARCH_'+code);}}
 function invalid():never{throw new SearchInputError();}
@@ -31,19 +31,19 @@ function localDate(value:unknown):string{
  if(!Number.isFinite(at)||new Date(at).toISOString().slice(0,10)!==date)invalid();
  return date;
 }
-function customDates(value:Record<string,unknown>):{closed_from:string;closed_to:string}{
- const closed_from=localDate(value.closed_from),closed_to=localDate(value.closed_to);
- if(closed_from>closed_to||closed_to==='9999-12-31')invalid();
- return {closed_from,closed_to};
+function customDates(value:Record<string,unknown>):{handled_from:string;handled_to:string}{
+ const handled_from=localDate(value.handled_from),handled_to=localDate(value.handled_to);
+ if(handled_from>handled_to||handled_to==='9999-12-31')invalid();
+ return {handled_from,handled_to};
 }
 export function normalizeSearchCriteria(value:unknown):WorkbenchSearchCriteria{
- const optional=['closure_kind','closed_from','closed_to'],v=plain(value,SEARCH_KEYS.filter(key=>!optional.includes(key)),optional),raw=text(v.q),q=raw.trim();
+ const optional=['closure_kind','handled_from','handled_to'],v=plain(value,SEARCH_KEYS.filter(key=>!optional.includes(key)),optional),raw=text(v.q),q=raw.trim();
  if([...q].length>128||/[\u0000-\u001f\u007f\ud800-\udfff]/u.test(raw))invalid();
  const team=v.resolver_team_id===null?null:text(v.resolver_team_id);
  if(team!==null&&!/^[A-Z][A-Z0-9_]{1,63}$/u.test(team))invalid();
  const range=selected(v.range,['recent','all','custom']),dates=range==='custom'?customDates(v):{};
- if(range!=='custom'&&(Object.hasOwn(v,'closed_from')||Object.hasOwn(v,'closed_to')))invalid();
- return {q,column:selected(v.column,['all','pending','active','closed']),range,
+ if(range!=='custom'&&(Object.hasOwn(v,'handled_from')||Object.hasOwn(v,'handled_to')))invalid();
+ return {q,column:selected(v.column,['all','pending','active','handled']),range,
   scope:selected(v.scope,['team','related']),responsibility:selected(v.responsibility,['any','handling','communication','following','unassigned']),
   resolver_team_id:team,assignee_id:optionalId(v.assignee_id,UUID),sources:array(v.sources,SEARCH_SOURCES,5),
   source_group_ref:optionalId(v.source_group_ref,/^[a-f0-9]{64}$/u),statuses:array(v.statuses,SEARCH_STATUSES,8),
@@ -61,7 +61,7 @@ export function parseSearchRequest(params:URLSearchParams):WorkbenchSearchReques
   assignee_id:params.get('assignee_id'),sources:csv(params.get('sources')),source_group_ref:params.get('source_group_ref'),
   statuses:csv(params.get('statuses')),supplement:params.get('supplement')??'any',schedule:params.get('schedule')??'any',
   ...(params.has('closure_kind')?{closure_kind:params.get('closure_kind')}:{}),
-  ...(params.has('closed_from')?{closed_from:params.get('closed_from')}:{}),...(params.has('closed_to')?{closed_to:params.get('closed_to')}:{})});
+  ...(params.has('handled_from')?{handled_from:params.get('handled_from')}:{}),...(params.has('handled_to')?{handled_to:params.get('handled_to')}:{})});
  return {criteria,cursor,limit:Number(rawLimit)};
 }
 export function parseSearchBody(value:unknown):WorkbenchSearchRequest{

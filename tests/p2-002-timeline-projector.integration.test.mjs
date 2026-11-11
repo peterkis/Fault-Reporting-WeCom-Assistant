@@ -29,7 +29,7 @@ import {
   createNotificationOutbox,
 } from '../app/server/src/p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-closure.mjs';
+import { applyTicketClosureMigration } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
 import { applyPilotOperationsMigration } from '../app/server/src/p1-011-pilot-operations-baseline.mjs';
 import {
   applyConversationContractsMigration,
