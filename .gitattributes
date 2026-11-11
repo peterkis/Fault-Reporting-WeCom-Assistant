@@ -10,3 +10,6 @@
 /app/server/scripts/*.ps1 -text
 # Current readiness originals are raw-byte evidence, including CRLF diagnostics.
 /evidence/yxx-current-*/** -text -whitespace
+# Preserve the supplied vector bytes on Windows and macOS.
+/app/h5/src/assets/yixiaoxiu-*.svg text eol=lf
+/app/pc-admin/src/assets/yixiaoxiu-*.svg text eol=lf

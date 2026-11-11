@@ -147,7 +147,7 @@
 
 - N1：th无底边框，thead tr绘制等于表格宽的连续1px hair底线。N2：失败TriangleAlert，待核对Clock，均12px、间距4px。N3：会话来源仅去掉“（资料未提供）”，保留其它后缀。
 - G1：页面标题图标36px、8px圆角、muted底、20px primary图标；通知异常danger底/字。图标到标题12px，副标题向标题文字对齐（48px）。各页标题原点统一。
-- G2：侧栏搜索上品牌行48px高，28px品牌底白扳手、医小修15/600、团队12/secondary，团队与面包屑共用现有来源。上下间距8px、水平对齐导航；折叠保留图标。
+- G2：侧栏搜索上品牌行48px高，28px透明医小修人物图形、医小修15/600、团队12/secondary，团队与面包屑共用现有来源。图形等比完整显示，不添加底板或裁切；上下间距8px、水平对齐导航；折叠保留图形。
 - G3：统一kbd高18px、最小宽18px、水平4px、4px圆角、1px default描边、canvas白底、12px secondary sans/500，侧栏Ctrl K、搜索/、输入Ctrl共用。尺寸用已有Token组合，品牌15px用fs-md+描边单位组合，不扩字号阶梯。
 
 Oct 31, 2026 · @peter evans

@@ -14,7 +14,7 @@ import {loginReducedManualScript,readReducedManualSnapshot,type ReducedManualSna
 
 test('compiled embedded login rejects altered binary representations and retains original resource budgets',{timeout:30_000},async context=>{
  const parent=path.resolve('.local/electron/temp');await mkdir(parent,{recursive:true});
- const cases=['valid','unknown-binary','two-environments','environment-encoding','missing-environment','length-drift','hash-drift','asset-budget','total-budget','code-budget','font-budget'] as const;
+ const cases=['valid','unknown-binary','unknown-image','missing-logo','two-logos','logo-encoding','logo-drift','two-environments','environment-encoding','missing-environment','length-drift','hash-drift','asset-budget','total-budget','code-budget','font-budget'] as const;
  for(const mode of cases)await context.test(mode,async()=>{
   const owned=await mkdtemp(path.join(parent,'desktop-env-assets-'));
   try{
@@ -22,10 +22,15 @@ test('compiled embedded login rejects altered binary representations and retains
    for(const file of ['workbench-embedded-login.mjs','static-encoding.mjs']){const source=new URL('../app/server/src/'+file,import.meta.url),destination=path.join(moduleRoot,file);await copyFile(source,destination);assert.deepEqual(await readFile(destination),await readFile(source),'the fixture executes unchanged compiled server bytes');}
    const files=new Map<string,Buffer>(),representations:{file:string;source:string;encoding:'identity'|'gzip'|'br';bytes:number;sha256:string}[]=[];
    const put=(file:string,body:Buffer,compress=false)=>{files.set(file,body);representations.push({file,source:file,encoding:'identity',bytes:body.length,sha256:createHash('sha256').update(body).digest('hex')});if(compress)for(const [encoding,suffix,value]of [['gzip','.gz',gzipSync(body)],['br','.br',brotliCompressSync(body)]] as const){files.set(file+suffix,value);representations.push({file:file+suffix,source:file,encoding,bytes:value.length,sha256:createHash('sha256').update(value).digest('hex')});}};
-   const dependentImports:string[]=[];const environment='assets/login-environment-v1-Cache123.pmrem',entry={file:'assets/login-Ab123.js',isEntry:true,assets:[environment],imports:dependentImports,loginRepresentations:representations};const manifest:Record<string,unknown>={'src/login/main.ts':entry};
-   put(entry.file,Buffer.from('export const fixture="SYNTHETIC_EMBEDDED_LOGIN_ASSET";'),true);put(environment,Buffer.from('SYNTHETIC_IDENTITY_GZIP_PAYLOAD'));
+   const dependentImports:string[]=[];const environment='assets/login-environment-v1-Cache123.pmrem',logo='assets/yixiaoxiu-logo-Cache123.svg',entry={file:'assets/login-Ab123.js',isEntry:true,assets:[environment,logo],imports:dependentImports,loginRepresentations:representations};const manifest:Record<string,unknown>={'src/login/main.ts':entry};
+   put(entry.file,Buffer.from('export const fixture="SYNTHETIC_EMBEDDED_LOGIN_ASSET";'),true);put(environment,Buffer.from('SYNTHETIC_IDENTITY_GZIP_PAYLOAD'));put(logo,Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'));
    const env=representations.find(item=>item.source===environment);assert.ok(env);
    if(mode==='unknown-binary'){entry.assets.push('assets/arbitrary.pmrem');put('assets/arbitrary.pmrem',Buffer.from('PRIVATE_UNSUPPORTED_BINARY'));}
+   if(mode==='unknown-image'){entry.assets.push('assets/arbitrary.svg');put('assets/arbitrary.svg',Buffer.from('<svg/>'));}
+   if(mode==='missing-logo'){entry.assets.splice(entry.assets.indexOf(logo),1);}
+   if(mode==='two-logos'){entry.assets.push('assets/yixiaoxiu-logo-Cache456.svg');put('assets/yixiaoxiu-logo-Cache456.svg',Buffer.from('<svg/>'));}
+   if(mode==='logo-encoding'){const item=representations.find(value=>value.source===logo);assert.ok(item);item.encoding='gzip';item.file=logo+'.gz';files.set(item.file,files.get(logo)??Buffer.alloc(0));}
+   if(mode==='logo-drift'){const body=files.get(logo);assert.ok(body);files.set(logo,Buffer.alloc(body.length,1));}
    if(mode==='two-environments'){entry.assets.push('assets/login-environment-v1-Cache456.pmrem');put('assets/login-environment-v1-Cache456.pmrem',Buffer.from('SECOND_ENVIRONMENT'));}
    if(mode==='environment-encoding'){env.encoding='gzip';env.file=environment+'.gz';files.set(env.file,files.get(environment)??Buffer.alloc(0));}
    if(mode==='missing-environment')representations.splice(representations.indexOf(env),1);
@@ -38,8 +43,8 @@ test('compiled embedded login rejects altered binary representations and retains
    await writeFile(path.join(assetRoot,'.vite/manifest.json'),JSON.stringify(manifest));await writeFile(path.join(assetRoot,'asset-inventory.json'),JSON.stringify(['.vite/manifest.json',...files.keys()]));
    const copied:typeof import('../app/server/src/workbench-embedded-login.mjs')=await import(pathToFileURL(path.join(moduleRoot,'workbench-embedded-login.mjs')).href);
    const result=()=>copied.renderEmbeddedLogin({corpId:'synthetic',agentId:'1000001',state:'desktop.asset-inventory',issuedEpochMs:0,expiresEpochMs:300_000,publicOrigin:'https://synthetic.invalid'});
-   if(mode==='valid')assert.match(await result(),/<script type="module" src="\/workbench\/desktop\/assets\/login-Ab123\.js"/u);
-   else{const expected={'unknown-binary':'LOGIN_FONT_INVALID','two-environments':'LOGIN_ENVIRONMENT_LIMIT','environment-encoding':'LOGIN_REPRESENTATION_ENCODING_INVALID','missing-environment':'LOGIN_REPRESENTATIONS_INVALID','length-drift':'LOGIN_REPRESENTATION_DRIFT','hash-drift':'LOGIN_REPRESENTATION_DRIFT','asset-budget':'LOGIN_REPRESENTATION_INVALID','total-budget':'LOGIN_REPRESENTATION_DRIFT','code-budget':'LOGIN_ASSET_LIMIT','font-budget':'LOGIN_ASSET_LIMIT'}[mode];await assert.rejects(result(),{message:expected});}
+   if(mode==='valid'){const html=await result();assert.match(html,/<script type="module" src="\/workbench\/desktop\/assets\/login-Ab123\.js"/u);assert.match(html,/rel="icon" type="image\/svg\+xml" href="\/workbench\/desktop\/assets\/yixiaoxiu-logo-Cache123\.svg"/u);}
+   else{const expected={'unknown-binary':'LOGIN_FONT_INVALID','unknown-image':'LOGIN_FONT_INVALID','missing-logo':'LOGIN_BRAND_ASSET_INVALID','two-logos':'LOGIN_BRAND_ASSET_INVALID','logo-encoding':'LOGIN_REPRESENTATION_ENCODING_INVALID','logo-drift':'LOGIN_REPRESENTATION_DRIFT','two-environments':'LOGIN_ENVIRONMENT_LIMIT','environment-encoding':'LOGIN_REPRESENTATION_ENCODING_INVALID','missing-environment':'LOGIN_REPRESENTATIONS_INVALID','length-drift':'LOGIN_REPRESENTATION_DRIFT','hash-drift':'LOGIN_REPRESENTATION_DRIFT','asset-budget':'LOGIN_REPRESENTATION_INVALID','total-budget':'LOGIN_REPRESENTATION_DRIFT','code-budget':'LOGIN_ASSET_LIMIT','font-budget':'LOGIN_ASSET_LIMIT'}[mode];await assert.rejects(result(),{message:expected});}
   }finally{
    assert.equal(path.dirname(owned),parent);assert.match(path.basename(owned),/^desktop-env-assets-[A-Za-z0-9]+$/u);assert.equal((await lstat(owned)).isSymbolicLink(),false);assert.equal(path.dirname(await realpath(owned)),await realpath(parent));await rm(owned,{recursive:true,force:true});
   }
@@ -58,6 +63,13 @@ test('compiled login prepares once under the native cover, presents the same ifr
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address==='object');origin='http://127.0.0.1:'+address.port;
  let browser:Awaited<ReturnType<typeof launchSystemBrowser>>|undefined,failure:unknown;
  try{
+  const html=await (await fetch(origin+'/workbench/desktop/embedded')).text();
+  const logo=html.match(/rel="icon" type="image\/svg\+xml" href="([^"]+)"/u)?.[1];assert.ok(logo);
+  const image=await fetch(origin+logo);assert.equal(image.status,200);assert.equal(image.headers.get('content-type'),'image/svg+xml');
+  assert.deepEqual(Buffer.from(await image.arrayBuffer()),await readFile(path.resolve(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'app/pc-admin/src/assets/yixiaoxiu-logo.svg')));
+  const head=await fetch(origin+logo,{method:'HEAD'});assert.equal(head.status,200);assert.equal((await head.arrayBuffer()).byteLength,0);
+  assert.equal((await fetch(origin+'/workbench/desktop/assets/yixiaoxiu-logo-not-in-manifest.svg')).status,404);
+  assert.equal((await fetch(origin+'/workbench/desktop/assets/arbitrary.svg')).status,400);
   browser=await launchSystemBrowser({url:origin+'/start',width:1280,height:900,graphics:true});assert.ok(browser);
   await browser.command('Network.enable');await browser.command('Network.setBlockedURLs',{urls:['https://login.work.weixin.qq.com/*']});
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
