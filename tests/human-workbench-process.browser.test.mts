@@ -22,6 +22,7 @@ import {migrateWorkbenchSupplementFollowUp} from '../app/server/scripts/workbenc
 import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 import {migrateWorkbenchFollow} from '../app/server/scripts/workbench-follow-migrate.mjs';
 import {migrateWorkbenchSourceGroups} from '../app/server/scripts/workbench-source-groups-migrate.mjs';
 import {migrateConversationDeliveryCommands} from '../app/server/scripts/conversation-delivery-commands-migrate.mjs';
@@ -63,7 +64,7 @@ async function migrateWorkbenchDatabase(databaseUrl:string){
  for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands,migrateMvpNotifications])await migrate({databaseUrl,mode:'apply'});
  await migrateTicketReporterProfiles({databaseUrl,expectedDatabase:new URL(databaseUrl).pathname.slice(1),mode:'apply'});
  // The current roles require the 071 closure schema, the 072 completion / dismissal vocabulary and the 073 notification vocabulary before readiness.
- await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});
+ await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
 }
 async function unusedPort(){const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');await new Promise<void>(r=>probe.close(()=>r()));return address.port;}
 

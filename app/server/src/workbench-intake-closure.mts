@@ -11,7 +11,7 @@ import type {createP2016TicketNotificationProjector} from './p2-016-ticket-notif
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
 import {exactP2016,uuidP2016,versionP2016,failP2016,guardP2016,transactionP2016,codeP2016} from './p2-016-domain-contracts.mjs';
-import {normalizeClosingInput,intakeClosureSnapshot,insertClosureRecord,currentClosure,markClosureRestored,appendIntakeClosureEvent} from './service-closure-records.mjs';
+import {normalizeClosingInput,intakeClosureSnapshot,insertClosureRecord,currentClosure,restoreIntakeClosure,appendIntakeClosureEvent} from './service-closure-records.mjs';
 interface IntakeRow {id:string;status:string;version:number;request_type:string;pilot_ticket_id:string|null;linked_ticket:boolean}
 export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,notifications,reviews,currentSessionPredicate}:{currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtime:Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'review'>;notifications:Pick<ReturnType<typeof createP2016TicketNotificationProjector>,'projectClosure'>;reviews:Pick<ReturnType<typeof createP2016ManualReviewFacade>,'resolveManualReviewInTransaction'>}){
  const ledger=createP2016CommandLedger({pool});
@@ -54,9 +54,10 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
      await assertSession(authContext,value.principal.principal_id,tx);return {principal:value.principal,version:value.ticket.version};
     };
     const initial=await read();
-    type Row={id:string;before_version:number;reason_code:ClosureReasonCode;secondary_reason_code:ClosureSecondaryReasonCode|null;note:string|null;duplicate_of_ref:string|null;source:'MANUAL'|'SYSTEM';ended_at:string;ended_by_display_name:string|null;restored_at:string|null;restored_by_display_name:string|null;before_status:string;effective_status:string;assignee_name:string|null;notify_reporter:boolean;notification_state:ClosureHistoryEntry['notification_state']};
+    type Row={id:string;before_version:number;reason_code:ClosureReasonCode;secondary_reason_code:ClosureSecondaryReasonCode|null;note:string|null;duplicate_of_ref:string|null;source:'MANUAL'|'SYSTEM';ended_at:string;ended_by_display_name:string|null;restored_at:string|null;restored_by_display_name:string|null;restore_source:'MANUAL'|'SYSTEM'|null;before_status:string;effective_status:string;assignee_name:string|null;notify_reporter:boolean;notification_state:ClosureHistoryEntry['notification_state']};
     const rows=(await tx.query<Row>(`SELECT c.id::text,c.before_version,c.reason_code,c.secondary_reason_code,c.note,c.duplicate_of_ref,c.source,c.ended_at,c.notify_reporter,
      closer.display_name AS ended_by_display_name,c.restored_at,restorer.display_name AS restored_by_display_name,c.before_status,
+     CASE WHEN c.restored_at IS NULL THEN NULL WHEN c.restored_by IS NULL THEN 'SYSTEM' ELSE 'MANUAL' END AS restore_source,
      CASE WHEN c.before_assignee_id IS NOT NULL AND NOT COALESCE(owner_valid.valid,false) THEN 'QUEUED' ELSE c.before_status END AS effective_status,
      CASE WHEN owner_valid.valid THEN owner.display_name ELSE NULL END AS assignee_name,
      CASE WHEN delivery.sent THEN 'SENT' WHEN delivery.unknown THEN 'UNKNOWN' ELSE 'NOT_SENT' END AS notification_state
@@ -79,7 +80,7 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
      restore_target:active?{status:active.effective_status,column:kind==='intake'||['NEW','QUEUED','ACCEPTED','REOPENED'].includes(active.effective_status)?'pending':'active',assignee_name:active.assignee_name,notify_reporter:active.notify_reporter,notification_state:active.notification_state}:null,
      items:visible.map(row=>({id:row.id,before_version:row.before_version,reason_code:row.reason_code,reason_label:CLOSURE_REASONS[row.reason_code],secondary_reason:row.secondary_reason_code?{code:row.secondary_reason_code,label:CLOSURE_SECONDARY_REASONS[row.secondary_reason_code]}:null,
       note:row.note,duplicate_of:row.duplicate_of_ref?{display_no:row.duplicate_of_ref}:null,source:row.source,ended_at:closureRecordTime(row.ended_at),ended_by_display_name:row.ended_by_display_name,
-      notification_state:row.notification_state,restored_at:row.restored_at?closureRecordTime(row.restored_at):null,restored_by_display_name:row.restored_by_display_name}))};
+      notification_state:row.notification_state,restored_at:row.restored_at?closureRecordTime(row.restored_at):null,restored_by_display_name:row.restored_by_display_name,restore_source:row.restore_source}))};
    });
   },
   async context({authContext,intakeId}:{authContext:unknown;intakeId:unknown}){
@@ -123,20 +124,10 @@ export function createWorkbenchIntakeClosure({pool,query,enabled=false,realtime,
      if(intake.linked_ticket)failP2016('ACTION_FAILED',409);
      if(restoring){
       if(intake.status!=='DISMISSED')failP2016('ACTION_FAILED',409);
-      const record=await currentClosure(tx,'INTAKE',id,true),snapshot=record.before_snapshot;
-      if(!['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(record.before_status))failP2016('ACTION_FAILED',503);
-      await tx.query('UPDATE intake.service_intake SET status=$2,request_type=$3,version=version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid',[id,record.before_status,snapshot.request_type??intake.request_type]);
-      if(Array.isArray(snapshot.journeys))for(const j of snapshot.journeys){
-       if(!j||typeof j!=='object'||typeof j.id!=='string'||typeof j.status!=='string')failP2016('ACTION_FAILED',503);
-       await tx.query('UPDATE intake.contact_journey SET status=$2,ended_at=$3::timestamp,row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND linked_ticket_id IS NULL',[j.id,j.status,j.ended_at??null]);
-      }
-      if(Array.isArray(snapshot.reviews))for(const r of snapshot.reviews){
-       if(!r||typeof r!=='object'||typeof r.id!=='string'||r.status!=='PENDING')failP2016('ACTION_FAILED',503);
-       await tx.query(`UPDATE intake.manual_review_item SET status='PENDING',row_version=row_version+1,resolution_command_id=NULL,resolution_command_hash=NULL,resolution_code=NULL,resolution_reason_code=NULL,resolved_by_principal_id=NULL,resolution_decision_id=NULL,resolved_at=NULL,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid AND service_intake_id=$2::uuid`,[r.id,id]);
-       await realtime.review({transaction:tx,reviewId:r.id});
-      }
-      const event=await appendIntakeClosureEvent(tx,{intakeId:id,version:intake.version+1,type:'intake.restored',oldStatus:'DISMISSED',newStatus:record.before_status,actor:principal.principal_id,traceId:'closure:'+command.client_command_id});
-      await markClosureRestored(tx,record,principal.principal_id,event);await notifications.projectClosure({transaction:tx,recordId:record.id,restoring:true});
+      const record=await currentClosure(tx,'INTAKE',id,true);
+      const event=await restoreIntakeClosure(tx,{intakeId:id,version:intake.version,requestType:intake.request_type,record,actor:principal.principal_id,traceId:'closure:'+command.client_command_id,
+       reviewRestored:async reviewId=>{await realtime.review({transaction:tx,reviewId});}});
+      await notifications.projectClosure({transaction:tx,recordId:record.id,restoring:true});
       return {ok:true as const,subject_type:'INTAKE' as const,subject_id:id,version:intake.version+1,closure_id:record.id,event_id:event};
      }
      if(!closure||!['RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','FAILED'].includes(intake.status))failP2016('ACTION_FAILED',409);

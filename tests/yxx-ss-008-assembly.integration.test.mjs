@@ -12,6 +12,7 @@ import { migrateCurrentBaselineWithYxx } from '../app/server/scripts/migrate-cur
 import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
 import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { migrateNotificationVocabulary } from '../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from '../app/server/src/p2-006-workbench-authorization.mjs';
 import { listAuthorizedRealtimeEvents, normalizeRealtimeAuthorization } from '../app/server/src/p2-003-realtime-event-log.mjs';
@@ -61,7 +62,7 @@ test('SS-008 FULL readiness requires both Web migrations only when the extension
   await withP2016IsolatedDatabase({databaseUrl,purpose:'ss008ready',run:async({pool,databaseUrl:isolated})=>{
     // 033/034 always precede 071 in a real database, and the current roles require 071; build that full schema once and
     // take the two Web migrations out of the registry (the readiness source) for the phases where they are absent.
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});await migrateNotificationVocabulary({databaseUrl:isolated,mode:'apply'});
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});await migrateNotificationVocabulary({databaseUrl:isolated,mode:'apply'});await migrateSystemClosureRestore({databaseUrl:isolated,mode:'apply'});
     const webMigrations=['033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check'];
     const registerWeb=async present=>{for(const id of webMigrations)await pool.query('UPDATE platform.schema_migration SET migration_id=$2 WHERE migration_id=$1',present?[id+'_ss008_absent',id]:[id,id+'_ss008_absent']);};
     await registerWeb(false);
@@ -99,7 +100,8 @@ test('SS-008 FULL readiness requires both Web migrations only when the extension
 
 test('SS-008 member HTTP pipeline carries its catalog selection into authorized decision facts', {timeout:180000},async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'selectedsvc',run:async({pool,databaseUrl:isolated})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
+    // The member Worker pump reads system closures (071 / 074); build the current closure chain like the other SS-008 profiles.
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});await migrateNotificationVocabulary({databaseUrl:isolated,mode:'apply'});await migrateSystemClosureRestore({databaseUrl:isolated,mode:'apply'});
     const options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret};
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss008-selection-admin',displayName:'Synthetic Selection',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const self=createYxxProfile({...options,profile:'MEMBER_SELF_SERVICE',oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
@@ -166,7 +168,7 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
   assert.ok(databaseUrl,'isolated PostgreSQL configuration required');
   assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
   await withP2016IsolatedDatabase({databaseUrl,purpose:'g2ss008',run:async({pool,databaseUrl:isolated})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});await migrateNotificationVocabulary({databaseUrl:isolated,mode:'apply'});
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});await migrateServiceClosure({databaseUrl:isolated,mode:'apply'});await migrateCompletionDismissal({databaseUrl:isolated,mode:'apply'});await migrateNotificationVocabulary({databaseUrl:isolated,mode:'apply'});await migrateSystemClosureRestore({databaseUrl:isolated,mode:'apply'});
     const identityMapping=await mapping();
     const options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret};
     // This V1 API assembly explicitly mounts the current formal H5 presentation.

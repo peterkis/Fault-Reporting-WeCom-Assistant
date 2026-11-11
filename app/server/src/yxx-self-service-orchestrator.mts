@@ -29,6 +29,9 @@ import { createServiceIntakeDecisionPort } from './p2-015-service-intake-decisio
 import { appendTicketEvent, createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { safeHash } from './p2-015-domain-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
+import type {ClosureRecord} from './service-closure-records.mjs';
+import {restoreIntakeClosure,systemRestorableIntakeClosure} from './service-closure-records.mjs';
+import {projectServiceClosureNotification} from './service-closure-notifications.mjs';
 
 const MAX_BATCH = 20;
 const DEFAULT_BATCH = 10;
@@ -318,6 +321,31 @@ async function processActions({ transaction, decision, root, journey, observedAt
   return { results, linkedTicketId };
 }
 
+/**
+ * ADR-0056 supplement: a reporter supplement after the system closed the Intake as outside IT scope restores it, so the
+ * supplement is judged again together with the earlier material. Manual closures, other system closures and linked Intakes stay
+ * closed (INTAKE_CLOSED). The caller holds the Web binding and Intake row locks; the closure record lock makes it happen once.
+ */
+async function restoreSystemOutOfScopeClosure(transaction:PostgresTransaction,root:WebRoot,realtimeProjector:RealtimePort|null|undefined):Promise<boolean>{
+  if(root.pilot_ticket_id!==null)return false;
+  const record=(await transaction.query<ClosureRecord>(
+    'SELECT * FROM pilot_ticket.closure_record WHERE intake_id=$1::uuid AND restored_at IS NULL FOR UPDATE',[root.intake_id])).rows[0];
+  if(!record||!systemRestorableIntakeClosure(record))return false;
+  const intake=(await transaction.query<{request_type:string;linked_ticket:boolean}>(
+    `SELECT i.request_type,(EXISTS(SELECT 1 FROM pilot_ticket.ticket direct WHERE direct.source_intake_id=i.id)
+      OR EXISTS(SELECT 1 FROM intake.channel_leg own JOIN intake.contact_journey j ON j.id=own.journey_id
+        WHERE own.source_intake_id=i.id AND j.linked_ticket_id IS NOT NULL)) AS linked_ticket
+       FROM intake.service_intake i WHERE i.id=$1::uuid`,[root.intake_id])).rows[0];
+  if(!intake||intake.linked_ticket)return false;
+  await restoreIntakeClosure(transaction,{intakeId:root.intake_id,version:Number(root.version),requestType:intake.request_type,record,actor:null,
+    traceId:`yxx:${root.request_ref}:restore:${root.input_revision}`,
+    detail:{restore_source:'SYSTEM',trigger:'REPORTER_SUPPLEMENT',closure_id:record.id,input_revision:String(root.input_revision)},
+    reviewRestored:async reviewId=>{await realtimeProjector?.review?.({transaction,reviewId});}});
+  // Web closures and restorations are shown only in the App (WEB_APP_ONLY); this settles the restoration notification without a message.
+  await projectServiceClosureNotification({transaction,recordId:record.id,restoring:true});
+  return true;
+}
+
 export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, ticketCore = null,
   decisionStore = createDecisionStore({ webSource: true }), manualReviewStore = createManualReviewStore({ webSource: true }),
   intakeDecisionPort = createServiceIntakeDecisionPort(), realtimeProjector = null,
@@ -346,8 +374,12 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     try {
       return await withTransaction(pool, async (transaction) => {
         await realtimeProjector?.lock?.(transaction);
-        const { row: root, submissions } = await loadWebRoot(transaction, requestRef);
-        if(root.status==='DISMISSED')return {processed:false,reason:'INTAKE_CLOSED',request_ref:requestRef};
+        let { row: root, submissions } = await loadWebRoot(transaction, requestRef);
+        if(root.status==='DISMISSED'){
+          if(Number(root.processed_revision)>=Number(root.input_revision)
+            ||!await restoreSystemOutOfScopeClosure(transaction,root,realtimeProjector))return {processed:false,reason:'INTAKE_CLOSED',request_ref:requestRef};
+          ({ row: root, submissions } = await loadWebRoot(transaction, requestRef));
+        }
         if (Number(root.processed_revision) >= Number(root.input_revision)) return { processed: false, replayed: true, request_ref: requestRef };
         const latest = (submissions.at(-1) as WebSubmission);
         const text = sourceText(submissions);
@@ -461,7 +493,9 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
       const candidates = await pool.query<{request_ref:string}>(
         `SELECT b.request_ref FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
           WHERE b.input_revision>b.processed_revision AND b.revoked_at IS NULL
-            AND b.retention_until>platform.local_now() AND i.status<>'DISMISSED'
+            AND b.retention_until>platform.local_now()
+            AND (i.status<>'DISMISSED' OR EXISTS(SELECT 1 FROM pilot_ticket.closure_record c WHERE c.intake_id=i.id AND c.restored_at IS NULL
+              AND c.subject_type='INTAKE' AND c.source='SYSTEM' AND c.reason_code='NOT_IT_SCOPE' AND c.secondary_reason_code='OUT_OF_SCOPE_CONFIRMED'))
             AND (b.next_attempt_epoch_ms IS NULL OR b.next_attempt_epoch_ms<=$1::bigint)
           ORDER BY COALESCE(b.next_attempt_epoch_ms,0),b.intake_id LIMIT $2`, [nowEpochMs, batchSize],
       );

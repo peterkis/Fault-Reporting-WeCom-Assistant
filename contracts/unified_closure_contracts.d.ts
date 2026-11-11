@@ -14,6 +14,8 @@ export interface ClosureHistoryEntry {
  secondary_reason:{code:ClosureSecondaryReasonCode;label:string}|null;note:string|null;
  duplicate_of:{display_no:string}|null;source:'MANUAL'|'SYSTEM';ended_at:string;ended_by_display_name:string|null;
  notification_state:'SENT'|'UNKNOWN'|'NOT_SENT';restored_at:string|null;restored_by_display_name:string|null;
+ /** null while closed; SYSTEM: restored by the system on a reporter supplement after a system out-of-scope closure (ADR-0056). */
+ restore_source:'MANUAL'|'SYSTEM'|null;
 }
 export interface ClosureHistoryPage {
  subject_id:string;version:number;items:ClosureHistoryEntry[];next_before_version:number|null;

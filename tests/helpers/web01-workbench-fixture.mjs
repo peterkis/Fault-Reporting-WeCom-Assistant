@@ -3,6 +3,7 @@ import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-p
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
 import {insertClosureRecord,normalizeClosureInput,appendIntakeClosureEvent} from '../../app/server/src/service-closure-records.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
@@ -177,7 +178,7 @@ export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((
     await beforeClosureMigration?.({pool,databaseUrl});
     await migrateServiceClosure({databaseUrl,mode:'apply'});
     // ADR-0058: 072 applies after every other migration of this chain (it rewrites the closure vocabulary in place).
-    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});
+    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});

@@ -39,7 +39,8 @@
           "ended_by_display_name",
           "notification_state",
           "restored_at",
-          "restored_by_display_name"
+          "restored_by_display_name",
+          "restore_source"
         ],
         "properties": {
           "id": {
@@ -164,6 +165,13 @@
               "null"
             ],
             "maxLength": 128
+          },
+          "restore_source": {
+            "enum": [
+              null,
+              "MANUAL",
+              "SYSTEM"
+            ]
           }
         }
       }
