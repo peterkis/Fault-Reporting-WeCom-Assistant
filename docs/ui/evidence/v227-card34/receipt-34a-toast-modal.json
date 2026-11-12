@@ -1,0 +1,134 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "table": [
+    {
+      "dialog": "closing",
+      "width": 1920,
+      "mode": "window",
+      "popover": null,
+      "controls": 10,
+      "toasts": 3,
+      "chip": false
+    },
+    {
+      "dialog": "closing",
+      "width": 1440,
+      "mode": "window",
+      "popover": null,
+      "controls": 10,
+      "toasts": 3,
+      "chip": false
+    },
+    {
+      "dialog": "closing",
+      "width": 1280,
+      "mode": "chip",
+      "popover": "false",
+      "controls": 10,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "closing",
+      "width": 900,
+      "mode": "chip",
+      "popover": "true",
+      "controls": 10,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "settings",
+      "width": 1920,
+      "mode": "window",
+      "popover": null,
+      "controls": 6,
+      "toasts": 3,
+      "chip": false
+    },
+    {
+      "dialog": "settings",
+      "width": 1440,
+      "mode": "window",
+      "popover": null,
+      "controls": 6,
+      "toasts": 3,
+      "chip": false
+    },
+    {
+      "dialog": "settings",
+      "width": 1280,
+      "mode": "chip",
+      "popover": "false",
+      "controls": 6,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "settings",
+      "width": 900,
+      "mode": "chip",
+      "popover": "true",
+      "controls": 6,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "restore",
+      "width": 1920,
+      "mode": "window",
+      "popover": null,
+      "controls": 3,
+      "toasts": 4,
+      "chip": false
+    },
+    {
+      "dialog": "restore",
+      "width": 1440,
+      "mode": "window",
+      "popover": null,
+      "controls": 3,
+      "toasts": 4,
+      "chip": false
+    },
+    {
+      "dialog": "restore",
+      "width": 1280,
+      "mode": "window",
+      "popover": null,
+      "controls": 3,
+      "toasts": 4,
+      "chip": false
+    },
+    {
+      "dialog": "restore",
+      "width": 900,
+      "mode": "chip",
+      "popover": "true",
+      "controls": 3,
+      "toasts": 0,
+      "chip": true
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "toast-dialog-1440.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "eab3df7a6a892e4613f02a6ec70cefcb0aceaadaf5b34fb8c02bd6327d0f8621"
+    },
+    {
+      "file": "toast-dialog-900-chip.png",
+      "width": 900,
+      "height": 820,
+      "sha256": "20f0ed2dbfaf32737592008d6be2f0bfa72b4da636f390dc5d61ca40f6da26a1"
+    },
+    {
+      "file": "toast-dialog-900-chip-open.png",
+      "width": 900,
+      "height": 820,
+      "sha256": "1ab69dfb3a47bd3b32d8d2d9962b0f1fa151a675a5efb4dc8727d3d01ab1aca7"
+    }
+  ]
+}

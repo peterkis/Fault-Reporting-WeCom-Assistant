@@ -1,6 +1,6 @@
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Slider,Tooltip} from '@heroui/react';
-import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {ToastFeedback,useFeedbackState,DialogAlert,useDialogToast} from '../../app/ToastFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {CloudOff,Download,Image as ImageIcon,Pause,Play,TriangleAlert,Volume2} from 'lucide-react';
@@ -64,6 +64,8 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   useEffect(()=>{denied(web.error);},[web.error]);
   useEffect(()=>client.getQueryCache().subscribe(event=>{const q=event.query.queryKey,error=event.query.state.error;if(event.type==='updated'&&q[1]===principal.principal_id&&(q[0]==='detail'||q[0]==='web-report')&&(q[2]===kind&&q[3]===id||q[2]===requested.kind&&q[3]===requested.id)&&error instanceof ApiError&&[401,403,404].includes(error.status))clear();}),[client,principal.principal_id,kind,id,requested.kind,requested.id]);
   const modal=preview!==null&&preview.item.kind!=='VOICE';
+  // Card 34A: a download started from the preview reports inside it; later notices are page toasts.
+  const noticeToast=useDialogToast(modal,noticeRevision);
   const close=()=>{if(preview)revoke(preview.url);setPreview(null);};
   function pump(){
     while(alive.current&&!exclusiveRead.current&&activeReads.current<maxReads.current&&queue.current.length){
@@ -139,10 +141,11 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
     {emptySettled&&!storageUnavailable?<p className="media-empty">当前事项没有可读取的已保存附件。</p>:null}
     {visual.length?<div className="detail-media-grid">{visual.map(item=><HButton key={item.key} type="button" className="detail-media-card" aria-label={(thumbState[item.key]==='failed'?'重试查看':'查看')+item.name} isDisabled={!readReady||busy||(!item.ready&&!item.web)} onClick={()=>{void open(item);}} tone="secondary">{thumbs[item.key]?<img src={thumbs[item.key]} alt={item.name}/>:!item.ready?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.legacy?.reason?labels[item.legacy.reason]:'播放副本正在准备，可下载原件'}</span></span>:employeeRead&&item.web&&item.web.thumbnail?.status!=='READY'?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.web.thumbnail?.status==='PENDING'?'预览正在生成，点击查看':'暂无小图，点击查看'}</span></span>:thumbState[item.key]==='failed'?<span className="media-placeholder"><ImageIcon size={24}/><span>缩略图暂不可用，点击重试查看</span></span>:<DetailLoading compact label="加载预览…"/>}{item.kind==='VIDEO'?<><span className="media-video-play"><Play size={24}/></span>{item.duration!==null?<time>{clock(item.duration/1000)}</time>:null}</>:null}</HButton>)}</div>:null}
     {voices.map(item=><Voice key={item.key} item={item} sender={reporterName} url={preview?.item.key===item.key?preview.url:undefined} disabled={!readReady||busy} onPlay={()=>{void open(item);}} onDownload={()=>{void open(item,true);}} onError={()=>{void nativeMediaError(item);}}/>)}
-    {legacy.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}{notice?<ToastFeedback revision={noticeRevision} source="attachments" state={busy?'loading':undefined} role="status" aria-live="polite">{notice}</ToastFeedback>:null}
+    {legacy.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}{notice?<ToastFeedback enabled={noticeToast} revision={noticeRevision} source="attachments" state={busy?'loading':undefined} role="status" aria-live="polite">{notice}</ToastFeedback>:null}
     {legacyFailure||unavailableFiles?<HButton type="button" className="media-retry" isDisabled={!readReady||legacy.isFetching||busy} onClick={()=>{void refreshMaterials();}} tone="secondary">重试读取附件</HButton>:null}
     <DetailDialog open={modal} onClose={close} title={preview?.item.name??'报修附件预览'} closeLabel="关闭附件预览" accessibleName="报修附件预览" className="detail-media-dialog" onOpenChange={onOpenChange} actions={preview?<HButton type="button" className="media-download" isDisabled={busy||!readReady} onClick={()=>{void open(preview.item,true);}} tone="secondary"><Download size={16}/>下载原件</HButton>:null}>
       {modal&&preview?(preview.url?(preview.item.kind==='IMAGE'?<img src={preview.url} alt={preview.item.name}/>:<MediaVideo url={preview.url} poster={thumbs[preview.item.key]} onError={()=>{void nativeMediaError(preview.item);}}/>):<p>暂无可预览副本，可下载原件。</p>):null}
+      {notice?<DialogAlert source="attachments" state={busy?'loading':undefined} role="status">{notice}</DialogAlert>:null}
 
     </DetailDialog>
   </section>;

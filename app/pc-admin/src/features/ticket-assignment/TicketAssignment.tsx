@@ -3,7 +3,7 @@ import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
-import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState,DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/ToastFeedback';
 import {DetailDialog} from '../../app/DetailDialog';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -37,6 +37,9 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   const allowed=context.data?.allowed_actions??[],action:P2016AssignmentAction=allowed.includes('assign')?'assign':'transfer-assignment';
   const submit=()=>{if(blocked||otherBlocked||!draft.canSubmit||request.current||!context.data||!allowed.includes(action)||(context.isPending||context.isError)||(targets.isPending||targets.isError)||!workbenchTransportWritable()||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))||!team||!targets.data?.items.some(item=>item.principal_id===person))return;
     void send(Object.freeze({action,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:action==='assign'?'WORKBENCH_ASSIGN':'WORKBENCH_TRANSFER',target_principal_id:person,resolver_team_id:team,communication_choice:choice,sessions:Object.freeze(choice==='RETAIN_CURRENT'?[]:selected.map(row=>Object.freeze({...row})))} )}));};
+  // Card 34A: while the form is open as a modal, its own outcome and draft notices show inside it; only later ones become page
+  // toasts. Inside the next-step card the same form opens inline in the drawer, not as a modal, and keeps its toasts.
+  const modalOpen=open&&!step,messageToast=useDialogToast(modalOpen,messageRevision),draftToast=useDialogToast(modalOpen,draft.message);
   const toggle=(sessionId:string,version:string,permitted:boolean)=>{if(blocked)return;setSelected(previous=>previous.some(row=>row.session_id===sessionId)?previous.filter(row=>row.session_id!==sessionId):permitted&&previous.length<8?[...previous,{session_id:sessionId,expected_row_version:Number(version)}]:previous);};
   if(!allowed.includes(action)&&!pending&&!draft.operationId&&!team&&!person&&!choice&&!selected.length&&state==='idle'&&context.isSuccess&&!context.isError)return null;
   return <section className="ticket-notes ticket-assignment detail-action-controller" aria-label="工单派单与转派">
@@ -57,11 +60,12 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
     </>:null}
     <p>责任交接不会接单或开始处理；沟通责任按明确选择处理。</p>
     {draft.enabled?<DraftStatus notify={false} data-assignment-draft-status role="status">{draft.message}</DraftStatus>:null}
+    {modalOpen&&draft.enabled?<DialogDraftAlert>{draft.message}</DialogDraftAlert>:null}{modalOpen&&message?<DialogAlert source="ticket-assignment" state={state} role={['unknown','denied','conflict'].includes(state)?'alert':'status'}>{message}</DialogAlert>:null}
     <HButton type="button" data-action={action} isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||targets.isPending||targets.isError||!allowed.includes(action)||!team||!person||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))} onClick={submit} tone={step?'secondary':'primary'}>{action==='assign'?'确认派单':'确认转派'}</HButton>
     {state==='unknown'&&(pending||draft.operationId)?<HButton type="button" data-action="check-assignment-command" onClick={check} tone="secondary">{draft.enabled?'核对上次操作':'核对原操作结果'}</HButton>:null}
     {draft.enabled&&Boolean(team||person||choice||selected.length)&&!blocked?<HButton type="button" data-action="discard-assignment-draft" onClick={()=>{void draft.discard();}} tone="secondary">丢弃选择内容</HButton>:null}
 
-    </DetailDialog><DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>{message?<ToastFeedback revision={messageRevision} source="ticket-assignment" state={state} role={['unknown','denied','conflict'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
+    </DetailDialog><DraftFeedback enabled={draft.enabled&&draftToast}>{draft.message}</DraftFeedback>{message?<ToastFeedback enabled={messageToast} revision={messageRevision} source="ticket-assignment" state={state} role={['unknown','denied','conflict'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
 
   </section>;
 }

@@ -6,7 +6,8 @@ import {useLocation} from 'react-router';
 import toast,{resolveValue,useToaster} from 'react-hot-toast/headless';
 import {overflowToasts,toastDuration,toastHeading,toastTone} from './toast-policy';
 import type {ToastTone} from './toast-policy';
-import {Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
+import {Bell,Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
+import {InlineAlert} from '../design/components/InlineAlert/InlineAlert';
 import type {LucideIcon} from 'lucide-react';
 
 const loadingStates=new Set(['loading','reading','preparing','submitting','checking','sending','saving']);
@@ -36,22 +37,44 @@ function toastHost(target:HTMLElement):HTMLElement|null{
   if(target!==document.body)return null;
   return Array.from(document.querySelectorAll<HTMLElement>('[data-toast-host]')).filter(host=>shown(host)&&!host.closest('[data-workbench-overlay]')).at(-1)??null;
 }
+/** Card 34A: how the stack is laid out. docked: 32D-T (window corner, or the open detail container); window: a modal is open and the
+ * stack sits in the window's bottom-right corner beside it; chip: a modal is open and there is no room beside it, so the notices
+ * collapse into one chip that expands on demand. */
+type ToastMode='docked'|'window'|'chip';
+const MIN_SIDE_LIST=272;
 /**
  * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
  * (`data-toast-avoid="bottom"`) and below its top control bar (`data-toast-avoid="top"`), so the toolbar, the composer and dialog
  * actions stay reachable even when a short window or several notices waiting to be closed limit the stack's height; the stack then
- * scrolls. Card 33: the scroll box keeps a transparent shadow gutter around the notices so their shadows are drawn whole. Positions
- * are written as CSS variables only when the target, a size or the notices change; nothing polls per frame.
+ * scrolls. Card 33: the scroll box keeps a transparent shadow gutter around the notices so their shadows are drawn whole.
+ * Card 34A: while a modal (`data-workbench-modal`) is open the notices stay in the window's bottom-right corner and never enter the
+ * modal: beside it when the room to its right holds a notice plus 32, otherwise as a chip whose list opens above it, beside the
+ * modal when that room is at least 272 wide and as a popover over it otherwise. The DOM stays inside the modal only because a
+ * modal makes the rest of the page inert. Positions are written as CSS variables only when the target, a size or the notices
+ * change; nothing polls per frame.
  */
-function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count:number){
+function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,target:HTMLElement,count:number,expanded:boolean,onMode:(mode:ToastMode)=>void){
+  const report=useRef(onMode);report.current=onMode;
   useLayoutEffect(()=>{
     if(!viewport)return;
     let frame=0;
     const place=()=>{
       frame=0;
-      const host=toastHost(target),screen=viewportBox(),narrow=window.matchMedia('(max-width: 640px)').matches;
-      let left=narrow?12:screen.right-20-Math.min(400,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20,top=screen.top+16;
-      if(host){
+      const modal=target.matches('[data-workbench-modal]')?target:null,host=modal?null:toastHost(target),screen=viewportBox(),narrow=window.matchMedia('(max-width: 640px)').matches;
+      let left=narrow?12:screen.right-20-Math.min(400,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20,top=screen.top+16,mode:ToastMode='docked',popover=false;
+      const block=containingBlock(viewport),style=viewport.style;
+      if(modal){
+        const dialog=modal.getBoundingClientRect(),width=Math.min(400,screen.width-32);
+        right=screen.right-20;left=right-width;
+        if(screen.right-dialog.right>=width+32)mode='window';
+        else{
+          mode='chip';
+          const size=chip?.getBoundingClientRect(),chipTop=bottom-(size&&size.height>0?size.height:32);
+          chip?.style.setProperty('--toast-chip-right',Math.round(block.right-right)+'px');chip?.style.setProperty('--toast-chip-bottom',Math.round(block.bottom-bottom)+'px');
+          bottom=chipTop-8;
+          const room=right-(dialog.right+16);popover=room<MIN_SIDE_LIST;left=right-(popover?width:Math.min(width,room));
+        }
+      }else if(host){
         const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
         const avoid=Array.from(host.querySelectorAll('[data-toast-avoid="bottom"]')).filter(shown).map(element=>element.getBoundingClientRect())
           .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
@@ -61,24 +84,24 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
         top=bars.length?Math.max(...bars.map(area=>area.bottom))+12:hostTop+16;
         if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(400,box.width-32,screen.width-32);}
       }
-      const block=containingBlock(viewport),style=viewport.style;
       style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
       style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
-      viewport.dataset.toastHosted=host?'true':'false';
+      viewport.dataset.toastHosted=host?'true':'false';viewport.dataset.toastMode=mode;viewport.dataset.toastPopover=popover?'true':'false';
       // Card 33 review: while the stack scrolls, notices are clipped to the content box (see feedback.css) so a scrolled notice never
       // enters the 12px kept clear of the top bar and the bottom input area; the shadow gutter is only for an unscrolled stack.
       viewport.dataset.toastOverflow=viewport.scrollHeight>viewport.clientHeight+1?'true':'false';
+      report.current(mode);
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
     place();
-    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);resize.observe(viewport);
-    const host=toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
+    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);resize.observe(viewport);if(chip)resize.observe(chip);
+    const host=target.matches('[data-workbench-modal]')?target:toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
     const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
     // A detail opening or closing settles through its own animation; recompute once when it ends.
     window.addEventListener('resize',schedule);document.addEventListener('animationend',schedule,true);document.addEventListener('transitionend',schedule,true);
     return()=>{if(frame)cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',schedule,true);document.removeEventListener('transitionend',schedule,true);};
-  },[viewport,target,count]);
+  },[viewport,chip,target,count,expanded]);
 }
 
 export function useFeedbackState(initial=''){
@@ -121,6 +144,36 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
   return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
+/** Card 34A: the tone of a feedback state, shared by the toast and the dialog's inline alert. */
+function feedbackTone(state:string|undefined,role:string|undefined):'success'|'info'|'warning'|'danger'{
+  const value=state??'';
+  return value==='unknown'?'warning':role==='alert'||errorStates.has(value)?'danger':successStates.has(value)?'success':'info';
+}
+/**
+ * Card 34A: a dialog's own outcome is shown inside the open dialog as an inline alert, not as a toast. Render it where the toast
+ * content used to be; the stable keys (`data-toast-source`, `data-toast-state` and the feature's class) stay on it.
+ */
+export function DialogAlert({children,source,state,role,title,className='',...attributes}:Omit<FeedbackProps,'enabled'|'persistent'|'revision'|'aria-live'>){
+  if(!children)return null;
+  const heading=title??null;
+  return <InlineAlert {...attributes} tone={feedbackTone(state,role)} className={'workbench-dialog-alert '+className} data-dialog-feedback data-toast-source={source} data-toast-state={state??''}>{heading?<><strong>{heading}</strong> </>:null}{children}</InlineAlert>;
+}
+/**
+ * Card 34A: whether a dialog's outcome should still become a page toast. While the dialog is open it is shown inline; an outcome
+ * already shown inline is not repeated as a toast after the dialog closes, but a new one (for example the success that closes the
+ * dialog) is.
+ */
+export function useDialogToast(open:boolean,key:unknown):boolean{
+  const [inline,setInline]=useState<unknown>(undefined);
+  useEffect(()=>{if(open)setInline(key);},[open,key]);
+  return !open&&!(inline!==undefined&&Object.is(inline,key));
+}
+/** Card 34A: a draft notice (warning or restored) shown inline in the dialog that owns the draft. */
+export function DialogDraftAlert({children}:{children:string}){
+  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  return warning||/已恢复/u.test(children)?<DialogAlert source="draft" state={warning?'unknown':undefined}>{children}</DialogAlert>:null;
+}
+
 /** Card 33: each tone's icon; an error is a crossed circle so it never reads as an unknown outcome. */
 const toneIcons:Record<ToastTone,readonly [LucideIcon,string]>={success:[CircleCheck,'CircleCheck'],info:[Info,'Info'],warning:[TriangleAlert,'TriangleAlert'],danger:[CircleX,'CircleX'],loading:[LoaderCircle,'LoaderCircle']};
 
@@ -129,7 +182,19 @@ export function WorkbenchToasts(){
   useEffect(()=>{if(!toasts.length)handlers.endPause();},[toasts.length,handlers.endPause]);
   useEffect(()=>{for(const item of overflowToasts(toasts))toast.dismiss(item.id);},[toasts]);
   const [target,setTarget]=useState<HTMLElement>(document.body),priorFocus=useRef<HTMLElement|null>(null),[viewport,setViewport]=useState<HTMLDivElement|null>(null);
-  useToastPlacement(viewport,target,toasts.length);
+  // Card 34A: chip mode while a modal leaves no room beside it.
+  const [mode,setMode]=useState<ToastMode>('docked'),[expanded,setExpanded]=useState(false),[chip,setChip]=useState<HTMLSpanElement|null>(null),listId=useId();
+  const visibleCount=toasts.filter(item=>item.visible).length,chipped=mode==='chip'&&visibleCount>0,open=chipped&&expanded;
+  useToastPlacement(viewport,chipped?chip:null,target,toasts.length,open,setMode);
+  useEffect(()=>{if(!chipped)setExpanded(false);},[chipped]);
+  const collapse=useCallback(()=>{setExpanded(false);chip?.querySelector<HTMLElement>('button')?.focus({preventScroll:true});},[chip]);
+  useEffect(()=>{
+    if(!open)return;
+    // A press anywhere outside the chip and its list (the modal included) closes the list; the press itself still goes through.
+    const outside=(event:PointerEvent)=>{const node=event.target;if(node instanceof Node&&!viewport?.contains(node)&&!chip?.contains(node))setExpanded(false);};
+    document.addEventListener('pointerdown',outside,true);return()=>document.removeEventListener('pointerdown',outside,true);
+  },[open,viewport,chip]);
+  const escape=(event:{key:string;stopPropagation:()=>void;preventDefault:()=>void})=>{if(event.key==='Escape'&&open){event.stopPropagation();event.preventDefault();collapse();}};
   useEffect(()=>{
     const update=()=>{
       const focused=document.activeElement?.closest<HTMLElement>('[data-workbench-overlay]');
@@ -144,11 +209,11 @@ export function WorkbenchToasts(){
     if(document.activeElement===button){const previous=priorFocus.current;if(previous?.isConnected&&previous.checkVisibility()&&!previous.matches(':disabled'))previous.focus({preventScroll:true});else target.querySelector<HTMLElement>('h2[tabindex]')?.focus({preventScroll:true});}
     toast.dismiss(id);
   };
-  return createPortal(<div ref={setViewport} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
+  return createPortal(<><div ref={setViewport} id={listId} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts hidden={chipped&&!open} onKeyDown={escape} onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
     {[...toasts].reverse().map(item=>{const tone=toastTone(item.type,item.className),[Icon,icon]=toneIcons[tone];return <div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-tone={tone} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
       <span className="workbench-toast-tone" aria-hidden="true"><span className="workbench-toast-icon" data-icon={icon}><Icon size={20} strokeWidth={1.75}/></span></span>
       {resolveValue(item.message,item)}
       {tone==='loading'?<span className="workbench-toast-close-space" aria-hidden="true"/>:<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" tabIndex={item.visible?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>}
     </div>;})}
-  </div>,target);
+  </div>{chipped?<span ref={setChip} className="workbench-toast-chip-anchor" onKeyDown={escape}><HButton type="button" className="workbench-toast-chip" data-action="toggle-toast-chip" aria-expanded={open} aria-controls={listId} onClick={()=>setExpanded(value=>!value)} variant="secondary"><Bell size={14} aria-hidden="true"/><span aria-live="polite">{visibleCount} 条提示</span></HButton></span>:null}</>,target);
 }
