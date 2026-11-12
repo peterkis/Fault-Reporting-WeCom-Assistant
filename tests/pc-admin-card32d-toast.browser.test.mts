@@ -165,6 +165,9 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    // Resize and settle first; the 4s success notice is refreshed only then, so it is measured while visible.
    await size(width,height);await waitForAnimationsSettled(b);await success();await waitForAnimationsSettled(b,'.workbench-toast');
    const found=await b.evaluate(controls(names)) as (Control&{missing?:boolean})[],toasts=await b.evaluate(toastRects) as (Rect&{kind:string;text:string})[];
+   // The stack is marked (and clipped to its content box) exactly when it overflows; in full-height windows it never does.
+   const overflow=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility());return [v.dataset.toastOverflow,v.scrollHeight>v.clientHeight+1];})()") as [string,boolean];
+   assert.deepEqual(overflow,height?[String(overflow[1]),overflow[1]]:['false',false],scenario+' '+width+': the overflow mark matches the stack');
    assertAnatomy(await b.evaluate(anatomy()) as Anatomy[],scenario+' '+width,width<=640?18:20,width<=640?44:52);assertViewports(await b.evaluate(viewportStyle) as Record<string,string>[],scenario+' '+width);
    const through=await b.evaluate(passThrough) as Parameters<typeof assertPassThrough>[0];assertPassThrough(through,scenario+' '+width+(height?'×'+height:''));passes.push({scenario,width,height:height??null,points:through.points.length});
    // A stack taller than its limit scrolls inside the viewport; only the part inside the viewport can cover a control.
@@ -204,6 +207,18 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    const reachable=await b.evaluate(`[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>{const close=node.querySelector('.workbench-toast-close');close.scrollIntoView({block:'nearest'});
     const r=close.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return Boolean(hit&&(hit===close||close.contains(hit)));})`) as boolean[];
    assert.deepEqual(reachable,reachable.map(()=>true),scenario+' shorter window: every close button can be scrolled into view and hit');
+   // Card 33 review: scrolled to either end, no notice reaches into the 12px kept clear below the top bar or above the bottom
+   // input area. Points 1px inside each control edge and 6px into each clear band, at eight positions across the stack, must not
+   // hit the viewport.
+   for(const end of ['top','bottom'] as const){
+    const edges=await b.evaluate(`(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility());v.scrollTop=${JSON.stringify(end)}==='top'?0:v.scrollHeight;
+     const box=v.getBoundingClientRect(),across=a=>a.left<box.right&&a.right>box.left,rects=kind=>[...document.querySelectorAll('[data-toast-avoid='+kind+']')].filter(e=>e.checkVisibility()).map(e=>e.getBoundingClientRect()).filter(a=>a.height>0&&across(a));
+     const bar=Math.max(...rects('top').map(a=>a.bottom)),input=Math.min(...rects('bottom').map(a=>a.top)),points=[];
+     for(let i=0;i<8;i++){const x=box.left+24+(box.width-48)*(i+.5)/8;for(const y of [bar-1,bar+6,input-6,input+1])if(y>=0&&y<innerHeight)points.push({x:Math.round(x),y:Math.round(y),hit:v.contains(document.elementFromPoint(x,y))});}
+     return {bar,input,scrollTop:v.scrollTop,points};})()`) as {bar:number;input:number;scrollTop:number;points:{x:number;y:number;hit:boolean}[]};
+    assert.ok(Number.isFinite(edges.bar)&&Number.isFinite(edges.input)&&edges.points.length===32,scenario+' shorter window: top bar and bottom area found '+JSON.stringify(edges));
+    assert.deepEqual(edges.points.filter(point=>point.hit),[],JSON.stringify({bar:edges.bar,input:edges.input})+' '+scenario+' shorter window scrolled to the '+end+': no notice enters the top bar, the bottom area or their 12px clear bands');
+   }
   }
   // Closing dialog: the notices move into the dialog and dock above its own action bar. The follow button behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.

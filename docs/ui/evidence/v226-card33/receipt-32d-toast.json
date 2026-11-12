@@ -623,18 +623,18 @@
     {
       "scenario": "drawer",
       "clip": {
-        "x": 976,
-        "y": 496,
+        "x": 984,
+        "y": 504,
         "width": 464,
         "height": 326,
         "scale": 1
       },
-      "pixels": 49849,
+      "pixels": 49813,
       "lines": 788,
-      "strongest": 22.18,
+      "strongest": 22.86,
       "worst": {
-        "line": "row 79",
-        "share": 0.017
+        "line": "column 224",
+        "share": 0.081
       }
     },
     {
@@ -663,11 +663,11 @@
         "height": 326,
         "scale": 1
       },
-      "pixels": 49759,
+      "pixels": 49761,
       "lines": 788,
       "strongest": 18.06,
       "worst": {
-        "line": "row 249",
+        "line": "row 250",
         "share": 0.018
       }
     }
@@ -775,25 +775,25 @@
       "file": "toast-drawer-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "3bf6bc8333f8ecac819e4f34a8a680874c7e4a01683bcf24587bc36603cf78b3"
+      "sha256": "f7e13562ce63517705e3f3988e2a6cb68db9d6dc6d266a1d9e941b2502984699"
     },
     {
       "file": "toast-drawer-900.png",
       "width": 900,
       "height": 820,
-      "sha256": "4684638824ebdd6c97783314a78c0b90202a2bf62bd5ba6ff051b1f0a6b16fd0"
+      "sha256": "ea50bc4384579b0c1f3d7a3f4a400659ab55a245f1cc70a6695cd6beb5cfbd9b"
     },
     {
       "file": "toast-fullpage-1280.png",
       "width": 1280,
       "height": 1000,
-      "sha256": "c00e54323827c4b663990259e68e130af2060ffd9496d44c4ed87c6598767906"
+      "sha256": "878b420d0c0b893834ae49f04246e5abb6875509f3deb502eb27537c4657a750"
     },
     {
       "file": "toast-dialog-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "afc89e33b9b6e5d3192a04c20d825af7d2ee62e59a50dc9de76ec990fa53e96c"
+      "sha256": "5d3fe9fa9b493e5bc69e783858a67359dd4c7a7cbdd2b0a31053e4c8b1829246"
     }
   ]
 }

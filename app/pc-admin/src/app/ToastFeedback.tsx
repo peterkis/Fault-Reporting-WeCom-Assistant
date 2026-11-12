@@ -21,8 +21,11 @@ const viewportBox=():Box=>({left:0,top:0,right:window.innerWidth,bottom:window.i
 function containingBlock(element:HTMLElement):Box{
   for(let node=element.parentElement;node&&node!==document.documentElement;node=node.parentElement){
     const style=getComputedStyle(node),backdrop=style.getPropertyValue('backdrop-filter');
-    if(style.transform!=='none'||style.perspective!=='none'||style.filter!=='none'||(backdrop!==''&&backdrop!=='none')
-      ||/transform|perspective|filter/u.test(style.willChange)||/paint|layout|strict|content/u.test(style.contain)){const box=node.getBoundingClientRect();return {left:box.left,top:box.top,right:box.right,bottom:box.bottom,width:box.width};}
+    // Card 33 review: the individual transform properties count too (the detail drawer declares will-change: translate), as do
+    // size container queries and content-visibility:auto, which imply layout / paint containment.
+    if(style.transform!=='none'||style.translate!=='none'||style.scale!=='none'||style.rotate!=='none'||style.perspective!=='none'||style.filter!=='none'||(backdrop!==''&&backdrop!=='none')
+      ||/transform|translate|scale|rotate|perspective|filter|contain/u.test(style.willChange)||/paint|layout|strict|content/u.test(style.contain)
+      ||/size/u.test(style.containerType)||style.contentVisibility==='auto'){const box=node.getBoundingClientRect();return {left:box.left,top:box.top,right:box.right,bottom:box.bottom,width:box.width};}
   }
   return viewportBox();
 }
@@ -63,10 +66,13 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
       style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
       viewport.dataset.toastHosted=host?'true':'false';
+      // Card 33 review: while the stack scrolls, notices are clipped to the content box (see feedback.css) so a scrolled notice never
+      // enters the 12px kept clear of the top bar and the bottom input area; the shadow gutter is only for an unscrolled stack.
+      viewport.dataset.toastOverflow=viewport.scrollHeight>viewport.clientHeight+1?'true':'false';
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
     place();
-    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);
+    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);resize.observe(viewport);
     const host=toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
     const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
     // A detail opening or closing settles through its own animation; recompute once when it ends.
