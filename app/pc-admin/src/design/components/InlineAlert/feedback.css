@@ -1,8 +1,8 @@
 /* Retained feedback layout contracts; visual primitives belong to the v2 components. */
 /* Card 32D: bottom-right of the window or of the open detail container, above its bottom input area (variables from ToastFeedback). */
 /* Card 32D: placement defaults; ToastFeedback overrides them inline from the visible host. */
-/* Card 33: the viewport is not a scroll container and has no padding, height limit, background, border or shadow, so every notice's shadow is drawn whole. */
-.workbench-toast-viewport {--toast-right:20px;--toast-bottom:20px;--toast-left:auto;--toast-width:min(400px,calc(100vw - 32px));position:fixed;inset:auto var(--toast-right) var(--toast-bottom) auto;z-index:var(--z-toast);display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:var(--space-3);width:var(--toast-width);pointer-events:none}
+/* Card 33: the stack stays within --toast-max-height (below the top bar, above the bottom area) and scrolls when it is taller. The scroll box is grown by a transparent gutter that covers the shadow's reach (0 8px 24px: 16 above, 24 at the sides, 32 below), so a notice's shadow is clipped only while it is scrolled to the edge; the viewport has no background, border or shadow and passes the pointer through. */
+.workbench-toast-viewport {--toast-right:20px;--toast-bottom:20px;--toast-left:auto;--toast-width:min(400px,calc(100vw - 32px));--toast-max-height:calc(100dvh - 96px);--toast-gutter-top:16px;--toast-gutter-x:24px;--toast-gutter-bottom:32px;position:fixed;inset:auto calc(var(--toast-right) - var(--toast-gutter-x)) calc(var(--toast-bottom) - var(--toast-gutter-bottom)) auto;z-index:var(--z-toast);display:flex;flex-direction:column;justify-content:safe flex-end;align-items:stretch;gap:var(--space-3);width:calc(var(--toast-width) + 2 * var(--toast-gutter-x));max-height:calc(var(--toast-max-height) + var(--toast-gutter-top) + var(--toast-gutter-bottom));overflow-y:auto;overscroll-behavior:contain;padding:var(--toast-gutter-top) var(--toast-gutter-x) var(--toast-gutter-bottom);pointer-events:none}
 /* Card 33: colour block | title and description | close button. data-tone drives the colours. */
 .workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;display:flex;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) ease-out}
 .workbench-toast[data-tone=success] {--toast-tone-bg:var(--tone-success-bg);--toast-tone-fg:var(--tone-success-fg)}
@@ -21,7 +21,7 @@
 .workbench-toast .workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
 .workbench-toast-close-space {flex:none;width:42px}
 .workbench-draft-status {display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;color:var(--text-secondary);flex:none}
-.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:20px;bottom:20px;width:min(400px,calc(100% - 40px))}
+.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:calc(20px - var(--toast-gutter-x));bottom:calc(20px - var(--toast-gutter-bottom));width:calc(min(400px,100% - 40px) + 2 * var(--toast-gutter-x));max-height:calc(40dvh + var(--toast-gutter-top) + var(--toast-gutter-bottom))}
 @keyframes workbench-toast-enter {
 from{opacity:.65;translate:0 6px}
 to{opacity:1;translate:0 0}}
@@ -29,6 +29,6 @@ to{opacity:1;translate:0 0}}
 .workbench-toast{animation:none}
 .workbench-toast[data-tone=loading] .workbench-toast-icon svg{animation:none}}
 @media(max-width:640px){
-.workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto var(--toast-right) var(--toast-bottom) var(--toast-left);width:auto}
+.workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto calc(var(--toast-right) - var(--toast-gutter-x)) calc(var(--toast-bottom) - var(--toast-gutter-bottom)) calc(var(--toast-left) - var(--toast-gutter-x));width:auto}
 .workbench-toast{--toast-tone-width:44px}
 .workbench-toast-icon svg{width:18px;height:18px}}

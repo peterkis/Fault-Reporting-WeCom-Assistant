@@ -46,7 +46,7 @@ const anatomy=(scope='document')=>`(()=>{const probe=token=>{const e=document.cr
  return {tone:node.dataset.tone,icon:block.querySelector('[data-icon]')?.dataset.icon??'',svg:String(svg.getAttribute('class')),bg:getComputedStyle(block).backgroundColor,expectedBg:probe(tokens[node.dataset.tone]),height:r.height,toneHeight:b.height,toneWidth:b.width,iconSize:parseFloat(getComputedStyle(svg).width),
   iconDx:Math.abs(i.left+i.width/2-(b.left+b.width/2)),iconDy:Math.abs(i.top+i.height/2-(b.top+b.height/2)),closeDy:c?Math.abs(c.top+c.height/2-(r.top+r.height/2)):null,close:Boolean(close),space:Boolean(node.querySelector(':scope>.workbench-toast-close-space')),
   lines:description?Math.round(description.getBoundingClientRect().height/20):0,single:content.classList.contains('is-single'),source:content.dataset.toastSource,text:node.innerText.replace(/\\s+/g,' ').slice(0,60)};});})()`;
-const viewportStyle="[...document.querySelectorAll('.workbench-toast-viewport')].filter(v=>v.checkVisibility()).map(v=>{const s=getComputedStyle(v);return {overflowX:s.overflowX,overflowY:s.overflowY,padding:s.padding,background:s.backgroundColor,shadow:s.boxShadow,border:s.borderTopWidth,maxHeight:s.maxHeight};})";
+const viewportStyle="[...document.querySelectorAll('.workbench-toast-viewport')].filter(v=>v.checkVisibility()).map(v=>{const s=getComputedStyle(v);return {overflowY:s.overflowY,padding:s.padding,background:s.backgroundColor,shadow:s.boxShadow,border:s.borderTopWidth,pointer:s.pointerEvents};})";
 function assertAnatomy(items:Anatomy[],label:string,iconSize=20,toneWidth=52){
  for(const item of items){
   const where=label+' '+item.tone+' '+JSON.stringify(item.text);
@@ -61,7 +61,9 @@ function assertAnatomy(items:Anatomy[],label:string,iconSize=20,toneWidth=52){
 }
 function assertViewports(styles:Record<string,string>[],label:string){
  assert.ok(styles.length>=1,label+': a visible viewport');
- for(const style of styles)assert.deepEqual(style,{overflowX:'visible',overflowY:'visible',padding:'0px',background:'rgba(0, 0, 0, 0)',shadow:'none',border:'0px',maxHeight:'none'},label+': the viewport never clips or paints');
+ // The stack scrolls when it is taller than its limit; the scroll box keeps a transparent gutter covering the shadow's reach
+ // (0 8px 24px: 16 above, 24 at the sides, 32 below), paints nothing itself and passes the pointer through.
+ for(const style of styles)assert.deepEqual(style,{overflowY:'auto',padding:'16px 24px 32px',background:'rgba(0, 0, 0, 0)',shadow:'none',border:'0px',pointer:'none'},label+': the viewport scrolls inside a shadow gutter and never paints');
 }
 /** Minimal PNG reader (8-bit RGB/RGBA, not interlaced) for the shadow sampling; returns per-pixel luminance. */
 function luminance(png:Buffer):{width:number;height:number;at:(x:number,y:number)=>number}{
@@ -144,8 +146,9 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await size(width,height);await waitForAnimationsSettled(b);await success();await waitForAnimationsSettled(b,'.workbench-toast');
    const found=await b.evaluate(controls(names)) as (Control&{missing?:boolean})[],toasts=await b.evaluate(toastRects) as (Rect&{kind:string;text:string})[];
    assertAnatomy(await b.evaluate(anatomy()) as Anatomy[],scenario+' '+width,width<=640?18:20,width<=640?44:52);assertViewports(await b.evaluate(viewportStyle) as Record<string,string>[],scenario+' '+width);
-   // Card 33: the stack has no scroll container or height limit, so every notice is drawn whole and is checked whole.
-   const visible=toasts;
+   // A stack taller than its limit scrolls inside the viewport; only the part inside the viewport can cover a control.
+   const stack=await b.evaluate("(()=>{const r=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()") as Rect;
+   const visible=toasts.map(item=>{const x=Math.max(item.x,stack.x),y=Math.max(item.y,stack.y);return {...item,x,y,width:Math.max(0,Math.min(item.x+item.width,stack.x+stack.width)-x),height:Math.max(0,Math.min(item.y+item.height,stack.y+stack.height)-y)};});
    assert.deepEqual(toasts.map(t=>t.kind).sort(),['error','success','unknown'],scenario+' '+width+': one success, one error and one unknown notice '+JSON.stringify(toasts));
    for(const control of found){
     assert.ok(!control.missing,scenario+' '+width+': '+control.name+' is rendered');
@@ -162,13 +165,18 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
    for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440)shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
-   // A short window (1440×560): the three notices, drawn whole without a scroll container (card 33), still leave the
-   // navigation, copy, follow, more and close controls and the composer reachable. The scrolling body between them has no free
-   // space at this height and is not part of this check.
+   // Short windows: at 1440×560 (32D-T) the three notices fit between the toolbar and the composer; at 1440×440 they do not, so
+   // the stack stops below the toolbar (data-toast-avoid="top") and scrolls inside its shadow gutter (card 33), and the
+   // navigation, copy, follow, more and close controls and the composer stay reachable. The scrolling body between them has no
+   // free space at these heights and is not part of this check.
    const {'下一步主操作':_body,...bars}=detailControls;await measure(scenario+'-short',1440,{...bars,...extra},560);
-   const reachable=await b.evaluate(`[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>{const close=node.querySelector('.workbench-toast-close');
+   await measure(scenario+'-shorter',1440,{...bars,...extra},440);
+   const overflowing=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility());return v.scrollHeight>v.clientHeight;})()");
+   assert.equal(overflowing,true,scenario+' shorter window: the three notices overflow their limit');
+   // The overflowing stack stays scrollable: every notice, the oldest included, can be scrolled into view and closed.
+   const reachable=await b.evaluate(`[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>{const close=node.querySelector('.workbench-toast-close');close.scrollIntoView({block:'nearest'});
     const r=close.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return Boolean(hit&&(hit===close||close.contains(hit)));})`) as boolean[];
-   assert.deepEqual(reachable,reachable.map(()=>true),scenario+' short window: every close button can be hit');
+   assert.deepEqual(reachable,reachable.map(()=>true),scenario+' shorter window: every close button can be scrolled into view and hit');
   }
   // Closing dialog: the notices move into the dialog and dock above its own action bar. The follow button behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.

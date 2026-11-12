@@ -13,7 +13,7 @@
       "toneWidth": 52,
       "iconSize": 20,
       "iconDx": 0,
-      "iconDy": 0.000030517578125,
+      "iconDy": 0,
       "closeDy": null,
       "close": false,
       "space": true,
@@ -99,8 +99,8 @@
       "space": false,
       "lines": 1,
       "single": false,
-      "source": "draft",
-      "text": "恢复状态 已恢复当前浏览器的草稿；最长保留24小时。"
+      "source": "ticket-unassign",
+      "text": "解除分派 当前撤派内容已停止展示。"
     },
     {
       "tone": "info",
@@ -119,8 +119,8 @@
       "space": false,
       "lines": 1,
       "single": false,
-      "source": "ticket-unassign",
-      "text": "解除分派 当前撤派内容已停止展示。"
+      "source": "draft",
+      "text": "恢复状态 已恢复当前浏览器的草稿；最长保留24小时。"
     }
   ],
   "screenshots": [
@@ -128,7 +128,7 @@
       "file": "toast-narrow-600.png",
       "width": 600,
       "height": 900,
-      "sha256": "2c5746aac40f00a0e9545c7948bc468ec8ae520c83f36642c3aeec21a873144a"
+      "sha256": "f091fc3ee1503d0c6f5ead04b816087e9eefc05c5dd45e3e7d05aa3908557ec0"
     },
     {
       "file": "toast-tones-1440.png",

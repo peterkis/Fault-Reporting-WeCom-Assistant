@@ -35,9 +35,10 @@ function toastHost(target:HTMLElement):HTMLElement|null{
 }
 /**
  * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
- * (`data-toast-avoid="bottom"`), so the composer and dialog actions stay reachable. Card 33: at most three notices stack without
- * a scroll container or height limit, so their shadows are never clipped. Positions are written as CSS variables only when the
- * target, a size or the notices change; nothing polls per frame.
+ * (`data-toast-avoid="bottom"`) and below its top control bar (`data-toast-avoid="top"`), so the toolbar, the composer and dialog
+ * actions stay reachable even when a short window or several notices waiting to be closed limit the stack's height; the stack then
+ * scrolls. Card 33: the scroll box keeps a transparent shadow gutter around the notices so their shadows are drawn whole. Positions
+ * are written as CSS variables only when the target, a size or the notices change; nothing polls per frame.
  */
 function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count:number){
   useLayoutEffect(()=>{
@@ -46,17 +47,21 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
     const place=()=>{
       frame=0;
       const host=toastHost(target),screen=viewportBox(),narrow=window.matchMedia('(max-width: 640px)').matches;
-      let left=narrow?12:screen.right-20-Math.min(400,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20;
+      let left=narrow?12:screen.right-20-Math.min(400,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20,top=screen.top+16;
       if(host){
         const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
         const avoid=Array.from(host.querySelectorAll('[data-toast-avoid="bottom"]')).filter(shown).map(element=>element.getBoundingClientRect())
           .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
         bottom=avoid.length?Math.min(...avoid.map(area=>area.top))-12:hostBottom-16;
+        const bars=Array.from(host.querySelectorAll('[data-toast-avoid="top"]')).filter(shown).map(element=>element.getBoundingClientRect())
+          .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
+        top=bars.length?Math.max(...bars.map(area=>area.bottom))+12:hostTop+16;
         if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(400,box.width-32,screen.width-32);}
       }
       const block=containingBlock(viewport),style=viewport.style;
       style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
+      style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
       viewport.dataset.toastHosted=host?'true':'false';
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
