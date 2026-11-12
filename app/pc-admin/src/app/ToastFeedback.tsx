@@ -4,13 +4,14 @@ import type {HTMLAttributes,SetStateAction} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import toast,{resolveValue,useToaster} from 'react-hot-toast/headless';
-import {overflowToasts,toastDuration} from './toast-policy';
-import {Check,CheckCircle2,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
+import {overflowToasts,toastDuration,toastHeading,toastTone} from './toast-policy';
+import type {ToastTone} from './toast-policy';
+import {Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
+import type {LucideIcon} from 'lucide-react';
 
 const loadingStates=new Set(['loading','reading','preparing','submitting','checking','sending','saving']);
 const successStates=new Set(['succeeded','success','committed']);
 const errorStates=new Set(['failed','error','denied','conflict','invalid']);
-const labels:Record<string,string>={'ticket-assignment':'派单','ticket-self-handling':'接单','ticket-conversation-handling':'接单','ticket-completion':'完工','ticket-notes':'内部备注','ticket-reopen':'重新打开工单','ticket-unassign':'解除分派','ticket-takeover':'接管工单','ticket-takeover-completion':'接管与完工','ticket-return-to-dispatch':'退回调度','ticket-waiting-cancel':'关闭事项','ticket-waiting-request-information':'等待补充','ticket-waiting-wait-vendor':'等待厂商','ticket-waiting-resume':'恢复处理','web-report':'公开进度','attachments':'报修资料','item-follow':'关注','board-actions':'看板操作','manual-report':'登记报修','manual-review':'报修复核','conversations':'会话操作','source-groups':'来源群','reminders':'提醒设置','supplement-follow-up':'补充材料','follow-up':'跟进安排','incident-candidates':'公共故障','draft':'恢复状态'};
 
 export function clearWorkbenchToasts(){toast.remove();}
 
@@ -34,9 +35,9 @@ function toastHost(target:HTMLElement):HTMLElement|null{
 }
 /**
  * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
- * (`data-toast-avoid="bottom"`) and below its top control bar (`data-toast-avoid="top"`), so the toolbar, the composer and dialog
- * actions stay reachable even when a short window limits the stack's height. Positions are written as CSS
- * variables only when the target, a size or the notices change; nothing polls per frame.
+ * (`data-toast-avoid="bottom"`), so the composer and dialog actions stay reachable. Card 33: at most three notices stack without
+ * a scroll container or height limit, so their shadows are never clipped. Positions are written as CSS variables only when the
+ * target, a size or the notices change; nothing polls per frame.
  */
 function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count:number){
   useLayoutEffect(()=>{
@@ -45,21 +46,17 @@ function useToastPlacement(viewport:HTMLDivElement|null,target:HTMLElement,count
     const place=()=>{
       frame=0;
       const host=toastHost(target),screen=viewportBox(),narrow=window.matchMedia('(max-width: 640px)').matches;
-      let left=narrow?12:screen.right-20-Math.min(420,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20,top=screen.top+16;
+      let left=narrow?12:screen.right-20-Math.min(400,screen.width-32),right=narrow?screen.right-12:screen.right-20,bottom=screen.bottom-20;
       if(host){
         const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
         const avoid=Array.from(host.querySelectorAll('[data-toast-avoid="bottom"]')).filter(shown).map(element=>element.getBoundingClientRect())
           .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
         bottom=avoid.length?Math.min(...avoid.map(area=>area.top))-12:hostBottom-16;
-        const bars=Array.from(host.querySelectorAll('[data-toast-avoid="top"]')).filter(shown).map(element=>element.getBoundingClientRect())
-          .filter(area=>area.height>0&&area.top<hostBottom&&area.bottom>hostTop);
-        top=bars.length?Math.max(...bars.map(area=>area.bottom))+12:hostTop+16;
-        if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(420,box.width-32,screen.width-32);}
+        if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(400,box.width-32,screen.width-32);}
       }
       const block=containingBlock(viewport),style=viewport.style;
       style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
-      style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
       viewport.dataset.toastHosted=host?'true':'false';
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
@@ -87,7 +84,9 @@ export function ToastFeedback({children,source,state,enabled=true,persistent=fal
     if(!enabled||!children){toast.remove(id);return;}
     const unknown=state==='unknown',loading=loadingStates.has(state??''),success=successStates.has(state??''),error=!unknown&&(role==='alert'||errorStates.has(state??''));
     const show=()=>{
-      const content=<div {...latest.current} className={'workbench-toast-content '+(latest.current.className??'')} data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{title??labels[source]??'操作提示'}</strong><span>{children}</span></div>;
+      // Card 33: with neither an outcome title nor a purpose label the message itself is the single-line title.
+      const heading=toastHeading(title,source);
+      const content=<div {...latest.current} className={'workbench-toast-content'+(heading?'':' is-single')+' '+(latest.current.className??'')} data-toast-source={source} data-toast-state={state??''}>{heading?<><strong className="workbench-toast-purpose">{heading}</strong><span>{children}</span></>:<strong className="workbench-toast-purpose">{children}</strong>}</div>;
       const options={id,duration:toastDuration({unknown,loading,error,persistent}),removeDelay:180,className:unknown?'is-warning':'',ariaProps:{role:error?'alert' as const:'status' as const,'aria-live':live??(error?'assertive' as const:'polite' as const)}};
       if(loading)toast.loading(content,options);else if(success)toast.success(content,options);else if(error)toast.error(content,options);else toast(content,options);
     };
@@ -111,6 +110,9 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
   return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
+/** Card 33: each tone's icon; an error is a crossed circle so it never reads as an unknown outcome. */
+const toneIcons:Record<ToastTone,readonly [LucideIcon,string]>={success:[CircleCheck,'CircleCheck'],info:[Info,'Info'],warning:[TriangleAlert,'TriangleAlert'],danger:[CircleX,'CircleX'],loading:[LoaderCircle,'LoaderCircle']};
+
 export function WorkbenchToasts(){
   const {toasts,handlers}=useToaster(),location=useLocation();
   useEffect(()=>{if(!toasts.length)handlers.endPause();},[toasts.length,handlers.endPause]);
@@ -132,9 +134,10 @@ export function WorkbenchToasts(){
     toast.dismiss(id);
   };
   return createPortal(<div ref={setViewport} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
-    {[...toasts].reverse().map(item=><div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
-      <span className="workbench-toast-icon" aria-hidden="true">{item.type==='loading'?<LoaderCircle size={19}/>:item.type==='success'?<CheckCircle2 size={19}/>:item.type==='error'||item.className==='is-warning'?<TriangleAlert size={19}/>:<Info size={19}/>}</span>
-      {resolveValue(item.message,item)}<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" isDisabled={item.type==='loading'} tabIndex={item.visible&&item.type!=='loading'?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>
-    </div>)}
+    {[...toasts].reverse().map(item=>{const tone=toastTone(item.type,item.className),[Icon,icon]=toneIcons[tone];return <div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-tone={tone} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
+      <span className="workbench-toast-tone" aria-hidden="true"><span className="workbench-toast-icon" data-icon={icon}><Icon size={20} strokeWidth={1.75}/></span></span>
+      {resolveValue(item.message,item)}
+      {tone==='loading'?<span className="workbench-toast-close-space" aria-hidden="true"/>:<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" tabIndex={item.visible?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>}
+    </div>;})}
   </div>,target);
 }
