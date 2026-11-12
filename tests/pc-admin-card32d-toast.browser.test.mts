@@ -184,7 +184,8 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   for(const [scenario,path,extra] of [['drawer','/workbench/app/items/ticket/'+id,{'上一项':'button[aria-label=上一项]','下一项':'button[aria-label=下一项]'}],['fullpage','/workbench/app/items/ticket/'+id+'?detail=page',{}]] as const){
    await open(path);
    await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
-   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440)shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});
+   let fullHeights:number[]=[];
+   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});}
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
    // Short windows: at 1440×560 (32D-T) the three notices fit between the toolbar and the composer; at 1440×440 they do not, so
    // the stack stops below the toolbar (data-toast-avoid="top") and scrolls inside its shadow gutter (card 33), and the
@@ -194,6 +195,11 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await measure(scenario+'-shorter',1440,{...bars,...extra},440);
    const overflowing=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility());return v.scrollHeight>v.clientHeight;})()");
    assert.equal(overflowing,true,scenario+' shorter window: the three notices overflow their limit');
+   // Each notice keeps its content height inside the scrolling stack: nothing is clipped by the notice itself, and it is no shorter
+   // than the same notices measured at 1440 in a full-height window.
+   const clipped=await b.evaluate("[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>({text:node.innerText.replace(/\\s+/g,' ').slice(0,40),height:node.getBoundingClientRect().height,overflow:node.scrollHeight-node.clientHeight,content:node.querySelector('.workbench-toast-content').scrollHeight-node.querySelector('.workbench-toast-content').clientHeight}))") as {text:string;height:number;overflow:number;content:number}[];
+   for(const item of clipped)assert.ok(item.overflow<=0&&item.content<=0,scenario+' shorter window: '+item.text+' shows its whole content '+JSON.stringify(item));
+   assert.deepEqual(clipped.map(item=>Math.round(item.height)).sort((x,y)=>x-y),fullHeights.slice().sort((x,y)=>x-y),scenario+' shorter window: no notice shrinks in the scrolling stack');
    // The overflowing stack stays scrollable: every notice, the oldest included, can be scrolled into view and closed.
    const reachable=await b.evaluate(`[...document.querySelectorAll('.workbench-toast[data-visible=true]')].map(node=>{const close=node.querySelector('.workbench-toast-close');close.scrollIntoView({block:'nearest'});
     const r=close.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return Boolean(hit&&(hit===close||close.contains(hit)));})`) as boolean[];

@@ -629,12 +629,12 @@
         "height": 326,
         "scale": 1
       },
-      "pixels": 49831,
+      "pixels": 49849,
       "lines": 788,
-      "strongest": 22.6,
+      "strongest": 22.18,
       "worst": {
-        "line": "row 85",
-        "share": 0.036
+        "line": "row 79",
+        "share": 0.017
       }
     },
     {
@@ -648,7 +648,7 @@
       },
       "pixels": 49838,
       "lines": 788,
-      "strongest": 18.06,
+      "strongest": 20.6,
       "worst": {
         "line": "row 100",
         "share": 0.018
@@ -663,11 +663,11 @@
         "height": 326,
         "scale": 1
       },
-      "pixels": 49761,
+      "pixels": 49759,
       "lines": 788,
       "strongest": 18.06,
       "worst": {
-        "line": "row 250",
+        "line": "row 249",
         "share": 0.018
       }
     }
@@ -707,7 +707,7 @@
       "scenario": "drawer-shorter",
       "width": 1440,
       "height": 440,
-      "points": 6
+      "points": 4
     },
     {
       "scenario": "fullpage",
@@ -743,7 +743,7 @@
       "scenario": "fullpage-shorter",
       "width": 1440,
       "height": 440,
-      "points": 5
+      "points": 4
     },
     {
       "scenario": "dialog",
@@ -775,25 +775,25 @@
       "file": "toast-drawer-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "830e7e64c4a460f9a646afe438b644716ded4abc84546e7abb50c09b0c3e67c9"
+      "sha256": "3bf6bc8333f8ecac819e4f34a8a680874c7e4a01683bcf24587bc36603cf78b3"
     },
     {
       "file": "toast-drawer-900.png",
       "width": 900,
       "height": 820,
-      "sha256": "cf913ce420fcf69e7d88c512e9c7b0cf8dc50e1cc0788e29e13fd116f7070c30"
+      "sha256": "4684638824ebdd6c97783314a78c0b90202a2bf62bd5ba6ff051b1f0a6b16fd0"
     },
     {
       "file": "toast-fullpage-1280.png",
       "width": 1280,
       "height": 1000,
-      "sha256": "5ae9f2cdc891e4f7b3f7ccf9057681b1d73861321f5ce1affd7425673182956d"
+      "sha256": "c00e54323827c4b663990259e68e130af2060ffd9496d44c4ed87c6598767906"
     },
     {
       "file": "toast-dialog-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "c1b16dbb5864ff81885f2d0d0b8f1d7f8a405694251338eb715eef7733c099d6"
+      "sha256": "afc89e33b9b6e5d3192a04c20d825af7d2ee62e59a50dc9de76ec990fa53e96c"
     }
   ]
 }
