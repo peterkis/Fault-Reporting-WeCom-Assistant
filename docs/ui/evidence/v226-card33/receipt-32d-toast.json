@@ -1,0 +1,799 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "table": [
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "上一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "control": "下一项",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "control": "下一步主操作",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "control": "关闭详情",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "control": "复制编号",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "control": "关注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "control": "⋯",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "control": "保存内部备注",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1920,
+      "control": "确认关闭",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1920,
+      "control": "取消",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1440,
+      "control": "确认关闭",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1440,
+      "control": "取消",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1280,
+      "control": "确认关闭",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 1280,
+      "control": "取消",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 900,
+      "control": "确认关闭",
+      "hit": true,
+      "clear": true
+    },
+    {
+      "scenario": "dialog",
+      "width": 900,
+      "control": "取消",
+      "hit": true,
+      "clear": true
+    }
+  ],
+  "shadows": [
+    {
+      "scenario": "drawer",
+      "clip": {
+        "x": 984,
+        "y": 504,
+        "width": 464,
+        "height": 326,
+        "scale": 1
+      },
+      "pixels": 49813,
+      "lines": 788,
+      "strongest": 22.86,
+      "worst": {
+        "line": "column 224",
+        "share": 0.081
+      }
+    },
+    {
+      "scenario": "fullpage",
+      "clip": {
+        "x": 912,
+        "y": 512,
+        "width": 464,
+        "height": 326,
+        "scale": 1
+      },
+      "pixels": 49838,
+      "lines": 788,
+      "strongest": 20.6,
+      "worst": {
+        "line": "row 100",
+        "share": 0.018
+      }
+    },
+    {
+      "scenario": "dialog",
+      "clip": {
+        "x": 492,
+        "y": 433,
+        "width": 464,
+        "height": 326,
+        "scale": 1
+      },
+      "pixels": 49761,
+      "lines": 788,
+      "strongest": 18.06,
+      "worst": {
+        "line": "row 250",
+        "share": 0.018
+      }
+    }
+  ],
+  "passes": [
+    {
+      "scenario": "drawer",
+      "width": 1920,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "drawer",
+      "width": 1440,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "drawer",
+      "width": 1280,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "drawer",
+      "width": 900,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "drawer-short",
+      "width": 1440,
+      "height": 560,
+      "points": 7
+    },
+    {
+      "scenario": "drawer-shorter",
+      "width": 1440,
+      "height": 440,
+      "points": 4
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1920,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1440,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "fullpage",
+      "width": 1280,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "fullpage",
+      "width": 900,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "fullpage-short",
+      "width": 1440,
+      "height": 560,
+      "points": 7
+    },
+    {
+      "scenario": "fullpage-shorter",
+      "width": 1440,
+      "height": 440,
+      "points": 4
+    },
+    {
+      "scenario": "dialog",
+      "width": 1920,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "dialog",
+      "width": 1440,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "dialog",
+      "width": 1280,
+      "height": null,
+      "points": 7
+    },
+    {
+      "scenario": "dialog",
+      "width": 900,
+      "height": null,
+      "points": 7
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "toast-drawer-1440.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f7e13562ce63517705e3f3988e2a6cb68db9d6dc6d266a1d9e941b2502984699"
+    },
+    {
+      "file": "toast-drawer-900.png",
+      "width": 900,
+      "height": 820,
+      "sha256": "ea50bc4384579b0c1f3d7a3f4a400659ab55a245f1cc70a6695cd6beb5cfbd9b"
+    },
+    {
+      "file": "toast-fullpage-1280.png",
+      "width": 1280,
+      "height": 1000,
+      "sha256": "878b420d0c0b893834ae49f04246e5abb6875509f3deb502eb27537c4657a750"
+    },
+    {
+      "file": "toast-dialog-1440.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5d3fe9fa9b493e5bc69e783858a67359dd4c7a7cbdd2b0a31053e4c8b1829246"
+    }
+  ]
+}

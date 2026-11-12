@@ -6,7 +6,7 @@ import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
 
 // Card 32D-T: toast timing and the three-notice cap are one dependency-free policy module, loaded from its PC source.
 interface Item {id:string;visible:boolean;duration?:number;createdAt:number}
-interface Policy {AUTO_DISMISS_MS:number;MAX_VISIBLE_TOASTS:number;toastDuration:(kind:{unknown:boolean;loading:boolean;error:boolean;persistent:boolean})=>number;overflowToasts:(toasts:readonly Item[])=>Item[]}
+interface Policy {toastTone:(type:string,className?:string)=>string;toastHeading:(title:string|undefined,source:string)=>string|null;AUTO_DISMISS_MS:number;MAX_VISIBLE_TOASTS:number;toastDuration:(kind:{unknown:boolean;loading:boolean;error:boolean;persistent:boolean})=>number;overflowToasts:(toasts:readonly Item[])=>Item[]}
 async function policy():Promise<Policy>{
  const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??resolve(import.meta.dirname,'..');
  const source=await readFile(resolve(root,'app/pc-admin/src/app/toast-policy.ts'),'utf8');
@@ -44,3 +44,19 @@ test('Card 32D-T a notice that waits for the user is never pushed out, even when
  assert.deepEqual(p.overflowToasts([{id:'loading',visible:true,createdAt:1},...three(2)]).map(t=>t.id),['x2']);
 });
 function three(start:number):Item[]{return [0,1,2].map(n=>({id:'x'+(start+n),visible:true,duration:4000,createdAt:start+n}));}
+
+test('Card 33 tones: the toaster type and the unknown-outcome class select one of five tones',async()=>{
+ const p=await policy();
+ assert.equal(p.toastTone('success',''),'success');assert.equal(p.toastTone('blank',''),'info');assert.equal(p.toastTone('blank','is-warning'),'warning');
+ assert.equal(p.toastTone('error',''),'danger');assert.equal(p.toastTone('loading',''),'loading');
+ // The toaster type wins over the class: an error or in-progress notice is never shown as an unknown outcome.
+ assert.equal(p.toastTone('error','is-warning'),'danger');assert.equal(p.toastTone('loading','is-warning'),'loading');
+});
+
+test('Card 33 headings: an outcome title, else the purpose label, else none — and then the message is a single line',async()=>{
+ const p=await policy();
+ assert.equal(p.toastHeading('已恢复','closure-restore'),'已恢复');assert.equal(p.toastHeading(undefined,'item-follow'),'关注');
+ assert.equal(p.toastHeading(undefined,'closure-restore'),null);assert.equal(p.toastHeading('','closure-restore'),null);
+ // Never the generic 「操作提示」 fallback.
+ assert.notEqual(p.toastHeading(undefined,'unlabelled-source'),'操作提示');assert.equal(p.toastHeading(undefined,'unlabelled-source'),null);
+});

@@ -359,7 +359,8 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 | 圆角 | `--radius-xl` | 16 | 居中弹窗 |
 | 阴影 | `--shadow-1` | 极轻 + 1px 环 | 静态卡片 |
 | 阴影 | `--shadow-2` | 中 | 卡片悬停、分段控件选中块 |
-| 阴影 | `--shadow-3` | 浮层 | 下拉、菜单、日期、Toast |
+| 阴影 | `--shadow-3` | 浮层 | 下拉、菜单、日期 |
+| 阴影 | `--shadow-toast` | 浮层（1px 环 + 8/24 10%） | Toast（卡33） |
 | 阴影 | `--shadow-4` | 重 | 抽屉、弹窗 |
 | 控件高 | `--control-h-sm/md/lg` | 28 / 32 / 36 | 表格内、默认、弹窗底部主操作；触控设备自动 40 |
 | 图标 | `--icon-sm/md/lg` | 14 / 16 / 20 | 标签内 / 默认 / 页面标题；stroke 1.75 |
@@ -572,12 +573,28 @@ PageHeader 的原获权「新报修」primary 内附 `N` 提示；本卡只加�
 - **EmptyState**：居中；40px 线性图标（tertiary）→ 标题 14/600 → 说明 13 secondary（最大 32 字宽）→ 可选 secondary 按钮。同一区域只有一个空状态。
 - **Skeleton**：`--bg-muted` 块，圆角与真实元素一致，1.2s 微光；不用转圈替代整页。
 - **InlineAlert**：圆角 8、内边距 10 12、tone 底色 + 16px 图标 + 13 文字 + 可选链接动作。
-- **Toast**：默认在视口**右下角**（right 20 / bottom 20），宽 `min(420px, 100vw - 32px)`，`--shadow-3`，圆角 8，新的一条在最下方，向上堆叠。
+- **Toast**：默认在视口**右下角**（right 20 / bottom 20），宽 `min(400px, 100vw - 32px)`，`--shadow-toast`，圆角 12（`--radius-lg`），新的一条在最下方，向上堆叠，间距 `--space-3`。
+  - **结构（卡33）**：`.workbench-toast[data-tone]` = 左侧色块 `.workbench-toast-tone`（含图标）+ 文字区 `.workbench-toast-content` + 关闭按钮 `.workbench-toast-close`。卡片 `display:flex; align-items:stretch`，白底 `--bg-canvas`，`overflow:hidden` 让色块跟随圆角，最小高 64。
+  - **色块**：宽 52、与卡片同高；底色 `--tone-*-bg`；图标 20px、描边 1.75、颜色 `--tone-*-fg`，水平垂直居中。
+  - **文字区**：padding 12 4 12 14，垂直居中；标题 14/20 semibold `--text-primary`；说明 13/20 `--text-secondary`，与标题间距 2；长文本 `overflow-wrap:anywhere`。没有标题（既无结果标题也无用途名）时，消息本身作为单行标题，改用常规字重。
+  - **关闭按钮**：28×28，垂直居中，左距 4、右边距 10，`X` 16px，`--text-tertiary`；hover 底 `--bg-hover`、字 `--text-primary`；focus-visible 显示统一焦点环。进行中不渲染关闭按钮，右侧留 42 空位保持文字对齐。
+  - **视口**：高度上限为顶部控制栏（`data-toast-avoid="top"`）下沿 + 12 到底部输入区上沿 − 12 之间的空间（弹窗内 40dvh）；等待用户关闭的提示不计入 3 条上限，矮窗口或多条持久提示超出上限时栈内滚动，导航、关注、关闭详情等控件不被遮挡。滚动框四周带透明阴影边距（上 16、左右 24、下 32，覆盖 `--shadow-toast` 的 0 8px 24px 范围），用负偏移抵消，提示本身的位置与宽度不变；视口无背景 / 阴影 / 边框、不接收指针，未滚动时阴影完整绘制。滚动时视口上下裁剪到内容框（`data-toast-overflow` + `clip-path`，并设 `scroll-padding`），滚动中的提示不进入上下 12px 避让带（卡33 复审）。弹窗内视口同样适用，宽度规则不变。
+  - **窄屏（≤640px）**：色块宽 44、图标 18，其余不变。
+  - **语气映射**（只用现有 tone token）：
+
+    | 类型 | 判定 | 色块 / 图标颜色 | 图标（lucide） | 自动消失 |
+    |---|---|---|---|---|
+    | 成功 `success` | `type==='success'` | `--tone-success-bg` / `-fg` | `CircleCheck` | 4s |
+    | 信息 `info` | 默认 | `--tone-brand-bg` / `-fg` | `Info` | 4s |
+    | 结果未确认 `warning` | `className==='is-warning'` | `--tone-warning-bg` / `-fg` | `TriangleAlert` | 否 |
+    | 失败 `danger` | `type==='error'` | `--tone-danger-bg` / `-fg` | `CircleX` | 否 |
+    | 进行中 `loading` | `type==='loading'` | `--tone-neutral-bg` / `-fg` | `LoaderCircle`（旋转，减少动效时不转） | 否，无关闭按钮 |
+
   - **避让**：任何时候不得遮挡以下区域：
     - 详情工具栏：导航、复制编号、在场胶囊、关注、⋯、关闭详情；
     - 底部输入区：内部备注 / 回复框及其保存按钮；
     - 弹窗。
-  - **详情打开时**（抽屉或整页）：toast 停靠在**详情容器的右下角**，right = 容器右边 + 16，bottom = 底部输入区上沿再往上 12。宽度不超过容器宽度减 32。
+  - **详情打开时**（抽屉或整页）：toast 停靠在**详情容器的右下角**，right = 容器右边 + 16，bottom = 底部输入区上沿再往上 12。宽度取 `min(400px, 容器宽 − 32)`。
   - **弹窗内**：保持现有规则，在弹窗底部。
   - **窄屏（≤640px）**：底部通栏，左右各 12，同样位于输入区之上。
   - **时长**：成功与普通提示 4s；未知结果、进行中、错误**不自动消失**，必须手动关闭。

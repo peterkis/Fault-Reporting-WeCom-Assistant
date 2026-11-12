@@ -1,27 +1,36 @@
 /* Retained feedback layout contracts; visual primitives belong to the v2 components. */
 /* Card 32D: bottom-right of the window or of the open detail container, above its bottom input area (variables from ToastFeedback). */
 /* Card 32D: placement defaults; ToastFeedback overrides them inline from the visible host. */
-.workbench-toast-viewport {--toast-right:20px;--toast-bottom:20px;--toast-left:auto;--toast-width:min(420px,calc(100vw - 32px));--toast-max-height:calc(100dvh - 96px);position:fixed;inset:auto var(--toast-right) var(--toast-bottom) auto;z-index:var(--z-toast);display:flex;flex-direction:column;justify-content:safe flex-end;align-items:stretch;gap:var(--space-3);width:var(--toast-width);max-height:var(--toast-max-height);overflow-y:auto;padding:var(--space-1);pointer-events:none;overscroll-behavior:contain}
-.workbench-toast {display:grid;grid-template-columns:20px minmax(0,1fr) 24px;align-items:start;gap:var(--space-3);padding:var(--space-4) var(--space-3) var(--space-4) var(--space-4);background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-3);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/1.5 var(--font-sans);animation:workbench-toast-enter var(--dur-base) ease-out}
+/* Card 33: the stack stays within --toast-max-height (below the top bar, above the bottom area) and scrolls when it is taller. The scroll box is grown by a transparent gutter that covers the shadow's reach (0 8px 24px: 16 above, 24 at the sides, 32 below), so a notice's shadow is clipped only while it is scrolled to the edge; the viewport has no background, border or shadow and passes the pointer through. */
+.workbench-toast-viewport {--toast-right:20px;--toast-bottom:20px;--toast-left:auto;--toast-width:min(400px,calc(100vw - 32px));--toast-max-height:calc(100dvh - 96px);--toast-gutter-top:16px;--toast-gutter-x:24px;--toast-gutter-bottom:32px;position:fixed;inset:auto calc(var(--toast-right) - var(--toast-gutter-x)) calc(var(--toast-bottom) - var(--toast-gutter-bottom)) auto;z-index:var(--z-toast);display:flex;flex-direction:column;justify-content:safe flex-end;align-items:stretch;gap:var(--space-3);width:calc(var(--toast-width) + 2 * var(--toast-gutter-x));max-height:calc(var(--toast-max-height) + var(--toast-gutter-top) + var(--toast-gutter-bottom));overflow-y:auto;overscroll-behavior:contain;padding:var(--toast-gutter-top) var(--toast-gutter-x) var(--toast-gutter-bottom);scroll-padding:var(--toast-gutter-top) 0 var(--toast-gutter-bottom);pointer-events:none}
+/* Card 33 review: a scrolling stack is clipped (paint and hit testing) to its content box above and below, so a scrolled notice stays within the top-bar and bottom-area limits; scroll-padding brings focused notices into that box. */
+.workbench-toast-viewport[data-toast-overflow=true] {clip-path:inset(var(--toast-gutter-top) 0 var(--toast-gutter-bottom) 0)}
+/* Card 33: colour block | title and description | close button. data-tone drives the colours. A notice never shrinks below its content in a height-limited stack; the stack scrolls instead. */
+.workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;display:flex;flex:none;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) ease-out}
+.workbench-toast[data-tone=success] {--toast-tone-bg:var(--tone-success-bg);--toast-tone-fg:var(--tone-success-fg)}
+.workbench-toast[data-tone=warning] {--toast-tone-bg:var(--tone-warning-bg);--toast-tone-fg:var(--tone-warning-fg)}
+.workbench-toast[data-tone=danger] {--toast-tone-bg:var(--tone-danger-bg);--toast-tone-fg:var(--tone-danger-fg)}
+.workbench-toast[data-tone=loading] {--toast-tone-bg:var(--tone-neutral-bg);--toast-tone-fg:var(--tone-neutral-fg)}
 .workbench-toast[data-visible=false] {opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease-out}
-.workbench-toast .workbench-toast-content {display:flex;flex-direction:column;gap:var(--space-0-5);min-width:0;max-width:none;margin:0;padding:0;color:inherit;text-align:left;font-size:var(--fs-md);font-weight:var(--fw-regular);line-height:1.5;overflow-wrap:anywhere}
-.workbench-toast-purpose {font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--text-secondary)}
-.workbench-toast-icon {display:flex;align-items:center;justify-content:center;margin-top:var(--space-0-5);color:var(--brand)}
-.workbench-toast.success .workbench-toast-icon {color:var(--tone-success-fg)}
-.workbench-toast.error .workbench-toast-icon {color:var(--text-danger)}
-.workbench-toast.is-warning .workbench-toast-icon {color:var(--tone-attention-fg)}
-.workbench-toast.loading .workbench-toast-icon svg {animation:detail-loader-spin var(--dur-slow) linear infinite}
-.workbench-toast .workbench-toast-close {display:grid;place-items:center;width:24px;height:24px;min-height:24px;padding:var(--space-1);border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);cursor:pointer;box-shadow:none}
-.workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
-.workbench-toast.loading .workbench-toast-close {visibility:hidden}
+.workbench-toast-tone {display:grid;place-items:center;flex:none;align-self:stretch;width:var(--toast-tone-width);background:var(--toast-tone-bg);color:var(--toast-tone-fg)}
+.workbench-toast-icon {display:grid;place-items:center}
+.workbench-toast-icon svg {width:20px;height:20px}
+.workbench-toast[data-tone=loading] .workbench-toast-icon svg {animation:detail-loader-spin var(--dur-slow) linear infinite}
+.workbench-toast .workbench-toast-content {display:flex;flex:1;flex-direction:column;justify-content:center;gap:var(--space-0-5);min-width:0;max-width:none;margin:0;padding:var(--space-3) var(--space-1) var(--space-3) 14px;color:var(--text-secondary);text-align:left;font-size:var(--fs-sm);font-weight:var(--fw-regular);line-height:var(--lh-sm);overflow-wrap:anywhere}
+.workbench-toast-purpose {font-size:var(--fs-md);font-weight:var(--fw-semibold);line-height:var(--lh-sm);color:var(--text-primary)}
+.workbench-toast .workbench-toast-content.is-single .workbench-toast-purpose {font-weight:var(--fw-regular)}
+.workbench-toast .workbench-toast-close {display:grid;place-items:center;flex:none;align-self:center;width:28px;height:28px;min-width:28px;min-height:28px;margin:0 10px 0 var(--space-1);padding:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-tertiary);cursor:pointer;box-shadow:none}
+.workbench-toast .workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
+.workbench-toast-close-space {flex:none;width:42px}
 .workbench-draft-status {display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;color:var(--text-secondary);flex:none}
-.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:20px;bottom:20px;width:min(420px,calc(100% - 40px));max-height:40dvh}
+.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:calc(20px - var(--toast-gutter-x));bottom:calc(20px - var(--toast-gutter-bottom));width:calc(min(400px,100% - 40px) + 2 * var(--toast-gutter-x));max-height:calc(40dvh + var(--toast-gutter-top) + var(--toast-gutter-bottom))}
 @keyframes workbench-toast-enter {
 from{opacity:.65;translate:0 6px}
 to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){
 .workbench-toast{animation:none}
-.workbench-toast.loading .workbench-toast-icon svg{animation:none}}
+.workbench-toast[data-tone=loading] .workbench-toast-icon svg{animation:none}}
 @media(max-width:640px){
-.workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto var(--toast-right) var(--toast-bottom) var(--toast-left);width:auto;padding:0}
-.workbench-toast{padding:var(--space-3) var(--space-3) var(--space-3) var(--space-3);gap:var(--space-2)}}
+.workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto calc(var(--toast-right) - var(--toast-gutter-x)) calc(var(--toast-bottom) - var(--toast-gutter-bottom)) calc(var(--toast-left) - var(--toast-gutter-x));width:auto}
+.workbench-toast{--toast-tone-width:44px}
+.workbench-toast-icon svg{width:18px;height:18px}}
