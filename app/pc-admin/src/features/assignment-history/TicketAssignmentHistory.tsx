@@ -1,33 +1,44 @@
-import {BeijingTime} from '../../design/components/Timeline/BeijingTime';
-import {Button as HButton} from '../../design/components/Button/Button';
-import {useEffect} from 'react';
+import {useEffect,useMemo} from 'react';
 import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage} from '../../api/client';
+import {api,ApiError} from '../../api/client';
 import type {Principal} from '../../api/client';
-import type {P2016AssignmentHistoryName} from '../../../../../contracts/p2_016_assignment_history_contracts';
+import type {P2016AssignmentHistoryItem,P2016AssignmentHistoryName} from '../../../../../contracts/p2_016_assignment_history_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 const label=(name:P2016AssignmentHistoryName)=>name.state==='KNOWN'?name.name:name.state==='NONE'?'无人':'记录不足';
-export function TicketAssignmentHistory({ticketId,principal}:{ticketId:string;principal:Principal}){
+
+/**
+ * Card 34B: the take-over and hand-over chain is no longer a card of its own. Its facts enrich the matching events of the
+ * 「处理记录」 timeline (same ticket event id), so a take-over reads 「陈悦 接单」 and a hand-over 「陈悦 转交给 周宁」. The chain is read
+ * oldest first in keyset pages of 20 while the timeline is newest first, so its pages are read in the background up to the same
+ * bound as before (ten pages, 200 facts); none is dropped, and an event beyond that bound stays a plain event row.
+ */
+const MAX_PAGES=10;
+export function useAssignmentHistory(ticketId:string,principal:Principal,enabled:boolean){
  const client=useQueryClient(),key=['ticket-assignment-history',principal.principal_id,ticketId,principal.authorization_revision??[...principal.roles].sort().join('|'),principal.expires_epoch_ms] as const;
- const query=useInfiniteQuery({queryKey:key,initialPageParam:null as string|null,queryFn:({signal,pageParam})=>api.assignmentHistory(ticketId,pageParam,signal),getNextPageParam:page=>page.next_cursor??undefined,maxPages:10,gcTime:0});
- useEffect(()=>{if(query.error instanceof ApiError&&[401,403,404].includes(query.error.status)){
-  if(query.error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearTicketAuthorization(client,principal.principal_id,ticketId,query.error);
- }},[client,principal.principal_id,ticketId,query.error]);
- const items=query.isError?[]:query.data?.pages.flatMap(page=>page.items)??[],unknown=query.data?.pages[0]?.initial_basis==='UNKNOWN';
- const reload=async()=>{try{const fresh=await client.fetchQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),staleTime:0});if(fresh.principal_id!==principal.principal_id||!fresh.assignment_history_enabled)return;await client.resetQueries({queryKey:key,exact:true});}catch(error){if(error instanceof ApiError&&[401,403].includes(error.status))void clearSessionAuthorization(client,principal.principal_id,error.status as 401|403,'revoked');}};
- return <section className="attachment-section ticket-assignment-history" role="region" aria-label="接单与交接链">
-  <h3>接单与交接链</h3>
-  <p>已加载 {items.length} 条责任记录，仅为当前已读取范围；最多保留 200 条。沟通交接仅显示当前可读取的实际变化。</p>
-  {query.isPending?<p role="status">正在读取接单与交接记录…</p>:query.isError?<p role="status">{errorMessage(query.error)} 请重新读取当前获权记录。</p>:<>
-   {unknown?<p>初始责任记录不足，无法确认完整起点。</p>:null}
-   {!items.length?<p>当前没有可读取的责任记录。</p>:<ul>{items.map(row=><li data-assignment-history-row key={row.ticket_event_id}><span>
-    <strong>{row.kind==='FIRST_RESPONSIBILITY'?'首次接单':'责任变化'}</strong>
-    <small>{label(row.previous.person)}（{row.previous.team.state==='NONE'?'无组':label(row.previous.team)}） → {label(row.next.person)}（{row.next.team.state==='NONE'?'无组':label(row.next.team)}）</small>
-    <small>操作者 {label(row.actor)} · <BeijingTime value={row.occurred_at}/> · {row.handling_cycle.state==='KNOWN'?'处理轮次 '+row.handling_cycle.cycle_no:'轮次记录不足'}</small>
-    {row.communication.length?<ul aria-label="实际沟通交接">{row.communication.map(control=><li key={control.control_event_id}><span><small>沟通交接：{label(control.previous)} → {label(control.next)}</small><small>操作者 {label(control.actor)} · <BeijingTime value={control.occurred_at}/></small></span></li>)}</ul>:<small>当前获权范围没有可返回的沟通交接记录。</small>}
-   </span></li>)}</ul>}
-  </>}
-  {query.hasNextPage&&!query.isError?<HButton type="button" isDisabled={query.isFetchingNextPage} onClick={()=>{void query.fetchNextPage({cancelRefetch:false});}} tone="secondary">加载后续记录</HButton>:null}
-  <HButton type="button" isDisabled={query.isPending} onClick={()=>{void reload();}} tone="secondary">重新读取接单链</HButton>
- </section>;
+ // Only this read's own denial clears the ticket's authorization: it is handled where the response arrives. Clearing writes the
+ // same error into every query of the ticket, this one included; reacting to that copied error would clear again and cancel the
+ // detail's next read in a loop.
+ const query=useInfiniteQuery({queryKey:key,initialPageParam:null as string|null,queryFn:async({signal,pageParam})=>{
+  try{return await api.assignmentHistory(ticketId,pageParam,signal);}
+  catch(error){if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearTicketAuthorization(client,principal.principal_id,ticketId,error);}throw error;}
+ },getNextPageParam:page=>page.next_cursor??undefined,gcTime:0,enabled,
+  // A denied read is final for this authorization; retrying it would clear the ticket's authorization again and again.
+  retry:(count,error)=>!(error instanceof ApiError&&[401,403,404].includes(error.status))&&count<3});
+ const pages=query.data?.pages.length??0,{hasNextPage,isFetching,isError,fetchNextPage}=query;
+ useEffect(()=>{if(enabled&&hasNextPage&&!isFetching&&!isError&&pages<MAX_PAGES)void fetchNextPage({cancelRefetch:false});},[enabled,hasNextPage,isFetching,isError,pages,fetchNextPage]);
+ const byEvent=useMemo(()=>new Map((query.isError?[]:query.data?.pages.flatMap(page=>page.items)??[]).map(item=>[item.ticket_event_id,item] as const)),[query.data,query.isError]);
+ return {byEvent,failed:enabled&&query.isError,retry:()=>{void query.refetch();}};
+}
+
+/** The action of a take-over or hand-over event: 「接单」, 「接手」, 「转交给 周宁」 or 「撤销派工」. */
+export function assignmentAction(item:P2016AssignmentHistoryItem):string{
+ if(item.kind==='FIRST_RESPONSIBILITY')return '接单';
+ if(item.next.person.state==='NONE')return '撤销派工';
+ // A colleague who takes the ticket over is the actor and the new handler at once.
+ return item.actor.state==='KNOWN'&&item.next.person.state==='KNOWN'&&item.actor.name===item.next.person.name?'接手':'转交给 '+label(item.next.person);
+}
+
+/** The hand-overs of conversations that came with the event, as plain secondary lines of the same row. */
+export function AssignmentCommunication({item}:{item:P2016AssignmentHistoryItem}){
+ return item.communication.length?<span className="record-assignment-communication" aria-label="沟通交接">{item.communication.map(control=><span key={control.control_event_id}>沟通交接：{label(control.previous)} → {label(control.next)}</span>)}</span>:null;
 }
