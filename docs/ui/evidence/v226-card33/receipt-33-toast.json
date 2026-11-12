@@ -13,7 +13,7 @@
       "toneWidth": 52,
       "iconSize": 20,
       "iconDx": 0,
-      "iconDy": 0,
+      "iconDy": 0.000030517578125,
       "closeDy": null,
       "close": false,
       "space": true,
@@ -128,7 +128,7 @@
       "file": "toast-narrow-600.png",
       "width": 600,
       "height": 900,
-      "sha256": "f091fc3ee1503d0c6f5ead04b816087e9eefc05c5dd45e3e7d05aa3908557ec0"
+      "sha256": "bed22999fbb3699964e2a3bf7853e8d06afb88a43f5c70d68c21503c6160711f"
     },
     {
       "file": "toast-tones-1440.png",

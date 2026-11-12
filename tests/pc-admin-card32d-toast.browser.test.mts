@@ -59,6 +59,26 @@ function assertAnatomy(items:Anatomy[],label:string,iconSize=20,toneWidth=52){
   else{assert.equal(item.close,true,where+': has a close button');assert.ok(item.closeDy!==null&&item.closeDy<=0.5,where+': the close button is vertically centred '+item.closeDy);}
  }
 }
+/**
+ * Card 33 review: the scroll box's transparent gutter and the gaps between notices pass the pointer through. Points beside each
+ * notice (12px left, in the side gutter), midway in every gap between two notices, 8px above the first and 16px below the last are
+ * taken where they lie inside the viewport box (a stack scrolled in a short window leaves some outside); at each the hit target must lie outside the viewport and be the same element that
+ * is hit with the viewport hidden.
+ */
+const passThrough=`(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()),box=v.getBoundingClientRect();
+ const items=[...v.querySelectorAll('.workbench-toast[data-visible=true]')].map(n=>n.getBoundingClientRect()).sort((a,b)=>a.top-b.top),points=[];
+ for(const r of items)points.push({where:'side',x:r.left-12,y:r.top+r.height/2});
+ for(let i=1;i<items.length;i++)points.push({where:'gap',x:items[i].left+items[i].width/2,y:(items[i-1].bottom+items[i].top)/2});
+ if(items.length){const first=items[0],last=items[items.length-1];points.push({where:'above',x:first.left+first.width/2,y:first.top-8},{where:'below',x:last.left+last.width/2,y:last.bottom+16});}
+ const inside=points.filter(p=>p.x>=Math.max(box.left,0)&&p.x<Math.min(box.right,innerWidth)&&p.y>=Math.max(box.top,0)&&p.y<Math.min(box.bottom,innerHeight));
+ const shown=inside.map(p=>document.elementFromPoint(p.x,p.y));v.style.visibility='hidden';const hidden=inside.map(p=>document.elementFromPoint(p.x,p.y));v.style.visibility='';
+ return {toasts:items.length,points:inside.map((p,i)=>({where:p.where,x:Math.round(p.x),y:Math.round(p.y),blocked:Boolean(shown[i]&&v.contains(shown[i])),same:shown[i]!==null&&shown[i]===hidden[i]}))};})()`;
+function assertPassThrough(result:{toasts:number;points:{where:string;blocked:boolean;same:boolean}[]},label:string){
+ // A notice scrolled out of the box has no point inside it, so only presence is required: a side-gutter point, and a gap point
+ // whenever two notices are shown.
+ assert.ok(result.points.some(p=>p.where==='side')&&(result.toasts<2||result.points.some(p=>p.where==='gap')),label+': gutter and gap points inside the viewport '+JSON.stringify(result));
+ for(const point of result.points)assert.ok(!point.blocked&&point.same,label+': the '+point.where+' point passes the pointer through to the control below '+JSON.stringify(point));
+}
 function assertViewports(styles:Record<string,string>[],label:string){
  assert.ok(styles.length>=1,label+': a visible viewport');
  // The stack scrolls when it is taller than its limit; the scroll box keeps a transparent gutter covering the shadow's reach
@@ -113,7 +133,7 @@ const intersects=(a:Rect,b:Rect)=>a.x<b.x+b.width&&b.x<a.x+a.width&&a.y<b.y+b.he
 
 test('Card 32D-T toasts stay clear of detail controls in the drawer, the full page and the closing dialog at four widths',{timeout:600000},()=>withT43Fixture(async f=>{
  const directory=process.env.CARD32D_EVIDENCE_DIR??join(tmpdir(),'card32d-'+randomUUID());await mkdir(directory,{recursive:true});
- const screenshots:{file:string;width:number;height:number;sha256:string}[]=[],table:{scenario:string;width:number;control:string;hit:boolean;clear:boolean}[]=[],shadows:Record<string,unknown>[]=[];
+ const screenshots:{file:string;width:number;height:number;sha256:string}[]=[],table:{scenario:string;width:number;control:string;hit:boolean;clear:boolean}[]=[],shadows:Record<string,unknown>[]=[],passes:{scenario:string;width:number;height:number|null;points:number}[]=[];
  const active=await start(f,await f.manualReport('卡32D 合成：打印机无法打印（合成）')),id=text(active.id);
  // A separate ticket for the dialog, so no draft or pending check from the other scenarios applies to it.
  const dialogTicket=await start(f,await f.manualReport('卡32D 合成：扫码枪无响应（合成）')),dialogId=text(dialogTicket.id);
@@ -146,6 +166,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await size(width,height);await waitForAnimationsSettled(b);await success();await waitForAnimationsSettled(b,'.workbench-toast');
    const found=await b.evaluate(controls(names)) as (Control&{missing?:boolean})[],toasts=await b.evaluate(toastRects) as (Rect&{kind:string;text:string})[];
    assertAnatomy(await b.evaluate(anatomy()) as Anatomy[],scenario+' '+width,width<=640?18:20,width<=640?44:52);assertViewports(await b.evaluate(viewportStyle) as Record<string,string>[],scenario+' '+width);
+   const through=await b.evaluate(passThrough) as Parameters<typeof assertPassThrough>[0];assertPassThrough(through,scenario+' '+width+(height?'×'+height:''));passes.push({scenario,width,height:height??null,points:through.points.length});
    // A stack taller than its limit scrolls inside the viewport; only the part inside the viewport can cover a control.
    const stack=await b.evaluate("(()=>{const r=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()") as Rect;
    const visible=toasts.map(item=>{const x=Math.max(item.x,stack.x),y=Math.max(item.y,stack.y);return {...item,x,y,width:Math.max(0,Math.min(item.x+item.width,stack.x+stack.width)-x),height:Math.max(0,Math.min(item.y+item.height,stack.y+stack.height)-y)};});
@@ -213,7 +234,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   await b.waitFor(`${kindCount('error')}===0`);
  }catch(caught){error=caught;}
  finally{
-  await writeFile(join(directory,'receipt-32d-toast.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,table,shadows,screenshots},null,2));
+  await writeFile(join(directory,'receipt-32d-toast.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,table,shadows,passes,screenshots},null,2));
   await close(browser,error);
  }
 }));
