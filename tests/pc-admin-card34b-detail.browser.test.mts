@@ -27,7 +27,15 @@ test('Card 34B detail drawer: chain in the timeline, no empty unassign block, co
   await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
   await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id});
-  await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelectorAll('.activity-list [data-assignment-history-row]').length===2");await waitForAnimationsSettled(b);
+  await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelectorAll('.activity-list [data-assignment-history-row]').length===2");
+  // Opening an in-progress ticket that offers neither 撤销派工 nor 退回 raises no toast for them: no 「已停止展示」 and no draft
+  // 「已过期」. Watch for three seconds, past the draft hooks' own authority reads, and match on the toast source, not its wording.
+  const stray=await b.evaluate(`new Promise(resolve=>{const seen=new Set(),selector='[data-toast-source=ticket-unassign],[data-toast-source=ticket-return-to-dispatch],[data-toast-source=draft]';
+   const collect=()=>{for(const node of document.querySelectorAll(selector))seen.add(node.dataset.toastSource+'|'+node.textContent.replace(/\\s+/g,' ').trim());};
+   collect();const observer=new MutationObserver(collect);observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+   setTimeout(()=>{observer.disconnect();collect();resolve([...seen]);},3000);})`) as string[];
+  assert.deepEqual(stray,[],'no unassign, return or draft toast when the ticket is only opened '+JSON.stringify(stray));
+  await waitForAnimationsSettled(b);
   const rows=text(await b.evaluate("[...document.querySelectorAll('.activity-list [data-assignment-history-row]')].map(row=>row.dataset.assignmentHistoryRow+'|'+row.innerText.replace(/\\s+/g,' ')).join('\\n')"));
   assert.match(rows,/^FIRST_RESPONSIBILITY\|.* 接单/mu,'the take-over is a timeline row 「… 接单」');
   assert.match(rows,/^RESPONSIBILITY_CHANGE\|.* 转交给 \S/mu,'the hand-over is a timeline row 「… 转交给 …」');
