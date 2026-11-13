@@ -166,7 +166,7 @@ export function BoardActionNotice({intent,selector,currentColumn,onCancel}:{inte
   const currentTarget=currentColumn===intent.target_column;
   return <section ref={container} className="board-action-notice" data-board-intent-panel>
     <h3>{currentTarget?'官方已显示：'+boardColumnNames[intent.target_column]:'移至'+boardColumnNames[intent.target_column]+'：请完成合法表单'}</h3>
-    <p>{currentTarget?'事项已在这一列。上次拖动的结果仍需确认，点击「核对结果」。':'拖动本身不提交操作。取消此入口会保留本页输入；结果未知或冲突时，沿原操作核对并以官方查询显示真实位置。'}</p>
+    <p>{currentTarget?'事项已在这一列（可能由同事完成）。这不代表你的操作已提交；如果你提交过，请以下方表单中的结果为准。':'拖动本身不提交操作。取消此入口会保留本页输入；结果未知或冲突时，沿原操作核对并以官方查询显示真实位置。'}</p>
     <HButton type="button" data-action="focus-board-action-form" onClick={()=>{const root=container.current?.closest('.detail-dialog,.detail-page'),form=root?.querySelector<HTMLElement>(selector);if(form){form.tabIndex=-1;form.scrollIntoView({block:'nearest',behavior:'auto'});form.focus({preventScroll:true});}}} tone="secondary">{currentTarget?'查看原操作与回执':'继续填写原表单'}</HButton>
     <HButton type="button" data-action="cancel-board-move" onClick={onCancel} tone="secondary">取消移动，保留本页输入</HButton>
   </section>;

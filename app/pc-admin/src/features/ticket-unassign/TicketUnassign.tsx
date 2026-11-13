@@ -20,6 +20,7 @@ import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/auth
 import {EMPTY_UNASSIGN,createUnassignCommand,hasUnassignInput,isUnassignChoiceRevocation,readUnassignChoices,unassignInputSnapshot,useUnassignDraft} from './use-unassign-draft';
 import type {UnassignCopy,UnassignFence,UnassignInput} from './use-unassign-draft';
 import {shortCode} from '../../app/short-code';
+import {useFullNumbers} from '../../app/FullNumbers';
 
 type State='idle'|'preparing'|'submitting'|'checking'|'unknown'|'conflict'|'failed'|'denied'|'committed';
 interface Job extends UnassignFence {controller:AbortController;generation:number;mode:'command'|'ack'|'review'|'privacy'}
@@ -30,6 +31,7 @@ const boundedVersion=(value:string)=>/^[1-9][0-9]{0,18}$/u.test(value)&&BigInt(v
 
 export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=null}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void;/** Card 34B: the detail's ⋯ menu slot before 「关闭事项…」. */menuTarget?:HTMLElement|null}){
   const client=useQueryClient(),generation=useRef(0),request=useRef<Job|null>(null);
+  const fullNumbers=useFullNumbers();
   const [value,setValue]=useState<UnassignInput>(EMPTY_UNASSIGN),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<P2016UnassignCommand|null>(null),pendingRef=useRef(pending);pendingRef.current=pending;
   const pendingSnapshot=useRef<string|null>(null),[opaque,setOpaque]=useState<string|null>(null),opaqueRef=useRef(opaque);opaqueRef.current=opaque;
@@ -267,16 +269,16 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
         {targets.isError||related.isError?<p role="alert">{errorMessage(targets.error??related.error)} 当前选择保留，读取成功后重新核对。</p>:null}
         <WorkbenchSelect label={<>沟通同事</>} value={displayTarget} isDisabled={blocked||targets.isPending||targets.isError} onChange={event=>update({target:event||null})}><ListBox.Item id="" textValue={"请选择沟通同事"}>请选择沟通同事<ListBox.ItemIndicator/></ListBox.Item>{value.target&&!targets.data?.items.some(row=>sameId(row.principal_id,value.target))?<ListBox.Item id={value.target} textValue={"原选择需重新确认"}>原选择需重新确认<ListBox.ItemIndicator/></ListBox.Item>:null}{targets.data?.items.map(row=><ListBox.Item key={row.principal_id} id={row.principal_id} textValue={String(row.display_name)}>{row.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
         <p>本次已选 {value.sessions.length} 个会话，最多 8 个。目标列表展示最多 100 人；原选择提交时确认。</p>
-        <ul className="conversation-choices">{related.data?.items.map(row=>{
+        {fullNumbers.toggle}<ul className="conversation-choices">{related.data?.items.map(row=>{
           seenSessions.current.set(row.session_id,row.conversation_principal_name??'尚未分配沟通人');
           const chosen=value.sessions.find(item=>sameId(item.session_id,row.session_id)),permitted=row.take_allowed&&boundedVersion(row.session_row_version);
-          return <li key={row.session_id} title={'会话编号 '+row.session_id}><HCheckbox data-session-choice={row.session_id} data-session-row-version={row.session_row_version} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>会话尾号 {shortCode(row.session_id,[...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()])} · {row.conversation_principal_name??'尚未分配沟通人'}<span className="sr-only">，会话编号 {row.session_id}</span><small>{!permitted?'当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
+          return <li key={row.session_id} title={'会话编号 '+row.session_id}><HCheckbox data-session-choice={row.session_id} data-session-row-version={row.session_row_version} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>会话尾号 {shortCode(row.session_id,[...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()])} · {row.conversation_principal_name??'尚未分配沟通人'}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:<span className="sr-only">，会话编号 {row.session_id}</span>}<small>{!permitted?'当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
         })}</ul>
         {value.sessions.length?<ul>{value.sessions.map(row=>{const label=(()=>{const item=related.data?.items.find(candidate=>sameId(candidate.session_id,row.session_id));// Codex review: a selection on another page keeps a stable, visible name (the session's last four characters, and its
           // colleague when that page was seen), so two of them can be told apart without hovering.
           const seen=seenSessions.current.get(row.session_id);
           const code=shortCode(row.session_id,[...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()]);
-          return item?'已选：会话尾号 '+code+' · '+(item.conversation_principal_name??'尚未分配沟通人'):'已选：会话尾号 '+code+'（不在当前列表）'+(seen?' · '+seen:'');})();return <li key={row.session_id} title={'会话编号 '+row.session_id}>{label}<HButton type="button" aria-label={'取消选择：'+label} isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>;})}</ul>:null}
+          return item?'已选：会话尾号 '+code+' · '+(item.conversation_principal_name??'尚未分配沟通人'):'已选：会话尾号 '+code+'（不在当前列表）'+(seen?' · '+seen:'');})();return <li key={row.session_id} title={'会话编号 '+row.session_id}>{label}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:null}<HButton type="button" aria-label={'取消选择：'+label} isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>;})}</ul>:null}
         {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}
         {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} tone="secondary">下一批关联会话</HButton>:null}
       </>:null}

@@ -47,3 +47,6 @@ to{opacity:1;translate:0 0}}
 .workbench-toast-viewport{--toast-right:12px;--toast-bottom:12px;--toast-left:12px;inset:auto calc(var(--toast-right) - var(--toast-gutter-x)) calc(var(--toast-bottom) - var(--toast-gutter-bottom)) calc(var(--toast-left) - var(--toast-gutter-x));width:auto}
 .workbench-toast{--toast-tone-width:44px}
 .workbench-toast-icon svg{width:18px;height:18px}}
+/* Codex review (card 34C): the saved-draft limit opens from a small info button beside 「草稿已保存」 (keyboard and touch). */
+.workbench-draft-limit-toggle {display:inline-grid;place-items:center;width:20px;height:20px;min-width:20px;min-height:20px;margin:0 0 0 var(--space-1);padding:0;color:var(--text-tertiary);vertical-align:middle}
+.workbench-draft-limit {margin-left:var(--space-1);color:var(--text-tertiary);font-size:var(--fs-xs)}

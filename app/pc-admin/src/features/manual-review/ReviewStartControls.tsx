@@ -47,7 +47,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{cleaned=await draft.success(commandId);current();}finally{settling.current=false;}
     if(!mounted.current||generation.current!==token)return;
     onRefresh();setCleanupBlocked(!cleaned);
-    if(!cleaned){setOpaque(commandId);setState('unknown');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}
+    if(!cleaned){setOpaque(commandId);setState('unknown');setMessage('已提交；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}
     setPending(null);setOpaque(null);setTouched(false);setState('succeeded');setMessage('已确认故障并开始处理；原工单与实际沟通责任已在一次操作中记录。');onStarted();
   }
   async function send(command:ReviewResolveAndStartCommand){
@@ -77,7 +77,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{const receipt=await reviewStartApi.receipt(reviewId,originalId,controller.signal);current();if(!mounted.current||generation.current!==token)return;
       if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知；无终态回执不代表没有提交。不会自动发送。');return;}
       if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');await finish(originalId,current,token);return;}
-      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}}finally{settling.current=false;}}
+      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('上次操作没有成功；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}}finally{settling.current=false;}}
       current();if(!mounted.current||generation.current!==token)return;setOpaque(null);setCleanupBlocked(false);setState('failed');setMessage('已只读确认原操作失败；原完整意图保留，新的意图须明确采用工单信息。');onRefresh();
     }catch(error){if(!mounted.current||generation.current!==token||controller.signal.aborted)return;try{current();}catch{return;}
       if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else{setState('unknown');setMessage('只读核对未完成，原操作身份保留，没有发送新操作。');}

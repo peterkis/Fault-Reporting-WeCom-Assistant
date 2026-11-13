@@ -57,5 +57,5 @@ export function useManualSelfHandlingDraft({principal,value,team,pending,onResto
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{epoch.current++;request.current?.abort();},[]);
   return {...draft,revoke,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable,safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,
-    message:unavailable?'草稿暂未恢复：内容仍保存在本机，重新打开详情后会自动找回。':restoring?'正在核对原输入及本人当前处理组…':draft.message};
+    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存。请先保留此页面，稍后重新打开详情或刷新页面再试。':restoring?'正在核对原输入及本人当前处理组…':draft.message};
 }

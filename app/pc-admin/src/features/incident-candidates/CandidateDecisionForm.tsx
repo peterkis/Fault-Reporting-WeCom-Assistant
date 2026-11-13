@@ -65,7 +65,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       if(result.state==='UNKNOWN'){setCheckedUnknown(true);setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
       setCheckedUnknown(false);let cleaned=true;if(result.state==='COMMITTED')cleaned=await draft.success(variables.commandId,true);else try{await draft.knownFailure(variables.commandId);}catch{cleaned=false;}
       setPending(null);setReviewRequired(true);refresh();
-      if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}
+      if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'已提交；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));}
     },onError:(_error,variables)=>{if(variables.signal.aborted)return;setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='__NO_TEAM__'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));

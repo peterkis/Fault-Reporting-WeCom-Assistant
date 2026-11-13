@@ -128,7 +128,11 @@ for(const temporary of [false,true])test(temporary
     // Codex review: without the session number in the text, each choice still names itself 「会话尾号 XXXXXX · 沟通人」 (a stable suffix of its number) and keeps the
     // session number in its hover title, so two choices with the same colleague stay distinguishable.
     const choice=await browser.evaluate(`(row=>({text:row?.innerText.replace(/\\s+/g,' ')??'',title:row?.title??''}))(document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li'))`) as {text:string;title:string};
-    assert.match(choice.text,/^会话尾号 [0-9A-F]{8,} · \S/u,'the choice names its stable session code and colleague '+JSON.stringify(choice));assert.ok(sessionId.replaceAll('-','').toUpperCase().endsWith(/^会话尾号 ([0-9A-F]+)/u.exec(choice.text)?.[1]??'#'),'the code is the session number\'s own suffix '+JSON.stringify(choice));assert.equal(choice.title,'会话编号 '+sessionId);
+    assert.match(choice.text,/^会话尾号 [0-9A-F]{8,} · \S/u,'the choice names its stable session code and colleague '+JSON.stringify(choice));assert.ok(sessionId.replaceAll('-','').toUpperCase().endsWith(/^会话尾号 ([0-9A-F]+)/u.exec(choice.text)?.[1]??'#'),'the code is the session number\'s own suffix '+JSON.stringify(choice));
+    // Codex review: keyboard and touch users can show the full session number without hovering.
+    await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').closest('ul').previousElementSibling.click()`);
+    assert.equal(await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').closest('ul').previousElementSibling.dataset.action`),'toggle-full-numbers');
+    await browser.waitFor(`document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li')?.querySelector('.full-number')?.innerText.includes(${JSON.stringify(sessionId)})`);assert.equal(choice.title,'会话编号 '+sessionId);
     await browser.evaluate("document.querySelector('[data-action=unassign]').click()");await browser.waitFor(queuedDom);
     const posts=requests.filter(row=>row.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);assert.equal(post.path,path+'/unassign');assert.equal(post.status,200);
     const body=object(post.body),commandId=text(body.client_command_id);assert.match(commandId,UUID);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"2"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);

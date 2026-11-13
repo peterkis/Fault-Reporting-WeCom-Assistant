@@ -47,7 +47,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(unavailable(error)||error instanceof DraftError&&['DRAFT_IDENTITY_CHANGED','DRAFT_ACTION_REVOKED'].includes(error.message)){revoke(error);return;}
   setNeedsRead(true);
   if(originalId)setState(known.current?'committed':'unknown');
-  setMessage(originalId?'草稿暂未恢复：内容仍保存在本机。网络恢复后，重新打开详情或刷新页面即可找回。':'恢复或授权读取尚未完成，输入保留；请重新读取后确认。');
+  setMessage(originalId?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存。请先保留此页面，稍后重新打开详情或刷新页面再试。':'恢复或授权读取尚未完成，输入保留；请重新读取后确认。');
  }
  function requirePrincipal(fresh:Principal,startIdentity:string){
   if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');

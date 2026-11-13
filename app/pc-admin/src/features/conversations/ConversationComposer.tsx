@@ -42,7 +42,7 @@ export function ConversationComposer(props:ComposerProps){
       let letters='';while(number>0n){letters=String.fromCharCode(97+Number(number%26n))+letters;number/=26n;}
       // 55 base26 letters represent the complete 256-bit digest inside the existing closed purpose grammar.
       if(!cancelled)setBinding({identity,purpose:'sr-'+letters.padStart(55,'a')});
-    })().catch(()=>{if(!cancelled)setFailure('草稿暂未恢复：补充回复没有发送。重新打开会话后再试。');});
+    })().catch(()=>{if(!cancelled)setFailure('草稿暂未恢复：补充回复的草稿暂时读不到，无法确认上次是否已发送，请先不要再次发送。重新打开会话后再试。');});
     return()=>{cancelled=true;};
   },[identity]);
   const preparing=target!==undefined&&binding?.identity!==identity;

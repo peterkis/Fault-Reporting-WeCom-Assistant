@@ -42,7 +42,7 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
     if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;
     const controller=new AbortController();request.current=controller;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在保存内部备注…');
-    try{await draft.prepare(command);}catch{request.current=null;if(checking){setPending(command);setState('unknown');setMessage('结果未确认：本机草稿暂时无法保存，没有重复提交。点击「核对结果」。');}else{setPending(null);setState('denied');setMessage('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
+    try{await draft.prepare(command);}catch{request.current=null;if(checking){setPending(command);setState('unknown');setMessage('结果未确认：本机草稿暂时无法保存，这次没有重新提交。检查浏览器存储后再点击「重新提交」。');}else{setPending(null);setState('denied');setMessage('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
     if(controller.signal.aborted)return;
     mutation.mutate({command,signal:controller.signal});
   };
