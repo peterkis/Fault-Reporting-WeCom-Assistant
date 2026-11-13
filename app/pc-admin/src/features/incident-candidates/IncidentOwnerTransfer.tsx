@@ -44,7 +44,7 @@ export function IncidentOwnerTransfer({principal,detail,otherBlocked,onBlockedCh
       onChanged();void purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true}).catch(()=>setMessage('草稿未能清空：为避免重复交接，暂时只能查看。点击重试。'));
     }
   };
-  const recoveryFailure=(error:unknown)=>{if(denied(error)||purposeFailure(error))revoke(error);else{setRecoveryUnavailable(true);setState(known.current?'committed':'failed');setMessage('草稿暂未恢复：内容仍保存在本机，网络恢复后会自动找回。');}};
+  const recoveryFailure=(error:unknown)=>{if(denied(error)||purposeFailure(error))revoke(error);else{setRecoveryUnavailable(true);setState(known.current?'committed':'failed');setMessage('草稿暂未恢复：内容仍保存在本机。网络恢复后，重新打开详情或刷新页面即可找回。');}};
   async function authorize(signal:AbortSignal){
     const current=captureWorkbenchRead(signal),captured=revision.current,requireCurrent=()=>{current();if(revision.current!==captured)throw new DraftError('DRAFT_ACTION_REVOKED');};let fresh:Principal;
     try{fresh=await api.bootstrap(signal);}catch(error){requireCurrent();if(error instanceof ApiError&&(error.status===401||error.status===403))throw new OwnerTransferSessionRejected(error.status,error);throw error;}requireCurrent();

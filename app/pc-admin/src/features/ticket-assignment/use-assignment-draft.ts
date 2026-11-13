@@ -45,5 +45,5 @@ export function useAssignmentDraft({ticketId,principal,value,pending,onRestore,o
   },onOperation,onSensitiveClear:clear,
  });
  useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'草稿暂未恢复：内容仍保存在本机，网络恢复后会自动找回。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
+ return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'草稿暂未恢复：内容仍保存在本机。网络恢复后，重新打开详情或刷新页面即可找回。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
 }

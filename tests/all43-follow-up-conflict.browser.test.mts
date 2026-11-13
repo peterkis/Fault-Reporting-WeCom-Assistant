@@ -5,6 +5,8 @@ import {readFile} from 'node:fs/promises';
 import {withT37Fixture,object,text} from './helpers/t37-follow-up-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
+// The outcome of the follow-up command is a page notice (data-toast-source=follow-up) since the toast viewport cards; the
+// region keeps the input.
 const region='[role="region"][aria-label="共享下次跟进时间"]',due='2030-01-02 09:30:00';
 async function recoveryPath(){const manifest=object(JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')));return '/workbench/app/'+text(object(manifest['src/feedback-recovery.ts']).file);}
 
@@ -25,8 +27,8 @@ for(const lost of [false,true])test('ALL43 shared SET conflict preserves input a
    if(lost){
     const check=`[...document.querySelector(${JSON.stringify(region)}).querySelectorAll('button')].find(b=>b.textContent.includes('核对结果'))`;
     await browser.waitFor(`Boolean(${check})&&!(${check}).disabled`);await browser.evaluate(`(${check}).click()`);
-    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('已核对原操作被拒绝')`);
-   }else await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('安排或工单已变化')`);
+    await browser.waitFor(`[document.querySelector(${JSON.stringify(region)}),document.querySelector('[data-toast-source=follow-up]')].some(node=>node?.innerText.includes('已核对原操作被拒绝'))`);
+   }else await browser.waitFor(`[document.querySelector(${JSON.stringify(region)}),document.querySelector('[data-toast-source=follow-up]')].some(node=>node?.innerText.includes('安排或工单已变化'))`);
    assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region+' input[name="due_at"]')})?.value`),due,'a known refusal cannot erase the original user time');
    const scope={principal:f.handler,kind:'ticket',id,purpose:'shared-follow-up-schedule'},module=await recoveryPath();
    await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('草稿已保存')`);

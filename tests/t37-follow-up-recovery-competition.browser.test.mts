@@ -104,7 +104,7 @@ test('prepare capacity failure leaves zero POST and zero phantom operation while
   // Hold real encryption until submit has entered prepare; no capacity, row or success result is replaced.
   await browser.evaluate(`(()=>{const original=crypto.subtle.encrypt.bind(crypto.subtle),held=[];globalThis.__t37EncryptionHeld=0;crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__t37EncryptionHeld++;held.push(()=>original(...args).then(resolve,reject));});globalThis.__t37ReleaseEncryption=()=>{crypto.subtle.encrypt=original;for(const release of held.splice(0))release();};})()`);
   await fill(browser,dueX);await click(browser,'设置共享时间');await browser.waitFor(`globalThis.__t37EncryptionHeld>0&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('正在保存共享时间')`);
-  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('操作尚未发送')`);
+  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('没有提交')`);
   assert.equal(requests.filter(request=>request.method==='POST').length,0);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),full);
   assert.equal(await browser.evaluate(`Boolean(${button('核对结果')})`),false,'a failed prepare must not create an ACK target which the server never received');
   assert.equal(await browser.evaluate(`${inputNode}.value`),dueX);await click(browser,'清空未提交输入');await browser.waitFor(`${inputNode}?.value===''`);
