@@ -29,6 +29,18 @@ function containingBlock(element:HTMLElement):Box{
   }
   return viewportBox();
 }
+/**
+ * CI (t05 at 900 wide): inside the detail drawer (the containing block) the stack's transparent side gutter reached past the
+ * drawer's scroll box (beside its scrollbar) and made it scroll sideways. The right edge of the nearest scrolling ancestor's
+ * content box, used when the stack is not positioned against the window.
+ */
+function scrollerRight(element:HTMLElement):number{
+  for(let node=element.parentElement;node&&node!==document.body&&node!==document.documentElement;node=node.parentElement){
+    const style=getComputedStyle(node);
+    if(style.overflowX!=='visible'||style.overflowY!=='visible'){const box=node.getBoundingClientRect();return box.left+node.clientLeft+node.clientWidth;}
+  }
+  return Infinity;
+}
 const shown=(element:Element)=>element instanceof HTMLElement&&element.checkVisibility()&&!element.closest('[aria-hidden="true"],[data-exiting]');
 /** The declared detail container (drawer, full page or closing dialog) whose bottom-right corner the notices dock to. */
 function toastHost(target:HTMLElement):HTMLElement|null{
@@ -127,6 +139,11 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
         top=bars.length?Math.max(...bars.map(area=>area.bottom))+12:hostTop+16;
         if(!narrow){right=Math.min(box.right,screen.right)-16;left=right-Math.min(400,box.width-32,screen.width-32);}
       }
+      // The stack (with its full shadow gutter) stays inside a scrolling ancestor's content box: it moves left by the overshoot,
+      // so the drawer never scrolls sideways and the shadow is never cut.
+      const windowBlock=block.left===0&&block.top===0&&block.right===window.innerWidth&&block.bottom===window.innerHeight;
+      const gutter=parseFloat(getComputedStyle(viewport).getPropertyValue('--toast-gutter-x'))||0,limit=windowBlock?Infinity:scrollerRight(viewport),overshoot=Math.ceil(right+gutter-limit);
+      if(overshoot>0){right-=overshoot;left=Math.max(left-overshoot,screen.left+(narrow?12:16));}
       style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
       style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');

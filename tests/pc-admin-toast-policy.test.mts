@@ -42,6 +42,8 @@ test('Card 32D-T a notice that waits for the user is never pushed out, even when
  const waiting=[1,2,3,4].map(n=>({id:'w'+n,visible:true,duration:Infinity,createdAt:n}));
  assert.deepEqual(p.overflowToasts(waiting),[]);
  assert.deepEqual(p.overflowToasts([{id:'loading',visible:true,createdAt:1},...three(2)]).map(t=>t.id),['x2']);
+ // A new result over notices that wait for the user is the newest: it stays visible instead of vanishing as it appears.
+ assert.deepEqual(p.overflowToasts([...waiting,{id:'result',visible:true,duration:4000,createdAt:9}]),[]);
 });
 function three(start:number):Item[]{return [0,1,2].map(n=>({id:'x'+(start+n),visible:true,duration:4000,createdAt:start+n}));}
 

@@ -15,6 +15,7 @@ import {migrateP2016} from '../../app/server/scripts/p2-016-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
 import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
 import {migrateTicketReturnToDispatch} from '../../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
+import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 import {ensureCompletionDismissal} from './completion-dismissal.mjs';
 
 export function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -30,7 +31,9 @@ export async function withT09Fixture(run:(fixture:T09Fixture)=>Promise<void>,{ti
  await withP2016IsolatedDatabase({databaseUrl,purpose:'t09',run:async(context:{pool:PostgresPool;databaseUrl:string})=>{
   await applyThrough030(context);const migrationOptions={databaseUrl:context.databaseUrl,mode:'apply'};await migrateP2016(migrationOptions);
   await migrateTicketSelfHandling({databaseUrl:context.databaseUrl,mode:'apply'});await migrateTicketUnassign({databaseUrl:context.databaseUrl,mode:'apply'});
-  if(ticketReturnToDispatchEnabled)await migrateTicketReturnToDispatch({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.databaseUrl);
+  if(ticketReturnToDispatchEnabled)await migrateTicketReturnToDispatch({databaseUrl:context.databaseUrl,mode:'apply'});
+  // The workbench item read joins pilot_ticket.closure_record (071, service closure) like the t08 / t37 / t43 fixtures.
+  await migrateServiceClosure({databaseUrl:context.databaseUrl,mode:'apply'});await ensureCompletionDismissal(context.databaseUrl);
   const access=createPilotAccessService({pool:context.pool}),roles:PilotRole[][]=[['ADMIN'],['DISPATCHER'],['HANDLER'],['HANDLER']];
   const members=await Promise.all(roles.map((role,index)=>access.upsertPrincipal({wecomUserId:'t09-synthetic-'+index+'-'+randomUUID(),displayName:'T09 合成内部人员 '+index,roles:role,resolverTeamIds:['PILOT_IT']})));
   const [admin,dispatcher,handler,otherHandler]=members;assert.ok(admin&&dispatcher&&handler&&otherHandler);

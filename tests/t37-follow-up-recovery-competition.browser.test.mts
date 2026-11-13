@@ -165,7 +165,8 @@ test('a confirmed production POST remains submitted when delivery of the subsequ
   assert.equal(await browser.evaluate(`Boolean(${button('核对结果')})`),false);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),{drafts:0,operations:0,revision:null,commandId:null});
   const arranged=await current(handler,schedulePath);assert.equal(arranged.schedule_version,'1');assert.equal(object(arranged.active).due_at,dueX);
   await browser.evaluate('globalThis.__t37Transport.failViews=false;globalThis.__t37Transport.failAfterPost=false');await click(browser,'重新读取共享时间');
-  await browser.waitFor(`${regionNode}?.innerText.includes(${JSON.stringify(dueX)})&&!${regionNode}?.innerText.includes('最新安排仍需重新读取')`);
+  // The active schedule is shown to the minute (BeijingTime), as 「2030-01-02 09:30 · 已安排」.
+  await browser.waitFor(`${regionNode}?.innerText.includes(${JSON.stringify(dueX.slice(0,16)+' · 已安排')})&&!${regionNode}?.innerText.includes('最新安排仍需重新读取')`);
   assert.equal(requests.filter(request=>request.method==='POST').length,1,'recovering current facts never resends the confirmed command');
   assert.equal(requests.some(request=>request.path.startsWith(schedulePath+'/commands/')),false);assert.deepEqual(await current(handler,schedulePath),arranged);
  });
