@@ -128,7 +128,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
         onRestoreReview={restored=>{setValue(restored);setState('idle');}} readCurrentReview={async signal=>{const current=await reviewApi.detail(reviewId,signal);client.setQueryData(key,current);return {...latest.current,capture:{row_version:current.row_version,material_basis:current.material_basis.current_hash,canonical_item:current.canonical_item}};}}
         onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认故障并开始处理。');void draft.discard();refresh();}}/><div className="review-controls"><HButton type="submit" data-action="submit-review" isDisabled={!canSubmit} tone="secondary">记录复核结论</HButton>
         <HButton type="button" data-action="refresh-review" isDisabled={busy} onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton>
-        {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} tone="secondary">核对结果</HButton>:null}
+        {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}
         {draft.operationId?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} tone="secondary">核对结果</HButton>:null}
         {draft.enabled&&hasReviewInput(value)?<HButton type="button" data-action="discard-review-draft" isDisabled={busy} onClick={()=>{void draft.discard();}} tone="secondary">丢弃草稿内容</HButton>:null}
       </div></HForm>

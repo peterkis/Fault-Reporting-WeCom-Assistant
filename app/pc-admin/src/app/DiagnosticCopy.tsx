@@ -24,11 +24,15 @@ export function DiagnosticCopy({data}:{data:Record<string,unknown>}){
 }
 
 /**
- * Codex review: the hint beside 「核对结果」 says what is actually known. After a confirmed commit (or a confirmed failure) only the
- * local draft is still to be cleared; otherwise the outcome itself is unconfirmed.
+ * Codex review: the hint beside 「核对结果」 says what is actually known: a confirmed commit or failure (with its local draft still
+ * to be cleared only when `cleanupPending`), otherwise an unconfirmed outcome. Callers that keep the operation only after a
+ * failed cleanup use the default.
  */
-export function operationHint(state:string):string{
-  if(state==='committed'||state==='succeeded')return '已提交，本机草稿还没清除完。点击「核对结果」再次清除。';
-  if(state==='failed')return '上次操作没有成功，本机草稿还没清除完。点击「核对结果」再次清除。';
+export function operationHint(state:string,cleanupPending=true):string{
+  const committed=state==='committed'||state==='succeeded';
+  // Codex review: the draft is only said to be uncleared when its cleanup actually failed (a known result whose reading of the
+  // current facts failed has not reached the cleanup yet).
+  if(committed)return cleanupPending?'已提交，本机草稿还没清除完。点击「核对结果」再次清除。':'已提交。最新内容还没加载完，点击「核对结果」。';
+  if(state==='failed')return cleanupPending?'上次操作没有成功，本机草稿还没清除完。点击「核对结果」再次清除。':'上次操作没有成功。点击「核对结果」查看最新内容。';
   return '上次操作的结果还没确认，点击「核对结果」。';
 }

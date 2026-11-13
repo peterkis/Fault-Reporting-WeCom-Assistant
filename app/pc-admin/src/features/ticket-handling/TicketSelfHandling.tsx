@@ -49,7 +49,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
       {cardMode?(cardActionTarget?createPortal(action,cardActionTarget):null):action}
-      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">核对结果</HButton>:null}
+      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">重新提交</HButton>:null}
       {!blocked&&(context.isError||state==='conflict'||state==='denied')?<HButton type="button" data-action="refresh-self-handling" onClick={()=>{void context.refetch();}} tone="secondary">重试读取操作</HButton>:null}
     </div>
     {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-self-handling" state={state} className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}

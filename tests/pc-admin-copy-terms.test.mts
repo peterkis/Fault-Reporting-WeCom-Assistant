@@ -71,9 +71,11 @@ test('Card 34C operation hint follows what is known',async()=>{
   let output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:4,verbatimModuleSyntax:true}}).outputText;
   for(const [from,code] of [['react','export const useState=()=>[null,()=>{}];'],['lucide-react','export const Copy=()=>null;'],['@heroui/react','export const TextArea=()=>null;'],['../design/components/Button/Button','export const Button=()=>null;'],['react/jsx-runtime','export const jsx=()=>null,jsxs=()=>null,Fragment=null;']] as const)
     for(const quote of ["'",'"'])output=output.replaceAll(quote+from+quote,JSON.stringify(stub(code)));
-  const module=await import(stub(output)) as {operationHint:(state:string)=>string};
+  const module=await import(stub(output)) as {operationHint:(state:string,cleanupPending?:boolean)=>string};
   assert.match(module.operationHint('committed'),/^已提交，本机草稿还没清除完/u);
   assert.match(module.operationHint('failed'),/^上次操作没有成功，本机草稿还没清除完/u);
   for(const state of ['committed','failed'])assert.doesNotMatch(module.operationHint(state),/还没确认/u);
   assert.match(module.operationHint('unknown'),/结果还没确认/u);
+  // Codex review: a known result whose reading of the current facts failed has not tried the cleanup yet.
+  assert.equal(module.operationHint('committed',false),'已提交。最新内容还没加载完，点击「核对结果」。');assert.doesNotMatch(module.operationHint('failed',false),/草稿/u);
 });

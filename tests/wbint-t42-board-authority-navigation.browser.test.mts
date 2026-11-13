@@ -30,7 +30,10 @@ test('T42 full-page expansion preserves the original completion intent through a
       const current=await http.detail(ticket.ticket.id);assert.equal(current.status,'IN_PROGRESS');assert.ok(current.version>started.version);
       await browser.evaluate('globalThis.__t42ReleaseCompletion()');await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('已被他人更新')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-board-original-intent]'))"),true,'expansion cannot drop the original board-mode conflict protection');
-      assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"))),original);
+      // Codex review: the copied diagnostics identify the completion (number and version) and never carry its internal or public text.
+      const diagnostics=String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"));
+      assert.deepEqual(JSON.parse(diagnostics),{operation_id:object(original).client_command_id,expected_version:object(original).expected_version,action:null});
+      for(const field of ['internal_process','external_summary'])assert.ok(!diagnostics.includes(field)&&!diagnostics.includes(String(object(original)[field]??'\u0000')),'no '+field+' in the copied diagnostics');
       assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'T42原独立内部过程：展开完整页后仍保留原操作。');
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'合成设备已恢复。');assert.equal(await browser.evaluate('globalThis.__t42CompletionPosts'),1);
       assert.equal((await http.detail(ticket.ticket.id)).version,current.version,'conflict has no completion fact or automatic new command');

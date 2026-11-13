@@ -83,7 +83,8 @@ test('T42 real competing command produces conflict without losing the original c
     await browser.waitFor(`document.querySelector('.ticket-handling-version')?.textContent===${JSON.stringify('工单版本 ')}+${JSON.stringify(accepted.version)}`);
     assert.deepEqual(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'),originalWorkspace,'current refresh must not replace the held operation target or reload its workspace');
     await browser.evaluate('globalThis.__t42Release()');await browser.waitFor("Boolean(document.querySelector('[data-board-original-intent]'))");
-    const original=JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics")));assert.deepEqual(object(original).command,held.body);
+    const original=JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics")));// Codex review: only the identifying fields are copied, never the command body.
+    assert.deepEqual(original,{operation_id:object(held.body).client_command_id,expected_version:object(held.body).expected_version??null,action:object(original).action});assert.equal(typeof object(original).action,'string');
     assert.equal((await get(path)).version,accepted.version);assert.equal((await get(path)).status,'ACCEPTED');
     assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1);
     await browser.evaluate("document.querySelector('[data-action=cancel-board-move]').click()");
