@@ -94,7 +94,9 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
           const natural=new DOMRect(dialog.x,dialog.y-half,dialog.width,dialog.height+2*half);
           let slot=chipSlot(natural,screen,fullWidth.current,h),compact=false;
           if(!slot){slot=chipSlot(natural,screen,COMPACT_CHIP,COMPACT_CHIP);compact=true;}
-          const needed=slot?0:Math.ceil(2*(COMPACT_CHIP+16-(screen.bottom-natural.bottom)));
+          // Codex review: only a chip that is actually shown (a visible notice exists) may take height from the modals; with none the
+          // reserve is released.
+          const needed=slot||!chip?0:Math.ceil(2*(COMPACT_CHIP+16-(screen.bottom-natural.bottom)));
           if(needed!==reserve.current){reserve.current=needed;if(needed)document.documentElement.style.setProperty('--workbench-toast-reserve',needed+'px');else document.documentElement.style.removeProperty('--workbench-toast-reserve');}
           if(!slot){
             // Once the modal has given up the height, the room below may hold the full chip again.

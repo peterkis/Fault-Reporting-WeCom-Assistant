@@ -209,12 +209,20 @@ test('Card 34A page notices stay outside the media preview modal at four widths'
    if(expected==='margin')assert.equal(extra.compact,'true',label+': no margin holds the full chip, so it is compact '+JSON.stringify({chip:state.chip,dialog:state.dialog,extra}));
    assert.equal(Boolean(extra.reserve),expected==='reserve',label+': the modals give up height only when no margin holds even the compact chip');
    table.push({dialog:'media-tall',width,mode:state.mode,popover:null,controls:state.controls.length,toasts:state.toasts.length,chip:true});
+   if(expected==='reserve'){
+    // Codex review: with no notice left there is no chip, so the modals take their height back.
+    await b.evaluate("document.querySelectorAll('.workbench-toast-close').forEach(button=>button.click())");
+    await b.waitFor("!document.querySelector('.workbench-toast-chip-anchor')&&!document.querySelector('.workbench-toast[data-visible=true]')");await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);
+    const after=await b.evaluate(`({reserve:document.documentElement.style.getPropertyValue('--workbench-toast-reserve'),height:document.querySelector('.detail-media-dialog').getBoundingClientRect().height})`) as {reserve:string;height:number};
+    assert.equal(after.reserve,'',label+': the last notice gone, the modals no longer give up height');
+    assert.ok(after.height>=height-32-1,label+': the modal is back to its full height '+JSON.stringify(after));
+   }
   }
   await b.evaluate("(()=>{const dialog=document.querySelector('.detail-media-dialog');dialog.style.removeProperty('width');dialog.style.removeProperty('height');})()");await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);
   assert.equal(await b.evaluate("document.documentElement.style.getPropertyValue('--workbench-toast-reserve')"),'','back at 1440 the modals no longer give up height');
   const restored=await b.evaluate(layout('.detail-media-dialog')) as Layout;
-  assert.ok(restored.chip&&!intersects(restored.chip,restored.dialog),'back at 1440 the chip is clear of the modal');
+  assert.equal(restored.chip,null,'back at 1440 with no notice left there is no chip');
  }catch(caught){error=caught;}
  finally{
   await writeFile(join(directory,'receipt-34a-toast-media.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,table,screenshots},null,2));
