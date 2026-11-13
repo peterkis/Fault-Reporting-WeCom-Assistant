@@ -103,7 +103,10 @@ function luminance(png:Buffer):{width:number;height:number;at:(x:number,y:number
  */
 async function assertUnclippedShadow(b:Browser,label:string,directory?:string){
  const box=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()),r=v.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,toasts:[...v.querySelectorAll('.workbench-toast[data-visible=true]')].map(n=>{const t=n.getBoundingClientRect();return {x:t.x,y:t.y,width:t.width,height:t.height};})};})()") as Rect&{toasts:Rect[]};
- const clip={x:Math.max(0,Math.floor(box.x)-8),y:Math.max(0,Math.floor(box.y)-8),width:Math.ceil(box.width)+16,height:Math.ceil(box.height)+16,scale:1};
+ // The clip stays 8px inside the window: in the window corner (card 34A, a modal open) the shadow runs off the window's own edge,
+ // which is not a clip of the page but would read as a straight edge.
+ const screen=await b.evaluate('[innerWidth,innerHeight]') as [number,number],left=Math.max(0,Math.floor(box.x)-8),top=Math.max(0,Math.floor(box.y)-8);
+ const clip={x:left,y:top,width:Math.min(screen[0]-8,Math.ceil(box.x+box.width)+8)-left,height:Math.min(screen[1]-8,Math.ceil(box.y+box.height)+8)-top,scale:1};
  const capture=async()=>Buffer.from((await b.command('Page.captureScreenshot',{format:'png',clip}) as {data:string}).data,'base64');
  const shown=await capture();
  await b.evaluate("[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()).style.visibility='hidden'");
@@ -220,7 +223,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
     assert.deepEqual(edges.points.filter(point=>point.hit),[],JSON.stringify({bar:edges.bar,input:edges.input})+' '+scenario+' shorter window scrolled to the '+end+': no notice enters the top bar, the bottom area or their 12px clear bands');
    }
   }
-  // Closing dialog: the notices move into the dialog and dock above its own action bar. The follow button behind the modal is
+  // Closing dialog: the notices stay in the window corner beside it (card 34A). The follow button behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.
   await open('/workbench/app/items/ticket/'+dialogId);
   await clickWorkbenchControl(b,'.ds-drawer-more>summary');await clickWorkbenchControl(b,'.ds-drawer-more [data-action=cancel]');
@@ -233,7 +236,12 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   await b.evaluate("[...document.querySelectorAll('.ds-detail-footer button')].find(button=>button.textContent.includes('保存')&&!button.disabled).click()");
   await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1&&document.querySelector('.ds-closure-dialog')?.checkVisibility()===true`);
   const dialogControls={'确认关闭':'.ds-closure-dialog .ds-closure-actions button[type=submit]','取消':'.ds-closure-dialog .ds-closure-actions button[type=button]'};
-  for(const width of WIDTHS){await measure('dialog',width,dialogControls);if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory)});if(width===1440)await shot('toast-dialog-1440.png');}
+  // Card 34A: with a modal open the notices sit in the window corner beside it, and collapse into a chip where there is no room
+  // (1280 and 900 for this dialog); the chip, every control of each modal and the four modal kinds are checked in
+  // pc-admin-card34a-toast-modal. Here the stack beside the modal is held to the same 32D-T and card 33 checks.
+  for(const width of [1920,1440] as const){await measure('dialog',width,dialogControls);
+   assert.equal(await b.evaluate("(()=>{const d=document.querySelector('.ds-closure-dialog').getBoundingClientRect();return [...document.querySelectorAll('.workbench-toast[data-visible=true]')].every(n=>{const r=n.getBoundingClientRect();return r.right<=d.left||r.left>=d.right||r.bottom<=d.top||r.top>=d.bottom;});})()"),true,'dialog '+width+': no notice intersects the modal');
+   if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory)});if(width===1440)await shot('toast-dialog-1440.png');}
 
   // Hover and timing (T1): a hovered success notice waits; once the pointer leaves it closes after 4s. An error notice waits for
   // its close button, however long it stays on screen.
