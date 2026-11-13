@@ -5,6 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withT43Fixture,text,version} from './helpers/t43-full-service-fixture.mjs';
+import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {start,launch,close,get,post} from './helpers/t43-service-actions.mjs';
 import type {Browser} from './helpers/t43-service-actions.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
@@ -52,6 +53,9 @@ test('Card 34B detail drawer: chain in the timeline, no empty unassign block, co
   // Codex review: the action follows the event type. A dispatcher's first assignment is 「派给 …」 (not the dispatcher's own 接单),
   // the assignee accepting is 「接单」, and stopping work already started is 「退回待安排」 (not 撤销派工).
   const handler=f.staff[1];assert.ok(handler);
+  // Codex review (second round): names never prove identity. The handler is renamed to the dispatcher's display name; the
+  // dispatcher's assignment must still read as assigning someone else, not as their own 接单.
+  assert.equal((await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:'t43-staff-1',displayName:'T43合成人员0',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']})).id,target);
   const second=await f.intake((await f.manualReport('卡34B 合成：派工与退回（合成）')).intakeId);assert.ok(second.ticketId);
   const path2='/api/tickets/'+second.ticketId,current2=async()=>version((await get(admin,path2)).version);
   await post(admin,path2+'/assign',{client_command_id:randomUUID(),expected_version:await current2(),reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]});
@@ -63,7 +67,7 @@ test('Card 34B detail drawer: chain in the timeline, no empty unassign block, co
   await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelectorAll('.activity-list [data-assignment-history-row]').length===3");await waitForAnimationsSettled(b);
   const chain=text(await b.evaluate("[...document.querySelectorAll('.activity-list [data-assignment-history-row]')].reverse().map(row=>row.dataset.assignmentHistoryRow+'|'+row.innerText.replace(/\\s+/g,' ')).join('\\n')"));
   const [assigned,accepted,returned]=chain.split('\n');
-  assert.match(assigned??'',/^FIRST_RESPONSIBILITY\|.* 派给 T43合成人员1/u,'a dispatcher\'s first assignment reads 「派给 …」 '+chain);
+  assert.match(assigned??'',/^FIRST_RESPONSIBILITY\|.* 派给 T43合成人员0/u,'a dispatcher\'s first assignment reads 「派给 …」 '+chain);
   assert.doesNotMatch(assigned??'',/ 接单/u,'the dispatcher did not accept the ticket '+chain);
   assert.match(accepted??'',/^RESPONSIBILITY_CHANGE\|.* 接单/u,'the assignee accepting reads 「接单」 '+chain);
   assert.match(returned??'',/^RESPONSIBILITY_CHANGE\|.* 退回待安排/u,'returning started work reads 「退回待安排」 '+chain);

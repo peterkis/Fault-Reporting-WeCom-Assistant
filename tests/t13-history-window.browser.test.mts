@@ -41,7 +41,7 @@ test('production keyset pages retain at most 200 of 205 real serial responsibili
    await browser.waitFor("document.querySelectorAll('.activity-list [data-assignment-history-row]').length===200");
    const shown=text(await browser.evaluate("[...document.querySelectorAll('.activity-list [data-assignment-history-row]')].map(row=>row.dataset.assignmentHistoryRow+'|'+row.innerText.replace(/\\s+/g,' ')).join('\\n')"));
    assert.equal((shown.match(/^FIRST_RESPONSIBILITY\|/gmu)??[]).length,1,'the oldest fact, the first take-over, is within the bound and enriches its own row');
-   assert.equal((shown.match(/^RESPONSIBILITY_CHANGE\|.*(?: 转交给 \S| 接手)/gmu)??[]).length,199,'the next 199 hand-overs read as 「转交给 …」 or, when the actor takes it themself, 「接手」');
+   assert.equal((shown.match(/^RESPONSIBILITY_CHANGE\|.*(?: 转交给 \S| 接手| 接单)/gmu)??[]).length,199,'the next 199 hand-overs read as 「转交给 …」, or 「接手」 / 「接单」 when the operator themself becomes the handler');
    assert.ok(!shown.includes('已加载')&&!shown.includes('仅为当前已读取范围')&&!shown.includes('最多保留'),'no window notes');
    assert.equal(await browser.evaluate("[...document.querySelectorAll('button')].some(button=>button.textContent==='重新读取接单链'||button.textContent==='加载后续记录')"),false,'no chain-only buttons');
    // The five newest hand-overs beyond the bound stay plain event rows of the timeline.

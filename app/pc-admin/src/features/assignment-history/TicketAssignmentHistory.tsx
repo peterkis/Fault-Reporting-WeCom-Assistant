@@ -30,26 +30,22 @@ export function useAssignmentHistory(ticketId:string,principal:Principal,enabled
  return {byEvent,failed:enabled&&query.isError,retry:()=>{void query.refetch();}};
 }
 
-const same=(a:P2016AssignmentHistoryName,b:P2016AssignmentHistoryName)=>a.state==='KNOWN'&&b.state==='KNOWN'&&a.name===b.name;
 /**
- * The action of a take-over or hand-over event, from the timeline record's own event type (Codex review): a dispatcher's first
- * assignment is 「派给 周宁」 (the round's first responsibility is not the dispatcher's own acceptance), a later one 「转交给 周宁」;
- * the assignee accepting is 「接单」, taking it from a colleague 「接手」; `ticket.unassigned` is 「撤销派工」 and
+ * The action of a take-over or hand-over event, from the timeline record's own event type (Codex review) and the server's
+ * `actor_is_next`, which compares principal ids (Codex review, second round: display names never decide identity, two accounts may
+ * share one). The operator becoming the handler (proven by id, or by a `ticket.accepted` event) is 「接单」 for the round's first responsibility and 「接手」 later (taking it over);
+ * otherwise the first responsibility is 「派给 周宁」 and a later change 「转交给 周宁」. `ticket.unassigned` is 「撤销派工」 and
  * `ticket.returned_to_dispatch` (stopping work already started) 「退回待安排」.
  */
 export function assignmentAction(item:P2016AssignmentHistoryItem,eventType:string):string{
- const next=item.next.person,previous=item.previous.person,self=same(item.actor,next),takenFromColleague=previous.state==='KNOWN'&&!same(previous,item.actor);
  if(eventType==='ticket.returned_to_dispatch')return '退回待安排';
- if(eventType==='ticket.unassigned')return '撤销派工';
- if(eventType==='ticket.accepted')return takenFromColleague?'接手':'接单';
- if(eventType==='ticket.assignment_transferred'){
-  if(self)return takenFromColleague?'接手':'接单';
-  return (item.kind==='FIRST_RESPONSIBILITY'?'派给 ':'转交给 ')+label(next);
- }
- // Any other assignment event type: the facts alone.
- if(next.state==='NONE')return '撤销派工';
- if(self)return item.kind==='FIRST_RESPONSIBILITY'?'接单':'接手';
- return (item.kind==='FIRST_RESPONSIBILITY'?'派给 ':'转交给 ')+label(next);
+ if(eventType==='ticket.unassigned'||item.next.person.state==='NONE')return '撤销派工';
+ const first=item.kind==='FIRST_RESPONSIBILITY';
+ // 「接手」 only when it is proven to be taken from someone else; accepting a ticket already assigned to oneself, or one from the
+ // queue (no previous person), is 「接单」.
+ // `ticket.accepted` is the operator taking the responsibility themself by its type, even when the new person is not provable.
+ if(item.actor_is_next||eventType==='ticket.accepted')return !first&&item.previous.person.state==='KNOWN'&&!item.actor_was_previous?'接手':'接单';
+ return (first?'派给 ':'转交给 ')+label(item.next.person);
 }
 
 /** The hand-overs of conversations that came with the event, as plain secondary lines of the same row. */

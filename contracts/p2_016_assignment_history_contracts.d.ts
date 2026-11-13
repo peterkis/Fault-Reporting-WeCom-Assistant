@@ -20,6 +20,11 @@ export type P2016AssignmentHistoryItem = Readonly<{
   kind:'FIRST_RESPONSIBILITY'|'RESPONSIBILITY_CHANGE';occurred_at:LocalDateTime;
   actor:P2016AssignmentHistoryName;handling_cycle:P2016AssignmentHistoryCycle;
   previous:P2016AssignmentHistoryResponsibility;next:P2016AssignmentHistoryResponsibility;
+  /** True only when the event's operator is an internal principal and that same principal is the proven new person; computed by
+   * principal id on the server, never from display names (two accounts may share a name). */
+  actor_is_next:boolean;
+  /** True only when the operator is an internal principal and that same principal is the proven previous person (by principal id). */
+  actor_was_previous:boolean;
   /** Only actual changed Control facts independently readable now; empty never means all Sessions absent. */
   communication:ReadonlyArray<P2016AssignmentHistoryCommunication>;
 }>;
