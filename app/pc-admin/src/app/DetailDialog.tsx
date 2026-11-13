@@ -15,8 +15,8 @@ export function DetailDialogProvider({children}:{children:ReactNode}){
   return <DialogContext.Provider value={scope}>{children}</DialogContext.Provider>;
 }
 export function useDetailModalOpen(){const scope=useContext(DialogContext);return scope!==null&&scope.active!==null;}
-export function DetailDialog({open,onClose,closeBlocked=false,title,closeLabel,accessibleName,className='detail-action-dialog',actions,children,onOpenChange}:{open:boolean;onClose:()=>void;closeBlocked?:boolean;title:string;closeLabel:string;accessibleName?:string;className?:string;actions?:ReactNode;children:ReactNode;onOpenChange?:((open:boolean)=>void)|undefined}){
-  const scope=useContext(DialogContext),id=useId(),inline=useNextStep();
+export function DetailDialog({open,onClose,closeBlocked=false,title,closeLabel,accessibleName,className='detail-action-dialog',actions,children,onOpenChange,modal=false}:{open:boolean;onClose:()=>void;closeBlocked?:boolean;title:string;closeLabel:string;accessibleName?:string;className?:string;actions?:ReactNode;children:ReactNode;onOpenChange?:((open:boolean)=>void)|undefined;/** Card 34B: a centred dialog even inside the next-step card. */modal?:boolean}){
+  const scope=useContext(DialogContext),id=useId(),inline=useNextStep()&&!modal;
   const entry=useRef<HTMLElement|null>(null);
   const request=scope?.request,release=scope?.release,active=scope?.active,visible=open&&(!scope||active===id);
   useEffect(()=>{if(open&&active===null)request?.(id);if(!open)release?.(id);},[open,active,id,request,release]);

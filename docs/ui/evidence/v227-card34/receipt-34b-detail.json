@@ -1,0 +1,18 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "screenshots": [
+    {
+      "file": "drawer-1440-processing.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "585a54aeeabffe5a92758296fbbbcf958c1000314f9d65b9ebc1907e6fbe8541"
+    },
+    {
+      "file": "drawer-1440-composer-draft.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "9109beb3c8177f09993201c59c10bf440318656e941f3ce7b1be590474b05a47"
+    }
+  ]
+}

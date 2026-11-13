@@ -189,6 +189,8 @@
         "handling_cycle",
         "previous",
         "next",
+        "actor_is_next",
+        "actor_was_previous",
         "communication"
       ],
       "properties": {
@@ -221,6 +223,12 @@
         "next": {
           "$ref": "#/$defs/responsibility"
         },
+        "actor_is_next": {
+          "type": "boolean"
+        },
+        "actor_was_previous": {
+          "type": "boolean"
+        },
         "communication": {
           "type": "array",
           "maxItems": 8,
@@ -232,4 +240,3 @@
     }
   }
 }
-

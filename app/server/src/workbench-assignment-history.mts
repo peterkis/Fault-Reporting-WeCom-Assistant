@@ -6,7 +6,7 @@ import {reopenRoundsSchemaReady} from './ticket-reopen-rounds.mjs';
 
 interface HistoryRow {
  event_id:string;event_ordinal:number;occurred_at:string;first:boolean;cycle_no:number|null;
- actor_name:string|null;previous_person_id:string|null;next_person_id:string|null;
+ actor_name:string|null;operator_type:string|null;operator_id:string|null;previous_person_id:string|null;next_person_id:string|null;
  previous_team_id:string|null;next_team_id:string|null;previous_person_name:string|null;next_person_name:string|null;
  previous_team_name:string|null;next_team_name:string|null;previous_person_proven:boolean|null;next_person_proven:boolean|null;
  previous_team_proven:boolean|null;next_team_proven:boolean|null;
@@ -48,7 +48,7 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
    ON e.ticket_id=c.ticket_id AND e.event_id=c.first_responsibility_event_id
    WHERE c.ticket_id=$1::uuid AND c.cycle_no=1 AND ${firstProof}) AS recorded`,[ticketId]);
  const result=await queryable.query<HistoryRow>(`SELECT e.event_id::text,e.event_ordinal,e.created_at AS occurred_at,
-   COALESCE(c.first_responsibility_event_id=e.event_id,false) AS first,c.cycle_no,actor.display_name AS actor_name,
+   COALESCE(c.first_responsibility_event_id=e.event_id,false) AS first,c.cycle_no,actor.display_name AS actor_name,e.operator_type,e.operator_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'old_assignee_id'
      WHEN accepted.proven AND predecessor.same_cycle THEN predecessor.assignment_metadata->>'new_assignee_id' ELSE NULL END AS previous_person_id,
    CASE WHEN e.assignment_metadata IS NOT NULL THEN e.assignment_metadata->>'new_assignee_id'
@@ -161,7 +161,7 @@ export async function assignmentHistoryPage({queryable,ticketId,principal,sessio
     WHERE e.ticket_id=$1::uuid AND e.event_id=ANY($2::uuid[])`,[ticketId,selected.map(row=>row.event_id),...sessionPredicate.values]);
   for(const control of controls.rows){const list=communication.get(control.ticket_event_id)??[];list.push(control);communication.set(control.ticket_event_id,list);}
  }
- const items:P2016AssignmentHistoryItem[]=selected.map(row=>({ticket_event_id:uuidP2016(row.event_id),event_ordinal:versionP2016(row.event_ordinal),kind:row.first?'FIRST_RESPONSIBILITY':'RESPONSIBILITY_CHANGE',occurred_at:localP2016(row.occurred_at),actor:known(row.actor_name),handling_cycle:row.cycle_no===null?{state:'UNKNOWN'}:{state:'KNOWN',cycle_no:versionP2016(row.cycle_no)},previous:{person:person(row.previous_person_id,row.previous_person_name,row.previous_person_proven),team:row.previous_team_proven?known(row.previous_team_name):{state:'UNKNOWN'}},next:{person:person(row.next_person_id,row.next_person_name,row.next_person_proven),team:row.next_team_proven?known(row.next_team_name):{state:'UNKNOWN'}},communication:(communication.get(row.event_id)??[]).map(control=>({session_id:uuidP2016(control.session_id),control_event_id:uuidP2016(control.control_event_id),occurred_at:localP2016(control.occurred_at),actor:known(control.actor_name),previous:control.old_assignment_status==='UNASSIGNED'?{state:'NONE'}:control.previous_status==='ASSIGNED'?person(control.previous_target,control.previous_name,control.previous_target!==null):{state:'UNKNOWN'},next:control.new_assignment_status==='UNASSIGNED'?{state:'NONE'}:person(control.next_target,control.next_name,control.next_target!==null)}))}));
+ const items:P2016AssignmentHistoryItem[]=selected.map(row=>({ticket_event_id:uuidP2016(row.event_id),event_ordinal:versionP2016(row.event_ordinal),kind:row.first?'FIRST_RESPONSIBILITY':'RESPONSIBILITY_CHANGE',occurred_at:localP2016(row.occurred_at),actor:known(row.actor_name),handling_cycle:row.cycle_no===null?{state:'UNKNOWN'}:{state:'KNOWN',cycle_no:versionP2016(row.cycle_no)},previous:{person:person(row.previous_person_id,row.previous_person_name,row.previous_person_proven),team:row.previous_team_proven?known(row.previous_team_name):{state:'UNKNOWN'}},next:{person:person(row.next_person_id,row.next_person_name,row.next_person_proven),team:row.next_team_proven?known(row.next_team_name):{state:'UNKNOWN'}},actor_is_next:row.operator_type==='PILOT_USER'&&row.operator_id!==null&&row.next_person_proven===true&&row.next_person_id!==null&&row.operator_id===row.next_person_id,actor_was_previous:row.operator_type==='PILOT_USER'&&row.operator_id!==null&&row.previous_person_proven===true&&row.previous_person_id!==null&&row.operator_id===row.previous_person_id,communication:(communication.get(row.event_id)??[]).map(control=>({session_id:uuidP2016(control.session_id),control_event_id:uuidP2016(control.control_event_id),occurred_at:localP2016(control.occurred_at),actor:known(control.actor_name),previous:control.old_assignment_status==='UNASSIGNED'?{state:'NONE'}:control.previous_status==='ASSIGNED'?person(control.previous_target,control.previous_name,control.previous_target!==null):{state:'UNKNOWN'},next:control.new_assignment_status==='UNASSIGNED'?{state:'NONE'}:person(control.next_target,control.next_name,control.next_target!==null)}))}));
  const last=items.at(-1);
  return {schema_version:1,ticket_id:ticketId,initial_basis:basis.rows[0]?.recorded?'RECORDED':'UNKNOWN',items,next_cursor:result.rows.length>n&&last?cursorP2016({v:1,ticket:ticketId,scope,ordinal:last.event_ordinal,id:last.ticket_event_id}):null};
 }

@@ -31,13 +31,16 @@ test('formal production detail reads the recorded first and coupled transfer thr
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);
    await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
 
-   assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"接单与交接链\"]'))"),true,'the actual production bundle must mount the safe history consumer');
-   await browser.waitFor("document.querySelectorAll('[data-assignment-history-row]').length===2");
-   const displayed=text(await browser.evaluate("document.querySelector('[aria-label=\"接单与交接链\"]').innerText"));
-   assert.ok(displayed.includes('林舟')&&displayed.includes('陈悦')&&displayed.includes('Pilot 信息保障组')&&displayed.includes('合成网络处理组'));
-   assert.ok(displayed.includes('首次接单')&&displayed.includes('责任变化')&&displayed.includes('处理轮次 1')&&displayed.includes('沟通交接'));
-   assert.ok(displayed.includes('已加载 2 条责任记录'));
-   assert.ok(!displayed.includes('web01-synthetic')&&!displayed.includes('仅供内部的合成处理记录'));
+   // Card 34B: the production bundle mounts the safe history consumer inside the 「处理记录」 timeline; there is no separate chain card,
+   // no loaded-count note and no reload button. The two real facts enrich their own timeline events.
+   assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"接单与交接链\"]'))"),false,'no separate chain card');
+   await browser.waitFor("document.querySelectorAll('.activity-list [data-assignment-history-row]').length===2");
+   const displayed=text(await browser.evaluate("[...document.querySelectorAll('.activity-list [data-assignment-history-row]')].map(row=>row.dataset.assignmentHistoryRow+'|'+row.innerText.replace(/\\s+/g,' ')).join('\\n')"));
+   assert.match(displayed,/^FIRST_RESPONSIBILITY\|.*林舟 接单/mu,'the first responsibility reads as its actor taking the ticket');
+   assert.match(displayed,/^RESPONSIBILITY_CHANGE\|.*陈悦 接手/mu,'the colleague taking it over reads as their own take-over');
+   assert.ok(displayed.includes('沟通交接：'),'the conversation handed over with it is a secondary line of the same row');
+   assert.ok(!displayed.includes('已加载')&&!displayed.includes('处理轮次')&&!displayed.includes('重新读取接单链'),'no engineering notes in the rows');
+   assert.ok(!displayed.includes('web01-synthetic'),'no raw WeCom identifier');
    assert.ok(requests.some(row=>row.method==='GET'&&row.path===s.path+'/assignment-history'&&row.status===200));assert.equal(requests.filter(row=>row.method==='POST').length,0);
    await capture('recorded-chain-1280.png');
    await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert.ok(await browser.evaluate('document.documentElement.scrollWidth<=window.innerWidth+1'));await capture('recorded-chain-390.png');
