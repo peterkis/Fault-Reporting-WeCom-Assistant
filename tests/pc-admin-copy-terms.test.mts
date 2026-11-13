@@ -79,3 +79,16 @@ test('Card 34C operation hint follows what is known',async()=>{
   // Codex review: a known result whose reading of the current facts failed has not tried the cleanup yet.
   assert.equal(module.operationHint('committed',false),'已提交。最新内容还没加载完，点击「核对结果」。');assert.doesNotMatch(module.operationHint('failed',false),/草稿/u);
 });
+
+// Codex review: sessions and subscriptions keep a visible, stable code that is unique on screen, even when suffixes collide.
+test('Card 34C short codes are the id\'s own suffix and never collide',async()=>{
+  const source=await readFile(join(src,'app/short-code.ts'),'utf8');
+  const output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+  const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {shortCodes:(ids:readonly string[],min?:number)=>Map<string,string>};
+  const a='01a1d3bc-c109-73fb-8a3b-65db1e0aaaaa',b='01a1d3bc-c109-73fb-8a3b-65db1e1aaaaa',c='01a1d3bc-c109-73fb-8a3b-65db1e062a78';
+  const codes=module.shortCodes([a,b,c]);
+  assert.equal(codes.get(c),'062A78','a unique id keeps the six-character suffix');
+  assert.notEqual(codes.get(a),codes.get(b),'colliding suffixes grow until they differ');
+  for(const id of [a,b,c])assert.ok(id.replaceAll('-','').toUpperCase().endsWith(codes.get(id)??'#'),'each code is the id\'s own suffix');
+  assert.equal(module.shortCodes([a,b,c]).get(a),codes.get(a),'the same ids give the same codes');
+});

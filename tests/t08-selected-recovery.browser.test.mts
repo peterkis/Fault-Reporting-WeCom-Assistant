@@ -125,10 +125,10 @@ for(const temporary of [false,true])test(temporary
     assert.equal(requests.filter(row=>row.method==='POST').length,0,'current authorized restoration never submits');
     // Card 34C: the session version is no longer visible copy; it stays on the choice as a data attribute.
     const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]')?.dataset.sessionRowVersion`);assert.equal(renderedVersion,String(sessionVersion));
-    // Codex review: without the session number in the text, each choice still names itself 「关联会话 N · 沟通人」 and keeps the
+    // Codex review: without the session number in the text, each choice still names itself 「会话尾号 XXXXXX · 沟通人」 (a stable suffix of its number) and keeps the
     // session number in its hover title, so two choices with the same colleague stay distinguishable.
     const choice=await browser.evaluate(`(row=>({text:row?.innerText.replace(/\\s+/g,' ')??'',title:row?.title??''}))(document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li'))`) as {text:string;title:string};
-    assert.match(choice.text,/^关联会话 \d+ · \S/u,'the choice names its position and colleague '+JSON.stringify(choice));assert.equal(choice.title,'会话编号 '+sessionId);
+    assert.match(choice.text,/^会话尾号 [0-9A-F]{6,} · \S/u,'the choice names its stable session code and colleague '+JSON.stringify(choice));assert.ok(sessionId.replaceAll('-','').toUpperCase().endsWith(/^会话尾号 ([0-9A-F]+)/u.exec(choice.text)?.[1]??'#'),'the code is the session number\'s own suffix '+JSON.stringify(choice));assert.equal(choice.title,'会话编号 '+sessionId);
     await browser.evaluate("document.querySelector('[data-action=unassign]').click()");await browser.waitFor(queuedDom);
     const posts=requests.filter(row=>row.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);assert.equal(post.path,path+'/unassign');assert.equal(post.status,200);
     const body=object(post.body),commandId=text(body.client_command_id);assert.match(commandId,UUID);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"2"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);
