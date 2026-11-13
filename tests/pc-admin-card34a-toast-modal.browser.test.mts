@@ -49,13 +49,14 @@ type Table={dialog:string;width:number;mode:string;popover:string|null;controls:
 type Shots={file:string;width:number;height:number;sha256:string}[];
 /** The checks shared by every modal: three persistent notices behind it, four widths, and the chip from the keyboard. */
 function modalHarness(b:Browser,directory:string,screenshots:Shots,table:Table,{sources='note+follow'}:{sources?:'note+follow'|'note'|'follow'}={}){
- const minimum=sources==='note+follow'?3:1;
+ const minimum=sources==='note+follow'?2:1;
  const size=async(width:number)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height:width===900?820:1000,deviceScaleFactor:1,mobile:false});};
  const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
  const key=async(name:'Enter'|'Escape')=>{const code=name==='Enter'?13:27;await b.command('Input.dispatchKeyEvent',{type:'keyDown',key:name,code:name,windowsVirtualKeyCode:code,...(name==='Enter'?{text:'\r'}:{})});await b.command('Input.dispatchKeyEvent',{type:'keyUp',key:name,code:name,windowsVirtualKeyCode:code});};
  const persistent="document.querySelectorAll('.workbench-toast[data-visible=true]:is(.error,.is-warning)').length";
- // Three notices that wait to be closed: an internal-note conflict (error) with its draft guard (unknown) and a follow conflict
- // (error); without the follow feature only the note conflict. They come from the real composer and follow button behind the open modal: the modal traps focus, so the note is set
+ // Two notices that wait to be closed: an internal-note conflict (error) and a follow conflict (error); without the follow
+ // feature only the note conflict. Opening the ticket itself raises none: the stray unassign draft 「已过期」 warning that used to
+ // add a third is gone (unassign is not offered on these tickets). They come from the real composer and follow button behind the open modal: the modal traps focus, so the note is set
  // through the native setter React listens to, and both buttons are pressed programmatically.
  const note=async()=>{
   await b.evaluate("globalThis.__toastMode['/internal-notes']='conflict'");
@@ -68,7 +69,7 @@ function modalHarness(b:Browser,directory:string,screenshots:Shots,table:Table,{
   if(sources==='follow'){await follow();await b.waitFor("document.querySelectorAll('.workbench-toast[data-visible=true].error').length===1");return;}
   await note();
   if(sources==='note'){await b.waitFor(persistent+'===1');return;}
-  await b.waitFor(persistent+'===2');await follow();await b.waitFor(persistent+'===3');
+  await b.waitFor(persistent+'===1');await follow();await b.waitFor(persistent+'===2');
  };
  const measure=async(name:string,dialog:string,width:number)=>{
   await size(width);await waitForAnimationsSettled(b);await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
@@ -141,7 +142,7 @@ test('Card 34A page notices stay outside every open modal at four widths, collap
   await scenario('closing','.detail-cancel-dialog',{wide:'toast-dialog-1440.png',chip:'toast-dialog-900-chip.png',chipOpen:'toast-dialog-900-chip-open.png'});
   // Closing the modal brings back the 32D-T docking inside the detail.
   await clickWorkbenchControl(b,'.ds-closure-dialog .ds-closure-actions button[type=button]');await b.waitFor("!document.querySelector('.ds-closure-dialog')");await waitForAnimationsSettled(b);
-  assert.deepEqual(await b.evaluate("(()=>{const v=document.querySelector('.workbench-toast-viewport');return [v.dataset.toastMode,v.dataset.toastHosted,v.hidden,Boolean(document.querySelector('.workbench-toast-chip-anchor')),v.querySelectorAll('.workbench-toast[data-visible=true]').length];})()"),['docked','true',false,false,3],'after the modal closes the notices dock inside the detail again');
+  assert.deepEqual(await b.evaluate("(()=>{const v=document.querySelector('.workbench-toast-viewport');return [v.dataset.toastMode,v.dataset.toastHosted,v.hidden,Boolean(document.querySelector('.workbench-toast-chip-anchor')),v.querySelectorAll('.workbench-toast[data-visible=true]').length];})()"),['docked','true',false,false,2],'after the modal closes the notices dock inside the detail again');
 
   // 设置: from the user menu, over the full-page detail.
   await open(settingsId,true);

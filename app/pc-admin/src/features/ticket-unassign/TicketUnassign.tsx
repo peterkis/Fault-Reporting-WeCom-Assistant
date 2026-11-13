@@ -40,7 +40,7 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
   const allowed=Boolean(context.data?.allowed_actions.includes('unassign'));
   const busy=['preparing','submitting','checking'].includes(state),unknown=state==='unknown';
   const clearSensitive=()=>{
-    const id=pendingRef.current?.client_command_id??opaqueRef.current??storedId.current;
+    const id=pendingRef.current?.client_command_id??opaqueRef.current??storedId.current,shown=hasUnassignInput(latest.current)||pendingRef.current!==null;
     generation.current++;request.current?.controller.abort();request.current=null;
     forgetMutationViews.current(); // Mutation variables also contain the protected original body/snapshot.
     latest.current=EMPTY_UNASSIGN;pendingRef.current=null;pendingSnapshot.current=null;opaqueRef.current=id;
@@ -48,7 +48,8 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
     const known=id&&knownTerminal.current?.commandId===id?knownTerminal.current:null;
     if(known){setCleanupBlocked(true);setReviewRequired(true);}
     setState(known?(known.state==='COMMITTED'?'committed':'failed'):id?'unknown':'idle');
-    setMessage(known?'上次操作已有结果，内容已隐藏。点击「核对结果」查看最新情况。':id?'结果未确认：内容已隐藏。点击「核对结果」，不要重复提交。':'当前撤派内容已停止展示。');
+    // Nothing was typed or pending and no original operation exists: there was nothing on screen to stop showing.
+    if(known||id||shown)setMessage(known?'上次操作已有结果，内容已隐藏。点击「核对结果」查看最新情况。':id?'结果未确认：内容已隐藏。点击「核对结果」，不要重复提交。':'当前撤派内容已停止展示。');
   };
   const draft=useUnassignDraft({ticketId,principal,value,pending,actionAllowed:allowed,
     onRestore:copy=>{latest.current=copy.value;pendingRef.current=copy.pending;pendingSnapshot.current=copy.pending?unassignInputSnapshot(copy.value):null;setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：已找回上次的填写内容。先点击「核对结果」，不会自动提交。');}},

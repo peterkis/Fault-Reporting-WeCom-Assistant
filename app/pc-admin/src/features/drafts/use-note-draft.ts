@@ -98,6 +98,9 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       if(controller.signal.aborted||generation.current!==token)return;
       const value=copy.text===null?null:protocol.current.decode(copy.text);
       handle.current=copy.handle;
+      // An action that is simply not offered, with nothing stored and nothing typed, stays silent. Purging the empty slot would
+      // broadcast an 'expired' invalidation that this hook's own subscriber reads as a real expiry of the user's draft.
+      if(!allowed&&!copy.handle.record&&!copy.handle.operation&&!hasInput(latest.current.value)&&!latest.current.pending){setStatus('ready');setMessage('');return;}
       if(!allowed){await removeSensitiveDraft(copy.handle);if(!copy.handle.operation)throw new DraftError('DRAFT_ACTION_REVOKED');}
       if(copy.handle.operation){setOperationId(copy.handle.operation.commandId);if(copy.text===null||!allowed){callbacks.current.onSensitiveClear();callbacks.current.onOperation(copy.handle.operation.commandId);setStatus('saved');setMessage(copy.expired?'草稿已过期，敏感内容已清理；原操作仍未知，只能只读核对。':'原操作仍未知，敏感恢复内容不可用；只能只读核对。');setInitialized(true);return;}}
       if(value&&!hasInput(latest.current.value)&&!latest.current.pending){
