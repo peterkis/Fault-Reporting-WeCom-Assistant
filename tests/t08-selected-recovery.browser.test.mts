@@ -94,7 +94,7 @@ for(const temporary of [false,true])test(temporary
    assert.equal(requests.filter(row=>row.method==='POST').length,0);
    await reload(browser);
    if(temporary){
-    await browser.waitFor(`(${draftStatus})?.textContent.includes('恢复核验暂时不可用')&&globalThis.__t08FaultCount>=1`);
+    await browser.waitFor(`(${draftStatus})?.textContent.includes('草稿暂未恢复')&&globalThis.__t08FaultCount>=1`);
     const statuses:unknown=await browser.evaluate('globalThis.__t08RealTargetStatuses');assert.ok(Array.isArray(statuses)&&statuses.length>=1&&statuses.every((status:unknown)=>status===200));
     assert.equal(await browser.evaluate(`(${reasonInput})?.value`),'');assert.equal(await browser.evaluate(`(${targetInput})?.value??null`),null);
     assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice] input[type=checkbox]:checked').length"),0);
@@ -123,7 +123,8 @@ for(const temporary of [false,true])test(temporary
    }else{
     await browser.waitFor(restored);assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')),original);
     assert.equal(requests.filter(row=>row.method==='POST').length,0,'current authorized restoration never submits');
-    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.closest('li')?.textContent`);assert.ok(typeof renderedVersion==='string'&&renderedVersion.includes('版本 '+sessionVersion));
+    // Card 34C: the session version is no longer visible copy; it stays on the choice as a data attribute.
+    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]')?.dataset.sessionRowVersion`);assert.equal(renderedVersion,String(sessionVersion));
     await browser.evaluate("document.querySelector('[data-action=unassign]').click()");await browser.waitFor(queuedDom);
     const posts=requests.filter(row=>row.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);assert.equal(post.path,path+'/unassign');assert.equal(post.status,200);
     const body=object(post.body),commandId=text(body.client_command_id);assert.match(commandId,UUID);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"2"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);

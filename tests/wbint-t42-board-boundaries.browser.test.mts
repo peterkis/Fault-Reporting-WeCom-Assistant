@@ -53,7 +53,7 @@ test('T42 cancel preserves a lost-ACK original command and explicit verification
     const first=f.tickets[0];assert.ok(first);const path='/api/tickets/'+first.ticket.id;
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-action=board-action-menu]')}).click()`);await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
     await browser.waitFor("document.querySelector('[data-action=take-and-start]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
-    await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未知')");
+    await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未确认')");
     const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
     const committed=await get(path);assert.equal(committed.status,'IN_PROGRESS');
     await browser.evaluate("document.querySelector('[data-action=cancel-board-move]').click()");
@@ -83,11 +83,11 @@ test('T42 real competing command produces conflict without losing the original c
     await browser.waitFor(`document.querySelector('.ticket-handling-version')?.textContent===${JSON.stringify('工单版本 ')}+${JSON.stringify(accepted.version)}`);
     assert.deepEqual(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'),originalWorkspace,'current refresh must not replace the held operation target or reload its workspace');
     await browser.evaluate('globalThis.__t42Release()');await browser.waitFor("Boolean(document.querySelector('[data-board-original-intent]'))");
-    const original=JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] pre').textContent")));assert.deepEqual(object(original).command,held.body);
+    const original=JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics")));assert.deepEqual(object(original).command,held.body);
     assert.equal((await get(path)).version,accepted.version);assert.equal((await get(path)).status,'ACCEPTED');
     assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1);
     await browser.evaluate("document.querySelector('[data-action=cancel-board-move]').click()");
-    assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] pre').textContent"))),original);
+    assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"))),original);
   },{realtime:true});
 });
 

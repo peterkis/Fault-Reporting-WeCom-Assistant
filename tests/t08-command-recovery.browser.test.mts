@@ -49,7 +49,7 @@ for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery
    // The production fetch awaits its actual server result, then loses that ACK. No test success handler or business fixture writes.
    await browser.evaluate(`(()=>{const send=fetch;globalThis.fetch=async(path,options)=>{const response=await send(path,options);if(options?.method==='POST'&&String(path)==='${path}/unassign'){globalThis.__t08RealCommit={status:response.status,body:await response.clone().json()};globalThis.__t08OriginalCommand=JSON.parse(options.body);throw new TypeError('T08_REAL_ACK_LOST');}return response;};})()`);
    await browser.evaluate("document.querySelector('[data-action=unassign]').click()");
-   await browser.waitFor(`(${feedback})?.innerText.includes('结果未知')&&Boolean(document.querySelector('[data-action=check-unassign-command]'))`);
+   await browser.waitFor(`(${feedback})?.innerText.includes('结果未确认')&&Boolean(document.querySelector('[data-action=check-unassign-command]'))`);
    const transport=object(await browser.evaluate('globalThis.__t08RealCommit')),original=object(await browser.evaluate('globalThis.__t08OriginalCommand'));
    assert.equal(transport.status,200);assert.equal(object(transport.body).ok,true);assert.equal(original.expected_version,2);assert.equal(original.reason,reason);
    const id=text(original.client_command_id);assert.equal(requests.filter(row=>row.method==='POST').length,1);
@@ -68,7 +68,7 @@ for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery
     await browser.evaluate("(()=>{globalThis.__t08Delete=IDBObjectStore.prototype.delete;IDBObjectStore.prototype.delete=function(...args){if(this.name==='operations')throw new DOMException('T08_SETTLEMENT_FAILURE','UnknownError');return globalThis.__t08Delete.apply(this,args);};})()");
     await browser.evaluate("document.querySelector('[data-action=check-unassign-command]').click()");
     await browser.waitFor(`(${feedback})?.innerText.includes('原操作已核对为提交')&&(${feedback})?.innerText.includes('清理尚未确认')`);
-    assert.equal(await browser.evaluate(`(${feedback})?.innerText.includes('结果未知')`),false);assert.deepEqual(object(await browser.evaluate(copies)).operations,[operation]);
+    assert.equal(await browser.evaluate(`(${feedback})?.innerText.includes('结果未确认')`),false);assert.deepEqual(object(await browser.evaluate(copies)).operations,[operation]);
     assert.equal(requests.filter(row=>row.method==='POST').length,1);await browser.evaluate('IDBObjectStore.prototype.delete=globalThis.__t08Delete');
    }
    await browser.evaluate("document.querySelector('[data-action=check-unassign-command]').click()");

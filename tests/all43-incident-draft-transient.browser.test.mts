@@ -15,7 +15,7 @@ async function transient(browser:Browser,incidentId:string,purposePath:string,dr
  try{
   const old=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
   await browser.waitFor(`performance.timeOrigin!==${old}&&globalThis.__all43Faults>0`);
-  await browser.waitFor(`document.querySelector(${JSON.stringify(draftSelector)})?.textContent.includes('恢复不可用')||document.body.innerText.includes('失权')`);
+  await browser.waitFor(`document.querySelector(${JSON.stringify(draftSelector)})?.textContent.match(/草稿未能保存|草稿暂未恢复/u)||document.body.innerText.includes('失权')`);
   assert.deepEqual(await browser.evaluate(copies),before,'a transient purpose read cannot destroy an unexpired encrypted original');
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(inputSelector)})?.value??''`),'','unverified recovery is not displayed or submitted');
  }finally{await browser.command('Page.removeScriptToEvaluateOnNewDocument',{identifier:text(fault.identifier)});}

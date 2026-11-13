@@ -70,10 +70,10 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       stage='candidate detail refresh preserves the explicit captured input';await navigate('incidents/candidates/'+candidateId);
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('.workbench-select[data-field-label="人工决定"] select'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
       await choose(candidateId,'人工决定','START_REVIEW');await choose(candidateId,'决定原因','OPERATOR_REVIEWED');
-      const captured=await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('[data-captured-basis]').textContent`);
-      assert.match(text(captured),/已捕获候选版本 1；当前候选版本 1/u);const detailReads=reads.get('/api/incident-candidates/'+candidateId)??0;
+      const captured=await browser.evaluate(`(captured=>captured?.dataset.capturedVersion==='1'&&captured.dataset.currentVersion==='1'&&!captured.textContent.includes('内容已更新'))(document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('[data-captured-basis]'))`);
+      assert.equal(captured,true,'captured and current candidate version are both 1 (Card 34C: kept as data attributes)');const detailReads=reads.get('/api/incident-candidates/'+candidateId)??0;
       await post('/api/incident-candidates/'+candidateId+'/start-review',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
-      await browser.waitFor(`document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('[data-captured-basis]')?.textContent.includes('已捕获候选版本 1；当前候选版本 2')`);
+      await browser.waitFor(`document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('[data-captured-basis]')?.dataset.currentVersion==='2'&&document.querySelector(${JSON.stringify(root(candidateId))})?.querySelector('[data-captured-basis]')?.textContent.includes('内容已更新')`);
       assert.ok((reads.get('/api/incident-candidates/'+candidateId)??0)>detailReads);
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('.workbench-select[data-field-label="人工决定"] select').value`),'START_REVIEW');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root(candidateId))}).querySelector('.workbench-select[data-field-label="决定原因"] select').value`),'OPERATOR_REVIEWED');

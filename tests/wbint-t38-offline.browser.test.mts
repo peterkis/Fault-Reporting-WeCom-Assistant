@@ -40,9 +40,9 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       for(let i=0;i<150&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,100));assert.ok(attachmentReads>beforeAttachments,'an unrelated authorized attachment family actually returned200');
       await browser.waitFor('!document.querySelector(".attachment-section button")?.disabled&&!document.querySelector(".attachment-section")?.textContent.includes("附件响应无法安全识别")');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
-      await browser.waitFor('(()=>{const text=document.querySelector(".ticket-note-state")?.textContent??"";return ["尚未准备或发送","已保存","结果未知","保存被拒绝"].some(state=>text.includes(state));})()');
+      await browser.waitFor('(()=>{const text=document.querySelector(".ticket-note-state")?.textContent??"";return ["网络未就绪","已保存","结果未确认","保存被拒绝"].some(state=>text.includes(state));})()');
       assert.equal(posts,0,'no new prepare/POST may be inferred from stale/unreadable action data');
-      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("尚未准备或发送")'));
+      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("网络未就绪")'));
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'T38 draft during temporary read failure');
       unreadable=false;
       await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="刷新可用操作").click()');

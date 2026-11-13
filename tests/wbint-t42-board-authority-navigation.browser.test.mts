@@ -28,9 +28,9 @@ test('T42 full-page expansion preserves the original completion intent through a
       await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");await browser.waitFor('globalThis.__t42Completion!==null');
       const original=await browser.evaluate('globalThis.__t42Completion'),note=await http.post(ticket.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:started.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T42真实竞争版本的内部备注',external_visible:false});assert.equal(note.status,200,await note.clone().text());
       const current=await http.detail(ticket.ticket.id);assert.equal(current.status,'IN_PROGRESS');assert.ok(current.version>started.version);
-      await browser.evaluate('globalThis.__t42ReleaseCompletion()');await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('冲突')");
+      await browser.evaluate('globalThis.__t42ReleaseCompletion()');await browser.waitFor("document.querySelector('.ticket-completion-state')?.textContent.includes('已被他人更新')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-board-original-intent]'))"),true,'expansion cannot drop the original board-mode conflict protection');
-      assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] pre').textContent"))),original);
+      assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"))),original);
       assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'T42原独立内部过程：展开完整页后仍保留原操作。');
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'合成设备已恢复。');assert.equal(await browser.evaluate('globalThis.__t42CompletionPosts'),1);
       assert.equal((await http.detail(ticket.ticket.id)).version,current.version,'conflict has no completion fact or automatic new command');

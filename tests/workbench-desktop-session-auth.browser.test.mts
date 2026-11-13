@@ -45,7 +45,7 @@ for(const mode of ['initial-401','draft-401','cleanup-failure','permission-403',
     // Another in-flight read can already have closed the view after cookie loss.
     await browser.evaluate("[...document.querySelectorAll('.ticket-notes button')].find(button=>button.textContent==='刷新可用操作')?.click()");
     if(mode==='ordinary-browser'){await browser.waitFor("document.body.innerText.includes('会话已失效')");assert.equal(qrRequests,0);return;}
-    if(mode==='cleanup-failure'){await browser.waitFor("document.body.innerText.includes('清理尚未确认')");assert.equal(qrRequests,0);assert.equal(await browser.evaluate('window.__loginRequests'),0);assert.equal(posts,0);return;}
+    if(mode==='cleanup-failure'){await browser.waitFor("document.body.innerText.includes('还没清除完')");assert.equal(qrRequests,0);assert.equal(await browser.evaluate('window.__loginRequests'),0);assert.equal(posts,0);return;}
    }
    await browser.waitFor("location.pathname==='/workbench/desktop'&&document.body.innerText.includes('合成企业微信二维码登录')");
    const proof=await browser.evaluate("JSON.parse(sessionStorage.getItem('synthetic-login-proof'))") as {calls:number;counts:{drafts:number;operations:number};blocked:boolean;oldTextVisible:boolean;context:{epoch:null;blocked:boolean;live:boolean;remindersAvailable:boolean}};

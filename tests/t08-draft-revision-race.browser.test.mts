@@ -111,7 +111,7 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    assert.equal(await writer.evaluate(`(${reasonInput})?.value`),unsaved);assert.deepEqual(await writer.evaluate(snapshot(fixture.admin,ticketId)),r2);
    releaseTargets();await pollYxx(()=>held.size===0);
    // Both original and minimally fixed code have a public completion state. No assertion requires the buggy broadcast.
-   await stale.waitFor(`globalThis.__t08TargetReplies?.includes(403)&&Boolean(${draftStatus})&&((${draftStatus}).textContent.includes('恢复核验暂时不可用')||(${draftStatus}).textContent.includes('恢复副本已清理')||(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}&&(${reasonInput}).disabled===false)`);
+   await stale.waitFor(`globalThis.__t08TargetReplies?.includes(403)&&Boolean(${draftStatus})&&((${draftStatus}).textContent.includes('草稿暂未恢复')||(${draftStatus}).textContent.includes('恢复副本已清理')||(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}&&(${reasonInput}).disabled===false)`);
    // An observation marker has no principal/reason and is rejected by production invalidation().
    // It drains the same native cross-tab channel after the old restore completed, without creating a revoked message.
    const barrier=randomUUID();await stale.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({t08RaceBarrier:${JSON.stringify(barrier)}});channel.close();})()`);

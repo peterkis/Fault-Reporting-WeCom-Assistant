@@ -63,8 +63,8 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('[data-action=refresh-candidate]'))`);
       await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select'))`);
       await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');
-      const captured=await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]').textContent`);
-      assert.equal(typeof captured,'string');assert.match(String(captured),/已捕获候选版本 1；当前候选版本 1/u);
+      const captured=await browser.evaluate(`(captured=>captured?.dataset.capturedVersion==='1'&&captured.dataset.currentVersion==='1'&&!captured.textContent.includes('内容已更新'))(document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]'))`);
+      assert.equal(captured,true,'captured and current candidate version are both 1 (Card 34C: kept as data attributes)');
 
       // Issue a real replacement session only after the first App/API has stopped.
       await runtime.stop();assert.equal(runtime.server.listening,false);runtime=createP2012Runtime(runtimeOptions);
@@ -72,7 +72,7 @@ test('T27 native START uses renewed same-principal Cookie CSRF and preserves the
       assert.notEqual(currentCookie.value,originalCookie.value);await browser.command('Network.setCookies',{cookies:[currentCookie]});
       const fresh=record(await browser.evaluate('fetch("/api/lifecycle/bootstrap").then(r=>r.json())'));
       assert.equal(fresh.principal_id,principalId);const currentCsrf=stringField(fresh,'csrf_token');assert.notEqual(currentCsrf,oldCsrf);
-      assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]').textContent`),captured);
+      assert.equal(await browser.evaluate(`(captured=>captured?.dataset.capturedVersion==='1'&&captured.dataset.currentVersion==='1'&&!captured.textContent.includes('内容已更新'))(document.querySelector(${JSON.stringify(root)}).querySelector('[data-captured-basis]'))`),captured);
       await browser.evaluate(`(()=>{const send=globalThis.fetch;globalThis.__t27Posts=[];globalThis.fetch=async(path,options)=>{if(String(path)!=='/api/incident-candidates/${candidateId}/start-review'||options?.method!=='POST')return send(path,options);const row={body:JSON.parse(options.body),serializedBody:options.body,key:options.headers['idempotency-key'],match:options.headers['if-match'],freshCsrf:options.headers['x-csrf-token']===${JSON.stringify(currentCsrf)},status:null};globalThis.__t27Posts.push(row);const response=await send(path,options);row.status=response.status;return response;};})()`);
       await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').click()`);
       await browser.waitFor('globalThis.__t27Posts.length===1 && globalThis.__t27Posts[0].status!==null');

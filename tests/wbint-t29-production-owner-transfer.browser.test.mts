@@ -14,7 +14,7 @@ test('T29 production bundle explicitly transfers once, renders responsibility hi
     await browser.evaluate('document.querySelector("[data-action=submit-owner-transfer]").click()');
     await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("交接已提交")');
     const after=(await get(path)).body;assert.equal(after.owner_principal_id,target);assert.equal(after.owner_team_id,'PILOT_IT');assert.equal(after.row_version,'2');assert.equal(after.status,before.status);
-    const display=`(()=>{const root=document.querySelector('[data-incident-id="${incidentId}"]');const value=label=>[...(root?.querySelectorAll('dt')??[])].find(item=>item.textContent===label)?.nextElementSibling?.textContent;return value('故障负责人')==='合成调度员'&&value('责任组')==='PILOT_IT'&&value('公共故障版本')==='2'&&document.body.innerText.includes('交接公共故障负责人');})()`;
+    const display=`(()=>{const root=document.querySelector('[data-incident-id="${incidentId}"]');const value=label=>[...(root?.querySelectorAll('dt')??[])].find(item=>item.textContent===label)?.nextElementSibling?.textContent;return value('故障负责人')==='合成调度员'&&value('责任组')==='PILOT_IT'&&root?.dataset.rowVersion==='2'&&document.body.innerText.includes('交接公共故障负责人');})()`;
     await browser.waitFor(display);assert.equal(await browser.evaluate('globalThis.__t29Posts.filter(post=>post.path.endsWith("/transfer-owner")).length'),1);
     assert.deepEqual(await get(path+'/notifications?limit=100'),notifications);
     await context.capture();await browser.command('Page.reload');await browser.waitFor(display);assert.equal((await get(path)).body.row_version,'2');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0,'reload must not POST');

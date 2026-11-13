@@ -28,7 +28,7 @@ test('temporary GET unavailability preserves UNKNOWN and permits explicit origin
       await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note]"))');assert.equal(commands.length,1);
       unreadable=true;
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
-      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("结果未知")'));
+      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("结果未确认")'));
       assert.equal(commands.length,1,'failed reads must not infer a retry or settle the unknown command');
       restoreInternalNoteResponses();
       await browser.evaluate('document.querySelector("[data-action=check-internal-note]").click()');

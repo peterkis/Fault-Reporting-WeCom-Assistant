@@ -32,7 +32,7 @@ test('expired unknown payload and key are purged while the original opaque opera
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t03Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T03 expired unknown synthetic private note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
-      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t03Commands[0]');
       const storage=await browser.evaluate("(async()=>{const record=await new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,read=db.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{db.close();resolve(read.result[0]);};};});let exportError=null;try{await crypto.subtle.exportKey('raw',record.key);}catch(error){exportError=error.name;}return {extractable:record.key.extractable,exportError,algorithm:record.key.algorithm,cipherBytes:record.ciphertext.byteLength,hasPlainCanary:JSON.stringify(record).includes('T03 expired unknown synthetic private note'),ttl:record.expiresAt-record.firstSavedAt};})()");
       assert.equal(storage.extractable,false);assert.equal(storage.exportError,'InvalidAccessError');assert.deepEqual(storage.algorithm,{name:'AES-GCM',length:256});assert.equal(storage.hasPlainCanary,false);assert.equal(storage.ttl,86400000);assert.ok(storage.cipherBytes>16&&storage.cipherBytes<=16400);
@@ -61,13 +61,13 @@ test('unknown internal note submission survives refresh with the immutable origi
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t03Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,' T03 unknown synthetic private note ');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
-      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t03Commands[0]');
       assert.equal(original.expected_version,2);assert.equal(original.note,'T03 unknown synthetic private note');
       await browser.command('Page.enable');
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__t03Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};})()"});
       await reload(browser);
-      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')&&Boolean(document.querySelector('[data-action=check-internal-note]'))");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未确认')&&Boolean(document.querySelector('[data-action=check-internal-note]'))");
       assert.equal(await browser.evaluate("document.querySelector('textarea').value"),' T03 unknown synthetic private note ');
       assert.equal(await browser.evaluate("document.querySelector('textarea').disabled"),true);
       assert.equal(await browser.evaluate('globalThis.__t03Commands.length'),0);

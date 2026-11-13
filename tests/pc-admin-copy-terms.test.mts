@@ -14,8 +14,8 @@ const ENGLISH_ALLOWED=new Set(['Ctrl','Esc','Enter','Tab','Shift','Alt','Cmd']);
 const SERVER_VALUES=new Set(['Bot 私聊','Bot 私聊回复','Bot 私聊规则回复','本人 Bot 私聊','本人的医小修私聊']);
 // Download file names, never shown in the page body.
 const FILE_NAMES=new Set(['报修附件.png','报修附件.jpg']);
-// Pending: these features are rewritten by card 34B (#187); their copy is cleaned once it lands, then this list empties.
-const PENDING_DIRECTORIES=['features/ticket-unassign/','features/ticket-return-to-dispatch/','features/assignment-history/'];
+// Directories temporarily outside the check; empty since card 34B (#187) landed and its copy was cleaned.
+const PENDING_DIRECTORIES:string[]=[];
 const cjk=/[\u4e00-\u9fff]/u;
 const literal=/'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`|[>}]([^<>{}'"`;=]*[\u4e00-\u9fff][^<>{}'"`;=]*)[<{]/gu;
 

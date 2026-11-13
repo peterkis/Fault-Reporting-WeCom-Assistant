@@ -41,7 +41,7 @@ test('Card 34B detail drawer: chain in the timeline, no empty unassign block, co
   await shot('drawer-1440-processing.png');
   // A saved draft: 「✓ 草稿已保存 · 清空」 at the left of the composer's bottom bar, in small tertiary text.
   await clickWorkbenchControl(b,'.ds-detail-footer textarea');await b.command('Input.insertText',{text:'卡34B 合成草稿（合成）'});
-  await b.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");await waitForAnimationsSettled(b);
+  await b.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");await waitForAnimationsSettled(b);
   const draft=await b.evaluate(`(()=>{const line=document.querySelector('.ds-note-bottom .ds-note-draft'),s=getComputedStyle(line),fs=getComputedStyle(document.documentElement);
    const visible=line.cloneNode(true);visible.querySelectorAll('.sr-only').forEach(node=>node.remove());
    return {text:visible.textContent.replace(/\\s+/g,''),icon:Boolean(line.querySelector('[data-draft-status] svg')),clear:line.querySelector('[data-action=discard-note-draft]')?.textContent.trim()??null,

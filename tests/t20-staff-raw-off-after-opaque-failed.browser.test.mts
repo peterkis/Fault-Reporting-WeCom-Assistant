@@ -40,7 +40,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    assert.equal(note.status,200,await note.clone().text());const changed=await http.detail(ticketId);assert.equal(changed.status,'COMPLETED');assert.equal(changed.version,closed.version+1);
    await tab.evaluate("(()=>{const input=document.querySelector('#reopen-reason');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'原工作人员重开原因');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
    await tab.evaluate("document.querySelector('[data-action=reopen-ticket]').click()");
-   await tab.waitFor("globalThis.__t20Posts.length===1&&document.querySelector('[data-reopen-state]')?.textContent.includes('结果未知')");
+   await tab.waitFor("globalThis.__t20Posts.length===1&&document.querySelector('[data-reopen-state]')?.textContent.match(/结果未知|结果未确认/u)");
    const observations=await tab.evaluate('globalThis.__t20Posts') as {path:string;input:{client_command_id:string;expected_version:number};status:number;response:{ok:boolean;error:{code:string;retryable:boolean}}}[];
    const original=observations[0];assert.ok(original);assert.equal(original.path,ticketPath+'/reopen');assert.equal(original.input.expected_version,closed.version);assert.equal(original.status,409);assert.equal(original.response.ok,false);assert.equal(original.response.error.retryable,false);
    await writeFile(join(directory,'original-failed-post-observation.json'),JSON.stringify(observations,null,2));
@@ -62,7 +62,7 @@ test('production HANDLER raw OFF settles an old opaque FAILED UUID then never wr
    const countsExpression=`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onupgradeneeded=()=>request.transaction.abort();request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations'],'readonly'),draft=tx.objectStore('drafts').getKey(${JSON.stringify(scope)}),operation=tx.objectStore('operations').getKey(${JSON.stringify(scope)});tx.oncomplete=()=>{db.close();resolve({sensitive:draft.result===undefined?0:1,opaque:operation.result===undefined?0:1});};tx.onabort=()=>{db.close();reject(tx.error);};};})`;
    assert.deepEqual(await tab.evaluate(countsExpression),{sensitive:0,opaque:1});
    await tab.evaluate("document.querySelector('[data-action=check-reopen-command]').click()");
-   await tab.waitFor("document.querySelector('[data-reopen-state]')?.textContent.includes('已核对原操作被拒绝')&&!document.querySelector('[data-action=check-reopen-command]')");
+   await tab.waitFor("document.querySelector('[data-reopen-state]')?.textContent.includes('上次操作没有成功')&&!document.querySelector('[data-action=check-reopen-command]')");
    assert.equal(await tab.evaluate(`globalThis.__t20Reads.includes(${JSON.stringify(ticketPath+'/reopen/commands/'+original.input.client_command_id)})`),true);
    assert.deepEqual(await tab.evaluate(countsExpression),{sensitive:0,opaque:0},'only explicit terminal FAILED acknowledgement settles the old operation');
    await tab.evaluate("(()=>{const input=document.querySelector('#reopen-reason');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'RAW_OFF_NEW_REASON_CANARY');input.dispatchEvent(new Event('input',{bubbles:true}));})()");

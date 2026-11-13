@@ -131,7 +131,7 @@ test('T14 expired UNKNOWN keeps only its original opaque operation and checks a 
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");await browser.evaluate(traceCommands);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t14Commands[0]') as {client_command_id:string};assert.ok(original.client_command_id);
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:traceCommands+";(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()"});await reload(browser);
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已过期')&&Boolean(document.querySelector('[data-action=check-review-receipt]'))");
@@ -206,14 +206,14 @@ test('T14 linked Review UNKNOWN survives refresh without replacing its captured 
       await browser.evaluate("(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t14Commands[0]');assert.ok(original);
       await browser.command('Page.enable');
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};})()"});
       await reload(browser);
       await browser.waitFor("Boolean(document.querySelector('.detail-page .detail-heading h2'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the committed associated Review must still locate its original UNKNOWN recovery scope');
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')&&Boolean(document.querySelector('[data-action=reconcile-review]'))");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')&&Boolean(document.querySelector('[data-action=reconcile-review]'))");
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'CLASSIFY_BUSINESS_CONSULTATION');
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核原因\"] select').value"),'BUSINESS_CONSULTATION_CONFIRMED');
       assert.equal(await browser.evaluate('globalThis.__t14Commands.length'),0);

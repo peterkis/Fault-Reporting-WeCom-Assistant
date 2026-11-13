@@ -12,7 +12,7 @@ test('T28 follow-up preserves unsubmitted input across parent conflict and retai
     await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
     await http.post(path+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
     await context.browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');
-    await context.browser.waitFor('document.body.innerText.includes("已捕获公共故障版本 1；当前版本 2")');
+    await context.browser.waitFor('document.body.innerText.includes("内容已更新，请点击「使用最新内容」后再提交")');
     assert.equal(await context.browser.evaluate('document.querySelector(".workbench-select[data-field-label=确认范围] select").value'),'BUILDING');
     assert.equal(await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").disabled'),true);
     assert.equal(rows(await context.browser.evaluate('globalThis.__t28Posts')).filter(value=>value.path===path+'/correct-scope').length,0);
@@ -27,11 +27,11 @@ test('T28 follow-up preserves unsubmitted input across parent conflict and retai
     await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');
     await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');
     const lost=record(await context.browser.evaluate('globalThis.__t28LostAck'));assert.equal(lost.status,200);assert.equal(record(lost.body).ok,true);
-    const command=await assertClosedUiCommand(context.browser,path+'/correct-scope',{expected_row_version:'3',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'}),unknown=text(await context.browser.evaluate('document.querySelector("[data-incident-unknown]").textContent'));
+    const command=await assertClosedUiCommand(context.browser,path+'/correct-scope',{expected_row_version:'3',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'}),unknown=text(await context.browser.evaluate('document.querySelector("[data-action=copy-diagnostics]").dataset.diagnostics'));
     assert.ok(unknown.includes(text(command.client_command_id))&&unknown.includes('3'));assert.equal((await http.get(path)).row_version,'4');
     await context.browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');
-    await context.browser.waitFor('document.body.innerText.includes("当前版本 4")');
-    assert.equal(await context.browser.evaluate('document.querySelector("[data-incident-unknown]").textContent'),unknown);assert.equal(await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").disabled'),true);
+    await context.browser.waitFor('document.body.innerText.includes("内容已更新，请点击「使用最新内容」后再提交")');
+    assert.equal(await context.browser.evaluate('document.querySelector("[data-action=copy-diagnostics]").dataset.diagnostics'),unknown);assert.equal(await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").disabled'),true);
     const posts=rows(await context.browser.evaluate('globalThis.__t28Posts'));assert.equal(posts.filter(value=>value.path===path+'/correct-scope').length,1);
     const reads=await context.browser.evaluate('globalThis.__t27DomainReads');assert.ok(Array.isArray(reads));assert.equal(reads.some(value=>typeof value==='string'&&value.startsWith(path+'/commands/')),false);
     assert.deepEqual(await personalSnapshots(http,context.f.reports),personal);

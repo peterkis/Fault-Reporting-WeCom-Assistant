@@ -177,7 +177,7 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
     enabled: draft.enabled,status:draft.status,operationId:draft.operationId,
     restorationBlocked:unavailable,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',
     safeToLeave:!restoring&&!unavailable&&(draft.safeToLeave||Boolean(enabled&&draft.operationId&&pending===null&&!hasReturnInput(value)&&['ready','saved'].includes(draft.status))),
-    message:unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后重新读取。':restoring?'正在核对当前退回、目标和会话授权…':draft.message,
+    message:unavailable?'草稿暂未恢复：内容仍保存在本机，网络恢复后会自动找回。':restoring?'正在核对当前退回、目标和会话授权…':draft.message,
     async prepare(command:P2016ReturnToDispatchCommand,fence:ReturnFence){
       fence.requireCurrent();if(!enabled){const saved=await checkOpaque(fence,true);fence.requireCurrent();if(saved?.operation){onSensitiveClear();onOperation(saved.operation.commandId);throw new DraftError('DRAFT_OPERATION_PENDING');}}
       await draft.prepare(command);fence.requireCurrent();
