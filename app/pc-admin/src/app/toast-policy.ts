@@ -8,10 +8,14 @@ export function toastDuration({unknown,loading,error,persistent}:{unknown:boolea
 }
 
 export interface ToastLike {id:string;visible:boolean;duration?:number|undefined;createdAt:number}
-/** The notices to push out when more than three are visible: the oldest that would close on their own; a notice that waits for the user is never pushed out. */
+/**
+ * The notices to push out when more than three are visible: the oldest that would close on their own; a notice that waits for the
+ * user is never pushed out, and neither is the newest notice (with three notices waiting for the user, a new result would otherwise
+ * be the only candidate and vanish as it appears).
+ */
 export function overflowToasts<T extends ToastLike>(toasts:readonly T[]):T[]{
-  const visible=toasts.filter(item=>item.visible);
-  return visible.filter(item=>item.duration!==undefined&&Number.isFinite(item.duration)).sort((a,b)=>a.createdAt-b.createdAt).slice(0,Math.max(0,visible.length-MAX_VISIBLE_TOASTS));
+  const visible=toasts.filter(item=>item.visible),newest=visible.reduce<T|undefined>((latest,item)=>!latest||item.createdAt>=latest.createdAt?item:latest,undefined);
+  return visible.filter(item=>item!==newest&&item.duration!==undefined&&Number.isFinite(item.duration)).sort((a,b)=>a.createdAt-b.createdAt).slice(0,Math.max(0,visible.length-MAX_VISIBLE_TOASTS));
 }
 
 /** The purpose label shown as a notice's title when no outcome title is given. */
