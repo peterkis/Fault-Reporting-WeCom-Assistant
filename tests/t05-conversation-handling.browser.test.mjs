@@ -91,7 +91,7 @@ test('the sole-session shortcut preserves its exact selection and UUID when the 
     await browser.evaluate(instrument);
     await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="领取并开始"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+    await browser.waitFor('/结果未知|结果未确认/u.test(document.querySelector(".conversation-handling-state")?.textContent??"")&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions.length,1);
     malformed=false;await browser.evaluate('document.querySelector("[data-action=check-conversation-handling]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');
@@ -115,7 +115,7 @@ for(const expires of [false,true])test('an UNKNOWN composite keeps its original 
   await browserScenario(async({browser,runtime,tickets})=>{
     let malformed=true;runtime.server.on('request',(request,response)=>{if(!request.url?.endsWith('/take-and-start-with-conversations'))return;const end=response.end.bind(response);response.end=(...args)=>response.statusCode===200&&malformed?end('{"ok":true}'):end(...args);});
     await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")');const original=(await browser.evaluate('globalThis.__t05Posts'))[0];
+    await browser.waitFor('/结果未知|结果未确认/u.test(document.querySelector(".conversation-handling-state")?.textContent??"")');const original=(await browser.evaluate('globalThis.__t05Posts'))[0];
     // The harness enables Runtime and Network; future-document scripts also require the Page domain.
     await browser.command('Page.enable');
     const beforeReload=await browser.evaluate('Date.now()');
@@ -142,7 +142,7 @@ test('a real version conflict preserves the identified selection and its old ver
     const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query('UPDATE conversation.session SET row_version=row_version+1 WHERE id=$1::uuid',[id]);
     await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("操作冲突")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已被他人更新")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
     assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
     await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("内容已变化")'));

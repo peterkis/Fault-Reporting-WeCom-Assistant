@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readdir,readFile} from 'node:fs/promises';
 import {join,relative,resolve} from 'node:path';
+import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
 
 // Card 34C: the PC workbench copy speaks to the user, not about the system (docs/ui/design-system.md 「界面文案」). Every Chinese
 // string literal and JSX text in app/ and features/ is scanned for the banned technical words and for English words.
@@ -47,4 +48,17 @@ test('Card 34C PC workbench copy has no banned technical words or English words'
   }
   assert.ok(scanned>100,'the scan reached the workbench sources ('+scanned+')');
   assert.deepEqual(findings,[],'copy must follow 「界面文案」 in docs/ui/design-system.md');
+});
+
+// Codex review: an example in the copy must be one the input accepts. The follow-up time hint is fed to the real parser.
+test('Card 34C follow-up time example is accepted by followUpInput',async()=>{
+  const view=await readFile(join(src,'features/follow-up/SharedFollowUp.tsx'),'utf8');
+  const example=/请填写正确的时间，例如 ([0-9-]+ [0-9:]+)。/u.exec(view)?.[1];assert.ok(example,'the hint shows an example time');
+  const stub='export class ApiError extends Error{constructor(status,code){super(code);this.status=status;}}export class UnknownCommandOutcome extends Error{}export const captureWorkbenchRead=()=>()=>{};export const postTicketCommand=()=>{};export const readWorkbench=()=>{};export const decodeSharedFollowUpActive=()=>{};';
+  const source=await readFile(join(src,'features/follow-up/client.ts'),'utf8');
+  const output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,verbatimModuleSyntax:true}}).outputText
+    .replace("'../../api/client'",JSON.stringify('data:text/javascript;base64,'+Buffer.from(stub).toString('base64')));
+  const client=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {followUpInput:(value:string)=>string};
+  assert.equal(client.followUpInput(example),example,'the displayed example parses');
+  assert.throws(()=>client.followUpInput('2026-11-12 14:30'),'minutes alone are rejected, which is why the example shows seconds');
 });

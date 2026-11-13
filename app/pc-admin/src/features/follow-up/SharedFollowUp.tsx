@@ -95,7 +95,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   if(!view||!readReady||blocked||!principal.follow_up_schedules_enabled||!view.allowed_actions.includes(action)||!principal.csrf_token||!workbenchTransportWritable())return;
   if(action==='SET'){
    try{const due=followUpInput(input);void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:view.ticket_version,expected_schedule_version:view.schedule_version,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:due}));}
-   catch{setState('invalid');setMessage('请填写正确的时间，例如 2026-11-12 14:30。');}
+   catch{setState('invalid');setMessage('请填写正确的时间，例如 2026-11-12 14:30:00。');}
   }else void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:view.ticket_version,expected_schedule_version:view.schedule_version,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'CANCEL',due_at:null}));
  }
  async function checkOriginal(){

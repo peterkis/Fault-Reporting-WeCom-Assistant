@@ -136,7 +136,7 @@
 | `follow-up/SharedFollowUp.tsx:138` | 北京时间（Asia/Shanghai），由当前处理和沟通责任共同跟进。 | 「北京时间。处理人和沟通人都会看到这次跟进。」 | 设置跟进时间 |
 | `follow-up/SharedFollowUp.tsx:78` | 恢复副本未确认，操作尚未发送；输入仍保留，可先清空或处理已有草稿。 | 「草稿未能保存，本次没有提交。可以先清空草稿再试。」 | 跟进时间草稿写入失败 |
 | `follow-up/SharedFollowUp.tsx:91` | 尚未发送：恢复副本未确认，请保留原操作只读核对。 | 标题「草稿未能保存」· 说明「本次没有提交，你的输入还在。检查浏览器存储后重试。」 | 提交前本机草稿写不进浏览器（隐私模式、存储已满） |
-| `follow-up/SharedFollowUp.tsx:98` | 请填写有效的北京时间，格式为 YYYY-MM-DD HH:mm:ss。 | 「请填写正确的时间，例如 2026-11-12 14:30。」 | 跟进时间格式错误 |
+| `follow-up/SharedFollowUp.tsx:98` | 请填写有效的北京时间，格式为 YYYY-MM-DD HH:mm:ss。 | 「请填写正确的时间，例如 2026-11-12 14:30:00。」（解析要求到秒） | 跟进时间格式错误 |
 
 ### incident-candidates
 
