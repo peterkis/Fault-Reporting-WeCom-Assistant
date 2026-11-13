@@ -39,7 +39,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const allowed=principal.ticket_return_to_dispatch_enabled&&Boolean(context.data?.allowed_actions.includes('return-to-dispatch'));
   const busy=['preparing','submitting','checking'].includes(state),unknown=state==='unknown';
   const clearSensitive=()=>{
-    const id=pendingRef.current?.client_command_id??opaqueRef.current??storedId.current;
+    const id=pendingRef.current?.client_command_id??opaqueRef.current??storedId.current,shown=hasReturnInput(latest.current)||pendingRef.current!==null;
     generation.current++;request.current?.controller.abort();request.current=null;
     forgetMutationViews.current(); // Mutation variables also contain the protected original body/snapshot.
     latest.current=EMPTY_RETURN;pendingRef.current=null;pendingSnapshot.current=null;opaqueRef.current=id;
@@ -47,7 +47,8 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     const known=id&&knownTerminal.current?.commandId===id?knownTerminal.current:null;
     if(known){setCleanupBlocked(true);setReviewRequired(true);}
     setState(known?(known.state==='COMMITTED'?'committed':'failed'):id?'unknown':'idle');
-    setMessage(known?'原操作终态已读到；敏感内容已停止展示，须按原 UUID 重新读取当前事实。':id?'原操作仍须按原 UUID 只读核对，敏感内容已停止展示。':'当前退回内容已停止展示。');
+    // Nothing was typed or pending and no original operation exists: there was nothing on screen to stop showing.
+    if(known||id||shown)setMessage(known?'原操作终态已读到；敏感内容已停止展示，须按原 UUID 重新读取当前事实。':id?'原操作仍须按原 UUID 只读核对，敏感内容已停止展示。':'当前退回内容已停止展示。');
   };
   const draft=useReturnDraft({ticketId,principal,value,pending,actionAllowed:allowed,
     onRestore:copy=>{latest.current=copy.value;pendingRef.current=copy.pending;pendingSnapshot.current=copy.pending?returnInputSnapshot(copy.value):null;setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('已恢复原操作的 UUID、版本及选择；请先只读核对。');}},
