@@ -7,6 +7,7 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
+import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedback';
 // T08 consumer installed after the original real production-bundle RED.
 // Local production-bundle validation does not enable the default-off feature or authorize deployment.
 import {useEffect,useId,useRef,useState} from 'react';
@@ -250,6 +251,8 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
   // protected input and recovery are never unmounted by presentation.
   const readState:StepReadState=context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready';
   useStepRead(readState);
+  // Card 34A: while its dialog is open the outcome is shown inside it; a toast only for what is not already shown there.
+  const messageToast=useDialogToast(dialogOpen,messageRevision);
   if(!showForm&&!originalId&&!hasUnassignInput(value)&&!busy&&!message&&!dialogOpen)return null;
   const close=()=>{if(!busy)setDialogOpen(false);};
   const section=<section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
@@ -274,14 +277,14 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
     {originalId&&!busy?<HButton type="button" data-action="check-unassign-command" onClick={()=>{void check();}} tone="secondary">只读核对原操作</HButton>:null}
     {!originalId&&hasUnassignInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-unassign-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
 
-    <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText data-unassign-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasUnassignInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-unassign-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>
+    <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText notify={!dialogOpen} data-unassign-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasUnassignInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-unassign-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>
      <div className="ds-closure-actions"><HButton type="button" isDisabled={busy} onClick={close} tone="secondary">取消</HButton>{showForm?<HButton type="button" data-action="unassign" isDisabled={!canSubmit} onClick={()=>{void submit();}} tone="primary">确认撤销派工</HButton>:null}</div></footer>
   </section>;
   const opener=<HButton type="button" className="detail-menu-action" data-action="open-unassign" data-step-action="unassign" data-step-open={dialogOpen?'true':'false'} aria-expanded={dialogOpen} aria-controls={holderId} isDisabled={!showForm&&!originalId&&!hasUnassignInput(value)} onClick={()=>setDialogOpen(true)} tone="secondary">{originalId?'核对撤销派工':'撤销派工…'}</HButton>;
   return <>
     {menuTarget?createPortal(opener,menuTarget):opener}
-    {message?<ToastFeedback revision={messageRevision} source="ticket-unassign" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
+    {message&&!dialogOpen?<ToastFeedback enabled={messageToast} revision={messageRevision} source="ticket-unassign" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
     {dialogOpen?null:<div id={holderId} className="ds-step-workflow" data-step-read-state={readState} hidden>{section}</div>}
-    <DetailDialog modal open={dialogOpen} onClose={close} closeBlocked={busy} title="撤销派工" closeLabel="关闭撤销派工窗口" className="detail-action-dialog detail-unassign-dialog">{dialogOpen?section:null}</DetailDialog>
+    <DetailDialog modal open={dialogOpen} onClose={close} closeBlocked={busy} title="撤销派工" closeLabel="关闭撤销派工窗口" className="detail-action-dialog detail-unassign-dialog">{dialogOpen?<>{message?<DialogAlert source="ticket-unassign" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</DialogAlert>:null}{draft.enabled?<DialogDraftAlert>{draft.message}</DialogDraftAlert>:null}{section}</>:null}</DetailDialog>
   </>;
 }

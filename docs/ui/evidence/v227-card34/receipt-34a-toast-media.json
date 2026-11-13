@@ -1,0 +1,61 @@
+{
+  "api": "REAL_LOOPBACK_HTTP_PG",
+  "platform": "darwin",
+  "table": [
+    {
+      "dialog": "media",
+      "width": 1920,
+      "mode": "window",
+      "popover": null,
+      "controls": 2,
+      "toasts": 1,
+      "chip": false
+    },
+    {
+      "dialog": "media",
+      "width": 1440,
+      "mode": "chip",
+      "popover": "false",
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "media",
+      "width": 1280,
+      "mode": "chip",
+      "popover": "true",
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "media",
+      "width": 900,
+      "mode": "chip",
+      "popover": "true",
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "media-tall",
+      "width": 900,
+      "mode": "chip",
+      "popover": null,
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "media-tall",
+      "width": 760,
+      "mode": "chip",
+      "popover": null,
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    }
+  ],
+  "screenshots": []
+}

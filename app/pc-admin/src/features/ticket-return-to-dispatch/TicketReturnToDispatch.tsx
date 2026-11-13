@@ -6,6 +6,7 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
+import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedback';
 // T09 consumer SOURCE after original55c true FORM_PRESENT RED. Runtime remains NOT_RUN.
 // Local production-bundle validation does not enable the default-off feature or authorize deployment.
 import {useEffect,useId,useRef,useState} from 'react';
@@ -248,6 +249,8 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   // Card 34B: the read state is reported before any early return, so the hook order never changes.
   const readState:StepReadState=context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready';
   useStepRead(readState);
+  // Card 34A: while its dialog is open the outcome is shown inside it; a toast only for what is not already shown there.
+  const messageToast=useDialogToast(dialogOpen,messageRevision);
   if(!principal.ticket_return_to_dispatch_enabled&&!originalId&&!hasReturnInput(value)&&!busy&&!draft.restoring)return null;
   // Card 34B: nothing is shown when there is nothing to do; otherwise the next step offers 「退回待安排」 and the form opens in a dialog
   // laid out like 01d. While the dialog is closed the form stays mounted in a hidden step holder, so its protected input and
@@ -277,13 +280,13 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     {originalId&&!busy?<HButton type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}} tone="secondary">只读核对原操作</HButton>:null}
     {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
 
-    <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasReturnInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-return-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>
+    <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText notify={!dialogOpen} data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasReturnInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-return-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>
      <div className="ds-closure-actions"><HButton type="button" isDisabled={busy} onClick={close} tone="secondary">取消</HButton>{showForm?<HButton type="button" data-action="return-to-dispatch" isDisabled={!canSubmit} onClick={()=>{void submit();}} tone="primary">确认停止处理并退回待安排</HButton>:null}</div></footer>
   </section>;
   return <>
     {showForm||originalId||hasReturnInput(value)?<StepEntry action="return" label={originalId?'核对退回':'退回待安排'}>{(tone,text)=><HButton type="button" data-step-action="return" data-step-open={dialogOpen?'true':'false'} aria-expanded={dialogOpen} aria-controls={holderId} onClick={()=>setDialogOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
-    {message?<ToastFeedback revision={messageRevision} source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
+    {message&&!dialogOpen?<ToastFeedback enabled={messageToast} revision={messageRevision} source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
     {dialogOpen?null:<div id={holderId} className="ds-step-workflow" data-step-read-state={readState} hidden>{section}</div>}
-    <DetailDialog modal open={dialogOpen} onClose={close} closeBlocked={busy} title="停止处理并退回待安排" closeLabel="关闭退回窗口" className="detail-action-dialog detail-return-dialog">{dialogOpen?section:null}</DetailDialog>
+    <DetailDialog modal open={dialogOpen} onClose={close} closeBlocked={busy} title="停止处理并退回待安排" closeLabel="关闭退回窗口" className="detail-action-dialog detail-return-dialog">{dialogOpen?<>{message?<DialogAlert source="ticket-return-to-dispatch" state={state} role={['unknown','conflict','failed','denied'].includes(state)?'alert':'status'}>{message}</DialogAlert>:null}{draft.enabled?<DialogDraftAlert>{draft.message}</DialogDraftAlert>:null}{section}</>:null}</DetailDialog>
   </>;
 }

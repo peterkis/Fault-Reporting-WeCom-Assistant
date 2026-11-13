@@ -23,7 +23,20 @@
 .workbench-toast .workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
 .workbench-toast-close-space {flex:none;width:42px}
 .workbench-draft-status {display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;color:var(--text-secondary);flex:none}
-.detail-action-dialog>.workbench-toast-viewport,.detail-media-dialog>.workbench-toast-viewport,.workbench-settings>.workbench-toast-viewport {top:auto;right:calc(20px - var(--toast-gutter-x));bottom:calc(20px - var(--toast-gutter-bottom));width:calc(min(400px,100% - 40px) + 2 * var(--toast-gutter-x));max-height:calc(40dvh + var(--toast-gutter-top) + var(--toast-gutter-bottom))}
+/* Card 34A: while a modal is open the notices stay in the window corner (ToastFeedback writes the variables); none docks inside a modal. In chip mode the collapsed list is hidden and one chip stands for it. */
+.workbench-toast-viewport[hidden] {display:none}
+/* Codex review: the height every modal gives up so the compact chip fits below it; ToastFeedback sets it on <html> only while needed. */
+:root {--workbench-toast-reserve:0px}
+.workbench-toast-chip-anchor {--toast-chip-right:20px;--toast-chip-bottom:20px;position:fixed;right:var(--toast-chip-right);bottom:var(--toast-chip-bottom);z-index:var(--z-toast);display:block}
+.workbench-toast-chip-anchor .workbench-toast-chip {display:inline-flex;align-items:center;gap:var(--space-1-5);height:32px;min-height:32px;padding:0 var(--space-3);border:0;border-radius:var(--radius-xl);background:var(--bg-canvas);color:var(--text-primary);box-shadow:var(--shadow-toast);font:var(--fw-medium) var(--fs-sm)/var(--lh-sm) var(--font-sans);white-space:nowrap;cursor:pointer}
+.workbench-toast-chip-anchor .workbench-toast-chip:hover {background:var(--bg-hover)}
+.workbench-toast-chip-anchor .workbench-toast-chip svg {width:14px;height:14px;color:var(--text-secondary)}
+/* Codex review: the compact chip (no margin around the modal holds the full one) is 32×32: the bell with the count as a badge; 「条提示」 stays for screen readers. */
+.workbench-toast-chip-anchor[data-compact=true] .workbench-toast-chip {width:32px;min-width:32px;padding:0;justify-content:center;gap:0}
+.workbench-toast-chip-anchor[data-compact=true] .workbench-toast-chip {position:relative;overflow:visible}
+.workbench-toast-chip-anchor[data-compact=true] .workbench-toast-chip-count {position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 var(--space-1);border-radius:var(--radius-full);background:var(--brand);color:var(--on-brand);font:var(--fw-semibold) var(--fs-2xs)/16px var(--font-sans);text-align:center}
+.workbench-toast-chip-anchor[data-compact=true] .workbench-toast-chip-label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.workbench-dialog-alert strong {font-weight:var(--fw-semibold)}
 @keyframes workbench-toast-enter {
 from{opacity:.65;translate:0 6px}
 to{opacity:1;translate:0 0}}

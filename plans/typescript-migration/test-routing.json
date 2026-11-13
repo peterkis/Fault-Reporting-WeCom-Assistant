@@ -68,6 +68,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card34a-toast-modal.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card32d-toast.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
