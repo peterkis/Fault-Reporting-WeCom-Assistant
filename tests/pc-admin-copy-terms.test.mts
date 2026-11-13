@@ -62,3 +62,18 @@ test('Card 34C follow-up time example is accepted by followUpInput',async()=>{
   assert.equal(client.followUpInput(example),example,'the displayed example parses');
   assert.throws(()=>client.followUpInput('2026-11-12 14:30'),'minutes alone are rejected, which is why the example shows seconds');
 });
+
+// Codex review: beside 「核对结果」 a confirmed commit or failure only has the local draft left to clear; only an unconfirmed
+// outcome says the result is unconfirmed.
+test('Card 34C operation hint follows what is known',async()=>{
+  const stub=(code:string)=>'data:text/javascript;base64,'+Buffer.from(code).toString('base64');
+  const source=await readFile(join(src,'app/DiagnosticCopy.tsx'),'utf8');
+  let output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:4,verbatimModuleSyntax:true}}).outputText;
+  for(const [from,code] of [['react','export const useState=()=>[null,()=>{}];'],['lucide-react','export const Copy=()=>null;'],['@heroui/react','export const TextArea=()=>null;'],['../design/components/Button/Button','export const Button=()=>null;'],['react/jsx-runtime','export const jsx=()=>null,jsxs=()=>null,Fragment=null;']] as const)
+    for(const quote of ["'",'"'])output=output.replaceAll(quote+from+quote,JSON.stringify(stub(code)));
+  const module=await import(stub(output)) as {operationHint:(state:string)=>string};
+  assert.match(module.operationHint('committed'),/^已提交，本机草稿还没清除完/u);
+  assert.match(module.operationHint('failed'),/^上次操作没有成功，本机草稿还没清除完/u);
+  for(const state of ['committed','failed'])assert.doesNotMatch(module.operationHint(state),/还没确认/u);
+  assert.match(module.operationHint('unknown'),/结果还没确认/u);
+});

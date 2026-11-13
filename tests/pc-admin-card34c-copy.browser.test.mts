@@ -31,7 +31,7 @@ test('Card 34C rendered copy: board and detail drawer show no banned technical w
   assert.doesNotMatch(await visible(),BANNED,'the detail drawer shows no banned word');
   await clickWorkbenchControl(b,'.ds-detail-footer textarea');await b.command('Input.insertText',{text:'卡34C 合成草稿（合成）'});
   await b.waitFor("document.querySelector('[data-draft-status]')?.getAttribute('aria-label')==='草稿已保存'");
-  assert.equal(await b.evaluate("document.querySelector('[data-draft-status]').getAttribute('title')"),'仅保存在这台电脑，24 小时后自动清除','the saved draft explains where and how long on hover');
+  assert.equal(await b.evaluate("document.querySelector('[data-draft-status]').getAttribute('title')"),'仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。','the saved draft explains where and how long on hover');
   assert.doesNotMatch(await visible(),BANNED,'the saved draft shows no banned word');
   await shot('detail-1440-draft-saved.png');
  }catch(caught){error=caught;}

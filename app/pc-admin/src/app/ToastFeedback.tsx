@@ -195,7 +195,7 @@ export function ToastFeedback({children,source,state,enabled=true,persistent=fal
 /** Routine autosave is an accessible status, not another notification on every keystroke. */
 // Card 34C: draft feedback that needs attention (not saved, not cleared, not confirmed, too long).
 export const DRAFT_WARNING=/未知|过期|失败|不可用|无法|未确认|未能|暂未|过长|只能查看/u,DRAFT_DONE=/^(?:草稿已保存|已保存|已提交)/u;
-const DRAFT_SAVED_HINT='仅保存在这台电脑，24 小时后自动清除';
+const DRAFT_SAVED_HINT='仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。';
 export function DraftFeedback({children,enabled=true}:{children:string;enabled?:boolean}){
   const warning=DRAFT_WARNING.test(children);
   return <ToastFeedback source="draft" state={warning?'unknown':undefined} enabled={enabled&&(warning||/已恢复/u.test(children))}>{children}</ToastFeedback>;

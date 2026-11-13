@@ -24,12 +24,17 @@ function decodeNote(text:string):NoteDraft{
   if(Object.keys(v).length!==3||v.schema!==1||typeof v.note!=='string'||v.note.length>2000)throw new DraftError('DRAFT_CORRUPT');
   return {schema:1,note:v.note,pending:decodeCommand(v.pending)};
 }
-function failureMessage(error:unknown):string{
+/**
+ * Codex review: while a draft is being restored the original operation may already have been submitted and nothing is restored
+ * yet, so a restore failure never claims 「本次没有提交，你的输入还在」; that wording belongs to a save before a submit.
+ */
+function failureMessage(error:unknown,phase:'save'|'restore'='save'):string{
   const reason=error instanceof DraftError?error.message:'';
   if(reason==='DRAFT_FULL')return '恢复不可用：当前浏览器已达到20份草稿上限；当前输入未保存，请先处理已有草稿。';
   if(reason==='DRAFT_OPERATION_FULL')return '恢复不可用：已达到20个未核对操作上限；不能清除它们来提交新操作，请先核对已有操作。';
   if(reason==='DRAFT_TOO_LARGE')return '内容过长：草稿无法保存，本次没有提交。请删减后再提交。';
   if(reason==='DRAFT_OPERATION_CORRUPT')return '恢复不可用：未核对操作记录已损坏，标识仍保留；不能推断原操作失败或提交新操作，请核对当前工单事实。';
+  if(phase==='restore')return '草稿暂未恢复：上次的内容和结果暂时读不到，请先不要重复办理。重新打开详情或刷新页面后再试。';
   return '草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。';
 }
 export interface AuthorizedDraftValue<T,C> {value:T;pending:C|null}
@@ -110,7 +115,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       setInitialized(true);
     })().catch(error=>{
       if(controller.signal.aborted||generation.current!==token)return;
-      setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_EXPIRED'?'草稿已过期并清理；过期不代表原操作未提交。':failureMessage(error));
+      setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_EXPIRED'?'草稿已过期并清理；过期不代表原操作未提交。':failureMessage(error,'restore'));
       protocol.current.onAuthorityFailure(error);
     });
     return()=>{controller.abort();generation.current++;cancelTimer();cancelAuthority();handle.current=null;};
@@ -136,7 +141,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
             await refreshEmptyDraft(target);
             if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
             setStatus('ready');setMessage('草稿仅在当前浏览器恢复，最长24小时。');setRefreshIndex(index=>index+1);
-          }catch(error){if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(failureMessage(error));protocol.current.onAuthorityFailure(error);}}
+          }catch(error){if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(failureMessage(error,'restore'));protocol.current.onAuthorityFailure(error);}}
           finally{if(authorityRequest.current===controller)authorityRequest.current=null;}
         }).finally(()=>{blankRefreshPending.current=false;});
         queue.current=task;void task.catch(()=>{});return;
@@ -150,7 +155,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         if(copy.handle.operation)callbacks.current.onOperation(copy.handle.operation.commandId);
         setStatus('ready');setMessage(value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
       }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
-    });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error));return;}
+    });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
   },[enabled,scopeKey]);
   useEffect(()=>{
     if(!writeEnabled){cancelTimer();return;}
