@@ -30,12 +30,26 @@ export function useAssignmentHistory(ticketId:string,principal:Principal,enabled
  return {byEvent,failed:enabled&&query.isError,retry:()=>{void query.refetch();}};
 }
 
-/** The action of a take-over or hand-over event: 「接单」, 「接手」, 「转交给 周宁」 or 「撤销派工」. */
-export function assignmentAction(item:P2016AssignmentHistoryItem):string{
- if(item.kind==='FIRST_RESPONSIBILITY')return '接单';
- if(item.next.person.state==='NONE')return '撤销派工';
- // A colleague who takes the ticket over is the actor and the new handler at once.
- return item.actor.state==='KNOWN'&&item.next.person.state==='KNOWN'&&item.actor.name===item.next.person.name?'接手':'转交给 '+label(item.next.person);
+const same=(a:P2016AssignmentHistoryName,b:P2016AssignmentHistoryName)=>a.state==='KNOWN'&&b.state==='KNOWN'&&a.name===b.name;
+/**
+ * The action of a take-over or hand-over event, from the timeline record's own event type (Codex review): a dispatcher's first
+ * assignment is 「派给 周宁」 (the round's first responsibility is not the dispatcher's own acceptance), a later one 「转交给 周宁」;
+ * the assignee accepting is 「接单」, taking it from a colleague 「接手」; `ticket.unassigned` is 「撤销派工」 and
+ * `ticket.returned_to_dispatch` (stopping work already started) 「退回待安排」.
+ */
+export function assignmentAction(item:P2016AssignmentHistoryItem,eventType:string):string{
+ const next=item.next.person,previous=item.previous.person,self=same(item.actor,next),takenFromColleague=previous.state==='KNOWN'&&!same(previous,item.actor);
+ if(eventType==='ticket.returned_to_dispatch')return '退回待安排';
+ if(eventType==='ticket.unassigned')return '撤销派工';
+ if(eventType==='ticket.accepted')return takenFromColleague?'接手':'接单';
+ if(eventType==='ticket.assignment_transferred'){
+  if(self)return takenFromColleague?'接手':'接单';
+  return (item.kind==='FIRST_RESPONSIBILITY'?'派给 ':'转交给 ')+label(next);
+ }
+ // Any other assignment event type: the facts alone.
+ if(next.state==='NONE')return '撤销派工';
+ if(self)return item.kind==='FIRST_RESPONSIBILITY'?'接单':'接手';
+ return (item.kind==='FIRST_RESPONSIBILITY'?'派给 ':'转交给 ')+label(next);
 }
 
 /** The hand-overs of conversations that came with the event, as plain secondary lines of the same row. */

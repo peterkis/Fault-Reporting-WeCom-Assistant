@@ -51,7 +51,7 @@ function ActivityRecord({record,principal,item,active,now,closure=false,assignme
   // Card 34B: a take-over or hand-over event is an event row even when it carries a reason, never a note bubble.
   const [expanded,setExpanded]=useState(false),name=activityActorName(record),kind=assignment&&recordKind(record)==='note'?'event':recordKind(record);
   // Card 34B: a take-over or hand-over event reads as its action (「接单」「转交给 周宁」「撤销派工」), followed by the recorded reason.
-  const text=assignment?assignmentAction(assignment)+(record.text?' · '+record.text:''):record.text??(kind==='status'?'更新状态':'已记录处理操作。');
+  const text=assignment?assignmentAction(assignment,record.type)+(record.text?' · '+record.text:''):record.text??(kind==='status'?'更新状态':'已记录处理操作。');
   const bubble=kind==='note'||kind==='report',time=<BeijingTime value={record.at} now={now}/>;
   const audience=kind==='note'&&record.audience==='INTERNAL'?<span className="record-audience" aria-label="内部，仅信息科可见"><Lock size={12}/>内部</span>:kind==='note'&&record.audience==='EXTERNAL'?<span className="record-audience public">报修人可见</span>:null;
   return <TimelineItem className={'detail-record'+(expanded?' is-expanded':'')} data-record-kind={kind} data-audience={record.audience} data-assignment-history-row={assignment?assignment.kind:undefined} avatar={<ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name}/>} time={bubble?undefined:time}>

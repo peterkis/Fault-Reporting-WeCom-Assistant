@@ -49,6 +49,25 @@ test('Card 34B detail drawer: chain in the timeline, no empty unassign block, co
   assert.equal(draft.text,'草稿已保存·清空','the draft line reads 「草稿已保存 · 清空」 '+JSON.stringify(draft));
   assert.ok(draft.icon&&draft.clear==='清空'&&draft.size&&draft.colour===draft.tertiary&&draft.left&&!draft.separate,'check icon, text button, --fs-xs, --text-tertiary, left of the bar, no separate discard button '+JSON.stringify(draft));
   await shot('drawer-1440-composer-draft.png');
+  // Codex review: the action follows the event type. A dispatcher's first assignment is 「派给 …」 (not the dispatcher's own 接单),
+  // the assignee accepting is 「接单」, and stopping work already started is 「退回待安排」 (not 撤销派工).
+  const handler=f.staff[1];assert.ok(handler);
+  const second=await f.intake((await f.manualReport('卡34B 合成：派工与退回（合成）')).intakeId);assert.ok(second.ticketId);
+  const path2='/api/tickets/'+second.ticketId,current2=async()=>version((await get(admin,path2)).version);
+  await post(admin,path2+'/assign',{client_command_id:randomUUID(),expected_version:await current2(),reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]});
+  await post(handler,path2+'/accept',{client_command_id:randomUUID(),expected_version:await current2(),reason_code:'CARD34B_HANDLER_ACCEPT'});
+  await post(handler,path2+'/start',{client_command_id:randomUUID(),expected_version:await current2(),reason_code:'CARD34B_STARTED'});
+  await post(handler,path2+'/return-to-dispatch',{client_command_id:randomUUID(),expected_version:await current2(),reason_code:'WORKBENCH_RETURN_TO_DISPATCH',reason:'需要重新安排具备条件的同事（合成）。',unfinished_work:'设备仍不可用（合成）。',communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
+  await f.project();
+  await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+second.ticketId});
+  await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelectorAll('.activity-list [data-assignment-history-row]').length===3");await waitForAnimationsSettled(b);
+  const chain=text(await b.evaluate("[...document.querySelectorAll('.activity-list [data-assignment-history-row]')].reverse().map(row=>row.dataset.assignmentHistoryRow+'|'+row.innerText.replace(/\\s+/g,' ')).join('\\n')"));
+  const [assigned,accepted,returned]=chain.split('\n');
+  assert.match(assigned??'',/^FIRST_RESPONSIBILITY\|.* 派给 T43合成人员1/u,'a dispatcher\'s first assignment reads 「派给 …」 '+chain);
+  assert.doesNotMatch(assigned??'',/ 接单/u,'the dispatcher did not accept the ticket '+chain);
+  assert.match(accepted??'',/^RESPONSIBILITY_CHANGE\|.* 接单/u,'the assignee accepting reads 「接单」 '+chain);
+  assert.match(returned??'',/^RESPONSIBILITY_CHANGE\|.* 退回待安排/u,'returning started work reads 「退回待安排」 '+chain);
+  assert.doesNotMatch(chain,/撤销派工/u,'no return reads as 撤销派工 '+chain);
  }catch(caught){error=caught;}
  finally{
   await writeFile(join(directory,'receipt-34b-detail.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,screenshots},null,2));
