@@ -43,7 +43,7 @@ for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery
    const reason='T08 UNKNOWN 合成内部原因 '+randomUUID();await browser.evaluate(fill(reason));
    await browser.waitFor("document.querySelector('[data-action=unassign]')?.disabled===false");
    let expiry:number|null=null;
-   if(recovery){await browser.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('已保存恢复副本')");const saved=object(await browser.evaluate(copies)),draft=rows(saved.drafts)[0];assert.ok(draft);
+   if(recovery){await browser.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('草稿已保存')");const saved=object(await browser.evaluate(copies)),draft=rows(saved.drafts)[0];assert.ok(draft);
     assert.equal(draft.extractable,false);assert.equal(draft.algorithm,'AES-GCM');assert.equal(Number(draft.expiresAt)-Number(draft.firstSavedAt),86400000);assert.ok(Number(draft.bytes)<=16400);assert.equal(typeof draft.expiresAt,'number');expiry=Number(draft.expiresAt);
     assert.equal(JSON.stringify(saved).includes(reason),false);assert.deepEqual(saved.operations,[]);}
    // The production fetch awaits its actual server result, then loses that ACK. No test success handler or business fixture writes.

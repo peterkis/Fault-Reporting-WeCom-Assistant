@@ -83,7 +83,7 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    await writer.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(writer,oldTarget);
    await writer.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
    await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
-   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').checked`);
+   await writer.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').checked`);
    r1=object(await writer.evaluate(snapshot(fixture.admin,ticketId)));assert.ok(r1.revision);assert.equal(r1.operation,null);
    // Writer B itself completes a real authorized R1 restore while X is still valid.
    const timeOrigin=await writer.evaluate('performance.timeOrigin');await writer.command('Page.reload');
@@ -104,7 +104,7 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    assert.equal(await stale.evaluate(`(${reasonInput})?.value??null`),'','R1 restore has not exposed its selected body before the held target authorization');
    assert.equal(await writer.evaluate(`(${reasonInput})?.value`),reasonR1);
    await choose(writer,newTarget);await writer.evaluate(input(reasonR2));
-   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}`);
+   await writer.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}`);
    r2=object(await writer.evaluate(snapshot(fixture.admin,ticketId)));assert.ok(r2.revision);assert.notEqual(r2.revision,r1.revision);assert.equal(r2.operation,null);assert.equal(r2.epoch,r1.epoch);
    // Same existing T22 seam: hold actual encryption so new public UI text remains demonstrably unsaved.
    await writer.evaluate(holdEncryption);await writer.evaluate(input(unsaved));await writer.waitFor('globalThis.__t08EncryptionHeld===1');

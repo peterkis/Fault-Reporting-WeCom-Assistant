@@ -22,8 +22,8 @@ export function IncidentResultView({principal,incidentId,authorityRevision='stan
 }
 export function IncidentResultFacts({result}:{result:IncidentResult}){
   return <section className="properties" aria-label="当前公共故障" data-incident-id={result.id}>
-    <h2>{result.incident_no} · {result.safe_title}</h2><dl><dt>状态</dt><dd>{result.status}</dd><dt>确认范围</dt><dd>{result.confirmed_scope}</dd><dt>公共故障版本</dt><dd>{result.row_version}</dd><dt>确认时间</dt><dd>{result.confirmed_at}（北京时间）</dd>
+    <h2>{result.incident_no} · {result.safe_title}</h2><dl><dt>状态</dt><dd>{result.status}</dd><dt>确认范围</dt><dd>{result.confirmed_scope}</dd><dt>确认时间</dt><dd>{result.confirmed_at}（北京时间）</dd>
       {result.owner_principal_id!==undefined?<><dt>故障负责人</dt><dd>{result.owner_display_name??'当前姓名不可用'}</dd><dt>责任组</dt><dd>{result.owner_team_id??'未设责任组'}</dd><dt>主处理参考</dt><dd>{result.primary_ticket_id===null?'无主工单':result.primary_ticket_no??'当前编号不可用'}</dd></>:null}
-    </dl><p>这是独立 Incident 的当前投影；个人工单仍保持各自的状态与责任，确认不代表通知已发送。</p>
+    </dl><p>这是公共故障的汇总。各工单的状态和负责人不变；确认不代表通知已发出。</p>
   </section>;
 }

@@ -14,7 +14,7 @@ import './search.css';
 
 const viewKeys=['range','scope','handled_from','handled_to','closure_kind'] as const;
 const conditionsKey=(criteria:WorkbenchSearchCriteria)=>{const params=searchParameters(criteria);for(const key of viewKeys)params.delete(key);return params.toString();};
-const sourceLabels:Record<string,string>={WECOM_DIRECT:'Bot 私聊',WECOM_GROUP:'群聊报修',WEB_REQUEST:'医小修网页',MANUAL_PHONE:'电话代录',MANUAL_ON_SITE:'现场代录'};
+const sourceLabels:Record<string,string>={WECOM_DIRECT:'医小修私聊',WECOM_GROUP:'群聊报修',WEB_REQUEST:'医小修网页',MANUAL_PHONE:'电话代录',MANUAL_ON_SITE:'现场代录'};
 export function criteriaFromUrl(params:URLSearchParams,range:BoardCompletionRange,scope:'team'|'related'){
  if(params.has('cursor')||params.has('limit'))return {criteria:null,error:'搜索地址中的分页参数无效，请重新提交搜索条件。'};
  const input=new URLSearchParams(),navigation=new Set(['view','detail','search']);

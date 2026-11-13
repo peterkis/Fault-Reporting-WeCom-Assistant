@@ -37,7 +37,7 @@ for(const mode of ['initial-401','draft-401','cleanup-failure','permission-403',
     if(mode==='draft-401'||mode==='cleanup-failure'){
      await browser.waitFor("document.querySelector('#internal-note')?.disabled===false");
      await browser.evaluate("(()=>{const input=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'PRIVATE_AUTH_DRAFT：仅合成未提交输入');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
-     await browser.waitFor("document.body.innerText.includes('已保存恢复副本')");assert.equal((await browser.evaluate(draftCounts) as {drafts:number}).drafts,1);
+     await browser.waitFor("document.body.innerText.includes('草稿已保存')");assert.equal((await browser.evaluate(draftCounts) as {drafts:number}).drafts,1);
      if(mode==='cleanup-failure')await browser.evaluate("(()=>{const original=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(this.name==='wecom-workbench-drafts-v1'&&mode==='readwrite')throw new DOMException('SYNTHETIC_STORAGE_UNAVAILABLE','InvalidStateError');return original.call(this,stores,mode,...rest);};})()");
     }
     await browser.waitFor("[...document.querySelectorAll('.ticket-notes button')].some(button=>button.textContent==='刷新可用操作'&&!button.disabled)");

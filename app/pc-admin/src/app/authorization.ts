@@ -71,16 +71,16 @@ export function clearSessionView(client:QueryClient,status:401|403|undefined,not
   clearWorkbenchToasts();
   closeDesktopSession();
   advanceWorkbenchAuthorizationEpoch();
-  if(status)useUiStore.getState().failSession(status);else useUiStore.getState().closeSession(notice??'会话已关闭，请重新核验。');
+  if(status)useUiStore.getState().failSession(status);else useUiStore.getState().closeSession(notice??'登录已过期，请重新登录。');
   void client.cancelQueries();client.clear();
 }
 export function clearSessionAuthorization(client:QueryClient,principal:unknown,status:401|403|undefined,reason:'revoked'|'logout'|'logout-unknown',notice?:string):Promise<void>{
   const expired=Boolean(desktopHost&&status===401&&reason==='revoked');
   if(expired&&expiredDesktopCleanup)return expiredDesktopCleanup;
   const cleanup=(async()=>{
-    clearSessionView(client,status,notice?(reason==='logout'?'已退出。正在清理本地恢复副本…':'退出结果尚未确认，正在清理本地恢复副本…'):undefined);
+    clearSessionView(client,status,notice?'正在退出…':undefined);
     try{if(typeof principal==='string')await purgeDrafts({principal,reason});if(notice){if(reason==='logout')useUiStore.getState().finishLogout(notice);else useUiStore.getState().closeSession(notice);}}
-    catch{useUiStore.getState().closeSession((notice??'会话需要重新核验。')+' 本地恢复副本清理尚未确认，请保持会话关闭。');}
+    catch{useUiStore.getState().closeSession((notice??'登录已过期，请重新登录。')+' 本机草稿还没清除完，请保持退出状态。');}
   })();
   if(expired){expiredDesktopCleanup=cleanup;void cleanup.finally(()=>{if(expiredDesktopCleanup===cleanup)expiredDesktopCleanup=undefined;});}
   return cleanup;

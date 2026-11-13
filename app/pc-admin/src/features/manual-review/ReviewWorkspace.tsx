@@ -68,7 +68,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
   const context=useQuery({queryKey:key,queryFn:({signal})=>reviewApi.detail(reviewId,signal)});
   useEffect(()=>{onReadStateChange?.(context.isPending?'pending':context.isError?'unknown':'ready');},[onReadStateChange,context.isPending,context.isError]);
   const draft=useReviewDraft({principal,item,reviewId,value,pending,
-    onRestore:restored=>{setValue(restored.value);setPending(restored.pending);if(restored.pending){setState('unknown');setMessage('结果未知：已恢复原命令，结论、原因、版本和材料摘要保持不变。');}},
+    onRestore:restored=>{setValue(restored.value);setPending(restored.pending);if(restored.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}},
     onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容不可用，只能核对上次操作。');},
     onSensitiveClear:()=>{generation.current++;request.current?.abort();request.current=null;setValue(emptyReviewInput(reviewId));setPending(null);setState('idle');setMessage('');}});
   const busy=state==='submitting'||state==='checking'||startBlocked,unresolved=state==='unknown'||Boolean(pending)||Boolean(draft.operationId);
@@ -87,7 +87,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
     ||latest.current.capture?.row_version!==command.expected_row_version||latest.current.capture?.material_basis!==command.expected_material_basis;
   const committed=async(commandId:string,preserve:boolean,label:string)=>{
     const cleaned=await draft.success(commandId,preserve);if(!mounted.current)return;
-    setPending(null);if(!preserve)setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage(label+(preserve?' 较新的未提交选择已保留。':'')+(cleaned?'':' 本地恢复副本清理尚未确认，禁止新提交；请只读核对并重试清理。'));
+    setPending(null);if(!preserve)setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage(label+(preserve?' 较新的未提交选择已保留。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
     const controller=new AbortController();request.current=controller;
     try{const current=await reviewApi.detail(reviewId,controller.signal);if(!mounted.current)return;client.setQueryData(key,current);await api.detail(current.canonical_item.kind,current.canonical_item.id,null,controller.signal);}
     catch(error){if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else if(mounted.current)setMessage(previous=>previous+' 当前事项暂未重新读取，请重试读取。');}
@@ -99,11 +99,11 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
     onError:(error,variables)=>{
       if(!mounted.current||variables.generation!==generation.current)return;
       if(error instanceof ApiError){if([401,403,404].includes(error.status)){deny(error);return;}setPending(null);void draft.knownFailure(variables.command.client_command_id).catch(()=>{});setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'结论未记录：资料已变化，选择和原因已保留。重新读取后请明确采用当前材料。':('结论被拒绝：'+errorMessage(error)));refresh();}
-      else{setPending(variables.command);setState('unknown');setMessage('结果未知：可能已经记录。请核对上次操作，结论、原因、版本和材料摘要保持不变。');}
+      else{setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
     },onSettled:()=>{request.current=null;}});
   const send=async(command:ReviewCommand,checking=false)=>{
     if(request.current)return;const controller=new AbortController(),token=generation.current;request.current=controller;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对上次操作…':'正在记录人工结论…');
-    try{await draft.prepare(command);}catch{request.current=null;setPending(checking?command:null);setState(checking?'unknown':'denied');setMessage(checking?'原操作仍未知；恢复存储不可用，尚未再次发送。':'恢复副本未保存，本次尚未发送；请保留当前选择。');return;}
+    try{await draft.prepare(command);}catch{request.current=null;setPending(checking?command:null);setState(checking?'unknown':'denied');setMessage(checking?'原操作仍未知；恢复存储不可用，尚未再次发送。':'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');return;}
     if(controller.signal.aborted||token!==generation.current)return;mutation.mutate({command,signal:controller.signal,generation:token});
   };
   const receipt=useMutation({mutationKey:['manual-review-command',principal.principal_id,item.kind,item.id,reviewId],
@@ -128,8 +128,8 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
         onRestoreReview={restored=>{setValue(restored);setState('idle');}} readCurrentReview={async signal=>{const current=await reviewApi.detail(reviewId,signal);client.setQueryData(key,current);return {...latest.current,capture:{row_version:current.row_version,material_basis:current.material_basis.current_hash,canonical_item:current.canonical_item}};}}
         onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认故障并开始处理。');void draft.discard();refresh();}}/><div className="review-controls"><HButton type="submit" data-action="submit-review" isDisabled={!canSubmit} tone="secondary">记录复核结论</HButton>
         <HButton type="button" data-action="refresh-review" isDisabled={busy} onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton>
-        {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} tone="secondary">核对上次操作</HButton>:null}
-        {draft.operationId?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} tone="secondary">核对上次操作</HButton>:null}
+        {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} tone="secondary">核对结果</HButton>:null}
+        {draft.operationId?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} tone="secondary">核对结果</HButton>:null}
         {draft.enabled&&hasReviewInput(value)?<HButton type="button" data-action="discard-review-draft" isDisabled={busy} onClick={()=>{void draft.discard();}} tone="secondary">丢弃草稿内容</HButton>:null}
       </div></HForm>
     {message?<ToastFeedback revision={messageRevision} source="manual-review" state={state} data-review-result role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}

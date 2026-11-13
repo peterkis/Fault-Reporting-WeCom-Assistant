@@ -1,6 +1,8 @@
 import {ApiError,UnknownCommandOutcome,readWorkbench} from '../../api/client';
 import type {ConversationWorkspaceEntry,ConversationWorkspacePage,ConversationItemPage,ConversationWorkspaceItem,ConversationWorkspaceDelivery,ConversationMessageResult,ConversationTextCommand,ConversationCommandReceipt,ConversationPurpose} from '../../../../../contracts/workbench_conversation_workspace_contracts';
 export type {ConversationWorkspaceEntry,ConversationWorkspaceItem,ConversationPurpose,ConversationTextCommand,ConversationMessageResult};
+/** Card 34C: the server still names the bot channel 「Bot 私聊」; the workbench shows it as 「医小修私聊」. */
+export function publicChannelLabel(label:string):string{return label.replace('Bot 私聊规则回复','医小修自动回复').replace('本人 Bot 私聊','本人的医小修私聊').replace(/Bot 私聊(?:来源)?/u,'医小修私聊');}
 export const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function bad():never{throw new ApiError(502,'INVALID_RESPONSE');}
 function object(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))bad();return v as Record<string,unknown>;}

@@ -75,7 +75,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   }catch(error){
    if(!current())return;
    if(error instanceof ApiError&&[401,404].includes(error.status)||accepted&&error instanceof ApiError&&error.status===403)await deny(error);
-   else if(!dispatched){setPending(null);setOpaque(null);setState('denied');setMessage('恢复副本未确认，操作尚未发送；输入仍保留，可先清空或处理已有草稿。');}
+   else if(!dispatched){setPending(null);setOpaque(null);setState('denied');setMessage('草稿未能保存，本次没有提交。可以先清空草稿再试。');}
    else if(accepted){setPending(null);setInput('');setState('succeeded');setMessage('原操作已确认提交，最新安排暂未读回；请重新读取当前资料。');refresh();}
    else if(error instanceof ApiError){
     // A maintenance refusal can coexist with Ticket READ; confirm READ before any broad privacy purge.
@@ -88,14 +88,14 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
     if(!cleaned){setState('unknown');setMessage('本次操作已被拒绝，但仍有恢复记录待核对；请先只读核对当前操作。');return;}
     setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'安排或工单已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));refresh();
    }
-   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，请只读核对；不会再次发送。':'尚未发送：恢复副本未确认，请保留原操作只读核对。');}
+   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，请只读核对；不会再次发送。':'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
   }finally{if(generation.current===token)request.current=null;}
  }
  function submit(action:'SET'|'CANCEL'){
   if(!view||!readReady||blocked||!principal.follow_up_schedules_enabled||!view.allowed_actions.includes(action)||!principal.csrf_token||!workbenchTransportWritable())return;
   if(action==='SET'){
    try{const due=followUpInput(input);void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:view.ticket_version,expected_schedule_version:view.schedule_version,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:due}));}
-   catch{setState('invalid');setMessage('请填写有效的北京时间，格式为 YYYY-MM-DD HH:mm:ss。');}
+   catch{setState('invalid');setMessage('请填写正确的时间，例如 2026-11-12 14:30。');}
   }else void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:view.ticket_version,expected_schedule_version:view.schedule_version,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'CANCEL',due_at:null}));
  }
  async function checkOriginal(){
@@ -135,7 +135,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
  const canSet=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('SET')===true;
  const canCancel=principal.follow_up_schedules_enabled&&view?.allowed_actions.includes('CANCEL')===true;
  return <StepWorkflow action="follow-up" label={canSet?'设置跟进':'查看跟进'} available={canSet||canCancel} attention={Boolean(input||commandId||message||!canSet&&!canCancel&&(view||query.isError))}><section role="region" aria-label="共享下次跟进时间" className="ticket-notes shared-follow-up">
-  <h3>共享下次跟进时间</h3><p>北京时间（Asia/Shanghai），由当前处理和沟通责任共同跟进。</p>
+  <h3>共享下次跟进时间</h3><p>北京时间。处理人和沟通人都会看到这次跟进。</p>
   {!principal.follow_up_schedules_enabled?<p>共享时间维护已关闭；仍可核对原操作。</p>:query.isPending?<p role="status">正在读取当前共享时间…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:null}
   {principal.follow_up_schedules_enabled&&view?<>
    {query.isError||!factsConfirmed?<p role="status">以下为最近已确认资料，最新安排仍需重新读取。</p>:null}
@@ -145,7 +145,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
    {view.history.length?<ol className="shared-follow-up-history">{view.history.map(entry=><li key={entry.ticket_event_id}>{entry.action==='SET'?'已设置':entry.action==='CANCEL'?'已取消':entry.end_reason==='COMPLETED'?'完成后结束':'关闭后结束'}{entry.due_at?<> · <BeijingTime value={entry.due_at}/></>:null}<span>记录时间 <BeijingTime value={entry.occurred_at}/></span></li>)}</ol>:null}
    {view.history_has_more?<p>显示最近20条记录，仍有更早历史。</p>:null}
   </>:null}
-  {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} tone="secondary">只读核对原操作</HButton>:null}
+  {commandId?<HButton type="button" isDisabled={working||draft.probing||draft.status==='loading'||!principal.follow_up_schedule_receipt_enabled} onClick={()=>void checkOriginal()} tone="secondary">核对结果</HButton>:null}
   {draft.enabled&&(draft.status!=='ready'||!commandId)?<DraftStatus role="status">{draft.message}</DraftStatus>:null}
   {input&&!blocked?<HButton type="button" onClick={()=>{if(draft.enabled)void draft.discard();else setInput('');}} tone="secondary">清空未提交输入</HButton>:null}
   {principal.follow_up_schedules_enabled&&!blocked?<HButton type="button" onClick={()=>{void query.refetch();}} tone="secondary">重新读取共享时间</HButton>:null}

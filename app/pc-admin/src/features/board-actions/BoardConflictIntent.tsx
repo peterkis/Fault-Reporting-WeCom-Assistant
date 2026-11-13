@@ -1,5 +1,4 @@
 import {Button as HButton} from '../../design/components/Button/Button';
-import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
 import {useEffect,useRef,useState} from 'react';
 import {captureWorkbenchRead} from '../../api/client';
 
@@ -17,7 +16,8 @@ export function BoardConflictIntent({original,onAdopt}:{original:unknown;onAdopt
   };
   return <section className="board-conflict-intent" data-board-original-intent>
     <p role="alert">原操作冲突，完整原意图保留。未自动发送，也未按拖动目标移动事项。</p>
-    <WorkbenchDisclosure title={<>查看原 UUID、版本与完整命令</>}><pre>{JSON.stringify(original,null,2)}</pre></WorkbenchDisclosure>
+    {/* Card 34C: the original operation is diagnostics; it is copied on request, not shown in the body. */}
+    <HButton type="button" data-action="copy-board-diagnostics" tone="ghost" onClick={()=>{void navigator.clipboard?.writeText(JSON.stringify(original,null,2)).catch(()=>{});}}>复制诊断信息</HButton>
     {failed?<p role="alert">新意图尚未开始，原操作与输入保留，请重新核对。</p>:null}
     <HButton type="button" data-action="adopt-current-board-facts" isDisabled={busy} onClick={()=>{void adopt();}} tone="secondary">明确读取当前事实，保留填写内容并开始新意图</HButton>
   </section>;

@@ -14,6 +14,7 @@ import type {IncidentDeliveryDraftValue} from './use-incident-delivery-draft';
 import type {IncidentResult} from './client';
 import {decodeIncidentDeliveryOperation,matchesIncidentDeliveryResult} from '../../contracts/workbench-incident-delivery-browser-contracts.mjs';
 import type {IncidentDeliveryOperation,IncidentDeliveryPurpose,IncidentDeliveryResolution,IncidentDeliveryStatus,IncidentDeliverySideEffect,IncidentDeliveryControlResult} from '../../contracts/workbench-incident-delivery-browser-contracts.mjs';
+import {DiagnosticCopy} from '../../app/DiagnosticCopy';
 
 export interface IncidentDeliveryRoute {deliveryId:string;status:IncidentDeliveryStatus;effect:IncidentDeliverySideEffect;attemptCount:number;label:string}
 type State='idle'|'preparing'|'submitting'|'reading'|'checking'|'unknown'|'failed'|'committed'|'denied';
@@ -34,7 +35,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  const capability=useQuery({queryKey:[...queryPrefix,'capability',authority,principal.incident_delivery_control_enabled,value.deliveryId],enabled:Boolean(readReady&&value.deliveryId&&!revoked),queryFn:({signal})=>incidentDeliveryApi.control({incidentId,deliveryId:value.deliveryId??'',purpose},signal),retry:false,gcTime:0});
  const clearSensitive=()=>{setValue(EMPTY_INCIDENT_DELIVERY_DRAFT);setPending(null);setConfirmed(false);setChecked(false);};
  function revoke(error:unknown,purge=true){
-  generation.current++;request.current?.abort();request.current=null;clearSensitive();setOpaque(null);setResult(null);setRevoked(true);setNeedsRead(true);setState('denied');setMessage('当前通知控制用途或此公共故障已失权，原输入和恢复副本停止展示。');
+  generation.current++;request.current?.abort();request.current=null;clearSensitive();setOpaque(null);setResult(null);setRevoked(true);setNeedsRead(true);setState('denied');setMessage('你已不能操作此公共故障的通知，输入已隐藏。');
   void client.cancelQueries({queryKey:queryPrefix},{revert:false});client.removeQueries({queryKey:queryPrefix});
   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,principal.principal_id,undefined,'revoked');
   else if(error instanceof IncidentDeliverySessionRejected)void clearSessionAuthorization(client,principal.principal_id,403,'revoked');
@@ -46,7 +47,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(unavailable(error)||error instanceof DraftError&&['DRAFT_IDENTITY_CHANGED','DRAFT_ACTION_REVOKED'].includes(error.message)){revoke(error);return;}
   setNeedsRead(true);
   if(originalId)setState(known.current?'committed':'unknown');
-  setMessage(originalId?'恢复或授权读取尚未完成，原 UUID 保留；不会发起新操作。':'恢复或授权读取尚未完成，输入保留；请重新读取后确认。');
+  setMessage(originalId?'草稿暂未恢复：内容仍保存在本机，网络恢复后会自动找回。':'恢复或授权读取尚未完成，输入保留；请重新读取后确认。');
  }
  function requirePrincipal(fresh:Principal,startIdentity:string){
   if(fresh.principal_id!==principal.principal_id)throw new DraftError('DRAFT_IDENTITY_CHANGED');
@@ -75,14 +76,14 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    // controls only a new intent and does not revoke an existing UUID.
    const actionAllowed=copy.value.action==='RETRY'?read.capability.retry_authorized:copy.value.action==='RECONCILE'?read.capability.reconcile_authorized:true;
    if(!actionAllowed){
-    if(copy.pending){clearSensitive();setOpaque(copy.pending.body.client_command_id);setState('unknown');setNeedsRead(true);setMessage('当前完整原操作不可重放；原 UUID 保留，请明确只读核对。');return;}
+    if(copy.pending){clearSensitive();setOpaque(copy.pending.body.client_command_id);setState('unknown');setNeedsRead(true);setMessage('上次的内容已不完整，不能重新提交。点击「核对结果」。');return;}
     throw new DraftError('DRAFT_ACTION_REVOKED');
    }
    setValue(copy.value);setPending(copy.pending);setConfirmed(false);setChecked(false);setNeedsRead(true);
-   if(copy.pending){setOpaque(copy.pending.body.client_command_id);setState('unknown');setMessage('已恢复原通知路、UUID、正文和版本；先只读核对，不会自动发送。');}
+   if(copy.pending){setOpaque(copy.pending.body.client_command_id);setState('unknown');setMessage('已找回上次的通知内容。先点击「核对结果」，不会自动发送。');}
   },
   onOperation:id=>{if(settling.current)return;if(pending&&pending.body.client_command_id!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
-  onSensitiveClear:()=>{if(!settling.current){clearSensitive();if(clearRequested.current){clearRequested.current=false;setState('idle');setMessage('当前输入和此用途的恢复副本已清除。');}}}
+  onSensitiveClear:()=>{if(!settling.current){clearSensitive();if(clearRequested.current){clearRequested.current=false;setState('idle');setMessage('已清空输入和草稿。');}}}
  });
  const originalId=draft.operationId??opaque??pending?.body.client_command_id,busy=['preparing','submitting','reading','checking'].includes(state),hasInput=Boolean(value.deliveryId||value.action||value.reason||value.version),blocked=busy||Boolean(originalId)||hasInput||draft.restoring;
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
@@ -95,7 +96,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  useEffect(()=>{
   generation.current++;request.current?.abort();request.current=null;setConfirmed(false);setChecked(false);setNeedsRead(true);
   if((pending?.action??value.action)==='RECONCILE'&&!principal.roles.includes('ADMIN')||(pending?.action??value.action)==='RETRY'&&!principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')){revoke(new ApiError(403,'AUTHORIZATION_REJECTED'));return;}
-  if(originalId){if(!principal.incident_delivery_control_enabled){setPending(null);setOpaque(originalId);}setState(known.current?'committed':'unknown');setMessage('当前身份、授权或开关已更新；原 UUID 和已知结果保留，只读核对后才能继续。');}
+  if(originalId){if(!principal.incident_delivery_control_enabled){setPending(null);setOpaque(originalId);}setState(known.current?'committed':'unknown');setMessage('你的权限有变化。先点击「核对结果」，再继续操作。');}
   const token=generation.current,startIdentity=currentIdentity.current;
   void client.cancelQueries({queryKey:queryPrefix},{revert:false}).then(()=>{
    if(value.deliveryId&&readReady&&!revoked&&token===generation.current&&currentIdentity.current===startIdentity)void capability.refetch();
@@ -113,12 +114,12 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(!capability.data.receipt_read){revoke(new ApiError(403,'AUTHORIZATION_REJECTED'));return;}
   if(!pending)return;
   const permitted=pending.action==='RETRY'?capability.data.retry_authorized:capability.data.reconcile_authorized;
-  if(!permitted){setOpaque(pending.body.client_command_id);clearSensitive();setState(known.current?'committed':'unknown');setChecked(false);setNeedsRead(true);setMessage('当前完整原操作不可重放；原 UUID 和已知结果保留，仅明确只读核对。');void draft.discard();}
+  if(!permitted){setOpaque(pending.body.client_command_id);clearSensitive();setState(known.current?'committed':'unknown');setChecked(false);setNeedsRead(true);setMessage('上次的内容已不完整，不能重新提交。点击「核对结果」。');void draft.discard();}
  },[capability.data,capability.isFetching,busy,revoked,value.deliveryId]);
 
  useEffect(()=>{
   if(!pending)return;
-  const timer=setTimeout(()=>{generation.current++;request.current?.abort();request.current=null;setOpaque(pending.body.client_command_id);clearSensitive();setState(known.current?'committed':'unknown');setMessage('原操作正文已过期；原 UUID 和已知结果保留，只能只读核对。');},draft.ttl);
+  const timer=setTimeout(()=>{generation.current++;request.current?.abort();request.current=null;setOpaque(pending.body.client_command_id);clearSensitive();setState(known.current?'committed':'unknown');setMessage('上次的输入已过期，只能查看结果。点击「核对结果」。');},draft.ttl);
   return()=>clearTimeout(timer);
  },[pending?.body.client_command_id]);
  useEffect(()=>{
@@ -128,7 +129,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(!principal.incident_delivery_control_enabled&&!originalId&&!draft.existing)return;
   try{return subscribeDrafts(event=>{
    if(event.principal!==principal.principal_id||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;
-   if(event.reason==='logout'||event.reason==='logout-unknown'){generation.current++;request.current?.abort();clearSensitive();setOpaque(null);setResult(null);clearSessionView(client,undefined,'会话已退出，请重新核验。');}
+   if(event.reason==='logout'||event.reason==='logout-unknown'){generation.current++;request.current?.abort();clearSensitive();setOpaque(null);setResult(null);clearSessionView(client,undefined,'登录已过期，请重新登录。');}
    else if(event.reason==='revoked'&&matchesDraft(event,draft.scope))revoke(new DraftError('DRAFT_ACTION_REVOKED'),false);
   });}catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_STORAGE_UNAVAILABLE'))throw error;}
  },[principal.principal_id,incidentId,purpose,principal.incident_delivery_control_enabled,originalId,draft.existing]);
@@ -152,15 +153,15 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    settling.current=true;let cleaned=false;
    try{cleaned=await draft.success(commandId,receiptResult===null);}finally{settling.current=false;}
    current();setPending(null);setChecked(false);setConfirmed(false);setOpaque(cleaned?null:commandId);
-   if(!cleaned){setState(receiptResult?'committed':'failed');setMessage('原结果已核对并保持；恢复副本清理未确认，保留原 UUID，禁止新提交。');return;}
+   if(!cleaned){setState(receiptResult?'committed':'failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}
    if(receiptResult){setResult(receiptResult);clearSensitive();setState('committed');setNeedsRead(false);setMessage('本路操作已确认提交；当前权限和公共故障已重新读取，各路结果分别刷新。确认发送不代表报修人已读。');}
-   else{setState('failed');setNeedsRead(true);setMessage('原操作已明确拒绝；输入保留，请重新读取并明确采用当前快照。');}
+   else{setState('failed');setNeedsRead(true);setMessage('上次操作没有成功，输入还在。点击「使用最新内容」后重试。');}
    onChanged();
   }catch(error){
    if(controller.signal.aborted||request.current!==controller)return;
    try{current();}catch{return;}
    if(unavailable(error)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'){revoke(error);return;}
-   setOpaque(commandId);setState(receiptResult?'committed':'failed');setChecked(false);setNeedsRead(true);setMessage(receiptResult?'原提交已确认，当前事实尚未读回；原 UUID、正文和版本保留，请只读核对。':'原拒绝已确认，当前事实尚未读回；原 UUID 保留，请只读核对。');
+   setOpaque(commandId);setState(receiptResult?'committed':'failed');setChecked(false);setNeedsRead(true);setMessage(receiptResult?'已提交。最新内容还没加载完，点击「核对结果」。':'上次操作没有成功。最新内容还没加载完，点击「核对结果」。');
   }
  }
  async function send(operation:IncidentDeliveryOperation,replay=false){
@@ -183,8 +184,8 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    if(unavailable(error)||error instanceof DraftError&&['DRAFT_IDENTITY_CHANGED','DRAFT_ACTION_REVOKED'].includes(error.message)){revoke(error);return;}
    if(error instanceof ControlDisabled){if(replay||dispatched){setOpaque(operation.body.client_command_id);clearSensitive();setState('unknown');setMessage('通知控制当前关闭；原操作保留，仅可只读核对，不会新提交。');}else{setPending(null);setOpaque(null);setState('failed');setNeedsRead(true);setMessage('通知控制当前关闭，本次尚未发送。');}return;}
    if(error instanceof IncidentDeliveryCommandRefusal){await terminal(operation.body.client_command_id,null,controller,current,startIdentity);return;}
-   if(!dispatched&&!replay){settling.current=true;let cleaned=false;try{cleaned=await draft.success(operation.body.client_command_id,true);}finally{settling.current=false;}try{current();}catch{return;}setPending(null);setOpaque(cleaned?null:operation.body.client_command_id);setState(cleaned?'failed':'unknown');setNeedsRead(true);setMessage(cleaned?'本次尚未发送：'+errorMessage(error)+'。输入保留，请重新核对。':'本次未发送，恢复清理未确认；原 UUID 保留，先只读核对。');}
-   else{setState(known.current?'committed':'unknown');setChecked(false);setMessage(known.current?'原提交已收到确认，后续读取尚未完成；保留原 UUID、正文和版本，请只读核对。':'通知操作结果未知；保留原 UUID、正文和版本，先只读核对，不能创建新操作。');}
+   if(!dispatched&&!replay){settling.current=true;let cleaned=false;try{cleaned=await draft.success(operation.body.client_command_id,true);}finally{settling.current=false;}try{current();}catch{return;}setPending(null);setOpaque(cleaned?null:operation.body.client_command_id);setState(cleaned?'failed':'unknown');setNeedsRead(true);setMessage(cleaned?'本次尚未发送：'+errorMessage(error)+'。输入保留，请重新核对。':'草稿未能清空：本次没有提交。点击「核对结果」后重试。');}
+   else{setState(known.current?'committed':'unknown');setChecked(false);setMessage(known.current?'已提交。最新内容还没加载完，点击「核对结果」。':'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
   }finally{if(request.current===controller)request.current=null;}
  }
  async function checkOriginal(){
@@ -193,16 +194,16 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   try{
    await readCurrent(original?.deliveryId??value.deliveryId,controller,current,startIdentity);current();
    const receipt=await incidentDeliveryApi.receipt(incidentId,id,controller.signal);current();
-   if(receipt.state==='UNKNOWN'){setChecked(!known.current);setState(known.current?'committed':'unknown');setMessage(known.current?'原提交已知确认；本次未读到终态，不改写已有 ACK，没有发送新操作。':'原操作尚无可确认终态；未知不代表未应用，没有发送新操作。');return;}
+   if(receipt.state==='UNKNOWN'){setChecked(!known.current);setState(known.current?'committed':'unknown');setMessage(known.current?'已提交。最新结果暂时读不到，没有重复提交。':'原操作尚无可确认终态；未知不代表未应用，没有发送新操作。');return;}
    if(known.current&&receipt.state==='FAILED')throw new Error('ORIGINAL_INCIDENT_DELIVERY_RECEIPT_CONFLICT');
    if(receipt.state==='COMMITTED'&&original&&!matchesIncidentDeliveryResult(original,receipt.result))throw new Error('ORIGINAL_INCIDENT_DELIVERY_RESULT_UNCONFIRMED');
    await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,controller,current,startIdentity);
-  }catch(error){if(controller.signal.aborted||request.current!==controller)return;try{current();}catch{return;}if(unavailable(error)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')revoke(error);else{setState(known.current?'committed':'unknown');setMessage('本次只读核对未完成，原 UUID 和已知结果保留，没有发送新操作。');}}
+  }catch(error){if(controller.signal.aborted||request.current!==controller)return;try{current();}catch{return;}if(unavailable(error)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')revoke(error);else{setState(known.current?'committed':'unknown');setMessage('这次核对没有完成，没有重复提交。点击重试。');}}
   finally{if(request.current===controller)request.current=null;}
  }
  async function refreshCurrent(){
   if(request.current)return;const {controller,current,startIdentity}=startRequest('reading');
-  try{await readCurrent(value.deliveryId,controller,current,startIdentity);current();setNeedsRead(false);setState(originalId?(known.current?'committed':'unknown'):'idle');setMessage(originalId?'当前事实已重新读取；原操作仍须只读核对。':'当前事实已读取，捕获输入保持；请明确采用当前快照。');onChanged();}
+  try{await readCurrent(value.deliveryId,controller,current,startIdentity);current();setNeedsRead(false);setState(originalId?(known.current?'committed':'unknown'):'idle');setMessage(originalId?'当前事实已重新读取；原操作仍须只读核对。':'已获取最新内容，输入还在。点击「使用最新内容」后再提交。');onChanged();}
   catch(error){if(controller.signal.aborted||request.current!==controller)return;try{current();}catch{return;}if(unavailable(error)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')revoke(error);else{setState(originalId?(known.current?'committed':'unknown'):'failed');setNeedsRead(true);setMessage(errorMessage(error));}}
   finally{if(request.current===controller)request.current=null;}
  }
@@ -222,16 +223,16 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  return <section className="candidate-decision" aria-label={purpose==='INCIDENT_LIFECYCLE'?'生命周期通知控制':'公开进展通知控制'} data-incident-delivery-controls data-control-purpose={purpose}>
   <h3>{purpose==='INCIDENT_LIFECYCLE'?'生命周期通知控制':'公开进展通知控制'}</h3><p>只操作选定通知路。结果未知须先核对；确认已发不再发送，核实未发才重新排队。发送结果不代表报修人已读。</p>
   {principal.incident_delivery_control_enabled&&!revoked?<HForm onSubmit={event=>{event.preventDefault();if(canSubmit)void send(operation());}}><div className="candidate-form-grid">
-   <WorkbenchSelect label={<>选择通知路</>} aria-label="选择通知路" value={value.deliveryId??''} isDisabled={locked} onChange={event=>{const route=routes.find(item=>item.deliveryId===event);setValue(route?{...EMPTY_INCIDENT_DELIVERY_DRAFT,deliveryId:route.deliveryId,version:detail.row_version,status:route.status,effect:route.effect,attemptCount:null}:EMPTY_INCIDENT_DELIVERY_DRAFT);setConfirmed(false);setNeedsRead(false);setResult(null);setState('idle');}}><ListBox.Item id="" textValue={"请选择本次控制的通知路"}>请选择本次控制的通知路<ListBox.ItemIndicator/></ListBox.Item>{value.deliveryId&&!selected?<ListBox.Item id={value.deliveryId} textValue={"原通知路（当前分页窗口外，提交时核验）"}>原通知路（当前分页窗口外，提交时核验）<ListBox.ItemIndicator/></ListBox.Item>:null}{routes.map(route=><ListBox.Item key={route.deliveryId} id={route.deliveryId} textValue={String(route.label)+"·"+String(route.deliveryId.slice(-8))+"·"+String(statusLabels[route.status])}>{route.label}· {route.deliveryId.slice(-8)}· {statusLabels[route.status]}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
+   <WorkbenchSelect label={<>选择通知路</>} aria-label="选择通知路" value={value.deliveryId??''} isDisabled={locked} onChange={event=>{const route=routes.find(item=>item.deliveryId===event);setValue(route?{...EMPTY_INCIDENT_DELIVERY_DRAFT,deliveryId:route.deliveryId,version:detail.row_version,status:route.status,effect:route.effect,attemptCount:null}:EMPTY_INCIDENT_DELIVERY_DRAFT);setConfirmed(false);setNeedsRead(false);setResult(null);setState('idle');}}><ListBox.Item id="" textValue={"请选择本次控制的通知路"}>请选择本次控制的通知路<ListBox.ItemIndicator/></ListBox.Item>{value.deliveryId&&!selected?<ListBox.Item id={value.deliveryId} textValue={"原通知渠道（已选，提交时确认）"}>原通知渠道（已选，提交时确认）<ListBox.ItemIndicator/></ListBox.Item>:null}{routes.map(route=><ListBox.Item key={route.deliveryId} id={route.deliveryId} textValue={String(route.label)+"·"+String(route.deliveryId.slice(-8))+"·"+String(statusLabels[route.status])}>{route.label}· {route.deliveryId.slice(-8)}· {statusLabels[route.status]}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
    <WorkbenchSelect label={<>投递控制操作</>} aria-label="投递控制操作" value={value.action} isDisabled={locked||!value.deliveryId||capability.isFetching||capability.isError} onChange={event=>{const action=event;setValue(input=>({...input,action:action==='RETRY'||action==='RECONCILE'?action:'',reason:'',resolution:''}));setConfirmed(false);}}><ListBox.Item id="" textValue={"请选择明确操作"}>请选择明确操作<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="RETRY" isDisabled={!capability.data?.retry} textValue={"重试确定未发送的通知"}>重试确定未发送的通知<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="RECONCILE" isDisabled={!capability.data?.reconcile} textValue={"核对未知发送结果"}>核对未知发送结果<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
    <WorkbenchSelect label={<>投递操作原因</>} aria-label="投递操作原因" value={value.reason} isDisabled={locked||!value.action} onChange={event=>{setValue(input=>({...input,reason:event}));setConfirmed(false);}}><ListBox.Item id="" textValue={"请选择已实际完成的核对原因"}>请选择已实际完成的核对原因<ListBox.ItemIndicator/></ListBox.Item>{Object.entries(reasonLabels).map(([code,label])=><ListBox.Item key={code} id={code} textValue={String(label)}>{label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
    {value.action==='RECONCILE'?<WorkbenchSelect label={<>未知发送核对结论</>} aria-label="未知发送核对结论" value={value.resolution} isDisabled={locked} onChange={event=>{const resolution=resolutions.find(item=>item===event)??'';setValue(input=>({...input,resolution}));setConfirmed(false);}}><ListBox.Item id="" textValue={"请选择已核实的结论"}>请选择已核实的结论<ListBox.ItemIndicator/></ListBox.Item>{resolutions.map(resolution=><ListBox.Item key={resolution} id={resolution} textValue={String(resolutionLabels[resolution])}>{resolutionLabels[resolution]}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>:null}
-  </div>{value.version?<p>捕获公共故障版本 {value.version}；当前版本 {detail.row_version}。原路快照：{value.status?statusLabels[value.status]:''} / {value.effect}；捕获尝试 {value.attemptCount}，当前路尝试 {selected?.attemptCount??'窗口外'}。{!snapshotMatches?'当前事实已变化或原路不在当前窗口，须重新读取并明确采用当前快照。':''}</p>:null}<HCheckbox aria-label="确认本路投递操作" isSelected={confirmed} isDisabled={otherBlocked||busy||revoked||!value.action||Boolean(originalId)&&!pending} onChange={event=>setConfirmed(event)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>已核对选定通知路、原因和结论，明确执行此操作</HCheckbox.Content></HCheckbox><div className="note-controls"><HButton type="submit" data-action="submit-incident-delivery-control" isDisabled={!canSubmit} tone="secondary">明确提交本路通知操作</HButton>{hasInput&&!originalId&&!busy&&state!=='committed'?<><HButton type="button" data-action="adopt-incident-delivery-snapshot" isDisabled={!selected||!readReady||revoked||capability.isFetching||capability.isError||!capability.data} onClick={()=>{if(!selected)return;setValue(input=>({...input,version:detail.row_version,status:selected.status,effect:selected.effect,attemptCount:capability.data?.attempt_count??null}));setConfirmed(false);setNeedsRead(false);setState('idle');}} tone="secondary">明确采用当前路快照</HButton><HButton type="button" data-action="clear-incident-delivery-input" isDisabled={draft.probing||draft.restoring||draft.enabled&&(draft.status==='loading'||draft.status==='failed')} onClick={()=>{if(draft.enabled){clearRequested.current=true;void draft.discard();}else{clearSensitive();setMessage('已清除尚未提交的本路输入；此页没有保存恢复副本。');setState('idle');}}} tone="secondary">清除当前输入</HButton></>:null}</div></HForm>:null}
+  </div>{value.version?<p hidden data-delivery-capture>捕获公共故障版本 {value.version}；捕获尝试 {value.attemptCount}，</p>:null}{value.version&&!snapshotMatches?<p>内容已更新，请点击「使用最新内容」后再提交。</p>:null}<HCheckbox aria-label="确认本路投递操作" isSelected={confirmed} isDisabled={otherBlocked||busy||revoked||!value.action||Boolean(originalId)&&!pending} onChange={event=>setConfirmed(event)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>已核对选定通知路、原因和结论，明确执行此操作</HCheckbox.Content></HCheckbox><div className="note-controls"><HButton type="submit" data-action="submit-incident-delivery-control" isDisabled={!canSubmit} tone="secondary">明确提交本路通知操作</HButton>{hasInput&&!originalId&&!busy&&state!=='committed'?<><HButton type="button" data-action="adopt-incident-delivery-snapshot" isDisabled={!selected||!readReady||revoked||capability.isFetching||capability.isError||!capability.data} onClick={()=>{if(!selected)return;setValue(input=>({...input,version:detail.row_version,status:selected.status,effect:selected.effect,attemptCount:capability.data?.attempt_count??null}));setConfirmed(false);setNeedsRead(false);setState('idle');}} tone="secondary">使用最新内容</HButton><HButton type="button" data-action="clear-incident-delivery-input" isDisabled={draft.probing||draft.restoring||draft.enabled&&(draft.status==='loading'||draft.status==='failed')} onClick={()=>{if(draft.enabled){clearRequested.current=true;void draft.discard();}else{clearSensitive();setMessage('已清空未提交的输入。');setState('idle');}}} tone="secondary">清除当前输入</HButton></>:null}</div></HForm>:null}
   {capability.isError&&!revoked?<p role="alert">{errorMessage(capability.error)}；无法读取能力不代表有操作权。</p>:null}
   {draft.enabled?<DraftStatus data-incident-delivery-draft-status={draft.status} role="status">{draft.message}</DraftStatus>:null}
   {message?<ToastFeedback revision={messageRevision} source="incident-candidates" state={state} data-incident-delivery-outcome data-incident-delivery-state={state} role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
   {result&&!revoked?<p data-incident-delivery-receipt>原操作安全回执：{statusLabels[result.status]} / {result.side_effect_state} · 尝试 {result.attempt_count} 次。各路当前结果按重新读取的列表显示。</p>:null}
-  {originalId&&!revoked?<div className="note-controls"><p>原通知操作 UUID：{originalId}；原版本：{pending?.body.expected_row_version??'正文不可用'}。</p><HButton type="button" data-action="check-incident-delivery-operation" isDisabled={busy||draft.probing||draft.restoring} onClick={()=>{void checkOriginal();}} tone="secondary">只读核对原通知操作</HButton>{pending&&checked?<HButton type="button" data-action="replay-incident-delivery-operation" isDisabled={!canReplay} onClick={()=>{if(pending&&canReplay)void send(pending,true);}} tone="secondary">明确重放同一原通知操作</HButton>:null}</div>:null}
+  {originalId&&!revoked?<div className="note-controls"><p>上次操作的结果还没确认，点击「核对结果」。</p><DiagnosticCopy data={{operation_id:originalId,expected_row_version:pending?.body.expected_row_version??null}}/><HButton type="button" data-action="check-incident-delivery-operation" isDisabled={busy||draft.probing||draft.restoring} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&checked?<HButton type="button" data-action="replay-incident-delivery-operation" isDisabled={!canReplay} onClick={()=>{if(pending&&canReplay)void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead&&!revoked?<HButton type="button" data-action="refresh-incident-delivery-current" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">只读刷新当前事实</HButton>:null}
   {state==='committed'&&!originalId&&!revoked&&principal.incident_delivery_control_enabled?<HButton type="button" data-action="new-incident-delivery-intent" isDisabled={busy||otherBlocked||!readReady} onClick={()=>{known.current=false;setResult(null);clearSensitive();setState('idle');setNeedsRead(false);setMessage('请明确选择下一条通知路，不会自动操作其他路。');}} tone="secondary">开始下一条明确通知操作</HButton>:null}
  </section>;

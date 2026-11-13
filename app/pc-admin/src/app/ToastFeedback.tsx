@@ -109,16 +109,19 @@ export function ToastFeedback({children,source,state,enabled=true,persistent=fal
 }
 
 /** Routine autosave is an accessible status, not another notification on every keystroke. */
+// Card 34C: draft feedback that needs attention (not saved, not cleared, not confirmed, too long).
+const DRAFT_WARNING=/未知|过期|失败|不可用|无法|未确认|未能|暂未|过长|只能查看/u,DRAFT_DONE=/^(?:草稿已保存|已保存|已提交)/u;
+const DRAFT_SAVED_HINT='仅保存在这台电脑，24 小时后自动清除';
 export function DraftFeedback({children,enabled=true}:{children:string;enabled?:boolean}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  const warning=DRAFT_WARNING.test(children);
   return <ToastFeedback source="draft" state={warning?'unknown':undefined} enabled={enabled&&(warning||/已恢复/u.test(children))}>{children}</ToastFeedback>;
 }
 
 export function DraftStatus({children,notify=true,inlineText=false,...attributes}:Omit<HTMLAttributes<HTMLSpanElement>,'children'> & {children:string;notify?:boolean;inlineText?:boolean}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  const warning=DRAFT_WARNING.test(children),done=DRAFT_DONE.test(children);
   const quiet=inlineText&&(!children||/^草稿仅在当前浏览器/u.test(children));
-  const short=/^已保存恢复副本/u.test(children)?'草稿已保存':/^已提交；恢复副本已清理/u.test(children)?'草稿已清理':children;
-  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
+  const short=children;
+  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children==='草稿已保存'?DRAFT_SAVED_HINT:children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
 /** Card 33: each tone's icon; an error is a crossed circle so it never reads as an unknown outcome. */

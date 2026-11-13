@@ -71,7 +71,7 @@ for(const mode of ['browser','desktop','logout-unknown','logout-cleanup-failure'
     const ticket=f.tickets[5];assert.ok(ticket);await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page'});
     await browser.waitFor('document.querySelector("#internal-note")?.disabled===false');
     await browser.evaluate(`(()=>{const e=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,'SYNTHETIC_MENU_DRAFT');e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-    await browser.waitFor('document.body.innerText.includes("已保存恢复副本")');
+    await browser.waitFor('document.body.innerText.includes("草稿已保存")');
     await browser.evaluate(`(()=>{const original=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...args){if(this.name==='wecom-workbench-drafts-v1'&&mode==='readwrite')throw Error('SYNTHETIC_CLEANUP_REFUSED');return original.call(this,stores,mode,...args);};})()`);
    }
    await openWorkbenchUserMenu(browser);await clickWorkbenchControl(browser,'[data-action="logout-workbench"]');

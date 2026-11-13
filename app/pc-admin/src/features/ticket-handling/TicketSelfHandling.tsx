@@ -29,11 +29,11 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     onSuccess:(result,variables)=>{setPending(null);setState('succeeded');setMessage(variables.intent.action==='accept-for-later'?'已接单，可稍后开始处理。':'已开始处理。');if(result.replayed)setMessage(variables.intent.action==='accept-for-later'?'已核对：原操作已接单。':'已核对：原操作已开始处理。');refresh();},
     onError:(error,variables)=>{
       if(error instanceof ApiError){setPending(boardMode&&error.status===409?variables.intent:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：请重新读取工单后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
-      else{setPending(variables.intent);setState('unknown');setMessage('结果未知：请求可能已提交。请核对原操作结果，原动作、版本和处理组保持不变。');}
+      else{setPending(variables.intent);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
     },onSettled:()=>{request.current=null;},
   });
   const send=(intent:Pending,checking:boolean)=>{
-    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('连接尚未完成事实核验，新处理操作尚未发送；请重新读取。');return;}
+    if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;const controller=new AbortController();request.current=controller;setPending(intent);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在提交处理操作…');mutation.mutate({intent,signal:controller.signal});
   };
   const submit=(action:SelfHandlingAction)=>{
@@ -49,7 +49,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
       {cardMode?(cardActionTarget?createPortal(action,cardActionTarget):null):action}
-      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">核对原操作结果</HButton>:null}
+      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">核对结果</HButton>:null}
       {!blocked&&(context.isError||state==='conflict'||state==='denied')?<HButton type="button" data-action="refresh-self-handling" onClick={()=>{void context.refetch();}} tone="secondary">重试读取操作</HButton>:null}
     </div>
     {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-self-handling" state={state} className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}

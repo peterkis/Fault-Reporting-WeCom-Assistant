@@ -107,7 +107,7 @@ async function runBoundary(mode:Boundary){
       await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.checked===true`);
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'material and Session selection must not submit an intermediate command');
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]')?.disabled===false");
 
       const close=async()=>{assert.ok(browser);await browser.waitFor("document.querySelector('[aria-label=\"关闭详情\"]')?.disabled===false");await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('.detail-dialog')");};
@@ -137,7 +137,7 @@ async function runBoundary(mode:Boundary){
           await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
           await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);
           await browser.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
-          await browser.waitFor("document.querySelector('[data-review-start-draft-status]')?.textContent.includes('已保存恢复副本')");
+          await browser.waitFor("document.querySelector('[data-review-start-draft-status]')?.textContent.includes('草稿已保存')");
           assert.equal(object(await browser.evaluate(snapshot(reviewId))).sensitive,1);
           await browser.waitFor("document.querySelector('[data-action=resolve-and-start-review]')?.disabled===false");
           await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:[]});

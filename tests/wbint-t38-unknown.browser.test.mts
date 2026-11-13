@@ -23,7 +23,7 @@ test('temporary GET unavailability preserves UNKNOWN and permits explicit origin
       assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T38 original committed but unreadable result');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
       await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note]"))');assert.equal(commands.length,1);
       unreadable=true;

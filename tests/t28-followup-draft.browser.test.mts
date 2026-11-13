@@ -10,7 +10,7 @@ test('T28 encrypted Incident follow-up restores the original unknown operation a
     assert.equal(await context.browser.evaluate('document.querySelectorAll("[data-incident-draft]").length'),1,'Incident follow-up needs its own enabled encrypted recovery consumer');
     await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
     await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
-    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("已保存恢复副本")');
+    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿已保存")');
     const initial=record(await context.browser.evaluate(candidateCopies)),saved=rows(initial.drafts).find(row=>row.kind==='incident'&&row.id===id);assert.ok(saved);assert.equal(saved.purpose,'incident-followup');assert.equal(Number(saved.expiresAt)-Number(saved.firstSavedAt),86400000);
     await context.browser.command('Page.reload');await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("已恢复")');
     assert.equal(await context.browser.evaluate('document.querySelector(".workbench-select[data-field-label=确认范围] select").value'),'BUILDING');assert.deepEqual(await context.browser.evaluate('globalThis.__t27Posts'),[]);

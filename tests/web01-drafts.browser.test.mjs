@@ -13,7 +13,7 @@ test('same-profile internal note draft is restored after refresh using current s
       await browser.waitFor("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))");
       await browser.evaluate("(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T03 refresh synthetic private note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       // Wait on the public durable-save feedback; the original memory-only form has no recoverable copy.
-      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await reload(browser);
       await browser.waitFor("document.querySelector('textarea')?.value==='T03 refresh synthetic private note'");
       assert.equal(await browser.evaluate("document.querySelector('.ticket-command-version').textContent"),'工单版本 2');
@@ -30,7 +30,7 @@ test('expired unknown payload and key are purged while the original opaque opera
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticketId+'?detail=page',width:900,height:900,cookies:[browserCookies[0]]});
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t03Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T03 expired unknown synthetic private note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
-      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
       const original=await browser.evaluate('globalThis.__t03Commands[0]');
@@ -59,7 +59,7 @@ test('unknown internal note submission survives refresh with the immutable origi
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticketId+'?detail=page',width:1920,height:1080,cookies:[browserCookies[0]]});
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t03Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,' T03 unknown synthetic private note ');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
-      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
       const original=await browser.evaluate('globalThis.__t03Commands[0]');

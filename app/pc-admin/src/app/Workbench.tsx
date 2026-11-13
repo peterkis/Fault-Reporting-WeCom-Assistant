@@ -130,13 +130,13 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   const displayName=profile.data?.name??principal.display_name,department=profile.data?.department;
   const client=useQueryClient();
   const logout=useMutation({mutationKey:['session-logout',principal.principal_id],mutationFn:()=>api.logout(principal.csrf_token),
-    onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出，当前浏览器的恢复副本已清理。'),
-    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看工单信息。')});
+    onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出登录，本机草稿已清除。'),
+    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','退出结果未确认，本机草稿已清除。请重新登录。')});
   useEffect(()=>{
     if(!principal.draft_recovery_enabled&&!principal.closure_draft_recovery_enabled&&!principal.manual_review_draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.staff_completion_draft_recovery_enabled&&!principal.conversation_draft_recovery_enabled&&!principal.manual_report_draft_recovery_enabled&&!principal.ticket_unassign_draft_recovery_enabled&&!principal.ticket_takeover_draft_recovery_enabled&&!principal.ticket_return_to_dispatch_enabled&&!principal.supplement_follow_up_draft_recovery_enabled&&!principal.logout_enabled)return;
     try{return subscribeDrafts(value=>{
       if(value.principal!==principal.principal_id||value.principal!==client.getQueryData<Principal>(['session'])?.principal_id)return;
-      if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
+      if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出登录，本机草稿已清除。':'退出结果未确认，请重新登录。');
       else if(value.reason==='revoked'){
         if(value.kind==='ticket'&&value.id&&['waiting-requester','waiting-vendor','waiting-resume','waiting-cancel'].includes(value.purpose??''))void client.invalidateQueries({queryKey:['ticket-command-context',value.principal,value.id]});
         else if(value.kind==='ticket'&&value.id&&value.purpose==='ticket-unassign')void clearTicketUnassignView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
@@ -146,7 +146,7 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
         else if(value.kind==='review'&&value.id&&value.purpose==='review-resolve-start'){const queryKey=['review-start-context',value.principal,value.id];void client.cancelQueries({queryKey,exact:true},{revert:false});client.getQueryCache().find({queryKey,exact:true})?.setState({data:undefined,dataUpdatedAt:0,error:new ApiError(404,'AUTHORIZATION_REJECTED'),status:'error',fetchStatus:'idle'});}
         else if(value.kind==='ticket'&&value.id&&(value.purpose==='supplement-reply'||/^sr-[a-z]{55}$/u.test(value.purpose??'')))void client.invalidateQueries({queryKey:['supplement-reply-sessions',value.principal,value.id]});
         else if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));
-        else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');
+        else clearSessionView(client,undefined,'登录已过期，请重新登录。');
       }
     });}catch{return;}
   },[client,principal.principal_id,principal.draft_recovery_enabled,principal.closure_draft_recovery_enabled,principal.manual_review_draft_recovery_enabled,principal.ticket_conversation_draft_recovery_enabled,principal.staff_completion_draft_recovery_enabled,principal.conversation_draft_recovery_enabled,principal.manual_report_draft_recovery_enabled,principal.ticket_unassign_draft_recovery_enabled,principal.ticket_takeover_draft_recovery_enabled,principal.ticket_return_to_dispatch_enabled,principal.supplement_follow_up_draft_recovery_enabled,principal.logout_enabled]);
@@ -330,7 +330,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     {searchMode&&searched.isError?<p role="alert" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</p>:null}
     {searchMode&&!parsed.error&&!searched.isPending&&!searched.isError&&searched.data&&unique.length===0?<p role="status" data-search-state="empty">{searchEmptyMessage(parsed.criteria)}</p>:null}
     {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
-      {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在核验当前事项读取权限…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
+      {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在加载…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
     {searchMode&&parsed.error?<Message text={parsed.error}/>:view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={Boolean(summaryFilter||categoryFilter!=='all'||handlerFilter!=='all')} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
       <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind}

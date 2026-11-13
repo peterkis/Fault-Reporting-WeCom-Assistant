@@ -106,7 +106,7 @@ async function commitUnknown(context:CaseContext,due=firstDue,alreadyTyped=false
  await writeFile(join(directory,'original-post-and-storage.json'),JSON.stringify({writes,storage},null,2));return original;
 }
 async function retainedOpaque(context:CaseContext,original:Write):Promise<Storage>{
- assert.ok(original.request);await context.browser.waitFor(button('只读核对原操作','ready'));
+ assert.ok(original.request);await context.browser.waitFor(button('核对结果','ready'));
  const storage=await context.browser.evaluate(context.stored) as Storage;assert.equal(draftFor(storage),undefined,'T37_BOUNDARY_SENSITIVE_COPY_MUST_BE_REMOVED');assert.equal(operationFor(storage)?.commandId,original.request.client_command_id,'T37_BOUNDARY_ORIGINAL_OPAQUE_UUID_MUST_REMAIN');
  assert.deepEqual(operationFor(storage)?.keys,['commandId','createdAt','id','kind','principal','purpose','scope']);assert.equal(await context.browser.evaluate(`document.querySelector(${JSON.stringify(region+' input[name="due_at"]')})?.value??''`),'');
  assert.deepEqual(await context.browser.evaluate('globalThis.__t37BoundaryWrites'),[],'boundary reload must not POST');assert.equal(await context.browser.evaluate(`globalThis.__t37BoundaryReads.some(value=>value.path.startsWith(${JSON.stringify(context.schedulePath+'/commands/')}))`),false,'boundary reload must not automatically ACK');
@@ -114,7 +114,7 @@ async function retainedOpaque(context:CaseContext,original:Write):Promise<Storag
 }
 async function acknowledge(context:CaseContext,original:Write){
  assert.ok(original.request);const expected=context.schedulePath+'/commands/'+text(original.request.client_command_id);
- await context.browser.evaluate(button('只读核对原操作','click'));await context.browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${button('只读核对原操作')})`);
+ await context.browser.evaluate(button('核对结果','click'));await context.browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${button('核对结果')})`);
  const receipts=await context.browser.evaluate(`globalThis.__t37BoundaryReads.filter(value=>value.path.startsWith(${JSON.stringify(context.schedulePath+'/commands/')}))`) as Read[];assert.equal(receipts.length,1);const receipt=receipts[0];assert.ok(receipt);assert.equal(receipt.path,expected);assert.equal(receipt.status,200);assert.deepEqual(receipt.body,{ticket_id:context.ticketId,client_command_id:original.request.client_command_id,state:'COMMITTED',result:{...original.body,replayed:true}});
  await context.browser.waitFor(`(async()=>{const value=await (${context.stored});return !value.drafts.some(row=>row.purpose===${JSON.stringify(purpose)})&&!value.operations.some(row=>row.purpose===${JSON.stringify(purpose)});})()`);
  assert.deepEqual(await context.browser.evaluate('globalThis.__t37BoundaryWrites'),[]);return receipt;
@@ -123,10 +123,10 @@ async function acknowledge(context:CaseContext,original:Write){
 test('T37 first-save TTL does not renew and genuine 24-hour expiry keeps only the original opaque UUID until explicit ACK',{timeout:240000},async()=>{
  await withBrowserCase('expiry',async context=>{
   const {browser,stored,directory}=context;await browser.evaluate(typeDue(firstDue));
-  await browser.waitFor(`(async()=>{const value=await (${stored});return value.drafts.some(row=>row.purpose===${JSON.stringify(purpose)})&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('已保存恢复副本');})()`);
+  await browser.waitFor(`(async()=>{const value=await (${stored});return value.drafts.some(row=>row.purpose===${JSON.stringify(purpose)})&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('草稿已保存');})()`);
   const first=draftFor(await browser.evaluate(stored) as Storage);assert.ok(first);assert.equal(first.expiresAt-first.firstSavedAt,86400000);assert.equal(first.extractable,false);assert.equal(first.plainCanary,false);
   await browser.evaluate('(()=>{const now=Date.now;Date.now=()=>now()+3600000;})()');await browser.evaluate(typeDue(updatedDue));
-  await browser.waitFor(`(async()=>{const value=await (${stored}),draft=value.drafts.find(row=>row.purpose===${JSON.stringify(purpose)});return draft&&draft.revision!==${JSON.stringify(first.revision)}&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('已保存恢复副本');})()`);
+  await browser.waitFor(`(async()=>{const value=await (${stored}),draft=value.drafts.find(row=>row.purpose===${JSON.stringify(purpose)});return draft&&draft.revision!==${JSON.stringify(first.revision)}&&document.querySelector(${JSON.stringify(region)})?.textContent.includes('草稿已保存');})()`);
   const updated=draftFor(await browser.evaluate(stored) as Storage);assert.ok(updated);assert.notEqual(updated.revision,first.revision);assert.equal(updated.firstSavedAt,first.firstSavedAt,'T37_FIRST_SAVE_ORIGIN_MUST_NOT_RENEW');assert.equal(updated.expiresAt,first.expiresAt,'T37_FIRST_SAVE_EXPIRY_MUST_NOT_RENEW');
   const original=await commitUnknown(context,updatedDue,true),prepared=draftFor(await browser.evaluate(stored) as Storage);assert.ok(prepared);assert.equal(prepared.firstSavedAt,first.firstSavedAt);assert.equal(prepared.expiresAt,first.expiresAt);
   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:'(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()'});await reload(browser);
@@ -161,7 +161,7 @@ test('T37 maintenance loss removes sensitive content but keeps both real opaque 
   const {browser,fixture,stored,ticketPath,schedulePath}=context,notePath=ticketPath+'/internal-notes';
   await browser.waitFor("Boolean(document.querySelector('#internal-note'))&&!document.querySelector('#internal-note').disabled");
   await browser.evaluate(`(()=>{const input=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(noteCanary)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-  await browser.waitFor(`(async()=>{const value=await (${stored});return value.drafts.some(row=>row.purpose==='internal-note')&&document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本');})()`);
+  await browser.waitFor(`(async()=>{const value=await (${stored});return value.drafts.some(row=>row.purpose==='internal-note')&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存');})()`);
   // add-note also disappears after transfer. Create its real pending command while still authorized,
   // then lose only delivery of its actual 200 response, so the second purpose has a real opaque UUID.
   const beforeNote=await current(await context.http(1),ticketPath);

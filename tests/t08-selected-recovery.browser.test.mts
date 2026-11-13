@@ -81,12 +81,12 @@ for(const temporary of [false,true])test(temporary
    await browser.evaluate(edit(reasonInput,reason));await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,target);
    await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
    await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
-   await browser.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${restored})`);
+   await browser.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${restored})`);
    const original=object(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')));assert.ok(original.revision);assert.equal(original.operation,null);
    let noteCopy:Record<string,unknown>|null=null;
    if(temporary){
     await browser.waitFor("document.querySelector('#internal-note')?.disabled===false&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-    await browser.evaluate(edit("document.querySelector('#internal-note')",otherNote));await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+    await browser.evaluate(edit("document.querySelector('#internal-note')",otherNote));await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
     noteCopy=object(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')));assert.ok(noteCopy.revision);assert.equal(noteCopy.operation,null);
     await browser.command('Page.enable');
     faultScript=text(object(await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__t08FaultCount=0;globalThis.__t08RealTargetStatuses=[];globalThis.__t08ReadFault=true;globalThis.__t08RestoreRead=()=>{globalThis.__t08ReadFault=false;globalThis.fetch=original;};globalThis.fetch=async(input,init)=>{const response=await original(input,init),url=new URL(typeof input==='string'?input:input.url,location.href);if(globalThis.__t08ReadFault&&(!init?.method||init.method==='GET')&&url.pathname===${JSON.stringify(targetPath)}&&url.searchParams.get('target_principal_id')===${JSON.stringify(target)}){globalThis.__t08RealTargetStatuses.push(response.status);if(response.status===200){await response.arrayBuffer();globalThis.__t08FaultCount++;throw new TypeError('T08_SYNTHETIC_NETWORK_FAILURE_AFTER_REAL_TARGET_READ');}}return response;};})()`})).identifier);

@@ -21,7 +21,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
   const clearSensitive=()=>{if(!settling.current){generation.current++;request.current?.abort();request.current=null;}setCapture(null);setSelected([]);setPending(null);setOpaque(null);setTouched(false);setResult(null);setState('idle');setMessage('');};
   const draft=useReviewStartDraft({principal,reviewId,value:{review:value,capture,choice,sessions:selected,touched,original:pending},pending:['submitting','checking','unknown'].includes(state)?pending:null,
     onRestore:copy=>{onRestoreReview(copy.value.review);adopted.current=copy.value.review.capture;setCapture(copy.value.capture);setChoice(copy.value.choice);setSelected(copy.value.sessions);setTouched(copy.value.touched);setPending(copy.value.original??copy.pending);setState(copy.pending?'unknown':copy.value.original?'failed':'idle');setMessage(copy.pending?'结果未知：已恢复您上次的选择。不会自动发送。':copy.value.original?'已恢复原失败意图；请只读核对或明确采用工单信息开始新操作。':'已恢复此用途的选择。');},
-    onSensitiveClear:clearSensitive,onOperation:id=>{setOpaque(id);setState('unknown');setMessage('结果未知：敏感副本不可用，请先核对上次操作。');}});
+    onSensitiveClear:clearSensitive,onOperation:id=>{setOpaque(id);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}});
   const key=['review-start-context',principal.principal_id,reviewId] as const;
   const context=useQuery({queryKey:key,enabled:principal.manual_review_resolve_and_start_enabled===true,queryFn:async({signal})=>{const current=await reviewStartApi.context(reviewId,signal),sessions=current.expected_ticket?await api.relatedConversations(current.expected_ticket.ticket_id,null,signal):{items:[],next_cursor:null};return {...current,sessions};}});
   const busy=state==='submitting'||state==='checking'||draft.restoring,originalId=pending?.client_command_id??opaque??draft.operationId;
@@ -47,7 +47,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{cleaned=await draft.success(commandId);current();}finally{settling.current=false;}
     if(!mounted.current||generation.current!==token)return;
     onRefresh();setCleanupBlocked(!cleaned);
-    if(!cleaned){setOpaque(commandId);setState('unknown');setMessage('原操作已确认提交，但恢复副本清理尚未确认。禁止新操作，请只读核对并重试清理。');return;}
+    if(!cleaned){setOpaque(commandId);setState('unknown');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}
     setPending(null);setOpaque(null);setTouched(false);setState('succeeded');setMessage('已确认故障并开始处理；原工单与实际沟通责任已在一次操作中记录。');onStarted();
   }
   async function send(command:ReviewResolveAndStartCommand){
@@ -68,7 +68,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
       if(error instanceof ApiError){if([401,403,404].includes(error.status)){if(bootstrap&&error.status===403)void clearSessionAuthorization(client,principal.principal_id,403,'revoked');else deny(error);return;}
         try{await draft.knownFailure(command.client_command_id);current();}catch{setCleanupBlocked(true);}
         if(!mounted.current||generation.current!==token)return;setState('failed');setMessage('此次操作未完成：'+errorMessage(error)+'。您的选择已保留。请核对原操作，再核对后重新操作。');
-      }else{setState(submitted?'unknown':'failed');setMessage(submitted?'结果未知：您的选择已保留。不会自动提交，请明确核对原操作。':'恢复副本未确认，本次尚未发送；原意图保留，禁止自动重试。');}
+      }else{setState(submitted?'unknown':'failed');setMessage(submitted?'结果未知：您的选择已保留。不会自动提交，请明确核对原操作。':'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
       void context.refetch();onRefresh();
     }finally{if(request.current===controller)request.current=null;}
   }
@@ -77,7 +77,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{const receipt=await reviewStartApi.receipt(reviewId,originalId,controller.signal);current();if(!mounted.current||generation.current!==token)return;
       if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知；无终态回执不代表没有提交。不会自动发送。');return;}
       if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');await finish(originalId,current,token);return;}
-      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('原操作失败已确认，但恢复副本清理尚未确认。禁止新操作，请只读核对并重试清理。');return;}}finally{settling.current=false;}}
+      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}}finally{settling.current=false;}}
       current();if(!mounted.current||generation.current!==token)return;setOpaque(null);setCleanupBlocked(false);setState('failed');setMessage('已只读确认原操作失败；原完整意图保留，新的意图须明确采用工单信息。');onRefresh();
     }catch(error){if(!mounted.current||generation.current!==token||controller.signal.aborted)return;try{current();}catch{return;}
       if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else{setState('unknown');setMessage('只读核对未完成，原操作身份保留，没有发送新操作。');}
@@ -92,7 +92,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
       if(!mounted.current||generation.current!==token)return;
       onRestoreReview(material);adopted.current=material.capture;setCapture({ticket:fresh.expected_ticket,team:fresh.resolver_team_id??(fresh.resolver_teams.length===1?fresh.resolver_teams[0]?.team_id??'':'')});
       setSelected(previous=>previous.flatMap(row=>{const current=sessions.items.find(session=>session.session_id===row.session_id&&session.take_allowed);return current?[{session_id:row.session_id,expected_row_version:Number(current.session_row_version)}]:[];}));
-      setPending(null);setOpaque(null);setTouched(true);setCleanupBlocked(false);setState('idle');setMessage('已明确采用当前材料与责任版本；只有再次确认才创建新操作并提交。');void context.refetch();
+      setPending(null);setOpaque(null);setTouched(true);setCleanupBlocked(false);setState('idle');setMessage('已更新为最新内容，确认后再提交。');void context.refetch();
     }catch(error){if(!mounted.current||generation.current!==token||controller.signal.aborted)return;try{current();}catch{return;}if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else{setState('failed');setMessage('工单信息尚未采用，原意图仍保留。');}}
     finally{if(request.current===controller)request.current=null;}
   }
@@ -111,14 +111,14 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     {draft.enabled?<DraftStatus data-review-start-draft-status role="status">{draft.message}</DraftStatus>:null}
     <WorkbenchSelect label={<>本次处理组 </>} aria-label="确认并开始的处理组" value={capture?.team??''} isDisabled={busy||Boolean(originalId)||Boolean(capture?.ticket)||state==='succeeded'} onChange={event=>{setTouched(true);setCapture(previous=>previous?{...previous,team:event}:previous);}}><ListBox.Item id="" textValue={"请选择处理组"}>请选择处理组<ListBox.ItemIndicator/></ListBox.Item>{context.data.resolver_teams.map(team=><ListBox.Item key={team.team_id} id={team.team_id} textValue={String(team.display_name)}>{team.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
     {noSessions?<p>当前没有需要接管的在线会话，按原联系方式联系报修人。</p>:<><HRadioGroup className="workbench-radio-group" name={'review-start-communication-'+reviewId} value={choice??''} onChange={next=>{if(next==='TAKE_SELECTED'){setTouched(true);setChoice('TAKE_SELECTED');}if(next==='RETAIN_CURRENT'){setTouched(true);setChoice('RETAIN_CURRENT');setSelected([]);}}} isDisabled={busy||Boolean(originalId)||state==='succeeded'} aria-label="沟通责任"><HRadio value={'TAKE_SELECTED'}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>同时承接下方明确选择的真实沟通会话</HRadio.Content></HRadio><HRadio value={'RETAIN_CURRENT'}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通责任</HRadio.Content></HRadio></HRadioGroup><p>已选择 {selected.length} 个会话（最多8个）。</p></>}
-    {changed?<p role="alert">处理或沟通版本已变化；原选择仍保留，请读取后明确重新采用当前材料。</p>:null}
+    {changed?<p role="alert">工单已被更新：查看最新内容后再操作。</p>:null}
     {context.data.sessions.items.map(session=><HCheckbox data-session-choice={session.session_id} isSelected={selected.some(s=>s.session_id===session.session_id)} isDisabled={!session.take_allowed||choice!=='TAKE_SELECTED'||busy||Boolean(originalId)||state==='succeeded'||selected.length>=8&&!selected.some(s=>s.session_id===session.session_id)} onChange={event=>{setTouched(true);setSelected(previous=>event?[...previous,{session_id:session.session_id,expected_row_version:Number(session.session_row_version)}]:previous.filter(s=>s.session_id!==session.session_id));}} key={session.session_id}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>{session.conversation_principal_name??'尚未分配沟通人'}</HCheckbox.Content></HCheckbox>)}
     {context.data.sessions.next_cursor?<p>只展示当前有权会话的第一页；此页未选择的会话不会被更改。</p>:null}
     <HButton type="button" data-action="resolve-and-start-review" isDisabled={!canSubmit} onClick={()=>{if(!canSubmit||!value.capture||!capture)return;if(noSessions)setChoice('RETAIN_CURRENT');void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:value.capture.row_version,
       expected_material_basis:value.capture.material_basis,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:value.reason,expected_ticket:capture.ticket?Object.freeze({...capture.ticket}):null,resolver_team_id:capture.team,communication_choice:communicationChoice,sessions:Object.freeze(selected.map(session=>Object.freeze({...session})))}));}} tone="secondary">确认故障并由我处理</HButton>
     <HButton type="button" data-action="refresh-review-start" isDisabled={busy} onClick={()=>{void context.refetch();}} tone="secondary">重新读取处理与沟通选择</HButton>
     {(state==='unknown'||state==='failed')&&pending&&!knownCommit.current?<HButton type="button" data-action="replay-review-start" isDisabled={busy} onClick={()=>{void send(pending);}} tone="secondary">重试上次操作</HButton>:null}
-    {originalId?<HButton type="button" data-action="check-review-start-receipt" isDisabled={busy} onClick={()=>{void check();}} tone="secondary">只读核对原确认并开始操作</HButton>:null}
+    {originalId?<HButton type="button" data-action="check-review-start-receipt" isDisabled={busy} onClick={()=>{void check();}} tone="secondary">核对结果</HButton>:null}
     {state==='failed'&&!knownCommit.current?<HButton type="button" data-action="new-review-start-intent" isDisabled={busy||cleanupBlocked||!context.data.allowed} onClick={()=>{void adoptNewIntent();}} tone="secondary">核对后重新操作</HButton>:null}
     {message?<ToastFeedback revision={messageRevision} source="manual-review" state={state} data-review-start-result role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
     {result?<p>本次处理事件已记录；当前状态以重新读取的事项为准。</p>:null}

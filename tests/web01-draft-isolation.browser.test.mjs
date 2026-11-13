@@ -6,7 +6,7 @@ import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 async function type(browser,text){await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
 async function reload(browser){const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);}
 async function ready(browser){await browser.waitFor("Boolean(document.querySelector('textarea'))&&!document.querySelector('[data-draft-status]').textContent.includes('正在')");}
-async function saved(browser){await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");}
+async function saved(browser){await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");}
 
 test('same-profile account and purpose isolation and a separate native browser profile never restore another scope copy',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,principals})=>{

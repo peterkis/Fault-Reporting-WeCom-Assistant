@@ -23,13 +23,13 @@ for(const lost of [false,true])test('ALL43 shared SET conflict preserves input a
    const before=await http.get(schedule);assert.equal(before.status,200);const changed=await http.post(schedule,{client_command_id:randomUUID(),expected_version:before.value.ticket_version,expected_schedule_version:before.value.schedule_version,reason_code:'WORKBENCH_FOLLOW_UP_SCHEDULE',action:'SET',due_at:'2030-01-03 10:00:00'});assert.equal(changed.status,200,JSON.stringify(changed.value));const afterOther=(await http.get(schedule)).value;
    await browser.evaluate('globalThis.__all43Release()');await browser.waitFor('globalThis.__all43Writes.length===1&&globalThis.__all43Writes[0].status===409');
    if(lost){
-    const check=`[...document.querySelector(${JSON.stringify(region)}).querySelectorAll('button')].find(b=>b.textContent.includes('只读核对原操作'))`;
+    const check=`[...document.querySelector(${JSON.stringify(region)}).querySelectorAll('button')].find(b=>b.textContent.includes('核对结果'))`;
     await browser.waitFor(`Boolean(${check})&&!(${check}).disabled`);await browser.evaluate(`(${check}).click()`);
     await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('已核对原操作被拒绝')`);
    }else await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('安排或工单已变化')`);
    assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(region+' input[name="due_at"]')})?.value`),due,'a known refusal cannot erase the original user time');
    const scope={principal:f.handler,kind:'ticket',id,purpose:'shared-follow-up-schedule'},module=await recoveryPath();
-   await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('已保存恢复副本')`);
+   await browser.waitFor(`document.querySelector(${JSON.stringify(region)})?.innerText.includes('草稿已保存')`);
    const copy=object(await browser.evaluate(`(async()=>{const store=await import(${JSON.stringify(module)}),saved=await store.openDraft(${JSON.stringify(scope)});return {text:saved.text,commandId:saved.handle.operation?.commandId??null};})()`));assert.equal(object(JSON.parse(text(copy.text))).value,due);assert.equal(copy.commandId,null,'the failed UUID has been explicitly settled, not replayed');
    const writes=await browser.evaluate('globalThis.__all43Writes');assert.ok(Array.isArray(writes)&&writes.length===1);const original=object(object(writes[0]).command);assert.equal(original.expected_version,before.value.ticket_version);assert.equal(original.expected_schedule_version,before.value.schedule_version);assert.equal(original.due_at,due);
    const submittingActor=await f.http(1);assert.equal((await submittingActor.get(schedule+'/commands/'+text(original.client_command_id))).value.state,'FAILED');assert.deepEqual((await http.get(schedule)).value,afterOther,'the refused old command cannot alter the other actor arrangement');

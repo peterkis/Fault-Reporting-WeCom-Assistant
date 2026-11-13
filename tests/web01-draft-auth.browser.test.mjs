@@ -6,7 +6,7 @@ import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 const counts="new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').count(),operations=tx.objectStore('operations').count();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result,operations:operations.result});};};})";
-async function type(browser,text){await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");}
+async function type(browser,text){await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");}
 
 test('real mounted workbench logout revokes the persisted session and clears same-profile draft and private views in every tab',async()=>{
   await withWeb01Fixture(async({origin,backendOrigin,certificateSpki,browserCookies,cookies,sessionId,pool,tickets,runtime})=>{

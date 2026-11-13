@@ -56,7 +56,7 @@ test('effective scope changes revoke facts and draft authority without relying o
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       phase='saving-draft';
       await browser.evaluate(inputExpression('T38 authorized draft revoked with its scope'));
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');
       phase='preparing-current-read';holdReads=true;
       await clickWorkbenchControl(browser,'.ds-note-actions button');
       await prepared(()=>held.some(item=>!item.response.destroyed&&(item.request.url??'').split('?')[0]==='/api/tickets/'+ticket.ticket.id),'the browser must start the original current-object READ');
@@ -97,7 +97,7 @@ test('a genuinely expired current Cookie session stops its production stream, fa
       assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate(inputExpression('T38 current Cookie expiry draft'));
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');
       await pool.query('UPDATE pilot_ticket.workbench_auth_session SET expires_epoch_ms=$2::bigint,expires_at=platform.local_from_epoch_ms($2::bigint) WHERE session_id=$1::uuid',[sessionId,String(Date.now()-1)]);
       await browser.waitFor('document.body.innerText.includes("会话已失效")&&!document.querySelector("textarea")&&!document.querySelector(".activity-list")');
       assert.equal(await browser.evaluate('document.body.innerText.includes("T38 current Cookie expiry draft")'),false);assert.equal(posts,0);
@@ -122,7 +122,7 @@ test('a real Cookie principal change fences an old in-flight GET and does not ca
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[oldCookie]});assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate(inputExpression('T38 former principal private draft'));
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');holdNext=true;
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');holdNext=true;
       for(let i=0;i<150&&!release;i++)await new Promise(resolve=>setTimeout(resolve,50));assert.ok(release,'a real old-principal authorized detail GET must be in flight');
       await browser.command('Network.deleteCookies',{name:oldCookie.name,url:origin});await browser.command('Network.setCookies',{cookies:[nextCookie]});
       await browser.waitFor(`document.querySelector('.account strong')?.textContent===${JSON.stringify(nextPrincipal.display_name)}||document.body.innerText.includes('会话需要重新核验')`);
