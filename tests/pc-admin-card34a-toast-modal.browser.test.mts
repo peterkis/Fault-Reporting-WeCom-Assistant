@@ -101,6 +101,9 @@ function modalHarness(b:Browser,directory:string,screenshots:Shots,table:Table,{
   else assert.equal(state.popover,'true',label+': too little room beside the modal, so the list is a popover');
   for(const item of state.toasts)assert.ok(state.chip&&item.y+item.height<=state.chip.y,label+': the list opens above the chip');
   if(evidence)await shot(evidence);
+  // Codex review: with the list open, focus can go back into the modal; Esc pressed there still closes only the list.
+  await b.evaluate(`document.querySelector(${JSON.stringify(dialog)}).querySelector('button,[href],input,textarea,select,[tabindex]:not([tabindex="-1"])').focus()`);
+  assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(dialog)}).contains(document.activeElement)`),true,label+': focus is back inside the modal');
   await key('Escape');
   await b.waitFor("document.querySelector('.workbench-toast-chip')?.getAttribute('aria-expanded')==='false'&&document.querySelector('.workbench-toast-viewport').hidden");
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(dialog)})?.checkVisibility()===true`),true,label+': Esc closed the list, not the modal');
@@ -189,6 +192,29 @@ test('Card 34A page notices stay outside the media preview modal at four widths'
   await clickWorkbenchControl(b,'#detail-tab-trigger-attachments');await b.waitFor("document.querySelector('.detail-media-card img')?.naturalWidth>0");await clickWorkbenchControl(b,'.detail-media-card');
   await b.waitFor("document.querySelector('.detail-media-dialog')?.checkVisibility()===true");await waitForAnimationsSettled(b);await notices();
   await scenario('media','.detail-media-dialog');
+  // Codex review: a preview filling the largest modal in a short window leaves too little margin for the full chip; the chip
+  // then goes compact into a margin that holds it, or the modals give up height so the compact chip fits below. It never covers
+  // the modal.
+  // The page's CSP blocks a <style> element; the element's own style (CSSOM) is allowed. The modal's max-height still caps it.
+  await b.evaluate("(()=>{const dialog=document.querySelector('.detail-media-dialog');dialog.style.setProperty('width','720px','important');dialog.style.setProperty('height','2000px','important');})()");
+  for(const [width,height,expected] of [[900,600,'margin'],[760,600,'reserve']] as const){
+   await b.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   await b.waitFor("document.querySelector('.workbench-toast-viewport')?.dataset.toastMode==='chip'");await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);
+   const state=await b.evaluate(layout('.detail-media-dialog')) as Layout,label='tall media '+width+'x'+height;
+   const extra=await b.evaluate("({compact:document.querySelector('.workbench-toast-chip-anchor')?.dataset.compact,reserve:document.documentElement.style.getPropertyValue('--workbench-toast-reserve')})") as {compact:string;reserve:string};
+   assert.ok(state.chip,label+': the chip is shown');
+   assert.ok(state.chip&&!intersects(state.chip,state.dialog),label+': the collapsed chip does not intersect the modal '+JSON.stringify({chip:state.chip,dialog:state.dialog,extra}));
+   assert.ok(state.chip&&state.chip.x>=0&&state.chip.y>=0&&state.chip.x+state.chip.width<=width&&state.chip.y+state.chip.height<=height,label+': the chip stays in the window');
+   // Once the modals give up height, the room below may hold the full chip again; only the margin case must be compact.
+   if(expected==='margin')assert.equal(extra.compact,'true',label+': no margin holds the full chip, so it is compact '+JSON.stringify({chip:state.chip,dialog:state.dialog,extra}));
+   assert.equal(Boolean(extra.reserve),expected==='reserve',label+': the modals give up height only when no margin holds even the compact chip');
+   table.push({dialog:'media-tall',width,mode:state.mode,popover:null,controls:state.controls.length,toasts:state.toasts.length,chip:true});
+  }
+  await b.evaluate("(()=>{const dialog=document.querySelector('.detail-media-dialog');dialog.style.removeProperty('width');dialog.style.removeProperty('height');})()");await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);
+  assert.equal(await b.evaluate("document.documentElement.style.getPropertyValue('--workbench-toast-reserve')"),'','back at 1440 the modals no longer give up height');
+  const restored=await b.evaluate(layout('.detail-media-dialog')) as Layout;
+  assert.ok(restored.chip&&!intersects(restored.chip,restored.dialog),'back at 1440 the chip is clear of the modal');
  }catch(caught){error=caught;}
  finally{
   await writeFile(join(directory,'receipt-34a-toast-media.json'),JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',platform:process.platform,table,screenshots},null,2));

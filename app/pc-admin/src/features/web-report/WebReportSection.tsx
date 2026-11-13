@@ -1,6 +1,7 @@
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Form as HForm,Input as HInput,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
-import {ToastFeedback,useFeedbackState,DialogAlert,useDialogToast} from '../../app/ToastFeedback';
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {DialogAlert,useDialogToast} from '../../app/DialogFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';

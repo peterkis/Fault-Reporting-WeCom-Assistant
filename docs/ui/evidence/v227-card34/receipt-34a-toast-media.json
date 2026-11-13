@@ -37,6 +37,24 @@
       "controls": 2,
       "toasts": 0,
       "chip": true
+    },
+    {
+      "dialog": "media-tall",
+      "width": 900,
+      "mode": "chip",
+      "popover": null,
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
+    },
+    {
+      "dialog": "media-tall",
+      "width": 760,
+      "mode": "chip",
+      "popover": null,
+      "controls": 2,
+      "toasts": 0,
+      "chip": true
     }
   ],
   "screenshots": []

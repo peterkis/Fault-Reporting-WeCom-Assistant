@@ -20,7 +20,8 @@ import {ClosureTicketSearch} from './ClosureLinks';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
-import {ToastFeedback,DraftStatus,DialogAlert} from '../../app/ToastFeedback';
+import {ToastFeedback,DraftStatus} from '../../app/ToastFeedback';
+import {DialogAlert} from '../../app/DialogFeedback';
 
 type Action='close'|'restore';
 type Command=IntakeClosureCommand|RestoreCommand;

@@ -1,6 +1,7 @@
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Slider,Tooltip} from '@heroui/react';
-import {ToastFeedback,useFeedbackState,DialogAlert,useDialogToast} from '../../app/ToastFeedback';
+import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {DialogAlert,useDialogToast} from '../../app/DialogFeedback';
 import {useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {CloudOff,Download,Image as ImageIcon,Pause,Play,TriangleAlert,Volume2} from 'lucide-react';

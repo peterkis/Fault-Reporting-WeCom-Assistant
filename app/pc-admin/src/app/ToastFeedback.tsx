@@ -7,7 +7,6 @@ import toast,{resolveValue,useToaster} from 'react-hot-toast/headless';
 import {overflowToasts,toastDuration,toastHeading,toastTone} from './toast-policy';
 import type {ToastTone} from './toast-policy';
 import {Bell,Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
-import {InlineAlert} from '../design/components/InlineAlert/InlineAlert';
 import type {LucideIcon} from 'lucide-react';
 
 const loadingStates=new Set(['loading','reading','preparing','submitting','checking','sending','saving']);
@@ -42,6 +41,18 @@ function toastHost(target:HTMLElement):HTMLElement|null{
  * collapse into one chip that expands on demand. */
 type ToastMode='docked'|'window'|'chip';
 const MIN_SIDE_LIST=272;
+type ChipSlot={x:number;y:number;side:'right'|'below'|'left'|'above'};
+/** Codex review: a place for a w×h chip in the window that keeps 8 from the modal and 8–20 from the window edge, trying the
+ * margin right of, below, left of and above the modal in that order; null when no margin is wide enough. */
+function chipSlot(dialog:DOMRect,screen:Box,w:number,h:number):ChipSlot|null{
+  const gap=8,edge=20,min=8;
+  const right=Math.min(edge,screen.right-dialog.right-gap-w);if(right>=min)return {x:screen.right-right-w,y:screen.bottom-edge-h,side:'right'};
+  const below=Math.min(edge,screen.bottom-dialog.bottom-gap-h);if(below>=min)return {x:screen.right-edge-w,y:screen.bottom-below-h,side:'below'};
+  const left=Math.min(edge,dialog.left-gap-w-screen.left);if(left>=min)return {x:screen.left+left,y:screen.bottom-edge-h,side:'left'};
+  const above=Math.min(16,dialog.top-gap-h-screen.top);if(above>=min)return {x:screen.right-edge-w,y:screen.top+above,side:'above'};
+  return null;
+}
+const COMPACT_CHIP=32;
 /**
  * Card 32D: notices sit bottom-right of the window, or of the open detail container above its declared bottom input area
  * (`data-toast-avoid="bottom"`) and below its top control bar (`data-toast-avoid="top"`), so the toolbar, the composer and dialog
@@ -55,6 +66,8 @@ const MIN_SIDE_LIST=272;
  */
 function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,target:HTMLElement,count:number,expanded:boolean,onMode:(mode:ToastMode)=>void){
   const report=useRef(onMode);report.current=onMode;
+  // The full chip's measured width (it cannot be measured while compact) and the height the modals currently give up for it.
+  const fullWidth=useRef(112),reserve=useRef(0);
   useLayoutEffect(()=>{
     if(!viewport)return;
     let frame=0;
@@ -69,10 +82,32 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
         if(screen.right-dialog.right>=width+32)mode='window';
         else{
           mode='chip';
-          const size=chip?.getBoundingClientRect(),chipTop=bottom-(size&&size.height>0?size.height:32);
-          chip?.style.setProperty('--toast-chip-right',Math.round(block.right-right)+'px');chip?.style.setProperty('--toast-chip-bottom',Math.round(block.bottom-bottom)+'px');
-          bottom=chipTop-8;
-          const room=right-(dialog.right+16);popover=room<MIN_SIDE_LIST;left=right-(popover?width:Math.min(width,room));
+          // Codex review: the collapsed chip never covers the modal either. The full chip goes into a margin around the modal that
+          // holds it; otherwise a compact chip (bell and count); otherwise the modals give up height for it (centred, so half of it
+          // becomes the bottom margin) and the compact chip sits below.
+          const size=chip?.getBoundingClientRect(),compactNow=chip?.dataset.compact==='true';
+          if(size&&size.width>0&&!compactNow)fullWidth.current=size.width;
+          const h=size&&size.height>0?size.height:32;
+          // Decide against the modal as it would be without the height it currently gives up (centred, so half on each side), so the
+          // reserve is released as soon as a margin holds a chip again.
+          const maxHeight=parseFloat(getComputedStyle(modal).maxHeight),capped=reserve.current>0&&Number.isFinite(maxHeight)&&dialog.height>=maxHeight-1,half=capped?reserve.current/2:0;
+          const natural=new DOMRect(dialog.x,dialog.y-half,dialog.width,dialog.height+2*half);
+          let slot=chipSlot(natural,screen,fullWidth.current,h),compact=false;
+          if(!slot){slot=chipSlot(natural,screen,COMPACT_CHIP,COMPACT_CHIP);compact=true;}
+          const needed=slot?0:Math.ceil(2*(COMPACT_CHIP+16-(screen.bottom-natural.bottom)));
+          if(needed!==reserve.current){reserve.current=needed;if(needed)document.documentElement.style.setProperty('--workbench-toast-reserve',needed+'px');else document.documentElement.style.removeProperty('--workbench-toast-reserve');}
+          if(!slot){
+            // Once the modal has given up the height, the room below may hold the full chip again.
+            const below=screen.bottom-(natural.bottom-needed/2)-8;compact=below<h+8||fullWidth.current+40>screen.width;
+            slot={x:screen.right-20-(compact?COMPACT_CHIP:fullWidth.current),y:screen.bottom-8-(compact?COMPACT_CHIP:h),side:'below'};
+          }
+          const w=compact?COMPACT_CHIP:fullWidth.current;
+          if(chip){chip.dataset.compact=compact?'true':'false';chip.style.setProperty('--toast-chip-right',Math.round(block.right-(slot.x+w))+'px');chip.style.setProperty('--toast-chip-bottom',Math.round(block.bottom-(slot.y+h))+'px');}
+          // The list opens from the chip: beside the modal when the room between them holds it, otherwise as a popover.
+          if(slot.side==='above'){top=slot.y+h+8;right=slot.x+w;left=right-width;popover=true;}
+          else if(slot.side==='left'){bottom=slot.y-8;left=slot.x;const room=dialog.left-16-left;popover=room<MIN_SIDE_LIST;right=left+(popover?width:Math.min(width,room));}
+          else{bottom=slot.y-8;right=slot.x+w;const room=right-(dialog.right+16);popover=slot.side==='below'||room<MIN_SIDE_LIST;left=right-(popover?width:Math.min(width,room));}
+          left=Math.max(screen.left+16,left);
         }
       }else if(host){
         const box=host.getBoundingClientRect(),hostBottom=Math.min(box.bottom,screen.bottom),hostTop=Math.max(box.top,screen.top);
@@ -87,6 +122,7 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
       style.setProperty('--toast-right',Math.round(block.right-right)+'px');style.setProperty('--toast-left',Math.round(left-block.left)+'px');
       style.setProperty('--toast-bottom',Math.round(block.bottom-bottom)+'px');style.setProperty('--toast-width',Math.max(0,Math.round(right-left))+'px');
       style.setProperty('--toast-max-height',Math.max(0,Math.round(bottom-top))+'px');
+      if(mode!=='chip'&&reserve.current){reserve.current=0;document.documentElement.style.removeProperty('--workbench-toast-reserve');}
       viewport.dataset.toastHosted=host?'true':'false';viewport.dataset.toastMode=mode;viewport.dataset.toastPopover=popover?'true':'false';
       // Card 33 review: while the stack scrolls, notices are clipped to the content box (see feedback.css) so a scrolled notice never
       // enters the 12px kept clear of the top bar and the bottom input area; the shadow gutter is only for an unscrolled stack.
@@ -100,7 +136,7 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
     const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
     // A detail opening or closing settles through its own animation; recompute once when it ends.
     window.addEventListener('resize',schedule);document.addEventListener('animationend',schedule,true);document.addEventListener('transitionend',schedule,true);
-    return()=>{if(frame)cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',schedule,true);document.removeEventListener('transitionend',schedule,true);};
+    return()=>{if(frame)cancelAnimationFrame(frame);if(reserve.current){reserve.current=0;document.documentElement.style.removeProperty('--workbench-toast-reserve');}resize.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',schedule,true);document.removeEventListener('transitionend',schedule,true);};
   },[viewport,chip,target,count,expanded]);
 }
 
@@ -109,7 +145,7 @@ export function useFeedbackState(initial=''){
   const update=useCallback((next:SetStateAction<string>)=>setValue(previous=>({text:typeof next==='function'?next(previous.text):next,revision:previous.revision+1})),[]);
   return [value.text,update,value.revision] as const;
 }
-interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'children'|'title'> {children:string|null|undefined;source:string;state?:string|undefined;enabled?:boolean|undefined;persistent?:boolean|undefined;revision?:number|undefined;/** Card 29 D4: an outcome title replacing the purpose label. */title?:string|undefined}
+export interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'children'|'title'> {children:string|null|undefined;source:string;state?:string|undefined;enabled?:boolean|undefined;persistent?:boolean|undefined;revision?:number|undefined;/** Card 29 D4: an outcome title replacing the purpose label. */title?:string|undefined}
 
 /** Presentation only: a close button never settles, retries or discards an operation. */
 export function ToastFeedback({children,source,state,enabled=true,persistent=false,revision,role,title,'aria-live':live,...attributes}:FeedbackProps){
@@ -145,33 +181,9 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
 }
 
 /** Card 34A: the tone of a feedback state, shared by the toast and the dialog's inline alert. */
-function feedbackTone(state:string|undefined,role:string|undefined):'success'|'info'|'warning'|'danger'{
+export function feedbackTone(state:string|undefined,role:string|undefined):'success'|'info'|'warning'|'danger'{
   const value=state??'';
   return value==='unknown'?'warning':role==='alert'||errorStates.has(value)?'danger':successStates.has(value)?'success':'info';
-}
-/**
- * Card 34A: a dialog's own outcome is shown inside the open dialog as an inline alert, not as a toast. Render it where the toast
- * content used to be; the stable keys (`data-toast-source`, `data-toast-state` and the feature's class) stay on it.
- */
-export function DialogAlert({children,source,state,role,title,className='',...attributes}:Omit<FeedbackProps,'enabled'|'persistent'|'revision'|'aria-live'>){
-  if(!children)return null;
-  const heading=title??null;
-  return <InlineAlert {...attributes} tone={feedbackTone(state,role)} className={'workbench-dialog-alert '+className} data-dialog-feedback data-toast-source={source} data-toast-state={state??''}>{heading?<><strong>{heading}</strong> </>:null}{children}</InlineAlert>;
-}
-/**
- * Card 34A: whether a dialog's outcome should still become a page toast. While the dialog is open it is shown inline; an outcome
- * already shown inline is not repeated as a toast after the dialog closes, but a new one (for example the success that closes the
- * dialog) is.
- */
-export function useDialogToast(open:boolean,key:unknown):boolean{
-  const [inline,setInline]=useState<unknown>(undefined);
-  useEffect(()=>{if(open)setInline(key);},[open,key]);
-  return !open&&!(inline!==undefined&&Object.is(inline,key));
-}
-/** Card 34A: a draft notice (warning or restored) shown inline in the dialog that owns the draft. */
-export function DialogDraftAlert({children}:{children:string}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
-  return warning||/已恢复/u.test(children)?<DialogAlert source="draft" state={warning?'unknown':undefined}>{children}</DialogAlert>:null;
 }
 
 /** Card 33: each tone's icon; an error is a crossed circle so it never reads as an unknown outcome. */
@@ -194,7 +206,13 @@ export function WorkbenchToasts(){
     const outside=(event:PointerEvent)=>{const node=event.target;if(node instanceof Node&&!viewport?.contains(node)&&!chip?.contains(node))setExpanded(false);};
     document.addEventListener('pointerdown',outside,true);return()=>document.removeEventListener('pointerdown',outside,true);
   },[open,viewport,chip]);
-  const escape=(event:{key:string;stopPropagation:()=>void;preventDefault:()=>void})=>{if(event.key==='Escape'&&open){event.stopPropagation();event.preventDefault();collapse();}};
+  // Codex review: while the list is open, Escape anywhere (focus may have moved back into the modal) only collapses the list; it is
+  // caught before the modal's own Escape so the dialog stays open.
+  useEffect(()=>{
+    if(!open)return;
+    const escape=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.stopPropagation();event.preventDefault();collapse();}};
+    document.addEventListener('keydown',escape,true);return()=>document.removeEventListener('keydown',escape,true);
+  },[open,collapse]);
   useEffect(()=>{
     const update=()=>{
       const focused=document.activeElement?.closest<HTMLElement>('[data-workbench-overlay]');
@@ -209,11 +227,11 @@ export function WorkbenchToasts(){
     if(document.activeElement===button){const previous=priorFocus.current;if(previous?.isConnected&&previous.checkVisibility()&&!previous.matches(':disabled'))previous.focus({preventScroll:true});else target.querySelector<HTMLElement>('h2[tabindex]')?.focus({preventScroll:true});}
     toast.dismiss(id);
   };
-  return createPortal(<><div ref={setViewport} id={listId} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts hidden={chipped&&!open} onKeyDown={escape} onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
+  return createPortal(<><div ref={setViewport} id={listId} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts hidden={chipped&&!open} onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
     {[...toasts].reverse().map(item=>{const tone=toastTone(item.type,item.className),[Icon,icon]=toneIcons[tone];return <div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-tone={tone} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
       <span className="workbench-toast-tone" aria-hidden="true"><span className="workbench-toast-icon" data-icon={icon}><Icon size={20} strokeWidth={1.75}/></span></span>
       {resolveValue(item.message,item)}
       {tone==='loading'?<span className="workbench-toast-close-space" aria-hidden="true"/>:<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" tabIndex={item.visible?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>}
     </div>;})}
-  </div>{chipped?<span ref={setChip} className="workbench-toast-chip-anchor" onKeyDown={escape}><HButton type="button" className="workbench-toast-chip" data-action="toggle-toast-chip" aria-expanded={open} aria-controls={listId} onClick={()=>setExpanded(value=>!value)} variant="secondary"><Bell size={14} aria-hidden="true"/><span aria-live="polite">{visibleCount} 条提示</span></HButton></span>:null}</>,target);
+  </div>{chipped?<span ref={setChip} className="workbench-toast-chip-anchor"><HButton type="button" className="workbench-toast-chip" data-action="toggle-toast-chip" aria-expanded={open} aria-controls={listId} onClick={()=>setExpanded(value=>!value)} variant="secondary"><Bell size={14} aria-hidden="true"/><span aria-live="polite"><span className="workbench-toast-chip-count">{visibleCount}</span><span className="workbench-toast-chip-label"> 条提示</span></span></HButton></span>:null}</>,target);
 }
