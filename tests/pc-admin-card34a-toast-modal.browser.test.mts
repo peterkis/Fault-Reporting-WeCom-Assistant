@@ -210,6 +210,18 @@ test('Card 34A page notices stay outside the media preview modal at four widths'
    assert.equal(Boolean(extra.reserve),expected==='reserve',label+': the modals give up height only when no margin holds even the compact chip');
    table.push({dialog:'media-tall',width,mode:state.mode,popover:null,controls:state.controls.length,toasts:state.toasts.length,chip:true});
    if(expected==='reserve'){
+    // Codex review (third round): the preview's height set by the image's own max-height (which also gives up the reserve), the
+    // modal below its cap. The reserve must hold steady instead of switching on and off.
+    await b.evaluate("(()=>{const dialog=document.querySelector('.detail-media-dialog'),image=dialog.querySelector('img');dialog.style.removeProperty('height');image.style.setProperty('width','680px','important');image.style.setProperty('height','2000px','important');image.style.setProperty('max-width','none','important');image.style.setProperty('max-height','calc(100dvh - 140px - var(--workbench-toast-reserve,0px))','important');})()");
+    await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);
+    const steady=await b.evaluate(`new Promise(resolve=>{let changes=0;const html=document.documentElement,dialog=document.querySelector('.detail-media-dialog'),observer=new MutationObserver(()=>changes++);observer.observe(html,{attributes:true,attributeFilter:['style']});
+     setTimeout(()=>{observer.disconnect();const box=dialog.getBoundingClientRect(),chip=document.querySelector('.workbench-toast-chip-anchor')?.getBoundingClientRect();resolve({changes,reserve:html.style.getPropertyValue('--workbench-toast-reserve'),height:box.height,maxHeight:parseFloat(getComputedStyle(dialog).maxHeight),
+      clear:Boolean(chip)&&(chip.right<=box.left||chip.left>=box.right||chip.bottom<=box.top||chip.top>=box.bottom)});},1500);})`) as {changes:number;reserve:string;height:number;maxHeight:number;clear:boolean};
+    assert.ok(steady.height<steady.maxHeight-1,label+': the image, not the modal cap, sets the height '+JSON.stringify(steady));
+    assert.equal(steady.changes,0,label+': the reserve stays steady '+JSON.stringify(steady));
+    assert.ok(steady.reserve!==''&&steady.clear,label+': the modal gives up height and the chip is clear of it '+JSON.stringify(steady));
+    await b.evaluate("(()=>{const dialog=document.querySelector('.detail-media-dialog'),image=dialog.querySelector('img');for(const name of ['width','height','max-width','max-height'])image.style.removeProperty(name);dialog.style.setProperty('height','2000px','important');})()");
+    await waitForAnimationsSettled(b);
     // Codex review: with no notice left there is no chip, so the modals take their height back.
     await b.evaluate("document.querySelectorAll('.workbench-toast-close').forEach(button=>button.click())");
     await b.waitFor("!document.querySelector('.workbench-toast-chip-anchor')&&!document.querySelector('.workbench-toast[data-visible=true]')");await waitForAnimationsSettled(b);await waitForAnimationsSettled(b);

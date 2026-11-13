@@ -67,7 +67,7 @@ const COMPACT_CHIP=32;
 function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,target:HTMLElement,count:number,expanded:boolean,onMode:(mode:ToastMode)=>void){
   const report=useRef(onMode);report.current=onMode;
   // The full chip's measured width (it cannot be measured while compact) and the height the modals currently give up for it.
-  const fullWidth=useRef(112),reserve=useRef(0);
+  const fullWidth=useRef(112),reserve=useRef(0),reserveWindow=useRef('');
   useLayoutEffect(()=>{
     if(!viewport)return;
     let frame=0;
@@ -88,27 +88,33 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
           const size=chip?.getBoundingClientRect(),compactNow=chip?.dataset.compact==='true';
           if(size&&size.width>0&&!compactNow)fullWidth.current=size.width;
           const h=size&&size.height>0?size.height:32;
-          // Decide against the modal as it would be without the height it currently gives up (centred, so half on each side), so the
-          // reserve is released as soon as a margin holds a chip again.
-          const maxHeight=parseFloat(getComputedStyle(modal).maxHeight),capped=reserve.current>0&&Number.isFinite(maxHeight)&&dialog.height>=maxHeight-1,half=capped?reserve.current/2:0;
-          const natural=new DOMRect(dialog.x,dialog.y-half,dialog.width,dialog.height+2*half);
-          let slot=chipSlot(natural,screen,fullWidth.current,h),compact=false;
-          if(!slot){slot=chipSlot(natural,screen,COMPACT_CHIP,COMPACT_CHIP);compact=true;}
-          // Codex review: only a chip that is actually shown (a visible notice exists) may take height from the modals; with none the
-          // reserve is released.
-          const needed=slot||!chip?0:Math.ceil(2*(COMPACT_CHIP+16-(screen.bottom-natural.bottom)));
-          if(needed!==reserve.current){reserve.current=needed;if(needed)document.documentElement.style.setProperty('--workbench-toast-reserve',needed+'px');else document.documentElement.style.removeProperty('--workbench-toast-reserve');}
+          // Codex review: once the modals give up height it is kept, not re-derived from their shortened size (the media preview's own
+          // max-height shrinks with it too, so no "natural" size can be reconstructed reliably and re-deciding would loop). It is
+          // released only when the chip goes away, the window size changes (then measured afresh) or the modal changes (effect cleanup).
+          const windowSize=screen.width+'x'+screen.bottom;
+          let dialogBox=dialog;
+          if(reserve.current&&(!chip||reserveWindow.current!==windowSize)){reserve.current=0;document.documentElement.style.removeProperty('--workbench-toast-reserve');dialogBox=modal.getBoundingClientRect();}
+          let slot:ChipSlot|null=null,compact=false;
+          if(!reserve.current){
+            slot=chipSlot(dialogBox,screen,fullWidth.current,h);
+            if(!slot){slot=chipSlot(dialogBox,screen,COMPACT_CHIP,COMPACT_CHIP);compact=true;}
+            // Only a chip that is actually shown (a visible notice exists) may take height from the modals.
+            if(!slot&&chip){
+              reserve.current=Math.ceil(2*(COMPACT_CHIP+16-(screen.bottom-dialogBox.bottom)));reserveWindow.current=windowSize;
+              document.documentElement.style.setProperty('--workbench-toast-reserve',reserve.current+'px');dialogBox=modal.getBoundingClientRect();
+            }
+          }
           if(!slot){
-            // Once the modal has given up the height, the room below may hold the full chip again.
-            const below=screen.bottom-(natural.bottom-needed/2)-8;compact=below<h+8||fullWidth.current+40>screen.width;
+            // The modals give up height (centred, so half of it becomes the bottom margin); the room below may then hold the full chip.
+            const below=screen.bottom-dialogBox.bottom-8;compact=below<h+8||fullWidth.current+40>screen.width;
             slot={x:screen.right-20-(compact?COMPACT_CHIP:fullWidth.current),y:screen.bottom-8-(compact?COMPACT_CHIP:h),side:'below'};
           }
           const w=compact?COMPACT_CHIP:fullWidth.current;
           if(chip){chip.dataset.compact=compact?'true':'false';chip.style.setProperty('--toast-chip-right',Math.round(block.right-(slot.x+w))+'px');chip.style.setProperty('--toast-chip-bottom',Math.round(block.bottom-(slot.y+h))+'px');}
           // The list opens from the chip: beside the modal when the room between them holds it, otherwise as a popover.
           if(slot.side==='above'){top=slot.y+h+8;right=slot.x+w;left=right-width;popover=true;}
-          else if(slot.side==='left'){bottom=slot.y-8;left=slot.x;const room=dialog.left-16-left;popover=room<MIN_SIDE_LIST;right=left+(popover?width:Math.min(width,room));}
-          else{bottom=slot.y-8;right=slot.x+w;const room=right-(dialog.right+16);popover=slot.side==='below'||room<MIN_SIDE_LIST;left=right-(popover?width:Math.min(width,room));}
+          else if(slot.side==='left'){bottom=slot.y-8;left=slot.x;const room=dialogBox.left-16-left;popover=room<MIN_SIDE_LIST;right=left+(popover?width:Math.min(width,room));}
+          else{bottom=slot.y-8;right=slot.x+w;const room=right-(dialogBox.right+16);popover=slot.side==='below'||room<MIN_SIDE_LIST;left=right-(popover?width:Math.min(width,room));}
           left=Math.max(screen.left+16,left);
         }
       }else if(host){

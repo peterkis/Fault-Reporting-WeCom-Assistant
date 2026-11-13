@@ -116,19 +116,19 @@
       "file": "toast-dialog-1440.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "bb396a5df667b84c83999cef60751362b567abe24c056dfece88a93a34106fcb"
+      "sha256": "226abcd4f38cf31ddc3c1007b499388784ae62bbf2448be8c4cb37891cfd8c2b"
     },
     {
       "file": "toast-dialog-900-chip.png",
       "width": 900,
       "height": 820,
-      "sha256": "cf971dfb9f8387fb6de2c4a47b3e5b860b5132c5eb084c27d4df9e4397ebf398"
+      "sha256": "71392c348b0be25b84c55562d7ef55629a5177dc7c5d9c88360f143c889f821e"
     },
     {
       "file": "toast-dialog-900-chip-open.png",
       "width": 900,
       "height": 820,
-      "sha256": "5bcad67e09f04d70d6505fa8643400a606d08ea2176d6ca1fa034979b960087f"
+      "sha256": "96f66780e6d21f3a1b34e5fe0a7b077ae1ddff6a9e2034b1ef8b97b50daf7f1e"
     }
   ]
 }
