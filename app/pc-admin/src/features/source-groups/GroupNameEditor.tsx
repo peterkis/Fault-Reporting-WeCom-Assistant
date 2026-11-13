@@ -22,7 +22,7 @@ export function GroupNameEditor({group,principal,onSaved,onDenied,onBlockedChang
     mutationFn:({command,signal}:{command:SourceGroupNameCommand;signal:AbortSignal})=>api.saveGroupName(group.ref,command,principal.csrf_token,signal),
     onSuccess:async result=>{setPending(null);setBasis(result.group);setState('succeeded');setMessage(result.replayed?'已保存：已核对原操作结果。':'已保存群名称。');onSaved?.(result.group);await refresh();},
     onError:async(error,variables)=>{if(error instanceof ApiError){refuse(error);if(error.status===409)await refresh();if(error.code==='P2_016_DISABLED')void client.invalidateQueries({queryKey:['session']});}
-      else{setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}},
+      else{setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}},
     onSettled:()=>{request.current=null;},
   });
   const blocked=mutation.isPending||reading||state==='unknown';

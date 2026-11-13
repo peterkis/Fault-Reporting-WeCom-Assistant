@@ -21,7 +21,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
   const latest=useRef(value);latest.current=value;
   const clear=()=>{generation.current++;request.current?.abort();request.current=null;setValue(EMPTY_COMPLETION);setPending(null);setState('idle');setMessage('');};
   const sensitiveClear=()=>{if(settling.current){setValue(EMPTY_COMPLETION);setPending(null);}else clear();};
-  const draft=useCompletionDraft({ticketId,principal,value,pending,onRestore:copy=>{setValue(copy.pending?copy.value:{...copy.value,confirmed:false});setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}},onSensitiveClear:sensitiveClear,onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容已清理，只能只读核对原完工操作。');}});
+  const draft=useCompletionDraft({ticketId,principal,value,pending,onRestore:copy=>{setValue(copy.pending?copy.value:{...copy.value,confirmed:false});setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}},onSensitiveClear:sensitiveClear,onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容已清理，只能只读核对原完工操作。');}});
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const completion=useMutation({mutationKey:['ticket-completion',principal.principal_id,ticketId],mutationFn:({command,signal}:{command:P2016CompletionCommand;signal:AbortSignal})=>api.completeTicket(ticketId,command,principal.csrf_token,signal)});
   const receipt=useMutation({mutationKey:['ticket-completion',principal.principal_id,ticketId],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>api.completionReceipt(ticketId,commandId,signal)});
@@ -47,7 +47,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
       if(!current())return;
       if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorization(error);return;}
       if(error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再保存。':'完工被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
-      else{setPending(command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
+      else{setPending(command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}
     }finally{if(request.current===controller)request.current=null;}
   }
   async function checkReceipt(){

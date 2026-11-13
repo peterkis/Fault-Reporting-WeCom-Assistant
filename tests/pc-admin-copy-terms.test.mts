@@ -85,10 +85,11 @@ test('Card 34C short codes are the id\'s own suffix and never collide',async()=>
   const source=await readFile(join(src,'app/short-code.ts'),'utf8');
   const output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
   const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {shortCodes:(ids:readonly string[],min?:number)=>Map<string,string>};
-  const a='01a1d3bc-c109-73fb-8a3b-65db1e0aaaaa',b='01a1d3bc-c109-73fb-8a3b-65db1e1aaaaa',c='01a1d3bc-c109-73fb-8a3b-65db1e062a78';
+  const a='01a1d3bc-c109-73fb-8a3b-65db1e0aaaaa',b='01a1d3bc-c109-73fb-8a3b-75db1e0aaaaa',c='01a1d3bc-c109-73fb-8a3b-65db1e062a78';
   const codes=module.shortCodes([a,b,c]);
-  assert.equal(codes.get(c),'062A78','a unique id keeps the six-character suffix');
+  assert.equal(codes.get(c),'1E062A78','a unique id keeps the eight-character suffix');
   assert.notEqual(codes.get(a),codes.get(b),'colliding suffixes grow until they differ');
+  assert.equal(codes.get(a),'65DB1E0AAAAA','a shared eleven-character tail grows the code to twelve');assert.equal(codes.get(b),'75DB1E0AAAAA');
   for(const id of [a,b,c])assert.ok(id.replaceAll('-','').toUpperCase().endsWith(codes.get(id)??'#'),'each code is the id\'s own suffix');
   assert.equal(module.shortCodes([a,b,c]).get(a),codes.get(a),'the same ids give the same codes');
 });

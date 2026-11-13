@@ -205,7 +205,10 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
   const warning=DRAFT_WARNING.test(children),done=DRAFT_DONE.test(children);
   const quiet=inlineText&&(!children||/^草稿仅在当前浏览器/u.test(children));
   const short=children;
-  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children==='草稿已保存'?DRAFT_SAVED_HINT:children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
+  // Codex review: the saved-draft limit is part of the status's accessible text, not only a hover title (keyboard, touch and
+  // assistive technology users get it too); the visible line stays 「草稿已保存」.
+  const spoken=children==='草稿已保存'?children+'。'+DRAFT_SAVED_HINT:children;
+  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={spoken} title={children==='草稿已保存'?DRAFT_SAVED_HINT:children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{spoken}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
 /** Card 34A: the tone of a feedback state, shared by the toast and the dialog's inline alert. */

@@ -29,7 +29,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
     onSuccess:(result,variables)=>{setPending(null);setState('succeeded');setMessage(variables.intent.action==='accept-for-later'?'已接单，可稍后开始处理。':'已开始处理。');if(result.replayed)setMessage(variables.intent.action==='accept-for-later'?'已核对：原操作已接单。':'已核对：原操作已开始处理。');refresh();},
     onError:(error,variables)=>{
       if(error instanceof ApiError){setPending(boardMode&&error.status===409?variables.intent:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：请重新读取工单后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
-      else{setPending(variables.intent);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
+      else{setPending(variables.intent);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}
     },onSettled:()=>{request.current=null;},
   });
   const send=(intent:Pending,checking:boolean)=>{
