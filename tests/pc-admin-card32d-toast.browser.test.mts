@@ -96,12 +96,34 @@ function luminance(png:Buffer):{width:number;height:number;at:(x:number,y:number
  return {width,height,at:(x,y)=>{const i=y*stride+x*channels;return 0.2126*(out[i]??0)+0.7152*(out[i+1]??0)+0.0722*(out[i+2]??0);}};
 }
 /**
+ * A real draft-guard warning that stays until closed: one autosave of the internal note fails to encrypt, so the draft guard
+ * reports that the input was not saved as a recovery copy (unknown tone); encryption is restored right after. (#188 removed the
+ * stray draft notice on opening a ticket that these scenarios used to rely on for their warning.)
+ */
+async function draftWarning(b:Browser,text:string){
+ await b.evaluate("(()=>{const subtle=crypto.subtle;globalThis.__card32dEncrypt=subtle.encrypt;subtle.encrypt=()=>Promise.reject(new DOMException('synthetic','OperationError'));})()");
+ await b.evaluate(`(()=>{const area=document.querySelector('.ds-detail-footer textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(area,area.value+${JSON.stringify(text)});area.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+ await b.waitFor(`${kindCount('is-warning')}===1`);
+ await b.evaluate("crypto.subtle.encrypt=globalThis.__card32dEncrypt");
+}
+/**
+ * Navigates away. While the note holds text that draftWarning left unsaved, the page's unload guard asks before leaving (a
+ * beforeunload prompt); the prompt is confirmed, as a user leaving on purpose would. Without unsaved text it navigates directly.
+ */
+async function go(b:Browser,url:string){
+ const prompt=b.waitForEvent('Page.javascriptDialogOpening').catch(()=>null),going=b.command('Page.navigate',{url});
+ const first=await Promise.race([prompt,going.then(()=>'navigated' as const)]);
+ if(first!=='navigated'){assert.equal((first as {type?:string}|null)?.type,'beforeunload','only the unload guard may interrupt navigation');await b.command('Page.handleJavaScriptDialog',{accept:true});await going;}
+}
+/**
  * Card 33 shadow sampling. One clip 8px beyond the viewport on every side is captured with the notices shown and again with the
  * viewport hidden for that one capture; the difference is the shadow alone, with whatever lies behind cancelled out. In the bands
  * above, between, below, left and right of the notices the shadow must (a) reach past the notices (it is not clipped to their
  * boxes) and (b) fade smoothly: no step over 3 luminance levels between neighbouring pixels, as a clip edge would leave.
  */
 async function assertUnclippedShadow(b:Browser,label:string,directory?:string){
+ // Every notice has finished entering (a notice still sliding in moves between the measurement and the captures).
+ await waitForAnimationsSettled(b);
  const box=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()),r=v.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,toasts:[...v.querySelectorAll('.workbench-toast[data-visible=true]')].map(n=>{const t=n.getBoundingClientRect();return {x:t.x,y:t.y,width:t.width,height:t.height};})};})()") as Rect&{toasts:Rect[]};
  // The clip stays 8px inside the window: in the window corner (card 34A, a modal open) the shadow runs off the window's own edge,
  // which is not a clip of the page but would read as a straight edge.
@@ -147,9 +169,9 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   await b.command('Page.enable');if(!process.env.CARD32D_NO_INTERCEPT)await b.command('Page.addScriptToEvaluateOnNewDocument',{source:interceptor});
   const size=async(width:number,height=width===900?820:1000)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});};
   const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
-  const open=async(path:string)=>{await size(1440);await b.command('Page.navigate',{url:f.origin+path});await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
+  const open=async(path:string)=>{await size(1440);await go(b,f.origin+path);await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
   // Success: a real follow toggle. Error and unknown: a note save answered with a conflict keeps the text and reports the conflict
-  // (error), and the draft guard reports that the original operation must be checked (unknown); both stay until closed.
+  // (error), and the draft guard reports that the draft was not saved (unknown, see draftWarning); both stay until closed.
   // The follow toggle re-reads its state after each command and after a resize; press it only once it is enabled again.
   const success=async()=>{await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false&&!document.querySelector('[data-action=toggle-item-follow]').closest('[aria-busy=true]')");
    const before=await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')");
@@ -189,7 +211,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   // Drawer and full page: the error and unknown notices stay until closed; the success is refreshed per width (4s each).
   for(const [scenario,path,extra] of [['drawer','/workbench/app/items/ticket/'+id,{'上一项':'button[aria-label=上一项]','下一项':'button[aria-label=下一项]'}],['fullpage','/workbench/app/items/ticket/'+id+'?detail=page',{}]] as const){
    await open(path);
-   await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
+   await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1`);await draftWarning(b,'（续）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
    let fullHeights:number[]=[];
    for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});}
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
@@ -234,6 +256,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   await b.evaluate(`(()=>{const area=document.querySelector('.ds-detail-footer textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(area,${JSON.stringify('卡32D 合成弹窗冲突备注（合成）')});area.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await b.waitFor("[...document.querySelectorAll('.ds-detail-footer button')].some(button=>button.textContent.includes('保存')&&!button.disabled)");
   await b.evaluate("[...document.querySelectorAll('.ds-detail-footer button')].find(button=>button.textContent.includes('保存')&&!button.disabled).click()");
+  await b.waitFor(`${kindCount('error')}===1`);await draftWarning(b,'（续）');
   await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1&&document.querySelector('.ds-closure-dialog')?.checkVisibility()===true`);
   const dialogControls={'确认关闭':'.ds-closure-dialog .ds-closure-actions button[type=submit]','取消':'.ds-closure-dialog .ds-closure-actions button[type=button]'};
   // Card 34A: with a modal open the notices sit in the window corner beside it, and collapse into a chip where there is no room
@@ -281,13 +304,14 @@ test('Card 33 toasts show five tones and a single-line notice with a full-height
   await b.command('Page.enable');await b.command('Page.addScriptToEvaluateOnNewDocument',{source:interceptor});
   const size=async(width:number,height=1000)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});};
   const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
-  const open=async(path:string)=>{await b.command('Page.navigate',{url:f.origin+path});await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
+  const open=async(path:string)=>{await go(b,f.origin+path);await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
   const tone=(name:string,extra='')=>`[...document.querySelectorAll('.workbench-toast[data-visible=true][data-tone=${name}]')].some(n=>n.checkVisibility()${extra})`;
   // Records one notice of the tone (checked live) and keeps a copy of its rendered DOM for the evidence row.
   const captured:string[]=[];
   const take=async(name:string,label:string,select=`.workbench-toast[data-visible=true][data-tone=${name}]`)=>{
    try{await b.waitFor(`${tone(name)}&&Boolean(document.querySelector(${JSON.stringify(select)}))`);}catch(cause){throw Error('CARD33_TONE_TIMEOUT '+label+' '+JSON.stringify(await b.evaluate("[...document.querySelectorAll('.workbench-toast')].map(n=>[n.dataset.tone,n.dataset.visible,n.className,n.innerText.replace(/\\s+/g,' ').slice(0,80)])")),{cause});}
-   await waitForAnimationsSettled(b,'.workbench-toast');
+   // The notice just taken, not the first (oldest) one in the stack: a new notice slides in for --dur-base.
+   await waitForAnimationsSettled(b,select);
    const items=(await b.evaluate(anatomy()) as Anatomy[]).filter(item=>item.tone===name);assert.ok(items.length>=1,label+': visible');assertAnatomy(items,label);seen.push(...items);
    copies.push(await b.evaluate(`document.querySelector(${JSON.stringify(select)}).outerHTML`) as string);captured.push(name);
    return items;
@@ -299,12 +323,12 @@ test('Card 33 toasts show five tones and a single-line notice with a full-height
   // Success: the same follow request completes.
   await take('success','success');
   // Danger and warning: a note save answered with a conflict (danger, a two-line description at 400px), and the draft guard
-  // reporting that the original operation must be checked (warning).
+  // reporting that the draft was not saved (warning; see draftWarning).
   await b.evaluate("globalThis.__toastMode['/internal-notes']='conflict'");
   const area='.ds-detail-footer textarea';await clickWorkbenchControl(b,area);await b.command('Input.insertText',{text:'卡33 合成冲突备注（合成）'});
   await b.waitFor("[...document.querySelectorAll('.ds-detail-footer button')].some(button=>button.textContent.includes('保存')&&!button.disabled)");
   await b.evaluate("[...document.querySelectorAll('.ds-detail-footer button')].find(button=>button.textContent.includes('保存')&&!button.disabled).click()");
-  const danger=await take('danger','danger');await take('warning','warning');
+  const danger=await take('danger','danger');await draftWarning(b,'（续）');await take('warning','warning');
   assert.ok(danger.some(item=>item.lines>=2),'the conflict description wraps to two lines and stays centred: '+JSON.stringify(danger.map(item=>item.lines)));
   await assertUnclippedShadow(b,'tones drawer 1440',directory);
   // Narrow (≤640): a 44px block with an 18px icon.
@@ -322,7 +346,7 @@ test('Card 33 toasts show five tones and a single-line notice with a full-height
   // Evidence row: the six rendered notices side by side, in the production stylesheet.
   const tones=['success','info','warning','danger','loading'];assert.deepEqual([...new Set(seen.map(item=>item.tone))].sort(),[...tones].sort(),'all five tones were seen');
   const single=copies.at(-1)??'',row=[...tones.map(name=>copies[captured.indexOf(name)]??''),single];
-  await b.command('Page.navigate',{url:f.origin+'/workbench/app/'});await b.waitFor("Boolean(document.querySelector('.ds-board, .ds-work-table, main'))");await waitForAnimationsSettled(b);
+  await go(b,f.origin+'/workbench/app/');await b.waitFor("Boolean(document.querySelector('.ds-board, .ds-work-table, main'))");await waitForAnimationsSettled(b);
   await b.evaluate(`(()=>{const row=document.createElement('div');row.setAttribute('data-card33-evidence','');row.style.cssText='position:fixed;inset:0;z-index:2147483647;display:grid;grid-template-columns:repeat(3,400px);gap:28px 32px;align-content:center;justify-content:center;background:var(--bg-subtle);pointer-events:none';
    row.innerHTML=${JSON.stringify(row.join(''))};row.querySelectorAll('*').forEach(n=>{n.removeAttribute('id');});row.querySelectorAll('.workbench-toast').forEach(n=>{n.style.animation='none';});document.body.append(row);})()`);
   assertAnatomy(await b.evaluate(anatomy("document.querySelector('[data-card33-evidence]')")) as Anatomy[],'evidence row');

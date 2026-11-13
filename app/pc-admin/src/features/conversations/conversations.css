@@ -67,7 +67,8 @@
 .ds-page .ds-split .inbox-internal-lock {top:calc(var(--space-2) + var(--space-0-5));}
 
 /* Card25B: account-wide counts and server-projected waiting starts (ADR-0054). */
-.inbox-waiting-count {display:inline-block;margin-left:var(--space-3);font-size:var(--fs-sm);font-weight:var(--fw-regular);color:var(--text-secondary);vertical-align:baseline;}
+/* Its own line height keeps the h1 line box at the title's 32px, so 「会话」 sits where every other page title does. */
+.inbox-waiting-count {display:inline-block;margin-left:var(--space-3);font-size:var(--fs-sm);font-weight:var(--fw-regular);line-height:var(--lh-sm);color:var(--text-secondary);vertical-align:baseline;}
 .ds-page .ds-split .inbox-contact-title>time.inbox-wait-time {color:var(--text-secondary);}
 .ds-page .ds-split .inbox-contact-title>time[data-wait-tone=attention] {color:var(--tone-attention-fg);font-weight:var(--fw-semibold);}
 .ds-page .ds-split .inbox-contact-title>time[data-wait-tone=danger],.inbox-wait-duration[data-wait-tone=danger] {color:var(--tone-danger-fg);font-weight:var(--fw-semibold);}
