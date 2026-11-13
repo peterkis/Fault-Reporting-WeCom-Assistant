@@ -20,8 +20,8 @@
 .workbench-disclosure .disclosure__body-inner {padding:var(--space-1) 0 0}
 .workbench-disclosure [data-slot=disclosure-indicator] {width:14px;height:14px;flex:none}
 .workbench-modal-backdrop,.workbench-drawer-backdrop {background:var(--bg-overlay);z-index:var(--z-modal)}
-.workbench-modal-container {width:auto;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);padding:0;overflow:visible;background:transparent;border-radius:0}
-.workbench-modal-container>.detail-action-dialog,.workbench-modal-container>.detail-media-dialog {position:relative;inset:auto;overflow:auto;max-height:calc(100dvh - 32px)}
+.workbench-modal-container {width:auto;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px - var(--workbench-toast-reserve,0px));padding:0;overflow:visible;background:transparent;border-radius:0}
+.workbench-modal-container>.detail-action-dialog,.workbench-modal-container>.detail-media-dialog {position:relative;inset:auto;overflow:auto;max-height:calc(100dvh - 32px - var(--workbench-toast-reserve,0px))}
 .workbench-drawer-content {width:100%;max-width:none;padding:0;border-radius:0;background:transparent}
 .workbench-drawer-content>.detail-dialog {position:relative;inset:auto;width:min(780px,100vw);padding:0;border-radius:0;max-height:100dvh;overflow-y:auto}
 .workbench-settings {overflow:auto}

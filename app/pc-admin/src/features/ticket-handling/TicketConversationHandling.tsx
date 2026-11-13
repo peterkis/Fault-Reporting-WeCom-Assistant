@@ -1,8 +1,9 @@
-import {StepEntry} from '../../design/components/Drawer/NextStep';
+import {StepEntry,useNextStep} from '../../design/components/Drawer/NextStep';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel} from "@heroui/react";
 import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
+import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedback';
 import {DetailDialog} from '../../app/DetailDialog';
 import {ChevronDown} from 'lucide-react';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
@@ -64,6 +65,9 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const canStart=allowed.includes('take-and-start-with-conversations');
   const direct=Boolean((simpleSession||noSessions)&&!manualSelection&&!needsReview&&!originalId&&state!=='conflict');
   useEffect(()=>{if(state==='unknown'||boardMode&&state==='conflict'&&pending)setOpen(true);},[state,boardMode,pending]);
+  // Card 34A: while the form is open as a modal, its own outcome and draft notices show inside it; only later ones become page
+  // toasts. Inside the next-step card the same form opens inline in the drawer, not as a modal, and keeps its toasts.
+  const inlineForm=useNextStep(),modalOpen=open&&!inlineForm,messageToast=useDialogToast(modalOpen,messageRevision),draftToast=useDialogToast(modalOpen,draft.message);
   // Old purposes remain readable/recoverable, but no new accept-for-later action is offered.
   if(!canStart&&!originalId&&state==='idle'&&selected.length===0&&choice!=='RETAIN_CURRENT'&&context.isSuccess&&!context.isError)return null;
   if(!canStart&&!originalId&&state==='succeeded'&&context.data?.handling_cycle?.staff_completion_event_id)return null;
@@ -86,6 +90,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
         <div className="note-controls">{cursor?<HButton type="button" isDisabled={blocked||related.isPending||related.isError} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}{related.data.next_cursor?<HButton type="button" isDisabled={blocked||related.isPending||related.isError} onClick={()=>setCursor(related.data.next_cursor)} tone="secondary">下一批关联会话</HButton>:null}</div>
       </>}
       {draft.enabled?<DraftStatus notify={false} data-conversation-draft-status role="status">{draft.message}</DraftStatus>:null}
+      {modalOpen&&draft.enabled?<DialogDraftAlert>{draft.message}</DialogDraftAlert>:null}{modalOpen&&state!=='idle'&&message?<DialogAlert source="ticket-conversation-handling" state={state} className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</DialogAlert>:null}
       <div className="note-controls">
         {canStart?<HButton type="button" className="take-and-start" data-action="confirm-conversation-handling" isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||related.isPending||related.isError||!noSessions&&choice==='TAKE_SELECTED'&&!selected.length} onClick={()=>submit('take-and-start-with-conversations')} tone="secondary">确认接单并开始处理</HButton>:null}
         {state==='unknown'&&pending?<HButton type="button" data-action="check-conversation-handling" onClick={()=>{void send(pending,true);}} tone="secondary">核对结果</HButton>:null}
@@ -95,8 +100,8 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
       </div>
       {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>draft.knownFailure(pending.command.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}setPending(null);setState('idle');setMessage('会话选择已保留，请确认后再提交。');refresh();}).catch(()=>{if(current())setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');})}/>:null}
     </DetailDialog>
-      {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-conversation-handling" state={state} className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
-    <DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback>
+      {state!=='idle'?<ToastFeedback enabled={messageToast} revision={messageRevision} source="ticket-conversation-handling" state={state} className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
+    <DraftFeedback enabled={draft.enabled&&draftToast}>{draft.message}</DraftFeedback>
 
     {!open&&(context.isError||related.isError)?<HButton type="button" onClick={refresh} tone="secondary">重试读取接单选项</HButton>:null}
   </section>;

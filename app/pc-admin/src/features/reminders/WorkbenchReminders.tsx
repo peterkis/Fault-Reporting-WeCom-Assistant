@@ -4,6 +4,7 @@ import {Modal} from '../../design/components/Modal/Modal';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox} from "@heroui/react";
 import {ToastFeedback} from '../../app/ToastFeedback';
+import {DialogAlert,useDialogToast} from '../../app/DialogFeedback';
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {useLocation,useNavigate} from 'react-router';
@@ -31,6 +32,8 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked,desktop
   const nativeState=useSyncExternalStore(subscribeDesktopState,getDesktopState);
   const navigate=useNavigate(),location=useLocation(),blockedNavigation=useRef(navigationBlocked);blockedNavigation.current=navigationBlocked;
   const client=useQueryClient(),[preferences,setPreferences]=useState(readPreferences),[message,setMessage]=useState(''),[items,setItems]=useState<WorkbenchReminderItem[]>([]);
+  // Card 34A: while the settings dialog is open its own results show inside it; only later ones become page toasts.
+  const messageToast=useDialogToast(open,message);
   const [armed,setArmed]=useState(false),[desktopArmed,setDesktopArmed]=useState(false),[environmentAvailable,setEnvironmentAvailable]=useState(()=>navigator.onLine&&canRunWorkbenchTransport());
   const nativeArmed=desktopHost?nativeState.remindersEnabled:desktopArmed&&preferences.desktop_enabled;
   const environmentRef=useRef(environmentAvailable);
@@ -177,8 +180,8 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked,desktop
   }),[desktopEpoch,authority,location.search]);
   return <section className="workbench-reminders" aria-label="站内提醒" data-reminders-ready={Boolean(enabled&&baseline.current&&page.isSuccess)}>
     {items.length?<ul aria-label="当前提醒">{items.map(item=><li key={item.reminder_id} data-reminder-id={item.reminder_id}><span>{labels[item.reason]}</span><HButton type="button" aria-label="定位事项" isDisabled={navigationBlocked} onClick={()=>{void locate(item);}} tone="secondary">定位事项</HButton><HButton type="button" aria-label="移除此提醒" onClick={()=>setItems(previous=>previous.filter(row=>row.reminder_id!==item.reminder_id))} tone="secondary">移除</HButton></li>)}</ul>:null}
-    {message?<ToastFeedback source="reminders" role="status">{message}</ToastFeedback>:null}{page.isError?<ToastFeedback source="reminders" role="status">提醒暂未更新，现有事项仍可操作。</ToastFeedback>:null}
-    <Modal.Backdrop className="workbench-modal-backdrop" isOpen={open} onOpenChange={next=>{if(!next)closeSettings();}}><Modal.Container size="md"><Modal.Dialog data-workbench-overlay className="workbench-settings" aria-labelledby="settings-title"><header className="settings-heading"><div><h2 id="settings-title">设置</h2><p>调整这台设备的提醒方式</p></div><HButton type="button" className="icon-button" aria-label="关闭设置" onClick={closeSettings} tone="secondary"><X size={20}/></HButton></header><div className="settings-content"><section className="settings-section" aria-labelledby="reminder-settings-title"><h3 id="reminder-settings-title">提醒偏好</h3><p className="settings-description">新报修、相关事项补充、重开、催促和到期跟进，按当前权限提醒。</p><div className="settings-row"><Volume2 size={20}/><div className="settings-copy"><strong>声音提醒</strong><p>收到新提醒时播放短音。每次打开页面后需主动开启。</p><HButton type="button" className="settings-test-sound" onClick={()=>{setArmed(true);void tone().catch(()=>setMessage('声音暂不可用，视觉提醒继续。'));}} tone="secondary">试听短音</HButton></div>
+    {message?<ToastFeedback enabled={messageToast} source="reminders" role="status">{message}</ToastFeedback>:null}{page.isError?<ToastFeedback source="reminders" role="status">提醒暂未更新，现有事项仍可操作。</ToastFeedback>:null}
+    <Modal.Backdrop className="workbench-modal-backdrop" isOpen={open} onOpenChange={next=>{if(!next)closeSettings();}}><Modal.Container size="md"><Modal.Dialog data-workbench-overlay data-workbench-modal className="workbench-settings" aria-labelledby="settings-title"><header className="settings-heading"><div><h2 id="settings-title">设置</h2><p>调整这台设备的提醒方式</p></div><HButton type="button" className="icon-button" aria-label="关闭设置" onClick={closeSettings} tone="secondary"><X size={20}/></HButton></header><div className="settings-content">{message?<DialogAlert source="reminders" role="status">{message}</DialogAlert>:null}<section className="settings-section" aria-labelledby="reminder-settings-title"><h3 id="reminder-settings-title">提醒偏好</h3><p className="settings-description">新报修、相关事项补充、重开、催促和到期跟进，按当前权限提醒。</p><div className="settings-row"><Volume2 size={20}/><div className="settings-copy"><strong>声音提醒</strong><p>收到新提醒时播放短音。每次打开页面后需主动开启。</p><HButton type="button" className="settings-test-sound" onClick={()=>{setArmed(true);void tone().catch(()=>setMessage('声音暂不可用，视觉提醒继续。'));}} tone="secondary">试听短音</HButton></div>
       <Switch aria-label="开启声音提醒" isSelected={preferences.sound_enabled&&armed} onChange={event=>{const value=event;save({...preferences,sound_enabled:value});setArmed(value);if(value)void tone().catch(()=>setMessage('声音暂不可用，视觉提醒继续。'));}} className="settings-toggle"><Switch.Content><Switch.Control><Switch.Thumb/></Switch.Control></Switch.Content></Switch></div>
       <div className="settings-row"><Bell size={20}/><div className="settings-copy"><strong>桌面通知</strong><p>在窗口外显示通用提醒，不展示报修内容。</p></div>
       <Switch aria-label="开启桌面通知" isSelected={nativeArmed} onChange={event=>{const value=event;

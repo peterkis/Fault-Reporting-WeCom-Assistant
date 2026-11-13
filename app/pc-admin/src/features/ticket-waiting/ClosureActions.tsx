@@ -21,6 +21,7 @@ import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import {ToastFeedback,DraftStatus} from '../../app/ToastFeedback';
+import {DialogAlert} from '../../app/DialogFeedback';
 
 type Action='close'|'restore';
 type Command=IntakeClosureCommand|RestoreCommand;
@@ -169,15 +170,15 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
   }catch(error){if(!controller.signal.aborted&&!denied(error))setMessage('核对暂未完成，未重复提交。');}finally{if(request.current===controller){request.current=null;setBusy(false);}}
  };
  const close=async()=>{if(locked)return;onClose();};
- const feedback=<>{context.isPending?<p role="status">正在加载…</p>:context.isError?<p role="alert">读取失败。<Button tone="ghost" onPress={()=>{void context.refetch();}}>重试</Button></p>:!context.data?.allowed&&!originalId?<p role="alert">当前事项不可执行此操作，请刷新后核对。</p>:null}{message?<p role="status">{message}</p>:null}</>;
+ const feedback=<>{context.isPending?<p role="status">正在加载…</p>:context.isError?<p role="alert">读取失败。<Button tone="ghost" onPress={()=>{void context.refetch();}}>重试</Button></p>:!context.data?.allowed&&!originalId?<p role="alert">当前事项不可执行此操作，请刷新后核对。</p>:null}{message?<DialogAlert className="ticket-waiting-state" source={action==='close'?'ticket-waiting-cancel':'closure-restore'} state={originalId?'unknown':'idle'}>{message}</DialogAlert>:null}</>;
  const draftStatus=raw&&draft.message?<DraftStatus notify={false} inlineText data-waiting-draft-status>{draft.message}</DraftStatus>:null,discard=action==='close'&&(value.reason||value.note)&&!locked?()=>{if(raw)void draft.discard();else setValue(emptyClosureForm);}:null;
- const recovery=<>{originalId?<Button tone="secondary" data-toast-avoid="bottom" data-action={action==='close'?'check-cancel-command':'check-restore-command'} isDisabled={busy} onPress={()=>{void check();}}>核对结果</Button>:null}{message?<ToastFeedback className="ticket-waiting-state" source={action==='close'?'ticket-waiting-cancel':'closure-restore'} state={originalId?'unknown':'idle'}>{message}</ToastFeedback>:null}</>;
+ const recovery=<>{originalId?<Button tone="secondary" data-toast-avoid="bottom" data-action={action==='close'?'check-cancel-command':'check-restore-command'} isDisabled={busy} onPress={()=>{void check();}}>核对结果</Button>:null}</>;
  const enabled=Boolean(storageReady&&draft.canSubmit&&context.data?.allowed&&!context.isFetching&&!context.isError&&!otherBlocked);
  if(action==='close')return <ClosureDialog open={target.open} number={item.number} title={item.title} value={value} onChange={setValue} busy={busy} locked={locked} canSubmit={enabled&&!closureValidation(value)} onClose={()=>{void close();}} onSubmit={()=>{void submit();}} search={<ClosureTicketSearch principal={principal} subjectId={s.id} selected={value.duplicate} disabled={locked} onSelect={duplicate=>setValue(value=>({...value,duplicate}))}/>} inProgress={item.column==='active'} feedback={feedback} error={value.reason==='OTHER'||value.reason==='NOT_IT_SCOPE'?closureValidation(value):null} recovery={recovery} draft={draftStatus} onDiscard={discard}/>;
  const restore=history.data?.restore_target;
  // Card 29 R2: three notice states. Restore notifies only after a closure that chose to notify, so the closure's own choice decides 「本次不发送」.
  const restoreNotice=!restore?'':!restore.notify_reporter?'关闭时未通知报修人，本次不发送':restore.notification_state==='SENT'?'关闭时已通知，将通知报修人已重新受理':'关闭通知尚未送达，恢复后将按送达结果决定是否通知';
- return <Modal.Backdrop isOpen={target.open} isDismissable={false} isKeyboardDismissDisabled={locked} onOpenChange={open=>{if(!open)void close();}}><Modal.Container size="sm" className="ds-restore-container"><Modal.Dialog className="ds-closure-dialog ds-restore-dialog" aria-label="恢复事项" data-workbench-overlay data-toast-host>
+ return <Modal.Backdrop isOpen={target.open} isDismissable={false} isKeyboardDismissDisabled={locked} onOpenChange={open=>{if(!open)void close();}}><Modal.Container size="sm" className="ds-restore-container"><Modal.Dialog className="ds-closure-dialog ds-restore-dialog" aria-label="恢复事项" data-workbench-overlay data-workbench-modal data-toast-host>
   <header data-toast-avoid="top"><Modal.Heading>恢复事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭恢复窗口" isDisabled={locked} onPress={()=>{void close();}}><X size={18}/></Button></header>
   <p className="ds-closure-context"><span className="ds-closure-number">{item.number}</span> · {item.title}</p>
   {history.isPending?<p role="status">正在核对恢复目标…</p>:history.isError?<p role="alert">恢复目标暂不可读。<Button tone="ghost" onPress={()=>{void history.refetch();}}>重试</Button></p>:restore?<>

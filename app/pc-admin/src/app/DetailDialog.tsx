@@ -43,7 +43,7 @@ export function DetailDialog({open,onClose,closeBlocked=false,title,closeLabel,a
     <header><h3 id={id} tabIndex={-1}>{title}</h3><HButton type="button" className="icon-button" aria-label={closeLabel} isDisabled={closeBlocked} onPress={close} tone="ghost"><X size={18}/></HButton></header>{children}
   </section>:null;
   return <Modal.Backdrop className="workbench-modal-backdrop" isOpen={visible} onOpenChange={next=>{if(!next)close();}} isDismissable={false} isKeyboardDismissDisabled={closeBlocked}>
-    <Modal.Container size={className.includes('media')?'lg':className.includes('accept')?'sm':'md'}><Modal.Dialog data-workbench-overlay className={className} aria-label={accessibleName??title}>
+    <Modal.Container size={className.includes('media')?'lg':className.includes('accept')?'sm':'md'}><Modal.Dialog data-workbench-overlay data-workbench-modal className={className} aria-label={accessibleName??title}>
       <header><Modal.Heading id={id} tabIndex={-1}>{title}</Modal.Heading><div className="detail-modal-actions">{actions}<HButton type="button" className="icon-button" aria-label={closeLabel} isDisabled={closeBlocked} onPress={close} tone="ghost"><X size={18}/></HButton></div></header>{children}
     </Modal.Dialog></Modal.Container>
   </Modal.Backdrop>;
