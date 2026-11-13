@@ -60,7 +60,9 @@
 .ds-detail .ds-step-controllers .ticket-waiting-actions[data-routine-draft=true]:not(:has(form,button,[role=alert])) {position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .ds-detail .ds-step-controllers .detail-workflows:has(>.ticket-waiting-actions[data-routine-draft=true]):not(:has(>:not([hidden]):not([data-routine-draft=true]))) {padding:0;border:0;}
 .ds-detail .ds-step-controllers .detail-action-controller {padding:0;border:0;margin:0;}
-.ds-step-workflow:not([hidden]),.ds-step-inline-form {margin:0 0 var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--border-hair);}
+/* Card 34B: one hairline per shown block and --space-6 between blocks; the surrounding .detail-workflows draws none, so no double line. */
+.ds-step-workflow:not([hidden]),.ds-step-inline-form {margin:0 0 var(--space-6);padding:0 0 var(--space-6);border-bottom:1px solid var(--border-hair);}
+.ds-detail .ds-step-controllers .detail-workflows {border-bottom:0;padding:0;}
 .ds-detail .ds-step-inline-form {position:static;inset:auto;width:auto;max-width:none;height:auto;max-height:none;transform:none;border:0;border-bottom:1px solid var(--border-hair);border-radius:0;background:transparent;box-shadow:none;overflow:visible;}
 .ds-step-inline-form>header {display:flex;align-items:center;justify-content:space-between;}
 .ds-step-inline-form>header h3 {margin:0;font-size:var(--fs-md);font-weight:var(--fw-semibold);}
@@ -102,8 +104,13 @@
 .ds-detail .ds-note-input .note-entry {display:flex;flex-direction:column;gap:var(--space-2);}
 .ds-detail .ds-note-input textarea {width:100%;min-height:var(--lh-md);max-height:calc(var(--space-16) * 2);padding:0;border:0;background:transparent;resize:vertical;field-sizing:content;}
 .ds-note-bottom {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);width:100%;}
+/* Card 34B: the draft state and 「清空」 sit at the left of the composer's bottom bar, written like the 01d dialog footer. */
+.ds-note-bottom:has(>.ds-note-draft) {justify-content:flex-start;}
+.ds-note-bottom>.ds-note-draft {margin:0;}
+.ds-note-bottom>.ds-note-draft~.ds-note-counter {margin-left:auto;}
+.ds-note-draft .ds-closure-discard.button,.ds-dialog-footer .ds-closure-discard.button {height:var(--control-h-sm);min-height:var(--control-h-sm);padding:0 var(--space-1);font-size:var(--fs-xs);color:var(--text-secondary);}
 .ds-note-counter {color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-xs);font-variant-numeric:var(--font-numeric-variant);}
-.ds-detail .ds-note-input .ds-button[data-action=save-internal-note] {height:var(--control-h-sm);min-height:var(--control-h-sm);font-size:var(--fs-sm);margin-left:auto;}
+.ds-detail .ds-note-input .ds-button[data-action=save-internal-note] {height:var(--control-h-sm);min-height:var(--control-h-sm);font-size:var(--fs-sm);}
 .ds-note-input kbd {margin-left:var(--space-1);font-size:var(--fs-xs);color:var(--text-secondary);}
 .ds-detail .ds-detail-footer .note-controls {margin:var(--space-1) 0 0;font-size:var(--fs-xs);}
 .ds-detail.detail-page {display:flex;flex-direction:column;height:calc(100dvh - var(--topbar-h));}
@@ -135,3 +142,8 @@
 .ds-next-step[data-dismissed=true] .ds-next-step-kicker {display:block;margin-bottom:var(--space-0-5);font-size:var(--fs-xs);line-height:var(--lh-xs);font-weight:var(--fw-regular);color:var(--text-secondary);}
 .ds-next-step[data-dismissed=true] .ds-next-step-message {font-size:var(--fs-md);line-height:var(--lh-md);font-weight:var(--fw-semibold);}
 .ds-next-step .ds-closure-restore-inline svg {width:var(--icon-sm);height:var(--icon-sm);}
+
+/* Card 34B: dialog footer of 撤销派工 / 退回待安排, the same layout as the 01d closing dialog: draft state left, actions right. */
+.ds-dialog-footer {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);margin-top:var(--space-4);}
+/* Card 34B: take-over and hand-over rows of 「处理记录」 list the conversations handed over with them as secondary lines. */
+.record-assignment-communication {display:flex;flex-direction:column;gap:var(--space-0-5);color:var(--text-tertiary);font-size:var(--fs-xs);line-height:var(--lh-xs);}

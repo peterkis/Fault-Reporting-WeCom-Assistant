@@ -62,3 +62,8 @@ export function StepWorkflow({action,label,available,attention=false,readState='
 }
 
 export function useNextStep(){return useContext(Context)!==null;}
+/** Card 34B: a purpose shown in its own dialog still reports whether its available actions are known. */
+export function useStepRead(readState:StepReadState){
+  const scope=useContext(Context),id=useId(),reportRead=scope?.reportRead;
+  useLayoutEffect(()=>reportRead?.(id,readState),[reportRead,id,readState]);
+}

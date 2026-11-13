@@ -410,6 +410,8 @@ GET无body，只接受各一次cursor/limit（重复或额外参数400）；limi
 
 [原Page Schema](../../../contracts/p2_016_assignment_history_page.schema.json)/[类型](../../../contracts/p2_016_assignment_history_contracts.d.ts)保持冻结闭合字段schema_version/ticket_id/initial_basis/items/next_cursor，每页最多100行、每行当前可读沟通最多8项、显示名最长128字符。KNOWN安全当前名字、NONE有事实证明无人/无组、UNKNOWN缺记录三态保持；安全名字不承诺旧历史拼写。缺首任、前序、metadata或有界完整前缀证明不拿当前负责人填补；空页items=[]/next_cursor=null，initial_basis不足为UNKNOWN。转派/等待/退回及同轮再次接单不新开轮次，结束/合法重开保留旧记录。
 
+卡34B 复审（2026-11-13）：每行新增必填布尔 `actor_is_next`、`actor_was_previous`，由服务端按主体 id 比较（操作者须为内部主体，且对应新任 / 前任人员须已证明），从不按显示名推断；同名不同账号为 false。正式视图据此区分「接单 / 接手」与「派给 / 转交给 X」，其余字段与三态不变。
+
 既有Ticket event/cycle、真实assignment_metadata、021 Control和已COMMITTED复合引用是唯一来源。T06首次由调度员指派他人按真实target/team证明，后来同轮accept用该次receipt及同轮前序，不借首任组；T07/T12仅实际transfer关联沟通，不误绑最终start/close。每条历史Session先核真实Ticket关系及当前独立VIEW/保留边界再LIMIT8；隐藏对象不返回ID、名称、计数或存在标志。communication=[]只表示当前获权范围无可返回实际交接，RETAIN/no-op或独立沟通不会按时间伪造关联；不返raw principal identity、内部原因、原命令/hash/private receipt。
 
 正式视图按20条请求、maxPages10/gcTime0限界，显示已加载范围、缺证/空白/失败、后续页及显式重读；沿原epoch/abort、clearItemView和Realtime失效，不自动POST/ACK或创建草稿。实际生产浏览器测得DOM峰值200/末次185/重读20；cache内容未实测，200缓存上限为SOURCE配置。真实合成Cookie生产logout后释放旧server200，DOM未恢复且当前读401；旧body送达/解析未观测。固定本地未发布c6ec52f312dbf9d05f872039587fa31e22b02252完成040一次build/strict/artifact及042五文件17PASS、4accepted PNG；相关五文件71PASS经043/043b两个窗口，原超时FAIL不改，044工具外层27PASS。两轴SOURCE0产品修补、046精确自有PG清理通过；本段纯文档后继不重绑测试SHA，不表示Root集成、GH关票、生产/临床上线或Gate批准。

@@ -51,6 +51,8 @@ test('an authorized colleague pages the actual first acceptance and coupled tran
     assert.deepEqual(accepted.previous,{person:{state:'NONE'},team:{state:'KNOWN',name:originalTeam}});
     assert.deepEqual(accepted.next,{person:{state:'KNOWN',name:'林舟'},team:{state:'KNOWN',name:originalTeam}});
     assert.deepEqual(accepted.handling_cycle,{state:'KNOWN',cycle_no:1});
+    // Card 34B review: the same-person relation is computed from principal ids on the server, never from display names.
+    assert.equal(accepted.actor_is_next,true,'林舟 took the ticket: the operator is the new person');assert.equal(accepted.actor_was_previous,false,'nobody had it before');
     const initialCommunication=rows(accepted.communication);
     assert.equal(initialCommunication.length,1);
     assert.equal(initialCommunication[0]?.session_id,selected.session_id);
@@ -70,6 +72,7 @@ test('an authorized colleague pages the actual first acceptance and coupled tran
     assert.deepEqual(transfer.previous,{person:{state:'KNOWN',name:'林舟'},team:{state:'KNOWN',name:originalTeam}});
     assert.deepEqual(transfer.next,{person:{state:'KNOWN',name:'陈悦'},team:{state:'KNOWN',name:'合成网络处理组'}});
     assert.deepEqual(transfer.handling_cycle,{state:'KNOWN',cycle_no:1});
+    assert.equal(transfer.actor_is_next,true,'陈悦 took it over: the operator is the new person');assert.equal(transfer.actor_was_previous,false,'林舟, not the operator, had it before');
     const communication=rows(transfer.communication);assert.equal(communication.length,1);
     assert.equal(communication[0]?.session_id,selected.session_id);
     assert.equal(communication[0]?.control_event_id,changedCommunication[0]?.control_event_id);
