@@ -91,3 +91,18 @@ PC/核心集合保留一条现有 SSE 实流的身份、失权与 UNKNOWN 核对
 首批三项历史专用样例原本就不在旧 `v3-p09` 中；本次为其增加明确历史理由及默认混入拒绝，不能宣称从旧 251 集合删除了这三项。T35 风险替代已加入当前 PC/首版集合；原默认中的两个 T39 service/integration 检查改为 presence 按需类别，改到相关实现时保留原检查及失权生命周期测试。
 
 `p2-staff-directory` 保留领域触发和原身份/权限覆盖；`.github/review` 的文档路径缩为代码/JSON触发，避免单独改历史说明启动PG。该 workflow 自身变更仍触发既有领域回归。本 PR 不取消它；未来核心改动中与新首版 profile 的少量重叠保持并明确报告，未建设跨 workflow 调度。Windows 原生安装/进程/包验证是条件路径；本次策略工具改动不触发原生候选验收，其远端 bootstrap 结果仍须由实际适用运行证明。
+
+## 遗留测试与 CI 收敛（2026-11-14）
+
+按首版能力表把普通 PR 计划收敛到首版主体；分类、理由和触发路径只记在 [testing-policy.json](../testing-policy.json)。
+
+- 分类：`history` 由 2 项扩到 237 项。out-of-scope（Incident 公共故障，90 项）；on-demand（完整会话中心、完整草稿、跨团队接管/代办完工、关注、个人已读、补充待跟进、共享预约、提醒/声音、组合检索，共 138 项）；historical（T43 同候选验收 4 项、SS009 证据/治理工具 3 项，另含原有 2 项）。每项带 class、风险、处置和自身风险区 `triggers`。
+- 直接编辑：首版主体测试被改仍直接执行。已分类且 `applicable:false` 的旧测试只改文案、选择器或措辞时不执行，计划以 `EDITED_NOT_SELECTED` 列出理由；理由是该改动不改变其风险，严格类型检查仍编译该文件，而它保护的首版底线由默认集合覆盖。其功能源码变化时自动执行（`RISK_AREA_CHANGED_SELECTED`），与是否改测试无关。
+- 底线：新增 `required`，列出 UNKNOWN 核对、原 UUID 恢复、等待后授权终检、身份/失权、SSE 关键事实的具体入口；计划工具拒绝它们离开默认并集或进入 `history`。
+- 默认集合：`pr-pc`/`pr-core`/`pr-notification` 移出 5 个 Incident 入口（T30 内部处置、T31 公开进展投递、T32 Incident 异常），`pr-core` 增加 `t11-completion.integration`（工单完工的内外记录、权限、双 UUID 原回执与回滚）作为工单侧替代。
+- 规则：T05–T18、ALL43、会话测试改走 PC profile，不再落入未知路径的全量首版回退；`docs/**/evidence/*.json` 回执按文档处理。
+- 工作流：删除只对已关闭 PR #19 生效的 `ss009-file-coverage.yml`、`ss009-published-history.yml`，以及 `p2-staff-directory.yml`（旧原型构建、v1.4 架构和 P2-016 冻结历史校验）；其当前目录/Bot 复核回归 `t02-baseline` 改由计划工具的 `directory` profile 及首版并集执行。历史运行记录保持原样。
+- V1 自助 API：旧版 H5 页面重放测试已由 PR #181 删除；剩余 `yxx-ss-*` 覆盖仍在生产挂载的 V1 自助 API（新 H5、Bot 反馈复用），不是历史。新增 `pr-h5-api`（`yxx-ss-007-native-http-errors`、`yxx-ss-009-http-recovery`、`yxx-ss-010-runtime`）并入 H5 profile 与首版并集；`yxx-self-service-*` 源码改走 H5+core；`yxx-ss-009-http-recovery` 列入原 UUID 恢复底线。
+- 物理删除：本次不删除测试文件。被分类的入口仍是现有功能（默认关闭）的测试，或被 full/certify、命名 selection 和旧别名消费，不满足“明确作废且无消费者”。
+- 已知问题（不由分类掩盖）：`t37-shared-time-card-list` 在 main 上确定失败（期望完整到期时间，界面显示短格式），现归入共享预约按需类；`t02-expiry` 冻结重放在本地 main 同样失败（`T02_EXPIRY_NOT_PROVEN`），不在任何 PR profile 中。
+- 模拟计划（入口数，不是运行结果）：PR #186（base 为与 `origin/main` 的 merge-base `310fa421`，head `e2ad10f3`）158 → 91，浏览器 111 → 67，PG 141 → 82，不再落入首版全量回退、不再准备 ffmpeg；其中 45 个只改文案的旧测试以 `EDITED_NOT_SELECTED` 列出，25 个按需测试因 #186 实际改了会话收件箱服务端和共享草稿基础设施而执行。改 t06/t28/wbint-t27 测试样本 58 → 15；docs 证据 JSON 55 → 0；PC 15 → 14；通知 14 → 11；H5 12 → 15（`pr-h5-api`）；目录 11 → 28、首版并集 55 → 71（并入原 `p2-staff-directory` 工作流的 17 项 `t02-baseline` 与 3 项 `pr-h5-api`）。
