@@ -127,6 +127,12 @@ test('earlier T-numbered and conversation workbench tests stay in the PC profile
   const receipt=plan('docs/ui/evidence/v227-card34/copy/receipt-34c-copy.json');assert.equal(receipt.build,false);assert.deepEqual(receipt.profiles,['docs']);
   const directory=plan('app/server/src/p2-007-staff-directory-store.mts');assert.ok(directory.selections.includes('t02-baseline'),'the retired directory workflow coverage moved into the plan');
 });
+test('the still-mounted V1 self-service API keeps its current tests; only SS009 evidence tooling is historical',()=>{
+  const api=['tests/yxx-ss-007-native-http-errors.test.mjs','tests/yxx-ss-009-http-recovery.integration.test.mjs','tests/yxx-ss-010-runtime.integration.test.mjs'];
+  for(const file of ['app/server/src/yxx-self-service-command.mts','app/server/src/yxx-self-service-authorization.mts','app/h5/src/pages/Result.tsx']){const p=plan(file);for(const t of api)assert.ok(paths(p).includes(t),file+' '+t);}
+  const classified=new Set(policy().history.map(h=>h.path));for(const t of api)assert.ok(!classified.has(t),t);
+  const evidence=plan('tests/yxx-ss-009-governance.test.mjs');assert.equal(status(evidence,'tests/yxx-ss-009-governance.test.mjs'),'EDITED_NOT_SELECTED');
+});
 test('legacy classification requires a reason, a class and its own risk-area triggers',()=>{
   const edit=(change:(h:Record<string,unknown>)=>void)=>{const r=record(raw());const history=r.history;assert.ok(Array.isArray(history));const h=history.map(record).find(h=>h.class==='out-of-scope');assert.ok(h);change(h);return r;};
   assert.throws(()=>parsePolicy(edit(h=>{h.disposition='  ';})),/REASON_REQUIRED/u);

@@ -9076,6 +9076,11 @@
       "tests/mvp-application-members.integration.test.mts",
       "tests/p2-016-workbench-auth.integration.test.mjs",
       "tests/yxx-h5-application-auth.test.mts"
+    ],
+    "pr-h5-api": [
+      "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+      "tests/yxx-ss-010-runtime.integration.test.mjs"
     ]
   },
   "subprocess_entries": {

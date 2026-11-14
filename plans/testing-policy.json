@@ -32,7 +32,8 @@
     },
     "h5": {
       "selections": [
-        "yxx-h5-rebuild"
+        "yxx-h5-rebuild",
+        "pr-h5-api"
       ],
       "tools": [],
       "build": true,
@@ -70,6 +71,7 @@
       "selections": [
         "pr-pc",
         "yxx-h5-rebuild",
+        "pr-h5-api",
         "pr-core",
         "pr-notification",
         "t03-platform",
@@ -220,6 +222,14 @@
       "reason": "Staff/reporter directory and Bot rule-first manual review: current directory/orchestration regression (replaces the retired p2-staff-directory workflow)"
     },
     {
+      "pattern": "^app/server/(?:src|scripts)/.*yxx-self-service-|^tests/helpers/yxx-ss-",
+      "profiles": [
+        "h5",
+        "core"
+      ],
+      "reason": "V1 self-service API still mounted for the rebuilt H5 and Bot feedback: H5 flow, its HTTP contract, original-UUID recovery and reporter logout"
+    },
+    {
       "pattern": "^app/server/(?:src|scripts)/.*(?:auth|identity|principal|access|session|grant)",
       "profiles": [
         "identity"
@@ -259,7 +269,8 @@
       "paths": [
         "tests/wbint-t17-manual-receipts.integration.test.mts",
         "tests/t11-completion.integration.test.mts",
-        "tests/t25-app-delivery-http-recovery.integration.test.mts"
+        "tests/t25-app-delivery-http-recovery.integration.test.mts",
+        "tests/yxx-ss-009-http-recovery.integration.test.mjs"
       ]
     },
     {
@@ -2025,113 +2036,36 @@
       ]
     },
     {
-      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-009-catalog.integration.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-009-crash.integration.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
       "path": "tests/yxx-ss-009-evidence-history.test.mjs",
       "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "risk": "SS009 evidence binding, published-history and governance tooling for the fixed SS009 candidate",
       "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "disposition": "Historical SS009 evidence tooling, consumed by the manual certify workflows; not a current MVP PR prerequisite. Runs when the self-service evidence/readiness tooling changes.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+        "^app/server/(?:src|scripts)/.*yxx-self-service-(?:evidence|readiness|verification|validation-scope)"
       ]
     },
     {
       "path": "tests/yxx-ss-009-evidence.test.mjs",
       "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "risk": "SS009 evidence binding, published-history and governance tooling for the fixed SS009 candidate",
       "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "disposition": "Historical SS009 evidence tooling, consumed by the manual certify workflows; not a current MVP PR prerequisite. Runs when the self-service evidence/readiness tooling changes.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+        "^app/server/(?:src|scripts)/.*yxx-self-service-(?:evidence|readiness|verification|validation-scope)"
       ]
     },
     {
       "path": "tests/yxx-ss-009-governance.test.mjs",
       "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "risk": "SS009 evidence binding, published-history and governance tooling for the fixed SS009 candidate",
       "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "disposition": "Historical SS009 evidence tooling, consumed by the manual certify workflows; not a current MVP PR prerequisite. Runs when the self-service evidence/readiness tooling changes.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-009-review-regressions.integration.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-010-contract.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
-      ]
-    },
-    {
-      "path": "tests/yxx-ss-010-runtime.integration.test.mjs",
-      "class": "historical",
-      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
-      "applicable": false,
-      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
-      "replacement": [],
-      "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+        "^app/server/(?:src|scripts)/.*yxx-self-service-(?:evidence|readiness|verification|validation-scope)"
       ]
     },
     {
