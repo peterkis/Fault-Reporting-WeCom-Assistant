@@ -1,4 +1,4 @@
-import {useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {Copy} from 'lucide-react';
 import {TextArea as HTextArea} from '@heroui/react';
 import {Button as HButton} from '../design/components/Button/Button';
@@ -14,6 +14,8 @@ export function DiagnosticCopy({data}:{data:Record<string,unknown>}){
   // never shows against the current one.
   const text=JSON.stringify(data,null,2),[attempt,setAttempt]=useState<{text:string;outcome:'copied'|'failed'}|null>(null);
   const outcome=attempt?.text===text?attempt.outcome:'idle',sequence=useRef(0);
+  // A change of data drops the earlier feedback and any copy still pending, so returning to the same data shows nothing old.
+  useEffect(()=>{sequence.current++;setAttempt(null);},[text]);
   const copy=()=>{
     const written=text,mine=++sequence.current,settle=(result:'copied'|'failed')=>{if(mine===sequence.current)setAttempt({text:written,outcome:result});},clipboard=typeof navigator==='undefined'?undefined:navigator.clipboard;
     if(!clipboard?.writeText){settle('failed');return;}

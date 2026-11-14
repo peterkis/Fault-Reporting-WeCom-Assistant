@@ -18,7 +18,7 @@ import {DraftError} from '../drafts/encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 import {EMPTY_RETURN,createReturnCommand,hasReturnInput,isReturnChoiceRevocation,readReturnChoices,returnInputSnapshot,useReturnDraft} from './use-return-draft';
 import type {ReturnCopy,ReturnFence,ReturnInput} from './use-return-draft';
-import {shortCode} from '../../app/short-code';
+import {shortCodes} from '../../app/short-code';
 import {useFullNumbers} from '../../app/FullNumbers';
 
 type State='idle'|'preparing'|'submitting'|'checking'|'unknown'|'conflict'|'failed'|'denied'|'committed';
@@ -261,6 +261,8 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   // recovery are never unmounted by presentation.
   if(!showForm&&!originalId&&!hasReturnInput(value)&&!busy&&!message&&!dialogOpen)return null;
   const close=()=>{if(!busy)setDialogOpen(false);};
+  // Codex review: one short-code map per render, shared by the candidate rows and the selected list.
+  const sessionCodes=shortCodes([...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()]);
   const section=<section className="ticket-notes ticket-return-to-dispatch" aria-label="停止当前已开始的处理责任">
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
@@ -275,12 +277,12 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
         {fullNumbers.toggle}<ul className="conversation-choices">{related.data?.items.map(row=>{
           seenSessions.current.set(row.session_id,row.conversation_principal_name??'尚未分配沟通人');
           const chosen=value.sessions.find(item=>sameId(item.session_id,row.session_id)),permitted=row.take_allowed&&boundedVersion(row.session_row_version);
-          return <li key={row.session_id} title={'会话编号 '+row.session_id}><HCheckbox data-session-choice={row.session_id} data-session-row-version={row.session_row_version} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>会话尾号 {shortCode(row.session_id,[...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()])} · {row.conversation_principal_name??'尚未分配沟通人'}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:<span className="sr-only">，会话编号 {row.session_id}</span>}<small>{!permitted?'当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
+          return <li key={row.session_id} title={'会话编号 '+row.session_id}><HCheckbox data-session-choice={row.session_id} data-session-row-version={row.session_row_version} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>会话尾号 {(sessionCodes.get(row.session_id)??row.session_id)} · {row.conversation_principal_name??'尚未分配沟通人'}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:<span className="sr-only">，会话编号 {row.session_id}</span>}<small>{!permitted?'当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
         })}</ul>
         {value.sessions.length?<ul>{value.sessions.map(row=>{const label=(()=>{const item=related.data?.items.find(candidate=>sameId(candidate.session_id,row.session_id));// Codex review: a selection on another page keeps a stable, visible name (the session's last four characters, and its
           // colleague when that page was seen), so two of them can be told apart without hovering.
           const seen=seenSessions.current.get(row.session_id);
-          const code=shortCode(row.session_id,[...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()]);
+          const code=(sessionCodes.get(row.session_id)??row.session_id);
           return item?'已选：会话尾号 '+code+' · '+(item.conversation_principal_name??'尚未分配沟通人'):'已选：会话尾号 '+code+'（不在当前列表）'+(seen?' · '+seen:'');})();return <li key={row.session_id} title={'会话编号 '+row.session_id}>{label}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:null}<HButton type="button" aria-label={'取消选择：'+label} isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>;})}</ul>:null}
         {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}
         {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} tone="secondary">下一批关联会话</HButton>:null}
