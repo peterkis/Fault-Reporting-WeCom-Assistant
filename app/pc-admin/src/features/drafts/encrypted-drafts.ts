@@ -55,28 +55,32 @@ async function database():Promise<IDBDatabase>{
     request.onsuccess=()=>{if(rejected)request.result.close();else resolve(request.result);};
   });
 }
+const EXPIRED_MARKER='expired:';
 interface State {drafts:DraftRecord[];operations:OperationRecord[];epoch:string;expired:Set<string>;draftStore:IDBObjectStore;operationStore:IDBObjectStore;control:IDBObjectStore}
 async function state<T>(run:(value:State)=>T):Promise<T>{
   const db=await database();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(['drafts','operations','control'],'readwrite'),draftStore=tx.objectStore('drafts'),operationStore=tx.objectStore('operations'),control=tx.objectStore('control');
-    const rows=draftStore.getAll(undefined,21),keys=draftStore.getAllKeys(undefined,21),operations=operationStore.getAll(undefined,21),operationKeys=operationStore.getAllKeys(undefined,21),epoch=control.get('epoch');
+    const rows=draftStore.getAll(undefined,21),keys=draftStore.getAllKeys(undefined,21),operations=operationStore.getAll(undefined,21),operationKeys=operationStore.getAllKeys(undefined,21),epoch=control.get('epoch'),controlKeys=control.getAllKeys();
     let finished=false,result:T,failed:unknown;
     tx.oncomplete=()=>{db.close();if(failed!==undefined)reject(failed);else if(finished)resolve(result);else reject(new DraftError('DRAFT_STORAGE_UNAVAILABLE'));};
     tx.onabort=()=>{db.close();reject(failed??new DraftError('DRAFT_STORAGE_UNAVAILABLE'));};tx.onerror=()=>{};
-    let remaining=5;
+    let remaining=6;
     const read=()=>{if(--remaining)return;try{
       const rowValues:readonly unknown[]=rows.result,operationValues:readonly unknown[]=operations.result,rawEpoch:unknown=epoch.result;
       if(typeof rawEpoch!=='string'||!UUID.test(rawEpoch)||rowValues.length>20||operationValues.length>20)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
       const value:State={drafts:[],operations:[],epoch:rawEpoch,expired:new Set(),draftStore,operationStore,control};let cleaned=false;
-      for(const [index,row] of rowValues.entries()){try{const record=decode(row);if(Date.now()>=record.expiresAt){draftStore.delete(record.scope);value.expired.add(record.scope);cleaned=true;}else value.drafts.push(record);}catch{const key=keys.result[index];if(key!==undefined){draftStore.delete(key);cleaned=true;}}}
+      // Codex review (card 34C): an expiry swept here is also kept as a marker, so the hook of that draft still learns it expired
+      // when another read (another purpose's hook) swept it first; opening that draft consumes the marker.
+      for(const key of controlKeys.result as readonly unknown[])if(typeof key==='string'&&key.startsWith(EXPIRED_MARKER))value.expired.add(key.slice(EXPIRED_MARKER.length));
+      for(const [index,row] of rowValues.entries()){try{const record=decode(row);if(Date.now()>=record.expiresAt){draftStore.delete(record.scope);control.put(record.expiresAt,EXPIRED_MARKER+record.scope);value.expired.add(record.scope);cleaned=true;}else value.drafts.push(record);}catch{const key=keys.result[index];if(key!==undefined){draftStore.delete(key);cleaned=true;}}}
       for(const row of operationValues){try{value.operations.push(decodeOperation(row));}catch{failed=new DraftError('DRAFT_OPERATION_CORRUPT');}}
       if(cleaned){value.epoch=crypto.randomUUID();control.put(value.epoch,'epoch');}
       // Commit expired sensitive cleanup, retain untrusted opaque rows, then refuse new work.
       if(failed!==undefined)return;
       result=run(value);finished=true;
     }catch(error){failed=error;tx.abort();}};
-    for(const request of [rows,keys,operations,operationKeys,epoch])request.onsuccess=read;
+    for(const request of [rows,keys,operations,operationKeys,epoch,controlKeys])request.onsuccess=read;
   });
 }
 function aad(record:Pick<DraftRecord,'schema'|'scope'|'firstSavedAt'|'expiresAt'|'revision'>){return encoder.encode(JSON.stringify([record.schema,record.scope,record.firstSavedAt,record.expiresAt,record.revision]));}
@@ -100,7 +104,7 @@ export async function hasExistingDraft(scope:DraftScope):Promise<boolean>{
   });
 }
 export async function openDraft(scope:DraftScope,{restore=true}:{restore?:boolean}={}):Promise<{handle:DraftHandle;text:string|null;expired:boolean}>{
-  const key=draftScopeKey(scope),snapshot=await state(value=>({record:value.drafts.find(row=>row.scope===key)??null,operation:value.operations.find(row=>row.scope===key)??null,epoch:value.epoch,expired:value.expired.has(key)}));
+  const key=draftScopeKey(scope),snapshot=await state(value=>{const expired=value.expired.has(key);if(expired)value.control.delete(EXPIRED_MARKER+key);return {record:value.drafts.find(row=>row.scope===key)??null,operation:value.operations.find(row=>row.scope===key)??null,epoch:value.epoch,expired};});
   const handle:DraftHandle={scope,record:snapshot.record,operation:snapshot.operation,epoch:snapshot.epoch};
   if(!snapshot.record||!restore)return {handle,text:null,expired:snapshot.expired};
   const record=snapshot.record;let plaintext:ArrayBuffer;
@@ -125,6 +129,7 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
     if(!current&&value.drafts.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_FULL'};
     if(commandId&&!operation&&value.operations.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_OPERATION_FULL'};
     if(settledCommandId&&operation?.commandId===settledCommandId)value.operationStore.delete(record.scope);
+    value.control.delete(EXPIRED_MARKER+record.scope);
     const nextOperation:OperationRecord|null=commandId?{scope:record.scope,...handle.scope,commandId,createdAt:operation?.createdAt??Date.now()}:null;
     if(nextOperation)value.operationStore.put(nextOperation);
     value.draftStore.put(record);return {operation:nextOperation};
@@ -211,7 +216,11 @@ export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=f
         if(scope&&matchesDraft(filter,scope))store.delete(key);
       }}catch(error){failure=error;tx.abort();}};rows.onsuccess=loaded;keys.onsuccess=loaded;
     }
-    tx.objectStore('control').put(crypto.randomUUID(),'epoch');
+    const control=tx.objectStore('control'),controlKeys=control.getAllKeys();
+    // Expiry markers name their scope; a purge removes the ones it covers, so no scope key outlives its drafts.
+    controlKeys.onsuccess=()=>{for(const key of controlKeys.result as readonly unknown[]){if(typeof key!=='string'||!key.startsWith(EXPIRED_MARKER))continue;
+      try{const fields:unknown=JSON.parse(key.slice(EXPIRED_MARKER.length));if(Array.isArray(fields)&&fields.length===4&&fields.every(field=>typeof field==='string')&&matchesDraft(filter,{principal:fields[0],kind:fields[1],id:fields[2],purpose:fields[3]} as DraftScope))control.delete(key);}catch{control.delete(key);}}};
+    control.put(crypto.randomUUID(),'epoch');
   });
   publish(filter);
 }
