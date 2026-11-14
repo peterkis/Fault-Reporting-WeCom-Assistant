@@ -48,7 +48,8 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
     mutation.mutate({command,signal:controller.signal});
   };
   const receipt=useMutation({mutationKey:['ticket-internal-note',principal.principal_id,ticketId],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>api.internalNoteReceipt(ticketId,commandId,signal),
-    onSuccess:async result=>{if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：未找到终态收据不代表未提交，请继续只读核对。');refresh();return;}const preserveInput=Boolean(note),cleaned=await draft.success(result.client_command_id,preserveInput);if(!preserveInput)setNote('');setPending(null);setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage((result.state==='COMMITTED'?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(preserveInput?' 你后来输入的内容还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
+    onSuccess:async result=>{if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：未找到终态收据不代表未提交，请继续只读核对。');refresh();return;}// Codex review: the box is locked while the outcome is unknown, so text equal to the original note is that note, not later input.
+    const preserveInput=Boolean(note.trim())&&note.trim()!==pending?.note,cleaned=await draft.success(result.client_command_id,preserveInput);if(!preserveInput)setNote('');setPending(null);setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage((result.state==='COMMITTED'?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(preserveInput?' 你后来输入的内容还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.
