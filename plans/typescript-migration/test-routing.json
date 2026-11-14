@@ -9030,7 +9030,6 @@
       "tests/wbint-t19-manual-self-handling-contracts.test.mts",
       "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
       "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
-      "tests/wbint-t30-internal-note.browser.test.mts",
       "tests/wbint-t32-exception-authorization.browser.test.mts",
       "tests/wbint-t22-realtime-tracer.browser.test.mts",
       "tests/pc-admin-legacy-retirement.browser.test.mts"
@@ -9044,16 +9043,14 @@
       "tests/t10-unknown-recovery.browser.test.mts",
       "tests/wbint-t19-manual-self-handling-risks.integration.test.mts",
       "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
-      "tests/wbint-t30-internal-note-risks.integration.test.mts",
       "tests/wbint-t17-manual-receipts.integration.test.mts",
-      "tests/wbint-t22-realtime-tracer.browser.test.mts"
+      "tests/wbint-t22-realtime-tracer.browser.test.mts",
+      "tests/t11-completion.integration.test.mts"
     ],
     "pr-notification": [
       "tests/mvp-notification-policy.integration.test.mts",
       "tests/mvp-group-replies.integration.test.mts",
       "tests/mvp-application-members.integration.test.mts",
-      "tests/wbint-t31-delivery-admission.integration.test.mts",
-      "tests/wbint-t31-http-risks.integration.test.mts",
       "tests/t24-synthetic-sender-unknown.integration.test.mts",
       "tests/t24-round-notification-identity.integration.test.mts",
       "tests/t25-app-delivery-http-recovery.integration.test.mts",
@@ -9061,7 +9058,6 @@
       "tests/wbint-t32-exception-contract.test.mts",
       "tests/wbint-t32-notification-exceptions.integration.test.mts",
       "tests/wbint-t32-session-exceptions.integration.test.mts",
-      "tests/wbint-t32-incident-exceptions.integration.test.mts",
       "tests/wbint-t32-exception-compatibility.integration.test.mts"
     ],
     "pr-desktop": [

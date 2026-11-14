@@ -47,7 +47,7 @@ test('SQL, shared assembly, lock and compiler changes reach the MVP union',()=>{
 });
 test('notification risks include UNKNOWN, recipient authority and privacy admission',()=>{
   const p=plan('app/server/src/notification-sender.mts');
-  for(const word of ['sender-unknown','notification-identity','delivery-admission','exception-authorization'])assert.ok(paths(p).some(s=>s.includes(word)),word);
+  for(const word of ['sender-unknown','notification-identity','notification-policy','exception-authorization'])assert.ok(paths(p).some(s=>s.includes(word)),word);
 });
 test('a new unrecognized production module gets a nonempty broader MVP fallback',()=>{
   for(const file of ['future-service/main.mts','future-service/assets/icon.svg','future-service/evidence/icon.svg','web/p2-reporter/assets/status.png']){
@@ -89,13 +89,69 @@ test('invalid profiles, missing entries and empty business execution fail before
   const cli=spawnSync(process.execPath,[path.join(root,'.build/tools/pr-plan.mjs')],{cwd:root,encoding:'utf8',windowsHide:true});assert.notEqual(cli.status,0);assert.match(cli.stderr,/PR_BASE_REQUIRED/u);
   const mismatch=spawnSync(process.execPath,[path.join(root,'.build/tools/pr-plan.mjs'),'--base','HEAD^','--head','HEAD^'],{cwd:root,encoding:'utf8',windowsHide:true});assert.notEqual(mismatch.status,0);assert.match(mismatch.stderr,/PR_HEAD_CHECKOUT_MISMATCH/u);
 });
-test('historical-only checks cannot silently enter defaults, but a direct edit selects them explicitly',()=>{
-  const p=policy(),h=p.history[0];assert.ok(h);
+test('historical-only checks cannot silently enter defaults, but a direct edit of a still-applicable one selects it explicitly',()=>{
+  const p=policy(),h=p.history.find(h=>h.applicable);assert.ok(h);
   assert.ok(!paths(plan('app/pc-admin/src/Feature.tsx')).includes(h.path));
-  const direct=plan(h.path);assert.ok(paths(direct).includes(h.path));assert.equal(direct.history[0]?.status,'DIRECT_CHANGE_REQUIRES_CHECK');
+  const direct=plan(h.path);assert.ok(paths(direct).includes(h.path));assert.equal(direct.history.find(r=>r.path===h.path)?.status,'DIRECT_CHANGE_REQUIRES_CHECK');
   const altered=structuredClone(routes);altered.selections['pr-pc']=[h.path];assert.throws(()=>planChanges(p,altered,[]),/HISTORY_IN_DEFAULT/u);
   const current=plan('app/pc-admin/src/Feature.tsx');for(const replacement of h.replacement)assert.ok(paths(current).includes(replacement));
   const presence=plan('app/server/src/workbench-activity-service.mts');assert.ok(paths(presence).includes('tests/wbint-t39-activity.integration.test.mts'));assert.ok(paths(presence).includes('tests/wbint-t39-activity-lifecycle.browser.test.mts'));
+});
+
+const status=(p:ReturnType<typeof plan>,file:string)=>p.history.find(h=>h.path===file)?.status;
+test('a legacy test edited only for copy is reported, not executed, and never silently dropped',()=>{
+  for(const file of ['tests/wbint-t27-unknown.browser.test.mts','tests/t28-followup-draft.browser.test.mts','tests/t37-shared-time-card-list.browser.test.mts','tests/wbint-t43-competition-recovery.browser.test.mts','tests/conversation-inbox.browser.test.mts']){
+    const p=plan(file);assert.ok(!paths(p).includes(file),file);assert.equal(status(p,file),'EDITED_NOT_SELECTED',file);
+    assert.ok(p.history.find(h=>h.path===file)?.reason.length,file);
+    assert.ok(p.build&&paths(p).length>0,'the PC profile still runs; an edit never becomes an empty pass');
+  }
+  // The same file is executed once its own risk area changes, with or without the test edit.
+  for(const [file,source] of [['tests/wbint-t27-unknown.browser.test.mts','app/server/src/p2-012-incident-command-service.mts'],['tests/t37-shared-time-card-list.browser.test.mts','app/server/src/workbench-follow-up-schedules.mts'],['tests/wbint-t34-follow.integration.test.mts','app/server/src/workbench-follow.mts'],['tests/t07-takeover.integration.test.mts','app/server/src/workbench-ticket-takeover.mts'],['tests/t07-draft-recovery.browser.test.mts','app/pc-admin/src/features/drafts/use-note-draft.ts']] as const){
+    for(const p of [plan(source),plan(file,source)]){assert.ok(paths(p).includes(file),file);assert.equal(status(p,file),'RISK_AREA_CHANGED_SELECTED');}
+  }
+  // A UI-only change to a default-off or enhanced feature leaves its classified tests on demand.
+  const ui=plan('app/pc-admin/src/features/incident-candidates/CandidateDetail.tsx','app/pc-admin/src/features/follow-up/SharedFollowUp.tsx');
+  assert.ok(!paths(ui).some(p=>/wbint-t27-|t37-/u.test(p)));assert.equal(status(ui,'tests/wbint-t27-unknown.browser.test.mts'),'HISTORICAL_ONLY_NOT_SELECTED');
+  // A current MVP test edited for copy still runs: only classified legacy tests can be excluded.
+  const current=plan('tests/t11-completion.browser.test.mts');assert.ok(paths(current).includes('tests/t11-completion.browser.test.mts'));
+});
+test('an unrelated PC change keeps Incident, enhanced and old-candidate tests out of the default selection',()=>{
+  const p=plan('app/pc-admin/src/features/tickets/Ticket.tsx'),selected=new Set(paths(p));
+  for(const h of policy().history)if(!h.applicable){assert.ok(!selected.has(h.path),h.path);assert.equal(status(p,h.path),'HISTORICAL_ONLY_NOT_SELECTED');}
+  assert.ok(!paths(plan('app/server/src/notification-sender.mts')).some(s=>/incident/u.test(s)),'Incident delivery stays out of the notification profile');
+});
+test('earlier T-numbered and conversation workbench tests stay in the PC profile instead of the wide MVP fallback',()=>{
+  for(const file of ['tests/t06-assignment-recovery.browser.test.mts','tests/t18-postcommit-refusal.browser.test.mts','tests/all43-command-epoch.browser.test.mts','tests/conversation-inbox-contract.test.mts']){
+    const p=plan(file);assert.deepEqual(p.profiles,['pc'],file);assert.doesNotMatch(p.reasons[0]?.reason??'',/Unknown path/u);
+  }
+  const receipt=plan('docs/ui/evidence/v227-card34/copy/receipt-34c-copy.json');assert.equal(receipt.build,false);assert.deepEqual(receipt.profiles,['docs']);
+  const directory=plan('app/server/src/p2-007-staff-directory-store.mts');assert.ok(directory.selections.includes('t02-baseline'),'the retired directory workflow coverage moved into the plan');
+});
+test('legacy classification requires a reason, a class and its own risk-area triggers',()=>{
+  const edit=(change:(h:Record<string,unknown>)=>void)=>{const r=record(raw());const history=r.history;assert.ok(Array.isArray(history));const h=history.map(record).find(h=>h.class==='out-of-scope');assert.ok(h);change(h);return r;};
+  assert.throws(()=>parsePolicy(edit(h=>{h.disposition='  ';})),/REASON_REQUIRED/u);
+  assert.throws(()=>parsePolicy(edit(h=>{h.risk='';})),/REASON_REQUIRED/u);
+  assert.throws(()=>parsePolicy(edit(h=>{delete h.class;})),/HISTORY_CLASS/u);
+  assert.throws(()=>parsePolicy(edit(h=>{h.class='legacy';})),/HISTORY_CLASS/u);
+  assert.throws(()=>parsePolicy(edit(h=>{h.triggers=[];})),/TRIGGER_REQUIRED/u);
+  assert.throws(()=>parsePolicy(edit(h=>{h.triggers=['^tests/']; })),/SELF_TRIGGER/u,'a test cannot name its own edit as its risk area');
+  assert.throws(()=>parsePolicy(edit(h=>{h.triggers=['(']; })));
+  const missing=record(raw());delete missing.required;assert.throws(()=>parsePolicy(missing),/POLICY_RULES/u);
+});
+test('MVP bottom lines stay required and cannot be classified away or dropped from the default union',()=>{
+  const p=policy(),risks=p.required.map(r=>r.risk).join('\n');
+  for(const word of ['UNKNOWN','Original-UUID','after a wait','loss-of-permission','SSE'])assert.match(risks,new RegExp(word,'u'));
+  const fallback=paths(plan('future-service/main.mts'));for(const r of p.required)for(const file of r.paths)assert.ok(fallback.includes(file),file);
+  const required=p.required[0]?.paths[0];assert.ok(required);
+  const classified=policy();classified.history.push({path:required,class:'historical',risk:'r',applicable:false,disposition:'d',replacement:[],triggers:[]});
+  assert.throws(()=>planChanges(classified,routes,[]),/HISTORY_IN_DEFAULT|REQUIRED_IN_HISTORY/u);
+  const removed=structuredClone(routes);for(const [name,list] of Object.entries(removed.selections)){assert.ok(Array.isArray(list));removed.selections[name]=list.filter((s:unknown)=>s!==required);}
+  assert.throws(()=>planChanges(policy(),removed,[]),/REQUIRED_NOT_DEFAULT/u);
+});
+test('a legacy test deleted without removing its classification fails instead of disappearing',()=>{
+  const p=policy(),h=p.history.find(h=>!h.applicable);assert.ok(h);
+  const removed=structuredClone(routes);removed.entries=removed.entries.filter(e=>e.path!==h.path);
+  assert.throws(()=>planChanges(p,removed,[{status:'D',paths:[h.path]}]),/HISTORY_MISSING_ENTRY/u);
 });
 
 function yaml(file:string):Record<string,unknown>{return record(JSON.parse(execFileSync('python',['-c',"import json,yaml,sys; print(json.dumps(yaml.load(open(sys.argv[1],encoding='utf-8'),Loader=yaml.BaseLoader)))",path.join(root,file)],{encoding:'utf8',windowsHide:true})) as unknown);}

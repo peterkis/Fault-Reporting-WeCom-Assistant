@@ -6,10 +6,17 @@ import type {Entry,Routes,Selection} from './routing.mjs';
 
 type Requirements={database:boolean;browser:boolean;pyyaml:boolean;ffmpeg:boolean;windows:boolean};
 type Profile={selections:string[];tools:string[];build:boolean;pyyaml:boolean;windows:boolean};
-type History={path:string;risk:string;applicable:boolean;disposition:string;replacement:string[]};
-export type Policy={schema_version:1;profiles:Record<string,Profile>;rules:{pattern:string;profiles:string[];reason:string}[];fallback:string[];history:History[]};
+export const HISTORY_CLASSES=['historical','on-demand','out-of-scope'] as const;
+type HistoryClass=typeof HISTORY_CLASSES[number];
+// applicable=true: the original risk is still current, so a direct edit selects the test.
+// applicable=false: an edit alone (copy, selectors, wording) never selects it; only a change to its own
+// risk area (triggers) does. Every changed registered test is either selected or reported with a reason.
+type History={path:string;class:HistoryClass;risk:string;applicable:boolean;disposition:string;replacement:string[];triggers:string[]};
+type Required={risk:string;paths:string[]};
+export type Policy={schema_version:1;profiles:Record<string,Profile>;rules:{pattern:string;profiles:string[];reason:string}[];fallback:string[];required:Required[];history:History[]};
 export type Change={status:string;paths:string[]};
-export type Plan={base:string;head:string;changes:Change[];profiles:string[];reasons:{path:string;profiles:string[];reason:string}[];selection:Selection;selections:string[];tools:string[];build:boolean;requirements:Requirements;lane:'docs'|'no-database'|'database';not_selected:{profile:string;reason:string}[];history:{path:string;status:string;reason:string}[]};
+export type Plan={base:string;head:string;changes:Change[];profiles:string[];reasons:{path:string;profiles:string[];reason:string}[];selection:Selection;selections:string[];tools:string[];build:boolean;requirements:Requirements;lane:'docs'|'no-database'|'database';not_selected:{profile:string;reason:string}[];history:{path:string;class:string;status:HistoryStatus;reason:string}[]};
+export type HistoryStatus='DIRECT_CHANGE_REQUIRES_CHECK'|'RISK_AREA_CHANGED_SELECTED'|'EDITED_NOT_SELECTED'|'HISTORICAL_ONLY_NOT_SELECTED';
 
 export function isWindowsDesktopGraphics(entryPath:string):boolean {
   return entryPath==='tests/workbench-desktop-session.browser.test.mts'
@@ -25,14 +32,22 @@ export function parsePolicy(input:unknown):Policy{
     const tools=strings(p.tools);if(tools.some(t=>!/^tools\/ts-migration\/[a-z0-9-]+\.test\.mts$/u.test(t)))throw Error('PR_TOOL_PATH');
     profiles[name]={selections:strings(p.selections),tools,build:p.build===true,pyyaml:p.pyyaml===true,windows:p.windows===true};
   }
-  if(!Array.isArray(raw.rules)||!raw.rules.length||!Array.isArray(raw.history))throw Error('PR_POLICY_RULES');
+  if(!Array.isArray(raw.rules)||!raw.rules.length||!Array.isArray(raw.history)||!Array.isArray(raw.required)||!raw.required.length)throw Error('PR_POLICY_RULES');
   const rules=raw.rules.map((v:unknown)=>{const r=object(v);if(typeof r.pattern!=='string'||typeof r.reason!=='string'||!r.reason)throw Error('PR_POLICY_RULE');new RegExp(r.pattern,'u');return {pattern:r.pattern,profiles:strings(r.profiles),reason:r.reason};});
-  const history=raw.history.map((v:unknown)=>{const h=object(v);if(typeof h.path!=='string'||typeof h.risk!=='string'||typeof h.applicable!=='boolean'||typeof h.disposition!=='string'||!h.disposition)throw Error('PR_HISTORY_INVALID');const replacement=strings(h.replacement);if(h.applicable&&!replacement.length)throw Error('PR_HISTORY_REPLACEMENT_REQUIRED');return {path:h.path,risk:h.risk,applicable:h.applicable,disposition:h.disposition,replacement};});
+  const history=raw.history.map((v:unknown)=>{const h=object(v);
+    if(typeof h.path!=='string'||!h.path||typeof h.risk!=='string'||!h.risk.trim()||typeof h.applicable!=='boolean'||typeof h.disposition!=='string'||!h.disposition.trim())throw Error('PR_HISTORY_REASON_REQUIRED: '+String(h.path));
+    if(!HISTORY_CLASSES.includes(h.class as HistoryClass))throw Error('PR_HISTORY_CLASS: '+h.path);
+    const replacement=strings(h.replacement),triggers=strings(h.triggers);if(h.applicable&&!replacement.length)throw Error('PR_HISTORY_REPLACEMENT_REQUIRED');
+    // On-demand and out-of-scope features still exist in the product: their own code must reach them.
+    if(h.class!=='historical'&&!triggers.length)throw Error('PR_HISTORY_TRIGGER_REQUIRED: '+h.path);
+    for(const t of triggers){new RegExp(t,'u');if(t.startsWith('^tests/')&&new RegExp(t,'u').test(h.path))throw Error('PR_HISTORY_SELF_TRIGGER: '+h.path);}
+    return {path:h.path,class:h.class as HistoryClass,risk:h.risk,applicable:h.applicable,disposition:h.disposition,replacement,triggers};});
+  const required=raw.required.map((v:unknown)=>{const r=object(v);if(typeof r.risk!=='string'||!r.risk.trim())throw Error('PR_REQUIRED_INVALID');const paths=strings(r.paths);if(!paths.length)throw Error('PR_REQUIRED_INVALID');return {risk:r.risk,paths};});
   const fallback=strings(raw.fallback);
   if(!fallback.length||rules.some(r=>!r.profiles.length))throw Error('PR_POLICY_EMPTY');
   for(const name of [...fallback,...rules.flatMap(r=>r.profiles)])if(!Object.hasOwn(profiles,name))throw Error('PR_UNKNOWN_PROFILE: '+name);
   if(new Set(history.map(h=>h.path)).size!==history.length)throw Error('PR_HISTORY_DUPLICATE');
-  return {schema_version:1,profiles,rules,fallback,history};
+  return {schema_version:1,profiles,rules,fallback,required,history};
 }
 export function parseDiff(raw:string):Change[]{
   const fields=raw.split('\0');if(fields.pop()!=='')throw Error('PR_DIFF_NOT_NUL_TERMINATED');
@@ -63,13 +78,20 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
   }
   if(!policy.fallback.some(name=>policy.profiles[name]?.build))throw Error('PR_FALLBACK_MUST_EXECUTE');
   for(const h of policy.history){if(!routes.entries.some(e=>e.path===h.path)||h.replacement.some(p=>!routes.entries.some(e=>e.path===p)))throw Error('PR_HISTORY_MISSING_ENTRY');}
-  for(const p of [...new Set(changes.flatMap(c=>c.paths))]){
+  // MVP bottom lines must stay in the default (fallback) union and can never be classified away.
+  const fallbackPaths=new Set(policy.fallback.flatMap(n=>policy.profiles[n]?.selections??[]).flatMap(s=>resolve(s).map(e=>e.path)));
+  for(const r of policy.required)for(const p of r.paths){if(historyPaths.has(p))throw Error('PR_REQUIRED_IN_HISTORY: '+p);if(!fallbackPaths.has(p))throw Error('PR_REQUIRED_NOT_DEFAULT: '+p);}
+  const changedPaths=[...new Set(changes.flatMap(c=>c.paths))];
+  const triggered=new Set(policy.history.filter(h=>h.triggers.some(t=>changedPaths.some(p=>new RegExp(t,'u').test(p)))).map(h=>h.path));
+  const historyByPath=new Map(policy.history.map(h=>[h.path,h]));
+  for(const p of changedPaths){
     const rule=policy.rules.find(r=>new RegExp(r.pattern,'u').test(p));const names=rule?.profiles??policy.fallback;
     for(const name of names){if(!policy.profiles[name])throw Error('PR_UNKNOWN_PROFILE: '+name);selected.add(name);}
     const existing=routes.entries.find(e=>e.path===p);
-    if(existing&&!changes.some(c=>c.status==='D'&&c.paths.includes(p))){entries.set(existing.path,existing);direct.add(p);}
+    if(existing&&!changes.some(c=>c.status==='D'&&c.paths.includes(p))){direct.add(p);const h=historyByPath.get(p);if(!h||h.applicable)entries.set(existing.path,existing);}
     reasons.push({path:p,profiles:names,reason:rule?.reason??'Unknown path: current MVP fallback; never an empty production pass'});
   }
+  for(const p of triggered){const e=routes.entries.find(e=>e.path===p);if(e)entries.set(e.path,e);}
   let build=false;const requirements:Requirements={database:false,browser:false,pyyaml:false,ffmpeg:false,windows:false};
   for(const name of selected){const p=policy.profiles[name];if(!p)throw Error('PR_UNKNOWN_PROFILE');build ||= p.build;requirements.pyyaml ||= p.pyyaml;requirements.windows ||= p.windows;
     for(const tool of p.tools)tools.add(tool);
@@ -80,9 +102,14 @@ export function planChanges(policy:Policy,routes:Routes,changes:Change[],base='s
   if(sorted.some(e=>isWindowsDesktopGraphics(e.path)))requirements.windows=true;
   if(sorted.length&&!build)throw Error('PR_ENTRIES_REQUIRE_BUILD');
   if(build&&!sorted.length)throw Error('PR_EMPTY_EXECUTION');
+  const status=(h:History):HistoryStatus=>direct.has(h.path)&&h.applicable?'DIRECT_CHANGE_REQUIRES_CHECK':triggered.has(h.path)?'RISK_AREA_CHANGED_SELECTED':direct.has(h.path)?'EDITED_NOT_SELECTED':'HISTORICAL_ONLY_NOT_SELECTED';
+  const history=policy.history.map(h=>({path:h.path,class:h.class,status:status(h),reason:h.disposition}));
+  // No silent drop: a changed registered test is either executed or reported as an explained, classified exclusion.
+  const chosen=new Set(sorted.map(e=>e.path));
+  for(const p of direct)if(!chosen.has(p)&&history.find(h=>h.path===p)?.status!=='EDITED_NOT_SELECTED')throw Error('PR_SILENT_DROP: '+p);
   return {base,head,changes,profiles:[...selected].sort(),reasons,selection:{entries:sorted,flags:[],label:'pr-impact'},selections:[...selections].sort(),tools:[...tools].sort(),build,requirements,lane:!build?'docs':requirements.database?'database':'no-database',
     not_selected:Object.keys(policy.profiles).filter(n=>!selected.has(n)).map(profile=>({profile,reason:'NOT_SELECTED: no matching change; not a test pass'})),
-    history:policy.history.map(h=>({path:h.path,status:direct.has(h.path)?'DIRECT_CHANGE_REQUIRES_CHECK':'HISTORICAL_ONLY_NOT_SELECTED',reason:h.disposition}))};
+    history};
 }
 export async function createPlan(root:string,base:string,head='HEAD'):Promise<Plan>{
   const {loadRoutes}=await import('./routing.mjs');

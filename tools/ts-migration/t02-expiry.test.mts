@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync, type SpawnSyncReturns } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { hash, record, sourceRoot, strings } from './common.mjs';
@@ -88,7 +88,7 @@ test('only the two proven frozen T02 expiry failures become historical observati
 test('retired T02 replay cannot suppress independent current CI hard gates',()=>{
   const root=sourceRoot();
   const parsed=spawnSync('python',['-c',
-    "import json,yaml; from pathlib import Path; print(json.dumps({n:yaml.load(Path('.github/workflows/'+n+'.yml').read_text(encoding='utf-8'),Loader=yaml.BaseLoader) for n in ['types-migration','ss009-evidence-history','p2-staff-directory']}))"],
+    "import json,yaml; from pathlib import Path; print(json.dumps({n:yaml.load(Path('.github/workflows/'+n+'.yml').read_text(encoding='utf-8'),Loader=yaml.BaseLoader) for n in ['types-migration','ss009-evidence-history']}))"],
     {cwd:root,encoding:'utf8',windowsHide:true,timeout:10_000});
   assert.equal(parsed.status,0,parsed.stderr);
   const workflows=record(JSON.parse(parsed.stdout) as unknown), types=record(workflows['types-migration']);
@@ -154,44 +154,7 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   assert.match(runs(historical),/ss009-evidence-history-probe\.mjs/u);
   assert.match(runs(historical),/SS009_VALIDATORS/u);
   for(const workflow of [types,history])assert.equal(record(workflow.on).workflow_call,undefined);
-  const directory=record(record(record(workflows['p2-staff-directory']).on).pull_request);
-  const paths=strings(directory.paths);
-  for(const broad of ['app/server/src/**/*.mts','app/server/scripts/**/*.mts','tools/ts-migration/**','plans/typescript-migration/**'])assert.ok(!paths.includes(broad));
-  assert.ok(paths.includes('app/server/src/p2-007-*.mts'));assert.ok(paths.includes('app/server/src/platform/**'));assert.ok(paths.includes('shared/**'));
-  const directoryJob=record(record(record(workflows['p2-staff-directory']).jobs).regression);
-  assert.ok(Array.isArray(directoryJob.steps));
-  const optional=record(directoryJob.steps.find(step=>record(step).id==='optional'));
-  const optionalScript=String(optional.run);
-  assert.match(optionalScript,/DIRECTORY_DIFF_BASE_REQUIRED/u);
-  const prototypeStep=record(directoryJob.steps.find(step=>String(record(step).name).startsWith('Prototype typecheck')));
-  const historicalStep=record(directoryJob.steps.find(step=>String(record(step).name).startsWith('Frozen historical')));
-  assert.equal(prototypeStep.if,"${{ !cancelled() && steps.optional.outputs.prototype == 'true' }}");
-  assert.equal(historicalStep.if,"${{ !cancelled() && steps.optional.outputs.historical == 'true' }}");
-  const cases:[string[],boolean,boolean,Record<string,string>?,Record<string,string>?][]=[
-    [['app/server/src/p2-007-rule-engine.mts','app/server/src/p2-015-contact-journey.mts','package.json'],false,false],
-    [['web/admin-workbench-prototype/src/App.tsx'],true,false],
-    [['web/admin-workbench-prototype/package-lock.json'],true,false],
-    [['app/server/scripts/validate-p2-016-historical.mjs'],false,true],
-    [['.github/review/pr-evidence-delta.mjs'],false,true],
-    [['.github/review/README.md'],false,false],
-    [['tests/p2-016-historical-validation.test.mjs'],false,true],
-    [['tools/ts-migration/run-tests.mts'],false,true],
-    [['package.json'],true,false,{'prototype:admin:build':'old-build'},{'prototype:admin:build':'new-build'}],
-    [['package.json'],false,true,{'validate:p2:016:historical':'old-history'},{'validate:p2:016:historical':'new-history'}],
-  ];
-  const impactCode=optionalScript.match(/<<'NODE'\n([\s\S]+)\nNODE/u)?.[1];
-  assert.ok(impactCode);
-  const impactTemp=mkdtempSync(path.join(tmpdir(),'p03-directory-impact-'));
-  try {
-    for(const [changed,prototype,historical,before={},after={}] of cases) {
-      const output=path.join(impactTemp,'output.txt');writeFileSync(output,'');
-      const mock=`const execFileSync=(command,args)=>args[0]==='diff'?${JSON.stringify(changed.join('\0'))}:JSON.stringify({scripts:args[1].startsWith('a')?${JSON.stringify(before)}:${JSON.stringify(after)}});`;
-      const code:string=impactCode.replace("import {execFileSync} from 'node:child_process';",mock);
-      const env={...process.env,EXPECTED_BASE:'a'.repeat(40),EXPECTED_HEAD:'b'.repeat(40),GITHUB_OUTPUT:output};
-      const result:SpawnSyncReturns<string>=spawnSync(process.execPath,['--input-type=module','-e',code],{encoding:'utf8',windowsHide:true,env});
-      assert.equal(result.status,0,result.stderr);
-      assert.equal(readFileSync(output,'utf8'),`prototype=${prototype}\nhistorical=${historical}\n`);
-      assert.notEqual(spawnSync(process.execPath,['--input-type=module','-e',code],{windowsHide:true,env:{...env,EXPECTED_BASE:''}}).status,0);
-    }
-  } finally { rmSync(impactTemp,{recursive:true}); }
+  // The PR-#19-only SS009 workflows and the P2 staff-directory workflow (old prototype build and frozen
+  // P2-016 validation) are retired; current directory coverage runs through the impact planner.
+  for(const retired of ['ss009-file-coverage','ss009-published-history','p2-staff-directory'])assert.equal(existsSync(path.join(root,'.github/workflows',retired+'.yml')),false,retired);
 });

@@ -74,7 +74,8 @@
         "pr-notification",
         "t03-platform",
         "pr-read-safety",
-        "pr-identity"
+        "pr-identity",
+        "t02-baseline"
       ],
       "tools": [],
       "build": true,
@@ -117,6 +118,15 @@
       "build": true,
       "pyyaml": true,
       "windows": false
+    },
+    "directory": {
+      "selections": [
+        "t02-baseline"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
     }
   },
   "rules": [
@@ -143,11 +153,11 @@
       "reason": "Execution policy, routing or tooling: tools, strict, one build and compiled canary"
     },
     {
-      "pattern": "\\.md$|^(?:(?:docs|plans|adr|evidence|screenshots)/|app/(?:pc-admin|h5|server)/(?:docs|evidence|screenshots)/).*\\.(?:png|jpe?g|webp|svg|pdf)$",
+      "pattern": "\\.md$|^(?:(?:docs|plans|adr|evidence|screenshots)/|app/(?:pc-admin|h5|server)/(?:docs|evidence|screenshots)/).*\\.(?:png|jpe?g|webp|svg|pdf)$|^docs/(?:.*/)?evidence/.*\\.json$",
       "profiles": [
         "docs"
       ],
-      "reason": "Ordinary Markdown outside execution-policy files: changed local links only"
+      "reason": "Ordinary Markdown outside execution-policy files and evidence receipts under docs/: changed local links only"
     },
     {
       "pattern": "^app/pc-admin/(?:desktop/|src/login/)|^app/server/src/workbench-embedded-login\\.|^tests/(?:pc-admin-electron|workbench-desktop-session)\\.",
@@ -174,11 +184,11 @@
       "reason": "Personal read/activity boundaries retain current authority and original UUID recovery checks"
     },
     {
-      "pattern": "^app/pc-admin/|^tests/(?:pc-admin-|web01-|workbench-|wbint-|t(?:04|09|10|12|17|19|20|21|22|24|25|26|27|28|30|31|32|35|36|37|38|39|40|41|42|43)-)",
+      "pattern": "^app/pc-admin/|^tests/(?:pc-admin-|web01-|workbench-|wbint-|conversation-|all43-|t\\d{2}-)",
       "profiles": [
         "pc"
       ],
-      "reason": "PC UI or workbench interaction; changed registered entries are added directly"
+      "reason": "PC UI or workbench interaction (every T-numbered, ALL43 and conversation workbench test); changed registered entries are added unless policy.history classifies them"
     },
     {
       "pattern": "^app/h5/|^tests/yxx-h5",
@@ -200,6 +210,14 @@
         "mvp"
       ],
       "reason": "Shared assembly, migrations, contracts, lock/build configuration: current MVP union"
+    },
+    {
+      "pattern": "^(?:app/server/(?:src|scripts)/p2-(?:007|015)-|tests/(?:helpers/)?p2-(?:007|015)-)",
+      "profiles": [
+        "core",
+        "directory"
+      ],
+      "reason": "Staff/reporter directory and Bot rule-first manual review: current directory/orchestration regression (replaces the retired p2-staff-directory workflow)"
     },
     {
       "pattern": "^app/server/(?:src|scripts)/.*(?:auth|identity|principal|access|session|grant)",
@@ -226,9 +244,51 @@
   "fallback": [
     "mvp"
   ],
+  "required": [
+    {
+      "risk": "UNKNOWN result confirmation for submitted commands",
+      "paths": [
+        "tests/t10-unknown-recovery.browser.test.mts",
+        "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+        "tests/t35-unknown-read.browser.test.mts",
+        "tests/t24-synthetic-sender-unknown.integration.test.mts"
+      ]
+    },
+    {
+      "risk": "Original-UUID recovery and replay",
+      "paths": [
+        "tests/wbint-t17-manual-receipts.integration.test.mts",
+        "tests/t11-completion.integration.test.mts",
+        "tests/t25-app-delivery-http-recovery.integration.test.mts"
+      ]
+    },
+    {
+      "risk": "Final authorization check after a wait",
+      "paths": [
+        "tests/t10-current-authority-wait.integration.test.mts",
+        "tests/t35-current-authority-wait.integration.test.mts"
+      ]
+    },
+    {
+      "risk": "Current identity and loss-of-permission checks",
+      "paths": [
+        "tests/p2-016-workbench-auth.integration.test.mjs",
+        "tests/t35-account-switch.browser.test.mts",
+        "tests/wbint-t19-manual-self-handling-authority.integration.test.mts"
+      ]
+    },
+    {
+      "risk": "Key SSE fact updates with identity and scoped recovery",
+      "paths": [
+        "tests/wbint-t22-realtime-tracer.browser.test.mts",
+        "tests/p2-003-realtime-event-log.integration.test.mjs"
+      ]
+    }
+  ],
   "history": [
     {
       "path": "tests/t35-late-read-success.browser.test.mts",
+      "class": "historical",
       "risk": "Late committed read ACK must not restore previous account scope; old SESSION case fixes a 160px viewport",
       "applicable": true,
       "disposition": "Old layout/height scenario is historical-only by default; current authority/recovery checks remain required. Editing this file explicitly selects it; do not classify new failures away.",
@@ -236,14 +296,2682 @@
         "tests/t35-account-switch.browser.test.mts",
         "tests/t35-current-authority-wait.integration.test.mts",
         "tests/t35-unknown-read.browser.test.mts"
-      ]
+      ],
+      "triggers": []
     },
     {
       "path": "tests/yxx-ss-009-capacity.integration.test.mjs",
+      "class": "historical",
       "risk": "Original SS009 candidate capacity and repeated full-app setup",
       "applicable": false,
       "disposition": "Historical candidate reproduction, not a default current MVP PR prerequisite; unchanged full/certify consumers retain their original contract.",
-      "replacement": []
+      "replacement": [],
+      "triggers": []
+    },
+    {
+      "path": "tests/t36-team-and-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-default-off-and-schema.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-contract.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-entry-off-receipt.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-service-failure.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-later-material.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-draft-target.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/t36-reply-purpose-isolation.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-reply-receipt-authority.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-reply-production.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-reply-risks.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-bound-reply.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-current-material-authority.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-supplement-production.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/t36-supplement-follow-up.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Supplement follow-up (补充待跟进) and bound replies",
+      "applicable": false,
+      "disposition": "补充待跟进 is enhanced collaboration. Runs when supplement code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]upplement"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-owner-transfer-http.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-owner-transfer.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t12-purpose-and-late-storage.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-http-boundaries.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-command-concurrency.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-target-member-final-write.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-independent-notes-race.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-second-session-rollback.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-late-write-rollback.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-lawful-waiting.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-crosspage-selection.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-late-and-confirmation.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-opaque-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-draft-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/t12-targets-read-loss.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-raw-off-unknown.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-production-form.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-independent-profile.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-command-contract.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-safe-ack.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-selected-communication.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-targets.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t12-takeover-completion.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-draft-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/t07-atomic-start.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-current-authority-races.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-command-concurrency.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-receipts.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-second-session-rollback.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-selected-communication.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-transfer-states.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-queued-start.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-atomic-start.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-target-member-final-write.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-targets.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-restoration-boundaries.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-contract-boundaries.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-late-write-rollback.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-late-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-legacy-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t07-takeover.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Cross-team takeover and colleague takeover-completion (代办完工)",
+      "applicable": false,
+      "disposition": "复杂跨团队接管 and 代办完工 are kept as needed, not first-version prerequisites. Runs when takeover code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Tt]akeover)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-late-readers.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-recovery-off-authority.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-bigint.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-notifications.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-realtime.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-handler-late-receipt.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-storage-boundaries.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-destination.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-windows.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-handler.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-late-receipt.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-draft.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-receipt.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-actions.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-versions-and-authority.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t28-followup-input.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-command-integrity.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-contracts.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-shared-time-card-list.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-communicator-boundaries.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-communicator-resource-bound.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-due-authorization.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-due-lifecycle-races.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-defaults-schema.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-recovery-boundaries.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-recovery-competition.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-post-refusal.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-due-fault-isolation-rollback.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-recovery-first.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-due-worker.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-terminal-toggle-reopen.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-transfer-due-maintenance.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-communicator-authority.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t37-follow-up-schedule.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/t08-draft-revision-race.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-late-receipt-authority.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-late-command-authority.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-purpose-revocation.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-crosstab.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-primary-null.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-bounded-pages.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-discard-unknown.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-direct-ack.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-known-failure.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-expired-operation.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-current-authorization.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-explicit-replay.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-unknown.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-restoration-authority.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-none.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-off.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-reject.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-draft.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-realtime-candidate.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-current-csrf.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/t05-conversation-handling.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/t05-conversation-handling.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/t05-conversation-handling.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/t35-normal-web-visible.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-late-read-denial.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-read-page-denial.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-read-denial-scope.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-session-unknown.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-unknown-canonical.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-review-later-leg.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-normal-manual-visible.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-http-contracts.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-canonical-read.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-session-visible.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-normal-long-material.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-migration-order.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-bot-legs.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/t35-manual-source.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t35-visible-read.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Personal read position (个人已读) beyond the required authority/UNKNOWN read checks",
+      "applicable": false,
+      "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-authority-stage.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-contract.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-boundary.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-outcome.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-draft-races.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-draft-coexist.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-conversations.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t22-conversations.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-source-refs.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-material-bound.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-command-recovery.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-web-material.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-context.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-owner.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-candidate.browser.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t27-candidate.integration.test.mjs",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/web01-draft-contract.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-draft-isolation.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-draft-boundaries.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-draft-auth.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-draft-lifecycle.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-drafts.integration.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/web01-drafts.browser.test.mjs",
+      "class": "on-demand",
+      "risk": "Full browser draft experience: encrypted draft restore, revision races and draft isolation",
+      "applicable": false,
+      "disposition": "完整草稿体验 may be deferred. Submitted-command UNKNOWN confirmation and original-UUID recovery stay required in the default profiles (see policy.required). Runs when draft code changes.",
+      "replacement": [],
+      "triggers": [
+        "^app/pc-admin/src/features/drafts/",
+        "^app/pc-admin/src/.*encrypted-drafts"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-catalog.integration.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-crash.integration.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-evidence-history.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-evidence.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-governance.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-009-review-regressions.integration.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-010-contract.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/yxx-ss-010-runtime.integration.test.mjs",
+      "class": "historical",
+      "risk": "Retired SS007/SS009/SS010 self-service H5 (V1) fixture replay",
+      "applicable": false,
+      "disposition": "Old flow replaced by the rebuilt H5 (yxx-h5-rebuild). Kept for SS009 history and full/certify consumers; runs only when the retired self-service code or its helpers change. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*yxx-self-service"
+      ]
+    },
+    {
+      "path": "tests/wbint-t28-investigating.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-internal-note.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-schema.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-internal-note.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-command-port.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-internal-note-risks.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-contracts.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-migration.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-recovery.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t30-review-recovery.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-public-progress.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-delivery-admission.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-public-progress.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-contracts.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-http-risks.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-migration.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-delivery-results.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-recovery-results.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-unmounted-worker.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t31-purpose-loss.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t32-incident-exceptions.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-production-owner-transfer.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-contracts.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-caller-wait.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-purpose-loss.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-owner-risks.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-migration.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t29-recovery.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-explicit-follow.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-follow.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-follow-risks.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-follow-production.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-follow-contracts.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t34-follow-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Explicit item follow (关注) and \"related to me\"",
+      "applicable": false,
+      "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-control.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-aba.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-v2.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-authority.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-production.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-browser-contracts.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-response-loss.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-control-risks.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-public-progress-pause-control.integration.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-reload-recovery.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-scoped-rebase.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-incident-delivery-state-not-purpose.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t33-public-progress-paused-requeue.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t41-search-http-first.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-contract.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-pagination-authority.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-production.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-review-start.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-current-read.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-long-read.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-final-scope.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/t41-search-pending-hint.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-first.browser.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-contracts.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-read.integration.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-locate.browser.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-later-leg.integration.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-current-authority.integration.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-recovery.browser.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-precision.integration.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t40-reminder-preferences.browser.test.mts",
+      "class": "on-demand",
+      "risk": "In-app reminders, sound and personal preferences",
+      "applicable": false,
+      "disposition": "声音/提醒 is enhanced collaboration. Runs when reminder code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Rr]eminder|[Ss]ound)"
+      ]
+    },
+    {
+      "path": "tests/t41-search-acceptance.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full combined search across authorized items",
+      "applicable": false,
+      "disposition": "全量组合检索 is not a release gate. Runs when search code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Ss]earch"
+      ]
+    },
+    {
+      "path": "tests/wbint-t43-four-source-first.browser.test.mts",
+      "class": "historical",
+      "risk": "T43 whole-candidate isolation acceptance on one fixed candidate",
+      "applicable": false,
+      "disposition": "Old candidate acceptance; its record binds the original candidate. Current main-chain, authority and recovery risks are covered by the default profiles. Not selected by PR CI; named selections keep it for manual reproduction.",
+      "replacement": [],
+      "triggers": []
+    },
+    {
+      "path": "tests/wbint-t43-four-source-service-loop.browser.test.mts",
+      "class": "historical",
+      "risk": "T43 whole-candidate isolation acceptance on one fixed candidate",
+      "applicable": false,
+      "disposition": "Old candidate acceptance; its record binds the original candidate. Current main-chain, authority and recovery risks are covered by the default profiles. Not selected by PR CI; named selections keep it for manual reproduction.",
+      "replacement": [],
+      "triggers": []
+    },
+    {
+      "path": "tests/wbint-t43-incident-delivery.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/wbint-t43-material-projection.integration.test.mts",
+      "class": "historical",
+      "risk": "T43 whole-candidate isolation acceptance on one fixed candidate",
+      "applicable": false,
+      "disposition": "Old candidate acceptance; its record binds the original candidate. Current main-chain, authority and recovery risks are covered by the default profiles. Not selected by PR CI; named selections keep it for manual reproduction.",
+      "replacement": [],
+      "triggers": []
+    },
+    {
+      "path": "tests/wbint-t43-competition-recovery.browser.test.mts",
+      "class": "historical",
+      "risk": "T43 whole-candidate isolation acceptance on one fixed candidate",
+      "applicable": false,
+      "disposition": "Old candidate acceptance; its record binds the original candidate. Current main-chain, authority and recovery risks are covered by the default profiles. Not selected by PR CI; named selections keep it for manual reproduction.",
+      "replacement": [],
+      "triggers": []
+    },
+    {
+      "path": "tests/all43-incident-draft-transient.browser.test.mts",
+      "class": "out-of-scope",
+      "risk": "Incident (公共故障) candidate, follow-up, owner transfer, internal disposition, safe summary and delivery control",
+      "applicable": false,
+      "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+      ]
+    },
+    {
+      "path": "tests/all43-follow-up-conflict.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Shared follow-up arrangement (共享预约), due worker and its drawer/card list",
+      "applicable": false,
+      "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+      ]
+    },
+    {
+      "path": "tests/conversation-inbox-contract.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/conversation-inbox.integration.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
+    },
+    {
+      "path": "tests/conversation-inbox.browser.test.mts",
+      "class": "on-demand",
+      "risk": "Full conversation center: inbox, topic history, conversation handling and composer drafts",
+      "applicable": false,
+      "disposition": "完整会话中心 is kept as needed, not a first-version prerequisite. Runs when conversation code changes; SSE identity/scope recovery stays required through wbint-t22-realtime-tracer. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
+      "replacement": [],
+      "triggers": [
+        "^(?:app/server/(?:src|scripts)|contracts)/.*[Cc]onversation"
+      ]
     }
   ]
 }
