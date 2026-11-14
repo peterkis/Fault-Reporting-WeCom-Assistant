@@ -178,7 +178,21 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
     /** Drops the stored number of a command that was prepared but never sent (see `releaseUnsentOperation`). */
-    async releaseUnsent(commandId:string){if(!enabled)return;if(await releaseUnsentOperation(scope,commandId)){if(handle.current?.operation?.commandId===commandId)handle.current.operation=null;setOperationId(current=>current===commandId?null:current);}},
+    /** Releases a command prepared but never sent: one save drops its pending command and its operation number together, keeping
+     *  the text; the save is refused when another page changed the draft or holds another operation. With the draft row already
+     *  gone, only the matching operation record is removed. */
+    async releaseUnsent(commandId:string){
+      if(!enabled)return;
+      const target=handle.current;
+      if(target?.record&&writeEnabled){
+        await queue.current.catch(()=>{});
+        if(handle.current!==target||latest.current.pending&&protocol.current.commandId(latest.current.pending)!==commandId)return;
+        const next={...latest.current,pending:null};
+        try{await saveDraft(target,encode(next),{settledCommandId:commandId});}catch{return;}
+        latest.current=next;lastSaved.current=encode(next);pendingRevision.current=undefined;setOperationId(current=>current===commandId?null:current);return;
+      }
+      if(await releaseUnsentOperation(scope,commandId)){if(handle.current?.operation?.commandId===commandId)handle.current.operation=null;setOperationId(current=>current===commandId?null:current);}
+    },
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){

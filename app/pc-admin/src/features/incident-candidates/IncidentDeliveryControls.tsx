@@ -1,4 +1,5 @@
 import {Button as HButton} from '../../design/components/Button/Button';
+import {label,sendEffectLabels} from './labels';
 import {useSeenLabels} from '../../app/SeenLabels';
 import {Checkbox as HCheckbox,Form as HForm,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
@@ -30,7 +31,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  const client=useQueryClient(),incidentId=detail.id,queryPrefix=['incident-delivery-control',principal.principal_id,incidentId,purpose];
  const [value,setValue]=useState<IncidentDeliveryDraftValue>(EMPTY_INCIDENT_DELIVERY_DRAFT),[pending,setPending]=useState<IncidentDeliveryOperation|null>(null),[opaque,setOpaque]=useState<string|null>(null),[cleanupPending,setCleanupPending]=useState(false);
  const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[confirmed,setConfirmed]=useState(false),[checked,setChecked]=useState(false),[needsRead,setNeedsRead]=useState(false),[revoked,setRevoked]=useState(false),[result,setResult]=useState<IncidentDeliveryControlResult|null>(null);
- const request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),clearRequested=useRef(false),known=useRef(false),knownFailed=useRef(false),outcomeFor=useRef<string|null>(null),requestFor=useRef<string|null>(null),currentIdentity=useRef(identity(principal)),latestAction=useRef(value.action);currentIdentity.current=identity(principal);latestAction.current=pending?.action??value.action;
+ const request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),clearRequested=useRef(false),known=useRef(false),knownFailed=useRef(false),outcomeFor=useRef<string|null>(null),requestFor=useRef<string|null>(null),shownOperation=useRef<string|null>(null),currentIdentity=useRef(identity(principal)),latestAction=useRef(value.action);currentIdentity.current=identity(principal);latestAction.current=pending?.action??value.action;
  const selected=routes.find(route=>route.deliveryId===value.deliveryId);
  // Codex review: a kept channel off the loaded list is named from when it was seen; resending the original needs it in the list.
  const offPage=useSeenLabels(routes.map(route=>[route.deliveryId,String(route.label)+' · 尾号 '+route.deliveryId.slice(-8)] as const));
@@ -87,10 +88,12 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   },
   onOperation:id=>{if(settling.current)return;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);setResult(null);}
    // Codex review: a request still running for the previous operation is cancelled, so its result cannot be written for this one.
-   if(request.current&&requestFor.current!==null&&requestFor.current!==id){generation.current++;request.current.abort();request.current=null;}if(pending&&pending.body.client_command_id!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
+   if(request.current&&requestFor.current!==null&&requestFor.current!==id){generation.current++;request.current.abort();request.current=null;}// Codex review: any real switch of operation drops the earlier channel and input, with or without an earlier pending command, so
+   // the next lookup reads only the new operation's facts.
+   if(pending&&pending.body.client_command_id!==id||shownOperation.current!==null&&shownOperation.current!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
   onSensitiveClear:()=>{if(!settling.current){clearSensitive();if(clearRequested.current){clearRequested.current=false;setState('idle');setMessage('已清空输入和草稿。');}}}
  });
- const originalId=draft.operationId??opaque??pending?.body.client_command_id,busy=['preparing','submitting','reading','checking'].includes(state),hasInput=Boolean(value.deliveryId||value.action||value.reason||value.version),blocked=busy||Boolean(originalId)||hasInput||draft.restoring;
+ const originalId=draft.operationId??opaque??pending?.body.client_command_id,busy=['preparing','submitting','reading','checking'].includes(state),hasInput=Boolean(value.deliveryId||value.action||value.reason||value.version),blocked=busy||Boolean(originalId)||hasInput||draft.restoring;shownOperation.current=originalId??null;
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;
   const active=client.getQueryData<Principal>(['session']),action=latestAction.current;
@@ -245,7 +248,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   {capability.isError&&!revoked?<p role="alert">{errorMessage(capability.error)}；无法读取能力不代表有操作权。</p>:null}
   {draft.enabled?<DraftStatus data-incident-delivery-draft-status={draft.status} role="status">{draft.message}</DraftStatus>:null}
   {message?<ToastFeedback revision={messageRevision} source="incident-candidates" state={state} data-incident-delivery-outcome data-incident-delivery-state={state} role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
-  {result&&!revoked&&(!originalId||outcomeFor.current===originalId)?<p data-incident-delivery-receipt>原操作安全回执：{statusLabels[result.status]} / {result.side_effect_state} · 尝试 {result.attempt_count} 次。各路当前结果按重新读取的列表显示。</p>:null}
+  {result&&!revoked&&(!originalId||outcomeFor.current===originalId)?<p data-incident-delivery-receipt>原操作安全回执：{statusLabels[result.status]} / {label(sendEffectLabels,result.side_effect_state)} · 尝试 {result.attempt_count} 次。各路当前结果按重新读取的列表显示。</p>:null}
   {originalId&&!revoked?<div className="note-controls"><p>{operationHint(outcomeFor.current===originalId&&known.current?'committed':outcomeFor.current===originalId&&knownFailed.current?'failed':'unknown',outcomeFor.current===originalId&&cleanupPending)}</p><DiagnosticCopy data={{operation_id:originalId,expected_row_version:pending?.body.expected_row_version??null}}/><HButton type="button" data-action="check-incident-delivery-operation" isDisabled={busy||draft.probing||draft.restoring} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&checked&&!selected?<p data-incident-delivery-replay-target>原通知渠道不在当前列表中，无法确认要重新提交到哪个渠道。请刷新通知列表，找到该渠道后再重新提交。</p>:null}{pending&&checked?<HButton type="button" data-action="replay-incident-delivery-operation" isDisabled={!canReplay} onClick={()=>{if(pending&&canReplay)void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead&&!revoked?<HButton type="button" data-action="refresh-incident-delivery-current" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">只读刷新当前事实</HButton>:null}
   {state==='committed'&&!originalId&&!revoked&&principal.incident_delivery_control_enabled?<HButton type="button" data-action="new-incident-delivery-intent" isDisabled={busy||otherBlocked||!readReady} onClick={()=>{known.current=false;knownFailed.current=false;setResult(null);clearSensitive();setState('idle');setNeedsRead(false);setMessage('请明确选择下一条通知路，不会自动操作其他路。');}} tone="secondary">开始下一条明确通知操作</HButton>:null}

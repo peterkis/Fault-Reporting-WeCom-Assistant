@@ -180,13 +180,14 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
   if(next.removed)publish({...handle.scope,reason:'settled'});
 }
 /**
- * Codex review (card 34C): an operation number written while preparing a command that was then cancelled before it was sent is
- * removed, only while storage still holds that same number; the draft text is left as it is.
+ * Codex review (card 34C): the operation number of a command prepared but never sent is removed only when its draft row is
+ * already gone (cleared by another page) and storage still holds that same number. While the draft exists it carries the pending
+ * command, so the hook releases both in one save instead (see `releaseUnsent` in use-note-draft).
  */
 export async function releaseUnsentOperation(scope:DraftScope,commandId:string):Promise<boolean>{
   const key=draftScopeKey(scope);
   const next=await state(value=>{
-    const removed=value.operations.find(row=>row.scope===key)?.commandId===commandId;
+    const removed=!value.drafts.some(row=>row.scope===key)&&value.operations.find(row=>row.scope===key)?.commandId===commandId;
     if(removed){value.operationStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}
     return {removed};
   });

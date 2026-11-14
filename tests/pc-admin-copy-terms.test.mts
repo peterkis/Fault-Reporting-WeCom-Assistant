@@ -108,3 +108,15 @@ test('Card 34C channel labels are renamed by exact match only',async()=>{
   assert.equal(module.sourceLabel({kind:'group',label:'Bot 私聊来源'}),'Bot 私聊来源');assert.equal(module.sourceLabel({kind:'group',label:'企微群聊'}),'企微群聊');
   assert.equal(module.sourceLabel({kind:'direct',label:'Bot 私聊来源'}),'医小修私聊');
 });
+
+// Codex review: runtime status values of Incident subscriptions, links and notification receipts render as business Chinese.
+test('Card 34C incident status values all have Chinese labels',async()=>{
+  const source=await readFile(join(src,'features/incident-candidates/labels.ts'),'utf8');
+  const output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+  const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as Record<string,unknown>&{label:(labels:Record<string,string>,value:string)=>string};
+  const expected:Record<string,readonly string[]>={subscriptionStatusLabels:['PENDING_DESTINATION','ACTIVE','PAUSED','ENDED'],impactLabels:['UNKNOWN','IMPACTED','RECOVERED'],linkStateLabels:['CANDIDATE','LINKED','UNLINKED','REJECTED'],sendEffectLabels:['NOT_ATTEMPTED','ACKNOWLEDGED','UNKNOWN']};
+  for(const [name,values] of Object.entries(expected)){
+    const labels=module[name] as Record<string,string>;assert.deepEqual(Object.keys(labels).sort(),[...values].sort(),name+' covers exactly the contract values');
+    for(const value of values){const shown=module.label(labels,value);assert.match(shown,/\p{Script=Han}/u,name+'.'+value);assert.doesNotMatch(shown,/[A-Za-z]/u,name+'.'+value+' shows no raw value');}
+  }
+});

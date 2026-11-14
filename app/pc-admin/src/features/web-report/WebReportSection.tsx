@@ -43,7 +43,7 @@ export function WebReportSection({principal,kind,id,requested,readReady,otherBlo
   }finally{if(request.current===abort)request.current=null;}
  };
  const check=async()=>{if(!receiptId||request.current||kind!=='ticket')return;const abort=new AbortController(),generation=epoch.current,current=captureWorkbenchRead(abort.signal);request.current=abort;setOutcome('checking');
-  try{await authorize(abort.signal,false);current();const result=await webReportApi.receipt(id,receiptId,abort.signal);current();if(!alive.current||generation!==epoch.current)return;setDenied(false);if(result.state==='COMMITTED')settle();else{setOutcome('unknown');setChecked(true);setNotice('原操作仍没有明确结果。可以继续核对，或点击「重新提交」：会按原操作编号提交，已提交的不会重复办理。');}}
+  try{await authorize(abort.signal,false);current();const result=await webReportApi.receipt(id,receiptId,abort.signal);current();if(!alive.current||generation!==epoch.current)return;setDenied(false);if(result.state==='COMMITTED')settle();else{setOutcome('unknown');setChecked(true);setNotice(pending&&data?.can_publish_progress?'原操作仍没有明确结果。可以继续核对，或点击「重新提交」：会按原操作编号提交，已提交的不会重复办理。':'原操作仍没有明确结果，请稍后再点击「核对结果」。');}}
   catch(error){if(!alive.current||generation!==epoch.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status))revokeRead(error);setOutcome('unknown');setNotice('本次核对未完成，原操作保持。');}
   finally{if(request.current===abort)request.current=null;}
  };
