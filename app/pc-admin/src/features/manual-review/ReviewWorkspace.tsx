@@ -114,7 +114,8 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
       if(pending)await draft.knownFailure(variables.commandId);else await draft.success(variables.commandId,hasReviewInput(latest.current));
       setPending(null);setState('conflict');setMessage('已核对原操作失败；选择已保留，请读取工单信息后明确新的操作。');refresh();
     },onError:error=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知，尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
-  const check=()=>{if(request.current||!draft.operationId)return;const controller=new AbortController();request.current=controller;setState('checking');receipt.mutate({commandId:draft.operationId,signal:controller.signal,generation:generation.current});};
+  // Codex review: with draft recovery off the operation number is still held in memory, so it can be looked up read-only too.
+  const check=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;setState('checking');receipt.mutate({commandId,signal:controller.signal,generation:generation.current});};
   if(context.isPending)return <p role="status">正在独立核对复核权限与材料…</p>;
   if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton></p>;
   const view=context.data,capture=value.capture,changed=Boolean(capture&&(capture.row_version!==view.row_version||capture.material_basis!==view.material_basis.current_hash||!sameItem(capture.canonical_item,view.canonical_item)));
@@ -129,7 +130,7 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
         onRefresh={refresh} onStarted={()=>{setPending(null);setValue(emptyReviewInput(reviewId));setState('succeeded');setMessage('已确认故障并开始处理。');void draft.discard();refresh();}}/><div className="review-controls"><HButton type="submit" data-action="submit-review" isDisabled={!canSubmit} tone="secondary">记录复核结论</HButton>
         <HButton type="button" data-action="refresh-review" isDisabled={busy} onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton>
         {state==='unknown'&&pending?<HButton type="button" data-action="reconcile-review" onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}
-        {draft.operationId?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} tone="secondary">核对结果</HButton>:null}
+        {draft.operationId||state==='unknown'&&pending?<HButton type="button" data-action="check-review-receipt" isDisabled={busy} onClick={check} tone="secondary">核对结果</HButton>:null}
         {draft.enabled&&hasReviewInput(value)?<HButton type="button" data-action="discard-review-draft" isDisabled={busy} onClick={()=>{void draft.discard();}} tone="secondary">丢弃草稿内容</HButton>:null}
       </div></HForm>
     {message?<ToastFeedback revision={messageRevision} source="manual-review" state={state} data-review-result role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}

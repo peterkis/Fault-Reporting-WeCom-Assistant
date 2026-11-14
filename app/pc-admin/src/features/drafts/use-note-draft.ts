@@ -175,6 +175,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     return()=>clearTimeout(expiry);
   },[enabled,status,operationId]);
   return {enabled,status,message,
+    /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
+    currentOperation:():string|null=>handle.current?.operation?.commandId??null,
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){
@@ -199,7 +201,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       latest.current={value:preserveInput?latest.current.value:emptyValue,pending:null};lastSaved.current='';
       try{if(handle.current)await settleDraft(handle.current,commandId,pendingRevision.current??handle.current.record?.revision);}
       catch{setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return false;}
-      pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage('已提交');
+      // Codex review: the draft layer reports only what happened to the draft; the business outcome is the caller's to state.
+      pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage(handle.current?.operation?'':'草稿已清空。');
       return handle.current?.operation===null;
     },
     async knownFailure(commandId:string){if(!enabled)return true;if(!writeEnabled||!handle.current)return false;latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return false;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');return handle.current.operation===null;},

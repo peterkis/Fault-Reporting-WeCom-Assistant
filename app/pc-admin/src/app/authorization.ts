@@ -82,7 +82,9 @@ export function clearSessionAuthorization(client:QueryClient,principal:unknown,s
     // Codex review: a sign-out notice states the server's result; the local draft state is added here, only once it is known.
     const signOut=reason==='logout'||reason==='logout-unknown';
     try{if(typeof principal==='string')await purgeDrafts({principal,reason});if(notice){const text=signOut?notice+' 本机草稿已清除。':notice;if(reason==='logout')useUiStore.getState().finishLogout(text);else useUiStore.getState().closeSession(text);}}
-    catch{useUiStore.getState().closeSession((notice??'登录已过期，请重新登录。')+' 本机草稿还没清除完，请保持退出状态。');}
+    // Codex review: one consistent instruction for both results. Signing out again purges every local draft, so uncleared drafts
+    // always lead to 「重新登录后再退出一次」, never to both 「重新登录」 and 「保持退出状态」.
+    catch{useUiStore.getState().closeSession(reason==='logout'?'已退出登录，但本机草稿还没清除完。请重新登录后再退出一次。':reason==='logout-unknown'?'退出结果未确认，本机草稿也还没清除完。请重新登录后再退出一次。':(notice??'登录已过期，请重新登录。')+' 本机草稿还没清除完，重新登录后再退出一次即可清除。');}
   })();
   if(expired){expiredDesktopCleanup=cleanup;void cleanup.finally(()=>{if(expiredDesktopCleanup===cleanup)expiredDesktopCleanup=undefined;});}
   return cleanup;
