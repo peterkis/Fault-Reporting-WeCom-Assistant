@@ -97,7 +97,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
     if(!saved&&!workbenchTransportWritable()){setOutcome('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token};
-    let command=saved;
+    let command=saved,dispatched=false;
     try{
       const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled)throw new DraftError('DRAFT_DISABLED');
       attempt.stage='conversation';const current=await conversations.detail(session,controller.signal);if(!isCurrent(attempt))return;if(!current.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
@@ -105,11 +105,14 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:current.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);
       if(!saved)await draft.prepare(command);if(!isCurrent(attempt))return;
-      setPending(command);setOutcome('正在提交原操作…');const result=await conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal);await confirmed(command.command.client_command_id,result,command.command.text,token);
+      setPending(command);setOutcome('正在提交原操作…');dispatched=true;const result=await conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal);await confirmed(command.command.client_command_id,result,command.command.text,token);
     }catch(error){if(!isCurrent(attempt))return;
       if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{await draft.knownFailure(command.command.client_command_id);setPending(null);if(followUpTarget)setBoundOperationId(null);}catch{setPending(command);}}setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
-      else if(command){setPending(command);setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
-      else setOutcome('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');
+      // Codex review: only a request that went out (or a replayed original) can have an unknown result; a new reply whose draft
+      // could not be saved was never sent, so its number is released and the text stays.
+      else if(command&&(dispatched||saved)){setPending(command);setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
+      else if(command){setPending(null);if(followUpTarget)setBoundOperationId(null);setOutcome('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
+      else setOutcome(error instanceof DraftError?'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。':'网络中断：本次没有提交，你的输入还在。网络恢复后重试。');
     }finally{if(request.current===controller){request.current=null;setBusy(false);}}
   }
   async function check(){

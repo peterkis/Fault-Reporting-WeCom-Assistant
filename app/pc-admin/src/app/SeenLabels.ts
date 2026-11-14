@@ -8,5 +8,6 @@ import {shortCode} from './short-code';
 export function useSeenLabels(rows:readonly (readonly [string,string])[]){
   const seen=useRef(new Map<string,string>());
   for(const [id,label] of rows)if(id)seen.current.set(id,label);
-  return (id:string,full=false):string=>'已选：'+(seen.current.get(id)??'尾号 '+shortCode(id,[]))+'（不在当前列表，提交时确认）'+(full?' · 编号 '+id:'');
+  // `fallback` names a choice never seen here when its number is readable (a team code); otherwise the number's tail is shown.
+  return (id:string,full=false,fallback?:string):string=>'已选：'+(seen.current.get(id)??fallback??'尾号 '+shortCode(id,[]))+'（不在当前列表，提交时确认）'+(full?' · 编号 '+id:'');
 }

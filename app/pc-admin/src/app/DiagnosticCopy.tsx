@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useRef,useState} from 'react';
 import {Copy} from 'lucide-react';
 import {TextArea as HTextArea} from '@heroui/react';
 import {Button as HButton} from '../design/components/Button/Button';
@@ -10,11 +10,14 @@ import {Button as HButton} from '../design/components/Button/Button';
  * selectable, for copying by hand.
  */
 export function DiagnosticCopy({data}:{data:Record<string,unknown>}){
-  const text=JSON.stringify(data,null,2),[outcome,setOutcome]=useState<'idle'|'copied'|'failed'>('idle');
+  // Codex review: the feedback belongs to the text it copied; when the data changes it resets, and a late callback for older data
+  // never shows against the current one.
+  const text=JSON.stringify(data,null,2),[attempt,setAttempt]=useState<{text:string;outcome:'copied'|'failed'}|null>(null);
+  const outcome=attempt?.text===text?attempt.outcome:'idle',sequence=useRef(0);
   const copy=()=>{
-    const clipboard=typeof navigator==='undefined'?undefined:navigator.clipboard;
-    if(!clipboard?.writeText){setOutcome('failed');return;}
-    clipboard.writeText(text).then(()=>setOutcome('copied'),()=>setOutcome('failed'));
+    const written=text,mine=++sequence.current,settle=(result:'copied'|'failed')=>{if(mine===sequence.current)setAttempt({text:written,outcome:result});},clipboard=typeof navigator==='undefined'?undefined:navigator.clipboard;
+    if(!clipboard?.writeText){settle('failed');return;}
+    clipboard.writeText(written).then(()=>settle('copied'),()=>settle('failed'));
   };
   return <span className="diagnostic-copy" data-diagnostic-copy={outcome}>
     <HButton type="button" data-action="copy-diagnostics" data-diagnostics={text} tone="ghost" onClick={copy}><Copy aria-hidden="true"/>复制诊断信息</HButton>

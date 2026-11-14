@@ -69,7 +69,7 @@ test('Card 34C operation hint follows what is known',async()=>{
   const stub=(code:string)=>'data:text/javascript;base64,'+Buffer.from(code).toString('base64');
   const source=await readFile(join(src,'app/DiagnosticCopy.tsx'),'utf8');
   let output=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022,jsx:4,verbatimModuleSyntax:true}}).outputText;
-  for(const [from,code] of [['react','export const useState=()=>[null,()=>{}];'],['lucide-react','export const Copy=()=>null;'],['@heroui/react','export const TextArea=()=>null;'],['../design/components/Button/Button','export const Button=()=>null;'],['react/jsx-runtime','export const jsx=()=>null,jsxs=()=>null,Fragment=null;']] as const)
+  for(const [from,code] of [['react','export const useState=()=>[null,()=>{}];export const useRef=()=>({current:0});'],['lucide-react','export const Copy=()=>null;'],['@heroui/react','export const TextArea=()=>null;'],['../design/components/Button/Button','export const Button=()=>null;'],['react/jsx-runtime','export const jsx=()=>null,jsxs=()=>null,Fragment=null;']] as const)
     for(const quote of ["'",'"'])output=output.replaceAll(quote+from+quote,JSON.stringify(stub(code)));
   const module=await import(stub(output)) as {operationHint:(state:string,cleanupPending?:boolean)=>string};
   assert.match(module.operationHint('committed'),/^已提交，本机草稿还没清除完/u);
