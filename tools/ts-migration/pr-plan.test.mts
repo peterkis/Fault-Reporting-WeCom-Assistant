@@ -133,6 +133,18 @@ test('the still-mounted V1 self-service API keeps its current tests; only SS009 
   const classified=new Set(policy().history.map(h=>h.path));for(const t of api)assert.ok(!classified.has(t),t);
   const evidence=plan('tests/yxx-ss-009-governance.test.mjs');assert.equal(status(evidence,'tests/yxx-ss-009-governance.test.mjs'),'EDITED_NOT_SELECTED');
 });
+test('contract-only changes reach their classified tests despite underscore contract filenames',()=>{
+  for(const [contract,test] of [['contracts/workbench_follow_up_schedule_command.schema.json','tests/t37-follow-up-contracts.test.mts'],['contracts/workbench_personal_read_command.schema.json','tests/wbint-t35-visible-read.browser.test.mts'],['contracts/workbench_item_follow_command.schema.json','tests/wbint-t34-follow-contracts.test.mts'],['contracts/workbench_incident_public_progress_command.schema.json','tests/wbint-t31-contracts.test.mts'],['contracts/workbench_incident_owner_transfer_command.schema.json','tests/wbint-t29-contracts.test.mts'],['contracts/p2_016_takeover_command.schema.json','tests/t07-contract-boundaries.test.mts'],['contracts/workbench_supplement_follow_up_command.schema.json','tests/t36-contract.test.mts'],['contracts/workbench_reminder_query.schema.json','tests/wbint-t40-reminder-contracts.test.mts'],['contracts/workbench_search_criteria.schema.json','tests/t41-search-contract.test.mts'],['contracts/workbench_conversation_inbox_page.schema.json','tests/conversation-inbox-contract.test.mts']] as const){
+    const p=plan(contract);assert.ok(paths(p).includes(test),contract+' -> '+test);assert.equal(status(p,test),'RISK_AREA_CHANGED_SELECTED',contract);
+  }
+});
+test('every P2-007/015/016 path the retired directory workflow watched still runs its current regression',()=>{
+  for(const file of ['app/server/src/p2-016-workbench-http.mts','app/server/src/p2-016-manual-review-facade.mts','app/server/src/p2-016-workbench-wecom-auth.mts','app/server/src/p2-016-reporter-access.mts','app/server/src/p2-016-wecom-sender.mts','app/server/src/p2-016-delivery-control.mts','app/server/src/p2-016-runtime.mts','app/server/scripts/p2-016-process-role.mts','app/server/src/p2-015-contact-journey.mts','app/server/src/p2-007-staff-directory-store.mts','tests/helpers/p2-016-postgres-harness.mts','app/server/src/platform/clock.mts','shared/runtime.mts','package.json']){
+    const p=plan(file);assert.ok(p.selections.includes('t02-baseline'),file);assert.ok(paths(p).includes('tests/p2-016-workbench-http.integration.test.mjs'),file);
+  }
+  assert.ok(plan('app/server/src/p2-016-workbench-wecom-auth.mts').selections.includes('pr-identity'),'identity checks are kept alongside');
+  assert.ok(plan('app/server/src/p2-016-wecom-sender.mts').selections.includes('pr-notification'),'notification checks are kept alongside');
+});
 test('legacy classification requires a reason, a class and its own risk-area triggers',()=>{
   const edit=(change:(h:Record<string,unknown>)=>void)=>{const r=record(raw());const history=r.history;assert.ok(Array.isArray(history));const h=history.map(record).find(h=>h.class==='out-of-scope');assert.ok(h);change(h);return r;};
   assert.throws(()=>parsePolicy(edit(h=>{h.disposition='  ';})),/REASON_REQUIRED/u);

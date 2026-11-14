@@ -200,6 +200,14 @@
       "reason": "H5 main flow and direct risks; no desktop integration"
     },
     {
+      "pattern": "^app/server/(?:src|scripts)/p2-016-.*(?:notification|sender|delivery|communication|outbox)",
+      "profiles": [
+        "notification",
+        "directory"
+      ],
+      "reason": "P2-016 notification, sender and delivery handlers: notification risks plus the retired p2-staff-directory regression"
+    },
+    {
       "pattern": "^(?:app/server/(?:src|scripts)/.*(?:notification|sender|delivery|communication|outbox)|tests/(?:mvp-|.*notification|.*sender)|contracts/.*(?:notification|delivery|communication))",
       "profiles": [
         "notification"
@@ -214,12 +222,21 @@
       "reason": "Shared assembly, migrations, contracts, lock/build configuration: current MVP union"
     },
     {
-      "pattern": "^(?:app/server/(?:src|scripts)/p2-(?:007|015)-|tests/(?:helpers/)?p2-(?:007|015)-)",
+      "pattern": "^app/server/(?:src|scripts)/p2-016-.*(?:auth|identity|principal|access|session|grant)",
+      "profiles": [
+        "core",
+        "identity",
+        "directory"
+      ],
+      "reason": "P2-016 identity and access handlers: current identity checks plus the retired p2-staff-directory regression"
+    },
+    {
+      "pattern": "^(?:app/server/(?:src|scripts)/p2-(?:007|015|016)-|tests/(?:helpers/)?p2-(?:007|015|016)-)",
       "profiles": [
         "core",
         "directory"
       ],
-      "reason": "Staff/reporter directory and Bot rule-first manual review: current directory/orchestration regression (replaces the retired p2-staff-directory workflow)"
+      "reason": "Staff/reporter directory, Bot rule-first manual review and the P2-016 workbench HTTP/schema handlers: current directory/orchestration regression t02-baseline (the triggers of the retired p2-staff-directory workflow)"
     },
     {
       "pattern": "^app/server/(?:src|scripts)/.*yxx-self-service-|^tests/helpers/yxx-ss-",
@@ -493,7 +510,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -504,7 +521,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -946,7 +963,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -957,7 +974,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -968,7 +985,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -979,7 +996,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -990,7 +1007,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1001,7 +1018,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1012,7 +1029,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1023,7 +1040,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1034,7 +1051,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1045,7 +1062,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1056,7 +1073,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1067,7 +1084,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1078,7 +1095,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1089,7 +1106,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1100,7 +1117,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1111,7 +1128,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1122,7 +1139,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1133,7 +1150,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1144,7 +1161,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1155,7 +1172,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1166,7 +1183,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1177,7 +1194,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1188,7 +1205,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1199,7 +1216,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1210,7 +1227,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1221,7 +1238,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1232,7 +1249,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1243,7 +1260,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1254,7 +1271,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1265,7 +1282,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1276,7 +1293,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1287,7 +1304,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1298,7 +1315,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1309,7 +1326,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1320,7 +1337,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
@@ -1343,7 +1360,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1354,7 +1371,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1365,7 +1382,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1376,7 +1393,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1387,7 +1404,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1398,7 +1415,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1409,7 +1426,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1420,7 +1437,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1431,7 +1448,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1442,7 +1459,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1453,7 +1470,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1464,7 +1481,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1475,7 +1492,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1486,7 +1503,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1497,7 +1514,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1508,7 +1525,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1519,7 +1536,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1530,7 +1547,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1541,7 +1558,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1552,7 +1569,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1596,7 +1613,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1607,7 +1624,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1618,7 +1635,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1629,7 +1646,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1640,7 +1657,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1651,7 +1668,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1662,7 +1679,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1673,7 +1690,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1684,7 +1701,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1695,7 +1712,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1706,7 +1723,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1717,7 +1734,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1728,7 +1745,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1739,7 +1756,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1750,7 +1767,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1761,7 +1778,7 @@
       "disposition": "个人已读 is enhanced collaboration. pr-read-safety keeps its account-switch, authority-wait and UNKNOWN checks in the default PC profile. Runs when personal-read code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal-read|read-position)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:personal[-_]read|read[-_]position)"
       ]
     },
     {
@@ -1860,7 +1877,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1871,7 +1888,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1882,7 +1899,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1893,7 +1910,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1904,7 +1921,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1915,7 +1932,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1926,7 +1943,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1937,7 +1954,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -1948,7 +1965,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2076,7 +2093,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2087,7 +2104,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2098,7 +2115,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2109,7 +2126,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2120,7 +2137,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2131,7 +2148,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2142,7 +2159,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2153,7 +2170,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2164,7 +2181,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2175,7 +2192,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2186,7 +2203,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2197,7 +2214,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2208,7 +2225,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2219,7 +2236,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2230,7 +2247,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2241,7 +2258,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2252,7 +2269,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2263,7 +2280,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2274,7 +2291,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2285,7 +2302,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2296,7 +2313,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2307,7 +2324,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2318,7 +2335,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2329,7 +2346,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2340,7 +2357,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2351,7 +2368,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2362,7 +2379,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2373,7 +2390,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2384,7 +2401,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2395,7 +2412,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2406,7 +2423,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2417,7 +2434,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2428,7 +2445,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2439,7 +2456,7 @@
       "disposition": "关注 is enhanced collaboration, out of the first-version must-have list. Runs when follow code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:workbench-follow(?:-browser-contracts)?\\.|workbench_item_follow_)"
       ]
     },
     {
@@ -2450,7 +2467,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2461,7 +2478,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2472,7 +2489,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2483,7 +2500,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2494,7 +2511,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2505,7 +2522,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2516,7 +2533,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2527,7 +2544,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2538,7 +2555,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2549,7 +2566,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2560,7 +2577,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2571,7 +2588,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2582,7 +2599,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2831,7 +2848,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2860,7 +2877,7 @@
       "disposition": "Outside 人工首版 acceptance (README capability table); the feature stays default-off. Runs when Incident server or contract code changes; an edit to this test or its own test helpers alone (copy, selectors, wording) does not select it. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic-?[Pp]rogress|[Oo]wner-?[Tt]ransfer)"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*(?:[Ii]ncident|[Pp]ublic[-_]?[Pp]rogress|[Oo]wner[-_]?[Tt]ransfer)"
       ]
     },
     {
@@ -2871,7 +2888,7 @@
       "disposition": "共享预约 is enhanced collaboration. Runs when follow-up schedule code changes. UI-only changes to this feature (app/pc-admin) do not select it: the PC profile keeps the shared workbench checks, and the feature's named selection stays available for an on-demand run.",
       "replacement": [],
       "triggers": [
-        "^(?:app/server/(?:src|scripts)|contracts)/.*follow-up-schedule"
+        "^(?:app/server/(?:src|scripts)|contracts)/.*follow[-_]up[-_]schedule"
       ]
     },
     {
