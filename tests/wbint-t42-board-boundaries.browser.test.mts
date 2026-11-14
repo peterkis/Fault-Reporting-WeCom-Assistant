@@ -84,11 +84,20 @@ test('T42 real competing command produces conflict without losing the original c
     assert.deepEqual(await browser.evaluate('({href:location.href,timeOrigin:performance.timeOrigin})'),originalWorkspace,'current refresh must not replace the held operation target or reload its workspace');
     await browser.evaluate('globalThis.__t42Release()');await browser.waitFor("Boolean(document.querySelector('[data-board-original-intent]'))");
     const original=JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics")));// Codex review: only the identifying fields are copied, never the command body.
-    assert.deepEqual(original,{operation_id:object(held.body).client_command_id,expected_version:object(held.body).expected_version??null,action:object(original).action});assert.equal(typeof object(original).action,'string');
+    assert.deepEqual(original,{operation_id:object(held.body).client_command_id,expected_version:object(held.body).expected_version??null,action:'take-and-start'});
     assert.equal((await get(path)).version,accepted.version);assert.equal((await get(path)).status,'ACCEPTED');
     assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),1);
     await browser.evaluate("document.querySelector('[data-action=cancel-board-move]').click()");
     assert.deepEqual(JSON.parse(String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"))),original);
+    // Codex review: the command body is no longer shown, so its content is checked by behaviour: after the conflict and the cancel,
+    // adopting the current facts and sending again carries every original field; only the operation number and version are new.
+    await browser.evaluate("document.querySelector('[data-action=adopt-current-board-facts]').click()");await browser.waitFor("!document.querySelector('[data-board-original-intent]')");
+    await browser.evaluate('globalThis.__t42Held=null');await browser.waitFor("document.querySelector('[data-action=take-and-start]')?.disabled===false");
+    await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");await browser.waitFor('globalThis.__t42Held!==null');
+    const resent=object(object(await browser.evaluate('globalThis.__t42Held')).body),{client_command_id:oldId,expected_version:_oldVersion,...kept}=object(held.body),{client_command_id:newId,expected_version:newVersion,...again}=resent;
+    assert.notEqual(newId,oldId,'a new intent has its own operation number');assert.equal(newVersion,accepted.version,'the new intent is filled against the current facts');
+    assert.deepEqual(again,kept,'every other field of the original command survived the conflict and the cancel');
+    await browser.evaluate('globalThis.__t42Release()');
   },{realtime:true});
 });
 

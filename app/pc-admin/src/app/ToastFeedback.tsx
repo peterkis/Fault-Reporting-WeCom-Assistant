@@ -208,9 +208,10 @@ export function DraftStatus({children,notify=true,inlineText=false,...attributes
   // Codex review: the saved-draft limit is part of the status's accessible text, not only a hover title (keyboard, touch and
   // assistive technology users get it too); the visible line stays 「草稿已保存」.
   const spoken=children==='草稿已保存'?children+'。'+DRAFT_SAVED_HINT:children;
-  // Codex review: keyboard and touch users without a screen reader open the limit with a small info button beside the status.
-  const [limitShown,setLimitShown]=useState(false),limitId=useId(),saved=inlineText&&children==='草稿已保存';
-  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={spoken} title={children==='草稿已保存'?DRAFT_SAVED_HINT:children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{spoken}</span></span>{saved?<><HButton type="button" className="workbench-draft-limit-toggle" data-action="toggle-draft-limit" variant="ghost" isIconOnly aria-label="草稿保存期限" aria-expanded={limitShown} aria-controls={limitId} onClick={()=>setLimitShown(value=>!value)}><Info size={13} aria-hidden="true"/></HButton>{limitShown?<span id={limitId} className="workbench-draft-limit">{DRAFT_SAVED_HINT}</span>:null}</>:null}{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
+  // Codex review: keyboard and touch users without a screen reader open the limit with a small info button beside every saved
+  // status, the icon-only ones included.
+  const [limitShown,setLimitShown]=useState(false),limitId=useId(),saved=children==='草稿已保存';
+  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={spoken} title={spoken} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{spoken}</span></span>{saved?<><HButton type="button" className="workbench-draft-limit-toggle" data-action="toggle-draft-limit" variant="ghost" isIconOnly aria-label="草稿保存期限" aria-expanded={limitShown} aria-controls={limitId} onClick={()=>setLimitShown(value=>!value)}><Info size={13} aria-hidden="true"/></HButton>{limitShown?<span id={limitId} className="workbench-draft-limit">{DRAFT_SAVED_HINT}</span>:null}</>:null}{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
 /** Card 34A: the tone of a feedback state, shared by the toast and the dialog's inline alert. */

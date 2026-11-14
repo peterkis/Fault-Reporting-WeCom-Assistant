@@ -33,7 +33,7 @@ test('Card 34C rendered copy: board and detail drawer show no banned technical w
   await b.waitFor("document.querySelector('[data-draft-status]')?.getAttribute('aria-label')?.startsWith('草稿已保存')");
   // Codex review: the limit is in the status's accessible text too, not only in the hover title.
   assert.equal(await b.evaluate("document.querySelector('[data-draft-status]').getAttribute('aria-label')"),'草稿已保存。仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。','the status announces the limit');
-  assert.equal(await b.evaluate("document.querySelector('[data-draft-status]').getAttribute('title')"),'仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。','the saved draft explains where and how long on hover');
+  assert.equal(await b.evaluate("document.querySelector('[data-draft-status]').getAttribute('title')"),'草稿已保存。仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。','the hover text matches the spoken text');
   assert.doesNotMatch(await visible(),BANNED,'the saved draft shows no banned word');
   // Codex review: keyboard and touch users open the limit with the info button beside the status; it is shown as text.
   await b.evaluate("document.querySelector('[data-action=toggle-draft-limit]').click()");

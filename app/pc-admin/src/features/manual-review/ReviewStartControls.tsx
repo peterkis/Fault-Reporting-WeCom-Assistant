@@ -77,7 +77,8 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     try{const receipt=await reviewStartApi.receipt(reviewId,originalId,controller.signal);current();if(!mounted.current||generation.current!==token)return;
       if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知；无终态回执不代表没有提交。不会自动发送。');return;}
       if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');await finish(originalId,current,token);return;}
-      if(pending)await draft.knownFailure(originalId);else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('上次操作没有成功；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}}finally{settling.current=false;}}
+      // Codex review: a confirmed failure stays confirmed when only the local write fails; the cleanup is reported apart.
+      if(pending){try{await draft.knownFailure(originalId);}catch{current();if(!mounted.current||generation.current!==token)return;setCleanupBlocked(true);setState('failed');setMessage('已确认原操作没有成功；本机草稿暂时无法更新，原填写内容保留。检查浏览器存储后点击「核对结果」再次更新。');onRefresh();return;}}else{settling.current=true;try{if(!await draft.success(originalId)){setCleanupBlocked(true);setState('unknown');setMessage('上次操作没有成功；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}}finally{settling.current=false;}}
       current();if(!mounted.current||generation.current!==token)return;setOpaque(null);setCleanupBlocked(false);setState('failed');setMessage('已只读确认原操作失败；原完整意图保留，新的意图须明确采用工单信息。');onRefresh();
     }catch(error){if(!mounted.current||generation.current!==token||controller.signal.aborted)return;try{current();}catch{return;}
       if(error instanceof ApiError&&[401,403,404].includes(error.status))deny(error);else{setState('unknown');setMessage('只读核对未完成，原操作身份保留，没有发送新操作。');}
