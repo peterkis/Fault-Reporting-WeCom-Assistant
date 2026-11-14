@@ -12,7 +12,7 @@ const BANNED=['UUID','版本号','版本','核验','副本','加密','投影','�
 // Key names in shortcut hints.
 const ENGLISH_ALLOWED=new Set(['Ctrl','Esc','Enter','Tab','Shift','Alt','Cmd']);
 // Values the server still sends; the workbench compares against them and maps them to 「医小修私聊」 before showing them.
-const SERVER_VALUES=new Set(['Bot 私聊','Bot 私聊回复','Bot 私聊规则回复','本人 Bot 私聊','本人的医小修私聊']);
+const SERVER_VALUES=new Set(['Bot 私聊','Bot 私聊来源','Bot 私聊回复','Bot 私聊规则回复','本人 Bot 私聊','发送到本人 Bot 私聊','本人的医小修私聊']);
 // Download file names, never shown in the page body.
 const FILE_NAMES=new Set(['报修附件.png','报修附件.jpg']);
 // Directories temporarily outside the check; empty since card 34B (#187) landed and its copy was cleaned.
@@ -92,4 +92,16 @@ test('Card 34C short codes are the id\'s own suffix and never collide',async()=>
   assert.equal(codes.get(a),'65DB1E0AAAAA','a shared eleven-character tail grows the code to twelve');assert.equal(codes.get(b),'75DB1E0AAAAA');
   for(const id of [a,b,c])assert.ok(id.replaceAll('-','').toUpperCase().endsWith(codes.get(id)??'#'),'each code is the id\'s own suffix');
   assert.equal(module.shortCodes([a,b,c]).get(a),codes.get(a),'the same ids give the same codes');
+});
+
+// Codex review: only the fixed channel labels are renamed; a group name containing the same words is shown as given.
+test('Card 34C channel labels are renamed by exact match only',async()=>{
+  const source=await readFile(join(src,'features/conversations/client.ts'),'utf8'),start=source.indexOf('const channelLabels'),end=source.indexOf('\n',source.indexOf('export function publicChannelLabel'));
+  assert.ok(start>=0&&end>start,'the label table and function are found');
+  const output=transpileModule(source.slice(start,end),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
+  const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {publicChannelLabel:(label:string)=>string};
+  assert.equal(module.publicChannelLabel('Bot 私聊'),'医小修私聊');assert.equal(module.publicChannelLabel('Bot 私聊来源'),'医小修私聊');
+  assert.equal(module.publicChannelLabel('Bot 私聊规则回复'),'医小修自动回复');assert.equal(module.publicChannelLabel('发送到本人 Bot 私聊'),'发送到本人的医小修私聊');
+  assert.equal(module.publicChannelLabel('信息科 Bot 私聊交流群'),'信息科 Bot 私聊交流群','a group name is never rewritten');
+  assert.equal(module.publicChannelLabel('群来源 · 回复通过私聊'),'群来源 · 回复通过私聊');
 });
