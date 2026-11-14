@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
-import {DraftError,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
+import {DraftError,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
 import type {DraftHandle,DraftScope} from './encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -177,6 +177,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   return {enabled,status,message,
     /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
+    /** Drops the stored number of a command that was prepared but never sent (see `releaseUnsentOperation`). */
+    async releaseUnsent(commandId:string){if(!enabled)return;if(await releaseUnsentOperation(scope,commandId)){if(handle.current?.operation?.commandId===commandId)handle.current.operation=null;setOperationId(current=>current===commandId?null:current);}},
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){

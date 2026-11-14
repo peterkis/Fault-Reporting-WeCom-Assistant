@@ -1,4 +1,5 @@
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
+import {DiagnosticCopy} from '../../app/DiagnosticCopy';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Form as HForm,ListBox} from "@heroui/react";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
@@ -31,7 +32,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null),[checkedUnknown,setCheckedUnknown]=useState(false);
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}},
-    onOperation:id=>{setPending(null);setState('unknown');setMessage('原操作 '+id+' 仍未知，敏感恢复内容不可用；不能提交新操作。');},
+    onOperation:()=>{setPending(null);setState('unknown');setMessage('上次操作的结果还没确认，草稿内容已不可用，不能提交新的操作。点击「核对结果」。');},
     onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');setReviewRequired(false);setCheckedUnknown(false);}});
   const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0,originalId=pending?.body.client_command_id??draft.operationId;
   const navigationBlocked=active||unknown||candidateHasInput(value);
@@ -111,7 +112,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
         {!pending&&candidateHasInput(value)?<HButton type="button" data-action="adopt-candidate-basis" isDisabled={active} onClick={()=>{setValue(current=>({...current,capture:{version:detail.row_version,basis:detail.material_basis}}));setReviewRequired(false);}} tone="secondary">使用最新内容</HButton>:null}
         {!pending&&candidateHasInput(value)?<HButton type="button" data-action="clear-candidate-input" isDisabled={active} onClick={()=>{if(draft.enabled)void draft.discard();else{setValue(emptyCandidateDecision);setReviewRequired(false);}}} tone="secondary">清除当前输入</HButton>:null}
         {pending&&unknown&&draft.enabled?<HButton type="button" data-action="discard-candidate-recovery" isDisabled={active} onClick={()=>{void draft.discard();}} tone="secondary">清除敏感恢复内容（保留原操作核对）</HButton>:null}
-        {originalId?<HButton type="button" data-action="check-candidate-operation" isDisabled={active} onClick={check} tone="secondary">核对结果</HButton>:null}
+        {/* Card 34C: the operation number is offered for copying, never written into the visible text. */}{originalId?<><HButton type="button" data-action="check-candidate-operation" isDisabled={active} onClick={check} tone="secondary">核对结果</HButton><DiagnosticCopy data={{operation_id:originalId}}/></>:null}
         {pending&&checkedUnknown&&unknown?<HButton type="button" data-action="replay-candidate-operation" isDisabled={active} onClick={()=>{void send(pending,JSON.stringify(value));}} tone="secondary">重新提交</HButton>:null}
       </div></HForm>:<p>当前可读取候选，没有人工决定权限。</p>}
     {message?<ToastFeedback revision={messageRevision} source="incident-candidates" state={state} role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'} data-candidate-outcome>{message}</ToastFeedback>:null}

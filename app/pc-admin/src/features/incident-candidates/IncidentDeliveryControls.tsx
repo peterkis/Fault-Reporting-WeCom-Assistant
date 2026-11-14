@@ -163,7 +163,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    current();
    // Codex review: another tab may have cleared this operation and started a new one; this result then no longer applies here.
    const replaced=draft.currentOperation();
-   if(!cleaned&&replaced&&replaced!==commandId){known.current=false;knownFailed.current=false;outcomeFor.current=null;setResult(null);setPending(null);setChecked(false);setConfirmed(false);setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);setMessage('另一个页面已开始新的通知操作，这里的结果不再适用。点击「核对结果」查看新操作。');return;}
+   if(!cleaned&&replaced&&replaced!==commandId){known.current=false;knownFailed.current=false;outcomeFor.current=null;setResult(null);clearSensitive();setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);setMessage('另一个页面已开始新的通知操作，这里的结果不再适用。点击「核对结果」查看新操作。');return;}
    setPending(null);setChecked(false);setConfirmed(false);setOpaque(cleaned?null:commandId);setCleanupPending(!cleaned);
    if(!cleaned){setState(receiptResult?'committed':'failed');setMessage((receiptResult?'已提交；':'上次操作没有成功；')+'草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}
    if(receiptResult){setResult(receiptResult);clearSensitive();setState('committed');setNeedsRead(false);setMessage('本路操作已确认提交；当前权限和公共故障已重新读取，各路结果分别刷新。确认发送不代表报修人已读。');}

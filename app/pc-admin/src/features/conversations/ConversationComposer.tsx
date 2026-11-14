@@ -105,10 +105,10 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:current.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
       // Codex review: the number is bound only once its draft is saved and the attempt is still current, so a cancellation during
       // preparation never leaves an unsent number locking the follow-up.
-      if(!saved)await draft.prepare(command);if(!isCurrent(attempt))return;
+      if(!saved)await draft.prepare(command);if(!isCurrent(attempt)){if(!saved)void draft.releaseUnsent(command.command.client_command_id).catch(()=>{});return;}
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);
       setPending(command);setOutcome('正在提交原操作…');dispatched=true;const result=await conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal);await confirmed(command.command.client_command_id,result,command.command.text,token);
-    }catch(error){if(!isCurrent(attempt))return;
+    }catch(error){if(!isCurrent(attempt)){if(command&&!dispatched&&!saved)void draft.releaseUnsent(command.command.client_command_id).catch(()=>{});return;}
       if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{await draft.knownFailure(command.command.client_command_id);setPending(null);if(followUpTarget)setBoundOperationId(null);}catch{setPending(command);}}setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
       // Codex review: only a request that went out (or a replayed original) can have an unknown result; a new reply whose draft
       // could not be saved was never sent, so its number is released and the text stays.
