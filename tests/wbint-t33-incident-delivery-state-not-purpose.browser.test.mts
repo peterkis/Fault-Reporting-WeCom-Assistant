@@ -45,6 +45,8 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
   const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+')?.value??null');
+  // Card 34C: the original operation number and version are diagnostics, copied on request rather than shown.
+  const diagnostics=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+')?.querySelector("[data-diagnostics]")?.dataset.diagnostics??""'));
   const content=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+').textContent'));
   const quiet=async()=>{await browser.evaluate('globalThis.__t33StateNotPurpose.quietStart=performance.now()');await browser.waitFor('performance.now()-globalThis.__t33StateNotPurpose.quietStart>=400');};
   let phase='initial-real-worker-unknown',refreshMode='not-reached',originalId:string|null=null,originalBodyHash:string|null=null,currentCapability:Record<string,unknown>|null=null,initialPreviousFetchCalled:boolean|null=null,nodeOtherPostAttempted=false,nodeOtherAckObserved=false,uiReplayHttp409Observed=false;
@@ -92,7 +94,7 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    const unknown=closed(unaccepted.body,['state','incident_id','client_command_id']);assert.equal(unknown.state,'UNKNOWN');assert.equal(unknown.incident_id,incidentId);assert.equal(unknown.client_command_id,uuid);
    assert.equal((await getLifecycleRows()).find(row=>row.delivery_id===deliveryId)?.attempt_count,1);
    await quiet();assert.equal(attempts(await events()).length,1);assert.equal(receiptReads(await events()).length,0);assert.equal(senderCalls(),1);
-   assert.ok((await content()).includes('原通知操作 UUID：'+uuid));
+   assert.ok((await diagnostics()).includes(JSON.stringify(uuid)));
    phase='client-attempt-blocked-before-server-no-original-receipt';
    await capture('state-not-purpose-unaccepted-original-uuid');
 
@@ -127,7 +129,7 @@ test('T33 current SENT state preserves an original unaccepted UNKNOWN v2 intent 
    phase='real-current-route-sent-purpose-permissions-retained';
    assert.equal(await input('选择通知路'),deliveryId);assert.equal(await input('投递控制操作'),'RECONCILE');
    assert.equal(await input('投递操作原因'),body.reason_code);assert.equal(await input('未知发送核对结论'),body.resolution);
-   const retainedText=await content();assert.ok(retainedText.includes('原通知操作 UUID：'+uuid));assert.ok(retainedText.includes('原版本：'+version));
+   const retainedText=await content();assert.ok((await diagnostics()).includes(JSON.stringify(uuid)));assert.ok((await diagnostics()).includes(JSON.stringify(version)));
    assert.ok(retainedText.includes('捕获公共故障版本 '+version+'；'));assert.ok(retainedText.includes('捕获尝试 1，'));
    assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(outcome)+')?.dataset.incidentDeliveryState'), 'unknown','a different command changed state; it did not revoke original purpose authority');
    assert.equal(await browser.evaluate('Boolean(document.querySelector('+JSON.stringify(root+' [data-incident-delivery-receipt]')+'))'),false);

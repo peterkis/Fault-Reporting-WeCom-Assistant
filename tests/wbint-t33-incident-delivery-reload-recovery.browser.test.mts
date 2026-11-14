@@ -81,6 +81,8 @@ test('T33 production detail reloads its encrypted original v2 command after real
    await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(field,'+JSON.stringify(value)+');field.dispatchEvent(new Event("change",{bubbles:true}));})()');
   };
   const input=async(label:string)=>browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="'+label+'"] select')+').value');
+  // Card 34C: the original operation number and version are diagnostics, copied on request rather than shown.
+  const diagnostics=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+')?.querySelector("[data-diagnostics]")?.dataset.diagnostics??""'));
   const content=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+').textContent'));
   const status=root+' [data-incident-delivery-draft-status]';
   await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+'[data-incident-delivery-controls]')+'))');
@@ -151,7 +153,7 @@ test('T33 production detail reloads its encrypted original v2 command after real
   const storedOperation=closed(stored.operation,['scope','principal','kind','id','purpose','commandId','createdAt']);
   assert.equal(storedOperation.scope,scope);assert.equal(storedOperation.commandId,uuid);
   assert.equal(record(stored.metadata).firstSavedAt,initialMetadata.firstSavedAt);assert.equal(record(stored.metadata).expiresAt,initialMetadata.expiresAt);
-  assert.ok((await content()).includes('原通知操作 UUID：'+uuid));
+  assert.ok((await diagnostics()).includes(JSON.stringify(uuid)));
   await capture('reload-recovery-committed-response-lost');
 
   const reloadConfig={phase:'after-reload',endpoints,dropResponse:false,expected:{deliveryId,body}};
@@ -172,7 +174,7 @@ test('T33 production detail reloads its encrypted original v2 command after real
   assert.equal(await input('选择通知路'),deliveryId);assert.equal(await input('投递控制操作'),'RECONCILE');
   assert.equal(await input('投递操作原因'),body.reason_code);assert.equal(await input('未知发送核对结论'),body.resolution);
   const restoredContent=await content();
-  assert.ok(restoredContent.includes('原通知操作 UUID：'+uuid));assert.ok(restoredContent.includes('原版本：'+version));
+  assert.ok((await diagnostics()).includes(JSON.stringify(uuid)));assert.ok((await diagnostics()).includes(JSON.stringify(version)));
   assert.ok(restoredContent.includes('捕获公共故障版本 '+version+'；'));assert.ok(restoredContent.includes('捕获尝试 '+attempt+'，'));
   assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(root+' input[aria-label="确认本路投递操作"]')+').checked'),false,'reload never restores action confirmation');
   assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').disabled'),true);

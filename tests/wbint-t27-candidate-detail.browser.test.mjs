@@ -30,7 +30,7 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
       await browser.command('Page.navigate',{url:origin+'/workbench/app/incidents/candidates/'+candidate.id});
       await browser.waitFor('document.querySelector(".entry-state")?.innerText.includes("页面不存在") || Boolean(document.querySelector("article[data-candidate-id] [data-action=refresh-candidate]"))');
       assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(root)}).length`),1,'the canonical candidate must render independently of a Ticket or Manual Review route');
-      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.innerText.includes(${JSON.stringify(version)})`);
+      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-version]')?.textContent===${JSON.stringify(version)}`);
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelectorAll('.workbench-select[data-field-label="人工决定"] select').length`),1,'the current permitted decisions require an explicit human control');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('.workbench-select[data-field-label="人工决定"] select').value`),'');
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').disabled`),true);
@@ -38,7 +38,7 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
       assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).innerText`),/获权来源总数[：:]?\s*3/u);
       await select('人工决定','START_REVIEW');await select('决定原因','OPERATOR_REVIEWED');
       await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').click()`);
-      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('.detail-heading > p:last-child')?.textContent.includes(${JSON.stringify('候选依据版本 '+(BigInt(version)+1n).toString()+'；')})&&document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select')?.value===''`);
+      await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-version]')?.textContent===${JSON.stringify((BigInt(version)+1n).toString())}&&document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select')?.value===''`);
       assert.equal((await pool.query('SELECT status,row_version::text FROM incident.candidate_review WHERE id=$1::uuid',[candidate.id])).rows[0].status,'UNDER_REVIEW');
       await select('人工决定','CONFIRM_INCIDENT');await select('决定原因','CONFIRMED_SHARED_FAULT');
       for(const label of ['确认范围','故障负责人','责任组','主工单'])assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('.workbench-select[data-field-label="${label}"] select').value`),'');

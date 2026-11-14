@@ -19,6 +19,8 @@ import {DraftError} from '../drafts/encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 import {EMPTY_UNASSIGN,createUnassignCommand,hasUnassignInput,isUnassignChoiceRevocation,readUnassignChoices,unassignInputSnapshot,useUnassignDraft} from './use-unassign-draft';
 import type {UnassignCopy,UnassignFence,UnassignInput} from './use-unassign-draft';
+import {shortCodes} from '../../app/short-code';
+import {useFullNumbers} from '../../app/FullNumbers';
 
 type State='idle'|'preparing'|'submitting'|'checking'|'unknown'|'conflict'|'failed'|'denied'|'committed';
 interface Job extends UnassignFence {controller:AbortController;generation:number;mode:'command'|'ack'|'review'|'privacy'}
@@ -29,12 +31,13 @@ const boundedVersion=(value:string)=>/^[1-9][0-9]{0,18}$/u.test(value)&&BigInt(v
 
 export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=null}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void;/** Card 34B: the detail's ⋯ menu slot before 「关闭事项…」. */menuTarget?:HTMLElement|null}){
   const client=useQueryClient(),generation=useRef(0),request=useRef<Job|null>(null);
+  const fullNumbers=useFullNumbers();
   const [value,setValue]=useState<UnassignInput>(EMPTY_UNASSIGN),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<P2016UnassignCommand|null>(null),pendingRef=useRef(pending);pendingRef.current=pending;
   const pendingSnapshot=useRef<string|null>(null),[opaque,setOpaque]=useState<string|null>(null),opaqueRef=useRef(opaque);opaqueRef.current=opaque;
   const knownTerminal=useRef<{commandId:string;state:'COMMITTED'|'FAILED'}|null>(null);
   const forgetMutationViews=useRef<(variables?:unknown)=>void>(()=>{});
-  const storedId=useRef<string|null>(null),[cursor,setCursor]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
+  const storedId=useRef<string|null>(null),seenSessions=useRef(new Map<string,string>()),[cursor,setCursor]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
   const [reviewRequired,setReviewRequired]=useState(false),[cleanupBlocked,setCleanupBlocked]=useState(false),[dialogOpen,setDialogOpen]=useState(false),holderId=useId();
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const allowed=Boolean(context.data?.allowed_actions.includes('unassign'));
@@ -49,16 +52,16 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
     if(known){setCleanupBlocked(true);setReviewRequired(true);}
     setState(known?(known.state==='COMMITTED'?'committed':'failed'):id?'unknown':'idle');
     // Nothing was typed or pending and no original operation exists: there was nothing on screen to stop showing.
-    if(known||id||shown)setMessage(known?'原操作终态已读到；敏感内容已停止展示，须按原 UUID 重新读取当前事实。':id?'原操作仍须按原 UUID 只读核对，敏感内容已停止展示。':'当前撤派内容已停止展示。');
+    if(known||id||shown)setMessage(known?'上次操作已有结果，内容已隐藏。点击「核对结果」查看最新情况。':id?'结果未确认：内容已隐藏。点击「核对结果」，不要重复提交。':'当前撤派内容已停止展示。');
   };
   const draft=useUnassignDraft({ticketId,principal,value,pending,actionAllowed:allowed,
-    onRestore:copy=>{latest.current=copy.value;pendingRef.current=copy.pending;pendingSnapshot.current=copy.pending?unassignInputSnapshot(copy.value):null;setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('已恢复原操作的 UUID、版本及选择；请先只读核对。');}},
+    onRestore:copy=>{latest.current=copy.value;pendingRef.current=copy.pending;pendingSnapshot.current=copy.pending?unassignInputSnapshot(copy.value):null;setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：已找回上次的填写内容。先点击「核对结果」，不会自动提交。');}},
     onOperation:id=>{
       const previous=pendingRef.current?.client_command_id??opaqueRef.current;
       if(previous&&previous!==id){generation.current++;request.current?.controller.abort();request.current=null;}
       pendingRef.current=null;pendingSnapshot.current=null;opaqueRef.current=id;setPending(null);setOpaque(id);
       const known=knownTerminal.current?.commandId===id?knownTerminal.current:null;
-      if(known){setCleanupBlocked(true);setReviewRequired(true);setState(known.state==='COMMITTED'?'committed':'failed');setMessage('原操作终态已读到；当前恢复标记仍须按同一 UUID 只读核对。');}
+      if(known){setCleanupBlocked(true);setReviewRequired(true);setState(known.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');}
       else{setState('unknown');setMessage('原操作 '+id+' 仍未知；只读核对不需要当前撤派或所选会话的写权限。');}
     },onSensitiveClear:clearSensitive});
   storedId.current=draft.operationId;
@@ -130,12 +133,12 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
     void(async()=>{
       await freshRead(job);job.requireCurrent();
       const cleaned=await draft.dropSensitive(copy,job);job.requireCurrent();setCleanupBlocked(!cleaned);setState(commandId?'unknown':'idle');
-      if(!cleaned)setMessage('当前敏感内容已停止展示；存储中存在不同修订，未删除该副本，禁止新提交并须重新读取。');
+      if(!cleaned)setMessage('草稿未能清空：本机草稿已被更新，内容已隐藏。为避免重复提交，请重新打开详情。');
     })().catch(error=>{
       if(!current(job))return;
       if(error instanceof ApiError&&error.status===401||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,principal.principal_id,401,'revoked');
       else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,principal.principal_id,ticketId,error);
-      else setMessage('当前敏感内容已停止展示；读取或清理暂未确认，原 UUID 只能只读核对。');
+      else setMessage('草稿未能清空：内容已隐藏。为避免重复提交，暂时只能查看。点击「核对结果」。');
     }).finally(()=>end(job));
   };
   const selectionError=targets.error??related.error,handledSelectionError=useRef<unknown>(null);
@@ -160,19 +163,19 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
       }
       if(error instanceof ApiError){
         knownTerminal.current={commandId:variables.command.client_command_id,state:'FAILED'};
-        try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.command.client_command_id,variables.job);variables.job.requireCurrent();applyKnown(variables.command.client_command_id,'FAILED',variables.snapshot,cleaned,variables.job);setState(error.status===409?'conflict':'failed');setMessage((error.status===409?'版本或责任发生冲突；原输入保留，请重新读取并明确确认。':errorMessage(error))+(cleaned?'':' 恢复清理尚未确认，禁止新提交，请只读核对。'));}
-        catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.command.client_command_id);setState('failed');setMessage('已知拒绝的本地恢复清理尚未确认；禁止新提交，请只读核对原 UUID。');}}
-      }else{variables.job.requireCurrent();pendingRef.current=variables.command;setPending(variables.command);setState('unknown');setMessage('结果未知，原 UUID、版本和正文不变；只允许读取原操作回执。');}
+        try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.command.client_command_id,variables.job);variables.job.requireCurrent();applyKnown(variables.command.client_command_id,'FAILED',variables.snapshot,cleaned,variables.job);setState(error.status===409?'conflict':'failed');setMessage((error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再提交。':errorMessage(error))+(cleaned?'':' 恢复清理尚未确认，禁止新提交，请只读核对。'));}
+        catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.command.client_command_id);setState('failed');setMessage('草稿未能清空：上次操作没有成功。为避免重复提交，暂时只能查看。点击「核对结果」。');}}
+      }else{variables.job.requireCurrent();pendingRef.current=variables.command;setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
     },onSettled:(_result,_error,variables)=>{end(variables.job);forgetMutationViews.current(variables);},
   });
   const acknowledgement=useMutation({mutationKey:['ticket-unassign-ack',principal.principal_id,ticketId],gcTime:0,
     mutationFn:async(variables:AckVariables)=>{variables.job.requireCurrent();const result=await api.unassignAcknowledgement(ticketId,variables.commandId,variables.job.signal);variables.job.requireCurrent();return result;},
     onSuccess:async(result,variables)=>{
       if(!current(variables.job))return;
-      if(result.state==='UNKNOWN'){variables.job.requireCurrent();setState('unknown');setMessage('没有终态回执不代表未提交；原 UUID 仍须只读核对。');return;}
+      if(result.state==='UNKNOWN'){variables.job.requireCurrent();setState('unknown');setMessage('结果仍未确认：暂时查不到结果，不代表没有提交。稍后再点击「核对结果」。');return;}
       knownTerminal.current={commandId:variables.commandId,state:result.state};
       try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.commandId,variables.job);variables.job.requireCurrent();applyKnown(variables.commandId,result.state,variables.snapshot,cleaned,variables.job);}
-      catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.commandId);setState(result.state==='COMMITTED'?'committed':'failed');setMessage('终态已读到，但恢复清理尚未确认；禁止新提交，可重读同一 UUID。');refresh();}}
+      catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.commandId);setState(result.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');refresh();}}
     },onError:(error,variables)=>{
       if(!current(variables.job))return;
       if(error instanceof ApiError&&error.status===401){clearSensitive();void clearSessionAuthorization(client,principal.principal_id,401,'revoked');return;}
@@ -219,20 +222,20 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
       // This catch precedes command.mutate: no POST was attempted; storage prepare failure still blocks through the shared draft status.
       if(prepared){try{job.requireCurrent();await draft.settleKnown(intent.client_command_id,job);job.requireCurrent();}catch{if(!current(job))return;setCleanupBlocked(true);}}
       pendingRef.current=null;pendingSnapshot.current=null;setPending(null);setState(error instanceof ApiError&&error.status===409?'conflict':'denied');setReviewRequired(true);
-      setMessage('尚未发送：'+errorMessage(error)+' 原输入和捕获版本保留。');refresh();end(job);
+      setMessage('尚未发送：'+errorMessage(error)+' 你的输入还在。');refresh();end(job);
     }
   };
   const check=async()=>{
     const id=pendingRef.current?.client_command_id??opaqueRef.current??draft.operationId;if(!id||request.current)return;
     const job=begin('ack');if(!job)return;setState('checking');setMessage('正在只读核对原操作…');
     try{await freshRead(job);job.requireCurrent();acknowledgement.mutate({commandId:id,snapshot:pendingRef.current?pendingSnapshot.current:null,job});}
-    catch(error){if(current(job)){if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,principal.principal_id,ticketId,error);else{setState('unknown');setMessage('当前读取暂未确认；原 UUID 保留，未发送新的操作。');}}end(job);}
+    catch(error){if(current(job)){if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,principal.principal_id,ticketId,error);else{setState('unknown');setMessage('暂时无法加载最新内容，没有重复提交。点击重试。');}}end(job);}
   };
   const review=async()=>{
     if(originalId||request.current||cleanupBlocked)return;const job=begin('review');if(!job)return;
     const snapshot=unassignInputSnapshot(latest.current);setState('checking');
     try{const {ticket}=await freshRead(job);job.requireCurrent();if(!ticket.allowed_actions.includes('unassign'))throw new ApiError(409,'P2_016_UNASSIGN_STATE_CONFLICT');
-      setValue(input=>unassignInputSnapshot(input)===snapshot?Object.freeze({...input,version:ticket.version}):input);setReviewRequired(false);setState('idle');setMessage('已明确重新读取当前版本；请核对原因和沟通选择后再确认。');}
+      setValue(input=>unassignInputSnapshot(input)===snapshot?Object.freeze({...input,version:ticket.version}):input);setReviewRequired(false);setState('idle');setMessage('已更新为最新内容，请确认原因和沟通选择后再提交。');}
     catch(error){if(current(job)){setState('conflict');setMessage('当前撤派事实暂未确认；原输入保留。');if(error instanceof ApiError&&[401,403,404].includes(error.status))denySensitive({value:latest.current,pending:null},null);}}
     finally{end(job);}
   };
@@ -256,6 +259,8 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
   const messageToast=useDialogToast(dialogOpen,messageRevision);
   if(!showForm&&!originalId&&!hasUnassignInput(value)&&!busy&&!message&&!dialogOpen)return null;
   const close=()=>{if(!busy)setDialogOpen(false);};
+  // Codex review: one short-code map per render, shared by the candidate rows and the selected list.
+  const sessionCodes=shortCodes([...(related.data?.items??[]).map(item=>item.session_id),...value.sessions.map(item=>item.session_id),...seenSessions.current.keys()]);
   const section=<section className="ticket-notes ticket-unassign" aria-label="撤销尚未开始的派工">
     {context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
     {showForm?<>
@@ -264,19 +269,24 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
       <HRadioGroup className="workbench-radio-group" name={'unassign-communication-'+ticketId} value={value.choice??''} onChange={next=>{if(next==="RETAIN_CURRENT"){update({choice:'RETAIN_CURRENT',target:null,sessions:Object.freeze([])});}if(next==="TRANSFER_SELECTED"){update({choice:'TRANSFER_SELECTED'});}}} isDisabled={blocked||(context.isPending||context.isError)}><HLabel>沟通责任</HLabel><HRadio value={"RETAIN_CURRENT"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通责任</HRadio.Content></HRadio><HRadio value={"TRANSFER_SELECTED"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>明确选择会话和新的沟通同事</HRadio.Content></HRadio></HRadioGroup>
       {value.choice==='TRANSFER_SELECTED'?<>
         {targets.isError||related.isError?<p role="alert">{errorMessage(targets.error??related.error)} 当前选择保留，读取成功后重新核对。</p>:null}
-        <WorkbenchSelect label={<>沟通同事</>} value={displayTarget} isDisabled={blocked||targets.isPending||targets.isError} onChange={event=>update({target:event||null})}><ListBox.Item id="" textValue={"请选择沟通同事"}>请选择沟通同事<ListBox.ItemIndicator/></ListBox.Item>{value.target&&!targets.data?.items.some(row=>sameId(row.principal_id,value.target))?<ListBox.Item id={value.target} textValue={"原选择需重新核验"}>原选择需重新核验<ListBox.ItemIndicator/></ListBox.Item>:null}{targets.data?.items.map(row=><ListBox.Item key={row.principal_id} id={row.principal_id} textValue={String(row.display_name)}>{row.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
-        <p>本次已选 {value.sessions.length} 个会话，最多 8 个。目标列表展示最多 100 人；原选择另行核验。</p>
-        <ul className="conversation-choices">{related.data?.items.map(row=>{
+        <WorkbenchSelect label={<>沟通同事</>} value={displayTarget} isDisabled={blocked||targets.isPending||targets.isError} onChange={event=>update({target:event||null})}><ListBox.Item id="" textValue={"请选择沟通同事"}>请选择沟通同事<ListBox.ItemIndicator/></ListBox.Item>{value.target&&!targets.data?.items.some(row=>sameId(row.principal_id,value.target))?<ListBox.Item id={value.target} textValue={"原选择需重新确认"}>原选择需重新确认<ListBox.ItemIndicator/></ListBox.Item>:null}{targets.data?.items.map(row=><ListBox.Item key={row.principal_id} id={row.principal_id} textValue={String(row.display_name)}>{row.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
+        <p>本次已选 {value.sessions.length} 个会话，最多 8 个。目标列表展示最多 100 人；原选择提交时确认。</p>
+        {fullNumbers.toggle}<ul className="conversation-choices">{related.data?.items.map(row=>{
+          seenSessions.current.set(row.session_id,row.conversation_principal_name??'尚未分配沟通人');
           const chosen=value.sessions.find(item=>sameId(item.session_id,row.session_id)),permitted=row.take_allowed&&boundedVersion(row.session_row_version);
-          return <li key={row.session_id}><HCheckbox data-session-choice={row.session_id} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>{row.conversation_principal_name??'尚未分配沟通人'}<small>会话 {row.session_id} · 版本 {row.session_row_version}{!permitted?' · 当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
+          return <li key={row.session_id} title={'会话编号 '+row.session_id}><HCheckbox data-session-choice={row.session_id} data-session-row-version={row.session_row_version} isSelected={Boolean(chosen)} isDisabled={blocked||!chosen&&(!permitted||value.sessions.length>=8)} onChange={()=>toggle(row.session_id,row.session_row_version,permitted)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control>会话尾号 {(sessionCodes.get(row.session_id)??row.session_id)} · {row.conversation_principal_name??'尚未分配沟通人'}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:<span className="sr-only">，会话编号 {row.session_id}</span>}<small>{!permitted?'当前不可交接':''}{chosen&&String(chosen.expected_row_version)!==row.session_row_version?' · 已变化，请取消后重新选择':''}</small></HCheckbox.Content></HCheckbox></li>;
         })}</ul>
-        {value.sessions.length?<ul>{value.sessions.map(row=><li key={row.session_id}>已选会话 {row.session_id}<HButton type="button" isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>)}</ul>:null}
+        {value.sessions.length?<ul>{value.sessions.map(row=>{const label=(()=>{const item=related.data?.items.find(candidate=>sameId(candidate.session_id,row.session_id));// Codex review: a selection on another page keeps a stable, visible name (the session's last four characters, and its
+          // colleague when that page was seen), so two of them can be told apart without hovering.
+          const seen=seenSessions.current.get(row.session_id);
+          const code=(sessionCodes.get(row.session_id)??row.session_id);
+          return item?'已选：会话尾号 '+code+' · '+(item.conversation_principal_name??'尚未分配沟通人'):'已选：会话尾号 '+code+'（不在当前列表）'+(seen?' · '+seen:'');})();return <li key={row.session_id} title={'会话编号 '+row.session_id}>{label}{fullNumbers.shown?<small className="full-number"> · 会话编号 {row.session_id}</small>:null}<HButton type="button" aria-label={'取消选择：'+label} isDisabled={blocked} onClick={()=>update({sessions:Object.freeze(value.sessions.filter(item=>!sameId(item.session_id,row.session_id)))})} tone="secondary">取消选择</HButton></li>;})}</ul>:null}
         {cursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}
         {nextCursor?<HButton type="button" isDisabled={blocked||(related.isPending||related.isError)} onClick={()=>setCursor(nextCursor)} tone="secondary">下一批关联会话</HButton>:null}
       </>:null}
     </>:null}
-    {originalId&&!busy?<HButton type="button" data-action="check-unassign-command" onClick={()=>{void check();}} tone="secondary">只读核对原操作</HButton>:null}
-    {!originalId&&hasUnassignInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-unassign-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">重新读取并确认版本</HButton>:null}
+    {originalId&&!busy?<HButton type="button" data-action="check-unassign-command" onClick={()=>{void check();}} tone="secondary">核对结果</HButton>:null}
+    {!originalId&&hasUnassignInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-unassign-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">使用最新内容</HButton>:null}
 
     <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText notify={!dialogOpen} data-unassign-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasUnassignInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-unassign-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>
      <div className="ds-closure-actions"><HButton type="button" isDisabled={busy} onClick={close} tone="secondary">取消</HButton>{showForm?<HButton type="button" data-action="unassign" isDisabled={!canSubmit} onClick={()=>{void submit();}} tone="primary">确认撤销派工</HButton>:null}</div></footer>

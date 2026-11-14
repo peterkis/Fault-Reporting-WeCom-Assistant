@@ -45,5 +45,5 @@ export function useAssignmentDraft({ticketId,principal,value,pending,onRestore,o
   },onOperation,onSensitiveClear:clear,
  });
  useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后刷新重试。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
+ return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
 }

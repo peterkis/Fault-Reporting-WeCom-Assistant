@@ -18,9 +18,9 @@ test('settling one real reply preserves another mounted purpose and permits its 
       browser=await launchSystemBrowser({url:origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
       await browser.waitFor("document.querySelectorAll('[data-conversation-draft]').length===2&&Array.from(document.querySelectorAll('[data-conversation-draft]')).every(e=>e.textContent.includes('草稿仅在当前浏览器'))");
       await browser.evaluate(input('messages','T22 independently settled reply'));
-      await browser.waitFor("document.querySelector('[data-conversation-draft=messages]').textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-conversation-draft=messages]').textContent.includes('草稿已保存')");
       await browser.evaluate(input('internal-notes','T22 sibling note before reply'));
-      await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('草稿已保存')");
       const before=await browser.evaluate(snapshot) as {revision:string|null;epoch:string};assert.ok(before.revision);
       await browser.evaluate("document.querySelector('[data-action=send-conversation-reply]').click()");
       await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");
@@ -33,7 +33,7 @@ test('settling one real reply preserves another mounted purpose and permits its 
       const status=await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent");
       console.log('T22_PURPOSE_COEXIST '+JSON.stringify({before,settled,after,status}));
       assert.notEqual(after.revision,before.revision);
-      assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('已保存恢复副本')"),true);
+      assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('草稿已保存')"),true);
       assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 sibling note after reply');
     }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
@@ -51,14 +51,14 @@ test('a previously empty note purpose can save its first input after another pur
       browser=await launchSystemBrowser({url:origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
       await browser.waitFor("document.querySelectorAll('[data-conversation-draft]').length===2&&Array.from(document.querySelectorAll('[data-conversation-draft]')).every(e=>e.textContent.includes('草稿仅在当前浏览器'))");
       const before=await browser.evaluate(snapshot) as {revision:string|null;epoch:string};assert.equal(before.revision,null);
-      await browser.evaluate(input('messages','T22 reply while note is empty'));await browser.waitFor("document.querySelector('[data-conversation-draft=messages]').textContent.includes('已保存恢复副本')");
+      await browser.evaluate(input('messages','T22 reply while note is empty'));await browser.waitFor("document.querySelector('[data-conversation-draft=messages]').textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=send-conversation-reply]').click()");await browser.waitFor("document.querySelector('[data-reply-outcome]').textContent.includes('已受理发送')");
       const settled=await browser.evaluate(snapshot) as {revision:string|null;epoch:string};assert.equal(settled.revision,null);assert.notEqual(settled.epoch,before.epoch);
       await browser.evaluate(input('internal-notes','T22 first note after settled reply'));
       await browser.waitFor(`document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('恢复不可用')||(${snapshot}).then(v=>v.revision!==null)`);
       const after=await browser.evaluate(snapshot) as {revision:string|null;epoch:string},status=await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent");
       console.log('T22_EMPTY_PURPOSE '+JSON.stringify({before,settled,after,status}));
-      assert.ok(after.revision);assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('已保存恢复副本')"),true);
+      assert.ok(after.revision);assert.equal(await browser.evaluate("document.querySelector('[data-conversation-draft=internal-notes]').textContent.includes('草稿已保存')"),true);
     }catch(error){failure=error;try{if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}catch(diagnosticFailure){failure=new AggregateError([failure,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   });

@@ -104,9 +104,9 @@ test('prepare capacity failure leaves zero POST and zero phantom operation while
   // Hold real encryption until submit has entered prepare; no capacity, row or success result is replaced.
   await browser.evaluate(`(()=>{const original=crypto.subtle.encrypt.bind(crypto.subtle),held=[];globalThis.__t37EncryptionHeld=0;crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__t37EncryptionHeld++;held.push(()=>original(...args).then(resolve,reject));});globalThis.__t37ReleaseEncryption=()=>{crypto.subtle.encrypt=original;for(const release of held.splice(0))release();};})()`);
   await fill(browser,dueX);await click(browser,'设置共享时间');await browser.waitFor(`globalThis.__t37EncryptionHeld>0&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('正在保存共享时间')`);
-  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('操作尚未发送')`);
+  await browser.evaluate('globalThis.__t37ReleaseEncryption()');await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('没有提交')`);
   assert.equal(requests.filter(request=>request.method==='POST').length,0);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),full);
-  assert.equal(await browser.evaluate(`Boolean(${button('只读核对原操作')})`),false,'a failed prepare must not create an ACK target which the server never received');
+  assert.equal(await browser.evaluate(`Boolean(${button('核对结果')})`),false,'a failed prepare must not create an ACK target which the server never received');
   assert.equal(await browser.evaluate(`${inputNode}.value`),dueX);await click(browser,'清空未提交输入');await browser.waitFor(`${inputNode}?.value===''`);
   assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),full,'unrelated capacity control drafts remain intact');
   assert.deepEqual(await current(handler,path),before);assert.deepEqual(await current(handler,schedulePath),scheduleBefore);
@@ -120,20 +120,20 @@ test('a delayed real ACK for X cannot replace another tab Y operation or send X 
   await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
   const x=object(await browser.evaluate('globalThis.__t37Transport.posts[0]'));assert.equal(x.status,200);const xId=text(object(x.command).client_command_id);
   assert.equal(object(await browser.evaluate(stored(fixture.handler,ticketId))).commandId,xId);
-  await browser.evaluate(`globalThis.__t37Transport.holdAckId=${JSON.stringify(xId)}`);await click(browser,'只读核对原操作');
+  await browser.evaluate(`globalThis.__t37Transport.holdAckId=${JSON.stringify(xId)}`);await click(browser,'核对结果');
   await browser.waitFor('globalThis.__t37Transport.held===1&&globalThis.__t37Transport.ackState==="HELD"');
   const originalAck=object(rows(object(await browser.evaluate('globalThis.__t37Transport')).acks)[0]);assert.equal(originalAck.status,200);assert.equal(object(originalAck.body).state,'COMMITTED');
   const other=await peer();await other.command('Page.bringToFront');
   const beforeOtherAckViews=await other.evaluate('globalThis.__t37Transport.views.length');assert.ok(typeof beforeOtherAckViews==='number');
   // Hold delivery of the real current view while the same ACK still owns the request.
-  await other.evaluate('globalThis.__t37Transport.holdNextView=true');await click(other,'只读核对原操作');
+  await other.evaluate('globalThis.__t37Transport.holdNextView=true');await click(other,'核对结果');
   await other.waitFor('globalThis.__t37Transport.heldViews===1&&globalThis.__t37Transport.viewState==="HELD"');await tick(other);
   const heldView=object(rows(object(await other.evaluate('globalThis.__t37Transport')).views).at(-1));
   assert.equal(heldView.status,200);assert.equal(object(heldView.body).schedule_version,'1');assert.equal(object(object(heldView.body).active).due_at,dueX);
   assert.equal(await other.evaluate(`${inputNode}.disabled`),true,'the previous ACK current-view read must keep the form busy');
   assert.equal(await other.evaluate(readyButton('设置共享时间')),false,'Y must not be offered while the old ACK still owns the request');
   assert.equal(requests.filter(request=>request.method==='POST').length,1);await other.evaluate('globalThis.__t37ReleaseView()');
-  await other.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})&&globalThis.__t37Transport.views.length>${beforeOtherAckViews}`);
+  await other.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('核对结果')})&&globalThis.__t37Transport.views.length>${beforeOtherAckViews}`);
   await tick(other);await other.waitFor(`Boolean(${inputNode})&&!(${inputNode}).disabled`);
   await other.evaluate('globalThis.__t37Transport.dropPost=true');await fill(other,dueY);await click(other,'设置共享时间');
   await other.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知')&&globalThis.__t37Transport.posts.length===1`);
@@ -145,9 +145,9 @@ test('a delayed real ACK for X cannot replace another tab Y operation or send X 
   assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),retained,'old X cleanup must preserve actual Y recovery and its CAS revision');
   assert.equal(requests.filter(request=>request.method==='POST').length,2,'only the two deliberate SETs reached the server');
   // A settled broadcast may clear A before Y exists. Normal reload may discover Y; no new-save broadcast is required.
-  if(!await browser.evaluate(`Boolean(${button('只读核对原操作')})`))await reload(browser);
-  await click(browser,'只读核对原操作');
-  await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('只读核对原操作')})`);
+  if(!await browser.evaluate(`Boolean(${button('核对结果')})`))await reload(browser);
+  await click(browser,'核对结果');
+  await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!Boolean(${button('核对结果')})`);
   const ackRequests=requests.filter(request=>request.method==='GET'&&request.path.startsWith(schedulePath+'/commands/'));
   assert.equal(ackRequests.at(-1)?.path,schedulePath+'/commands/'+yId,'A must acknowledge the actual current Y operation, never remain pinned to old X');
   assert.equal(ackRequests.filter(request=>request.path===schedulePath+'/commands/'+xId).length,2,'one original held X GET plus B deliberate X GET, no third X GET');
@@ -162,7 +162,7 @@ test('a confirmed production POST remains submitted when delivery of the subsequ
   await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('原操作已确认提交')&&document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('最新安排暂未读回')`);
   const transport=object(await browser.evaluate('globalThis.__t37Transport')),post=rows(transport.posts)[0];assert.ok(post);assert.equal(post.status,200);assert.equal(object(post.body).ok,true);
   assert.equal(requests.filter(request=>request.method==='POST').length,1);assert.equal(await browser.evaluate(`Boolean(document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('结果未知'))`),false);
-  assert.equal(await browser.evaluate(`Boolean(${button('只读核对原操作')})`),false);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),{drafts:0,operations:0,revision:null,commandId:null});
+  assert.equal(await browser.evaluate(`Boolean(${button('核对结果')})`),false);assert.deepEqual(await browser.evaluate(stored(fixture.handler,ticketId)),{drafts:0,operations:0,revision:null,commandId:null});
   const arranged=await current(handler,schedulePath);assert.equal(arranged.schedule_version,'1');assert.equal(object(arranged.active).due_at,dueX);
   await browser.evaluate('globalThis.__t37Transport.failViews=false;globalThis.__t37Transport.failAfterPost=false');await click(browser,'重新读取共享时间');
   // The active schedule is shown to the minute (BeijingTime), as 「2030-01-02 09:30 · 已安排」.

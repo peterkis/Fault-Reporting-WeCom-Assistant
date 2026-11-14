@@ -49,7 +49,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
     const plan=planBoardAction(intent);
     if(plan.state==='NO_CHANGE'){setMessage('列内顺序由官方查询决定，未保存手工排序。');return;}
     if(plan.state==='UNAVAILABLE'){setMessage('此落点不能执行合法业务动作，当前位置未作本地变更。');return;}
-    const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setChecking(true);setMessage('正在核验原事项及当前合法动作…');
+    const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setChecking(true);setMessage('正在加载…');
     const current=()=>{if(controller.signal.aborted||generation.current!==token)return false;try{currentRead();return true;}catch{return false;}};
     let sessionRead=true;
     try{
@@ -166,8 +166,8 @@ export function BoardActionNotice({intent,selector,currentColumn,onCancel}:{inte
   const currentTarget=currentColumn===intent.target_column;
   return <section ref={container} className="board-action-notice" data-board-intent-panel>
     <h3>{currentTarget?'官方已显示：'+boardColumnNames[intent.target_column]:'移至'+boardColumnNames[intent.target_column]+'：请完成合法表单'}</h3>
-    <p>{currentTarget?'已读取的官方位置已到此列；这不代替本次原命令的回执。结果未知或冲突时，仍沿原操作核对，原命令及输入继续保留。':'拖动本身不提交操作。取消此入口会保留本页输入；结果未知或冲突时，沿原操作核对并以官方查询显示真实位置。'}</p>
-    <HButton type="button" data-action="focus-board-action-form" onClick={()=>{const root=container.current?.closest('.detail-dialog,.detail-page'),form=root?.querySelector<HTMLElement>(selector);if(form){form.tabIndex=-1;form.scrollIntoView({block:'nearest',behavior:'auto'});form.focus({preventScroll:true});}}} tone="secondary">{currentTarget?'查看原操作与回执':'继续填写原表单'}</HButton>
+    <p>{currentTarget?'事项已在这一列（可能由同事完成）。这不代表你的操作已提交；如果你提交过，请以下方表单中的结果为准。':'拖动本身不提交操作。取消此入口会保留本页输入；结果未知或冲突时，沿原操作核对并以官方查询显示真实位置。'}</p>
+    <HButton type="button" data-action="focus-board-action-form" onClick={()=>{const root=container.current?.closest('.detail-dialog,.detail-page'),form=root?.querySelector<HTMLElement>(selector);if(form){form.tabIndex=-1;form.scrollIntoView({block:'nearest',behavior:'auto'});form.focus({preventScroll:true});}}} tone="secondary">{currentTarget?'查看下方表单':'继续填写原表单'}</HButton>
     <HButton type="button" data-action="cancel-board-move" onClick={onCancel} tone="secondary">取消移动，保留本页输入</HButton>
   </section>;
 }

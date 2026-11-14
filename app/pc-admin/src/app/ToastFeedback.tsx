@@ -193,16 +193,25 @@ export function ToastFeedback({children,source,state,enabled=true,persistent=fal
 }
 
 /** Routine autosave is an accessible status, not another notification on every keystroke. */
+// Card 34C: draft feedback that needs attention (not saved, not cleared, not confirmed, too long).
+export const DRAFT_WARNING=/未知|过期|失败|不可用|无法|未确认|未能|暂未|过长|只能查看/u,DRAFT_DONE=/^(?:草稿已保存|已保存|已提交)/u;
+const DRAFT_SAVED_HINT='仅保存在这台电脑；从第一次保存起最多保留 24 小时，到期后不再恢复。';
 export function DraftFeedback({children,enabled=true}:{children:string;enabled?:boolean}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  const warning=DRAFT_WARNING.test(children);
   return <ToastFeedback source="draft" state={warning?'unknown':undefined} enabled={enabled&&(warning||/已恢复/u.test(children))}>{children}</ToastFeedback>;
 }
 
 export function DraftStatus({children,notify=true,inlineText=false,...attributes}:Omit<HTMLAttributes<HTMLSpanElement>,'children'> & {children:string;notify?:boolean;inlineText?:boolean}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  const warning=DRAFT_WARNING.test(children),done=DRAFT_DONE.test(children);
   const quiet=inlineText&&(!children||/^草稿仅在当前浏览器/u.test(children));
-  const short=/^已保存恢复副本/u.test(children)?'草稿已保存':/^已提交；恢复副本已清理/u.test(children)?'草稿已清理':children;
-  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={children} title={children} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:/^已保存|^已提交/u.test(children)?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{children}</span></span>{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
+  const short=children;
+  // Codex review: the saved-draft limit is part of the status's accessible text, not only a hover title (keyboard, touch and
+  // assistive technology users get it too); the visible line stays 「草稿已保存」.
+  const spoken=children==='草稿已保存'?children+'。'+DRAFT_SAVED_HINT:children;
+  // Codex review: keyboard and touch users without a screen reader open the limit with a small info button beside every saved
+  // status, the icon-only ones included.
+  const [limitShown,setLimitShown]=useState(false),limitId=useId(),saved=children==='草稿已保存';
+  return <><span {...attributes} role={inlineText?'status':'img'} aria-label={spoken} title={spoken} className={'workbench-draft-status'+(inlineText?' inbox-draft-status':'')+(quiet?' sr-only':'')}>{!quiet?<>{warning?<TriangleAlert size={13}/>:done?<Check size={13}/>:<Info size={13}/>}{inlineText?<span className="inbox-draft-copy">{short}</span>:null}</>:null}<span className="sr-only">{spoken}</span></span>{saved?<><HButton type="button" className="workbench-draft-limit-toggle" data-action="toggle-draft-limit" variant="ghost" isIconOnly aria-label="草稿保存期限" aria-expanded={limitShown} aria-controls={limitId} onClick={()=>setLimitShown(value=>!value)}><Info size={13} aria-hidden="true"/></HButton>{limitShown?<span id={limitId} className="workbench-draft-limit">{DRAFT_SAVED_HINT}</span>:null}</>:null}{notify?<DraftFeedback>{children}</DraftFeedback>:null}</>;
 }
 
 /** Card 34A: the tone of a feedback state, shared by the toast and the dialog's inline alert. */

@@ -50,8 +50,8 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
   }catch(error){
    if(!current())return;
    if(dispatched&&error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);
-   else if(dispatched&&!postAccepted&&error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单版本或状态已变化，请重新读取后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
-   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'尚未发送：恢复副本未确认，不能发起新操作，请保留原操作 只读核对。');}
+   else if(dispatched&&!postAccepted&&error instanceof ApiError){if(!(boardMode&&error.status===409))await draft.knownFailure(command.client_command_id).catch(()=>{});if(!current())return;setPending(boardMode&&error.status===409?command:null);setOpaque(null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'工单已被更新：查看最新内容后再操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
+   else{setOpaque(command.client_command_id);setState('unknown');setMessage(dispatched?'结果未知：保留原操作，不会再次发送。请只读核对。':'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
   }finally{if(generation.current===token)request.current=null;}
  }
  async function checkOriginal(){
@@ -64,7 +64,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
    if(receipt.state==='COMMITTED'&&(command&&receipt.result.ticket_version!==command.expected_version+1||fresh.version<receipt.result.ticket_version||fresh.handling_cycle?.id!==receipt.result.handling_cycle.id))throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
    const cleaned=await settle(id);if(!current())return;setReason('');setPending(null);setOpaque(cleaned?null:id);
    if(!cleaned){setState('unknown');setMessage('已读到原操作终态，但恢复清理尚未确认；只读核对同一操作，不发起新操作。');return;}
-   setState(receipt.state==='FAILED'?'denied':'succeeded');setMessage(receipt.state==='FAILED'?'已核对原操作被拒绝；已读取当前权限与版本，请明确发起新的操作。':fresh.handling_cycle?.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新接单。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
+   setState(receipt.state==='FAILED'?'denied':'succeeded');setMessage(receipt.state==='FAILED'?'上次操作没有成功，请重新操作。':fresh.handling_cycle?.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新接单。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);else{setState('unknown');setMessage('结果未知：只读核对尚未完成，保留原操作，不会再次发送。');}}
   finally{if(generation.current===token)request.current=null;}
  }
@@ -79,11 +79,11 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
   {context.data?<p hidden>工单版本 {context.data.version}</p>:null}
   {principal.ticket_reopen_rounds_enabled&&!context.isPending&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>:null}
   {allowed?<HForm onSubmit={event=>{event.preventDefault();if(blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}><HLabel htmlFor="reopen-reason">重开原因</HLabel><p>请先确认是同一故障。原因仅信息科可见。</p><HTextArea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/><p>保留原工单号和处理组。重开后需要重新接单。</p><HButton type="submit" data-action="reopen-ticket" isDisabled={blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!reason.trim()} tone="secondary">重开此工单</HButton></HForm>:<p>当前没有重开此工单的权限。</p>}
-  {commandId?<HButton type="button" data-action="check-reopen-command" isDisabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()} tone="secondary">核对上次重开</HButton>:null}
+  {commandId?<HButton type="button" data-action="check-reopen-command" isDisabled={state==='checking'||state==='submitting'||loading||context.isError} onClick={()=>void checkOriginal()} tone="secondary">核对结果</HButton>:null}
   {draft.enabled?<DraftStatus data-reopen-draft-status role="status">{draft.message}</DraftStatus>:null}
   {reason&&!commandId&&draft.enabled?<HButton type="button" isDisabled={state==='submitting'||state==='checking'} onClick={()=>void draft.discard()} tone="secondary">清空恢复草稿</HButton>:null}
   {!blocked?<HButton type="button" data-action="refresh-reopen" className="workflow-refresh" isDisabled={(context.isPending||context.isError)} onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton>:null}
   {state!=='idle'?<ToastFeedback revision={messageRevision} source="ticket-reopen" state={state} data-reopen-state role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}
-    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('原冲突意图的本地终态清理未确认，原 UUID 和输入继续保留。');return;}setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
+    {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}setPending(null);setOpaque(null);setState('idle');setMessage('重开原因已保留，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
  </section></StepWorkflow>;
 }

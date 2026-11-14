@@ -149,6 +149,24 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card34c-copy.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/workbench-media-employee-read.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9023,6 +9041,7 @@
     ],
     "pr-pc": [
       "tests/pc-admin-design-foundation.test.mts",
+      "tests/pc-admin-copy-terms.test.mts",
       "tests/pc-admin-card12-review.browser.test.mts",
       "tests/pc-admin-card16.browser.test.mts",
       "tests/web01-workbench.test.mts",

@@ -68,7 +68,7 @@ for(const fault of ['disconnect','invalid-success'])test('formal self handling k
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
       await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('正在提交')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=take-and-start]').disabled"),true);assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=accept-for-later]'))"),false);
-      await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未确认')");
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
       assert.equal(await browser.evaluate('globalThis.__t04Posts.length'),1);
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').disabled"),true);
@@ -112,7 +112,7 @@ test('malformed object denial is authoritative and the original 720px shell stay
       await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
       await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
       await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('.ticket-self-handling')");
-      assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
+      assert.equal(await browser.evaluate("document.body.innerText.includes('结果未确认')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
     },{page:false});
   },{ticketSelfHandlingEnabled:true,malformedSelfHandlingDenial:true});

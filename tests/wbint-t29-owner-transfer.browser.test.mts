@@ -34,7 +34,7 @@ test('T29 an authorized Incident owner transfer selects an already-readable vali
     for(const original of personal){assert.deepEqual(await http.get('/api/tickets/'+original.ticketId),original.detail);assert.deepEqual(await http.get('/api/tickets/'+original.ticketId+'/events?limit=200'),original.events);assert.deepEqual(await http.get('/api/tickets/'+original.ticketId+'/responsibility'),original.responsibility);}
     assert.deepEqual(await http.get(path+'/notifications?limit=100'),notifications,'internal owner transfer creates no external notice intent');
     await navigateFollowup(context,id);
-    const displayed=`(()=>{const root=document.querySelector('[data-incident-id="${id}"]');const value=label=>[...(root?.querySelectorAll('dt')??[])].find(item=>item.textContent===label)?.nextElementSibling?.textContent;return value('故障负责人')==='合成调度员'&&value('责任组')==='PILOT_IT'&&value('公共故障版本')==='2';})()`;
+    const displayed=`(()=>{const root=document.querySelector('[data-incident-id="${id}"]');const value=label=>[...(root?.querySelectorAll('dt')??[])].find(item=>item.textContent===label)?.nextElementSibling?.textContent;return value('故障负责人')==='合成调度员'&&value('责任组')==='PILOT_IT'&&root?.dataset.rowVersion==='2';})()`;
     await context.browser.waitFor(displayed);await context.browser.command('Page.reload');await context.browser.waitFor(displayed);
     assert.equal((await http.get(path)).row_version,'2');
   });

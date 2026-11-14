@@ -97,7 +97,7 @@ test('T15 lost composite ACK survives an explicitly safe close and reopen with i
       await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.checked===true`);
       assert.deepEqual(await browser.evaluate('globalThis.__t15Writes'),[]);
       assert.equal(requests.filter(request=>request.method==='POST').length,0,'material and Session selection must not submit an intermediate command');
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.waitFor("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]')?.disabled===false");
       await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=resolve-and-start-review]').click()");
       await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('结果未知')");

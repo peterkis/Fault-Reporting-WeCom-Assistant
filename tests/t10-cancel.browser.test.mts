@@ -22,7 +22,7 @@ test('Card 27C-B closure recovery uses its own capability when internal notes ar
   assert.deepEqual([bootstrap.draft_recovery_enabled,bootstrap.ticket_waiting_action_draft_recovery_enabled,bootstrap.closure_draft_recovery_enabled],[false,true,true]);
   await withT10Browser(context,target.ticket.id,2,'CARD27CB_RECOVERY_WITHOUT_NOTES',async browser=>{
    await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=OTHER]');
-   await browser.evaluate(fillWaiting('.detail-cancel-dialog textarea','独立关闭草稿（合成）'));await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('已保存恢复副本')");
+   await browser.evaluate(fillWaiting('.detail-cancel-dialog textarea','独立关闭草稿（合成）'));await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('草稿已保存')");
    await clickWorkbenchControl(browser,'.detail-cancel-dialog button[type=submit]');await browser.waitFor("document.querySelector('[data-toast-source=ticket-waiting-cancel]')?.textContent.includes('已处理 · 已关闭')");
    assert.equal((await http.detail(target.ticket.id)).status,'DISMISSED');
   });
@@ -169,7 +169,7 @@ test('Card 27C-B closing the dialog preserves the unsaved draft navigation fence
    await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=OTHER]');await browser.evaluate(fillWaiting('.detail-cancel-dialog textarea','尚未保存的关闭说明（合成）'));await browser.waitFor('globalThis.__closureEncryptionWaiting===true');
    await clickWorkbenchControl(browser,'[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");assert.equal(await browser.evaluate("document.querySelector('.nav-item.current').getAttribute('aria-disabled')"),'true');
    await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await clickWorkbenchControl(browser,'[data-action=cancel]');await browser.waitFor("document.querySelector('.detail-cancel-dialog textarea')?.value==='尚未保存的关闭说明（合成）'");
-   await browser.evaluate('globalThis.__releaseClosureEncryption()');await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('已保存恢复副本')");
+   await browser.evaluate('globalThis.__releaseClosureEncryption()');await browser.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('草稿已保存')");
    await clickWorkbenchControl(browser,'[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')&&document.querySelector('.nav-item.current').getAttribute('aria-disabled')==='false'");assert.equal(posts,0);assert.equal((await http.detail(target.ticket.id)).version,before.version);await capture('new-detail-1920.png');
   });}finally{context.runtime.server.removeListener('request',observe);}
  },{closureUi:true});

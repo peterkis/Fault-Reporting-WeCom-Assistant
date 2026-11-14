@@ -37,7 +37,7 @@ for(const mode of ['initial-401','draft-401','cleanup-failure','permission-403',
     if(mode==='draft-401'||mode==='cleanup-failure'){
      await browser.waitFor("document.querySelector('#internal-note')?.disabled===false");
      await browser.evaluate("(()=>{const input=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'PRIVATE_AUTH_DRAFT：仅合成未提交输入');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
-     await browser.waitFor("document.body.innerText.includes('已保存恢复副本')");assert.equal((await browser.evaluate(draftCounts) as {drafts:number}).drafts,1);
+     await browser.waitFor("document.body.innerText.includes('草稿已保存')");assert.equal((await browser.evaluate(draftCounts) as {drafts:number}).drafts,1);
      if(mode==='cleanup-failure')await browser.evaluate("(()=>{const original=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(this.name==='wecom-workbench-drafts-v1'&&mode==='readwrite')throw new DOMException('SYNTHETIC_STORAGE_UNAVAILABLE','InvalidStateError');return original.call(this,stores,mode,...rest);};})()");
     }
     await browser.waitFor("[...document.querySelectorAll('.ticket-notes button')].some(button=>button.textContent==='刷新可用操作'&&!button.disabled)");
@@ -45,7 +45,7 @@ for(const mode of ['initial-401','draft-401','cleanup-failure','permission-403',
     // Another in-flight read can already have closed the view after cookie loss.
     await browser.evaluate("[...document.querySelectorAll('.ticket-notes button')].find(button=>button.textContent==='刷新可用操作')?.click()");
     if(mode==='ordinary-browser'){await browser.waitFor("document.body.innerText.includes('会话已失效')");assert.equal(qrRequests,0);return;}
-    if(mode==='cleanup-failure'){await browser.waitFor("document.body.innerText.includes('清理尚未确认')");assert.equal(qrRequests,0);assert.equal(await browser.evaluate('window.__loginRequests'),0);assert.equal(posts,0);return;}
+    if(mode==='cleanup-failure'){await browser.waitFor("document.body.innerText.includes('还没清除完')");assert.equal(qrRequests,0);assert.equal(await browser.evaluate('window.__loginRequests'),0);assert.equal(posts,0);return;}
    }
    await browser.waitFor("location.pathname==='/workbench/desktop'&&document.body.innerText.includes('合成企业微信二维码登录')");
    const proof=await browser.evaluate("JSON.parse(sessionStorage.getItem('synthetic-login-proof'))") as {calls:number;counts:{drafts:number;operations:number};blocked:boolean;oldTextVisible:boolean;context:{epoch:null;blocked:boolean;live:boolean;remindersAvailable:boolean}};

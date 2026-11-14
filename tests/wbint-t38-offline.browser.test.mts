@@ -27,7 +27,7 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page',width:1280,height:900,cookies:[cookie]});assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea[aria-label=内部备注]"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T38 draft during temporary read failure');input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.setSelectionRange(4,8);})()`);
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');
       const priorReads=reads;unreadable=true;
       await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="刷新可用操作").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
@@ -40,9 +40,9 @@ test('ordinary failed authoritative reads retain the visible draft and confirmed
       for(let i=0;i<150&&attachmentReads===beforeAttachments;i++)await new Promise(resolve=>setTimeout(resolve,100));assert.ok(attachmentReads>beforeAttachments,'an unrelated authorized attachment family actually returned200');
       await browser.waitFor('!document.querySelector(".attachment-section button")?.disabled&&!document.querySelector(".attachment-section")?.textContent.includes("附件响应无法安全识别")');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
-      await browser.waitFor('(()=>{const text=document.querySelector(".ticket-note-state")?.textContent??"";return ["尚未准备或发送","已保存","结果未知","保存被拒绝"].some(state=>text.includes(state));})()');
+      await browser.waitFor('(()=>{const text=document.querySelector(".ticket-note-state")?.textContent??"";return ["网络未就绪","已保存","结果未确认","保存被拒绝"].some(state=>text.includes(state));})()');
       assert.equal(posts,0,'no new prepare/POST may be inferred from stale/unreadable action data');
-      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("尚未准备或发送")'));
+      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("网络未就绪")'));
       assert.equal(await browser.evaluate('document.querySelector("textarea").value'),'T38 draft during temporary read failure');
       unreadable=false;
       await browser.evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="刷新可用操作").click()');
@@ -75,7 +75,7 @@ test('the integrated conversation handling new operation waits for the same fres
       await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');await browser.waitFor('Boolean(document.querySelector(".detail-accept-dialog"))');
       await browser.waitFor('Boolean(document.querySelector("[data-session-choice] input[type=checkbox]"))&&document.querySelector("[data-action=retain-current-communicator] input[type=radio]")?.matches(":disabled")===false&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate('document.querySelector("[data-action=retain-current-communicator] input[type=radio]").click()');
-      await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")&&document.querySelector("[data-action=confirm-conversation-handling]")?.disabled===false');
+      await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")&&document.querySelector("[data-action=confirm-conversation-handling]")?.disabled===false');
       const priorReads=reads;unreadable=true;
       await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');

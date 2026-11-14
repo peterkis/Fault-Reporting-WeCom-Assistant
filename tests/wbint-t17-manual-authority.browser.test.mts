@@ -18,10 +18,10 @@ test('leaving the manual form does not leave its private draft behind after curr
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+other.ticket.id+'?detail=page',width:900,height:900,certificateSpki,cookies:browserCookies});assert.ok(browser);
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'内部备注','T17 separate authorized note');
-      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.command('Page.navigate',{url:origin+'/workbench/app/reports/new'});
       await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'报修人姓名','T17 revoked private reporter');await type(browser,'联系方式','合成人工联系8899');await type(browser,'故障描述','T17 revoked private input：打印机无法打印');
-      await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').click()");await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').click()");await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=return-workbench]').click()");await browser.waitFor("Boolean(document.querySelector('.ticket-card'))&&!document.querySelector('[data-manual-report-form]')");
       const before=object(await browser.evaluate(copies));assert.ok(Array.isArray(before.drafts));assert.equal(before.drafts.length,2);
       const changed=await access.upsertPrincipal({wecomUserId:principal.wecom_user_id,displayName:principal.display_name,roles:['HANDLER'],resolverTeamIds:[]});assert.equal(changed.id,principal.id);

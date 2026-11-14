@@ -25,7 +25,7 @@ test('the actual production staff form restores an encrypted manual draft and ex
       await browser.evaluate("document.querySelector('[data-action=new-report]').click()");
       await browser.waitFor("Boolean(document.querySelector('[data-manual-report-form]'))");
       for(const label of ['身份未核实','需人工联系','不会自动通知','代录人：林舟'])assert.equal(await browser.evaluate(`document.querySelector('[data-manual-report-form]').textContent.includes(${JSON.stringify(label)})`),true);
-      await fill(browser);await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await fill(browser);await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");
       const stored=object(await browser.evaluate(copies)),drafts=stored.drafts;assert.ok(Array.isArray(drafts));assert.equal(drafts.length,1);const draft=object(drafts[0]);
       assert.equal(draft.principal,principal.id);assert.equal(draft.kind,'intake');assert.equal(draft.purpose,'manual-report');assert.equal(draft.id,'00000000-0000-4000-8000-000000000072');
       assert.equal(Number(draft.expiresAt)-Number(draft.firstSavedAt),86_400_000);assert.equal(draft.extractable,false);assert.equal(draft.algorithm,'AES-GCM');assert.equal(draft.plaintext,false);

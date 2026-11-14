@@ -150,9 +150,11 @@ test('T33 production detail keeps one committed-but-unacknowledged command and r
   assert.equal(senderCalls(),1,'recording the observed send never calls Sender again');
   assert.equal(await input('选择通知路'),deliveryId);assert.equal(await input('投递控制操作'),'RECONCILE');
   assert.equal(await input('投递操作原因'),body.reason_code);assert.equal(await input('未知发送核对结论'),body.resolution);
+  // Card 34C: the original operation number and version are diagnostics, copied on request rather than shown.
+  const diagnostics=async()=>text(await browser.evaluate('document.querySelector('+JSON.stringify(root)+')?.querySelector("[data-diagnostics]")?.dataset.diagnostics??""'));
   const preservedText=await controlText();
-  assert.ok(preservedText.includes('原通知操作 UUID：'+uuid));
-  assert.ok(preservedText.includes('原版本：'+version));
+  assert.ok((await diagnostics()).includes(JSON.stringify(uuid)));
+  assert.ok((await diagnostics()).includes(JSON.stringify(version)));
   assert.ok(preservedText.includes('捕获公共故障版本 '+version+'；'));
   assert.ok(preservedText.includes('捕获尝试 '+attempt+'，'));
   assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(submit)+').disabled'),true);

@@ -13,7 +13,7 @@ import {sameSupplementTarget} from './client';
 import type {SupplementFollowUpCommand,SupplementFollowUpTarget,SupplementFollowUpResult,SupplementFollowUpItem} from './client';
 import {EMPTY_SUPPLEMENT_INPUT,useSupplementDraft} from './use-supplement-draft';
 import type {SupplementDispositionInput} from './use-supplement-draft';
-import {conversations} from '../conversations/client';
+import {conversations,publicChannelLabel} from '../conversations/client';
 import type {ConversationWorkspaceEntry} from '../conversations/client';
 import {ConversationComposer} from '../conversations/ConversationComposer';
 import './supplement-follow-up.css';
@@ -81,7 +81,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    await page.refetch();if(!current())return;const target=pending??value.target??restoredMaterial;
    if(target){const exact=await api.supplementFollowUpMaterial(ticketId,target,controller.signal);if(!current())return;setRestoredMaterial(exact.item);}
    void client.invalidateQueries({queryKey:['detail',principal.principal_id,'ticket',ticketId]});void client.invalidateQueries({queryKey:['board',principal.principal_id]});
-  }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){stage.current='purpose';await authorityFailure(error);}else setMessage('当前补充重新读取失败，原命令结果未变化。');}
+  }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){stage.current='purpose';await authorityFailure(error);}else setMessage('补充材料暂时读取失败，点击重试。');}
   finally{if(materialRead.current===controller)materialRead.current=null;controller.abort();}
  };
  async function submit(target:SupplementFollowUpTarget){
@@ -90,7 +90,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   const controller=new AbortController(),token=++generation.current;request.current=controller;original.current=command.client_command_id;setPending(command);setOperationId(command.client_command_id);setState('submitting');setMessage('正在记录本条补充的内部处置并标记已跟进…');
   const current=()=>generation.current===token&&!controller.signal.aborted;
   try{
-   try{await draft.prepare(command);}catch{if(current()){setPending(null);setOperationId(null);setState('failed');setMessage('恢复副本未保存，本次尚未发送；原输入已保留。');}return;}
+   try{await draft.prepare(command);}catch{if(current()){setPending(null);setOperationId(null);setState('failed');setMessage('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
    if(!current())return;stage.current='purpose';
    let result:SupplementFollowUpResult;
    try{result=await api.recordSupplementDisposition(ticketId,command,principal.csrf_token,controller.signal);}
@@ -103,13 +103,13 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
     }
     if(error instanceof ApiError){
      let cleaned=true;try{await draft.knownFailure(command.client_command_id);}catch{cleaned=false;}
-     if(!current())return;setPending(cleaned?null:command);setOperationId(cleaned?null:command.client_command_id);setState('failed');setMessage('处置未成功：'+errorMessage(error)+' 内部输入和原修订已保留。'+(cleaned?'':' 恢复副本清理失败，请核对上次操作。'));return;
+     if(!current())return;setPending(cleaned?null:command);setOperationId(cleaned?null:command.client_command_id);setState('failed');setMessage('处置未成功：'+errorMessage(error)+' 内部输入和原修订已保留。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));return;
     }
     setState('unknown');setMessage('处置结果未知；原操作、正文和修订保持不变，请核对上次操作。');return;
    }
    if(!current())return;
    settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(command.client_command_id);}catch{cleaned=false;}finally{settling.current=false;}
-   if(!current())return;resetInput();setOperationId(cleaned?null:command.client_command_id);setState('succeeded');setMessage((result.replayed?'已核对原处置结果。':'本条补充已记录处置并跟进。')+(cleaned?'':' 恢复副本清理失败，须只读核对并重试清理。'));
+   if(!current())return;resetInput();setOperationId(cleaned?null:command.client_command_id);setState('succeeded');setMessage((result.replayed?'已核对原处置结果。':'本条补充已记录处置并跟进。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
    try{await refresh();}catch{if(current())setMessage('本条补充处置已确认；当前材料重新读取失败，请重新读取。');}
   }finally{if(request.current===controller)request.current=null;}
  }
@@ -122,7 +122,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    if(receipt.state==='COMMITTED'&&pending&&!sameSupplementTarget(receipt.result,pending)){setState('unknown');setMessage('收据目标与原操作不一致，原操作保持锁定。');return;}
    settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(commandId,receipt.state==='FAILED');}catch{cleaned=false;}finally{settling.current=false;}
    if(!current())return;if(receipt.state==='COMMITTED')resetInput();else setPending(null);
-   setOperationId(cleaned?null:commandId);setState(receipt.state==='COMMITTED'?'succeeded':'failed');setMessage((receipt.state==='COMMITTED'?'已核对本条补充处置成功。':'原操作已确认失败；内部输入保留，请重新读取当前材料。')+(cleaned?'':' 恢复副本清理失败，须继续只读核对。'));
+   setOperationId(cleaned?null:commandId);setState(receipt.state==='COMMITTED'?'succeeded':'failed');setMessage((receipt.state==='COMMITTED'?'已核对本条补充处置成功。':'原操作已确认失败；内部输入保留，请重新读取当前材料。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
    try{await refresh();}catch{if(current())setMessage('原操作终态已确认；当前材料读取失败，请重新读取。');}
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorityFailure(error,commandId);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');}
   finally{if(request.current===controller)request.current=null;}
@@ -136,15 +136,15 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    const note=selected?value.note:'',editable=canEdit&&(!hasInput||selected),canSubmit=editable&&selected&&Boolean(note.trim())&&Array.from(note).length<=2000;
    return <li key={JSON.stringify([item.source_ref,item.revision])} data-supplement-source-ref={item.source_ref} data-supplement-revision={item.revision} data-follow-up-state={item.follow_up_state}>
     <header><strong>{item.source_kind==='WEB'?'网页补充':'企业微信补充'}</strong><span>{item.follow_up_state==='PENDING'?'待跟进':'已跟进'}</span></header>
-    {item.resolution?<p>跟进依据：{item.resolution.basis==='RECORDED_DISPOSITION'?'明确记录处置':'回复成功已核验'} · {item.resolution.occurred_at}（北京时间）</p>:<HForm onSubmit={event=>{event.preventDefault();if(canSubmit)void submit(item);}}><HLabel htmlFor={fieldId}>处理情况（内部）</HLabel><p id={fieldId+'-audience'}>仅信息科可见；提交后明确标记本条补充已跟进。</p><HTextArea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/><HButton type="submit" data-action="record-supplement-disposition" isDisabled={!canSubmit} tone="secondary">保存并标记已跟进</HButton>{replySessions.length&&!bound&&!locked?<HButton type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}} tone="secondary">通过已有会话回复本条补充</HButton>:null}</HForm>}
+    {item.resolution?<p>跟进依据：{item.resolution.basis==='RECORDED_DISPOSITION'?'明确记录处置':'已回复'} · {item.resolution.occurred_at}（北京时间）</p>:<HForm onSubmit={event=>{event.preventDefault();if(canSubmit)void submit(item);}}><HLabel htmlFor={fieldId}>处理情况（内部）</HLabel><p id={fieldId+'-audience'}>仅信息科可见；提交后明确标记本条补充已跟进。</p><HTextArea id={fieldId} name="disposition_note" aria-describedby={fieldId+'-audience'} disabled={!editable} value={note} onChange={event=>{setValue({target:{source_ref:item.source_ref,revision:item.revision},note:event.target.value});if(!locked){setState('idle');setMessage('');}}}/><HButton type="submit" data-action="record-supplement-disposition" isDisabled={!canSubmit} tone="secondary">保存并标记已跟进</HButton>{replySessions.length&&!bound&&!locked?<HButton type="button" data-action="reply-supplement" onClick={()=>{const entry=replySessions[0];if(entry)setBound({target:{source_ref:item.source_ref,revision:item.revision},entry});}} tone="secondary">通过已有会话回复本条补充</HButton>:null}</HForm>}
    </li>;
   })}</ol>{page.isSuccess&&!unique.length?<p>当前没有可见的补充材料。</p>:null}{page.hasNextPage?<HButton type="button" isDisabled={page.isFetchingNextPage||busy} onClick={()=>{void page.fetchNextPage();}} tone="secondary">加载更多补充</HButton>:null}{bound?<section data-supplement-bound-reply="" aria-label="精确补充回复">
    <p>请单独填写回复。内部处理情况不会自动填入回复。回复送达后，才会标记本条补充已跟进。</p>
-   {replySessions.length>1?<WorkbenchSelect label={<>已有获权会话</>} value={bound.entry.session.session_id} isDisabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><ListBox.Item key={entry.session.session_id} id={entry.session.session_id} textValue={String(entry.topic)+"·"+String(entry.channel_label)}>{entry.topic}· {entry.channel_label}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>:null}
+   {replySessions.length>1?<WorkbenchSelect label={<>已有获权会话</>} value={bound.entry.session.session_id} isDisabled={replyBlocked} onChange={event=>{const entry=replySessions.find(row=>row.session.session_id===event);if(entry)setBound({...bound,entry});}}>{replySessions.map(entry=><ListBox.Item key={entry.session.session_id} id={entry.session.session_id} textValue={String(entry.topic)+"·"+String(entry.channel_label)}>{entry.topic}· {publicChannelLabel(entry.channel_label)}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>:null}
    <ConversationComposer key={JSON.stringify([bound.target,bound.entry.session.session_id])} entry={bound.entry} principal={principal} purpose="messages" followUpTarget={{ticket_id:ticketId,...bound.target}} onBlockedChange={setReplyBlocked} onCommitted={()=>{void refresh();}}/>
    <HButton type="button" isDisabled={replyBlocked} onClick={()=>setBound(null)} tone="secondary">关闭补充回复</HButton>
   </section>:null}<div className="note-controls">
-   {originalId?<HButton type="button" data-action="check-supplement-receipt" isDisabled={busy} onClick={()=>{void checkReceipt();}} tone="secondary">只读核对原处置</HButton>:null}
+   {originalId?<HButton type="button" data-action="check-supplement-receipt" isDisabled={busy} onClick={()=>{void checkReceipt();}} tone="secondary">核对结果</HButton>:null}
    <HButton type="button" data-action="refresh-supplement-follow-up" isDisabled={busy} onClick={()=>{void refresh();}} tone="secondary">重新读取补充</HButton>
    {hasInput&&!locked?<HButton type="button" data-action="discard-supplement-input" onClick={()=>{if(draft.enabled)void draft.discard();else resetInput();}} tone="secondary">清空内部输入</HButton>:null}
   </div>{draft.rawEnabled?<DraftStatus role="status" data-supplement-draft-status>{draft.message}</DraftStatus>:<p>输入仅保留在当前页面；离开前请完成提交或清空输入。</p>}{state!=='idle'?<ToastFeedback revision={messageRevision} source="supplement-follow-up" state={state} role={['failed','unknown','denied'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}</WorkbenchDisclosure>

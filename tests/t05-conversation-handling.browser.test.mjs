@@ -41,7 +41,7 @@ test('refresh restores the explicit selection with its original Session version 
     await browser.waitFor('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length===1&&document.querySelector("[data-session-choice] input[type=checkbox]").disabled===false');
     await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-conversation-draft-status]"))'),true);
-    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');
+    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
     const original=await browser.evaluate('({id:document.querySelector("[data-session-choice]").dataset.sessionChoice,version:document.querySelector(".conversation-choices").innerText})');
     const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
     await browser.waitFor(`performance.timeOrigin!==${previous}&&document.querySelector('[data-session-choice] input[type=checkbox]')?.checked===true`);
@@ -91,7 +91,7 @@ test('the sole-session shortcut preserves its exact selection and UUID when the 
     await browser.evaluate(instrument);
     await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="领取并开始"&&document.querySelector("[data-action=take-and-start-with-conversations]").disabled===false');
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+    await browser.waitFor('/结果未知|结果未确认/u.test(document.querySelector(".conversation-handling-state")?.textContent??"")&&document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions.length,1);
     malformed=false;await browser.evaluate('document.querySelector("[data-action=check-conversation-handling]").click()');
     await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已开始处理")');
@@ -114,8 +114,8 @@ test('a conversation assigned to another colleague still requires explicit selec
 for(const expires of [false,true])test('an UNKNOWN composite keeps its original identified selection through reload and '+(expires?'expires into safe read-only Ack':'replays only on explicit checking'),async()=>{
   await browserScenario(async({browser,runtime,tickets})=>{
     let malformed=true;runtime.server.on('request',(request,response)=>{if(!request.url?.endsWith('/take-and-start-with-conversations'))return;const end=response.end.bind(response);response.end=(...args)=>response.statusCode===200&&malformed?end('{"ok":true}'):end(...args);});
-    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("结果未知")');const original=(await browser.evaluate('globalThis.__t05Posts'))[0];
+    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
+    await browser.waitFor('/结果未知|结果未确认/u.test(document.querySelector(".conversation-handling-state")?.textContent??"")');const original=(await browser.evaluate('globalThis.__t05Posts'))[0];
     // The harness enables Runtime and Network; future-document scripts also require the Page domain.
     await browser.command('Page.enable');
     const beforeReload=await browser.evaluate('Date.now()');
@@ -138,13 +138,13 @@ for(const expires of [false,true])test('an UNKNOWN composite keeps its original 
 const storedCounts="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').count(),operations=tx.objectStore('operations').count();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result,operations:operations.result});};};})";
 test('a real version conflict preserves the identified selection and its old version until explicit discard',async()=>{
   await browserScenario(async({browser,pool})=>{
-    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');
+    await browser.evaluate(instrument);await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
     const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query('UPDATE conversation.session SET row_version=row_version+1 WHERE id=$1::uuid',[id]);
     await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("操作冲突")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
+    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已被他人更新")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
     assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
-    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+    await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("内容已变化")'));
     await browser.evaluate('document.querySelector("[data-action=discard-conversation-handling-draft]").click()');await browser.waitFor("!document.querySelector('.detail-accept-dialog')");await openOptions(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
   },{workbenchDraftRecoveryEnabled:true});
@@ -152,7 +152,7 @@ test('a real version conflict preserves the identified selection and its old ver
 
 test('restore rejects an ended canonical choice and a fresh Ticket rejection clears its encrypted copy and private view',async()=>{
   await browserScenario(async({browser,pool,principals,tickets})=>{
-    await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("已保存恢复副本")');const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
+    await choose(browser);await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query("UPDATE conversation.session SET status='ENDED',ended_at=platform.local_now(),close_reason='T05_SYNTHETIC_ENDED' WHERE id=$1::uuid",[id]);await reload(browser);
     await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled===false');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
     assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);assert.equal(await browser.evaluate(`document.querySelector('.ticket-conversation-handling').innerText.includes(${JSON.stringify(id)})`),false);

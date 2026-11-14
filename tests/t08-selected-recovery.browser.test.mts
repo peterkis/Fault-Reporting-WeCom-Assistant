@@ -81,12 +81,12 @@ for(const temporary of [false,true])test(temporary
    await browser.evaluate(edit(reasonInput,reason));await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,target);
    await browser.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
    await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
-   await browser.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${restored})`);
+   await browser.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${restored})`);
    const original=object(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')));assert.ok(original.revision);assert.equal(original.operation,null);
    let noteCopy:Record<string,unknown>|null=null;
    if(temporary){
     await browser.waitFor("document.querySelector('#internal-note')?.disabled===false&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-    await browser.evaluate(edit("document.querySelector('#internal-note')",otherNote));await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+    await browser.evaluate(edit("document.querySelector('#internal-note')",otherNote));await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
     noteCopy=object(await browser.evaluate(stored(fixture.admin,ticketId,'internal-note')));assert.ok(noteCopy.revision);assert.equal(noteCopy.operation,null);
     await browser.command('Page.enable');
     faultScript=text(object(await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__t08FaultCount=0;globalThis.__t08RealTargetStatuses=[];globalThis.__t08ReadFault=true;globalThis.__t08RestoreRead=()=>{globalThis.__t08ReadFault=false;globalThis.fetch=original;};globalThis.fetch=async(input,init)=>{const response=await original(input,init),url=new URL(typeof input==='string'?input:input.url,location.href);if(globalThis.__t08ReadFault&&(!init?.method||init.method==='GET')&&url.pathname===${JSON.stringify(targetPath)}&&url.searchParams.get('target_principal_id')===${JSON.stringify(target)}){globalThis.__t08RealTargetStatuses.push(response.status);if(response.status===200){await response.arrayBuffer();globalThis.__t08FaultCount++;throw new TypeError('T08_SYNTHETIC_NETWORK_FAILURE_AFTER_REAL_TARGET_READ');}}return response;};})()`})).identifier);
@@ -94,7 +94,7 @@ for(const temporary of [false,true])test(temporary
    assert.equal(requests.filter(row=>row.method==='POST').length,0);
    await reload(browser);
    if(temporary){
-    await browser.waitFor(`(${draftStatus})?.textContent.includes('恢复核验暂时不可用')&&globalThis.__t08FaultCount>=1`);
+    await browser.waitFor(`(${draftStatus})?.textContent.includes('草稿暂未恢复')&&globalThis.__t08FaultCount>=1`);
     const statuses:unknown=await browser.evaluate('globalThis.__t08RealTargetStatuses');assert.ok(Array.isArray(statuses)&&statuses.length>=1&&statuses.every((status:unknown)=>status===200));
     assert.equal(await browser.evaluate(`(${reasonInput})?.value`),'');assert.equal(await browser.evaluate(`(${targetInput})?.value??null`),null);
     assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-unassign [data-session-choice] input[type=checkbox]:checked').length"),0);
@@ -123,7 +123,16 @@ for(const temporary of [false,true])test(temporary
    }else{
     await browser.waitFor(restored);assert.deepEqual(await browser.evaluate(stored(fixture.admin,ticketId,'ticket-unassign')),original);
     assert.equal(requests.filter(row=>row.method==='POST').length,0,'current authorized restoration never submits');
-    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.closest('li')?.textContent`);assert.ok(typeof renderedVersion==='string'&&renderedVersion.includes('版本 '+sessionVersion));
+    // Card 34C: the session version is no longer visible copy; it stays on the choice as a data attribute.
+    const renderedVersion=await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]')?.dataset.sessionRowVersion`);assert.equal(renderedVersion,String(sessionVersion));
+    // Codex review: without the session number in the text, each choice still names itself 「会话尾号 XXXXXX · 沟通人」 (a stable suffix of its number) and keeps the
+    // session number in its hover title, so two choices with the same colleague stay distinguishable.
+    const choice=await browser.evaluate(`(row=>({text:row?.innerText.replace(/\\s+/g,' ')??'',title:row?.title??''}))(document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li'))`) as {text:string;title:string};
+    assert.match(choice.text,/^会话尾号 [0-9A-F]{8,} · \S/u,'the choice names its stable session code and colleague '+JSON.stringify(choice));assert.ok(sessionId.replaceAll('-','').toUpperCase().endsWith(/^会话尾号 ([0-9A-F]+)/u.exec(choice.text)?.[1]??'#'),'the code is the session number\'s own suffix '+JSON.stringify(choice));
+    // Codex review: keyboard and touch users can show the full session number without hovering.
+    await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').closest('ul').previousElementSibling.click()`);
+    assert.equal(await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"]').closest('ul').previousElementSibling.dataset.action`),'toggle-full-numbers');
+    await browser.waitFor(`document.querySelector('[data-session-choice="${sessionId}"]')?.closest('li')?.querySelector('.full-number')?.innerText.includes(${JSON.stringify(sessionId)})`);assert.equal(choice.title,'会话编号 '+sessionId);
     await browser.evaluate("document.querySelector('[data-action=unassign]').click()");await browser.waitFor(queuedDom);
     const posts=requests.filter(row=>row.method==='POST');assert.equal(posts.length,1);const post=posts[0];assert.ok(post);assert.equal(post.path,path+'/unassign');assert.equal(post.status,200);
     const body=object(post.body),commandId=text(body.client_command_id);assert.match(commandId,UUID);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"2"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);

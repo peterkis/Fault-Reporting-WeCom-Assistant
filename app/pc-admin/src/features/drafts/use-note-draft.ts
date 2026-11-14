@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
-import {DraftError,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
+import {DraftError,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
 import type {DraftHandle,DraftScope} from './encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -24,13 +24,18 @@ function decodeNote(text:string):NoteDraft{
   if(Object.keys(v).length!==3||v.schema!==1||typeof v.note!=='string'||v.note.length>2000)throw new DraftError('DRAFT_CORRUPT');
   return {schema:1,note:v.note,pending:decodeCommand(v.pending)};
 }
-function failureMessage(error:unknown):string{
+/**
+ * Codex review: while a draft is being restored the original operation may already have been submitted and nothing is restored
+ * yet, so a restore failure never claims 「本次没有提交，你的输入还在」; that wording belongs to a save before a submit.
+ */
+function failureMessage(error:unknown,phase:'save'|'restore'='save'):string{
   const reason=error instanceof DraftError?error.message:'';
   if(reason==='DRAFT_FULL')return '恢复不可用：当前浏览器已达到20份草稿上限；当前输入未保存，请先处理已有草稿。';
   if(reason==='DRAFT_OPERATION_FULL')return '恢复不可用：已达到20个未核对操作上限；不能清除它们来提交新操作，请先核对已有操作。';
-  if(reason==='DRAFT_TOO_LARGE')return '恢复不可用：恢复副本超出16 KiB（16384 bytes），本次未发送；请减少当前输入。';
+  if(reason==='DRAFT_TOO_LARGE')return '内容过长：草稿无法保存，本次没有提交。请删减后再提交。';
   if(reason==='DRAFT_OPERATION_CORRUPT')return '恢复不可用：未核对操作记录已损坏，标识仍保留；不能推断原操作失败或提交新操作，请核对当前工单事实。';
-  return '恢复不可用：当前输入未保存为恢复副本；本次不会发送新的操作。';
+  if(phase==='restore')return '草稿暂未恢复：上次的内容和结果暂时读不到，请先不要重复办理。重新打开详情或刷新页面后再试。';
+  return '草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。';
 }
 export interface AuthorizedDraftValue<T,C> {value:T;pending:C|null}
 export interface AuthorizedDraftOptions<T,C> {
@@ -82,7 +87,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       if(generation.current!==token)throw new DraftError('DRAFT_CHANGED');
       lastSaved.current=text;
       if(value.pending){pendingRevision.current=record.revision;setOperationId(protocol.current.commandId(value.pending));}
-      if(encode(latest.current)===text){setStatus('saved');setMessage('已保存恢复副本；最长24小时。');}
+      if(encode(latest.current)===text){setStatus('saved');setMessage('草稿已保存');}
     });
     queue.current=task;
     try{await task;}catch(error){if(generation.current===token){setStatus('failed');setMessage(failureMessage(error));}throw error;}
@@ -110,7 +115,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       setInitialized(true);
     })().catch(error=>{
       if(controller.signal.aborted||generation.current!==token)return;
-      setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_EXPIRED'?'草稿已过期并清理；过期不代表原操作未提交。':failureMessage(error));
+      setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_EXPIRED'?'草稿已过期并清理；过期不代表原操作未提交。':failureMessage(error,'restore'));
       protocol.current.onAuthorityFailure(error);
     });
     return()=>{controller.abort();generation.current++;cancelTimer();cancelAuthority();handle.current=null;};
@@ -136,7 +141,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
             await refreshEmptyDraft(target);
             if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
             setStatus('ready');setMessage('草稿仅在当前浏览器恢复，最长24小时。');setRefreshIndex(index=>index+1);
-          }catch(error){if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(failureMessage(error));protocol.current.onAuthorityFailure(error);}}
+          }catch(error){if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(failureMessage(error,'restore'));protocol.current.onAuthorityFailure(error);}}
           finally{if(authorityRequest.current===controller)authorityRequest.current=null;}
         }).finally(()=>{blankRefreshPending.current=false;});
         queue.current=task;void task.catch(()=>{});return;
@@ -144,13 +149,13 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       const preserve=value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
       cancelTimer();cancelAuthority();const token=++generation.current;lastSaved.current='';pendingRevision.current=undefined;
       if(!preserve){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
-      setStatus('loading');setMessage('正在核对已清理的恢复副本…');
+      setStatus('loading');setMessage('正在清除草稿…');
       void openDraft(scope,{restore:false}).then(copy=>{
         if(generation.current!==token)return;handle.current=copy.handle;setOperationId(copy.handle.operation?.commandId??null);
         if(copy.handle.operation)callbacks.current.onOperation(copy.handle.operation.commandId);
-        setStatus('ready');setMessage(value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'恢复副本已清理。');setRefreshIndex(index=>index+1);
-      }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('恢复副本清理状态无法核验；不会发送新的操作。');}});
-    });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error));return;}
+        setStatus('ready');setMessage(value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
+      }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
+    });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
   },[enabled,scopeKey]);
   useEffect(()=>{
     if(!writeEnabled){cancelTimer();return;}
@@ -170,6 +175,24 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     return()=>clearTimeout(expiry);
   },[enabled,status,operationId]);
   return {enabled,status,message,
+    /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
+    currentOperation:():string|null=>handle.current?.operation?.commandId??null,
+    /** Drops the stored number of a command that was prepared but never sent (see `releaseUnsentOperation`). */
+    /** Releases a command prepared but never sent: one save drops its pending command and its operation number together, keeping
+     *  the text; the save is refused when another page changed the draft or holds another operation. With the draft row already
+     *  gone, only the matching operation record is removed. */
+    async releaseUnsent(commandId:string){
+      if(!enabled)return;
+      const target=handle.current;
+      if(target?.record&&writeEnabled){
+        await queue.current.catch(()=>{});
+        if(handle.current!==target||latest.current.pending&&protocol.current.commandId(latest.current.pending)!==commandId)return;
+        const next={...latest.current,pending:null};
+        try{await saveDraft(target,encode(next),{settledCommandId:commandId});}catch{return;}
+        latest.current=next;lastSaved.current=encode(next);pendingRevision.current=undefined;setOperationId(current=>current===commandId?null:current);return;
+      }
+      if(await releaseUnsentOperation(scope,commandId)){if(handle.current?.operation?.commandId===commandId)handle.current.operation=null;setOperationId(current=>current===commandId?null:current);}
+    },
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){
@@ -180,7 +203,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       const task=queue.current.catch(()=>{}).then(async()=>{if(generation.current!==token||handle.current!==target)return;await removeSensitiveDraft(target,'discard');});
       queue.current=task;
       try{await task;}
-      catch{setStatus('failed');setMessage('恢复副本清理失败；请保留当前输入。');}
+      catch{setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}
     },
     async prepare(command:C){
       if(!enabled||!writeEnabled)return;
@@ -193,8 +216,9 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       cancelTimer();cancelAuthority();generation.current++;
       latest.current={value:preserveInput?latest.current.value:emptyValue,pending:null};lastSaved.current='';
       try{if(handle.current)await settleDraft(handle.current,commandId,pendingRevision.current??handle.current.record?.revision);}
-      catch{setStatus('failed');setMessage('原操作结果已确认，但恢复副本清理失败；禁止新提交，请只读核对并重试清理。');return false;}
-      pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage('已提交；恢复副本已清理。');
+      catch{setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return false;}
+      // Codex review: the draft layer reports only what happened to the draft; the business outcome is the caller's to state.
+      pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage(handle.current?.operation?'':'草稿已清空。');
       return handle.current?.operation===null;
     },
     async knownFailure(commandId:string){if(!enabled)return true;if(!writeEnabled||!handle.current)return false;latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return false;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');return handle.current.operation===null;},
