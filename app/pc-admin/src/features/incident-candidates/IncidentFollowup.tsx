@@ -113,7 +113,7 @@ export function IncidentFollowup({principal,incidentId,onBlockedChange}:{princip
       }
       if(!workbenchTransportWritable()||!navigator.onLine)throw new ApiError(503,'WORKBENCH_OFFLINE');
       current();sent=true;setState('submitting');setMessage('正在提交'+labels[command.action]+'…');
-      await incidentApi.perform(command,fresh.csrf_token,controller.signal);current();knownCommit.current=true;const cleaned=await draft.success(command.body.client_command_id);current();setPending(null);clearInput();setState('committed');setMessage(labels[command.action]+'已提交；正在重新读取当前事实。个人工单仍保持各自状态与责任，提交不代表通知已送达。'+(cleaned?'':'已提交；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。'));
+      await incidentApi.perform(command,fresh.csrf_token,controller.signal);current();knownCommit.current=true;const cleaned=await draft.success(command.body.client_command_id);current();setPending(null);clearInput();setState('committed');setMessage(labels[command.action]+'已提交；正在重新读取当前事实。个人工单仍保持各自状态与责任，提交不代表通知已送达。'+(cleaned?'':'草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。'));
       void client.invalidateQueries({queryKey:['incident-result',principal.principal_id,incidentId]});void client.invalidateQueries({queryKey:['incident-children',principal.principal_id,incidentId]});
     }catch(error){
       if(request.current!==controller||controller.signal.aborted)return;

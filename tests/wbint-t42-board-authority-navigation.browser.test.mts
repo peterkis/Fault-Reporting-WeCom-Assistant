@@ -24,7 +24,7 @@ test('T42 full-page expansion preserves the original completion intent through a
       await browser.evaluate("document.querySelector('#completion-process').focus()");await browser.command('Input.insertText',{text:'T42原独立内部过程：展开完整页后仍保留原操作。'});
       await browser.evaluate("document.querySelector('#completion-summary').focus()");await browser.command('Input.insertText',{text:'合成设备已恢复。'});await browser.evaluate("document.querySelector('#completion-confirmed').click()");
       await browser.waitFor("document.querySelector('[data-action=complete-ticket]')?.disabled===false");
-      await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t42Completion=null;globalThis.__t42CompletionPosts=0;globalThis.fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/complete')){globalThis.__t42CompletionPosts++;globalThis.__t42Completion=JSON.parse(options.body);await new Promise(resolve=>{globalThis.__t42ReleaseCompletion=resolve;});}return original(path,options);};})()");
+      await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t42Completion=null;globalThis.__t42CompletionPosts=0;globalThis.fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/complete')){globalThis.__t42CompletionPosts++;globalThis.__t42Completion=JSON.parse(options.body);globalThis.__t42CompletionRaw=String(options.body);await new Promise(resolve=>{globalThis.__t42ReleaseCompletion=resolve;});}return original(path,options);};})()");
       await browser.evaluate("document.querySelector('[data-action=complete-ticket]').click()");await browser.waitFor('globalThis.__t42Completion!==null');
       const original=await browser.evaluate('globalThis.__t42Completion'),note=await http.post(ticket.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:started.version,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T42真实竞争版本的内部备注',external_visible:false});assert.equal(note.status,200,await note.clone().text());
       const current=await http.detail(ticket.ticket.id);assert.equal(current.status,'IN_PROGRESS');assert.ok(current.version>started.version);
@@ -33,6 +33,9 @@ test('T42 full-page expansion preserves the original completion intent through a
       // Codex review: the copied diagnostics identify the completion (number and version) and never carry its internal or public text.
       const diagnostics=String(await browser.evaluate("document.querySelector('[data-board-original-intent] [data-diagnostics]').dataset.diagnostics"));
       assert.deepEqual(JSON.parse(diagnostics),{operation_id:object(original).client_command_id,expected_version:object(original).expected_version,action:null});
+      // Codex review: the complete held command is checked through its one-way fingerprint, without its text on the page.
+      const fingerprint=createHash('sha256').update(String(await browser.evaluate('globalThis.__t42CompletionRaw'))).digest('hex');
+      await browser.waitFor("document.querySelector('[data-board-original-intent]')?.dataset.originalFingerprint==="+JSON.stringify(fingerprint));
       for(const field of ['internal_process','external_summary'])assert.ok(!diagnostics.includes(field)&&!diagnostics.includes(String(object(original)[field]??'\u0000')),'no '+field+' in the copied diagnostics');
       assert.equal(await browser.evaluate("document.querySelector('#completion-process').value"),'T42原独立内部过程：展开完整页后仍保留原操作。');
       assert.equal(await browser.evaluate("document.querySelector('#completion-summary').value"),'合成设备已恢复。');assert.equal(await browser.evaluate('globalThis.__t42CompletionPosts'),1);

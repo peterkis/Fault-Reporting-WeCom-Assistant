@@ -101,5 +101,5 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{revision.current++;restoreRequest.current?.abort();},[]);
   return {...draft,revoke,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable,safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,
-    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存。请先保留此页面，稍后重新打开详情或刷新页面再试。':restoring?'正在核对原复合意图的当前权限与关系…':draft.message};
+    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对原复合意图的当前权限与关系…':draft.message};
 }

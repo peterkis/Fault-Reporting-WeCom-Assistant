@@ -158,7 +158,7 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
     enabled: draft.enabled,status:draft.status,operationId:draft.operationId,
     restorationBlocked:unavailable,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',
     safeToLeave:!restoring&&!unavailable&&(draft.safeToLeave||Boolean(enabled&&draft.operationId&&pending===null&&!hasUnassignInput(value)&&['ready','saved'].includes(draft.status))),
-    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存。请先保留此页面，稍后重新打开详情或刷新页面再试。':restoring?'正在核对当前撤派、目标和会话授权…':draft.message,
+    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对当前撤派、目标和会话授权…':draft.message,
     async prepare(command:P2016UnassignCommand,fence:UnassignFence){fence.requireCurrent();await draft.prepare(command);fence.requireCurrent();},
     async settleKnown(commandId:string,fence:UnassignFence){
       fence.requireCurrent();

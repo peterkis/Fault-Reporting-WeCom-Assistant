@@ -33,7 +33,7 @@ export function IncidentInternalNotes({principal,detail,otherBlocked,onBlockedCh
     if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');
     else void purgeDrafts({...scope,reason:'revoked'},{preserveOperations:true}).catch(()=>setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
   };
-  const recoveryFailure=(error:unknown)=>{if(denied(error)||purposeFailure(error))revoke(error);else{setRecoveryUnavailable(true);setState(known.current?'committed':'failed');setMessage('草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存。请先保留此页面，稍后重新打开详情或刷新页面再试。');}};
+  const recoveryFailure=(error:unknown)=>{if(denied(error)||purposeFailure(error))revoke(error);else{setRecoveryUnavailable(true);setState(known.current?'committed':'failed');setMessage('草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。');}};
   async function authorize(signal:AbortSignal){
     const current=captureWorkbenchRead(signal),captured=revision.current,requireCurrent=()=>{current();if(revision.current!==captured)throw new DraftError('DRAFT_ACTION_REVOKED');};stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
     if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.incident_internal_notes_enabled)throw new DraftError('DRAFT_DISABLED');client.setQueryData(['session'],fresh);

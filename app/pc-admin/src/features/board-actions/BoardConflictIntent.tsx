@@ -12,10 +12,25 @@ function boardDiagnostics(original:unknown):Record<string,unknown>{
   const pick=(value:unknown)=>typeof value==='string'||typeof value==='number'?value:null;
   return {operation_id:pick(inner.client_command_id),expected_version:pick(inner.expected_version??inner.expected_row_version),action:pick(outer.action)};
 }
+/**
+ * Codex review: a one-way SHA-256 fingerprint of the held command, as it would be sent, so tests and support can confirm the
+ * original is unchanged through the conflict without the command text appearing anywhere on the page.
+ */
+function useCommandFingerprint(original:unknown):string{
+  const [digest,setDigest]=useState('');
+  useEffect(()=>{
+    let live=true;setDigest('');
+    const outer=original&&typeof original==='object'?original as Record<string,unknown>:{},inner=outer.command&&typeof outer.command==='object'?outer.command:original;
+    const subtle=typeof crypto==='undefined'?undefined:crypto.subtle;
+    if(subtle)void subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(inner))).then(bytes=>{if(live)setDigest([...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join(''));},()=>{});
+    return()=>{live=false;};
+  },[original]);
+  return digest;
+}
 /** The original feature controller owns this immutable command and its purpose. */
 export function BoardConflictIntent({original,onAdopt}:{original:unknown;onAdopt:(current:()=>boolean)=>void|Promise<void>}){
   const generation=useRef(0),request=useRef<AbortController|null>(null),active=useRef(false);
-  const [busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
+  const [busy,setBusy]=useState(false),[failed,setFailed]=useState(false),fingerprint=useCommandFingerprint(original);
   useEffect(()=>{active.current=false;setBusy(false);setFailed(false);return()=>{generation.current++;request.current?.abort();};},[original]);
   const adopt=async()=>{
     if(active.current)return;active.current=true;setBusy(true);setFailed(false);
@@ -24,7 +39,7 @@ export function BoardConflictIntent({original,onAdopt}:{original:unknown;onAdopt
     catch{if(!controller.signal.aborted&&token===generation.current)setFailed(true);}
     finally{if(token===generation.current){active.current=false;if(!controller.signal.aborted)setBusy(false);}}
   };
-  return <section className="board-conflict-intent" data-board-original-intent>
+  return <section className="board-conflict-intent" data-board-original-intent data-original-fingerprint={fingerprint||undefined}>
     <p role="alert">原操作冲突，完整原意图保留。未自动发送，也未按拖动目标移动事项。</p>
     {/* Card 34C: the original operation is diagnostics; it is copied on request, not shown in the body. */}
     <DiagnosticCopy data={boardDiagnostics(original)}/>
