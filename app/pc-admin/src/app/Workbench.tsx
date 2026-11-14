@@ -130,8 +130,8 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
   const displayName=profile.data?.name??principal.display_name,department=profile.data?.department;
   const client=useQueryClient();
   const logout=useMutation({mutationKey:['session-logout',principal.principal_id],mutationFn:()=>api.logout(principal.csrf_token),
-    onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出登录，本机草稿已清除。'),
-    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','退出结果未确认，本机草稿已清除。请重新登录。')});
+    onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出登录。'),
+    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','退出结果未确认，请重新登录。')});
   useEffect(()=>{
     if(!principal.draft_recovery_enabled&&!principal.closure_draft_recovery_enabled&&!principal.manual_review_draft_recovery_enabled&&!principal.ticket_conversation_draft_recovery_enabled&&!principal.staff_completion_draft_recovery_enabled&&!principal.conversation_draft_recovery_enabled&&!principal.manual_report_draft_recovery_enabled&&!principal.ticket_unassign_draft_recovery_enabled&&!principal.ticket_takeover_draft_recovery_enabled&&!principal.ticket_return_to_dispatch_enabled&&!principal.supplement_follow_up_draft_recovery_enabled&&!principal.logout_enabled)return;
     try{return subscribeDrafts(value=>{

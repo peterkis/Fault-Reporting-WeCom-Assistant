@@ -52,7 +52,8 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
     // A confirmed failure saved nothing, so the box keeps whatever it holds, the original note included.
     const committed=result.state==='COMMITTED',later=Boolean(note.trim())&&note.trim()!==pending?.note,preserveInput=committed?later:Boolean(note.trim()),
       // Codex review: a failure keeps the saved draft in one write (only the operation is cleared), never delete-then-rebuild.
-      cleaned=committed?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id).catch(()=>false);if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
+      // With no text there is nothing to keep, so only the matching operation is cleared and no empty draft is written.
+      cleaned=committed||!preserveInput?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id).catch(()=>false);if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
     onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.

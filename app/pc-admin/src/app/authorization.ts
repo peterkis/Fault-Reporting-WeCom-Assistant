@@ -79,7 +79,9 @@ export function clearSessionAuthorization(client:QueryClient,principal:unknown,s
   if(expired&&expiredDesktopCleanup)return expiredDesktopCleanup;
   const cleanup=(async()=>{
     clearSessionView(client,status,notice?'正在退出…':undefined);
-    try{if(typeof principal==='string')await purgeDrafts({principal,reason});if(notice){if(reason==='logout')useUiStore.getState().finishLogout(notice);else useUiStore.getState().closeSession(notice);}}
+    // Codex review: a sign-out notice states the server's result; the local draft state is added here, only once it is known.
+    const signOut=reason==='logout'||reason==='logout-unknown';
+    try{if(typeof principal==='string')await purgeDrafts({principal,reason});if(notice){const text=signOut?notice+' 本机草稿已清除。':notice;if(reason==='logout')useUiStore.getState().finishLogout(text);else useUiStore.getState().closeSession(text);}}
     catch{useUiStore.getState().closeSession((notice??'登录已过期，请重新登录。')+' 本机草稿还没清除完，请保持退出状态。');}
   })();
   if(expired){expiredDesktopCleanup=cleanup;void cleanup.finally(()=>{if(expiredDesktopCleanup===cleanup)expiredDesktopCleanup=undefined;});}

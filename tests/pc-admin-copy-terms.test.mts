@@ -96,12 +96,15 @@ test('Card 34C short codes are the id\'s own suffix and never collide',async()=>
 
 // Codex review: only the fixed channel labels are renamed; a group name containing the same words is shown as given.
 test('Card 34C channel labels are renamed by exact match only',async()=>{
-  const source=await readFile(join(src,'features/conversations/client.ts'),'utf8'),start=source.indexOf('const channelLabels'),end=source.indexOf('\n',source.indexOf('export function publicChannelLabel'));
+  const source=await readFile(join(src,'features/conversations/client.ts'),'utf8'),start=source.indexOf('const channelLabels'),end=source.indexOf('\n',source.indexOf('export function sourceLabel'));
   assert.ok(start>=0&&end>start,'the label table and function are found');
   const output=transpileModule(source.slice(start,end),{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText;
-  const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {publicChannelLabel:(label:string)=>string};
+  const module=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64')) as {publicChannelLabel:(label:string)=>string;sourceLabel:(source:{kind:string;label:string})=>string};
   assert.equal(module.publicChannelLabel('Bot 私聊'),'医小修私聊');assert.equal(module.publicChannelLabel('Bot 私聊来源'),'医小修私聊');
   assert.equal(module.publicChannelLabel('Bot 私聊规则回复'),'医小修自动回复');assert.equal(module.publicChannelLabel('发送到本人 Bot 私聊'),'发送到本人的医小修私聊');
   assert.equal(module.publicChannelLabel('信息科 Bot 私聊交流群'),'信息科 Bot 私聊交流群','a group name is never rewritten');
   assert.equal(module.publicChannelLabel('群来源 · 回复通过私聊'),'群来源 · 回复通过私聊');
+  // A group's maintained name is shown as given even when it equals a channel label; a direct source is still renamed.
+  assert.equal(module.sourceLabel({kind:'group',label:'Bot 私聊来源'}),'Bot 私聊来源');assert.equal(module.sourceLabel({kind:'group',label:'企微群聊'}),'企微群聊');
+  assert.equal(module.sourceLabel({kind:'direct',label:'Bot 私聊来源'}),'医小修私聊');
 });

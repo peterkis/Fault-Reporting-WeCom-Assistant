@@ -300,7 +300,7 @@ test('administrator source group settings searches the real directory across pag
       await openWorkbenchUserMenu(browser);
       await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');await browser.waitFor('Boolean(document.querySelector(".workbench-settings"))');await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
       await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===50');
-      assert.ok(await browser.evaluate('document.body.innerText.includes("群名称未登记")'));
+      assert.ok(await browser.evaluate('document.body.innerText.includes("企微群聊")'));
       await browser.evaluate('document.querySelector("[data-action=next-source-groups]").click()');
       await browser.waitFor('document.querySelector("[data-source-group-page]")?.textContent.includes("第 2 页")&&document.querySelectorAll("[data-source-group-ref]").length>0&&document.querySelectorAll("[data-source-group-ref]").length<50');
       await browser.evaluate('document.querySelector("[data-action=previous-source-groups]").click()');
@@ -601,7 +601,7 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${id}"] .card-open'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
       await browser.waitFor("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"] input'))");
-      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('群名称未登记')"));
+      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('企微群聊')"));
       const change=async name=>{
         // Refreshed names can render while the previous save still awaits its refresh.
         await browser.waitFor("(()=>{const input=document.querySelector('input[name=\"source-group-name\"]');return input instanceof HTMLInputElement&&!input.disabled&&!input.matches(':disabled');})()");

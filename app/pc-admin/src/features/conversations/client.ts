@@ -6,6 +6,8 @@ export type {ConversationWorkspaceEntry,ConversationWorkspaceItem,ConversationPu
 // it contains the same words.
 const channelLabels:Readonly<Record<string,string>>={'Bot 私聊':'医小修私聊','Bot 私聊来源':'医小修私聊','Bot 私聊回复':'医小修私聊回复','Bot 私聊规则回复':'医小修自动回复','本人 Bot 私聊':'本人的医小修私聊','发送到本人 Bot 私聊':'发送到本人的医小修私聊'};
 export function publicChannelLabel(label:string):string{return Object.hasOwn(channelLabels,label)?channelLabels[label]!:label;}
+/** Codex review: a source is renamed by its kind; a group's name (or 「企微群聊」 when none is maintained) is shown exactly as sent. */
+export function sourceLabel(source:{kind:string;label:string}):string{return source.kind==='group'?source.label:publicChannelLabel(source.label);}
 export const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function bad():never{throw new ApiError(502,'INVALID_RESPONSE');}
 function object(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))bad();return v as Record<string,unknown>;}

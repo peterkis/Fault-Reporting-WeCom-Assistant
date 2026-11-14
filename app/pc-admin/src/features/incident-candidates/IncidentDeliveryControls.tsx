@@ -29,7 +29,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  const client=useQueryClient(),incidentId=detail.id,queryPrefix=['incident-delivery-control',principal.principal_id,incidentId,purpose];
  const [value,setValue]=useState<IncidentDeliveryDraftValue>(EMPTY_INCIDENT_DELIVERY_DRAFT),[pending,setPending]=useState<IncidentDeliveryOperation|null>(null),[opaque,setOpaque]=useState<string|null>(null),[cleanupPending,setCleanupPending]=useState(false);
  const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[confirmed,setConfirmed]=useState(false),[checked,setChecked]=useState(false),[needsRead,setNeedsRead]=useState(false),[revoked,setRevoked]=useState(false),[result,setResult]=useState<IncidentDeliveryControlResult|null>(null);
- const request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),clearRequested=useRef(false),known=useRef(false),knownFailed=useRef(false),currentIdentity=useRef(identity(principal)),latestAction=useRef(value.action);currentIdentity.current=identity(principal);latestAction.current=pending?.action??value.action;
+ const request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false),clearRequested=useRef(false),known=useRef(false),knownFailed=useRef(false),outcomeFor=useRef<string|null>(null),currentIdentity=useRef(identity(principal)),latestAction=useRef(value.action);currentIdentity.current=identity(principal);latestAction.current=pending?.action??value.action;
  const selected=routes.find(route=>route.deliveryId===value.deliveryId);
  const authority=principal.authorization_revision??[...principal.roles].sort().join('|');
  const capability=useQuery({queryKey:[...queryPrefix,'capability',authority,principal.incident_delivery_control_enabled,value.deliveryId],enabled:Boolean(readReady&&value.deliveryId&&!revoked),queryFn:({signal})=>incidentDeliveryApi.control({incidentId,deliveryId:value.deliveryId??'',purpose},signal),retry:false,gcTime:0});
@@ -82,7 +82,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    setValue(copy.value);setPending(copy.pending);setConfirmed(false);setChecked(false);setNeedsRead(true);
    if(copy.pending){setOpaque(copy.pending.body.client_command_id);setState('unknown');setMessage('已找回上次的通知内容。先点击「核对结果」，不会自动发送。');}
   },
-  onOperation:id=>{if(settling.current)return;if(pending&&pending.body.client_command_id!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
+  onOperation:id=>{if(settling.current)return;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);}if(pending&&pending.body.client_command_id!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
   onSensitiveClear:()=>{if(!settling.current){clearSensitive();if(clearRequested.current){clearRequested.current=false;setState('idle');setMessage('已清空输入和草稿。');}}}
  });
  const originalId=draft.operationId??opaque??pending?.body.client_command_id,busy=['preparing','submitting','reading','checking'].includes(state),hasInput=Boolean(value.deliveryId||value.action||value.reason||value.version),blocked=busy||Boolean(originalId)||hasInput||draft.restoring;
@@ -146,6 +146,8 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  }
  async function terminal(commandId:string,receiptResult:IncidentDeliveryControlResult|null,controller:AbortController,current:()=>void,startIdentity:string){
   // Codex review: a confirmed failure is kept apart from the screen state, like a confirmed commit, so the hint never loses it.
+  // Codex review: the confirmed outcome and its cleanup belong to this operation number only.
+  if(outcomeFor.current!==commandId){known.current=false;knownFailed.current=false;outcomeFor.current=commandId;}
   if(receiptResult){known.current=true;knownFailed.current=false;setResult(receiptResult);}else if(!known.current)knownFailed.current=true;
   // A successful POST followed by a failed GET keeps the original intent. Only
   // a current read and an exact terminal receipt allow the local barrier to clear.
@@ -192,7 +194,8 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
  }
  async function checkOriginal(){
   if(!originalId||request.current||draft.probing||draft.restoring)return;
-  const id=originalId,original=pending,{controller,current,startIdentity}=startRequest('checking');setMessage('正在只读核对原通知操作…');
+  const id=originalId;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);}
+  const original=pending,{controller,current,startIdentity}=startRequest('checking');setMessage('正在只读核对原通知操作…');
   try{
    await readCurrent(original?.deliveryId??value.deliveryId,controller,current,startIdentity);current();
    const receipt=await incidentDeliveryApi.receipt(incidentId,id,controller.signal);current();
@@ -234,7 +237,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   {draft.enabled?<DraftStatus data-incident-delivery-draft-status={draft.status} role="status">{draft.message}</DraftStatus>:null}
   {message?<ToastFeedback revision={messageRevision} source="incident-candidates" state={state} data-incident-delivery-outcome data-incident-delivery-state={state} role={state==='unknown'||state==='failed'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
   {result&&!revoked?<p data-incident-delivery-receipt>原操作安全回执：{statusLabels[result.status]} / {result.side_effect_state} · 尝试 {result.attempt_count} 次。各路当前结果按重新读取的列表显示。</p>:null}
-  {originalId&&!revoked?<div className="note-controls"><p>{operationHint(known.current?'committed':knownFailed.current?'failed':'unknown',cleanupPending)}</p><DiagnosticCopy data={{operation_id:originalId,expected_row_version:pending?.body.expected_row_version??null}}/><HButton type="button" data-action="check-incident-delivery-operation" isDisabled={busy||draft.probing||draft.restoring} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&checked?<HButton type="button" data-action="replay-incident-delivery-operation" isDisabled={!canReplay} onClick={()=>{if(pending&&canReplay)void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
+  {originalId&&!revoked?<div className="note-controls"><p>{operationHint(outcomeFor.current===originalId&&known.current?'committed':outcomeFor.current===originalId&&knownFailed.current?'failed':'unknown',outcomeFor.current===originalId&&cleanupPending)}</p><DiagnosticCopy data={{operation_id:originalId,expected_row_version:pending?.body.expected_row_version??null}}/><HButton type="button" data-action="check-incident-delivery-operation" isDisabled={busy||draft.probing||draft.restoring} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&checked?<HButton type="button" data-action="replay-incident-delivery-operation" isDisabled={!canReplay} onClick={()=>{if(pending&&canReplay)void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead&&!revoked?<HButton type="button" data-action="refresh-incident-delivery-current" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">只读刷新当前事实</HButton>:null}
   {state==='committed'&&!originalId&&!revoked&&principal.incident_delivery_control_enabled?<HButton type="button" data-action="new-incident-delivery-intent" isDisabled={busy||otherBlocked||!readReady} onClick={()=>{known.current=false;knownFailed.current=false;setResult(null);clearSensitive();setState('idle');setNeedsRead(false);setMessage('请明确选择下一条通知路，不会自动操作其他路。');}} tone="secondary">开始下一条明确通知操作</HButton>:null}
  </section>;
