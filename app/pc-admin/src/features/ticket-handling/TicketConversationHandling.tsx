@@ -25,7 +25,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   // Each page is bounded to 20. Only explicitly selected identities and original versions cross pages.
   const related=useQuery({queryKey:['ticket-related-conversations',principal.principal_id,ticketId,cursor],queryFn:({signal})=>api.relatedConversations(ticketId,cursor,signal),gcTime:0});
-  const blocked=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
+  const blocked=draft.restoring||['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   const navigationBlocked=Boolean(boardMode&&pending)||(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);
@@ -81,7 +81,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
         <StepEntry action="take" label={'接单'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start-with-conversations" isDisabled={blocked||otherBlocked||context.isPending||context.isError||related.isPending||related.isError||draft.status==='loading'} onClick={()=>{if(direct)submit('take-and-start-with-conversations');else setOpen(true);}} tone={tone}>{text}</HButton>}</StepEntry>
       </>:null}
     </div>
-    <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||state==='checking'} title="接单选项" closeLabel="关闭接单选项" className="detail-action-dialog detail-accept-dialog">
+    <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||state==='checking'||draft.restoring} title="接单选项" closeLabel="关闭接单选项" className="detail-action-dialog detail-accept-dialog">
       {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
       {noSessions?<p>接单后由您开始处理，当前没有需要接管的在线会话。</p>:<HRadioGroup className="workbench-radio-group" name={'communication-'+ticketId} value={choice??''} onChange={next=>{if(next==="TAKE_SELECTED"){setChoice('TAKE_SELECTED');}if(next==="RETAIN_CURRENT"){setChoice('RETAIN_CURRENT');}}} isDisabled={blocked||draft.status==='loading'}><HLabel>在线沟通由谁负责</HLabel><HRadio value={"TAKE_SELECTED"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>同时负责所选会话的回复</HRadio.Content></HRadio><HRadio value={"RETAIN_CURRENT"} data-action="retain-current-communicator"><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通人</HRadio.Content></HRadio></HRadioGroup>}
       {related.isPending?<p role="status">正在读取关联会话…</p>:related.isError?<p role="alert">{errorMessage(related.error)}</p>:<>
@@ -93,9 +93,9 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
       {modalOpen&&draft.enabled?<DialogDraftAlert>{draft.message}</DialogDraftAlert>:null}{modalOpen&&state!=='idle'&&message?<DialogAlert source="ticket-conversation-handling" state={state} className="conversation-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</DialogAlert>:null}
       <div className="note-controls">
         {canStart?<HButton type="button" className="take-and-start" data-action="confirm-conversation-handling" isDisabled={blocked||otherBlocked||!draft.canSubmit||context.isPending||context.isError||related.isPending||related.isError||!noSessions&&choice==='TAKE_SELECTED'&&!selected.length} onClick={()=>submit('take-and-start-with-conversations')} tone="secondary">确认接单并开始处理</HButton>:null}
-        {state==='unknown'&&pending?<HButton type="button" data-action="check-conversation-handling" onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}
-        {!pending&&draft.operationId?<HButton type="button" data-action="check-expired-conversation-handling" isDisabled={state==='submitting'||state==='checking'} onClick={checkAcknowledgement} tone="secondary">核对结果</HButton>:null}
-        {draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')?<HButton type="button" data-action="discard-conversation-handling-draft" isDisabled={state==='submitting'||state==='checking'} onClick={()=>{void draft.discard();}} tone="secondary">丢弃选择内容</HButton>:null}
+        {state==='unknown'&&pending?<HButton type="button" data-action="check-conversation-handling" isDisabled={draft.restoring} onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}
+        {!pending&&draft.operationId?<HButton type="button" data-action="check-expired-conversation-handling" isDisabled={state==='submitting'||state==='checking'||draft.restoring} onClick={checkAcknowledgement} tone="secondary">核对结果</HButton>:null}
+        {draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')?<HButton type="button" data-action="discard-conversation-handling-draft" isDisabled={state==='submitting'||state==='checking'||draft.restoring} onClick={()=>{void draft.discard();}} tone="secondary">丢弃选择内容</HButton>:null}
         {!blocked?<HButton type="button" data-action="refresh-conversation-handling" onClick={refresh} tone="secondary">刷新</HButton>:null}
       </div>
       {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>draft.knownFailure(pending.command.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}setPending(null);setState('idle');setMessage('会话选择已保留，请确认后再提交。');refresh();}).catch(()=>{if(current())setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');})}/>:null}

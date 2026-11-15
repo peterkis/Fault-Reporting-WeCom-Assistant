@@ -241,6 +241,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   return {enabled,status,message,
     /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
+    hasRetainedInput:()=>retainedInput.current!==null,
     // Capture the preparation's handle and text for cleanup, even if unmount or invalidation clears the live handle.
     prepareSend(command:C){
       if(!enabled)return null;

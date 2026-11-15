@@ -59,5 +59,5 @@ export function useConversationHandlingDraft({ticketId,principal,value,pending,o
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
-  return {...draft,message:restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,settle:(commandId:string)=>draft.success(commandId)};
+  return {...draft,restoring,message:restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,settle:(commandId:string)=>draft.success(commandId)};
 }

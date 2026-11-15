@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
@@ -9,6 +9,7 @@ import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Fixture={pool:PostgresPool;runtime:P2016EnabledRuntime;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];principals:{id:string;display_name:string}[]};
 function object(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -16,6 +17,31 @@ function string(value:unknown):string{assert.equal(typeof value,'string');return
 function failure(value:unknown):unknown{return value instanceof Error?{name:value.name,message:value.message,stack:value.stack}:String(value);}
 async function choose(browser:Browser,label:string,value:string){await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");await browser.evaluate("(()=>{if(!document.querySelector('.detail-assignment-dialog'))document.querySelector('[data-action=open-assignment]').click();})()");await browser.waitFor("Boolean(document.querySelector('.detail-assignment-dialog'))");const select=`Array.from(document.querySelectorAll('.detail-assignment-dialog select')).find(input=>(input.closest('.workbench-select')?[input.closest('.workbench-select').querySelector('[data-slot=label]')]:Array.from(input.labels??[])).some(label=>label.textContent?.includes(${JSON.stringify(label)})))`;await browser.waitFor(`Boolean((${select})&&(${select}).checkVisibility()&&!(${select}).disabled&&Array.from((${select}).options).some(option=>option.value===${JSON.stringify(value)}))`);await browser.evaluate(`(()=>{const input=${select};Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
 const stored="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.map(row=>({purpose:row.purpose,keys:Object.keys(row)})),operations:operations.result});};};})";
+
+test('assignment retained choices stay locked while the restored target is reauthorized',{timeout:240000},async()=>{
+ await withWeb01Fixture(async(context:Fixture)=>{
+  const first=context.tickets[0],actor=context.principals[1],owner=context.principals[2],target=context.principals[3],admin=context.cookies[0],browserCookie=context.browserCookies[2];assert.ok(first&&actor&&owner&&target&&admin&&browserCookie);const path='/api/tickets/'+first.ticket.id;
+  const bootstrap=await (await fetch(context.origin+'/api/lifecycle/bootstrap',{headers:{cookie:admin}})).json() as {csrf_token:string};
+  const initial={client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_ASSIGN',target_principal_id:owner.id,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]};
+  assert.equal((await fetch(context.origin+path+'/assign',{method:'POST',headers:{cookie:admin,origin:context.origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':initial.client_command_id,'if-match':'"2"'},body:JSON.stringify(initial)})).status,200);
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:context.origin+'/workbench/app/items/ticket/'+first.ticket.id,width:1280,height:900,cookies:[browserCookie]});assert.ok(browser);
+   await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false");await choose(browser,'处理组','PILOT_IT');await choose(browser,'处理人',target.id);
+   await browser.evaluate("document.querySelector('.detail-assignment-dialog input[value=RETAIN_CURRENT]').click()");await browser.waitFor("document.querySelector('[data-assignment-draft-status]')?.textContent.includes('草稿已保存')");
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:actor.id,kind:'ticket',id:first.ticket.id,purpose:'ticket-assignment'};
+   tab=await yxxTab(browser,context.origin+'/workbench/app/');await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreAssignmentTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate("document.querySelector('.detail-assignment-dialog input[value=TRANSFER_SELECTED]').click()");
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishPeer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-assignment-command]'))");
+   await browser.evaluate("(()=>{const read=fetch;let held=false;fetch=(path,options)=>{if(!held&&String(path).includes('/assignment-targets?')){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseAssignmentRestore=()=>read(path,options).then(resolve,reject);});}return read(path,options);};})()");
+   await browser.evaluate('globalThis.__restoreAssignmentTimer()');await tab.evaluate('(async()=>{await globalThis.__finishPeer();})()');await browser.waitFor('typeof globalThis.__releaseAssignmentRestore==="function"');
+   assert.equal(await browser.evaluate("document.querySelector('[data-action=open-assignment]')?.disabled"),true);
+   await browser.evaluate('globalThis.__releaseAssignmentRestore()');await browser.waitFor("document.querySelector('.detail-assignment-dialog input[value=TRANSFER_SELECTED]')?.checked===true");
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{ticketAssignmentEnabled:true,workbenchDraftRecoveryEnabled:true,workbenchRealtimeEnabled:true});
+});
 
 for(const expired of [false,true])test('an UNKNOWN assignment keeps the original UUID through reload and '+(expired?'24h expiry retains only opaque read-only reconciliation':'restores only the currently authorized encrypted purpose'),async()=>{
  await withWeb01Fixture(async(context:Fixture)=>{
