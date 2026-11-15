@@ -254,9 +254,9 @@ export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvali
   handle.record=null;handle.epoch=next.epoch;handle.operation=next.operation;
   publish({...handle.scope,reason});
 }
-// A delayed authorization failure can remove only the exact row and operation it observed.
+// A delayed purpose-specific failure must not broadcast loss of access to the whole item.
 export async function removeOwnedSensitiveDraft(handle:DraftHandle|null|undefined):Promise<void>{
-  if(handle?.record)await removeSensitiveDraft({...handle},'revoked',{requireMatchingRevision:true,requireMatchingOperation:true});
+  if(handle?.record)await removeSensitiveDraft({...handle},'discard',{requireMatchingRevision:true,requireMatchingOperation:true});
 }
 export async function settleDraft(handle:DraftHandle,commandId:string,revision?:string):Promise<void>{
   const key=draftScopeKey(handle.scope);

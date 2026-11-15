@@ -346,7 +346,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
           if(!controller.signal.aborted&&generation.current===token){
             if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
               clearRetained();
-              try{if(observed?.record&&observed.operation?.commandId===commandId)await removeSensitiveDraft(observed,'revoked',{requireMatchingRevision:true,requireMatchingOperation:true});}catch{/* A different revision or operation belongs to another page. */}
+              try{if(observed?.record&&observed.operation?.commandId===commandId)await removeSensitiveDraft(observed,'discard',{requireMatchingRevision:true,requireMatchingOperation:true});}catch{/* A different revision or operation belongs to another page. */}
               if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;
               try{const current=await openDraft(scope,{restore:false}),next=current.handle.operation?.commandId;if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;if(next&&next!==commandId){handle.current=current.handle;setOperationId(next);callbacks.current.onOperation(next);}}catch{/* Keep the original operation unresolved when storage cannot be read. */}
               setStatus('failed');setMessage('当前输入的权限已变化，内容已停止展示。');return false;
