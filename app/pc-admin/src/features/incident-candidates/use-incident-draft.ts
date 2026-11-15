@@ -3,7 +3,8 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearSessionAuthorization} from '../../app/authorization';
-import {DraftError,purgeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,openDraft,purgeDrafts,removeOwnedSensitiveDraft} from '../drafts/encrypted-drafts';
+import type {DraftHandle} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {candidateApi,incidentApi,incidentActions,candidateReasons,incidentScopes,decodeIncidentOperation,decodeIncidentReportItem,decodeIncidentSubscriptionItem,incidentRoleAllowed} from './client';
 import type {IncidentAction,IncidentOperation,IncidentReportItem,IncidentSubscriptionItem} from './client';
@@ -32,22 +33,29 @@ export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,
   const restoreRequest=useRef<AbortController|null>(null),revocation=useRef(0);
   const revoke=(error:unknown)=>{
     if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');
-    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){revocation.current++;restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');});}
+    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACCESS_REVOKED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){revocation.current++;restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');});}
   };
   async function authorize(signal:AbortSignal,copy?:{value:IncidentDraftValue;pending:IncidentOperation|null}){
     const epoch=captureWorkbenchRead(signal),revision=revocation.current,requireCurrent=()=>{epoch();if(revocation.current!==revision)throw new DraftError('DRAFT_ACTION_REVOKED');};stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
     if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.incident_candidate_workspace_enabled||!fresh.incident_candidate_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');
     client.setQueryData(['session'],fresh);stage.current='incident';const current=await candidateApi.incident(incidentId,signal);requireCurrent();client.setQueryData(['incident-result',scope.principal,incidentId,'standalone'],current);
+    if(!fresh.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))||!current.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role)))throw new DraftError('DRAFT_ACCESS_REVOKED');
     const action=copy?.pending?.action||copy?.value.action;
     if(action&&(!incidentRoleAllowed(action,fresh.roles)||!incidentRoleAllowed(action,current.roles)))throw new DraftError('DRAFT_ACTION_REVOKED');
     if(action==='MARK_REPORTER_RECOVERED'&&!fresh.roles.some(role=>role==='ADMIN'||role==='DISPATCHER')){
-      const target=copy?.value.report?.ticket_id;if(!target||await incidentApi.ticketAssignee(target,signal)!==fresh.principal_id)throw new DraftError('DRAFT_ACTION_REVOKED');requireCurrent();
+      const target=copy?.value.report?.ticket_id;if(!target)throw new DraftError('DRAFT_ACTION_REVOKED');
+      let assignee:string|null;try{assignee=await incidentApi.ticketAssignee(target,signal);}catch(error){if(error instanceof ApiError&&[403,404].includes(error.status))throw new DraftError('DRAFT_ACTION_REVOKED');throw error;}requireCurrent();if(assignee!==fresh.principal_id)throw new DraftError('DRAFT_ACTION_REVOKED');
     }
-    return fresh.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role))&&current.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));
+    return true;
   }
   useEffect(()=>()=>{restoreRequest.current?.abort();restoreRequest.current=null;},[incidentId,principal.principal_id]);
   const draft=useAuthorizedDraft<IncidentDraftValue,IncidentOperation>({scope,enabled:principal.incident_candidate_draft_recovery_enabled,value,pending,emptyValue,hasInput:value=>Boolean(value.action||value.reason||value.capturedVersion),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:text=>decode(text,incidentId),commandId:command=>command.body.client_command_id,authorize,onAuthorityFailure:revoke,
-    onRestore:copy=>{const controller=new AbortController();restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);void authorize(controller.signal,copy).then(allowed=>{controller.signal.throwIfAborted();if(restoreRequest.current!==controller)return;if(!allowed)throw new DraftError('DRAFT_ACTION_REVOKED');onRestore(copy);}).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller)revoke(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},
+    onRestore:(copy,retained=false,owned)=>{const controller=new AbortController();let original:DraftHandle|null=owned??null;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);void(async()=>{
+      if(!retained){const stored=await openDraft(scope);if(stored.text!==JSON.stringify({schema:1,...copy}))throw new DraftError('DRAFT_CHANGED');original={...stored.handle};}
+      const allowed=await authorize(controller.signal,copy);controller.signal.throwIfAborted();if(restoreRequest.current!==controller)return;if(!allowed)throw new DraftError('DRAFT_ACTION_REVOKED');
+      if(!retained){const current=await openDraft(scope);if(current.handle.record?.revision!==original?.record?.revision||current.handle.operation?.commandId!==original?.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
+      controller.signal.throwIfAborted();if(restoreRequest.current===controller)onRestore(copy);
+    })().catch(error=>{if(controller.signal.aborted||restoreRequest.current!==controller)return;if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){if(retained)draft.forgetRetainedInput();onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void removeOwnedSensitiveDraft(original).catch(()=>{});}else revoke(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},
     onOperation,onOperationCleared,onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();}});
   return {...draft,restoring,revoke,canSubmit:draft.canSubmit&&!authorityNotice,message:authorityNotice||(restoring?'正在核对恢复操作的当前权限和目标…':draft.message)};
 }

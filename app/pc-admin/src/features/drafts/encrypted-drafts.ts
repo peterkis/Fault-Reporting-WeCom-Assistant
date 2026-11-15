@@ -242,16 +242,21 @@ export async function refreshEmptyDraft(handle:DraftHandle):Promise<void>{
   if(handle.record!==null||handle.operation!==null||handle.epoch!==previousEpoch)throw new DraftError('DRAFT_CHANGED');
   handle.epoch=epoch;
 }
-export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired',options:{requireMatchingRevision?:boolean}={}):Promise<void>{
+export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvalidation['reason']='expired',options:{requireMatchingRevision?:boolean;requireMatchingOperation?:boolean}={}):Promise<void>{
   const key=draftScopeKey(handle.scope),revision=handle.record?.revision;
   const next=await state(value=>{const current=value.drafts.find(row=>row.scope===key);
     // A revision-scoped caller must not broadcast old authority loss over a newer tab's row.
     // Existing expiry/discard callers retain their original default policy.
     if(options.requireMatchingRevision&&(!current||current.revision!==revision))throw new DraftError('DRAFT_CHANGED');
     const operation=value.operations.find(row=>row.scope===key)??null;
+    if(options.requireMatchingOperation&&(operation?.commandId??null)!==(handle.operation?.commandId??null))throw new DraftError('DRAFT_CHANGED');
     if(current&&current.revision===revision){value.draftStore.delete(key);if(operation?.prepared)value.control.put(true,preparedKey(key,operation.commandId));value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation};});
   handle.record=null;handle.epoch=next.epoch;handle.operation=next.operation;
   publish({...handle.scope,reason});
+}
+// A delayed authorization failure can remove only the exact row and operation it observed.
+export async function removeOwnedSensitiveDraft(handle:DraftHandle|null|undefined):Promise<void>{
+  if(handle?.record)await removeSensitiveDraft({...handle},'revoked',{requireMatchingRevision:true,requireMatchingOperation:true});
 }
 export async function settleDraft(handle:DraftHandle,commandId:string,revision?:string):Promise<void>{
   const key=draftScopeKey(handle.scope);
