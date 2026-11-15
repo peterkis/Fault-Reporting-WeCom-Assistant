@@ -42,6 +42,22 @@ test('T30 failed receipt without recovered text clears the operation without cla
     const after=record(await browser.evaluate(inspectT30Drafts));assert.deepEqual(after.drafts,[]);assert.deepEqual(after.operations,[]);
   });
 });
+test('T30 opaque failed receipt switches to a newer shared operation without waiting for a notification',async()=>{
+  await t30Browser('t30newop',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成旧操作正文');await browser.waitFor('document.querySelector("[data-action=submit-internal-note]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');
+    await browser.waitFor('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("结果未确认")');
+    const oldId=text(record(await browser.evaluate('globalThis.__opaqueCommand')).client_command_id),nextId=randomUUID();
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-internal-note')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const previousDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previousDocument}&&Boolean(document.querySelector("[data-action=check-internal-note-operation]"))`);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.endsWith('/commands/${oldId}'))return new Promise(resolve=>{globalThis.__releaseOldReceipt=()=>resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(oldId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}}));});if(url.endsWith('/commands/${nextId}')){globalThis.__checkedNew=true;return Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(nextId)},state:'UNKNOWN'}));}return read(path,options);};})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');await browser.waitFor('typeof globalThis.__releaseOldReceipt==="function"');
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('operations','readwrite'),store=tx.objectStore('operations'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.commandId===${JSON.stringify(oldId)})store.put({...row,commandId:${JSON.stringify(nextId)}});};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    await browser.evaluate('globalThis.__releaseOldReceipt()');await browser.waitFor(`JSON.parse(document.querySelector('[aria-label="内部处置记录"] [data-diagnostics]')?.dataset.diagnostics??'{}').operation_id===${JSON.stringify(nextId)}`);
+    assert.equal(await browser.evaluate('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("另一个页面已开始新的操作")'),true);
+    await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');await browser.waitFor('globalThis.__checkedNew===true');
+  });
+});
 test('T30 current CLOSED removes a now-ineligible private input while authorized internal history remains readable',async()=>{
   await t30Browser('t30closing',async({browser,incidentId,put,post})=>{
     const path='/api/incidents/'+incidentId;await put('合成关闭前的私有未提交输入');await browser.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');

@@ -43,7 +43,7 @@ export interface AuthorizedDraftOptions<T,C> {
   hasInput:(value:T)=>boolean;serialise:(value:AuthorizedDraftValue<T,C>)=>string;
   decode:(text:string)=>AuthorizedDraftValue<T,C>;commandId:(command:C)=>string;
   authorize:(signal:AbortSignal,copy?:AuthorizedDraftValue<T,C>)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
-  onRestore:(value:AuthorizedDraftValue<T,C>)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+  onRestore:(value:AuthorizedDraftValue<T,C>)=>void;onOperation:(id:string,preserveInput?:boolean)=>void;onOperationCleared?:()=>void;onSensitiveClear:()=>void;
 }
 export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   const {scope,enabled,value,pending,emptyValue}=options,scopeKey=draftScopeKey(scope),writeEnabled=options.writeEnabled??enabled;
@@ -61,14 +61,14 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   restore.current=options.onRestore;latest.current={value,pending};
   const cancelTimer=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
   const cancelAuthority=()=>{authorityRequest.current?.abort();authorityRequest.current=null;};
-  async function write(value:AuthorizedDraftValue<T,C>,operation?:{commandId:string;prepared?:boolean;claimPrepared?:boolean}){
+  async function write(value:AuthorizedDraftValue<T,C>,operation?:{commandId:string;prepared?:boolean;preparedText?:string;claimPrepared?:boolean}){
     if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
     const token=generation.current,text=encode(value);
     setStatus('saving');setMessage('正在保存草稿…');
     const task=queue.current.catch(()=>{}).then(async()=>{
       if(generation.current!==token||!handle.current)throw new DraftError('DRAFT_CHANGED');
       if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
-      const target=handle.current,saveOptions:{commandId?:string;prepared?:boolean;claimPrepared?:boolean}=operation??(value.pending?{commandId:protocol.current.commandId(value.pending)}:{});
+      const target=handle.current,saveOptions:{commandId?:string;prepared?:boolean;preparedText?:string;claimPrepared?:boolean}=operation??(value.pending?{commandId:protocol.current.commandId(value.pending)}:{});
       let record;
       try{record=await saveDraft(target,text,saveOptions);}
       catch(error){
@@ -148,31 +148,35 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       }
       const released=value.reason==='released';
       const previousOperation=handle.current?.operation?.commandId;
+      const changed=value.reason==='settled'||released;
+      const unsaved=changed&&!latest.current.pending&&hasInput(latest.current.value)&&encode(latest.current)!==lastSaved.current;
       const preserve=released||value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
       cancelTimer();cancelAuthority();const token=++generation.current;lastSaved.current='';pendingRevision.current=undefined;
-      if(!preserve){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
+      if(!preserve&&!changed){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
       setStatus('loading');setMessage('正在清除草稿…');
       void openDraft(scope,{restore:false}).then(copy=>{
         if(generation.current!==token)return;handle.current=copy.handle;setOperationId(copy.handle.operation?.commandId??null);
         if(copy.handle.operation){
-          if(released&&copy.handle.operation.commandId!==previousOperation)callbacks.current.onSensitiveClear();
-          callbacks.current.onOperation(copy.handle.operation.commandId);
-        }else if(released&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation)){
+          const different=copy.handle.operation.commandId!==previousOperation,retain=different&&unsaved;
+          if(changed&&different&&!retain){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
+          callbacks.current.onOperation(copy.handle.operation.commandId,retain);
+        }else if((released||value.reason==='settled'&&copy.handle.record!==null)&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation)){
           const editable={...latest.current,pending:null};
           latest.current=editable;
           restore.current(editable);
-        }
-        setStatus('ready');setMessage(released?'':value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
+        }else if(!preserve){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
+        else if(previousOperation&&!latest.current.pending&&hasInput(latest.current.value))callbacks.current.onOperationCleared?.();
+        setStatus('ready');setMessage(unsaved&&copy.handle.operation?'本页输入未保存；请先核对另一页面的操作。':released?'':value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
       }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
     });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
   },[enabled,scopeKey]);
   useEffect(()=>{
     if(!writeEnabled){cancelTimer();return;}
-    if(!enabled||!initialized||!handle.current||pending||!hasInput(value)||encode(latest.current)===lastSaved.current)return;
+    if(!enabled||!initialized||!handle.current||pending||operationId||!hasInput(value)||encode(latest.current)===lastSaved.current)return;
     setStatus('saving');setMessage('正在保存草稿…');
     // Keep the first timer: continuous typing starts one bounded save every 500 ms.
     if(timer.current===null)timer.current=setTimeout(()=>{timer.current=null;void write({...latest.current}).catch(()=>{});},500);
-  },[enabled,writeEnabled,value,pending,initialized,refreshIndex]);
+  },[enabled,writeEnabled,value,pending,operationId,initialized,refreshIndex]);
   useEffect(()=>{
     const target=handle.current;if(!enabled||!target?.record)return;
     const token=generation.current;
@@ -194,23 +198,29 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       const editable={value:latest.current.value,pending:null};
       const commandId=protocol.current.commandId(command);
       const text=encode(editable);
+      const ready={...editable,pending:command},preparedText=encode(ready),token=generation.current;
       return {
         async save(){
           cancelTimer();
           latest.current=editable;
-          // Older tabs can read the seven-field operation, but cannot replay it
-          // until the pending command and its claim are saved together.
-          await write(editable,{commandId,prepared:true});
+          // Legacy tabs see editable text only; the original command stays encrypted in control.
+          await write(editable,{commandId,prepared:true,preparedText});
         },
         async claim(){
-          const ready={...editable,pending:command};
-          latest.current=ready;
-          await write(ready,{commandId,claimPrepared:true});
+          if(!await claimDraftReplay(scope,commandId,target))throw new DraftError('DRAFT_CHANGED');
+          if(generation.current===token&&handle.current===target){
+            latest.current=ready;pendingRevision.current=target.record?.revision;lastSaved.current=preparedText;
+          }
         },
         release:()=>releaseUnsentOperation(target,commandId,text),
       };
     },
-    claimReplay:(commandId:string)=>enabled?claimDraftReplay(scope,commandId):Promise.resolve(true),
+    async claimReplay(commandId:string){
+      if(!enabled)return true;
+      const target=handle.current,token=generation.current,claimed=await claimDraftReplay(scope,commandId,target??undefined);
+      if(claimed&&generation.current===token&&handle.current===target)pendingRevision.current=target?.record?.revision;
+      return claimed;
+    },
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){

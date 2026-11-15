@@ -15,6 +15,8 @@ function invalidation(value:unknown):DraftInvalidation|null{
 }
 function publishToOtherTabs(value:DraftInvalidation){if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
 function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);publishToOtherTabs(value);}
+// Old tabs understand settled, but not released. Both describe removal of this operation.
+function publishReleased(scope:DraftScope){for(const listener of listeners)listener({...scope,reason:'released'});publishToOtherTabs({...scope,reason:'settled'});}
 export function matchesDraft(value:DraftInvalidation,scope:DraftScope){return value.principal===scope.principal&&(value.kind===undefined||value.kind===scope.kind)&&(value.id===undefined||value.id===scope.id)&&(value.purpose===undefined||value.purpose===scope.purpose);}
 export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>void{
   if(!globalThis.BroadcastChannel)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -45,6 +47,15 @@ function decodeOperation(value:unknown):OperationRecord{
   const v=object(value),scope=scopeOf(v);
   if(Object.keys(v).length!==(v.prepared===true?8:7)||Object.hasOwn(v,'prepared')&&v.prepared!==true||typeof v.scope!=='string'||typeof v.commandId!=='string'||!UUID.test(v.commandId)||typeof v.createdAt!=='number'||!Number.isSafeInteger(v.createdAt)||v.createdAt<0||encoder.encode(JSON.stringify(v)).byteLength>512)throw new DraftError('DRAFT_CORRUPT');
   return {scope:v.scope,...scope,commandId:v.commandId,createdAt:v.createdAt,...(v.prepared===true?{prepared:true as const}:{})};
+}
+interface PreparedPayload {baseRevision:string;revision:string;iv:Uint8Array<ArrayBuffer>;ciphertext:ArrayBuffer}
+function preparedRecord(value:unknown,current:DraftRecord):DraftRecord|null{
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const v=value as Record<string,unknown>;
+  if(Object.keys(v).length!==4||v.baseRevision!==current.revision||typeof v.revision!=='string'||!UUID.test(v.revision)
+    ||!(v.iv instanceof Uint8Array)||v.iv.byteLength!==12||!(v.iv.buffer instanceof ArrayBuffer)
+    ||!(v.ciphertext instanceof ArrayBuffer)||v.ciphertext.byteLength<16||v.ciphertext.byteLength>DRAFT_MAX_BYTES+16)return null;
+  return {...current,revision:v.revision,iv:new Uint8Array(v.iv),ciphertext:v.ciphertext};
 }
 async function database():Promise<IDBDatabase>{
   if(!globalThis.isSecureContext||!globalThis.crypto?.subtle||!globalThis.indexedDB)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -104,7 +115,12 @@ async function state<T>(run:(value:State)=>T):Promise<T>{
           value.operations.push(compatible);
           continue;
         }
-        if(markers.has(marker)){activeMarkers.add(marker);value.operations.push({...operation,prepared:true});}
+        if(markers.has(marker)){
+          activeMarkers.add(marker);
+          // The key lives only with the draft. Do not retain a prepared ciphertext after its draft expires.
+          if(!value.drafts.some(draft=>draft.scope===operation.scope))control.put(true,marker);
+          value.operations.push({...operation,prepared:true});
+        }
         else value.operations.push(operation);
       }catch{failed=new DraftError('DRAFT_OPERATION_CORRUPT');}}
       for(const marker of markers)if(!activeMarkers.has(marker))control.delete(marker);
@@ -153,7 +169,7 @@ export async function openDraft(scope:DraftScope,{restore=true}:{restore?:boolea
   if(!valid)throw new DraftError('DRAFT_CHANGED');
   return {handle,text:new TextDecoder('utf-8',{fatal:true}).decode(plaintext),expired:false};
 }
-export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId,prepared=false,releasePrepared=false,claimPrepared=false}:{commandId?:string;settledCommandId?:string;prepared?:boolean;releasePrepared?:boolean;claimPrepared?:boolean}={}):Promise<DraftRecord>{
+export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId,prepared=false,preparedText,releasePrepared=false,claimPrepared=false}:{commandId?:string;settledCommandId?:string;prepared?:boolean;preparedText?:string;releasePrepared?:boolean;claimPrepared?:boolean}={}):Promise<DraftRecord>{
   const bytes=encoder.encode(text);if(bytes.byteLength>DRAFT_MAX_BYTES)throw new DraftError('DRAFT_TOO_LARGE');
   const previous=handle.record?.revision,firstSavedAt=handle.record?.firstSavedAt??Date.now(),expiresAt=firstSavedAt+DRAFT_TTL_MS,epoch=handle.epoch;
   if(Date.now()>=expiresAt)throw new DraftError('DRAFT_EXPIRED');
@@ -161,6 +177,13 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   const key=handle.record?.key??await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
   const metadata={schema:1 as const,scope:draftScopeKey(handle.scope),...handle.scope,firstSavedAt,expiresAt,revision:crypto.randomUUID()},iv=crypto.getRandomValues(new Uint8Array(12));
   const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(metadata),tagLength:128},key,bytes),record:DraftRecord={...metadata,iv,ciphertext,key};
+  let payload:PreparedPayload|undefined;
+  if(preparedText!==undefined){
+    if(!prepared||!commandId)throw new DraftError('DRAFT_SCOPE_INVALID');
+    const preparedBytes=encoder.encode(preparedText);if(preparedBytes.byteLength>DRAFT_MAX_BYTES)throw new DraftError('DRAFT_TOO_LARGE');
+    const next={...metadata,revision:crypto.randomUUID()},nextIv=crypto.getRandomValues(new Uint8Array(12));
+    payload={baseRevision:record.revision,revision:next.revision,iv:nextIv,ciphertext:await crypto.subtle.encrypt({name:'AES-GCM',iv:nextIv,additionalData:aad(next),tagLength:128},key,preparedBytes)};
+  }
   const committed=await state(value=>{
     const current=value.drafts.find(row=>row.scope===record.scope),operation=value.operations.find(row=>row.scope===record.scope);
     if(current?.revision!==previous||Date.now()>=expiresAt)return {error:'DRAFT_CHANGED'};
@@ -176,7 +199,7 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
     value.control.delete(EXPIRED_MARKER+record.scope);
     let nextOperation:OperationRecord|null=commandId?(operation?.commandId===commandId?operation:{scope:record.scope,...handle.scope,commandId,createdAt:Date.now(),...(prepared?{prepared:true as const}:{})}):null;
     if(nextOperation){
-      if(prepared&&!operation)value.control.put(true,preparedKey(record.scope,nextOperation.commandId));
+      if(prepared&&!operation)value.control.put(payload??true,preparedKey(record.scope,nextOperation.commandId));
       if(claimPrepared){
         value.control.delete(preparedKey(record.scope,nextOperation.commandId));
         const {prepared:_prepared,...claimed}=nextOperation;nextOperation=claimed;
@@ -224,7 +247,8 @@ export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvali
     // A revision-scoped caller must not broadcast old authority loss over a newer tab's row.
     // Existing expiry/discard callers retain their original default policy.
     if(options.requireMatchingRevision&&(!current||current.revision!==revision))throw new DraftError('DRAFT_CHANGED');
-    if(current&&current.revision===revision){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation:value.operations.find(row=>row.scope===key)??null};});
+    const operation=value.operations.find(row=>row.scope===key)??null;
+    if(current&&current.revision===revision){value.draftStore.delete(key);if(operation?.prepared)value.control.put(true,preparedKey(key,operation.commandId));value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}return {epoch:value.epoch,operation};});
   handle.record=null;handle.epoch=next.epoch;handle.operation=next.operation;
   publish({...handle.scope,reason});
 }
@@ -240,14 +264,24 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
   if(next.removed)publish({...handle.scope,reason:'settled'});
 }
 // Before a restored reply can be sent, it gives up the original page's right to cancel its preparation.
-export async function claimDraftReplay(scope:DraftScope,commandId:string):Promise<boolean>{
+export async function claimDraftReplay(scope:DraftScope,commandId:string,handle?:DraftHandle):Promise<boolean>{
   const key=draftScopeKey(scope);
-  return state(value=>{
-    const operation=value.operations.find(row=>row.scope===key);
-    if(operation?.commandId!==commandId)return false;
-    if(operation.prepared)value.control.delete(preparedKey(key,commandId));
-    return true;
+  const result=await state(value=>{
+    const operation=value.operations.find(row=>row.scope===key)??null,current=value.drafts.find(row=>row.scope===key)??null;
+    const next:{ok:boolean;record:DraftRecord|null;operation:OperationRecord|null;epoch:string}={ok:operation?.commandId===commandId,record:current,operation,epoch:value.epoch};
+    if(!next.ok||!operation?.prepared)return next;
+    const marker=preparedKey(key,commandId),request=value.control.get(marker);
+    request.onsuccess=()=>{
+      const staged=current?preparedRecord(request.result,current):null;
+      if(request.result!==true&&!staged){next.ok=false;return;}
+      if(staged){value.draftStore.put(staged);next.record=staged;}
+      const {prepared:_prepared,...claimed}=operation;next.operation=claimed;
+      value.control.delete(marker);
+    };
+    return next;
   });
+  if(result.ok&&handle&&draftScopeKey(handle.scope)===key){handle.record=result.record;handle.operation=result.operation;handle.epoch=result.epoch;}
+  return result.ok;
 }
 
 // Only the original preparation calls this, before it dispatches. A replay can claim the same number in another tab.
@@ -256,7 +290,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
   if(handle.record&&handle.operation?.commandId===commandId&&handle.operation.prepared){
     try{
       await saveDraft(handle,text,{settledCommandId:commandId,releasePrepared:true});
-      publish({...scope,reason:'released'});
+      publishReleased(scope);
       return;
     }catch(error){
       if(!(error instanceof DraftError)||!['DRAFT_CHANGED','DRAFT_EXPIRED'].includes(error.message))throw error;
@@ -270,7 +304,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
     value.control.delete(preparedKey(key,commandId));
     return true;
   });
-  if(removed)publish({...scope,reason:'released'});
+  if(removed)publishReleased(scope);
 }
 export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=false}:{preserveOperations?:boolean}={}):Promise<void>{
   if(!invalidation(filter))throw new DraftError('DRAFT_SCOPE_INVALID');

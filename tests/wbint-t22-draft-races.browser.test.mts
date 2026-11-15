@@ -40,6 +40,47 @@ test('a newer tab real saved revision defeats a delayed stale writer and its fre
  });
 });
 
+test('another tab starting an operation keeps this page\'s unsaved independent input',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions})=>{
+  const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 shared saved base'));await saved(browser);
+   tab=await yxxTab(browser,path);await tab.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 shared saved base'");
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreDraftTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate(input('internal-notes','T22 independent unsaved input'));
+   await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__newOperationStarted=true;const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNewOperation=()=>resolve(response);});}return send(path,options);};})()");
+   await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");
+   await tab.waitFor('globalThis.__newOperationStarted===true');
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 independent unsaved input');
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').disabled"),true);
+   assert.equal(await browser.evaluate("[...document.querySelectorAll('section[aria-label=内部备注] button')].some(button=>button.textContent==='重新提交')"),false);
+   await tab.waitFor('typeof globalThis.__releaseNewOperation==="function"');await browser.evaluate('globalThis.__restoreDraftTimer()');await tab.evaluate('globalThis.__releaseNewOperation()');
+   await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.disabled===false&&document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 independent unsaved input'");
+   await saved(browser);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('a prepared reply starts its POST before the replayable command is claimed',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions})=>{
+  const session=sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:origin+'/workbench/app/conversations/'+session.id,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 send before claim'));await saved(browser);
+   await browser.evaluate("(()=>{const send=fetch,get=IDBObjectStore.prototype.get;globalThis.__postStarted=false;globalThis.__claimSawPost=null;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__postStarted=true;globalThis.__postedCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};IDBObjectStore.prototype.get=function(key){if(this.name==='control'&&typeof key==='string'&&key.startsWith('prepared:'))globalThis.__claimSawPost=globalThis.__postStarted;return get.call(this,key);};})()");
+   await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");
+   await browser.waitFor('globalThis.__claimSawPost!==null');
+   assert.equal(await browser.evaluate('globalThis.__claimSawPost'),true,'a cancelled preparation cannot expose a replayable command before its POST starts');
+   assert.equal(await browser.evaluate("globalThis.__postedCommand.text"),'T22 send before claim');
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('a real newer-tab row defeats a delayed notification-time blank refresh and is never overwritten',async()=>{
  await withT22Fixture(async({origin,browserCookie,sessions,principals})=>{
   const session=sessions[0],principal=principals[0];assert.ok(session);assert.ok(principal);const path=origin+'/workbench/app/conversations/'+session.id,directory=join(tmpdir(),'web01-ui-'+randomUUID());let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
@@ -131,6 +172,55 @@ test('an unsent preparation releases both stored references without deleting a c
    });
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('prepared commands stay encrypted for replay while a legacy tab can read and observe release',async()=>{
+ await withT22Fixture(async({origin,browserCookie})=>{
+  const source=await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8');
+  const storage=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText.replace(/^export /gmu,'');
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   const path=origin+'/workbench/app/';browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);tab=await yxxTab(browser,path);
+   const staged=await browser.evaluate(`(async()=>{${storage}
+    const scope={principal:crypto.randomUUID(),kind:'conversation',id:crypto.randomUUID(),purpose:'conversation-reply'},commandId=crypto.randomUUID();
+    const plain=JSON.stringify({value:'synthetic protected text',pending:null}),pending=JSON.stringify({value:'synthetic protected text',pending:{id:commandId}});
+    const opened=await openDraft(scope);
+    await saveDraft(opened.handle,plain,{commandId,prepared:true,preparedText:pending});
+    globalThis.__stagedScope=scope;globalThis.__stagedId=commandId;
+    globalThis.__releaseStaged=()=>releaseUnsentOperation(opened.handle,commandId,plain);
+    globalThis.__stageAgain=async()=>{const next=await openDraft(scope);await saveDraft(next.handle,plain,{commandId,prepared:true,preparedText:pending});globalThis.__releaseAgain=()=>releaseUnsentOperation(next.handle,commandId,plain);};
+    globalThis.__claimStaged=()=>claimDraftReplay(scope,commandId);
+    const modern=await openDraft(scope);
+    return {scope,commandId,modernPending:JSON.parse(modern.text).pending};
+   })()`) as {scope:unknown;commandId:string;modernPending:null};
+   assert.equal(staged.modernPending,null);
+   const legacy=await tab.evaluate(`(async()=>{const scope=${JSON.stringify(staged.scope)},key=JSON.stringify([scope.principal,scope.kind,scope.id,scope.purpose]);
+    globalThis.__legacyEvents=[];globalThis.__legacyChannel=new BroadcastChannel('wecom-workbench-drafts-v1');globalThis.__legacyChannel.onmessage=event=>globalThis.__legacyEvents.push(event.data);
+    const row=await new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations','control'],'readonly'),draft=tx.objectStore('drafts').get(key),operation=tx.objectStore('operations').get(key),marker=tx.objectStore('control').get('prepared:'+JSON.stringify([key,${JSON.stringify(staged.commandId)}]));tx.oncomplete=()=>{db.close();resolve({draft:draft.result,operation:operation.result,marker:marker.result});};};});
+    const d=row.draft,aad=new TextEncoder().encode(JSON.stringify([d.schema,d.scope,d.firstSavedAt,d.expiresAt,d.revision]));
+    const clear=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d.iv,additionalData:aad,tagLength:128},d.key,d.ciphertext)));
+    return {operationFields:Object.keys(row.operation).length,pending:clear.pending,markerHasKey:Object.hasOwn(row.marker,'key'),markerHasText:JSON.stringify(row.marker).includes('synthetic protected text')};
+   })()`);
+   assert.deepEqual(legacy,{operationFields:7,pending:null,markerHasKey:false,markerHasText:false});
+   await browser.evaluate('(async()=>{await globalThis.__releaseStaged();return true;})()');
+   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.reason==='settled'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
+   await browser.evaluate('(async()=>{await globalThis.__stageAgain();return true;})()');
+   assert.equal(await browser.evaluate('globalThis.__claimStaged()'),true);
+   await browser.evaluate('(async()=>{await globalThis.__releaseAgain();return true;})()');
+   const retained=await browser.evaluate(`(async()=>{${storage}const opened=await openDraft(${JSON.stringify(staged.scope)});return {id:opened.handle.operation?.commandId,pending:JSON.parse(opened.text).pending.id};})()`);
+   assert.deepEqual(retained,{id:staged.commandId,pending:staged.commandId});
+   const revoked=await browser.evaluate(`(async()=>{${storage}
+    const scope={principal:crypto.randomUUID(),kind:'conversation',id:crypto.randomUUID(),purpose:'conversation-note'},commandId=crypto.randomUUID();
+    const opened=await openDraft(scope);await saveDraft(opened.handle,JSON.stringify({value:'private',pending:null}),{commandId,prepared:true,preparedText:JSON.stringify({value:'private',pending:{id:commandId}})});
+    await removeSensitiveDraft(opened.handle,'revoked');
+    const marker=await new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('control','readonly'),row=tx.objectStore('control').get('prepared:'+JSON.stringify([draftScopeKey(scope),commandId]));tx.oncomplete=()=>{db.close();resolve(row.result);};};});
+    const after=await openDraft(scope,{restore:false});return {marker,hasDraft:Boolean(after.handle.record),operation:after.handle.operation?.commandId};
+   })()`) as {marker:unknown;hasDraft:boolean;operation:string};
+   assert.equal(revoked.marker,true,'revocation removes the encrypted command while keeping its opaque operation');
+   assert.equal(revoked.hasDraft,false);assert.ok(revoked.operation);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.evaluate('globalThis.__legacyChannel?.close()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });
 

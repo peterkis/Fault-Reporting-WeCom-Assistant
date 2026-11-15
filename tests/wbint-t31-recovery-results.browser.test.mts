@@ -66,6 +66,22 @@ test('T31 failed receipt without recovered text clears the operation without cla
   });
 });
 
+test('T31 opaque failed receipt switches to a newer shared operation without waiting for a notification',async()=>{
+  await t31Browser('t31newop',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成旧操作摘要');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
+    const oldId=text(record(await browser.evaluate('globalThis.__opaqueCommand')).client_command_id),nextId=randomUUID();
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-public-progress')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const previousDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previousDocument}&&Boolean(document.querySelector("[data-action=check-public-progress-operation]"))`);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.endsWith('/commands/${oldId}'))return new Promise(resolve=>{globalThis.__releaseOldReceipt=()=>resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(oldId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}}));});if(url.endsWith('/commands/${nextId}')){globalThis.__checkedNew=true;return Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(nextId)},state:'UNKNOWN'}));}return read(path,options);};})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('typeof globalThis.__releaseOldReceipt==="function"');
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('operations','readwrite'),store=tx.objectStore('operations'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.commandId===${JSON.stringify(oldId)})store.put({...row,commandId:${JSON.stringify(nextId)}});};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    await browser.evaluate('globalThis.__releaseOldReceipt()');await browser.waitFor(`JSON.parse(document.querySelector('[aria-label="公开进展摘要"] [data-diagnostics]')?.dataset.diagnostics??'{}').operation_id===${JSON.stringify(nextId)}`);
+    assert.equal(await browser.evaluate('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("另一个页面已开始新的操作")'),true);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('globalThis.__checkedNew===true');
+  });
+});
+
 test('T31 a held real public page cannot repopulate the projection or draft after current purpose loss',async()=>{
   await t31Browser('t31late',async({browser,incidentId,pool,f,post,put})=>{
     const path='/api/incidents/'+incidentId,summary='合成晚到公开记录：失权后停止展示';assert.equal((await post(path+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary,preview_confirmed:true})).status,200);
