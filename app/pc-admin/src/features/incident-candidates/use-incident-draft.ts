@@ -27,7 +27,7 @@ function decode(text:string,incidentId:string){
   if(pending?.action==='RESUME_SUBSCRIPTION'&&(pending.body.direct_channel_leg_id??'')!==value.direct)throw new DraftError('DRAFT_CORRUPT');
   return {value,pending};
 }
-export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,onRestore,onOperation,onSensitiveClear}:{principal:Principal;incidentId:string;value:IncidentDraftValue;pending:IncidentOperation|null;emptyValue:IncidentDraftValue;onRestore:(copy:{value:IncidentDraftValue;pending:IncidentOperation|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{principal:Principal;incidentId:string;value:IncidentDraftValue;pending:IncidentOperation|null;emptyValue:IncidentDraftValue;onRestore:(copy:{value:IncidentDraftValue;pending:IncidentOperation|null})=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),[restoring,setRestoring]=useState(false),[authorityNotice,setAuthorityNotice]=useState(''),scope={principal:principal.principal_id,kind:'incident' as const,id:incidentId,purpose:'incident-followup'},stage=useRef<'session'|'incident'>('session');
   const restoreRequest=useRef<AbortController|null>(null),revocation=useRef(0);
   const revoke=(error:unknown)=>{
@@ -48,6 +48,6 @@ export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,
   useEffect(()=>()=>{restoreRequest.current?.abort();restoreRequest.current=null;},[incidentId,principal.principal_id]);
   const draft=useAuthorizedDraft<IncidentDraftValue,IncidentOperation>({scope,enabled:principal.incident_candidate_draft_recovery_enabled,value,pending,emptyValue,hasInput:value=>Boolean(value.action||value.reason||value.capturedVersion),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:text=>decode(text,incidentId),commandId:command=>command.body.client_command_id,authorize,onAuthorityFailure:revoke,
     onRestore:copy=>{const controller=new AbortController();restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);void authorize(controller.signal,copy).then(allowed=>{controller.signal.throwIfAborted();if(restoreRequest.current!==controller)return;if(!allowed)throw new DraftError('DRAFT_ACTION_REVOKED');onRestore(copy);}).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller)revoke(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},
-    onOperation,onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();}});
+    onOperation,onOperationCleared,onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();}});
   return {...draft,restoring,revoke,canSubmit:draft.canSubmit&&!authorityNotice,message:authorityNotice||(restoring?'正在核对恢复操作的当前权限和目标…':draft.message)};
 }

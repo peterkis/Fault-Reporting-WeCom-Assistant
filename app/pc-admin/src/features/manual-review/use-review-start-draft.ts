@@ -75,7 +75,7 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
       else if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,scope.principal,401,'revoked');
       else if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED')void revoke(error).catch(()=>setUnavailable(true));
       else{setUnavailable(true);if(error instanceof DraftError&&error.message==='DRAFT_CORRUPT')void openDraft(scope,{restore:false}).then(copy=>removeSensitiveDraft(copy.handle,'revoked')).catch(()=>{});}
-    },onRestore:copy=>{
+    },onRestore:(copy,retained=false)=>{
       const controller=new AbortController(),token=++revision.current,current=captureWorkbenchRead(controller.signal);restoreRequest.current?.abort();restoreRequest.current=controller;validating.current=true;setRestoring(true);
       void(async()=>{
         const context=await reviewStartApi.context(reviewId,controller.signal,copy.value.capture?.team||undefined);current();
@@ -88,8 +88,8 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
           const related=await reviewStartApi.relatedSession(reviewId,row.session_id,controller.signal);current();
           if(related.ticket_id!==ticketId)throw new DraftError('DRAFT_RELATION_CHANGED');
         }
-        const stored=await openDraft(scope);current();
-        if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');
+        if(!retained){const stored=await openDraft(scope);current();
+        if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');}
         if(controller.signal.aborted||token!==revision.current)return;
         onRestore(copy);validating.current=false;setRestoring(false);restoreRequest.current=null;
       })().catch(error=>{if(controller.signal.aborted||token!==revision.current)return;validating.current=false;restoreRequest.current=null;setRestoring(false);setUnavailable(true);

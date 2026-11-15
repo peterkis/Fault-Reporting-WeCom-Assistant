@@ -86,11 +86,12 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    setValue(copy.value);setPending(copy.pending);setConfirmed(false);setChecked(false);setNeedsRead(true);
    if(copy.pending){setOpaque(copy.pending.body.client_command_id);setState('unknown');setMessage('已找回上次的通知内容。先点击「核对结果」，不会自动发送。');}
   },
-  onOperation:id=>{if(settling.current)return;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);setResult(null);}
+  onOperation:(id,preserveInput)=>{if(settling.current)return;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);setResult(null);}
    // Codex review: a request still running for the previous operation is cancelled, so its result cannot be written for this one.
    if(request.current&&requestFor.current!==null&&requestFor.current!==id){generation.current++;request.current.abort();request.current=null;}// Codex review: any real switch of operation drops the earlier channel and input, with or without an earlier pending command, so
    // the next lookup reads only the new operation's facts.
-   if(pending&&pending.body.client_command_id!==id||shownOperation.current!==null&&shownOperation.current!==id)clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
+   if(!preserveInput&&(pending&&pending.body.client_command_id!==id||shownOperation.current!==null&&shownOperation.current!==id))clearSensitive();setOpaque(id);setState(known.current?'committed':'unknown');setNeedsRead(true);setChecked(false);setMessage(known.current?'原操作已确认提交；本地清理仍须只读核对。':'原通知操作仍待核对；完整正文不可用，只能只读核对原操作。');},
+  onOperationCleared:conflict=>{generation.current++;request.current?.abort();request.current=null;requestFor.current=null;known.current=false;knownFailed.current=false;outcomeFor.current=null;setOpaque(null);setPending(null);setCleanupPending(false);setState('idle');setNeedsRead(true);setMessage(conflict?'本页输入未保存，请先自行留存。':'本页输入仍在，确认后可提交。');},
   onSensitiveClear:()=>{if(!settling.current){clearSensitive();if(clearRequested.current){clearRequested.current=false;setState('idle');setMessage('已清空输入和草稿。');}}}
  });
  const originalId=draft.operationId??opaque??pending?.body.client_command_id,busy=['preparing','submitting','reading','checking'].includes(state),hasInput=Boolean(value.deliveryId||value.action||value.reason||value.version),blocked=busy||Boolean(originalId)||hasInput||draft.restoring;shownOperation.current=originalId??null;

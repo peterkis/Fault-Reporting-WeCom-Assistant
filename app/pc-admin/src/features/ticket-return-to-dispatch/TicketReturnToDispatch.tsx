@@ -62,7 +62,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
       const known=knownTerminal.current?.commandId===id?knownTerminal.current:null;
       if(known){setCleanupBlocked(true);setReviewRequired(true);setState(known.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');}
       else{setState('unknown');setMessage('原操作 '+id+' 仍未知；只读核对不需要当前退回或所选会话的写权限。');}
-    },onSensitiveClear:clearSensitive});
+    },onOperationCleared:conflict=>{generation.current++;request.current?.controller.abort();request.current=null;knownTerminal.current=null;storedId.current=null;opaqueRef.current=null;pendingRef.current=null;pendingSnapshot.current=null;setOpaque(null);setPending(null);setCleanupBlocked(false);setReviewRequired(true);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'本页输入仍在，请重新核对后提交。');},onSensitiveClear:clearSensitive});
   storedId.current=draft.operationId;
   const originalId=pending?.client_command_id??opaque??draft.operationId;
   const blocked=busy||unknown||cleanupBlocked||draft.restorationBlocked||draft.restoring;

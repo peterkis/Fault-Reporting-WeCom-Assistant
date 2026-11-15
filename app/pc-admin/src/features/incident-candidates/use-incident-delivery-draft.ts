@@ -32,7 +32,7 @@ interface Options {
  authorize:(signal:AbortSignal,copy?:{value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null})=>Promise<boolean>;
  onAuthorityFailure:(error:unknown)=>void;
  onRestore:(copy:{value:IncidentDeliveryDraftValue;pending:IncidentDeliveryOperation|null},signal:AbortSignal)=>Promise<void>;
- onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+ onOperation:(id:string,preserveInput?:boolean)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }
 export function useIncidentDeliveryDraft(options:Options){
  const {principal,incidentId,purpose,value,pending}=options;
@@ -56,7 +56,7 @@ export function useIncidentDeliveryDraft(options:Options){
    const controller=new AbortController(),captured=currentIdentity.current;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);
    void latest.current.onRestore(copy,controller.signal).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller&&captured===currentIdentity.current)latest.current.onAuthorityFailure(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});
   },
-  onOperation:id=>latest.current.onOperation(id),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
+  onOperation:(id,preserveInput)=>latest.current.onOperation(id,preserveInput),onOperationCleared:conflict=>latest.current.onOperationCleared(conflict),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
  });
  return {...draft,scope,rawEnabled,probing,restoring,existing,ttl:DRAFT_TTL_MS};
 }

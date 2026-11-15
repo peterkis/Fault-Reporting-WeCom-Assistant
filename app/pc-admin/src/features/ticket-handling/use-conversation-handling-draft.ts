@@ -42,7 +42,7 @@ export function useConversationHandlingDraft({ticketId,principal,value,pending,o
     decode:text=>{const copy=decode(text);return {value:{choice:copy.choice,sessions:copy.sessions},pending:copy.pending};},commandId:intent=>intent.command.client_command_id,
     authorize:async signal=>{stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);if(fresh.principal_id!==scope.principal||!fresh.ticket_conversation_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');stage.current='ticket';const context=await api.ticketCommandContext(ticketId,signal);client.setQueryData(['ticket-command-context',scope.principal,ticketId],context);actions.current=context.allowed_actions;return true;},
     onAuthorityFailure:error=>{if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,scope.principal,401,'revoked');else if(error instanceof ApiError&&error.status===403&&stage.current==='session')void clearSessionAuthorization(client,scope.principal,403,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,scope.principal,ticketId,error);else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')void purgeDrafts({...scope,reason:'revoked'});else void openDraft(scope,{restore:false}).then(copy=>removeSensitiveDraft(copy.handle)).catch(()=>{});},
-    onRestore:copy=>{
+    onRestore:(copy,retained=false)=>{
       const token=++generation.current,controller=new AbortController();request.current?.abort();request.current=controller;validating.current=true;setRestoring(true);
       // A Ticket read cannot authorize decrypted Session identities. Hold UI and submit until these current reads finish.
       void(async()=>{
@@ -50,8 +50,8 @@ export function useConversationHandlingDraft({ticketId,principal,value,pending,o
         for(const row of copy.value.sessions)await api.readConversation(row.session_id,controller.signal);
         const remaining=new Set(copy.value.sessions.map(row=>row.session_id));let cursor:string|null=null;
         while(remaining.size){const page=await api.relatedConversations(ticketId,cursor,controller.signal);for(const row of page.items)remaining.delete(row.session_id);if(!page.next_cursor){if(remaining.size)throw new DraftError('DRAFT_RELATION_CHANGED');break;}if(page.next_cursor===cursor)throw new DraftError('DRAFT_RELATION_CHANGED');cursor=page.next_cursor;}
-        const current=await openDraft(scope);
-        if(current.text!==serialise(copy)||Boolean(copy.pending)!==Boolean(current.handle.operation)||copy.pending&&copy.pending.command.client_command_id!==current.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+        if(!retained){const current=await openDraft(scope);
+        if(current.text!==serialise(copy)||Boolean(copy.pending)!==Boolean(current.handle.operation)||copy.pending&&copy.pending.command.client_command_id!==current.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
         if(controller.signal.aborted||token!==generation.current)return;
         onRestore({schema:1,...copy.value,pending:copy.pending});validating.current=false;setRestoring(false);request.current=null;
       })().catch(error=>{if(controller.signal.aborted||token!==generation.current)return;validating.current=false;request.current=null;if(error instanceof ApiError&&error.status===401){void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}void draft.discard();});

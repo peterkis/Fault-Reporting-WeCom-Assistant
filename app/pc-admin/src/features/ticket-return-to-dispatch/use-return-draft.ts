@@ -89,9 +89,9 @@ export async function readReturnChoices(ticketId:string,value:ReturnInput,fence:
   }
 }
 
-export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onSensitiveClear}:{
+export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{
   ticketId:string;principal:Principal;value:ReturnInput;pending:P2016ReturnToDispatchCommand|null;actionAllowed:boolean;
-  onRestore:(copy:ReturnCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+  onRestore:(copy:ReturnCopy)=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'ticket-return-to-dispatch'};
   const enabled=principal.ticket_return_to_dispatch_draft_recovery_enabled;
@@ -122,14 +122,14 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
       }else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')clear();
       else setUnavailable(true); // A temporary read/storage failure never purges a saved copy.
     },
-    onRestore:copy=>{
+    onRestore:(copy,retained=false)=>{
       const controller=new AbortController(),token=++generation.current,requireRead=captureWorkbenchRead(controller.signal),inputBefore=returnInputSnapshot(latest.current.value);
       request.current?.abort();request.current=controller;validating.current=true;setRestoring(true);setUnavailable(false);
       const fence:ReturnFence={signal:controller.signal,requireCurrent:()=>current(controller,token,requireRead)};
       void(async()=>{
-        fence.requireCurrent();const original=await openDraft(scope);fence.requireCurrent();
-        if(original.text!==serialiseReturn(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
-          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+        fence.requireCurrent();const original=retained?null:await openDraft(scope);fence.requireCurrent();
+        if(original&&(original.text!==serialiseReturn(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
+          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId))throw new DraftError('DRAFT_CHANGED');
         try{
           if(!actions.current.includes('return-to-dispatch'))throw new DraftError('DRAFT_ACTION_REVOKED');
           await readReturnChoices(ticketId,copy.value,fence);fence.requireCurrent();
@@ -137,13 +137,13 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
           fence.requireCurrent();
           if(isReturnChoiceRevocation(error)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
             // Only the originally observed revision is removed; a newer tab's value is never guessed or deleted.
-            fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();
+            if(original){fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();}
           }
           throw error;
         }
-        const checked=await openDraft(scope);fence.requireCurrent();
+        if(original){const checked=await openDraft(scope);fence.requireCurrent();
         if(checked.text!==serialiseReturn(copy)||checked.handle.record?.revision!==original.handle.record?.revision
-          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
         if(returnInputSnapshot(latest.current.value)!==inputBefore){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
         onRestore(copy);
       })().catch(error=>{
@@ -151,7 +151,7 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
         if(error instanceof ApiError&&error.status===401){clear();void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
         setUnavailable(true);if(copy.pending)onOperation(copy.pending.client_command_id);
       }).finally(()=>{if(request.current===controller&&generation.current===token){request.current=null;validating.current=false;setRestoring(false);}});
-    },onOperation,onSensitiveClear:clear,
+    },onOperation,onOperationCleared,onSensitiveClear:clear,
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   const checkOpaque=async(fence:ReturnFence,purge=false)=>{

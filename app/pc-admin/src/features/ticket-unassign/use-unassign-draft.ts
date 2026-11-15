@@ -88,9 +88,9 @@ export async function readUnassignChoices(ticketId:string,value:UnassignInput,fe
   }
 }
 
-export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onSensitiveClear}:{
+export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{
   ticketId:string;principal:Principal;value:UnassignInput;pending:P2016UnassignCommand|null;actionAllowed:boolean;
-  onRestore:(copy:UnassignCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+  onRestore:(copy:UnassignCopy)=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'ticket-unassign'};
   const enabled=principal.ticket_unassign_draft_recovery_enabled;
@@ -121,14 +121,14 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
       }else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')clear();
       else setUnavailable(true); // A temporary read/storage failure never purges a saved copy.
     },
-    onRestore:copy=>{
+    onRestore:(copy,retained=false)=>{
       const controller=new AbortController(),token=++generation.current,requireRead=captureWorkbenchRead(controller.signal),inputBefore=unassignInputSnapshot(latest.current.value);
       request.current?.abort();request.current=controller;validating.current=true;setRestoring(true);setUnavailable(false);
       const fence:UnassignFence={signal:controller.signal,requireCurrent:()=>current(controller,token,requireRead)};
       void(async()=>{
-        fence.requireCurrent();const original=await openDraft(scope);fence.requireCurrent();
-        if(original.text!==serialiseUnassign(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
-          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+        fence.requireCurrent();const original=retained?null:await openDraft(scope);fence.requireCurrent();
+        if(original&&(original.text!==serialiseUnassign(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
+          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId))throw new DraftError('DRAFT_CHANGED');
         try{
           if(!actions.current.includes('unassign'))throw new DraftError('DRAFT_ACTION_REVOKED');
           await readUnassignChoices(ticketId,copy.value,fence);fence.requireCurrent();
@@ -136,13 +136,13 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
           fence.requireCurrent();
           if(isUnassignChoiceRevocation(error)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
             // Only the originally observed revision is removed; a newer tab's value is never guessed or deleted.
-            fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();
+            if(original){fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();}
           }
           throw error;
         }
-        const checked=await openDraft(scope);fence.requireCurrent();
+        if(original){const checked=await openDraft(scope);fence.requireCurrent();
         if(checked.text!==serialiseUnassign(copy)||checked.handle.record?.revision!==original.handle.record?.revision
-          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
         if(unassignInputSnapshot(latest.current.value)!==inputBefore){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
         onRestore(copy);
       })().catch(error=>{
@@ -150,7 +150,7 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
         if(error instanceof ApiError&&error.status===401){clear();void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
         setUnavailable(true);if(copy.pending)onOperation(copy.pending.client_command_id);
       }).finally(()=>{if(request.current===controller&&generation.current===token){request.current=null;validating.current=false;setRestoring(false);}});
-    },onOperation,onSensitiveClear:clear,
+    },onOperation,onOperationCleared,onSensitiveClear:clear,
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);

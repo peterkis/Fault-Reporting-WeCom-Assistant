@@ -21,7 +21,7 @@ function decode(text:string):WaitingCopy{
     pending=Object.freeze({client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:command.reason_code,note:command.note,external_visible:false});
   }return {value:value.note,pending};
 }
-export function useWaitingDraft({ticketId,action,principal,value,pending,allowed,onRestore,onOperation,onSensitiveClear}:{ticketId:string;action:WaitingAction;principal:Principal;value:string;pending:WaitingCommand|null;allowed:boolean;onRestore:(copy:WaitingCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useWaitingDraft({ticketId,action,principal,value,pending,allowed,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{ticketId:string;action:WaitingAction;principal:Principal;value:string;pending:WaitingCommand|null;allowed:boolean;onRestore:(copy:WaitingCopy)=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:purposes[action]},raw=principal.ticket_waiting_action_draft_recovery_enabled;
   const [existing,setExisting]=useState(false),[restoring,setRestoring]=useState(false),[unavailable,setUnavailable]=useState(false);
   const generation=useRef(0),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),restoreRead=useRef<()=>void>(()=>{});
@@ -37,7 +37,7 @@ export function useWaitingDraft({ticketId,action,principal,value,pending,allowed
       const read=captureWorkbenchRead(signal);restoreRead.current=read;stage.current='session';const fresh=await api.bootstrap(signal);read();if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');client.setQueryData(['session'],fresh);
       stage.current='ticket';const ticket=await api.ticketCommandContext(ticketId,signal);read();client.setQueryData(['ticket-command-context',scope.principal,ticketId],ticket);
       return fresh.ticket_waiting_actions_enabled&&fresh.ticket_waiting_action_draft_recovery_enabled&&ticket.allowed_actions.includes(action);
-    },onAuthorityFailure:authorityFailure,onRestore:copy=>{restoreRead.current();setExisting(true);onRestore(copy);},onOperation:id=>{setExisting(true);onOperation(id);},onSensitiveClear,
+    },onAuthorityFailure:authorityFailure,onRestore:copy=>{restoreRead.current();setExisting(true);onRestore(copy);},onOperation:id=>{setExisting(true);onOperation(id);},onOperationCleared,onSensitiveClear,
   });
   const checkOpaque=async(fence:WaitingFence,purge=false)=>{
     fence.requireCurrent();if(!await hasExistingDraft(scope)){fence.requireCurrent();return null;}fence.requireCurrent();stage.current='session';const fresh=await api.bootstrap(fence.signal);fence.requireCurrent();if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');client.setQueryData(['session'],fresh);if(fresh.ticket_waiting_action_draft_recovery_enabled)throw new DraftError('DRAFT_RECHECK_ENABLED');

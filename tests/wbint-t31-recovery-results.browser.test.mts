@@ -6,6 +6,7 @@ import {record,text} from './helpers/t31-public-progress-fixture.mjs';
 import type {Browser} from './helpers/wbint-t27-browser-fixture.mjs';
 import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 async function publish(browser:Browser){
   await browser.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');
@@ -79,6 +80,47 @@ test('T31 opaque failed receipt switches to a newer shared operation without wai
     await browser.evaluate('globalThis.__releaseOldReceipt()');await browser.waitFor(`JSON.parse(document.querySelector('[aria-label="公开进展摘要"] [data-diagnostics]')?.dataset.diagnostics??'{}').operation_id===${JSON.stringify(nextId)}`);
     assert.equal(await browser.evaluate('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("另一个页面已开始新的操作")'),true);
     await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('globalThis.__checkedNew===true');
+  });
+});
+
+test('T31 peer failure and discard leave the independent local input available',async()=>{
+  await t31Browser('t31peerfail',async({browser,incidentId,origin,put})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await put('合成对方公开摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成对方公开摘要"');
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await put('合成本页独立公开输入');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({ok:false,error:{code:'P2_012_VERSION_CONFLICT',retryable:false},replayed:false},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');
+      await tab.waitFor('typeof globalThis.__rejectNote==="function"');await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("另一页面仍有草稿")');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),'合成本页独立公开输入');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.disabled'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))'),false);
+      await browser.evaluate('globalThis.__restoreTimer()');await tab.evaluate('document.querySelector("[data-action=discard-public-progress-draft]").click()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成本页独立公开输入"&&document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+    }finally{await tab?.close();}
+  });
+});
+
+test('T31 checking a committed peer operation restores the independent local input',async()=>{
+  await t31Browser('t31peerack',async({browser,incidentId,origin,put})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await put('合成对方已发布摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成对方已发布摘要"');
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await put('合成本页待保存摘要');
+      await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNote=()=>resolve(response);});}return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await tab.waitFor('typeof globalThis.__releaseNote==="function"');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');await browser.evaluate('globalThis.__restoreTimer()');
+      await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成本页待保存摘要"&&document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))'),false);
+    }finally{await tab?.close();}
   });
 });
 

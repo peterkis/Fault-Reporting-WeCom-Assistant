@@ -89,6 +89,44 @@ test('a refused operation does not replace another tab\'s independent conversati
  });
 });
 
+test('consecutive peer operations do not hide the independent input',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions,principals})=>{
+  const session=sessions[0],principal=principals[0];assert.ok(session);assert.ok(principal);const path=origin+'/workbench/app/conversations/'+session.id;
+  const source=await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8');
+  const storage=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText.replace(/^export /gmu,'');
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 first peer note'));await saved(browser);
+   tab=await yxxTab(browser,path);await tab.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 first peer note'");
+   await browser.evaluate("(()=>{const timer=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate(input('internal-notes','T22 independent input through two operations'));
+   await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__firstCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+   await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");
+   await tab.waitFor('Boolean(globalThis.__firstCommand?.client_command_id)');await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))");
+   const nextId=await tab.evaluate(`(async()=>{${storage}
+    const scope={principal:${JSON.stringify(principal.id)},kind:'conversation',id:${JSON.stringify(session.id)},purpose:'conversation-note'},first=await openDraft(scope);
+    const post=BroadcastChannel.prototype.postMessage;BroadcastChannel.prototype.postMessage=function(){};
+    try{await settleDraft(first.handle,globalThis.__firstCommand.client_command_id,first.handle.record.revision);
+      const next=await openDraft(scope),id=crypto.randomUUID(),value='T22 second peer note',pending={session_id:scope.id,purpose:'internal-notes',command:{client_command_id:id,expected_row_version:globalThis.__firstCommand.expected_row_version,text:value}};
+      await saveDraft(next.handle,JSON.stringify({schema:1,value,pending}),{commandId:id});
+      globalThis.__finishSecond=()=>saveDraft(next.handle,JSON.stringify({schema:1,value,pending:null}),{settledCommandId:id});
+      globalThis.__secondScope=scope;return id;
+    }finally{BroadcastChannel.prototype.postMessage=post;}
+   })()`);
+   await tab.evaluate("(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({...globalThis.__secondScope,reason:'released'});channel.close();})()");
+   await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.includes('/internal-notes/commands/')){const id=url.split('/').at(-1);if(id===${JSON.stringify(nextId)})globalThis.__checkedSecond=true;return Promise.resolve(Response.json({session_id:${JSON.stringify(session.id)},client_command_id:id,state:'UNKNOWN'}));}return read(path,options);};})()`);
+   await browser.waitFor("(()=>{const button=document.querySelector('[data-action=check-internal-notes]');if(!globalThis.__checkedSecond&&button&&!button.disabled)button.click();return globalThis.__checkedSecond===true;})()");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 independent input through two operations');
+   await tab.evaluate('(async()=>{await globalThis.__finishSecond();return true;})()');
+   await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]')?.textContent.includes('另一页面仍有草稿')");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 independent input through two operations');
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').disabled"),false);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('a prepared reply starts its POST before the replayable command is claimed',async()=>{
  await withT22Fixture(async({origin,browserCookie,sessions})=>{
   const session=sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;

@@ -107,3 +107,49 @@ test('checking another tab\'s failed note keeps both pages\' independent input',
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
+
+test('a peer discarding its failed draft does not discard this tab\'s independent input',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const path='/workbench/app/items/ticket/'+tickets[5].ticket.id+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      await type(browser,'T03 peer draft');await saved(browser);
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('#internal-note')?.value==='T03 peer draft'");
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await type(browser,'T03 input kept after peer discards');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({error:{code:'P2_016_VERSION_CONFLICT'}},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      await tab.waitFor('typeof globalThis.__rejectNote==="function"');await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('另一页面仍有草稿')");
+      await browser.evaluate('globalThis.__restoreTimer()');await tab.evaluate("document.querySelector('[data-action=discard-note-draft]').click()");
+      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 input kept after peer discards'&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
+      assert.deepEqual(await browser.evaluate(counts),{drafts:1,operations:0});await reload(browser);
+      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 input kept after peer discards'");
+    }catch(failure){error=failure;try{console.log('T03_PEER_DISCARD_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+test('checking a committed peer note rechecks write authority before retaining local input',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const ticketId=tickets[5].ticket.id,path='/workbench/app/items/ticket/'+ticketId+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      await type(browser,'T03 peer committed note');await saved(browser);
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('#internal-note')?.value==='T03 peer committed note'");
+      await browser.evaluate("(()=>{const timer=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await type(browser,'T03 must not save after write loss');
+      await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNote=()=>resolve(response);});}return send(path,options);};})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await tab.waitFor('typeof globalThis.__releaseNote==="function"');
+      await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      await browser.evaluate(`(()=>{const read=fetch;fetch=async(path,options)=>{const response=await read(path,options);if((options?.method??'GET')==='GET'&&new URL(String(path),location.href).pathname===${JSON.stringify('/api/tickets/'+ticketId)}&&response.ok){const body=await response.json();return Response.json({...body,allowed_actions:body.allowed_actions.filter(action=>action!=='add-note')});}return response;};})()`);
+      await browser.evaluate("document.querySelector('[data-action=check-expired-note]').click()");
+      await browser.waitFor(`(async()=>{const state=await (${counts});return state.drafts===0&&state.operations===0;})()`);
+      await browser.waitFor("!document.querySelector('#internal-note')||document.querySelector('#internal-note').value===''");
+      assert.equal(await browser.evaluate(`fetch(${JSON.stringify('/api/tickets/'+ticketId)}).then(response=>response.status)`),200,'Ticket READ remains available');
+    }catch(failure){error=failure;try{console.log('T03_RETAIN_AUTH_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
