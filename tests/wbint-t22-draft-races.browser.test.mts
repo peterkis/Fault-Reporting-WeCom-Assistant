@@ -65,6 +65,30 @@ test('another tab starting an operation keeps this page\'s unsaved independent i
  });
 });
 
+test('a refused operation does not replace another tab\'s independent conversation input',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions})=>{
+  const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 other page saved note'));await saved(browser);
+   tab=await yxxTab(browser,path);await tab.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 other page saved note'");
+   await browser.evaluate("(()=>{const timer=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate(input('internal-notes','T22 local unsaved note'));
+   await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({error:{code:'CONVERSATION_VERSION_CONFLICT'}},{status:409}));});return send(path,options);};})()");
+   await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))");
+   await tab.waitFor('typeof globalThis.__rejectNote==="function"');await tab.evaluate('globalThis.__rejectNote()');
+   await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]')?.textContent.includes('另一页面仍有草稿')");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 local unsaved note');
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').disabled"),false);
+   assert.equal(await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').disabled"),true);
+   await browser.evaluate("document.querySelector('[data-action=discard-internal-notes]').click()");await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value===''");
+   await reload(browser);await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 other page saved note'");
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('a prepared reply starts its POST before the replayable command is claimed',async()=>{
  await withT22Fixture(async({origin,browserCookie,sessions})=>{
   const session=sessions[0];assert.ok(session);let browser:Browser|undefined,failure:unknown;
