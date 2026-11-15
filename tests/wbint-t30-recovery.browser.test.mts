@@ -24,6 +24,24 @@ test('T30 expiry removes only the private encrypted draft at its original 24h wi
     const originalDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`Date.now=()=>${Number(draft.expiresAt)+1};`});await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${originalDocument}`);const clock=await browser.evaluate('Date.now()');console.log('T30_EXPIRY_CLOCK '+JSON.stringify({originalDocument,newDocument:await browser.evaluate('performance.timeOrigin'),expected:Number(draft.expiresAt)+1,clock}));assert.equal(clock,Number(draft.expiresAt)+1,'the expiry behavior requires a confirmed synthetic browser clock on the new document');await browser.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿仅在当前浏览器恢复")');assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=内部处置记录]")?.value'),'');const expired=record(await browser.evaluate(inspectT30Drafts));assert.deepEqual(expired.drafts,[]);assert.deepEqual(expired.operations,[]);
   });
 });
+test('T30 failed receipt without recovered text clears the operation without claiming the text remains',async()=>{
+  await t30Browser('t30opaqfail',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成暂存的内部正文');await browser.waitFor('document.querySelector("[data-action=submit-internal-note]")?.disabled===false');
+    await browser.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');
+    await browser.waitFor('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("结果未确认")');
+    const command=record(await browser.evaluate('globalThis.__opaqueCommand')),commandId=text(command.client_command_id);
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-internal-note')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const originalDocument=await browser.evaluate('performance.timeOrigin');
+    await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${originalDocument}&&Boolean(document.querySelector("[data-action=check-internal-note-operation]"))&&Boolean(document.querySelector("textarea[aria-label=内部处置记录]"))`);
+    assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=内部处置记录]")?.value'),'');
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${commandId}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(commandId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');
+    await browser.waitFor('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("上次提交没有成功")');
+    assert.equal(await browser.evaluate('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("内容还在")'),false);
+    const after=record(await browser.evaluate(inspectT30Drafts));assert.deepEqual(after.drafts,[]);assert.deepEqual(after.operations,[]);
+  });
+});
 test('T30 current CLOSED removes a now-ineligible private input while authorized internal history remains readable',async()=>{
   await t30Browser('t30closing',async({browser,incidentId,put,post})=>{
     const path='/api/incidents/'+incidentId;await put('合成关闭前的私有未提交输入');await browser.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');

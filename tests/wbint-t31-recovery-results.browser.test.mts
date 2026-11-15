@@ -48,6 +48,24 @@ test('T31 encrypted lost-ACK recovery uses only the original operation and displ
   });
 });
 
+test('T31 failed receipt without recovered text clears the operation without claiming the text remains',async()=>{
+  await t31Browser('t31opaqfail',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成暂存的公开摘要');await publish(browser);
+    await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
+    const command=record(await browser.evaluate('globalThis.__opaqueCommand')),commandId=text(command.client_command_id);
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-public-progress')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const originalDocument=await browser.evaluate('performance.timeOrigin');
+    await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${originalDocument}&&Boolean(document.querySelector("[data-action=check-public-progress-operation]"))&&Boolean(document.querySelector("textarea[aria-label=公开进展摘要]"))`);
+    assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),'');
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${commandId}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(commandId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+    await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("上次提交没有成功")');
+    assert.equal(await browser.evaluate('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("内容还在")'),false);
+    const after=record(await browser.evaluate(inspectT31Drafts));assert.deepEqual(after.drafts,[]);assert.deepEqual(after.operations,[]);
+  });
+});
+
 test('T31 a held real public page cannot repopulate the projection or draft after current purpose loss',async()=>{
   await t31Browser('t31late',async({browser,incidentId,pool,f,post,put})=>{
     const path='/api/incidents/'+incidentId,summary='合成晚到公开记录：失权后停止展示';assert.equal((await post(path+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary,preview_confirmed:true})).status,200);

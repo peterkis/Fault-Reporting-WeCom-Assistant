@@ -79,6 +79,28 @@ test('production detail shares report materials, uses responsive information and
     await browser.waitFor("document.querySelector('.detail-progress-dialog')?.innerText.includes('原操作仍没有明确结果')");
     assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog')?.innerText.includes('重新提交')"),false,'the hint and action both respect the newly read permission');
     await browser.evaluate('globalThis.__restoreProgressReads()');
+    // Keep the real authorization read but make the receipt UNKNOWN while the browser is offline.
+    await browser.evaluate(`(()=>{
+      const read=fetch;
+      globalThis.__restoreOfflineProgress=()=>{fetch=read;delete navigator.onLine;window.dispatchEvent(new Event('online'));};
+      Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>globalThis.__progressOnline});
+      globalThis.__progressOnline=false;window.dispatchEvent(new Event('offline'));
+      fetch=async(url,options)=>{
+        const response=await read(url,options),pathname=new URL(String(url),location.href).pathname;
+        if(response.ok&&(options?.method??'GET')==='GET'&&pathname.startsWith(${JSON.stringify('/api/tickets/'+first.ticket.id+'/member-progress/commands/')})){
+          const {ticket_id,client_command_id}=await response.json();
+          return Response.json({state:'UNKNOWN',ticket_id,client_command_id});
+        }
+        return response;
+      };
+    })()`);
+    await browser.evaluate(checkProgress);
+    await browser.waitFor("document.querySelector('.detail-progress-dialog')?.innerText.includes('网络或写入通道尚未就绪')");
+    assert.equal(await browser.evaluate("[...document.querySelectorAll('.detail-progress-dialog button')].find(button=>button.textContent==='重新提交')?.disabled"),true);
+    assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/member-progress')).length"),1);
+    await browser.evaluate("globalThis.__progressOnline=true;window.dispatchEvent(new Event('online'))");
+    await browser.waitFor("[...document.querySelectorAll('.detail-progress-dialog button')].find(button=>button.textContent==='重新提交')?.disabled===false");
+    await browser.evaluate('globalThis.__restoreOfflineProgress()');
     await browser.evaluate(checkProgress);
     await browser.waitFor("!document.querySelector('.detail-progress-dialog')&&document.querySelector('[aria-label=\"报修人可见进度\"]')?.innerText.includes('合成公开进度')");
     assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/member-progress')).length"),1,'closing/reopening and acknowledgement never issue another public-progress command');
