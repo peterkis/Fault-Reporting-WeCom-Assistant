@@ -58,7 +58,28 @@ test('production detail shares report materials, uses responsive information and
     assert.equal(await browser.evaluate('globalThis.__droppedProgress'),1,'the actual committed success is lost at the browser transport boundary');
     await click('[aria-label="关闭公开进度窗口"]');await browser.waitFor("!document.querySelector('.detail-progress-dialog')");
     await click('[data-action=open-public-progress]');await browser.waitFor("Boolean(document.querySelector('.detail-progress-dialog'))");
-    await browser.evaluate("[...document.querySelectorAll('.detail-progress-dialog button')].find(button=>button.textContent==='核对结果').click()");
+    // The permission read can change between the click and the receipt response. Keep the real GETs and vary only this response.
+    await browser.evaluate(`(()=>{
+      const read=fetch;
+      globalThis.__restoreProgressReads=()=>{fetch=read;};
+      fetch=async(url,options)=>{
+        const pathname=new URL(String(url),location.href).pathname;
+        const response=await read(url,options);
+        if(!response.ok||(options?.method??'GET')!=='GET')return response;
+        if(pathname===${JSON.stringify(detailPath+'/web-report')})return Response.json({...await response.json(),can_publish_progress:false});
+        if(pathname.startsWith(${JSON.stringify(detailPath+'/member-progress/commands/')})){
+          const {ticket_id,client_command_id}=await response.json();
+          return Response.json({state:'UNKNOWN',ticket_id,client_command_id});
+        }
+        return response;
+      };
+    })()`);
+    const checkProgress="[...document.querySelectorAll('.detail-progress-dialog button')].find(button=>button.textContent==='核对结果').click()";
+    await browser.evaluate(checkProgress);
+    await browser.waitFor("document.querySelector('.detail-progress-dialog')?.innerText.includes('原操作仍没有明确结果')");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-progress-dialog')?.innerText.includes('重新提交')"),false,'the hint and action both respect the newly read permission');
+    await browser.evaluate('globalThis.__restoreProgressReads()');
+    await browser.evaluate(checkProgress);
     await browser.waitFor("!document.querySelector('.detail-progress-dialog')&&document.querySelector('[aria-label=\"报修人可见进度\"]')?.innerText.includes('合成公开进度')");
     assert.equal(await browser.evaluate("globalThis.__detailPosts.filter(row=>row.path.endsWith('/member-progress')).length"),1,'closing/reopening and acknowledgement never issue another public-progress command');
     const publicView=await http.get(detailPath+'/web-report');assert.equal(publicView.status,200);assert.equal((await publicView.json() as {public_progress:{summary:string}}).public_progress.summary,summary);
