@@ -81,7 +81,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       try{const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled||!fresh.conversation_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');attempt.stage='conversation';const current=await conversations.detail(session,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');if(followUpTarget){if(!fresh.supplement_follow_up_enabled||!fresh.supplement_follow_up_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');}return current.capabilities.includes(action);}
       catch(error){attempt.failure=error;throw error;}
     },onAuthorityFailure:error=>{const attempt=draftAuthority.current;if(attempt&&attempt.failure===error)authorityFailure(error,attempt);},
-    onRestore:v=>{setValue(v.value);setPending(v.pending);if(v.pending)setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');},onOperation:()=>setOutcome('结果未知：敏感内容不可用，只能只读核对原操作。'),onSensitiveClear:sensitiveClear});
+    onRestore:v=>{setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:()=>setOutcome('结果未知：敏感内容不可用，只能只读核对原操作。'),onSensitiveClear:sensitiveClear});
   const unknown=Boolean(pending||draft.operationId||boundOperationId),allowed=entry.capabilities.includes(action),blocked=(busy||unknown||(Boolean(value)&&draft.enabled))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;epoch.current++;request.current?.abort();};},[]);
@@ -97,25 +97,35 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
     if(!saved&&!workbenchTransportWritable()){setOutcome('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token};
-    let command=saved,dispatched=false;
+    let command=saved,dispatched=false,preparation:ReturnType<typeof draft.prepareSend>=null;
     try{
       const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled)throw new DraftError('DRAFT_DISABLED');
       attempt.stage='conversation';const current=await conversations.detail(session,controller.signal);if(!isCurrent(attempt))return;if(!current.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
       if(followUpTarget){if(!fresh.supplement_follow_up_enabled)throw new ApiError(404,'AUTHORIZATION_REJECTED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,controller.signal);if(!isCurrent(attempt))return;}
       if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:current.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
-      // Codex review: the number is bound only once its draft is saved and the attempt is still current, so a cancellation during
-      // preparation never leaves an unsent number locking the follow-up.
-      if(!saved)await draft.prepare(command);if(!isCurrent(attempt)){if(!saved)void draft.releaseUnsent(command.command.client_command_id).catch(()=>{});return;}
+      if(saved){
+        if(!await draft.claimReplay(saved.command.client_command_id)){
+          if(isCurrent(attempt))setOutcome('原操作已在另一页面处理，请重新打开详情后查看。');
+          return;
+        }
+      }else{
+        preparation=draft.prepareSend(command);
+        await preparation?.save();
+      }
+      if(!isCurrent(attempt))return;
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);
       setPending(command);setOutcome('正在提交原操作…');dispatched=true;const result=await conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal);await confirmed(command.command.client_command_id,result,command.command.text,token);
-    }catch(error){if(!isCurrent(attempt)){if(command&&!dispatched&&!saved)void draft.releaseUnsent(command.command.client_command_id).catch(()=>{});return;}
+    }catch(error){if(!isCurrent(attempt))return;
       if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{await draft.knownFailure(command.command.client_command_id);setPending(null);if(followUpTarget)setBoundOperationId(null);}catch{setPending(command);}}setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
       // Codex review: only a request that went out (or a replayed original) can have an unknown result; a new reply whose draft
       // could not be saved was never sent, so its number is released and the text stays.
       else if(command&&(dispatched||saved)){setPending(command);setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
       else if(command){setPending(null);if(followUpTarget)setBoundOperationId(null);setOutcome('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
       else setOutcome(error instanceof DraftError?'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。':'网络中断：本次没有提交，你的输入还在。网络恢复后重试。');
-    }finally{if(request.current===controller){request.current=null;setBusy(false);}}
+    }finally{
+      if(preparation&&!dispatched)await preparation.release().catch(()=>{});
+      if(request.current===controller){request.current=null;setBusy(false);}
+    }
   }
   async function check(){
     const nonce=draft.operationId??pending?.command.client_command_id??boundOperationId;if(!nonce||request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);

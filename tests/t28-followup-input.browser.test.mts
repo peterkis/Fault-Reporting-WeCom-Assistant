@@ -30,7 +30,9 @@ test('T28 follow-up preserves unsubmitted input across parent conflict and retai
     const command=await assertClosedUiCommand(context.browser,path+'/correct-scope',{expected_row_version:'3',reason_code:'SCOPE_CORRECTION',confirmed_scope:'CAMPUS'}),unknown=text(await context.browser.evaluate('document.querySelector("[data-action=copy-diagnostics]").dataset.diagnostics'));
     assert.ok(unknown.includes(text(command.client_command_id))&&unknown.includes('3'));assert.equal((await http.get(path)).row_version,'4');
     await context.browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');
-    await context.browser.waitFor('document.body.innerText.includes("内容已更新，请点击「使用最新内容」后再提交")');
+    await context.browser.waitFor('document.body.innerText.includes("内容已更新，请先点击「核对结果」")');
+    assert.equal(await context.browser.evaluate('document.querySelector("[data-action=adopt-incident-version]")'),null);
+    assert.equal(await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]")?.disabled'),false);
     assert.equal(await context.browser.evaluate('document.querySelector("[data-action=copy-diagnostics]").dataset.diagnostics'),unknown);assert.equal(await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").disabled'),true);
     const posts=rows(await context.browser.evaluate('globalThis.__t28Posts'));assert.equal(posts.filter(value=>value.path===path+'/correct-scope').length,1);
     const reads=await context.browser.evaluate('globalThis.__t27DomainReads');assert.ok(Array.isArray(reads));assert.equal(reads.some(value=>typeof value==='string'&&value.startsWith(path+'/commands/')),false);

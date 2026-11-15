@@ -1,15 +1,15 @@
 // These bounded browser-local recovery copies never own Ticket facts or authority.
 export interface DraftScope {principal:string;kind:'ticket'|'review'|'intake'|'conversation'|'incident-candidate'|'incident'|'web-feedback';id:string;purpose:string}
 export interface DraftRecord {schema:1;scope:string;principal:string;kind:DraftScope['kind'];id:string;purpose:string;firstSavedAt:number;expiresAt:number;revision:string;iv:Uint8Array<ArrayBuffer>;ciphertext:ArrayBuffer;key:CryptoKey}
-export interface OperationRecord extends DraftScope {scope:string;commandId:string;createdAt:number}
+export interface OperationRecord extends DraftScope {scope:string;commandId:string;createdAt:number;prepared?:true}
 export interface DraftHandle {scope:DraftScope;record:DraftRecord|null;operation:OperationRecord|null;epoch:string}
 export class DraftError extends Error {}
-export interface DraftInvalidation {principal:string;kind?:DraftScope['kind'];id?:string;purpose?:string;reason:'discard'|'expired'|'settled'|'revoked'|'logout'|'logout-unknown'}
+export interface DraftInvalidation {principal:string;kind?:DraftScope['kind'];id?:string;purpose?:string;reason:'discard'|'expired'|'settled'|'released'|'revoked'|'logout'|'logout-unknown'}
 const listeners=new Set<(value:DraftInvalidation)=>void>();let channel:BroadcastChannel|null=null;
 function invalidation(value:unknown):DraftInvalidation|null{
   if(!value||typeof value!=='object'||Array.isArray(value))return null;const v=value as Record<string,unknown>;
   const reason=v.reason,kind=v.kind;
-  if(typeof v.principal!=='string'||!(kind==='web-feedback'?/^[a-f0-9]{64}$/u.test(v.principal):UUID.test(v.principal))||(reason!=='discard'&&reason!=='expired'&&reason!=='settled'&&reason!=='revoked'&&reason!=='logout'&&reason!=='logout-unknown')||Object.keys(v).some(key=>!['principal','kind','id','purpose','reason'].includes(key)))return null;
+  if(typeof v.principal!=='string'||!(kind==='web-feedback'?/^[a-f0-9]{64}$/u.test(v.principal):UUID.test(v.principal))||(reason!=='discard'&&reason!=='expired'&&reason!=='settled'&&reason!=='released'&&reason!=='revoked'&&reason!=='logout'&&reason!=='logout-unknown')||Object.keys(v).some(key=>!['principal','kind','id','purpose','reason'].includes(key)))return null;
   if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'&&kind!=='conversation'&&kind!=='incident-candidate'&&kind!=='incident'&&kind!=='web-feedback'||v.id!==undefined&&(typeof v.id!=='string'||!(kind==='web-feedback'?/^[A-Za-z0-9_-]{32}$/u.test(v.id):UUID.test(v.id)))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose)))return null;
   return {principal:v.principal,reason,...(kind!==undefined?{kind}:{}),...(typeof v.id==='string'?{id:v.id}:{}),...(typeof v.purpose==='string'?{purpose:v.purpose}:{})};
 }
@@ -42,8 +42,8 @@ function decode(value:unknown):DraftRecord {
 }
 function decodeOperation(value:unknown):OperationRecord{
   const v=object(value),scope=scopeOf(v);
-  if(Object.keys(v).length!==7||typeof v.scope!=='string'||typeof v.commandId!=='string'||!UUID.test(v.commandId)||typeof v.createdAt!=='number'||!Number.isSafeInteger(v.createdAt)||v.createdAt<0||encoder.encode(JSON.stringify(v)).byteLength>512)throw new DraftError('DRAFT_CORRUPT');
-  return {scope:v.scope,...scope,commandId:v.commandId,createdAt:v.createdAt};
+  if(Object.keys(v).length!==(v.prepared===true?8:7)||Object.hasOwn(v,'prepared')&&v.prepared!==true||typeof v.scope!=='string'||typeof v.commandId!=='string'||!UUID.test(v.commandId)||typeof v.createdAt!=='number'||!Number.isSafeInteger(v.createdAt)||v.createdAt<0||encoder.encode(JSON.stringify(v)).byteLength>512)throw new DraftError('DRAFT_CORRUPT');
+  return {scope:v.scope,...scope,commandId:v.commandId,createdAt:v.createdAt,...(v.prepared===true?{prepared:true as const}:{})};
 }
 async function database():Promise<IDBDatabase>{
   if(!globalThis.isSecureContext||!globalThis.crypto?.subtle||!globalThis.indexedDB)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -114,7 +114,7 @@ export async function openDraft(scope:DraftScope,{restore=true}:{restore?:boolea
   if(!valid)throw new DraftError('DRAFT_CHANGED');
   return {handle,text:new TextDecoder('utf-8',{fatal:true}).decode(plaintext),expired:false};
 }
-export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId}:{commandId?:string;settledCommandId?:string}={}):Promise<DraftRecord>{
+export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId,prepared=false,releasePrepared=false}:{commandId?:string;settledCommandId?:string;prepared?:boolean;releasePrepared?:boolean}={}):Promise<DraftRecord>{
   const bytes=encoder.encode(text);if(bytes.byteLength>DRAFT_MAX_BYTES)throw new DraftError('DRAFT_TOO_LARGE');
   const previous=handle.record?.revision,firstSavedAt=handle.record?.firstSavedAt??Date.now(),expiresAt=firstSavedAt+DRAFT_TTL_MS,epoch=handle.epoch;
   if(Date.now()>=expiresAt)throw new DraftError('DRAFT_EXPIRED');
@@ -124,13 +124,17 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(metadata),tagLength:128},key,bytes),record:DraftRecord={...metadata,iv,ciphertext,key};
   const committed=await state(value=>{
     const current=value.drafts.find(row=>row.scope===record.scope),operation=value.operations.find(row=>row.scope===record.scope);
-    if(value.epoch!==epoch||current?.revision!==previous||Date.now()>=expiresAt)return {error:'DRAFT_CHANGED'};
+    if(current?.revision!==previous||Date.now()>=expiresAt)return {error:'DRAFT_CHANGED'};
+    if(releasePrepared){
+      // This only rewrites the exact surviving row. A revoked or newer draft is never recreated.
+      if(!current||commandId||!settledCommandId||operation?.commandId!==settledCommandId||!operation.prepared)return {error:'DRAFT_CHANGED'};
+    }else if(value.epoch!==epoch)return {error:'DRAFT_CHANGED'};
     if(operation&&operation.commandId!==commandId&&operation.commandId!==settledCommandId)return {error:'DRAFT_OPERATION_UNRESOLVED'};
     if(!current&&value.drafts.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_FULL'};
     if(commandId&&!operation&&value.operations.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_OPERATION_FULL'};
     if(settledCommandId&&operation?.commandId===settledCommandId)value.operationStore.delete(record.scope);
     value.control.delete(EXPIRED_MARKER+record.scope);
-    const nextOperation:OperationRecord|null=commandId?{scope:record.scope,...handle.scope,commandId,createdAt:operation?.createdAt??Date.now()}:null;
+    const nextOperation:OperationRecord|null=commandId?(operation?.commandId===commandId?operation:{scope:record.scope,...handle.scope,commandId,createdAt:Date.now(),...(prepared?{prepared:true as const}:{})}):null;
     if(nextOperation)value.operationStore.put(nextOperation);
     value.draftStore.put(record);return {operation:nextOperation};
   });
@@ -145,7 +149,7 @@ export async function rebaseDraft(handle:DraftHandle):Promise<void>{
   const epoch=await state(value=>{
     const current=value.drafts.find(row=>row.scope===key),pending=value.operations.find(row=>row.scope===key)??null;
     if(!current||current.scope!==record.scope||current.revision!==record.revision||current.firstSavedAt!==record.firstSavedAt||current.expiresAt!==record.expiresAt||current.expiresAt<=Date.now()
-      ||(operation===null?pending!==null:!pending||pending.scope!==operation.scope||pending.commandId!==operation.commandId||pending.createdAt!==operation.createdAt))throw new DraftError('DRAFT_CHANGED');
+      ||(operation===null?pending!==null:!pending||pending.scope!==operation.scope||pending.commandId!==operation.commandId||pending.createdAt!==operation.createdAt||pending.prepared!==operation.prepared))throw new DraftError('DRAFT_CHANGED');
     return value.epoch;
   });
   if(handle.record!==record||handle.operation!==operation)throw new DraftError('DRAFT_CHANGED');
@@ -184,19 +188,40 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
   handle.record=next.record;handle.operation=next.operation;handle.epoch=next.epoch;
   if(next.removed)publish({...handle.scope,reason:'settled'});
 }
-/**
- * Codex review (card 34C): the operation number of a command prepared but never sent is removed only when its draft row is
- * already gone (cleared by another page) and storage still holds that same number. While the draft exists it carries the pending
- * command, so the hook releases both in one save instead (see `releaseUnsent` in use-note-draft).
- */
-export async function releaseUnsentOperation(scope:DraftScope,commandId:string):Promise<boolean>{
+// Before a restored reply can be sent, it gives up the original page's right to cancel its preparation.
+export async function claimDraftReplay(scope:DraftScope,commandId:string):Promise<boolean>{
   const key=draftScopeKey(scope);
-  const next=await state(value=>{
-    const removed=!value.drafts.some(row=>row.scope===key)&&value.operations.find(row=>row.scope===key)?.commandId===commandId;
-    if(removed){value.operationStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}
-    return {removed};
+  return state(value=>{
+    const operation=value.operations.find(row=>row.scope===key);
+    if(operation?.commandId!==commandId)return false;
+    if(operation.prepared){
+      const {prepared:_prepared,...claimed}=operation;
+      value.operationStore.put(claimed);
+    }
+    return true;
   });
-  return next.removed;
+}
+
+// Only the original preparation calls this, before it dispatches. A replay can claim the same number in another tab.
+export async function releaseUnsentOperation(handle:DraftHandle,commandId:string,text:string):Promise<void>{
+  const {scope}=handle,key=draftScopeKey(scope);
+  if(handle.record&&handle.operation?.commandId===commandId&&handle.operation.prepared){
+    try{
+      await saveDraft(handle,text,{settledCommandId:commandId,releasePrepared:true});
+      publish({...scope,reason:'released'});
+      return;
+    }catch(error){
+      if(!(error instanceof DraftError)||!['DRAFT_CHANGED','DRAFT_EXPIRED'].includes(error.message))throw error;
+    }
+  }
+  // The draft may have been cleared during preparation. Do not recreate it or change other scopes' save generation.
+  const removed=await state(value=>{
+    const operation=value.operations.find(row=>row.scope===key);
+    if(value.drafts.some(row=>row.scope===key)||operation?.commandId!==commandId||!operation.prepared)return false;
+    value.operationStore.delete(key);
+    return true;
+  });
+  if(removed)publish({...scope,reason:'released'});
 }
 export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=false}:{preserveOperations?:boolean}={}):Promise<void>{
   if(!invalidation(filter))throw new DraftError('DRAFT_SCOPE_INVALID');

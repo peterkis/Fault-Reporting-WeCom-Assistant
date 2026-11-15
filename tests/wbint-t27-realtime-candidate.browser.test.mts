@@ -88,7 +88,7 @@ test('T27 one production stream refreshes candidate list/detail/result without r
       await browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'`);
       const resultReads=reads.get('/api/incidents/'+incidentId)??0;
       await post('/api/incidents/'+incidentId+'/start-investigating',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'OPERATOR_REVIEWED'});
-      await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.textContent.includes('INVESTIGATING')`);
+      await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.textContent.includes('调查中')`);
       assert.ok((reads.get('/api/incidents/'+incidentId)??0)>resultReads);assert.equal((await runtime.observability.metrics()).sse_clients,1);
 
       stage='late genuine authorized GET cannot restore protected candidate facts after the current epoch loses scope';await navigate('incidents/candidates/'+otherId);

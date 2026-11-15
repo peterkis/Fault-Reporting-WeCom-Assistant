@@ -152,7 +152,15 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   if(fresh.capability&&deliveryId===value.deliveryId)client.setQueryData([...queryPrefix,'capability',authority,principal.incident_delivery_control_enabled,deliveryId],fresh.capability);
   return fresh;
  }
- async function terminal(commandId:string,receiptResult:IncidentDeliveryControlResult|null,controller:AbortController,current:()=>void,startIdentity:string){
+ function adoptReplacement(commandId:string){
+  const replaced=draft.currentOperation();
+  if(!replaced||replaced===commandId)return false;
+  known.current=false;knownFailed.current=false;outcomeFor.current=null;setResult(null);
+  clearSensitive();setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);
+  setMessage('另一个页面已开始新的通知操作，这里的结果不再适用。点击「核对结果」查看新操作。');
+  return true;
+ }
+ async function terminal(commandId:string,receiptResult:IncidentDeliveryControlResult|null,deliveryId:string|null,controller:AbortController,current:()=>void,startIdentity:string){
   // Codex review: a confirmed failure is kept apart from the screen state, like a confirmed commit, so the hint never loses it.
   // Codex review: the confirmed outcome and its cleanup belong to this operation number only.
   if(outcomeFor.current!==commandId){known.current=false;knownFailed.current=false;outcomeFor.current=commandId;}
@@ -160,17 +168,20 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   // A successful POST followed by a failed GET keeps the original intent. Only
   // a current read and an exact terminal receipt allow the local barrier to clear.
   try{
-   await readCurrent(receiptResult?.delivery_id??value.deliveryId,controller,current,startIdentity);current();
+   await readCurrent(receiptResult?.delivery_id??deliveryId,controller,current,startIdentity);current();
    settling.current=true;let cleaned=false;
-   try{cleaned=await draft.success(commandId,receiptResult===null);}finally{settling.current=false;}
+   const preserveInput=receiptResult===null&&deliveryId!==null&&value.deliveryId===deliveryId;
+   try{cleaned=await draft.success(commandId,preserveInput);}finally{settling.current=false;}
    current();
-   // Codex review: another tab may have cleared this operation and started a new one; this result then no longer applies here.
-   const replaced=draft.currentOperation();
-   if(!cleaned&&replaced&&replaced!==commandId){known.current=false;knownFailed.current=false;outcomeFor.current=null;setResult(null);clearSensitive();setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);setMessage('另一个页面已开始新的通知操作，这里的结果不再适用。点击「核对结果」查看新操作。');return;}
+   if(adoptReplacement(commandId))return;
    setPending(null);setChecked(false);setConfirmed(false);setOpaque(cleaned?null:commandId);setCleanupPending(!cleaned);
    if(!cleaned){setState(receiptResult?'committed':'failed');setMessage((receiptResult?'已提交；':'上次操作没有成功；')+'草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}
    if(receiptResult){setResult(receiptResult);clearSensitive();setState('committed');setNeedsRead(false);setMessage('本路操作已确认提交；当前权限和公共故障已重新读取，各路结果分别刷新。确认发送不代表报修人已读。');}
-   else{setState('failed');setNeedsRead(true);setMessage('上次操作没有成功，输入还在。点击「使用最新内容」后重试。');}
+   else{
+    if(!preserveInput)clearSensitive();
+    setState('failed');setNeedsRead(preserveInput);
+    setMessage(preserveInput?'上次操作没有成功，输入还在。点击「使用最新内容」后重试。':'上次操作没有成功。请选择通知渠道后再操作。');
+   }
    onChanged();
   }catch(error){
    if(controller.signal.aborted||request.current!==controller)return;
@@ -193,28 +204,30 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    if(!workbenchTransportWritable()||!navigator.onLine||!fresh.principal.csrf_token)throw new ApiError(503,'WORKBENCH_OFFLINE');
    if(!replay)await draft.prepare(operation);current();dispatched=true;setState('submitting');setMessage(replay?'正在明确重放同一原通知操作…':'正在提交本路明确通知操作…');
    const acknowledged=await incidentDeliveryApi.perform(operation,fresh.principal.csrf_token,controller.signal);current();
-   await terminal(operation.body.client_command_id,acknowledged,controller,current,startIdentity);
+   await terminal(operation.body.client_command_id,acknowledged,operation.deliveryId,controller,current,startIdentity);
   }catch(error){
    if(controller.signal.aborted||request.current!==controller)return;
    try{current();}catch{return;}
    if(unavailable(error)||error instanceof DraftError&&['DRAFT_IDENTITY_CHANGED','DRAFT_ACTION_REVOKED'].includes(error.message)){revoke(error);return;}
    if(error instanceof ControlDisabled){if(replay||dispatched){setOpaque(operation.body.client_command_id);clearSensitive();setState('unknown');setMessage('通知控制当前关闭；原操作保留，仅可只读核对，不会新提交。');}else{setPending(null);setOpaque(null);setState('failed');setNeedsRead(true);setMessage('通知控制当前关闭，本次尚未发送。');}return;}
-   if(error instanceof IncidentDeliveryCommandRefusal){await terminal(operation.body.client_command_id,null,controller,current,startIdentity);return;}
-   if(!dispatched&&!replay){settling.current=true;let cleaned=false;try{cleaned=await draft.success(operation.body.client_command_id,true);}finally{settling.current=false;}try{current();}catch{return;}setPending(null);setOpaque(cleaned?null:operation.body.client_command_id);setCleanupPending(!cleaned);setState(cleaned?'failed':'unknown');setNeedsRead(true);setMessage(cleaned?'本次尚未发送：'+errorMessage(error)+'。输入保留，请重新核对。':'草稿未能清空：本次没有提交。点击「核对结果」后重试。');}
+   if(error instanceof IncidentDeliveryCommandRefusal){await terminal(operation.body.client_command_id,null,operation.deliveryId,controller,current,startIdentity);return;}
+   if(!dispatched&&!replay){settling.current=true;let cleaned=false;try{cleaned=await draft.success(operation.body.client_command_id,true);}finally{settling.current=false;}try{current();}catch{return;}if(adoptReplacement(operation.body.client_command_id))return;setPending(null);setOpaque(cleaned?null:operation.body.client_command_id);setCleanupPending(!cleaned);setState(cleaned?'failed':'unknown');setNeedsRead(true);setMessage(cleaned?'本次尚未发送：'+errorMessage(error)+'。输入保留，请重新核对。':'草稿未能清空：本次没有提交。点击「核对结果」后重试。');}
    else{setState(known.current?'committed':'unknown');setChecked(false);setMessage(known.current?'已提交。最新内容还没加载完，点击「核对结果」。':'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
   }finally{if(request.current===controller)request.current=null;}
  }
  async function checkOriginal(){
   if(!originalId||request.current||draft.probing||draft.restoring)return;
   const id=originalId;if(outcomeFor.current!==null&&outcomeFor.current!==id){known.current=false;knownFailed.current=false;outcomeFor.current=null;setCleanupPending(false);setResult(null);}
-  const original=pending,{controller,current,startIdentity}=startRequest('checking');requestFor.current=id;setMessage('正在只读核对原通知操作…');
+  const original=pending?.body.client_command_id===id?pending:null;
+  const deliveryId=original?.deliveryId??(outcomeFor.current===id&&opaque===id?value.deliveryId:null);
+  const {controller,current,startIdentity}=startRequest('checking');requestFor.current=id;setMessage('正在只读核对原通知操作…');
   try{
-   await readCurrent(original?.deliveryId??value.deliveryId,controller,current,startIdentity);current();
+   await readCurrent(deliveryId,controller,current,startIdentity);current();
    const receipt=await incidentDeliveryApi.receipt(incidentId,id,controller.signal);current();
    if(receipt.state==='UNKNOWN'){setChecked(!known.current&&!knownFailed.current);setState(known.current?'committed':knownFailed.current?'failed':'unknown');setMessage(known.current?'已提交。最新结果暂时读不到，没有重复提交。':knownFailed.current?'上次操作没有成功。最新结果暂时读不到，没有重复提交。':'原操作尚无可确认终态；未知不代表未应用，没有发送新操作。');return;}
    if(known.current&&receipt.state==='FAILED')throw new Error('ORIGINAL_INCIDENT_DELIVERY_RECEIPT_CONFLICT');
    if(receipt.state==='COMMITTED'&&original&&!matchesIncidentDeliveryResult(original,receipt.result))throw new Error('ORIGINAL_INCIDENT_DELIVERY_RESULT_UNCONFIRMED');
-   await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,controller,current,startIdentity);
+   await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,deliveryId,controller,current,startIdentity);
   }catch(error){if(controller.signal.aborted||request.current!==controller)return;try{current();}catch{return;}if(unavailable(error)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')revoke(error);else{setState(known.current?'committed':knownFailed.current?'failed':'unknown');setMessage((known.current?'已提交；':knownFailed.current?'上次操作没有成功；':'')+'这次核对没有完成，没有重复提交。点击「核对结果」重试。');}}
   finally{if(request.current===controller)request.current=null;}
  }

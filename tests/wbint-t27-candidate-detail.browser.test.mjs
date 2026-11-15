@@ -36,6 +36,11 @@ test('T27 formal canonical candidate requires explicit lawful decisions and retu
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').disabled`),true);
       assert.equal(await browser.evaluate(`document.querySelectorAll(${JSON.stringify(root+' [data-report-ref] input[type=checkbox]:checked')}).length`),0);
       assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).innerText`),/获权来源总数[：:]?\s*3/u);
+      const evidence=await browser.evaluate(`(()=>{const page=document.querySelector(${JSON.stringify(root)});return {text:page.innerText,diagnostics:page.querySelector('[data-candidate-evidence-diagnostics] [data-diagnostics]').dataset.diagnostics};})()`);
+      const diagnostic=JSON.parse(evidence.diagnostics);
+      assert.match(diagnostic.source_result_hash,/^[a-f0-9]{64}$/u);
+      assert.equal(evidence.text.includes(diagnostic.source_result_hash),false);
+      assert.equal(evidence.text.includes(diagnostic.reason_code),false);
       await select('人工决定','START_REVIEW');await select('决定原因','OPERATOR_REVIEWED');
       await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=submit-candidate]').click()`);
       await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-version]')?.textContent===${JSON.stringify((BigInt(version)+1n).toString())}&&document.querySelector(${JSON.stringify(root)})?.querySelector('.workbench-select[data-field-label="人工决定"] select')?.value===''`);

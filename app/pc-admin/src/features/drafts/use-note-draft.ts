@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
-import {DraftError,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
+import {DraftError,claimDraftReplay,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
 import type {DraftHandle,DraftScope} from './encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -61,14 +61,14 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   restore.current=options.onRestore;latest.current={value,pending};
   const cancelTimer=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
   const cancelAuthority=()=>{authorityRequest.current?.abort();authorityRequest.current=null;};
-  async function write(value:AuthorizedDraftValue<T,C>){
+  async function write(value:AuthorizedDraftValue<T,C>,prepared=false){
     if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
     const token=generation.current,text=encode(value);
     setStatus('saving');setMessage('正在保存草稿…');
     const task=queue.current.catch(()=>{}).then(async()=>{
       if(generation.current!==token||!handle.current)throw new DraftError('DRAFT_CHANGED');
       if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
-      const target=handle.current,saveOptions=value.pending?{commandId:protocol.current.commandId(value.pending)}:{};
+      const target=handle.current,saveOptions=value.pending?{commandId:protocol.current.commandId(value.pending),prepared}:{};
       let record;
       try{record=await saveDraft(target,text,saveOptions);}
       catch(error){
@@ -146,14 +146,23 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         }).finally(()=>{blankRefreshPending.current=false;});
         queue.current=task;void task.catch(()=>{});return;
       }
-      const preserve=value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
+      const released=value.reason==='released';
+      const previousOperation=handle.current?.operation?.commandId;
+      const preserve=released||value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
       cancelTimer();cancelAuthority();const token=++generation.current;lastSaved.current='';pendingRevision.current=undefined;
       if(!preserve){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
       setStatus('loading');setMessage('正在清除草稿…');
       void openDraft(scope,{restore:false}).then(copy=>{
         if(generation.current!==token)return;handle.current=copy.handle;setOperationId(copy.handle.operation?.commandId??null);
-        if(copy.handle.operation)callbacks.current.onOperation(copy.handle.operation.commandId);
-        setStatus('ready');setMessage(value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
+        if(copy.handle.operation){
+          if(released&&copy.handle.operation.commandId!==previousOperation)callbacks.current.onSensitiveClear();
+          callbacks.current.onOperation(copy.handle.operation.commandId);
+        }else if(released&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation)){
+          const editable={...latest.current,pending:null};
+          latest.current=editable;
+          restore.current(editable);
+        }
+        setStatus('ready');setMessage(released?'':value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
       }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
     });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
   },[enabled,scopeKey]);
@@ -177,22 +186,25 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   return {enabled,status,message,
     /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
-    /** Drops the stored number of a command that was prepared but never sent (see `releaseUnsentOperation`). */
-    /** Releases a command prepared but never sent: one save drops its pending command and its operation number together, keeping
-     *  the text; the save is refused when another page changed the draft or holds another operation. With the draft row already
-     *  gone, only the matching operation record is removed. */
-    async releaseUnsent(commandId:string){
-      if(!enabled)return;
+    // Capture the preparation's handle and text for cleanup, even if unmount or invalidation clears the live handle.
+    prepareSend(command:C){
+      if(!enabled)return null;
       const target=handle.current;
-      if(target?.record&&writeEnabled){
-        await queue.current.catch(()=>{});
-        if(handle.current!==target||latest.current.pending&&protocol.current.commandId(latest.current.pending)!==commandId)return;
-        const next={...latest.current,pending:null};
-        try{await saveDraft(target,encode(next),{settledCommandId:commandId});}catch{return;}
-        latest.current=next;lastSaved.current=encode(next);pendingRevision.current=undefined;setOperationId(current=>current===commandId?null:current);return;
-      }
-      if(await releaseUnsentOperation(scope,commandId)){if(handle.current?.operation?.commandId===commandId)handle.current.operation=null;setOperationId(current=>current===commandId?null:current);}
+      if(!writeEnabled||!initialized||!target)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
+      const editable={value:latest.current.value,pending:null};
+      const commandId=protocol.current.commandId(command);
+      const text=encode(editable);
+      return {
+        async save(){
+          cancelTimer();
+          const prepared={...editable,pending:command};
+          latest.current=prepared;
+          await write(prepared,true);
+        },
+        release:()=>releaseUnsentOperation(target,commandId,text),
+      };
     },
+    claimReplay:(commandId:string)=>enabled?claimDraftReplay(scope,commandId):Promise.resolve(true),
     operationId,canSubmit:!enabled||(initialized&&status!=='failed'&&operationId===null),
     safeToLeave:enabled&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){
@@ -213,15 +225,33 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     },
     async success(commandId:string,preserveInput=false){
       if(!enabled)return true;
-      cancelTimer();cancelAuthority();generation.current++;
+      cancelTimer();cancelAuthority();
+      const token=++generation.current,target=handle.current;
       latest.current={value:preserveInput?latest.current.value:emptyValue,pending:null};lastSaved.current='';
-      try{if(handle.current)await settleDraft(handle.current,commandId,pendingRevision.current??handle.current.record?.revision);}
-      catch{setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return false;}
-      // Codex review: the draft layer reports only what happened to the draft; the business outcome is the caller's to state.
-      pendingRevision.current=undefined;lastSaved.current='';setOperationId(handle.current?.operation?.commandId??null);setStatus('ready');setMessage(handle.current?.operation?'':'草稿已清空。');
-      return handle.current?.operation===null;
+      try{if(target)await settleDraft(target,commandId,pendingRevision.current??target.record?.revision);}
+      catch{
+        if(generation.current===token&&handle.current===target){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}
+        return false;
+      }
+      // A successful settlement broadcasts too. That subscriber owns the refresh if the handle changed.
+      const cleaned=target?.operation===null;
+      if(generation.current!==token||handle.current!==target)return cleaned;
+      pendingRevision.current=undefined;lastSaved.current='';setOperationId(target?.operation?.commandId??null);setStatus('ready');setMessage(cleaned?'草稿已清空。':'');
+      return cleaned;
     },
-    async knownFailure(commandId:string){if(!enabled)return true;if(!writeEnabled||!handle.current)return false;latest.current={...latest.current,pending:null};await queue.current.catch(()=>{});if(protocol.current.writeEnabled===false)return false;await saveDraft(handle.current,encode(latest.current),{settledCommandId:commandId});lastSaved.current=encode(latest.current);setOperationId(null);setStatus('saved');return handle.current.operation===null;},
+    async knownFailure(commandId:string){
+      if(!enabled)return true;
+      const target=handle.current,token=generation.current;
+      if(!writeEnabled||!target)return false;
+      latest.current={...latest.current,pending:null};
+      await queue.current.catch(()=>{});
+      if(generation.current!==token||handle.current!==target||protocol.current.writeEnabled===false)return false;
+      const text=encode(latest.current);
+      await saveDraft(target,text,{settledCommandId:commandId});
+      if(generation.current!==token||handle.current!==target)return false;
+      lastSaved.current=text;setOperationId(null);setStatus('saved');
+      return target.operation===null;
+    },
   };
 }
 

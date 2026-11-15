@@ -1,9 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
+import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
+import {sourceFile} from './helpers/migration-roots.mjs';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
@@ -79,3 +81,51 @@ test('expiry during fresh authority defeats stored-row rebase and never writes t
 });
 
 
+
+test('an unsent preparation releases both stored references without deleting a claimed replay',async()=>{
+ await withT22Fixture(async({origin,browserCookie})=>{
+  // Exercise current storage code with Chromium IndexedDB and no business POST.
+  const source=await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8');
+  const storage=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText.replace(/^export /gmu,'');
+  let browser:Browser|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
+   const result=await browser.evaluate(`(async()=>{${storage}
+    const principal=crypto.randomUUID();
+    const scope={principal,kind:'conversation',id:crypto.randomUUID(),purpose:'conversation-reply'};
+    const commandId=crypto.randomUUID(),plain=JSON.stringify({value:'synthetic draft',pending:null});
+    const pending=JSON.stringify({value:'synthetic draft',pending:{id:commandId}});
+    const {handle:original}=await openDraft(scope);
+    await saveDraft(original,pending,{commandId,prepared:true});
+    const expiry=original.record.expiresAt;
+    await releaseUnsentOperation(original,commandId,plain);
+    const editable=await openDraft(scope);
+    const released={text:JSON.parse(editable.text),operation:editable.handle.operation,expiryPreserved:editable.handle.record.expiresAt===expiry};
+    const missingCannotReplay=!await claimDraftReplay(scope,commandId);
+    await saveDraft(editable.handle,pending,{commandId,prepared:true});
+    const claimed=await claimDraftReplay(scope,commandId);
+    await releaseUnsentOperation(editable.handle,commandId,plain);
+    const replay=await openDraft(scope);
+    const retained={sameText:replay.text===pending,sameOperation:replay.handle.operation.commandId===commandId};
+    await settleDraft(replay.handle,commandId,replay.handle.record.revision);
+
+    const opaque=await openDraft(scope);
+    await saveDraft(opaque.handle,pending,{commandId,prepared:true});
+    await removeSensitiveDraft(opaque.handle,'discard');
+    const other=await openDraft({...scope,purpose:'conversation-note'});
+    let notified=false;
+    const unsubscribe=subscribeDrafts(event=>{if(matchesDraft(event,scope)&&event.reason==='released')notified=true;});
+    try{await releaseUnsentOperation(opaque.handle,commandId,plain);}finally{unsubscribe();}
+    const cleared=await openDraft(scope);
+    await saveDraft(other.handle,plain);
+    return {released,missingCannotReplay,claimed,retained,opaqueCleared:!cleared.handle.operation&&!cleared.handle.record,notified,otherSaved:Boolean(other.handle.record)};
+   })()`);
+   assert.deepEqual(result,{
+    released:{text:{value:'synthetic draft',pending:null},operation:null,expiryPreserved:true},
+    missingCannotReplay:true,claimed:true,retained:{sameText:true,sameOperation:true},
+    opaqueCleared:true,notified:true,otherSaved:true,
+   });
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});

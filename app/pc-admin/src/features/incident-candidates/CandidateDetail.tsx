@@ -1,3 +1,5 @@
+import {DiagnosticCopy} from '../../app/DiagnosticCopy';
+import {label,manualReviewStatusLabels} from './labels';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Link as HLink} from "@heroui/react";
@@ -38,14 +40,25 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
       <section className="properties" aria-label="候选来源与数量"><dl><dt>来源观察人数</dt><dd>{detail.distinct_reporters??unavailable}</dd><dt>来源观察科室</dt><dd>{detail.distinct_departments??unavailable}</dd><dt>来源观察位置</dt><dd>{detail.distinct_locations??unavailable}</dd><dt>原观察窗口</dt><dd>{detail.correlation_window_ms===null?unavailable:detail.correlation_window_ms+' 毫秒'}</dd><dt>来源建议范围</dt><dd>{scopeLabels[detail.scope_candidate]??detail.scope_candidate}（尚未确认）</dd><dt>原观察时间</dt><dd>{detail.first_seen_at??unavailable} 至 {detail.last_seen_at??unavailable}</dd><dt>候选到期</dt><dd>{detail.expires_at}（北京时间）</dd></dl>
         <p>获权来源总数：{detail.visible_report_source_count}；已提供选项：{detail.report_sources.length}。{detail.report_sources_truncated?'选项已裁剪。':'当前获权选项已全部提供。'}以上来源观察不代表确认后的关联数或受影响全量。</p>
       </section>
-      <section className="detail-main" aria-label="原候选证据"><h2>原候选证据</h2><dl className="candidate-evidence"><dt>规则与目录</dt><dd>{detail.source_decision.catalog_version} / {detail.source_decision.rule_set_version}</dd><dt>原结果依据</dt><dd>{detail.source_result_hash}</dd><dt>原决定原因</dt><dd>{detail.source_decision.reason_code}</dd><dt>人工复核来源</dt><dd>{detail.manual_review?detail.manual_review.status:'没有关联的人工复核事项'}</dd></dl>
+      <section className="detail-main" aria-label="原候选证据"><h2>原候选证据</h2><dl className="candidate-evidence"><dt>原决定</dt><dd>规则发现了可能的公共故障</dd><dt>人工复核来源</dt><dd>{detail.manual_review?label(manualReviewStatusLabels,detail.manual_review.status):'没有关联的人工复核事项'}</dd></dl>
         <h3>安全来源引用</h3>{detail.source_decision.source_refs.length?<ul>{detail.source_decision.source_refs.map(ref=><li key={ref}>{ref}</li>)}</ul>:<p>来源未提供可展示的引用。</p>}
         <p>原事实引用 {detail.evidence_fact_ids.length} 项，当前展示前 {Math.min(50,detail.evidence_fact_ids.length)} 项。</p><ul>{detail.evidence_fact_ids.slice(0,50).map(fact=><li key={fact}>{fact}</li>)}</ul>
         <h3>当前材料</h3><p>原材料依据保持不可变；变化或过期需要重新核对，不会自动确认或替换原决定。</p>
-        <ul>{detail.materials.map((material,index)=><li key={material.source_decision_id}>{index+1}. {material.source_kind==='WEB'?'医小修材料':'医小修收集的材料'} · {material.status==='CURRENT'?'与原依据一致':material.status==='CHANGED'?'已有新材料':'材料已过期或不可用'}<p>原材料依据：{material.original_source_hash}</p>{material.status!=='EXPIRED'&&material.current_source_hash?<p>当前材料依据：{material.current_source_hash}</p>:null}</li>)}</ul>
+        <ul>{detail.materials.map((material,index)=><li key={material.source_decision_id}>{index+1}. {material.source_kind==='WEB'?'医小修材料':'医小修收集的材料'} · {material.status==='CURRENT'?'与原依据一致':material.status==='CHANGED'?'已有新材料':'材料已过期或不可用'}</li>)}</ul>
         <h3>当前获权动作</h3><p>{detail.allowed_actions.map(action=>actionLabels[action]).join('、')||'当前没有可执行动作。'}</p><p>由你确认。确认后会新建一个公共故障，不会合并或关闭原来的工单。</p>
       </section>
       <CandidateDecisionForm key={principal.principal_id+':'+candidateId} principal={principal} detail={detail} onBlockedChange={setBlocked} onRefresh={()=>{void refresh();}}/>
+      <div data-candidate-evidence-diagnostics><DiagnosticCopy data={{
+        catalog_version:detail.source_decision.catalog_version,
+        rule_set_version:detail.source_decision.rule_set_version,
+        source_result_hash:detail.source_result_hash,
+        reason_code:detail.source_decision.reason_code,
+        materials:detail.materials.map(material=>({
+          source_decision_id:material.source_decision_id,
+          original_source_hash:material.original_source_hash,
+          ...(material.status!=='EXPIRED'&&material.current_source_hash?{current_source_hash:material.current_source_hash}:{}),
+        })),
+      }}/></div>
     </div>:null}
   </article>;
 }
