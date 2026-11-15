@@ -66,8 +66,8 @@ test('production detail shares report materials, uses responsive information and
         const pathname=new URL(String(url),location.href).pathname;
         const response=await read(url,options);
         if(!response.ok||(options?.method??'GET')!=='GET')return response;
-        if(pathname===${JSON.stringify(detailPath+'/web-report')})return Response.json({...await response.json(),can_publish_progress:false});
-        if(pathname.startsWith(${JSON.stringify(detailPath+'/member-progress/commands/')})){
+        if(pathname===${JSON.stringify('/api/workbench/items/ticket/'+first.ticket.id+'/web-report')})return Response.json({...await response.json(),can_publish_progress:false});
+        if(pathname.startsWith(${JSON.stringify('/api/tickets/'+first.ticket.id+'/member-progress/commands/')})){
           const {ticket_id,client_command_id}=await response.json();
           return Response.json({state:'UNKNOWN',ticket_id,client_command_id});
         }
