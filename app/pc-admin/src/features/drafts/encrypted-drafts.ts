@@ -212,7 +212,8 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   });
   if('error' in committed)throw new DraftError(committed.error);
   handle.record=record;handle.operation=committed.operation;
-  if(committed.changed)publishToOtherTabs({...handle.scope,reason:'released'});
+  // Tabs opened before this deployment understand settled and re-read the current operation.
+  if(committed.changed)publishToOtherTabs({...handle.scope,reason:'settled'});
   return record;
 }
 // The caller must freshly authorize its own scope. This only refreshes a still-existing

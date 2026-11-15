@@ -11,11 +11,12 @@ import {useNoteDraft} from '../drafts/use-note-draft';
 
 type NoteState='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void;actionsTarget:HTMLElement|null}){
-  const client=useQueryClient(),request=useRef<AbortController|null>(null);
+  const client=useQueryClient(),request=useRef<AbortController|null>(null),requestCommand=useRef<string|null>(null);
   const [note,setNote]=useState(''),[state,setState]=useState<NoteState>('idle'),[message,setMessage,messageRevision]=useFeedbackState('');
   const [pending,setPending]=useState<P2016InternalNoteCommand|null>(null);
   const [prepareFailed,setPrepareFailed]=useState(false);
-  const draft=useNoteDraft({scope:{principal:principal.principal_id,kind:'ticket',id:ticketId,purpose:'internal-note'},principal,note,pending,onRestore:value=>{setNote(value.note);setPending(value.pending);if(value.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}},onSensitiveClear:()=>{request.current?.abort();request.current=null;setNote('');setPending(null);setState('idle');setMessage('');},onOperation:()=>{setState('unknown');setMessage('结果未知：敏感恢复内容已清理，只能核对上次操作。');},onOperationCleared:conflict=>{setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');}});
+  const draft=useNoteDraft({scope:{principal:principal.principal_id,kind:'ticket',id:ticketId,purpose:'internal-note'},principal,note,pending,onRestore:value=>{setNote(value.note);setPending(value.pending);if(value.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}},onSensitiveClear:()=>{request.current?.abort();request.current=null;requestCommand.current=null;setNote('');setPending(null);setState('idle');setMessage('');},onOperation:id=>{if(request.current&&requestCommand.current!==id){request.current.abort();request.current=null;requestCommand.current=null;setPending(null);}setState('unknown');setMessage('结果未知：敏感恢复内容已清理，只能核对上次操作。');},onOperationCleared:conflict=>{request.current?.abort();request.current=null;requestCommand.current=null;setPending(null);setPrepareFailed(false);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');}});
+  const current=(signal:AbortSignal)=>request.current?.signal===signal&&!signal.aborted;
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const blocked=['submitting','checking','unknown'].includes(state);
   const navigationBlocked=(blocked||(draft.enabled&&Boolean(note)))&&!draft.safeToLeave;
@@ -33,31 +34,32 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
   };
   const mutation=useMutation({mutationKey:['ticket-internal-note',principal.principal_id,ticketId],
     mutationFn:({command,signal}:{command:P2016InternalNoteCommand;signal:AbortSignal})=>api.addInternalNote(ticketId,command,principal.csrf_token,signal),
-    onSuccess:async(result,variables)=>{const cleaned=await draft.success(variables.command.client_command_id);setPending(null);setNote('');setState('succeeded');setMessage((result.replayed?'已保存：已核对原操作结果。':'已保存内部备注。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
+    onSuccess:async(result,variables)=>{if(!current(variables.signal))return;const cleaned=await draft.success(variables.command.client_command_id);if(!current(variables.signal))return;setPending(null);setNote('');setState('succeeded');setMessage((result.replayed?'已保存：已核对原操作结果。':'已保存内部备注。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
     onError:(error,variables)=>{
+      if(!current(variables.signal))return;
       if(error instanceof ApiError){setPending(null);void draft.knownFailure(variables.command.client_command_id).catch(()=>{});setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再保存。':('保存被拒绝：'+errorMessage(error)));if(error.status===409)refresh();}
       else {setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}
-    },onSettled:()=>{request.current=null;},
+    },onSettled:(_result,_error,variables)=>{if(current(variables.signal)){request.current=null;requestCommand.current=null;}},
   });
   const send=async(command:P2016InternalNoteCommand,checking:boolean)=>{
     if(!checking&&!workbenchTransportWritable()){setState('denied');setMessage('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;
-    const controller=new AbortController();request.current=controller;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在保存内部备注…');setPrepareFailed(false);
-    try{await draft.prepare(command);}catch{request.current=null;if(checking){setPending(command);setState('unknown');setPrepareFailed(true);setMessage('结果未确认：本机草稿暂时无法保存，这次没有重新提交。可点击「核对结果」查看原操作结果，或检查浏览器存储后再点击「重新提交」。');}else{setPending(null);setState('denied');setMessage('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
-    if(controller.signal.aborted)return;
+    const controller=new AbortController();request.current=controller;requestCommand.current=command.client_command_id;setPending(command);setState(checking?'checking':'submitting');setMessage(checking?'正在核对原操作结果…':'正在保存内部备注…');setPrepareFailed(false);
+    try{await draft.prepare(command);}catch{if(!current(controller.signal))return;request.current=null;requestCommand.current=null;if(checking){setPending(command);setState('unknown');setPrepareFailed(true);setMessage('结果未确认：本机草稿暂时无法保存，这次没有重新提交。可点击「核对结果」查看原操作结果，或检查浏览器存储后再点击「重新提交」。');}else{setPending(null);setState('denied');setMessage('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
+    if(!current(controller.signal))return;
     mutation.mutate({command,signal:controller.signal});
   };
   const receipt=useMutation({mutationKey:['ticket-internal-note',principal.principal_id,ticketId],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>api.internalNoteReceipt(ticketId,commandId,signal),
-    onSuccess:async result=>{if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：未找到终态收据不代表未提交，请继续只读核对。');refresh();return;}// Codex review: the box is locked while the outcome is unknown, so text equal to the original note is that note, not later input.
+    onSuccess:async(result,variables)=>{if(!current(variables.signal))return;if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：未找到终态收据不代表未提交，请继续只读核对。');refresh();return;}// Codex review: the box is locked while the outcome is unknown, so text equal to the original note is that note, not later input.
     // A confirmed failure saved nothing, so the box keeps whatever it holds, the original note included.
     const committed=result.state==='COMMITTED',later=Boolean(note.trim())&&note.trim()!==pending?.note,preserveInput=committed?later:Boolean(note.trim()),
       // Codex review: a failure keeps the saved draft in one write (only the operation is cleared), never delete-then-rebuild.
       // With no text there is nothing to keep, so only the matching operation is cleared and no empty draft is written.
-      cleaned=committed||!preserveInput?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id).catch(()=>false);if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
-    onError:()=>{setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
+      cleaned=committed||!preserveInput?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id).catch(()=>false);if(!current(variables.signal))return;if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
+    onError:(_error,variables)=>{if(!current(variables.signal))return;setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:(_result,_error,variables)=>{if(current(variables.signal)){request.current=null;requestCommand.current=null;}}});
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.
-  const checkReceipt=()=>{const commandId=pending?.client_command_id??draft.operationId;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId,signal:controller.signal});};
+  const checkReceipt=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;requestCommand.current=commandId;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId,signal:controller.signal});};
   if(context.isPending)return <p role="status">正在加载…</p>;
   if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p>{actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost"><RefreshCw aria-hidden="true"/>刷新可用操作</HButton>,actionsTarget):null}</section>;
   if(!context.data)return <p role="status">正在加载…</p>;

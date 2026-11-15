@@ -176,6 +176,29 @@ test('clearing independent input during a shared conflict does not restore the o
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
 
+test('a delayed ticket note failure cannot replace a newer peer operation',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const ticketId=tickets[5].ticket.id,path='/workbench/app/items/ticket/'+ticketId+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'T03 original pending note');await saved(browser);
+      await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectFirst=()=>resolve(Response.json({error:{code:'P2_016_VERSION_CONFLICT'}},{status:409}));});return send(path,options);};})()");
+      await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor('typeof globalThis.__rejectFirst==="function"');
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("[...document.querySelectorAll('button')].some(button=>button.textContent==='重新提交')");
+      await tab.evaluate("(()=>{const send=fetch;let count=0;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){count++;if(count===1)return Promise.resolve(Response.json({error:{code:'P2_016_VERSION_CONFLICT'}},{status:409}));globalThis.__newCommand=JSON.parse(options.body);return new Promise(resolve=>{globalThis.__rejectNew=()=>resolve(Response.json({error:{code:'P2_016_VERSION_CONFLICT'}},{status:409}));});}return send(path,options);};})()");
+      await tab.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='重新提交').click()");await tab.waitFor("document.querySelector('#internal-note')?.disabled===false");
+      await browser.evaluate("(()=>{globalThis.__peerEvents=[];globalThis.__peerChannel=new BroadcastChannel('wecom-workbench-drafts-v1');globalThis.__peerChannel.onmessage=event=>globalThis.__peerEvents.push(event.data);})()");
+      await type(tab,'T03 newer peer note');await saved(tab);await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await tab.waitFor('Boolean(globalThis.__newCommand?.client_command_id)');
+      const newId=await tab.evaluate('globalThis.__newCommand.client_command_id');await browser.waitFor("globalThis.__peerEvents.some(event=>event.reason==='settled')&&Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      await browser.evaluate('globalThis.__rejectFirst()');
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.includes('/internal-notes/commands/')){globalThis.__checkedId=url.split('/').at(-1);return Promise.resolve(Response.json({ticket_id:${JSON.stringify(ticketId)},client_command_id:globalThis.__checkedId,state:'UNKNOWN'}));}return read(path,options);};})()`);
+      await browser.waitFor("document.querySelector('[data-action=check-expired-note]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=check-expired-note]').click()");
+      await browser.waitFor('Boolean(globalThis.__checkedId)');assert.equal(await browser.evaluate('globalThis.__checkedId'),newId);
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.evaluate('globalThis.__peerChannel?.close()');await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
 test('checking a committed peer note rechecks write authority before retaining local input',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
     const ticketId=tickets[5].ticket.id,path='/workbench/app/items/ticket/'+ticketId+'?detail=page';let browser,tab,error;

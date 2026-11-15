@@ -81,45 +81,45 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       try{const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled||!fresh.conversation_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');attempt.stage='conversation';const current=await conversations.detail(session,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');if(followUpTarget){if(!fresh.supplement_follow_up_enabled||!fresh.supplement_follow_up_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');}return current.capabilities.includes(action);}
       catch(error){attempt.failure=error;throw error;}
     },onAuthorityFailure:error=>{const attempt=draftAuthority.current;if(attempt&&attempt.failure===error)authorityFailure(error,attempt);},
-    onRestore:v=>{setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:(_id,preserveInput)=>{if(preserveInput){epoch.current++;request.current?.abort();request.current=null;setPending(null);setBusy(false);}setOutcome(preserveInput?'另一个页面的操作尚待核对；本页输入未保存。':'结果未知：敏感内容不可用，只能只读核对原操作。');},onOperationCleared:conflict=>setOutcome(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。'),onSensitiveClear:sensitiveClear});
+    onRestore:v=>{setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:(_id,preserveInput)=>{if(preserveInput){epoch.current++;request.current?.abort();request.current=null;setPending(null);setBusy(false);}setOutcome(preserveInput?'另一个页面的操作尚待核对；本页输入未保存。':'结果未知：敏感内容不可用，只能只读核对原操作。');},onOperationCleared:conflict=>{epoch.current++;request.current?.abort();request.current=null;setPending(null);setBoundOperationId(null);setBusy(false);setOutcome(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:sensitiveClear});
   const unknown=Boolean(pending||draft.operationId||boundOperationId),recovering=draft.enabled&&draft.status==='loading',allowed=entry.capabilities.includes(action),blocked=(busy||unknown||recovering||(Boolean(value)&&draft.enabled))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;epoch.current++;request.current?.abort();};},[]);
   useEffect(()=>{if(!blocked)return;const warn=(e:BeforeUnloadEvent)=>e.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
-  async function confirmed(nonce:string,result:ConversationMessageResult,original:string|undefined,token:number){
-    if(epoch.current!==token||request.current?.signal.aborted)return;
+  async function confirmed(nonce:string,result:ConversationMessageResult,original:string|undefined,token:number,controller:AbortController){
+    if(epoch.current!==token||request.current!==controller||controller.signal.aborted)return;
     const preserve=original===undefined?Boolean(latest.current):latest.current!==original;
-    const cleaned=await draft.success(nonce,preserve);if(epoch.current!==token||request.current?.signal.aborted)return;
+    const cleaned=await draft.success(nonce,preserve);if(epoch.current!==token||request.current!==controller||controller.signal.aborted)return;
     if(!preserve){latest.current='';setValue('');}setPending(null);if(followUpTarget&&cleaned)setBoundOperationId(null);onCommitted(result);
     setOutcome((purpose==='messages'?'已受理发送；请查看本条回复的投递状态。':'已保存内部备注，仅供有权限的工作人员查看。')+(preserve?' 较新的输入已保留。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
   }
   async function send(saved?:SavedCommand){
     if(!saved&&!workbenchTransportWritable()){setOutcome('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
     if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
-    const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token};
+    const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token},current=()=>request.current===controller&&isCurrent(attempt);
     let command=saved,dispatched=false,preparation:ReturnType<typeof draft.prepareSend>=null;
     try{
       const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled)throw new DraftError('DRAFT_DISABLED');
-      attempt.stage='conversation';const current=await conversations.detail(session,controller.signal);if(!isCurrent(attempt))return;if(!current.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
-      if(followUpTarget){if(!fresh.supplement_follow_up_enabled)throw new ApiError(404,'AUTHORIZATION_REJECTED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,controller.signal);if(!isCurrent(attempt))return;}
-      if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:current.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
+      attempt.stage='conversation';const detail=await conversations.detail(session,controller.signal);if(!current())return;if(!detail.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
+      if(followUpTarget){if(!fresh.supplement_follow_up_enabled)throw new ApiError(404,'AUTHORIZATION_REJECTED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,controller.signal);if(!current())return;}
+      if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:detail.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
       if(saved){
         if(!await draft.claimReplay(saved.command.client_command_id)){
-          if(isCurrent(attempt))setOutcome('原操作已在另一页面处理，请重新打开详情后查看。');
+          if(current())setOutcome('原操作已在另一页面处理，请重新打开详情后查看。');
           return;
         }
       }else{
         preparation=draft.prepareSend(command);
         await preparation?.save();
-        if(!isCurrent(attempt))return;
+        if(!current())return;
       }
-      if(!isCurrent(attempt))return;
+      if(!current())return;
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);
       setPending(command);setOutcome('正在提交原操作…');dispatched=true;
       const sending=conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal),claiming=preparation?.claim().catch(()=>{});
-      const result=await sending.finally(async()=>{await claiming;});await confirmed(command.command.client_command_id,result,command.command.text,token);
-    }catch(error){if(!isCurrent(attempt))return;
-      if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{const cleaned=await draft.knownFailure(command.command.client_command_id);if(!isCurrent(attempt))return;if(cleaned){setPending(null);if(followUpTarget)setBoundOperationId(null);}else{setPending(command);setOutcome('上次操作未成功，但本地恢复标记尚未清理；请先核对。');return;}}catch{if(!isCurrent(attempt))return;setPending(command);}}if(!isCurrent(attempt))return;setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
+      const result=await sending.finally(async()=>{await claiming;});await confirmed(command.command.client_command_id,result,command.command.text,token,controller);
+    }catch(error){if(!current())return;
+      if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{const cleaned=await draft.knownFailure(command.command.client_command_id);if(!current())return;if(cleaned){setPending(null);if(followUpTarget)setBoundOperationId(null);}else{setPending(command);setOutcome('上次操作未成功，但本地恢复标记尚未清理；请先核对。');return;}}catch{if(!current())return;setPending(command);}}if(!current())return;setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
       // Codex review: only a request that went out (or a replayed original) can have an unknown result; a new reply whose draft
       // could not be saved was never sent, so its number is released and the text stays.
       else if(command&&(dispatched||saved)){setPending(command);setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
@@ -133,8 +133,8 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   async function check(){
     const nonce=draft.operationId??pending?.command.client_command_id??boundOperationId;if(!nonce||request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'conversation',signal:controller.signal,token};
-    try{const result=await conversations.receipt(session,purpose,nonce,controller.signal);if(epoch.current!==token||controller.signal.aborted)return;if(result.state==='UNKNOWN'){setOutcome('结果仍未知；未找到收据不代表未提交，请继续只读核对。');return;}await confirmed(nonce,result.result,pending?.command.text,token);}
-    catch(error){if(isCurrent(attempt)){if(authorityFailure(error,attempt))return;setOutcome('只读核对失败，原操作仍未知。');}}
+    try{const result=await conversations.receipt(session,purpose,nonce,controller.signal);if(request.current!==controller||!isCurrent(attempt))return;if(result.state==='UNKNOWN'){setOutcome('结果仍未知；未找到收据不代表未提交，请继续只读核对。');return;}await confirmed(nonce,result.result,pending?.command.text,token,controller);}
+    catch(error){if(request.current===controller&&isCurrent(attempt)){if(authorityFailure(error,attempt))return;setOutcome('只读核对失败，原操作仍未知。');}}
     finally{if(request.current===controller){request.current=null;setBusy(false);}}
   }
   const label=purpose==='messages'?'回复报修人':'内部备注',awaitingReception=compact&&entry.assignment.status!=='ASSIGNED';

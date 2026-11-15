@@ -204,7 +204,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
               if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
               if(!retainedInput.current||encode(retainedInput.current)!==text){lastSaved.current=text;continue;}
               retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;setSharedConflict(false);lastSaved.current=text;callbacks.current.onSensitiveClear();callbacks.current.onOperationCleared?.();latest.current=local;
-              restore.current(local);setStatus('saved');setMessage('草稿已保存，本页输入已保留。');setRefreshIndex(index=>index+1);return;
+              restore.current(local,true);setStatus('saved');setMessage('草稿已保存，本页输入已保留。');setRefreshIndex(index=>index+1);return;
             }
           }catch(error){
             if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'?'当前操作权限已变化，内容已停止展示。':'本页输入未保存，请先自行留存，再重新打开。');protocol.current.onAuthorityFailure(error);}return;
