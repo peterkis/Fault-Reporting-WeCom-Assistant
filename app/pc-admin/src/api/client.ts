@@ -36,8 +36,17 @@ import {decodeVerifiedManualReportRejection,decodeReporterCandidates,decodeManua
 import type {SharedFollowUpCommand,SharedFollowUpActive} from '../../../../contracts/workbench_follow_up_schedule_contracts';
 import type {CanonicalItem,ReviewReference} from '../../../../contracts/workbench_review_contracts';
 let authorizationEpoch=0,transportWritable=true;
-export function setWorkbenchTransportWritable(value:boolean){transportWritable=value;}
+const transportListeners=new Set<()=>void>();
+export function setWorkbenchTransportWritable(value:boolean){
+  if(transportWritable===value)return;
+  transportWritable=value;
+  for(const listener of transportListeners)listener();
+}
 export function workbenchTransportWritable(){return transportWritable;}
+export function subscribeWorkbenchTransport(listener:()=>void){
+  transportListeners.add(listener);
+  return()=>{transportListeners.delete(listener);};
+}
 export function advanceWorkbenchAuthorizationEpoch(){authorizationEpoch++;}
 function requireCurrentRead(epoch:number,signal:AbortSignal){signal.throwIfAborted();if(epoch!==authorizationEpoch)throw new DOMException('AUTHORIZATION_EPOCH_CHANGED','AbortError');}
 export function captureWorkbenchRead(signal:AbortSignal):()=>void {const epoch=authorizationEpoch;return()=>requireCurrentRead(epoch,signal);}

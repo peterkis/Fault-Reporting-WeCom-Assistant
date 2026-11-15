@@ -111,6 +111,8 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       }else{
         preparation=draft.prepareSend(command);
         await preparation?.save();
+        if(!isCurrent(attempt))return;
+        await preparation?.claim();
       }
       if(!isCurrent(attempt))return;
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);

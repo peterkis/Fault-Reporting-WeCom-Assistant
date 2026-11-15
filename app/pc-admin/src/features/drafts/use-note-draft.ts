@@ -61,14 +61,14 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   restore.current=options.onRestore;latest.current={value,pending};
   const cancelTimer=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
   const cancelAuthority=()=>{authorityRequest.current?.abort();authorityRequest.current=null;};
-  async function write(value:AuthorizedDraftValue<T,C>,prepared=false){
+  async function write(value:AuthorizedDraftValue<T,C>,operation?:{commandId:string;prepared?:boolean;claimPrepared?:boolean}){
     if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
     const token=generation.current,text=encode(value);
     setStatus('saving');setMessage('正在保存草稿…');
     const task=queue.current.catch(()=>{}).then(async()=>{
       if(generation.current!==token||!handle.current)throw new DraftError('DRAFT_CHANGED');
       if(!protocol.current.enabled||protocol.current.writeEnabled===false)throw new DraftError('DRAFT_DISABLED');
-      const target=handle.current,saveOptions=value.pending?{commandId:protocol.current.commandId(value.pending),prepared}:{};
+      const target=handle.current,saveOptions:{commandId?:string;prepared?:boolean;claimPrepared?:boolean}=operation??(value.pending?{commandId:protocol.current.commandId(value.pending)}:{});
       let record;
       try{record=await saveDraft(target,text,saveOptions);}
       catch(error){
@@ -86,7 +86,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       }
       if(generation.current!==token)throw new DraftError('DRAFT_CHANGED');
       lastSaved.current=text;
-      if(value.pending){pendingRevision.current=record.revision;setOperationId(protocol.current.commandId(value.pending));}
+      if(saveOptions.commandId){pendingRevision.current=record.revision;setOperationId(saveOptions.commandId);}
       if(encode(latest.current)===text){setStatus('saved');setMessage('草稿已保存');}
     });
     queue.current=task;
@@ -197,9 +197,15 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       return {
         async save(){
           cancelTimer();
-          const prepared={...editable,pending:command};
-          latest.current=prepared;
-          await write(prepared,true);
+          latest.current=editable;
+          // Older tabs can read the seven-field operation, but cannot replay it
+          // until the pending command and its claim are saved together.
+          await write(editable,{commandId,prepared:true});
+        },
+        async claim(){
+          const ready={...editable,pending:command};
+          latest.current=ready;
+          await write(ready,{commandId,claimPrepared:true});
         },
         release:()=>releaseUnsentOperation(target,commandId,text),
       };
@@ -247,7 +253,22 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       await queue.current.catch(()=>{});
       if(generation.current!==token||handle.current!==target||protocol.current.writeEnabled===false)return false;
       const text=encode(latest.current);
-      await saveDraft(target,text,{settledCommandId:commandId});
+      try{await saveDraft(target,text,{settledCommandId:commandId});}
+      catch(error){
+        // A different tab may have cleared this command and prepared another
+        // before its notification reaches us. Read only the current operation.
+        if(error instanceof DraftError&&['DRAFT_CHANGED','DRAFT_OPERATION_UNRESOLVED'].includes(error.message)){
+          try{
+            const copy=await openDraft(scope,{restore:false}),next=copy.handle.operation?.commandId;
+            if(generation.current===token&&handle.current===target&&next&&next!==commandId){
+              generation.current++;handle.current=copy.handle;lastSaved.current='';pendingRevision.current=undefined;
+              setOperationId(next);callbacks.current.onSensitiveClear();callbacks.current.onOperation(next);
+              setStatus('ready');setMessage('');
+            }
+          }catch{/* Keep the old operation unresolved when storage cannot be read. */}
+        }
+        throw error;
+      }
       if(generation.current!==token||handle.current!==target)return false;
       lastSaved.current=text;setOperationId(null);setStatus('saved');
       return target.operation===null;

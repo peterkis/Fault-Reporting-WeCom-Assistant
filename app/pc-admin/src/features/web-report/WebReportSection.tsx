@@ -2,9 +2,9 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Form as HForm,Input as HInput,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {DialogAlert,useDialogToast} from '../../app/DialogFeedback';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
+import {api,ApiError,captureWorkbenchRead,errorMessage,subscribeWorkbenchTransport,workbenchTransportWritable} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {WorkbenchMemberProgressInput} from '../../../../../contracts/workbench_web_report_contracts';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
@@ -12,12 +12,20 @@ import {MemberProgressRejected,webReportApi} from './client';
 import {DetailDialog} from '../../app/DetailDialog';
 import type {WebReportQuery} from './use-web-report';
 
+function subscribeReplayAvailability(listener:()=>void){
+ const unsubscribe=subscribeWorkbenchTransport(listener);
+ window.addEventListener('online',listener);window.addEventListener('offline',listener);
+ return()=>{unsubscribe();window.removeEventListener('online',listener);window.removeEventListener('offline',listener);};
+}
+const replayAvailable=()=>workbenchTransportWritable()&&navigator.onLine;
+
 const unknownReceiptNotice='原操作仍没有明确结果，请稍后再点击「核对结果」。';
 
 type Outcome='idle'|'preparing'|'submitting'|'unknown'|'checking'|'failed'|'committed';
 export function WebReportSection({principal,kind,id,requested,readReady,otherBlocked,onBlockedChange,view}:{view:WebReportQuery;principal:Principal;kind:'ticket'|'review'|'intake';id:string;requested:{kind:'ticket'|'review'|'intake';id:string};readReady:boolean;otherBlocked:boolean;onBlockedChange:(value:boolean)=>void}){
  const client=useQueryClient(),key=['web-report',principal.principal_id,kind,id],request=useRef<AbortController|null>(null),alive=useRef(true),epoch=useRef(0);
  const [open,setOpen]=useState(false),[lastReadError,setLastReadError]=useState<unknown>(null);
+ const transportReady=useSyncExternalStore(subscribeReplayAvailability,replayAvailable,()=>false);
  const [summary,setSummary]=useState(''),[eta,setEta]=useState(''),[confirmed,setConfirmed]=useState(false),[notice,setNotice,noticeRevision]=useFeedbackState(''),[outcome,setOutcome]=useState<Outcome>('idle'),[pending,setPending]=useState<Readonly<WorkbenchMemberProgressInput>|null>(null),[receiptId,setReceiptId]=useState<string|null>(null),[checked,setChecked]=useState(false),[capturedVersion,setCapturedVersion]=useState<number|null>(null),[denied,setDenied]=useState(false);
  // Card 34A: the progress dialog's own outcome shows inside it while open; only later ones become page toasts.
  const noticeToast=useDialogToast(open,noticeRevision);
@@ -55,10 +63,12 @@ export function WebReportSection({principal,kind,id,requested,readReady,otherBlo
  if(!view.data.applicable)return receiptId?<div aria-label="公开进度原操作"><p role="status">报修资料当前不可用，原操作仍需核对。</p><HButton type="button" isDisabled={busy} onClick={()=>{void check();}} tone="secondary">核对结果</HButton></div>:null;
  const data=view.data,locked=busy||receiptId!==null||otherBlocked||!readReady||!data.can_publish_progress||!workbenchTransportWritable(),changedVersion=capturedVersion!==null&&capturedVersion!==data.ticket_version;
  const showReplay=outcome==='unknown'&&checked&&pending!==null&&data.can_publish_progress;
- const canReplay=showReplay&&readReady&&!busy;
+ const canReplay=showReplay&&readReady&&!busy&&transportReady;
  const visibleNotice=notice===unknownReceiptNotice&&canReplay
   ?'原操作仍没有明确结果。可以继续核对，或点击「重新提交」：会按原操作编号提交，已提交的不会重复办理。'
-  :notice;
+  :notice===unknownReceiptNotice&&showReplay&&!transportReady
+   ?'原操作仍没有明确结果。网络或写入通道尚未就绪，暂不能重新提交；恢复后可继续核对。'
+   :notice;
  const edited=()=>{setConfirmed(false);if(capturedVersion===null)setCapturedVersion(data.ticket_version);if(outcome==='committed')setOutcome('idle');};
  if(!data.contact_requested&&!data.public_progress&&!data.evaluation&&!data.can_publish_progress&&!summary&&!eta&&!receiptId&&!notice&&!view.isError)return null;
  return <div className="web-report-details">

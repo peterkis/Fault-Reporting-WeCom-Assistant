@@ -13,7 +13,8 @@ function invalidation(value:unknown):DraftInvalidation|null{
   if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'&&kind!=='conversation'&&kind!=='incident-candidate'&&kind!=='incident'&&kind!=='web-feedback'||v.id!==undefined&&(typeof v.id!=='string'||!(kind==='web-feedback'?/^[A-Za-z0-9_-]{32}$/u.test(v.id):UUID.test(v.id)))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose)))return null;
   return {principal:v.principal,reason,...(kind!==undefined?{kind}:{}),...(typeof v.id==='string'?{id:v.id}:{}),...(typeof v.purpose==='string'?{purpose:v.purpose}:{})};
 }
-function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
+function publishToOtherTabs(value:DraftInvalidation){if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
+function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);publishToOtherTabs(value);}
 export function matchesDraft(value:DraftInvalidation,scope:DraftScope){return value.principal===scope.principal&&(value.kind===undefined||value.kind===scope.kind)&&(value.id===undefined||value.id===scope.id)&&(value.purpose===undefined||value.purpose===scope.purpose);}
 export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>void{
   if(!globalThis.BroadcastChannel)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -55,32 +56,70 @@ async function database():Promise<IDBDatabase>{
     request.onsuccess=()=>{if(rejected)request.result.close();else resolve(request.result);};
   });
 }
-const EXPIRED_MARKER='expired:';
+const EXPIRED_MARKER='expired:',PREPARED_MARKER='prepared:';
+const MAX_EXPIRY_NOTICES=20;
+// These notices contain no draft text. Retain at most one additional draft lifetime.
+const expiryNoticeDeadline=(expiredAt:number)=>expiredAt+DRAFT_TTL_MS;
+function preparedKey(scope:string,commandId:string){return PREPARED_MARKER+JSON.stringify([scope,commandId]);}
 interface State {drafts:DraftRecord[];operations:OperationRecord[];epoch:string;expired:Set<string>;draftStore:IDBObjectStore;operationStore:IDBObjectStore;control:IDBObjectStore}
 async function state<T>(run:(value:State)=>T):Promise<T>{
   const db=await database();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(['drafts','operations','control'],'readwrite'),draftStore=tx.objectStore('drafts'),operationStore=tx.objectStore('operations'),control=tx.objectStore('control');
-    const rows=draftStore.getAll(undefined,21),keys=draftStore.getAllKeys(undefined,21),operations=operationStore.getAll(undefined,21),operationKeys=operationStore.getAllKeys(undefined,21),epoch=control.get('epoch'),controlKeys=control.getAllKeys();
+    const rows=draftStore.getAll(undefined,21),keys=draftStore.getAllKeys(undefined,21),operations=operationStore.getAll(undefined,21),operationKeys=operationStore.getAllKeys(undefined,21),epoch=control.get('epoch');
+    const preparedKeys=control.getAllKeys(IDBKeyRange.bound(PREPARED_MARKER,PREPARED_MARKER+'\uffff'));
+    const expiryCursor=control.openCursor(IDBKeyRange.bound(EXPIRED_MARKER,EXPIRED_MARKER+'\uffff'));
+    const expiryNotices:{key:string;expires:number}[]=[];
+    const rememberExpiry=(key:string,expires:number,write:boolean)=>{
+      if(!Number.isSafeInteger(expires)||Date.now()>=expiryNoticeDeadline(expires)){control.delete(key);return;}
+      const existing=expiryNotices.findIndex(item=>item.key===key);
+      if(existing>=0)expiryNotices.splice(existing,1);
+      expiryNotices.push({key,expires});
+      if(write)control.put(expires,key);
+      if(expiryNotices.length>MAX_EXPIRY_NOTICES){
+        expiryNotices.sort((a,b)=>b.expires-a.expires||a.key.localeCompare(b.key));
+        const removed=expiryNotices.pop();
+        if(removed)control.delete(removed.key);
+      }
+    };
     let finished=false,result:T,failed:unknown;
     tx.oncomplete=()=>{db.close();if(failed!==undefined)reject(failed);else if(finished)resolve(result);else reject(new DraftError('DRAFT_STORAGE_UNAVAILABLE'));};
     tx.onabort=()=>{db.close();reject(failed??new DraftError('DRAFT_STORAGE_UNAVAILABLE'));};tx.onerror=()=>{};
-    let remaining=6;
+    let remaining=7;
     const read=()=>{if(--remaining)return;try{
       const rowValues:readonly unknown[]=rows.result,operationValues:readonly unknown[]=operations.result,rawEpoch:unknown=epoch.result;
       if(typeof rawEpoch!=='string'||!UUID.test(rawEpoch)||rowValues.length>20||operationValues.length>20)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
       const value:State={drafts:[],operations:[],epoch:rawEpoch,expired:new Set(),draftStore,operationStore,control};let cleaned=false;
-      // Codex review (card 34C): an expiry swept here is also kept as a marker, so the hook of that draft still learns it expired
-      // when another read (another purpose's hook) swept it first; opening that draft consumes the marker.
-      for(const key of controlKeys.result as readonly unknown[])if(typeof key==='string'&&key.startsWith(EXPIRED_MARKER))value.expired.add(key.slice(EXPIRED_MARKER.length));
-      for(const [index,row] of rowValues.entries()){try{const record=decode(row);if(Date.now()>=record.expiresAt){draftStore.delete(record.scope);control.put(record.expiresAt,EXPIRED_MARKER+record.scope);value.expired.add(record.scope);cleaned=true;}else value.drafts.push(record);}catch{const key=keys.result[index];if(key!==undefined){draftStore.delete(key);cleaned=true;}}}
-      for(const row of operationValues){try{value.operations.push(decodeOperation(row));}catch{failed=new DraftError('DRAFT_OPERATION_CORRUPT');}}
+      for(const item of expiryNotices)value.expired.add(item.key.slice(EXPIRED_MARKER.length));
+      for(const [index,row] of rowValues.entries()){try{const record=decode(row);if(Date.now()>=record.expiresAt){draftStore.delete(record.scope);rememberExpiry(EXPIRED_MARKER+record.scope,record.expiresAt,true);value.expired.add(record.scope);cleaned=true;}else value.drafts.push(record);}catch{const key=keys.result[index];if(key!==undefined){draftStore.delete(key);cleaned=true;}}}
+      const markers=new Set((preparedKeys.result as readonly IDBValidKey[]).filter((key):key is string=>typeof key==='string'));
+      const activeMarkers=new Set<string>();
+      for(const row of operationValues){try{
+        const operation=decodeOperation(row),marker=preparedKey(operation.scope,operation.commandId);
+        if(operation.prepared){
+          // A previous build could expose the command to an old tab already. Treat it as claimed.
+          const {prepared:_prepared,...compatible}=operation;
+          operationStore.put(compatible);
+          markers.delete(marker);control.delete(marker);
+          value.operations.push(compatible);
+          continue;
+        }
+        if(markers.has(marker)){activeMarkers.add(marker);value.operations.push({...operation,prepared:true});}
+        else value.operations.push(operation);
+      }catch{failed=new DraftError('DRAFT_OPERATION_CORRUPT');}}
+      for(const marker of markers)if(!activeMarkers.has(marker))control.delete(marker);
       if(cleaned){value.epoch=crypto.randomUUID();control.put(value.epoch,'epoch');}
       // Commit expired sensitive cleanup, retain untrusted opaque rows, then refuse new work.
       if(failed!==undefined)return;
       result=run(value);finished=true;
     }catch(error){failed=error;tx.abort();}};
-    for(const request of [rows,keys,operations,operationKeys,epoch,controlKeys])request.onsuccess=read;
+    for(const request of [rows,keys,operations,operationKeys,epoch,preparedKeys])request.onsuccess=read;
+    expiryCursor.onsuccess=()=>{
+      const cursor=expiryCursor.result;
+      if(!cursor){read();return;}
+      if(typeof cursor.key==='string')rememberExpiry(cursor.key,Number(cursor.value),false);
+      cursor.continue();
+    };
   });
 }
 function aad(record:Pick<DraftRecord,'schema'|'scope'|'firstSavedAt'|'expiresAt'|'revision'>){return encoder.encode(JSON.stringify([record.schema,record.scope,record.firstSavedAt,record.expiresAt,record.revision]));}
@@ -114,7 +153,7 @@ export async function openDraft(scope:DraftScope,{restore=true}:{restore?:boolea
   if(!valid)throw new DraftError('DRAFT_CHANGED');
   return {handle,text:new TextDecoder('utf-8',{fatal:true}).decode(plaintext),expired:false};
 }
-export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId,prepared=false,releasePrepared=false}:{commandId?:string;settledCommandId?:string;prepared?:boolean;releasePrepared?:boolean}={}):Promise<DraftRecord>{
+export async function saveDraft(handle:DraftHandle,text:string,{commandId,settledCommandId,prepared=false,releasePrepared=false,claimPrepared=false}:{commandId?:string;settledCommandId?:string;prepared?:boolean;releasePrepared?:boolean;claimPrepared?:boolean}={}):Promise<DraftRecord>{
   const bytes=encoder.encode(text);if(bytes.byteLength>DRAFT_MAX_BYTES)throw new DraftError('DRAFT_TOO_LARGE');
   const previous=handle.record?.revision,firstSavedAt=handle.record?.firstSavedAt??Date.now(),expiresAt=firstSavedAt+DRAFT_TTL_MS,epoch=handle.epoch;
   if(Date.now()>=expiresAt)throw new DraftError('DRAFT_EXPIRED');
@@ -130,16 +169,28 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
       if(!current||commandId||!settledCommandId||operation?.commandId!==settledCommandId||!operation.prepared)return {error:'DRAFT_CHANGED'};
     }else if(value.epoch!==epoch)return {error:'DRAFT_CHANGED'};
     if(operation&&operation.commandId!==commandId&&operation.commandId!==settledCommandId)return {error:'DRAFT_OPERATION_UNRESOLVED'};
+    if(claimPrepared&&(!commandId||operation?.commandId!==commandId||!operation.prepared))return {error:'DRAFT_CHANGED'};
     if(!current&&value.drafts.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_FULL'};
     if(commandId&&!operation&&value.operations.length>=DRAFT_MAX_COUNT)return {error:'DRAFT_OPERATION_FULL'};
-    if(settledCommandId&&operation?.commandId===settledCommandId)value.operationStore.delete(record.scope);
+    if(settledCommandId&&operation?.commandId===settledCommandId){value.operationStore.delete(record.scope);value.control.delete(preparedKey(record.scope,settledCommandId));}
     value.control.delete(EXPIRED_MARKER+record.scope);
-    const nextOperation:OperationRecord|null=commandId?(operation?.commandId===commandId?operation:{scope:record.scope,...handle.scope,commandId,createdAt:Date.now(),...(prepared?{prepared:true as const}:{})}):null;
-    if(nextOperation)value.operationStore.put(nextOperation);
-    value.draftStore.put(record);return {operation:nextOperation};
+    let nextOperation:OperationRecord|null=commandId?(operation?.commandId===commandId?operation:{scope:record.scope,...handle.scope,commandId,createdAt:Date.now(),...(prepared?{prepared:true as const}:{})}):null;
+    if(nextOperation){
+      if(prepared&&!operation)value.control.put(true,preparedKey(record.scope,nextOperation.commandId));
+      if(claimPrepared){
+        value.control.delete(preparedKey(record.scope,nextOperation.commandId));
+        const {prepared:_prepared,...claimed}=nextOperation;nextOperation=claimed;
+      }
+      // The public operation row remains readable by the seven-field decoder in already-open tabs.
+      const {prepared:_prepared,...compatible}=nextOperation;value.operationStore.put(compatible);
+    }
+    value.draftStore.put(record);
+    return {operation:nextOperation,changed:Boolean(!operation&&commandId||settledCommandId&&operation?.commandId===settledCommandId)};
   });
   if('error' in committed)throw new DraftError(committed.error);
-  handle.record=record;handle.operation=committed.operation;return record;
+  handle.record=record;handle.operation=committed.operation;
+  if(committed.changed)publishToOtherTabs({...handle.scope,reason:'released'});
+  return record;
 }
 // The caller must freshly authorize its own scope. This only refreshes a still-existing
 // unchanged row's in-memory fence; cleared/expired rows and newer tab writes stay fenced.
@@ -182,7 +233,7 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
   const next=await state(value=>{
     const current=value.drafts.find(row=>row.scope===key),operation=value.operations.find(row=>row.scope===key);
     const removed=operation?.commandId===commandId&&(!current||current.revision===revision);
-    if(removed){value.operationStore.delete(key);if(current)value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}
+    if(removed){value.operationStore.delete(key);value.control.delete(preparedKey(key,commandId));if(current)value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}
     return {epoch:value.epoch,record:removed?null:current??null,operation:removed?null:operation??null,removed};
   });
   handle.record=next.record;handle.operation=next.operation;handle.epoch=next.epoch;
@@ -194,10 +245,7 @@ export async function claimDraftReplay(scope:DraftScope,commandId:string):Promis
   return state(value=>{
     const operation=value.operations.find(row=>row.scope===key);
     if(operation?.commandId!==commandId)return false;
-    if(operation.prepared){
-      const {prepared:_prepared,...claimed}=operation;
-      value.operationStore.put(claimed);
-    }
+    if(operation.prepared)value.control.delete(preparedKey(key,commandId));
     return true;
   });
 }
@@ -219,6 +267,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
     const operation=value.operations.find(row=>row.scope===key);
     if(value.drafts.some(row=>row.scope===key)||operation?.commandId!==commandId||!operation.prepared)return false;
     value.operationStore.delete(key);
+    value.control.delete(preparedKey(key,commandId));
     return true;
   });
   if(removed)publish({...scope,reason:'released'});
@@ -243,8 +292,8 @@ export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=f
     }
     const control=tx.objectStore('control'),controlKeys=control.getAllKeys();
     // Expiry markers name their scope; a purge removes the ones it covers, so no scope key outlives its drafts.
-    controlKeys.onsuccess=()=>{for(const key of controlKeys.result as readonly unknown[]){if(typeof key!=='string'||!key.startsWith(EXPIRED_MARKER))continue;
-      try{const fields:unknown=JSON.parse(key.slice(EXPIRED_MARKER.length));if(Array.isArray(fields)&&fields.length===4&&fields.every(field=>typeof field==='string')&&matchesDraft(filter,{principal:fields[0],kind:fields[1],id:fields[2],purpose:fields[3]} as DraftScope))control.delete(key);}catch{control.delete(key);}}};
+    controlKeys.onsuccess=()=>{for(const key of controlKeys.result as readonly unknown[]){if(typeof key!=='string'||!key.startsWith(EXPIRED_MARKER)&&!key.startsWith(PREPARED_MARKER))continue;
+      try{const suffix=key.startsWith(EXPIRED_MARKER)?key.slice(EXPIRED_MARKER.length):JSON.parse(key.slice(PREPARED_MARKER.length))[0];const fields:unknown=JSON.parse(suffix);if(Array.isArray(fields)&&fields.length===4&&fields.every(field=>typeof field==='string')&&matchesDraft(filter,{principal:fields[0],kind:fields[1],id:fields[2],purpose:fields[3]} as DraftScope))control.delete(key);}catch{control.delete(key);}}};
     control.put(crypto.randomUUID(),'epoch');
   });
   publish(filter);

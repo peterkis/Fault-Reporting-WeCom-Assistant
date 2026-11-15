@@ -96,13 +96,17 @@ test('an unsent preparation releases both stored references without deleting a c
     const commandId=crypto.randomUUID(),plain=JSON.stringify({value:'synthetic draft',pending:null});
     const pending=JSON.stringify({value:'synthetic draft',pending:{id:commandId}});
     const {handle:original}=await openDraft(scope);
-    await saveDraft(original,pending,{commandId,prepared:true});
+    await saveDraft(original,plain,{commandId,prepared:true});
+    const preparedRaw=await new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('operations','readonly'),row=tx.objectStore('operations').get(draftScopeKey(scope));tx.oncomplete=()=>{resolve(row.result);db.close();};};});
+    const staged=await openDraft(scope);
+    const oldTabCanRead=Object.keys(preparedRaw).length===7&&JSON.parse(staged.text).pending===null;
     const expiry=original.record.expiresAt;
     await releaseUnsentOperation(original,commandId,plain);
     const editable=await openDraft(scope);
     const released={text:JSON.parse(editable.text),operation:editable.handle.operation,expiryPreserved:editable.handle.record.expiresAt===expiry};
     const missingCannotReplay=!await claimDraftReplay(scope,commandId);
-    await saveDraft(editable.handle,pending,{commandId,prepared:true});
+    await saveDraft(editable.handle,plain,{commandId,prepared:true});
+    await saveDraft(editable.handle,pending,{commandId,claimPrepared:true});
     const claimed=await claimDraftReplay(scope,commandId);
     await releaseUnsentOperation(editable.handle,commandId,plain);
     const replay=await openDraft(scope);
@@ -110,7 +114,7 @@ test('an unsent preparation releases both stored references without deleting a c
     await settleDraft(replay.handle,commandId,replay.handle.record.revision);
 
     const opaque=await openDraft(scope);
-    await saveDraft(opaque.handle,pending,{commandId,prepared:true});
+    await saveDraft(opaque.handle,plain,{commandId,prepared:true});
     await removeSensitiveDraft(opaque.handle,'discard');
     const other=await openDraft({...scope,purpose:'conversation-note'});
     let notified=false;
@@ -118,13 +122,39 @@ test('an unsent preparation releases both stored references without deleting a c
     try{await releaseUnsentOperation(opaque.handle,commandId,plain);}finally{unsubscribe();}
     const cleared=await openDraft(scope);
     await saveDraft(other.handle,plain);
-    return {released,missingCannotReplay,claimed,retained,opaqueCleared:!cleared.handle.operation&&!cleared.handle.record,notified,otherSaved:Boolean(other.handle.record)};
+    return {oldTabCanRead,released,missingCannotReplay,claimed,retained,opaqueCleared:!cleared.handle.operation&&!cleared.handle.record,notified,otherSaved:Boolean(other.handle.record)};
    })()`);
    assert.deepEqual(result,{
-    released:{text:{value:'synthetic draft',pending:null},operation:null,expiryPreserved:true},
+    oldTabCanRead:true,released:{text:{value:'synthetic draft',pending:null},operation:null,expiryPreserved:true},
     missingCannotReplay:true,claimed:true,retained:{sameText:true,sameOperation:true},
     opaqueCleared:true,notified:true,otherSaved:true,
    });
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('legacy prepared records remain unresolved and expiry notices are bounded',async()=>{
+ await withT22Fixture(async({origin,browserCookie})=>{
+  const source=await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8');
+  const storage=transpileModule(source,{compilerOptions:{module:ModuleKind.ESNext,target:ScriptTarget.ES2022}}).outputText.replace(/^export /gmu,'');
+  let browser:Browser|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
+   const result=await browser.evaluate(`(async()=>{${storage}
+    const scope={principal:crypto.randomUUID(),kind:'conversation',id:crypto.randomUUID(),purpose:'conversation-reply'};
+    const id=crypto.randomUUID(),plain=JSON.stringify({value:'private',pending:null}),pending=JSON.stringify({value:'private',pending:{id}});
+    const original=await openDraft(scope);
+    await saveDraft(original.handle,pending,{commandId:id,prepared:true});
+    const change=await new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['operations','control'],'readwrite'),store=tx.objectStore('operations'),row=store.get(draftScopeKey(scope));row.onsuccess=()=>{store.put({...row.result,prepared:true});const control=tx.objectStore('control');for(let i=0;i<25;i++){const key=JSON.stringify([scope.principal,'conversation',crypto.randomUUID(),'conversation-note']);control.put(Date.now()-i*1000,'expired:'+key);if(i===0)globalThis.__newestScope=JSON.parse(key);}control.put(Date.now()-172800001,'expired:old-sensitive-scope');};tx.oncomplete=()=>{db.close();resolve(true);};};});
+    const migrated=await openDraft(scope);
+    await releaseUnsentOperation(migrated.handle,id,plain);
+    const retained=await openDraft(scope);
+    const notice=await openDraft({principal:globalThis.__newestScope[0],kind:globalThis.__newestScope[1],id:globalThis.__newestScope[2],purpose:globalThis.__newestScope[3]});
+    const snapshot=await new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['operations','control'],'readonly'),row=tx.objectStore('operations').get(draftScopeKey(scope)),keys=tx.objectStore('control').getAllKeys();tx.oncomplete=()=>{resolve({row:row.result,keys:keys.result});db.close();};};});
+    return {change,legacyRetained:retained.handle.operation?.commandId===id&&retained.text===pending,legacyCompatible:Object.keys(snapshot.row).length===7,noticed:notice.expired,notices:snapshot.keys.filter(key=>String(key).startsWith('expired:')).length,oldRemoved:!snapshot.keys.includes('expired:old-sensitive-scope')};
+   })()`);
+   assert.deepEqual(result,{change:true,legacyRetained:true,legacyCompatible:true,noticed:true,notices:19,oldRemoved:true});
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });

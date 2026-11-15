@@ -8,7 +8,7 @@ import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedbac
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
+import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016TakeoverAction,P2016TakeoverCommand} from '../../api/client';
 import type {P2016TakeoverSession} from '../../../../../contracts/p2_016_takeover_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
@@ -18,7 +18,7 @@ import {shortCodes} from '../../app/short-code';
 import {useFullNumbers} from '../../app/FullNumbers';
 
 type Intent=TakeoverIntent;
-type Request={controller:AbortController;token:number};
+type Request={controller:AbortController;token:number;requireRead:()=>void};
 export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=false}:{ticketId:string;principal:Principal;boardMode?:boolean;onBlockedChange:(blocked:boolean)=>void}){
  const client=useQueryClient(),generation=useRef(0),request=useRef<Request|null>(null),knownResult=useRef<{id:string;state:'succeeded'|'conflict'}|null>(null);
   const fullNumbers=useFullNumbers();
@@ -36,7 +36,10 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
  useEffect(()=>()=>{generation.current++;request.current?.controller.abort();request.current=null;},[]);
  useEffect(()=>{if(!navigationBlocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocked]);
  const refresh=()=>{void Promise.all([['ticket-command-context',principal.principal_id,ticketId],['ticket-takeover-targets',principal.principal_id,ticketId],['ticket-related-conversations',principal.principal_id,ticketId],['detail',principal.principal_id,'ticket',ticketId],['board',principal.principal_id]].map(queryKey=>client.invalidateQueries({queryKey})));};
- const current=(entry:Request)=>entry.token===generation.current&&request.current===entry&&!entry.controller.signal.aborted;
+ const current=(entry:Request)=>{
+  if(entry.token!==generation.current||request.current!==entry||entry.controller.signal.aborted)return false;
+  try{entry.requireRead();return true;}catch{return false;}
+ };
  const keepSettlement=(id:string,lookupFailed=false)=>{
   const known=knownResult.current;
   if(known?.id!==id)return false;
@@ -46,13 +49,20 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
    (lookupFailed?'；本次核对未完成。':'；')+'草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');
   return true;
  };
+ const replacedByAnotherOperation=(id:string)=>{
+  const currentId=draft.currentOperation();
+  if(!currentId||currentId===id)return false;
+  knownResult.current=null;setSettlementBlocked(false);setPending(null);
+  setState('unknown');setMessage('另一个页面已开始新的操作，点击「核对结果」查看。');
+  return true;
+ };
  const mutation=useMutation({mutationKey:['ticket-takeover',principal.principal_id,ticketId],mutationFn:({intent,entry}:{intent:Intent;entry:Request})=>api.takeoverTicket(ticketId,intent.action,intent.command,principal.csrf_token,entry.controller.signal),
-  onSuccess:async(_result,{intent,entry})=>{if(!current(entry))return;knownResult.current={id:intent.command.client_command_id,state:'succeeded'};clearInput();setState('succeeded');setMessage(intent.action==='takeover-and-start'?'已接管并开始处理，正在读取当前工单事实。':'已接管处理责任，正在读取当前工单事实。');refresh();const cleaned=await draft.settle(intent.command.client_command_id);if(current(entry)&&!cleaned)keepSettlement(intent.command.client_command_id);},
+  onSuccess:async(_result,{intent,entry})=>{if(!current(entry))return;knownResult.current={id:intent.command.client_command_id,state:'succeeded'};clearInput();setState('succeeded');setMessage(intent.action==='takeover-and-start'?'已接管并开始处理，正在读取当前工单事实。':'已接管处理责任，正在读取当前工单事实。');refresh();const cleaned=await draft.settle(intent.command.client_command_id);if(current(entry)&&!replacedByAnotherOperation(intent.command.client_command_id)&&!cleaned)keepSettlement(intent.command.client_command_id);},
   onError:async(error,{intent,entry})=>{if(!current(entry))return;if(error instanceof ApiError){setPending(boardMode&&error.status===409?intent:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突，请读取当前工单、处理组和会话后重新明确确认。':errorMessage(error));if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error.status===404)void clearTicketAuthorization(client,principal.principal_id,ticketId,error);if(!(boardMode&&error.status===409))await draft.knownFailure(intent.command.client_command_id).catch(()=>{});if(current(entry))refresh();}else{setPending(intent);setState('unknown');setMessage((principal.ticket_takeover_draft_recovery_enabled?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。'));}},
   onSettled:(_result,_error,{entry})=>{if(request.current===entry&&entry.token===generation.current)request.current=null;}});
- const acknowledgement=useMutation({mutationKey:['ticket-takeover-ack',principal.principal_id,ticketId],mutationFn:({id,entry}:{id:string;entry:Request})=>api.takeoverAcknowledgement(ticketId,id,entry.controller.signal),onSuccess:async(result,{id,entry})=>{if(!current(entry))return;if(result.state==='UNKNOWN'){if(keepSettlement(id,true))return;setState('unknown');setMessage('结果仍未知；未找到终态不表示原操作未提交，请继续只读核对。');return;}knownResult.current={id,state:result.state==='COMMITTED'?'succeeded':'conflict'};clearInput();setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage(result.state==='COMMITTED'?'已核对原操作：已提交，正在读取当前工单事实。':'原操作已明确失败，请读取当前事实后确认新的操作。');refresh();const cleaned=await draft.settle(id);if(!current(entry))return;if(cleaned)setSettlementBlocked(false);else keepSettlement(id);},onError:(error,{id,entry})=>{if(!current(entry))return;if(!keepSettlement(id,true)){setState('unknown');setMessage('只读核对失败，原操作仍未知；未发送新的操作。');}if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error instanceof ApiError&&error.status===404)void clearTicketAuthorization(client,principal.principal_id,ticketId,error);},onSettled:(_result,_error,{entry})=>{if(request.current===entry&&entry.token===generation.current)request.current=null;}});
- const send=async(intent:Intent)=>{if(request.current||!workbenchTransportWritable())return;const entry={controller:new AbortController(),token:generation.current};request.current=entry;knownResult.current=null;setSettlementBlocked(false);setPending(intent);setState('submitting');setMessage('正在提交接管…');try{await draft.prepare(intent);}catch{if(current(entry)){request.current=null;setState('denied');setMessage('恢复存储尚未准备，本次未发送新的操作。');}return;}if(current(entry))mutation.mutate({intent,entry});};
- const check=()=>{const id=pending?.command.client_command_id??draft.operationId;if(!id||request.current)return;if(!principal.ticket_takeover_draft_recovery_enabled&&pending){void send(pending);return;}const entry={controller:new AbortController(),token:generation.current};request.current=entry;setState('submitting');setMessage('正在只读核对原操作…');acknowledgement.mutate({id,entry});};
+ const acknowledgement=useMutation({mutationKey:['ticket-takeover-ack',principal.principal_id,ticketId],mutationFn:({id,entry}:{id:string;entry:Request})=>api.takeoverAcknowledgement(ticketId,id,entry.controller.signal),onSuccess:async(result,{id,entry})=>{if(!current(entry)||replacedByAnotherOperation(id))return;if(result.state==='UNKNOWN'){if(keepSettlement(id,true))return;setState('unknown');setMessage('结果仍未知；未找到终态不表示原操作未提交，请继续只读核对。');return;}knownResult.current={id,state:result.state==='COMMITTED'?'succeeded':'conflict'};clearInput();setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage(result.state==='COMMITTED'?'已核对原操作：已提交，正在读取当前工单事实。':'原操作已明确失败，请读取当前事实后确认新的操作。');refresh();const cleaned=await draft.settle(id);if(!current(entry)||replacedByAnotherOperation(id))return;if(cleaned)setSettlementBlocked(false);else keepSettlement(id);},onError:(error,{id,entry})=>{if(!current(entry)||replacedByAnotherOperation(id))return;if(!keepSettlement(id,true)){setState('unknown');setMessage('只读核对失败，原操作仍未知；未发送新的操作。');}if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error instanceof ApiError&&error.status===404)void clearTicketAuthorization(client,principal.principal_id,ticketId,error);},onSettled:(_result,_error,{entry})=>{if(request.current===entry&&entry.token===generation.current)request.current=null;}});
+ const send=async(intent:Intent)=>{if(request.current||!workbenchTransportWritable())return;const controller=new AbortController(),entry={controller,token:generation.current,requireRead:captureWorkbenchRead(controller.signal)};request.current=entry;knownResult.current=null;setSettlementBlocked(false);setPending(intent);setState('submitting');setMessage('正在提交接管…');try{await draft.prepare(intent);}catch{if(current(entry)){request.current=null;setState('denied');setMessage('恢复存储尚未准备，本次未发送新的操作。');}return;}if(current(entry))mutation.mutate({intent,entry});};
+ const check=()=>{const id=pending?.command.client_command_id??draft.operationId;if(!id||request.current)return;if(!principal.ticket_takeover_draft_recovery_enabled&&pending){void send(pending);return;}const controller=new AbortController(),entry={controller,token:generation.current,requireRead:captureWorkbenchRead(controller.signal)};request.current=entry;setState('submitting');setMessage('正在只读核对原操作…');acknowledgement.mutate({id,entry});};
  const permitted=(action:P2016TakeoverAction)=>context.data?.allowed_actions.includes(action)===true&&targets.data?.allowed_actions.includes(action)===true;
  const selectedCurrent=selected.every(item=>!related.data?.items.some(row=>row.session_id===item.session_id&&(row.session_row_version!==String(item.expected_row_version)||!row.take_allowed)));
  const canSend=(action:P2016TakeoverAction)=>!blocked&&draft.canSubmit&&!request.current&&Boolean(team&&choice)&&!context.isPending&&!context.isError&&!targets.isPending&&!targets.isError&&permitted(action)&&workbenchTransportWritable()&&(choice==='RETAIN_CURRENT'||selected.length>0&&!related.isPending&&!related.isError&&selectedCurrent);

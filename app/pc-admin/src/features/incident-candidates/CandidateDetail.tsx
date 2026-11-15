@@ -53,9 +53,12 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
         rule_set_version:detail.source_decision.rule_set_version,
         source_result_hash:detail.source_result_hash,
         reason_code:detail.source_decision.reason_code,
+        ...(detail.manual_review?{manual_review_row_version:detail.manual_review.row_version}:{}),
         materials:detail.materials.map(material=>({
           source_decision_id:material.source_decision_id,
+          original_revision:material.original_revision,
           original_source_hash:material.original_source_hash,
+          ...(material.status!=='EXPIRED'&&material.current_revision?{current_revision:material.current_revision}:{}),
           ...(material.status!=='EXPIRED'&&material.current_source_hash?{current_source_hash:material.current_source_hash}:{}),
         })),
       }}/></div>
