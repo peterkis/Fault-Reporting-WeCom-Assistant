@@ -122,11 +122,56 @@ test('a peer discarding its failed draft does not discard this tab\'s independen
       await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
       await tab.waitFor('typeof globalThis.__rejectNote==="function"');await tab.evaluate('globalThis.__rejectNote()');
       await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('另一页面仍有草稿')");
+      await type(browser,'T03 later edit while peer draft remains');
+      await browser.evaluate("(()=>{const read=fetch;let held=false;fetch=(path,options)=>{if(!held&&String(path)==='/api/lifecycle/bootstrap'){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseRetainedAuthority=()=>read(path,options).then(resolve,reject);});}return read(path,options);};})()");
       await browser.evaluate('globalThis.__restoreTimer()');await tab.evaluate("document.querySelector('[data-action=discard-note-draft]').click()");
-      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 input kept after peer discards'&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
+      await browser.waitFor('typeof globalThis.__releaseRetainedAuthority==="function"');
+      await type(browser,'T03 latest edit during authority');
+      await browser.evaluate("(()=>{const encrypt=crypto.subtle.encrypt.bind(crypto.subtle);let held=false;crypto.subtle.encrypt=(...args)=>{if(held)return encrypt(...args);held=true;return new Promise((resolve,reject)=>{globalThis.__releaseRetainedEncryption=()=>encrypt(...args).then(resolve,reject);});};})()");
+      await browser.evaluate('globalThis.__releaseRetainedAuthority()');await browser.waitFor('typeof globalThis.__releaseRetainedEncryption==="function"');
+      await type(browser,'T03 latest edit during encryption');await browser.evaluate('globalThis.__releaseRetainedEncryption()');
+      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 latest edit during encryption'&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       assert.deepEqual(await browser.evaluate(counts),{drafts:1,operations:0});await reload(browser);
-      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 input kept after peer discards'");
+      await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 latest edit during encryption'");
     }catch(failure){error=failure;try{console.log('T03_PEER_DISCARD_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+test('a peer finishing its note unlocks a page with no independent input',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const path='/workbench/app/items/ticket/'+tickets[5].ticket.id+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      await type(tab,'T03 peer owns this note');await saved(tab);
+      await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNote=()=>resolve(response);});}return send(path,options);};})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await tab.waitFor('typeof globalThis.__releaseNote==="function"');
+      await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      await tab.evaluate('globalThis.__releaseNote()');
+      await browser.waitFor("document.querySelector('#internal-note')?.disabled===false&&!document.querySelector('[data-action=check-expired-note]')");
+      assert.equal(await browser.evaluate("document.querySelector('#internal-note').value"),'');
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+test('clearing independent input during a shared conflict does not restore the old text',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const path='/workbench/app/items/ticket/'+tickets[5].ticket.id+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'T03 peer original');await saved(browser);
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('#internal-note')?.value==='T03 peer original'");
+      await browser.evaluate("(()=>{const timer=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");await type(browser,'T03 local text to clear');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({error:{code:'P2_016_VERSION_CONFLICT'}},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await tab.waitFor('typeof globalThis.__rejectNote==="function"');await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('另一页面仍有草稿')");await type(browser,'');
+      await tab.evaluate("document.querySelector('[data-action=discard-note-draft]').click()");
+      await browser.waitFor("document.querySelector('#internal-note')?.value===''&&document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
+      await reload(browser);await browser.waitFor("document.querySelector('#internal-note')?.value===''&&document.querySelector('#internal-note')?.disabled===false");
+    }catch(failure){error=failure;}
     await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

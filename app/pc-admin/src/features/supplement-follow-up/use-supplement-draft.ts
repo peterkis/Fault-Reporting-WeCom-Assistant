@@ -23,7 +23,7 @@ interface Options {
  authorize:(signal:AbortSignal,copy?:{value:SupplementDispositionInput;pending:SupplementFollowUpCommand|null})=>Promise<boolean>;
  onAuthorityFailure:(error:unknown)=>void;
  onRestore:(copy:{value:SupplementDispositionInput;pending:SupplementFollowUpCommand|null},signal:AbortSignal)=>Promise<void>;
- onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+ onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }
 export function useSupplementDraft(options:Options){
  const {ticketId,principal,value,pending}=options,scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'supplement-disposition'};
@@ -44,7 +44,7 @@ export function useSupplementDraft(options:Options){
   onRestore:copy=>{
    const controller=new AbortController(),captured=currentIdentity.current;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);
    void latest.current.onRestore(copy,controller.signal).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller&&captured===currentIdentity.current)latest.current.onAuthorityFailure(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});
-  },onOperation:id=>latest.current.onOperation(id),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
+  },onOperation:id=>latest.current.onOperation(id),onOperationCleared:conflict=>latest.current.onOperationCleared(conflict),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
  });
  return {...draft,scope,rawEnabled,existing,probing,restoring};
 }

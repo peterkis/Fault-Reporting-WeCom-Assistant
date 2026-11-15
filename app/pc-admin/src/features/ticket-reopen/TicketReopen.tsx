@@ -19,7 +19,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
  const draft=useReopenDraft({ticketId,principal,reason,pending,
   onRestore:copy=>{setReason(copy.value);setPending(copy.pending);if(copy.pending){setOpaque(copy.pending.client_command_id);setState('unknown');setMessage('已恢复原操作；结果仍未知，请只读核对，不会再次发送。');}},
   onOperation:id=>{if(!settling.current){setOpaque(id);setState('unknown');setMessage('原操作仍未知，请只读核对；敏感内容不可用不代表操作失败。');}},
-  onOperationCleared:conflict=>{generation.current++;request.current?.abort();request.current=null;setOpaque(null);setPending(null);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'本页输入仍在，确认后可提交。');},
+  onOperationCleared:conflict=>{generation.current++;request.current?.abort();request.current=null;setOpaque(null);setPending(null);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},
   onSensitiveClear:()=>{if(!settling.current){setReason('');setPending(null);}},
  });
  const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal),enabled:principal.ticket_reopen_rounds_enabled||draft.enabled});

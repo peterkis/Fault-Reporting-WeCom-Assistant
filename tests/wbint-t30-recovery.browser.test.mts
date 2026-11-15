@@ -80,6 +80,23 @@ test('T30 peer failure and discard leave the independent local input available',
   });
 });
 
+test('T30 peer failure clears the receipt on a blank page',async()=>{
+  await t30Browser('t30peerblank',async({browser,incidentId,origin})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await browser.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=内部处置记录]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"合成另一页内部记录");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({ok:false,error:{code:'P2_012_VERSION_CONFLICT',retryable:false},replayed:false},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');await tab.waitFor('typeof globalThis.__rejectNote==="function"');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note-operation]"))');await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=内部处置记录]")?.disabled===false&&!document.querySelector("[data-action=check-internal-note-operation]")');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=内部处置记录]").value'),'');
+    }finally{await tab?.close();}
+  });
+});
+
 test('T30 checking a committed peer operation restores the independent local input',async()=>{
   await t30Browser('t30peerack',async({browser,incidentId,origin,put})=>{
     let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
@@ -91,7 +108,11 @@ test('T30 checking a committed peer operation restores the independent local inp
       await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNote=()=>resolve(response);});}return send(path,options);};})()");
       await tab.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');await tab.waitFor('typeof globalThis.__releaseNote==="function"');
       await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note-operation]"))');await browser.evaluate('globalThis.__restoreTimer()');
+      await browser.evaluate("(()=>{const read=fetch;let count=0;fetch=(path,options)=>{if(String(path)==='/api/lifecycle/bootstrap'&&++count===3)return new Promise((resolve,reject)=>{globalThis.__releaseRestoreRead=()=>read(path,options).then(resolve,reject);});return read(path,options);};})()");
       await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');
+      await browser.waitFor('typeof globalThis.__releaseRestoreRead==="function"');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=内部处置记录]")?.disabled'),true);
+      await browser.evaluate('globalThis.__releaseRestoreRead()');
       await browser.waitFor('document.querySelector("textarea[aria-label=内部处置记录]")?.value==="合成本页待保存记录"&&document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');
       assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-internal-note-operation]"))'),false);
     }finally{await tab?.close();}

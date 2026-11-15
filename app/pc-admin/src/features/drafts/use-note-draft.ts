@@ -60,9 +60,13 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   const authorityRequest=useRef<AbortController|null>(null);
   const blankRefreshPending=useRef(false);
   // A different page's operation must not own this page's unsubmitted input.
-  const retainedInput=useRef<AuthorizedDraftValue<T,C>|null>(null);
+  const retainedInput=useRef<AuthorizedDraftValue<T,C>|null>(null),retainedVisible=useRef(false),retainedRestore=useRef<string|null>(null);
   restore.current=options.onRestore;latest.current={value,pending};
-  if(retainedInput.current&&operationId&&!pending&&hasInput(value))retainedInput.current={value,pending:null};
+  if(retainedInput.current&&!pending){
+    const rendered={value,pending:null};
+    if(retainedVisible.current)retainedInput.current=rendered;
+    else if(retainedRestore.current!==null&&(encode(rendered)===retainedRestore.current||hasInput(value))){retainedVisible.current=true;retainedRestore.current=null;retainedInput.current=rendered;}
+  }
   const cancelTimer=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
   const cancelAuthority=()=>{authorityRequest.current?.abort();authorityRequest.current=null;};
   async function write(value:AuthorizedDraftValue<T,C>,operation?:{commandId:string;prepared?:boolean;preparedText?:string;claimPrepared?:boolean}){
@@ -122,7 +126,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_EXPIRED'?'草稿已过期并清理；过期不代表原操作未提交。':failureMessage(error,'restore'));
       protocol.current.onAuthorityFailure(error);
     });
-    return()=>{controller.abort();generation.current++;cancelTimer();cancelAuthority();handle.current=null;retainedInput.current=null;};
+    return()=>{controller.abort();generation.current++;cancelTimer();cancelAuthority();handle.current=null;retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;};
   },[enabled,scopeKey]);
   useEffect(()=>{
     if(!enabled)return;
@@ -156,14 +160,14 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       const unsaved=changed&&!latest.current.pending&&hasInput(latest.current.value)&&encode(latest.current)!==lastSaved.current;
       const preserve=released||changed&&retainedInput.current!==null||value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
       cancelTimer();cancelAuthority();const token=++generation.current;lastSaved.current='';pendingRevision.current=undefined;
-      if(!changed){retainedInput.current=null;setSharedConflict(false);}
+      if(!changed){retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;setSharedConflict(false);}
       if(!preserve&&!changed){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
       setStatus('loading');setMessage('正在清除草稿…');
       void openDraft(scope,{restore:false}).then(async copy=>{
         if(generation.current!==token)return;handle.current=copy.handle;setOperationId(copy.handle.operation?.commandId??null);
         if(copy.handle.operation){
           const different=copy.handle.operation.commandId!==previousOperation,retain=different&&(retainedInput.current!==null||unsaved);
-          if(retain&&!retainedInput.current)retainedInput.current={value:latest.current.value,pending:null};
+          if(retain&&!retainedInput.current){retainedInput.current={value:latest.current.value,pending:null};retainedVisible.current=true;}
           if(changed&&different&&!retain){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
           callbacks.current.onOperation(copy.handle.operation.commandId,retain);
           if(retain&&retainedInput.current&&!hasInput(latest.current.value)){
@@ -171,41 +175,47 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
             try{
               const allowed=await protocol.current.authorize(controller.signal,local);
               if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
-              if(!allowed||protocol.current.writeEnabled===false){retainedInput.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();throw new DraftError('DRAFT_ACTION_REVOKED');}
-              latest.current=local;restore.current(local,true);
+              if(!allowed||protocol.current.writeEnabled===false){retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();throw new DraftError('DRAFT_ACTION_REVOKED');}
+              latest.current=local;retainedRestore.current=encode(local);restore.current(local,true);
             }catch(error){
               if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'?'当前操作权限已变化，内容已停止展示。':'本页输入暂未恢复，请保留本页并联系管理员。');protocol.current.onAuthorityFailure(error);}return;
             }finally{if(authorityRequest.current===controller)authorityRequest.current=null;}
           }
         }else if(changed&&retainedInput.current){
-          const local=retainedInput.current,target=copy.handle;
+          const target=copy.handle,owned=target.record===null;
           const controller=new AbortController();authorityRequest.current=controller;
           try{
-            const allowed=await protocol.current.authorize(controller.signal,local);
-            if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
-            if(!allowed||protocol.current.writeEnabled===false){retainedInput.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();throw new DraftError('DRAFT_ACTION_REVOKED');}
-            if(target.record){
-              setSharedConflict(true);
-              if(callbacks.current.onOperationCleared){
-                callbacks.current.onOperationCleared(true);
-                if(!hasInput(latest.current.value)){latest.current=local;restore.current(local,true);}
+            while(retainedInput.current){
+              const local=retainedInput.current,text=encode(local);
+              const allowed=await protocol.current.authorize(controller.signal,local);
+              if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
+              if(!allowed||protocol.current.writeEnabled===false){retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();throw new DraftError('DRAFT_ACTION_REVOKED');}
+              if(!retainedInput.current||encode(retainedInput.current)!==text)continue;
+              if(!owned){
+                setSharedConflict(true);
+                if(callbacks.current.onOperationCleared){
+                  callbacks.current.onOperationCleared(true);
+                  if(!retainedVisible.current){latest.current=local;retainedRestore.current=text;restore.current(local,true);}
+                }
+                else{retainedVisible.current=false;callbacks.current.onSensitiveClear();latest.current=local;retainedRestore.current=text;restore.current(local,true);}
+                setStatus('failed');setMessage('本页输入未保存；另一页面仍有草稿，请先自行留存。');return;
               }
-              else{callbacks.current.onSensitiveClear();latest.current=local;restore.current(local,true);}
-              setStatus('failed');setMessage('本页输入未保存；另一页面仍有草稿，请先自行留存。');return;
+              await saveDraft(target,text);
+              if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
+              if(!retainedInput.current||encode(retainedInput.current)!==text){lastSaved.current=text;continue;}
+              retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;setSharedConflict(false);lastSaved.current=text;callbacks.current.onSensitiveClear();callbacks.current.onOperationCleared?.();latest.current=local;
+              restore.current(local);setStatus('saved');setMessage('草稿已保存，本页输入已保留。');setRefreshIndex(index=>index+1);return;
             }
-            const text=encode(local);await saveDraft(target,text);
-            if(controller.signal.aborted||generation.current!==token||handle.current!==target)return;
-            retainedInput.current=null;setSharedConflict(false);lastSaved.current=text;callbacks.current.onSensitiveClear();callbacks.current.onOperationCleared?.();latest.current=local;
-            restore.current(local);setStatus('saved');setMessage('草稿已保存，本页输入已保留。');setRefreshIndex(index=>index+1);return;
           }catch(error){
             if(!controller.signal.aborted&&generation.current===token){setStatus('failed');setMessage(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'?'当前操作权限已变化，内容已停止展示。':'本页输入未保存，请先自行留存，再重新打开。');protocol.current.onAuthorityFailure(error);}return;
           }finally{if(authorityRequest.current===controller)authorityRequest.current=null;}
         }else if((released||value.reason==='settled'&&copy.handle.record!==null)&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation)){
           const editable={...latest.current,pending:null};
+          if(callbacks.current.onOperationCleared)callbacks.current.onOperationCleared();else callbacks.current.onSensitiveClear();
           latest.current=editable;
           restore.current(editable);
-        }else if(!preserve){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
-        else if(previousOperation&&!latest.current.pending&&hasInput(latest.current.value))callbacks.current.onOperationCleared?.();
+        }else if(!preserve){const clearsPrevious=changed&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation);latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();if(clearsPrevious)callbacks.current.onOperationCleared?.();}
+        else if(changed&&previousOperation&&!latest.current.pending){if(callbacks.current.onOperationCleared)callbacks.current.onOperationCleared();else{const editable=latest.current;callbacks.current.onSensitiveClear();latest.current=editable;restore.current(editable);}}
         setStatus('ready');setMessage(unsaved&&copy.handle.operation?'本页输入未保存；请先核对另一页面的操作。':released?'':value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
       }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
     });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
@@ -262,13 +272,13 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       if(claimed&&generation.current===token&&handle.current===target)pendingRevision.current=target?.record?.revision;
       return claimed;
     },
-    operationId,canSubmit:!enabled||(initialized&&!sharedConflict&&status!=='failed'&&operationId===null),
+    operationId,canSubmit:!enabled||(initialized&&!sharedConflict&&status!=='failed'&&status!=='loading'&&operationId===null),
     safeToLeave:enabled&&!sharedConflict&&status==='saved'&&encode(latest.current)===lastSaved.current,
     async discard(){
       if(!enabled||!handle.current)return;cancelTimer();cancelAuthority();const token=++generation.current,target=handle.current;
       if(retainedInput.current){
         // The shared record belongs to the other page. Discard only this page's input.
-        retainedInput.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();
+        retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();
         if(target.operation)callbacks.current.onOperation(target.operation.commandId);
         if(target.record&&!target.operation){setSharedConflict(true);setStatus('failed');setMessage('另一页面的草稿仍在，请重新打开。');}
         else{setStatus('ready');setMessage('本页输入已清空。');}
@@ -292,6 +302,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       if(!enabled)return true;
       cancelTimer();cancelAuthority();
       const token=++generation.current,target=handle.current;
+      if(retainedInput.current&&!preserveInput){retainedVisible.current=false;retainedRestore.current=null;}
       latest.current={value:preserveInput?latest.current.value:emptyValue,pending:null};lastSaved.current='';
       try{if(target)await settleDraft(target,commandId,pendingRevision.current??target.record?.revision);}
       catch{
@@ -330,7 +341,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         }catch(error){
           if(!controller.signal.aborted&&generation.current===token){
             if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
-              retainedInput.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();
+              retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();
               try{const stale=await openDraft(scope,{restore:false});if(stale.handle.record)await removeSensitiveDraft(stale.handle,'discard',{requireMatchingRevision:true});}catch{/* The caller keeps the original operation unresolved. */}
             }
             protocol.current.onAuthorityFailure(error);

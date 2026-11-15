@@ -51,6 +51,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
  }
  const draft=useSupplementDraft({ticketId,principal,readReady:currentRead,value,pending,authorize,onAuthorityFailure:error=>{void authorityFailure(error);},onSensitiveClear:sensitiveClear,
   onOperation:id=>{setOperationId(id);if(!settling.current){setState('unknown');setMessage('原补充处置结果尚未确认，请核对上次操作。');}},
+  onOperationCleared:conflict=>{generation.current++;request.current?.abort();request.current=null;setOperationId(null);setPending(null);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},
   onRestore:async(copy,signal)=>{
    stage.current='purpose';const target=copy.pending??copy.value.target;
    if(!target){resetInput();return;}

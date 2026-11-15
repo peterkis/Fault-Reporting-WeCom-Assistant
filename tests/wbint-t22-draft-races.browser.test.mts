@@ -65,6 +65,55 @@ test('another tab starting an operation keeps this page\'s unsaved independent i
  });
 });
 
+test('independent conversation input stays locked until peer settlement is reauthorized',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions})=>{
+  const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 peer settlement base'));await saved(browser);
+   tab=await yxxTab(browser,path);await tab.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.value==='T22 peer settlement base'");
+   await browser.evaluate("(()=>{const timer=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate(input('internal-notes','T22 local input awaiting authority'));
+   await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releasePeer=()=>resolve(response);});}return send(path,options);};})()");
+   await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");await tab.waitFor('typeof globalThis.__releasePeer==="function"');
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))");await browser.evaluate(holdNextAuthority);await tab.evaluate('globalThis.__releasePeer()');
+   await browser.waitFor('globalThis.__authorityHeld===1');
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').disabled"),true);
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 local input awaiting authority');
+   await browser.evaluate('globalThis.__releaseAuthority()');await saved(browser);
+   await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.disabled===false");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 local input awaiting authority');
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('a delayed refused conversation command cannot restore itself after a peer replaces it',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions})=>{
+  const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 first command'));await saved(browser);
+   await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectFirst=()=>resolve(Response.json({error:{code:'CONVERSATION_VERSION_CONFLICT'}},{status:409}));});return send(path,options);};})()");
+   await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");await browser.waitFor('typeof globalThis.__rejectFirst==="function"');
+   tab=await yxxTab(browser,path);await tab.waitFor("[...document.querySelectorAll('section[aria-label=内部备注] button')].some(button=>button.textContent==='重新提交')");
+   await tab.evaluate("(()=>{const post=BroadcastChannel.prototype.postMessage;BroadcastChannel.prototype.postMessage=function(){};globalThis.__resumeBroadcast=()=>{BroadcastChannel.prototype.postMessage=post;};const send=fetch;let count=0;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){count++;if(count===1)return Promise.resolve(Response.json({error:{code:'CONVERSATION_VERSION_CONFLICT'}},{status:409}));return new Promise(resolve=>{globalThis.__rejectSecond=()=>resolve(Response.json({error:{code:'CONVERSATION_VERSION_CONFLICT'}},{status:409}));});}return send(path,options);};})()");
+   await tab.evaluate("[...document.querySelectorAll('section[aria-label=内部备注] button')].find(button=>button.textContent==='重新提交').click()");
+   await tab.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.disabled===false");
+   await tab.evaluate(input('internal-notes','T22 replacement command'));await saved(tab);
+   await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");await tab.waitFor('typeof globalThis.__rejectSecond==="function"');
+   await browser.evaluate('globalThis.__rejectFirst()');
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))&&![...document.querySelectorAll('section[aria-label=内部备注] button')].some(button=>button.textContent==='重新提交')");
+   await tab.evaluate('globalThis.__resumeBroadcast();globalThis.__rejectSecond()');
+   await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.disabled===false&&!document.querySelector('[data-action=check-internal-notes]')");
+   assert.equal(await browser.evaluate("[...document.querySelectorAll('section[aria-label=内部备注] button')].some(button=>button.textContent==='重新提交')"),false);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('a refused operation does not replace another tab\'s independent conversation input',async()=>{
  await withT22Fixture(async({origin,browserCookie,sessions})=>{
   const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;
