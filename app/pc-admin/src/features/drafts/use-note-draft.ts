@@ -157,6 +157,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       }
       const released=value.reason==='released';
       const previousOperation=handle.current?.operation?.commandId;
+      const previousRevision=handle.current?.record?.revision;
       const changed=value.reason==='settled'||released||value.reason==='discard'&&retainedInput.current!==null;
       const unsaved=changed&&!latest.current.pending&&hasInput(latest.current.value)&&encode(latest.current)!==lastSaved.current;
       const preserve=released||changed&&retainedInput.current!==null||value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
@@ -166,6 +167,11 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       setStatus('loading');setMessage('正在清除草稿…');
       void openDraft(scope,{restore:false}).then(async copy=>{
         if(generation.current!==token)return;handle.current=copy.handle;setOperationId(copy.handle.operation?.commandId??null);
+        // A peer may have already ended its operation before this notification
+        // is read. Keep both pages' edits if its failed draft is a new revision.
+        if(changed&&unsaved&&!copy.handle.operation&&copy.handle.record&&copy.handle.record.revision!==previousRevision&&!retainedInput.current){
+          retainedInput.current={value:latest.current.value,pending:null};retainedVisible.current=true;
+        }
         if(copy.handle.operation){
           const different=copy.handle.operation.commandId!==previousOperation,retain=different&&(retainedInput.current!==null||unsaved);
           if(retain&&!retainedInput.current){retainedInput.current={value:latest.current.value,pending:null};retainedVisible.current=true;}

@@ -59,7 +59,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    setRestoredMaterial(current.item);setValue(copy.value);setPending(copy.pending);setOperationId(copy.pending?.client_command_id??null);setState(copy.pending?'unknown':'idle');setMessage(copy.pending?'原补充处置结果尚未确认，原操作、正文和修订保持不变。':'已恢复原补充修订的内部处置输入。');
   }
  });
- const originalId=pending?.client_command_id??operationId??draft.operationId,busy=state==='submitting'||state==='checking',locked=busy||Boolean(originalId),hasInput=Boolean(value.note);
+ const originalId=pending?.client_command_id??operationId??draft.operationId,busy=state==='submitting'||state==='checking',locked=busy||Boolean(originalId)||draft.recoveryBlocked,hasInput=Boolean(value.note);
  original.current=originalId;
  const blocked=((locked||hasInput)&&!draft.safeToLeave)||replyBlocked;
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);

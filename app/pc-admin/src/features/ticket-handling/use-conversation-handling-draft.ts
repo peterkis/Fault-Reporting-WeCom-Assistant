@@ -60,5 +60,5 @@ export function useConversationHandlingDraft({ticketId,principal,value,pending,o
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
-  return {...draft,restoring,restorationBlocked:unavailable,message:unavailable?'草稿暂未恢复：本机内容暂时读不到，请重新打开详情或刷新页面后再试。':restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,settle:(commandId:string)=>draft.success(commandId)};
+  return {...draft,restoring,restorationBlocked:unavailable,message:unavailable?(draft.hasRetainedInput()?'本页输入未保存，请先留在此页并自行留存可见内容，再重新核对。':'草稿暂未恢复：本机内容暂时读不到，请重新打开详情或刷新页面后再试。'):restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,settle:(commandId:string)=>draft.success(commandId)};
 }

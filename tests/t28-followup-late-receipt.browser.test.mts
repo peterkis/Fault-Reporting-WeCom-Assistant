@@ -123,3 +123,25 @@ test('T28 failure of an old target does not clear independently authorized input
   }finally{await tab.close();}
  });
 });
+
+test('T28 a temporary second authorization failure keeps the saved independent draft locked',{timeout:240000},async()=>{
+ await candidateBrowser({purpose:'t28rst503',reporters:3,recovery:true},async context=>{
+  const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+  await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
+  await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:text(record(context.f.admin).id),kind:'incident',id,purpose:'incident-followup'},tab=await yxxTab(context.browser,context.origin+'/workbench/app/');
+  try{
+   await context.browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT28Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await chooseFollowup(context.browser,'确认范围','CAMPUS');
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT28Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
+   await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');
+   await context.browser.evaluate(`(()=>{const read=fetch;let count=0;fetch=(input,options)=>{const target=new URL(typeof input==='string'?input:input.url,location.href).pathname;if(target===${JSON.stringify(path)}&&++count===2)return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));return read(input,options);};})()`);
+   await context.browser.evaluate('globalThis.__restoreT28Timer()');await tab.evaluate('globalThis.__finishT28Peer()');
+   await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿暂未恢复")');
+   assert.equal(await context.browser.evaluate('document.querySelector(".workbench-select[data-field-label=公共故障操作] select")?.disabled'),true);
+   const saved=record(await context.browser.evaluate(candidateCopies)),row=rows(saved.drafts).find(value=>value.id===id);assert.ok(row);assert.equal(record(record(row.value).value).scope,'CAMPUS');
+   const before=await context.browser.evaluate('performance.timeOrigin');await context.browser.command('Page.reload');
+   await context.browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.querySelector('.workbench-select[data-field-label="确认范围"] select')?.value==='CAMPUS'`);
+  }finally{await tab.close();}
+ });
+});

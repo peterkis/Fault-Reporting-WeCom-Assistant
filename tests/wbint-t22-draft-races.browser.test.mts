@@ -67,6 +67,28 @@ test('another tab starting an operation keeps this page\'s unsaved independent i
  });
 });
 
+test('a peer that fails before its start notification cannot have its saved draft overwritten',async()=>{
+ await withT22Fixture(async({origin,browserCookie,sessions,principals})=>{
+  const session=sessions[0],principal=principals[0];assert.ok(session&&principal);const path=origin+'/workbench/app/conversations/'+session.id;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);
+   await browser.evaluate(input('internal-notes','T22 original shared value'));await saved(browser);
+   tab=await yxxTab(browser,origin+'/workbench/app/');
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreFastTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate(input('internal-notes','T22 independent unsaved value'));
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:principal.id,kind:'conversation',id:session.id,purpose:'conversation-note'};
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),value=JSON.parse(copy.text),id=crypto.randomUUID(),post=BroadcastChannel.prototype.postMessage;value.value="T22 peer failed value";BroadcastChannel.prototype.postMessage=function(){};try{await store.saveDraft(copy.handle,JSON.stringify(value),{commandId:id});await store.saveDraft(copy.handle,JSON.stringify(value),{settledCommandId:id});}finally{BroadcastChannel.prototype.postMessage=post;}const channel=new BroadcastChannel("wecom-workbench-drafts-v1");channel.postMessage({...'+JSON.stringify(scope)+',reason:"released"});channel.close();})()');
+   await browser.waitFor("document.querySelector('[data-conversation-draft=internal-notes]')?.textContent.includes('本页输入未保存')");
+   assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 independent unsaved value');
+   await browser.waitFor("document.body.innerText.includes('另一页面仍有草稿')");
+   const peer=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {text:JSON.parse(copy.text).value,operation:copy.handle.operation};})()');
+   assert.deepEqual(peer,{text:'T22 peer failed value',operation:null});assert.equal(await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').disabled"),true);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__restoreFastTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('independent conversation input stays locked until peer settlement is reauthorized',async()=>{
  await withT22Fixture(async({origin,browserCookie,sessions})=>{
   const session=sessions[0];assert.ok(session);const path=origin+'/workbench/app/conversations/'+session.id;

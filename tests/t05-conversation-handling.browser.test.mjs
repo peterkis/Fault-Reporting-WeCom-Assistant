@@ -164,7 +164,7 @@ test('restore rejects an ended canonical choice and a fresh Ticket rejection cle
   },{workbenchDraftRecoveryEnabled:true});
 });
 
-test('a temporary Session read failure preserves a newly saved independent choice for later recovery',async()=>{
+for(const phase of ['before','after'])test('a temporary '+phase+'-save read failure preserves an independent choice',async()=>{
  await browserScenario(async({browser,principals,tickets})=>{
   const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'};
   await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');
@@ -180,13 +180,14 @@ test('a temporary Session read failure preserves a newly saved independent choic
    await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
    await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT05Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
    await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))');
-   await browser.evaluate(`(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes(${JSON.stringify('/api/conversations/')})){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()`);
+   await browser.evaluate(`(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes(${JSON.stringify(phase==='before'?'/api/lifecycle/bootstrap':'/api/conversations/')})){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()`);
    await browser.evaluate('globalThis.__restoreT05Timer()');await tab.evaluate('globalThis.__finishT05Peer()');
-   await browser.waitFor('document.body.innerText.includes("草稿暂未恢复")');
-   assert.equal(await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled'),true);
-   const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {value:JSON.parse(copy.text),operation:copy.handle.operation};})()');
-   assert.equal(saved.operation,null);assert.equal(saved.value.choice,'TAKE_SELECTED');assert.equal(saved.value.sessions[0].session_id,sessionId);
-   await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+   await browser.waitFor('document.body.innerText.includes('+JSON.stringify(phase==='before'?'本页输入未保存':'草稿暂未恢复')+')');
+   assert.equal(await browser.evaluate('(()=>{const button=document.querySelector("[data-action=take-and-start-with-conversations]");return !button||button.disabled;})()'),true);
+   const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {value:copy.text===null?null:JSON.parse(copy.text),operation:copy.handle.operation};})()');
+   assert.equal(saved.operation,null);
+   if(phase==='before'){assert.equal(saved.value,null);assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);assert.equal(await browser.evaluate('document.body.innerText.includes("刷新页面后再试")'),false);}
+   else{assert.equal(saved.value.choice,'TAKE_SELECTED');assert.equal(saved.value.sessions[0].session_id,sessionId);await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');}
   }finally{await tab.close();}
  },{workbenchDraftRecoveryEnabled:true});
 });
