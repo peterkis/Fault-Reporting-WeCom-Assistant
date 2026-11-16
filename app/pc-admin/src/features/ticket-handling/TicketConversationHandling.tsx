@@ -25,7 +25,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   // Each page is bounded to 20. Only explicitly selected identities and original versions cross pages.
   const related=useQuery({queryKey:['ticket-related-conversations',principal.principal_id,ticketId,cursor],queryFn:({signal})=>api.relatedConversations(ticketId,cursor,signal),gcTime:0});
-  const blocked=draft.restoring||['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
+  const blocked=draft.restoring||draft.restorationBlocked||['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   const navigationBlocked=Boolean(boardMode&&pending)||(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);

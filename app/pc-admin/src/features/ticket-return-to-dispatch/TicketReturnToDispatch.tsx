@@ -7,6 +7,7 @@ import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox,Text
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedback';
+import {DiagnosticCopy} from '../../app/DiagnosticCopy';
 // T09 consumer SOURCE after original55c true FORM_PRESENT RED. Runtime remains NOT_RUN.
 // Local production-bundle validation does not enable the default-off feature or authorize deployment.
 import {useEffect,useId,useRef,useState} from 'react';
@@ -61,7 +62,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
       pendingRef.current=null;pendingSnapshot.current=null;opaqueRef.current=id;setPending(null);setOpaque(id);
       const known=knownTerminal.current?.commandId===id?knownTerminal.current:null;
       if(known){setCleanupBlocked(true);setReviewRequired(true);setState(known.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');}
-      else{setState('unknown');setMessage('原操作 '+id+' 仍未知；只读核对不需要当前退回或所选会话的写权限。');}
+      else{setState('unknown');setMessage('上次操作的结果还没确认；可以只读核对，无需当前退回或所选会话的写权限。');}
     },onOperationCleared:conflict=>{generation.current++;request.current?.controller.abort();request.current=null;knownTerminal.current=null;storedId.current=null;opaqueRef.current=null;pendingRef.current=null;pendingSnapshot.current=null;setOpaque(null);setPending(null);setCleanupBlocked(false);setReviewRequired(true);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，请重新核对后处理。');},onSensitiveClear:clearSensitive});
   storedId.current=draft.operationId;
   const originalId=pending?.client_command_id??opaque??draft.operationId;
@@ -289,6 +290,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
       </>:null}
     </>:null}
     {originalId&&!busy?<HButton type="button" data-action="check-return-to-dispatch-command" onClick={()=>{void check();}} tone="secondary">核对结果</HButton>:null}
+    {originalId?<DiagnosticCopy data={{operation_id:originalId,expected_version:pending?.expected_version??null}}/>:null}
     {!originalId&&hasReturnInput(value)&&(reviewRequired||value.version!==context.data?.version)?<HButton type="button" data-action="review-return-version" isDisabled={busy||cleanupBlocked} onClick={()=>{void review();}} tone="secondary">使用最新内容</HButton>:null}
 
     <footer className="ds-dialog-footer"><div className="ds-closure-draft">{draft.enabled?<DraftStatus inlineText notify={!dialogOpen} data-return-to-dispatch-draft-status role="status">{state==='failed'||state==='conflict'?'当前输入待重新读取和确认。':state==='committed'?'原操作已确认，当前事实须重新读取。':draft.message}</DraftStatus>:null}{hasReturnInput(value)&&!busy?<>{draft.enabled?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<HButton type="button" data-action="discard-return-draft" className="ds-closure-discard" onClick={discard} tone="ghost">清空</HButton></>:null}</div>

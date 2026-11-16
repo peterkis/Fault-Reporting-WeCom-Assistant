@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {createP2016TicketCommandFacade} from '../app/server/src/p2-016-ticket-command-facade.mjs';
 import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
 import {prepareFollowup,navigateFollowup,chooseFollowup,rows} from './helpers/t28-followup-source-fixture.mjs';
@@ -95,4 +96,30 @@ test('T28 a delayed incident-read rejection before sending cannot remove a newer
       assert.equal(rows(await context.browser.evaluate('globalThis.__t27Posts')).filter(row=>String(row.path).startsWith(path+'/')).length,0);
     }finally{await tab.close();}
   });
+});
+
+test('T28 failure of an old target does not clear independently authorized input for another target',{timeout:240000},async()=>{
+ await candidateBrowser({purpose:'t28twotarget',reporters:3,recovery:true},async context=>{
+  const {http,id,path}=await prepareFollowup(context),actor=text(record(context.f.admin).id),other=text(record(context.f.handler).id),dispatcher=text(record(context.f.dispatcher).id);
+  const ticketA=text(record(context.f.reports[0]).ticketId),ticketB=text(record(context.f.reports[1]).ticketId),tickets=createP2016TicketCommandFacade({pool:context.pool,enabled:true});
+  const assign=async(ticket:string,target:string,expectedVersion:number)=>{const result=await tickets.perform({authContext:{principal_id:dispatcher},command:{action:'transfer-assignment',ticket_id:ticket,client_command_id:crypto.randomUUID(),expected_version:expectedVersion,reason_code:'WORKBENCH_ASSIGN',target_principal_id:target,resolver_team_id:'PILOT_IT'}});assert.equal(result.ok,true);};
+  await assign(ticketA,actor,Number((await http.get('/api/tickets/'+ticketA)).version));await assign(ticketB,actor,Number((await http.get('/api/tickets/'+ticketB)).version));
+  const versionA=Number((await http.get('/api/tickets/'+ticketA)).version),reports=rows((await http.get(path+'/reports?limit=30')).items),reportA=reports.find(row=>row.ticket_id===ticketA),reportB=reports.find(row=>row.ticket_id===ticketB);assert.ok(reportA&&reportB);
+  await createPilotAccessService({pool:context.pool}).upsertPrincipal({wecomUserId:'synthetic-incident-admin',displayName:'合成管理员',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+  await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+  await chooseFollowup(context.browser,'公共故障操作','MARK_REPORTER_RECOVERED');await chooseFollowup(context.browser,'决定原因','RECOVERY_CONFIRMED');await chooseFollowup(context.browser,'关联报修',text(reportA.id));
+  await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:actor,kind:'incident',id,purpose:'incident-followup'},tab=await yxxTab(context.browser,context.origin+'/workbench/app/');
+  try{
+   await context.browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTwoTargetTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await chooseFollowup(context.browser,'关联报修',text(reportB.id));
+   const oldId=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),value=JSON.parse(copy.text),id=crypto.randomUUID();value.pending={incidentId:'+JSON.stringify(id)+',action:"MARK_REPORTER_RECOVERED",reportId:value.value.report.id,body:{client_command_id:id,expected_row_version:value.value.capturedVersion,reason_code:value.value.reason,expected_report_version:value.value.report.row_version}};await store.saveDraft(copy.handle,JSON.stringify(value),{commandId:id});return id;})()') as string;
+   await context.browser.waitFor('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id==='+JSON.stringify(oldId));await context.browser.evaluate('globalThis.__restoreTwoTargetTimer()');
+   await assign(ticketA,other,versionA);
+   await context.browser.evaluate(`(()=>{const read=fetch;fetch=(input,options)=>{const target=new URL(typeof input==='string'?input:input.url,location.href).pathname;if(target===${JSON.stringify(path+'/commands/'+oldId)})return Promise.resolve(new Response(JSON.stringify({incident_id:${JSON.stringify(id)},client_command_id:${JSON.stringify(oldId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}}),{status:200,headers:{'content-type':'application/json'}}));return read(input,options);};})()`);
+   await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');
+   await context.browser.waitFor(`(async()=>{const current=await (${candidateCopies});return current.operations.filter(row=>row.id===${JSON.stringify(id)}).length===0&&current.drafts.filter(row=>row.id===${JSON.stringify(id)}).length===1&&document.querySelector('.workbench-select[data-field-label="关联报修"] select')?.value===${JSON.stringify(text(reportB.id))};})()`);
+   const after=record(await context.browser.evaluate(candidateCopies));assert.equal(rows(after.operations).filter(row=>row.id===id).length,0);assert.equal(rows(after.drafts).filter(row=>row.id===id).length,1);
+  }finally{await tab.close();}
+ });
 });

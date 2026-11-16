@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 async function browserScenario(run,options={}){
   await withWeb01Fixture(async fixture=>{
@@ -161,4 +162,31 @@ test('restore rejects an ended canonical choice and a fresh Ticket rejection cle
     await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]").click()');await browser.waitFor('!document.querySelector(".ticket-conversation-handling")');await browser.waitFor(`(async()=>{const counts=await (${storedCounts});return counts.drafts===0&&counts.operations===0;})()`);
     assert.equal(await browser.evaluate(`document.body.innerText.includes(${JSON.stringify(tickets[0].ticket.id)})`),false);
   },{workbenchDraftRecoveryEnabled:true});
+});
+
+test('a temporary Session read failure preserves a newly saved independent choice for later recovery',async()=>{
+ await browserScenario(async({browser,principals,tickets})=>{
+  const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'};
+  await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');
+  await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]").click()');
+  await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')),recovery='/workbench/app/'+manifest['src/feedback-recovery.ts'].file;
+  const tab=await yxxTab(browser,new URL('/workbench/app/',await browser.evaluate('location.origin')).href);
+  try{
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT05Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=TAKE_SELECTED]").click()');
+   await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.disabled===false');
+   const sessionId=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
+   await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT05Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
+   await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))');
+   await browser.evaluate(`(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes(${JSON.stringify('/api/conversations/')})){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()`);
+   await browser.evaluate('globalThis.__restoreT05Timer()');await tab.evaluate('globalThis.__finishT05Peer()');
+   await browser.waitFor('document.body.innerText.includes("草稿暂未恢复")');
+   assert.equal(await browser.evaluate('document.querySelector("[data-action=take-and-start-with-conversations]")?.disabled'),true);
+   const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {value:JSON.parse(copy.text),operation:copy.handle.operation};})()');
+   assert.equal(saved.operation,null);assert.equal(saved.value.choice,'TAKE_SELECTED');assert.equal(saved.value.sessions[0].session_id,sessionId);
+   await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+  }finally{await tab.close();}
+ },{workbenchDraftRecoveryEnabled:true});
 });
