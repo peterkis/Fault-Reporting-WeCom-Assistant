@@ -118,6 +118,7 @@ test('V1–V13 card23 conversation details use real DTOs and measured geometry i
      await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});
      if(mode!=='waiting'){
       await browser.waitFor("Boolean(document.querySelector('.inbox-mini-stage')&&document.querySelector('.inbox-message-user header'))");
+      await browser.waitFor(`document.querySelector('textarea[data-purpose=messages]')?.disabled===${mode==='denied'}`);
       const sample=await card23Geometry(browser);metrics.push({mode,...sample});assertCard23Geometry(sample,mode);
       await browser.evaluate(mode==='allowed'?"document.querySelector('.inbox-timeline').scrollTop=0":"document.querySelector('.inbox-timeline').scrollTop=document.querySelector('.inbox-timeline').scrollHeight");
      }else{
@@ -254,7 +255,11 @@ test('v2.1.2 G1 S10 C1–C10 use real long contacts, chronological fixtures and 
       await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
       const queue='[data-field-label="收件箱队列"] [data-slot=select-trigger]',source='[data-field-label="收件箱来源"]';
       assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(queue)+').closest(".ds-filter-chip").title'),'当前：进行中');
+      await browser.command('Page.bringToFront');
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      await browser.waitFor(`(()=>{const target=document.querySelector(${JSON.stringify(queue)});return Boolean(target&&target.checkVisibility()&&!target.disabled&&target.getBoundingClientRect().width>0);})()`);
       await browser.evaluate('document.querySelector('+JSON.stringify(queue)+').focus()');
+      await browser.waitFor('document.activeElement===document.querySelector('+JSON.stringify(queue)+')');
       for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
       await browser.waitFor("Boolean(document.querySelector('.ds-filter-chip[data-filter-open]'))");await clickWorkbenchControl(browser,'[role=option][data-key=unassigned]');
       await browser.waitFor("new URLSearchParams(location.search).get('state')==='unassigned'");await chooseWorkbenchSelect(browser,source,'group');
