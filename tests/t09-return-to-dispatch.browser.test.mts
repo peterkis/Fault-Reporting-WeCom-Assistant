@@ -4,7 +4,7 @@ import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
@@ -12,6 +12,7 @@ import {withT09Fixture,object,rows,text,version} from './helpers/t09-fixture.mjs
 import type {T09Http} from './helpers/t09-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type RequestFact={order:number;method:string;path:string;status:number|null;body:unknown;idempotency_key:string|null;if_match:string|null;csrf_present:boolean;origin_same:boolean};
@@ -133,4 +134,55 @@ test('production PC current handler restores two required inputs and returns a r
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',status:terminal?'FAIL':'BROWSER_SLICE_COMPLETE',t09_first_public_tracer:true,scenario:'PC_CURRENT_HANDLER_WAITING_VENDOR_DEFAULT_RETAIN_REFRESH_REAL_UNKNOWN_GET_ONLY',active_stage:activeStage,completed,screenshots}));if(terminal)throw terminal;
     }
   },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+for(const revoked of [false,true])test('a saved retained return draft '+(revoked?'is cleared when its selected target is revoked':'is shown after delayed reauthorization'),{timeout:240000},async()=>{
+ await withT09Fixture(async fixture=>{
+  const admin=await fixture.http(0),handler=await fixture.http(2),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+  assert.equal((await admin.post(path+'/assign',{client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_ASSIGN',target_principal_id:fixture.handler,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})).status,200);
+  await fixture.runtime.coordinator.runOnce();
+  const source=rows((await publicGet(handler,path+'/responsibility')).conversations)[0];assert.ok(source);const sessionId=text(source.session_id);
+  assert.equal((await handler.post('/api/conversations/'+sessionId+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(Number(text(source.session_row_version))),reason_code:'T09_RETAIN_COMMUNICATOR'})).status,200);
+  for(const actionName of ['accept','start','wait-vendor'])assert.equal((await handler.post(path+'/'+actionName,{client_command_id:randomUUID(),expected_version:version((await publicGet(handler,path)).version),reason_code:'T09_RETAIN_TEST'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[2];assert.ok(cookie);let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);
+   await openWorkbenchStep(browser,'.ticket-return-to-dispatch');
+   await browser.waitFor(`Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&!(${reasonInput}).disabled`);
+   if(revoked){
+    await browser.evaluate(`(${root}).querySelector('input[value=TRANSFER_SELECTED]').click()`);
+    await browser.waitFor(`(${root})?.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);
+    await browser.evaluate(`(${root}).querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+    await browser.waitFor(`!(${root})?.querySelector('select')?.disabled&&Array.from((${root})?.querySelector('select')?.options??[]).some(option=>option.value&&!option.disabled)`);
+    const target=await browser.evaluate(`Array.from((${root}).querySelector('select').options).find(option=>option.value&&!option.disabled).value`) as string;
+    await browser.evaluate(`(()=>{const select=(${root}).querySelector('select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,${JSON.stringify(target)});select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    await browser.waitFor(`(${root})?.querySelector('select')?.value===${JSON.stringify(target)}`);
+   }
+   await browser.evaluate(fill(reasonInput,'T09 peer reason'));await browser.evaluate(fill(unfinishedInput,'T09 peer unfinished'));
+   await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('草稿已保存')");
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+   const scope={principal:fixture.handler,kind:'ticket',id:ticketId,purpose:'ticket-return-to-dispatch'};
+   tab=await yxxTab(browser,fixture.origin+'/workbench/app/');
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT09Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   const local='T09 retained reason '+randomUUID();await browser.evaluate(fill(reasonInput,local));
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT09Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
+   await browser.waitFor(`Boolean(${check})`);
+   if(revoked)await browser.evaluate("(()=>{const read=fetch,held=[];let released=false;fetch=(path,options)=>{if(!released&&String(path).includes('/eligible-principals'))return new Promise(resolve=>{held.push(resolve);globalThis.__t09HeldCount=held.length;globalThis.__releaseT09Restore=()=>{released=true;for(const done of held.splice(0))done(new Response('{}',{status:403,headers:{'content-type':'application/json'}}));};});return read(path,options);};})()");
+   else await browser.evaluate("(()=>{const read=crypto.subtle.decrypt.bind(crypto.subtle);let held=false;crypto.subtle.decrypt=(...args)=>{if(!held&&new TextDecoder().decode(args[0].additionalData).includes('ticket-return-to-dispatch')){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseT09Restore=()=>read(...args).then(resolve,reject);});}return read(...args);};})()");
+   await browser.evaluate('globalThis.__restoreT09Timer()');await tab.evaluate('globalThis.__finishT09Peer()');
+   await browser.waitFor('typeof globalThis.__releaseT09Restore==="function"');
+   if(revoked)await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('正在核对当前退回')");
+   await browser.waitFor(`(${reasonInput})?.disabled===true`);
+   assert.equal(await browser.evaluate(`(${reasonInput})?.disabled`),true);
+   await browser.evaluate('globalThis.__releaseT09Restore()');
+   if(revoked){
+    await browser.waitFor(`(async()=>{const saved=await (${copies(fixture.handler,ticketId)});return saved.drafts.length===0&&saved.operations.length===0;})()`);
+    assert.equal(await browser.evaluate(`(${reasonInput})?.value??''`),'');assert.equal(await browser.evaluate(`(${unfinishedInput})?.value??''`),'');
+   }else{
+    await browser.waitFor(`(${reasonInput})?.value===${JSON.stringify(local)}&&(${reasonInput}).disabled===false`);
+    assert.equal(await browser.evaluate(`(${unfinishedInput})?.value`),'T09 peer unfinished');assert.equal(rows(object(await browser.evaluate(copies(fixture.handler,ticketId))).drafts).length,1);
+   }
+  }catch(error){if(browser)console.error('T09_RETAIN_DIAGNOSTIC '+JSON.stringify(await browser.evaluate(`({status:document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent??null,reasonPresent:Boolean(${reasonInput}),reasonDisabled:(${reasonInput})?.disabled??null,reasonLength:(${reasonInput})?.value.length??null,choice:(${root})?.querySelector('input[value=TRANSFER_SELECTED]')?.checked??null,target:(${root})?.querySelector('select')?.value??null,selected:(${root})?.querySelectorAll('[data-session-choice] input:checked').length??0,held:globalThis.__t09HeldCount??0})`)));primary=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

@@ -26,11 +26,11 @@ test('T28 a held original receipt cannot restore sensitive input or UNKNOWN afte
   });
 });
 
-for(const notification of ['before','after'] as const)test(`T28 a late receipt for A cannot replace a peer operation B when notification arrives ${notification} the receipt`,{timeout:240000},async()=>{
-  await candidateBrowser({purpose:notification==='before'?'t28switch':'t28delay',reporters:3,recovery:true},async context=>{
+for(const notification of ['before','after','denied'] as const)test(`T28 a late receipt for A cannot replace a peer operation B with ${notification} notification`,{timeout:240000},async()=>{
+  await candidateBrowser({purpose:notification==='before'?'t28switch':notification==='after'?'t28delay':'t28deny',reporters:3,recovery:true},async context=>{
     const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
     await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
-    await context.browser.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{const response=await send(path,options),url=String(path);if(options?.method==='POST'&&url.endsWith('/correct-scope'))throw new TypeError('T28_LOST_ACK');if(url.includes('/commands/')&&!globalThis.__heldReceipt){globalThis.__heldReceipt=true;return new Promise(resolve=>{globalThis.__releaseOldReceipt=()=>resolve(response);}).then(value=>{globalThis.__oldReceiptReturned=true;return value;});}return response;};})()");
+    await context.browser.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{const response=await send(path,options),url=String(path);if(options?.method==='POST'&&url.endsWith('/correct-scope'))throw new TypeError('T28_LOST_ACK');if(url.includes('/commands/')&&!globalThis.__heldReceipt){globalThis.__heldReceipt=true;return new Promise(resolve=>{globalThis.__releaseOldReceipt=()=>resolve("+(notification==='denied'?"new Response(JSON.stringify({error:{code:'P2_012_FORBIDDEN'}}),{status:403,headers:{'content-type':'application/json'}})":"response")+");}).then(value=>{globalThis.__oldReceiptReturned=true;return value;});}return response;};})()");
     await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');
     const copy=record(await context.browser.evaluate(candidateCopies)),marker=rows(copy.operations).find(row=>row.kind==='incident'&&row.id===id);assert.ok(marker);const oldId=text(marker.commandId);
     await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');await context.browser.waitFor('typeof globalThis.__releaseOldReceipt==="function"');
@@ -42,10 +42,11 @@ for(const notification of ['before','after'] as const)test(`T28 a late receipt f
       if(notification==='before'){await notify();await context.browser.waitFor('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id==='+JSON.stringify(newId));}
       await context.browser.command('Page.bringToFront');await context.browser.evaluate('globalThis.__releaseOldReceipt()');await context.browser.waitFor('globalThis.__oldReceiptReturned===true');
       await context.browser.waitFor('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id==='+JSON.stringify(newId));
-      if(notification==='after')await notify();
+      if(notification!=='before')await notify();
       await context.browser.waitFor('document.querySelector("[data-action=check-incident-operation]")?.disabled===false');
       assert.equal(await context.browser.evaluate('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id'),newId);
       assert.equal(await context.browser.evaluate('document.querySelector("[data-incident-outcome]")?.textContent.includes("原操作已确认提交")'),false);
+      const current=record(await context.browser.evaluate(candidateCopies));assert.equal(rows(current.operations).find(row=>row.id===id)?.commandId,newId);assert.equal(rows(current.drafts).filter(row=>row.id===id).length,1);
     }finally{await tab.close();}
   });
 });
@@ -72,6 +73,26 @@ test('T28 a delayed purpose denial for a failed operation cannot purge a newer p
       await context.browser.waitFor('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id==='+JSON.stringify(newId));
       const after=record(await context.browser.evaluate(candidateCopies)),operations=rows(after.operations).filter(row=>row.kind==='incident'&&row.id===id),drafts=rows(after.drafts).filter(row=>row.kind==='incident'&&row.id===id);
       assert.equal(operations.length,1);assert.equal(operations[0]?.commandId,newId);assert.equal(drafts.length,1,'the newer encrypted draft must remain');
+    }finally{await tab.close();}
+  });
+});
+
+test('T28 a delayed incident-read rejection before sending cannot remove a newer operation',{timeout:240000},async()=>{
+  await candidateBrowser({purpose:'t28presend',reporters:3,recovery:true},async context=>{
+    const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);
+    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+    await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
+    await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');
+    await context.browser.evaluate(`(()=>{const read=fetch;let held=false;fetch=async(input,options)=>{const target=new URL(typeof input==='string'?input:input.url,location.href).pathname;if(!held&&target===${JSON.stringify(path)}&&(options?.method??'GET')==='GET'){held=true;return new Promise(resolve=>{globalThis.__releaseT28PreSend=()=>resolve(new Response('{}',{status:403,headers:{'content-type':'application/json'}}));});}return read(input,options);};})()`);
+    await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');await context.browser.waitFor('typeof globalThis.__releaseT28PreSend==="function"');
+    const stored=record(await context.browser.evaluate(candidateCopies)),marker=rows(stored.operations).find(row=>row.id===id);assert.ok(marker);const oldId=text(marker.commandId),scope={principal:text(marker.principal),kind:'incident',id,purpose:'incident-followup'};
+    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,tab=await yxxTab(context.browser,context.origin+'/workbench/app/');
+    try{
+      const newId=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),scope='+JSON.stringify(scope)+',old=await store.openDraft(scope),value=JSON.parse(old.text),post=BroadcastChannel.prototype.postMessage;BroadcastChannel.prototype.postMessage=function(){};try{await store.settleDraft(old.handle,'+JSON.stringify(oldId)+',old.handle.record.revision);const next=await store.openDraft(scope),id=crypto.randomUUID();value.pending.body.client_command_id=id;await store.saveDraft(next.handle,JSON.stringify(value),{commandId:id});return id;}finally{BroadcastChannel.prototype.postMessage=post;}})()') as string;
+      await context.browser.command('Page.bringToFront');await context.browser.evaluate('globalThis.__releaseT28PreSend()');
+      await context.browser.waitFor('JSON.parse(document.querySelector("[data-incident-unknown] + [data-diagnostic-copy] [data-diagnostics]")?.dataset.diagnostics??"{}").operation_id==='+JSON.stringify(newId));
+      const after=record(await context.browser.evaluate(candidateCopies));assert.equal(rows(after.operations).find(row=>row.id===id)?.commandId,newId);assert.equal(rows(after.drafts).filter(row=>row.id===id).length,1);
+      assert.equal(rows(await context.browser.evaluate('globalThis.__t27Posts')).filter(row=>String(row.path).startsWith(path+'/')).length,0);
     }finally{await tab.close();}
   });
 });

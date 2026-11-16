@@ -1,15 +1,17 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,symlink,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
 import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
-import {sourceFile} from './helpers/migration-roots.mjs';
+import {sourceFile,testRoots} from './helpers/migration-roots.mjs';
 import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {build as viteBuild} from 'vite';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Surface=Pick<Browser,'evaluate'|'waitFor'>;
 const ready="document.querySelectorAll('[data-conversation-draft]').length===2&&Array.from(document.querySelectorAll('[data-conversation-draft]')).every(e=>e.textContent.includes('草稿仅在当前浏览器'))";
@@ -79,6 +81,7 @@ test('independent conversation input stays locked until peer settlement is reaut
    await tab.evaluate("document.querySelector('[data-action=save-conversation-note]').click()");await tab.waitFor('typeof globalThis.__releasePeer==="function"');
    await browser.waitFor("Boolean(document.querySelector('[data-action=check-internal-notes]'))");await browser.evaluate(holdNextAuthority);await tab.evaluate('globalThis.__releasePeer()');
    await browser.waitFor('globalThis.__authorityHeld===1');
+   await browser.waitFor("document.querySelector('textarea[data-purpose=internal-notes]')?.disabled===true");
    assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').disabled"),true);
    assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 local input awaiting authority');
    await browser.evaluate('globalThis.__releaseAuthority()');await saved(browser);
@@ -344,7 +347,7 @@ test('prepared commands stay encrypted for replay while a legacy tab can read an
    await browser.evaluate('(async()=>{await globalThis.__releaseStaged();return true;})()');
    await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.reason==='settled'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
    await browser.evaluate('(async()=>{await globalThis.__stageAgain();return true;})()');
-   await tab.waitFor(`globalThis.__legacyEvents.filter(event=>event.reason==='settled'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)}).length>=2`);
+   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.reason==='released'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
    assert.equal(await browser.evaluate('globalThis.__claimStaged()'),true);
    await browser.evaluate('(async()=>{await globalThis.__releaseAgain();return true;})()');
    const retained=await browser.evaluate(`(async()=>{${storage}const opened=await openDraft(${JSON.stringify(staged.scope)});return {id:opened.handle.operation?.commandId,pending:JSON.parse(opened.text).pending.id};})()`);
@@ -363,6 +366,56 @@ test('prepared commands stay encrypted for replay while a legacy tab can read an
    assert.equal(revoked.hasDraft,false);assert.ok(revoked.operation);
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await tab?.evaluate('globalThis.__legacyChannel?.close()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('an actually bundled base-version draft hook keeps its unsaved input across a peer failure',{timeout:240000},async()=>{
+ const base='0004c53689e5f038e3e9359b59347c7180e58d48',sourceRoot=testRoots().sourceRoot,fixture=await mkdtemp(join(tmpdir(),'legacy-pc-hook-'));
+ const draftDir=join(fixture,'app/pc-admin/src/features/drafts'),apiDir=join(fixture,'app/pc-admin/src/api'),appDir=join(fixture,'app/pc-admin/src/app');
+ await Promise.all([mkdir(draftDir,{recursive:true}),mkdir(apiDir,{recursive:true}),mkdir(appDir,{recursive:true})]);
+ const old=(file:string)=>execFileSync('git',['show',base+':'+file],{cwd:sourceRoot,encoding:'utf8',windowsHide:true});
+ await Promise.all([
+  writeFile(join(draftDir,'use-note-draft.ts'),old('app/pc-admin/src/features/drafts/use-note-draft.ts')),
+  writeFile(join(draftDir,'encrypted-drafts.ts'),old('app/pc-admin/src/features/drafts/encrypted-drafts.ts')),
+  writeFile(join(apiDir,'client.ts'),"export class ApiError extends Error {} export const api={};"),
+  writeFile(join(appDir,'authorization.ts'),"export const clearSessionAuthorization=()=>{};export const clearTicketAuthorization=()=>{};"),
+  symlink(join(sourceRoot,'node_modules'),join(fixture,'node_modules'),'junction'),
+ ]);
+ const entry=join(fixture,'legacy.ts');
+ await writeFile(entry,`import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {useAuthorizedDraft} from './app/pc-admin/src/features/drafts/use-note-draft';
+ const scope=globalThis.__legacyScope;
+ function Page(){const [note,setNote]=useState(''),[state,setState]=useState('idle');
+ const draft=useAuthorizedDraft({scope,enabled:true,value:note,pending:null,emptyValue:'',hasInput:value=>Boolean(value),serialise:copy=>JSON.stringify(copy),decode:text=>JSON.parse(text),commandId:command=>command.client_command_id,authorize:async()=>true,onAuthorityFailure:()=>{},onRestore:copy=>{setNote(copy.value);if(copy.pending)setState('unknown');},onOperation:()=>setState('unknown'),onSensitiveClear:()=>{setNote('');setState('idle');}});
+ globalThis.__legacySnapshot={state,status:draft.status,operationId:draft.operationId,canSubmit:draft.canSubmit};
+ globalThis.__legacyAttempt=async()=>{try{await draft.prepare({client_command_id:crypto.randomUUID()});return 'prepared';}catch(error){return error.message;}};
+ return React.createElement('textarea',{id:'legacy-note',value:note,disabled:state==='unknown',onChange:event=>setNote(event.target.value)});}
+ const host=document.createElement('div');host.id='legacy-fixture';document.body.appendChild(host);createRoot(host).render(React.createElement(Page));`);
+ const built=await viteBuild({root:fixture,configFile:false,logLevel:'silent',define:{'process.env.NODE_ENV':JSON.stringify('production')},build:{write:false,minify:false,lib:{entry,formats:['iife'],name:'LegacyDraftFixture'}}});
+ const chunks=Array.isArray(built)?built:[built];const chunk=chunks.flatMap(item=>'output' in item?item.output:[]).find(item=>item.type==='chunk');assert.ok(chunk&&chunk.type==='chunk');
+ await withT22Fixture(async({origin,browserCookie})=>{
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
+   tab=await yxxTab(browser,origin+'/workbench/app/');await tab.waitFor('document.readyState==="complete"&&Boolean(document.body)');
+   const scope={principal:randomUUID(),kind:'ticket',id:randomUUID(),purpose:'internal-note'};
+   await tab.evaluate('globalThis.__legacyScope='+JSON.stringify(scope));
+   const mountError=await tab.evaluate("(()=>{try{"+chunk.code+"\n;return null;}catch(error){return String(error?.stack??error);}})()");assert.equal(mountError,null);
+   await tab.waitFor('globalThis.__legacySnapshot?.status==="ready"&&Boolean(document.querySelector("#legacy-note"))');
+   const set=(value:string)=>`(()=>{const input=document.querySelector('#legacy-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`;
+   await tab.evaluate(set('old saved input'));await tab.waitFor('globalThis.__legacySnapshot?.status==="saved"');
+   await tab.evaluate("(()=>{const timer=window.setTimeout;globalThis.__legacyRestoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);globalThis.__legacyEvents=[];const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.onmessage=event=>globalThis.__legacyEvents.push(event.data);globalThis.__legacyClose=()=>channel.close();})()");
+   await tab.evaluate(set('old independent unsaved input'));
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+   const id=await browser.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__legacyPeer={store,copy,id};return id;})()') as string;
+   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='released')`);
+   assert.equal(await tab.evaluate('globalThis.__legacySnapshot.state'),'idle');assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent unsaved input');
+   assert.notEqual(await tab.evaluate('globalThis.__legacyAttempt()'),'prepared','the older page cannot start another operation while the peer operation exists');
+   await tab.evaluate('globalThis.__legacyRestoreTimer()');
+   await browser.evaluate('(async()=>{const {store,copy,id}=globalThis.__legacyPeer;await store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()');
+   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='settled')&&globalThis.__legacySnapshot.operationId===null&&globalThis.__legacySnapshot.canSubmit===true`);
+   assert.equal(await tab.evaluate('globalThis.__legacySnapshot.state'),'idle');assert.equal(await tab.evaluate('document.querySelector("#legacy-note").disabled'),false);assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent unsaved input');assert.equal(await tab.evaluate('globalThis.__legacySnapshot.canSubmit'),true);assert.ok(id);
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.evaluate('globalThis.__legacyRestoreTimer?.();globalThis.__legacyClose?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
 });
 

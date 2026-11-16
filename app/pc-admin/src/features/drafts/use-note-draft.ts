@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
-import {DraftError,claimDraftReplay,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
+import {DraftError,claimDraftReplay,draftScopeKey,matchesDraft,openDraft,rebaseDraft,refreshEmptyDraft,releaseUnsentOperation,removeOwnedSensitiveDraft,removeSensitiveDraft,saveDraft,settleDraft,subscribeDrafts} from './encrypted-drafts';
 import type {DraftHandle,DraftScope} from './encrypted-drafts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -244,6 +244,21 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
     hasRetainedInput:()=>retainedInput.current!==null,
     forgetRetainedInput:()=>{retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;cancelTimer();},
+    async restrictOperation(commandId:string){
+      if(!enabled||!handle.current)return null;
+      const target=handle.current,token=generation.current,observed=await openDraft(scope,{restore:false});
+      if(generation.current!==token||handle.current!==target)return null;
+      if(observed.handle.operation?.commandId===commandId&&observed.handle.record){
+        try{await removeOwnedSensitiveDraft(observed.handle);}catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_CHANGED'))throw error;}
+      }
+      const current=await openDraft(scope,{restore:false}),next=current.handle.operation?.commandId??null;
+      if(generation.current===token&&handle.current===target&&next&&next!==commandId){
+        generation.current++;cancelTimer();cancelAuthority();handle.current=current.handle;lastSaved.current='';pendingRevision.current=undefined;
+        const retained=retainedInput.current!==null;if(!retained){latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();}
+        setOperationId(next);callbacks.current.onOperation(next,retained);setStatus('ready');setMessage('');
+      }
+      return next;
+    },
     // Capture the preparation's handle and text for cleanup, even if unmount or invalidation clears the live handle.
     prepareSend(command:C){
       if(!enabled)return null;

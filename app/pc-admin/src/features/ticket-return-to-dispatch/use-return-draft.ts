@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {P2016ReturnToDispatchCommand,P2016ReturnSession} from '../../../../../contracts/workbench_return_to_dispatch_contracts';
-import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
+import {DraftError,hasExistingDraft,openDraft,removeOwnedSensitiveDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -122,12 +122,12 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
       }else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')clear();
       else setUnavailable(true); // A temporary read/storage failure never purges a saved copy.
     },
-    onRestore:(copy,retained=false)=>{
+    onRestore:(copy,retained=false,owned)=>{
       const controller=new AbortController(),token=++generation.current,requireRead=captureWorkbenchRead(controller.signal),inputBefore=returnInputSnapshot(latest.current.value);
       request.current?.abort();request.current=controller;validating.current=true;setRestoring(true);setUnavailable(false);
       const fence:ReturnFence={signal:controller.signal,requireCurrent:()=>current(controller,token,requireRead)};
       void(async()=>{
-        fence.requireCurrent();const original=retained?null:await openDraft(scope);fence.requireCurrent();
+        fence.requireCurrent();const original=retained?(owned?{handle:owned,text:serialiseReturn(copy)}:null):await openDraft(scope);fence.requireCurrent();
         if(original&&(original.text!==serialiseReturn(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
           ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId))throw new DraftError('DRAFT_CHANGED');
         try{
@@ -137,14 +137,16 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
           fence.requireCurrent();
           if(isReturnChoiceRevocation(error)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
             // Only the originally observed revision is removed; a newer tab's value is never guessed or deleted.
-            if(original){fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();}
+            if(retained){draft.forgetRetainedInput();onSensitiveClear();}
+            if(original){fence.requireCurrent();try{await removeOwnedSensitiveDraft(original.handle);}catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_CHANGED'))throw error;}fence.requireCurrent();}
           }
           throw error;
         }
         if(original){const checked=await openDraft(scope);fence.requireCurrent();
         if(checked.text!==serialiseReturn(copy)||checked.handle.record?.revision!==original.handle.record?.revision
           ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
-        if(returnInputSnapshot(latest.current.value)!==inputBefore){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
+        const currentInput=returnInputSnapshot(latest.current.value);
+        if(currentInput!==inputBefore&&!(retained&&owned&&currentInput===returnInputSnapshot(EMPTY_RETURN))){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
         onRestore(copy);
       })().catch(error=>{
         try{fence.requireCurrent();}catch{return;}

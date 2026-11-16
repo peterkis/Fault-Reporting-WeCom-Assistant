@@ -208,12 +208,14 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
       const {prepared:_prepared,...compatible}=nextOperation;value.operationStore.put(compatible);
     }
     value.draftStore.put(record);
-    return {operation:nextOperation,changed:Boolean(!operation&&commandId||settledCommandId&&operation?.commandId===settledCommandId)};
+    return {operation:nextOperation,started:Boolean(!operation&&commandId),settled:Boolean(settledCommandId&&operation?.commandId===settledCommandId)};
   });
   if('error' in committed)throw new DraftError(committed.error);
   handle.record=record;handle.operation=committed.operation;
-  // Tabs opened before this deployment understand settled and re-read the current operation.
-  if(committed.changed)publishToOtherTabs({...handle.scope,reason:'settled'});
+  // Older pages cannot leave UNKNOWN without clearing their unsaved input. They
+  // ignore the start hint and remain fenced by storage until settlement.
+  if(committed.started)publishToOtherTabs({...handle.scope,reason:'released'});
+  if(committed.settled)publishToOtherTabs({...handle.scope,reason:'settled'});
   return record;
 }
 // The caller must freshly authorize its own scope. This only refreshes a still-existing
