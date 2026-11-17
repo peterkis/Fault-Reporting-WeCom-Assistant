@@ -33,7 +33,7 @@ function decode(text:string):Copy{
   }
   return {schema:1,choice:communication,sessions:selected,pending};
 }
-export function useConversationHandlingDraft({ticketId,principal,value,pending,onRestore,onSensitiveClear,onOperation}:{ticketId:string;principal:Principal;value:CommunicationChoice;pending:ConversationHandlingIntent|null;onRestore:(value:Copy)=>void;onSensitiveClear:()=>void;onOperation:()=>void}){
+export function useConversationHandlingDraft({ticketId,principal,value,pending,onRestore,onSensitiveClear,onOperation,onOperationCleared}:{ticketId:string;principal:Principal;value:CommunicationChoice;pending:ConversationHandlingIntent|null;onRestore:(value:Copy)=>void;onSensitiveClear:()=>void;onOperation:()=>void;onOperationCleared:()=>void}){
   const scope:DraftScope={principal:principal.principal_id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'},enabled=principal.ticket_conversation_draft_recovery_enabled,client=useQueryClient();
   const [restoring,setRestoring]=useState(enabled),[unavailable,setUnavailable]=useState(false),generation=useRef(0),validating=useRef(false),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),actions=useRef<readonly string[]>([]);
   const serialise=({value,pending}:{value:CommunicationChoice;pending:ConversationHandlingIntent|null})=>JSON.stringify({schema:1,...value,...(pending?{choice:pending.command.communication_choice,sessions:pending.command.sessions}:{}),pending});
@@ -56,9 +56,9 @@ export function useConversationHandlingDraft({ticketId,principal,value,pending,o
         if(controller.signal.aborted||token!==generation.current)return;
         onRestore({schema:1,...copy.value,pending:copy.pending});validating.current=false;setRestoring(false);request.current=null;
       })().catch(error=>{if(controller.signal.aborted||token!==generation.current)return;validating.current=false;request.current=null;setRestoring(false);if(error instanceof ApiError&&error.status===401){void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_ACTION_REVOKED','DRAFT_RELATION_CHANGED'].includes(error.message)){if(retained){draft.forgetRetainedInput();onSensitiveClear();}void removeOwnedSensitiveDraft(original).catch(()=>{});return;}setUnavailable(true);});
-    },onSensitiveClear:clear,onOperation:()=>{onOperation();},
+    },onSensitiveClear:clear,onOperation:()=>{onOperation();},onOperationCleared:conflict=>{if(conflict)onOperationCleared();else clear();},
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
-  return {...draft,restoring,restorationBlocked:unavailable,message:unavailable?(draft.hasRetainedInput()?'本页输入未保存，请先留在此页并自行留存可见内容，再重新核对。':'草稿暂未恢复：本机内容暂时读不到，请重新打开详情或刷新页面后再试。'):restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,settle:(commandId:string)=>draft.success(commandId)};
+  return {...draft,restoring,restorationBlocked:unavailable,message:unavailable?(draft.hasUnsavedInput()?'本页输入未保存，请先留在此页并自行留存可见内容，再重新核对。':'草稿暂未恢复：本机内容暂时读不到，请重新打开详情或刷新页面后再试。'):restoring?'正在核对恢复选择的会话授权…':draft.message,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,settle:(commandId:string)=>draft.success(commandId)};
 }

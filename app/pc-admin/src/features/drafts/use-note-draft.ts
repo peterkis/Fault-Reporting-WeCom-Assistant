@@ -249,6 +249,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
     /** The operation the shared draft holds right now (another tab may have replaced it), read without waiting for a render. */
     currentOperation:():string|null=>handle.current?.operation?.commandId??null,
     hasRetainedInput:()=>retainedInput.current!==null,
+    hasUnsavedInput:()=>retainedInput.current!==null||!latest.current.pending&&hasInput(latest.current.value)&&encode(latest.current)!==lastSaved.current,
     forgetRetainedInput:()=>{retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;cancelTimer();},
     async restrictOperation(commandId:string){
       if(!enabled||!handle.current)return null;
@@ -304,7 +305,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         // The shared record belongs to the other page. Discard only this page's input.
         retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();
         if(target.operation)callbacks.current.onOperation(target.operation.commandId);
-        if(target.record&&!target.operation){setSharedConflict(true);setStatus('failed');setMessage('另一页面的草稿仍在，请重新打开。');}
+        if(target.record&&!target.operation){setSharedConflict(true);setStatus('failed');setMessage('另一页面的草稿仍在，本页暂时无法提交；请重新打开。');}
         else{setStatus('ready');setMessage('本页输入已清空。');}
         return;
       }

@@ -191,3 +191,59 @@ for(const phase of ['before','after'])test('a temporary '+phase+'-save read fail
   }finally{await tab.close();}
  },{workbenchDraftRecoveryEnabled:true});
 });
+
+test('a failed peer operation leaves this page\'s independent conversation choice visible',async()=>{
+ await browserScenario(async({browser,principals,tickets})=>{
+  const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'};
+  await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');
+  await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]").click()');
+  await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')),recovery='/workbench/app/'+manifest['src/feedback-recovery.ts'].file;
+  const tab=await yxxTab(browser,new URL('/workbench/app/',await browser.evaluate('location.origin')).href);
+  try{
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreConflictTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=TAKE_SELECTED]").click()');
+   await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.disabled===false');
+   await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__failT05Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()');
+   await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))');
+   await browser.evaluate("(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/api/conversations/')?Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}})):read(path,options);})()");
+   await browser.evaluate('globalThis.__restoreConflictTimer()');await tab.evaluate('globalThis.__failT05Peer()');
+   await browser.waitFor('document.body.innerText.includes("另一页面仍有草稿")');
+   assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);
+   assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]")?.disabled'),true);
+   const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {value:JSON.parse(copy.text),operation:copy.handle.operation};})()');
+   assert.equal(saved.value.choice,'RETAIN_CURRENT');assert.equal(saved.operation,null);
+  }finally{await browser.evaluate('globalThis.__restoreConflictTimer?.()');await tab.close();}
+ },{workbenchDraftRecoveryEnabled:true});
+});
+
+test('an unrelated settlement and temporary reauthorization failure never suggest refreshing an unsaved choice',async()=>{
+ await browserScenario(async({browser,principals,tickets})=>{
+  const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'},other={...scope,purpose:'internal-note'};
+  await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');
+  await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]").click()');
+  await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')),recovery='/workbench/app/'+manifest['src/feedback-recovery.ts'].file;
+  const tab=await yxxTab(browser,new URL('/workbench/app/',await browser.evaluate('location.origin')).href);
+  try{
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreRebaseTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>{if(ms!==500)return timer(fn,ms,...args);globalThis.__flushRebaseTimer=()=>fn(...args);return timer(()=>{},2147483647);};})()");
+   await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=TAKE_SELECTED]").click()');
+   await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.disabled===false');
+   await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');await browser.waitFor('typeof globalThis.__flushRebaseTimer==="function"');
+   await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(other)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,"{}",{commandId:id});await store.settleDraft(copy.handle,id,copy.handle.record.revision);})()');
+   await browser.evaluate("(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path)==='/api/lifecycle/bootstrap'){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()");
+   await browser.evaluate('globalThis.__restoreRebaseTimer();globalThis.__flushRebaseTimer()');
+   await browser.waitFor('document.body.innerText.includes("本页输入未保存")');
+   assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);
+   assert.equal(await browser.evaluate('document.body.innerText.includes("刷新页面后再试")'),false);
+   assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]")?.disabled'),true);
+   await browser.evaluate('document.querySelector("[aria-label=关闭接单选项]").click()');
+   await browser.waitFor('Boolean(document.querySelector("[data-action=show-unsaved-conversation-handling]"))');
+   await browser.evaluate('document.querySelector("[data-action=show-unsaved-conversation-handling]").click()');
+   await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
+   const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return JSON.parse(copy.text);})()');
+   assert.equal(saved.choice,'RETAIN_CURRENT');
+  }finally{await browser.evaluate('globalThis.__restoreRebaseTimer?.()');await tab.close();}
+ },{workbenchDraftRecoveryEnabled:true});
+});

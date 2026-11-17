@@ -83,7 +83,11 @@ test('a peer that fails before its start notification cannot have its saved draf
    assert.equal(await browser.evaluate("document.querySelector('textarea[data-purpose=internal-notes]').value"),'T22 independent unsaved value');
    await browser.waitFor("document.body.innerText.includes('另一页面仍有草稿')");
    const peer=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {text:JSON.parse(copy.text).value,operation:copy.handle.operation};})()');
-   assert.deepEqual(peer,{text:'T22 peer failed value',operation:null});assert.equal(await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').disabled"),true);
+    assert.deepEqual(peer,{text:'T22 peer failed value',operation:null});assert.equal(await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').disabled"),true);
+    await browser.evaluate("document.querySelector('[data-action=discard-internal-notes]').click()");
+    await browser.waitFor("document.body.innerText.includes('另一页面的草稿仍在，本页暂时无法提交')");
+    assert.equal(await browser.evaluate("document.querySelector('[data-action=save-conversation-note]').disabled"),true);
+    assert.deepEqual(await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {text:JSON.parse(copy.text).value,operation:copy.handle.operation};})()'),peer);
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__restoreFastTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });
@@ -367,16 +371,17 @@ test('prepared commands stay encrypted for replay while a legacy tab can read an
    })()`);
    assert.deepEqual(legacy,{operationFields:7,pending:null,markerHasKey:false,markerHasText:false});
    await browser.evaluate('(async()=>{await globalThis.__releaseStaged();return true;})()');
-   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.reason==='settled'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
-   await browser.evaluate('(async()=>{await globalThis.__stageAgain();return true;})()');
    await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.reason==='released'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
+   const beforeStage=await tab.evaluate('globalThis.__legacyEvents.length') as number;
+   await browser.evaluate('(async()=>{await globalThis.__stageAgain();return true;})()');
+   await tab.waitFor(`globalThis.__legacyEvents.slice(${beforeStage}).some(event=>event.reason==='released'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
    assert.equal(await browser.evaluate('globalThis.__claimStaged()'),true);
    await browser.evaluate('(async()=>{await globalThis.__releaseAgain();return true;})()');
    const retained=await browser.evaluate(`(async()=>{${storage}const opened=await openDraft(${JSON.stringify(staged.scope)});return {id:opened.handle.operation?.commandId,pending:JSON.parse(opened.text).pending.id};})()`);
    assert.deepEqual(retained,{id:staged.commandId,pending:staged.commandId});
    const before=await tab.evaluate('globalThis.__legacyEvents.length') as number;
    await browser.evaluate(`(async()=>{${storage}const opened=await openDraft(${JSON.stringify(staged.scope)});await saveDraft(opened.handle,JSON.stringify({value:'synthetic protected text',pending:null}),{settledCommandId:${JSON.stringify(staged.commandId)}});return true;})()`);
-   await tab.waitFor(`globalThis.__legacyEvents.slice(${before}).some(event=>event.reason==='settled'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
+   await tab.waitFor(`globalThis.__legacyEvents.slice(${before}).some(event=>event.reason==='released'&&event.id===${JSON.stringify((staged.scope as {id:string}).id)})`);
    const revoked=await browser.evaluate(`(async()=>{${storage}
     const scope={principal:crypto.randomUUID(),kind:'conversation',id:crypto.randomUUID(),purpose:'conversation-note'},commandId=crypto.randomUUID();
     const opened=await openDraft(scope);await saveDraft(opened.handle,JSON.stringify({value:'private',pending:null}),{commandId,prepared:true,preparedText:JSON.stringify({value:'private',pending:{id:commandId}})});
@@ -432,10 +437,15 @@ test('an actually bundled base-version draft hook keeps its unsaved input across
    await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='released')`);
    assert.equal(await tab.evaluate('globalThis.__legacySnapshot.state'),'idle');assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent unsaved input');
    assert.notEqual(await tab.evaluate('globalThis.__legacyAttempt()'),'prepared','the older page cannot start another operation while the peer operation exists');
-   await tab.evaluate('globalThis.__legacyRestoreTimer()');
+   await tab.evaluate('globalThis.__legacyRestoreTimer()');const before=await tab.evaluate('globalThis.__legacyEvents.length') as number;
    await browser.evaluate('(async()=>{const {store,copy,id}=globalThis.__legacyPeer;await store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()');
-   await tab.waitFor(`globalThis.__legacyEvents.some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='settled')&&globalThis.__legacySnapshot.operationId===null&&globalThis.__legacySnapshot.canSubmit===true`);
-   assert.equal(await tab.evaluate('globalThis.__legacySnapshot.state'),'idle');assert.equal(await tab.evaluate('document.querySelector("#legacy-note").disabled'),false);assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent unsaved input');assert.equal(await tab.evaluate('globalThis.__legacySnapshot.canSubmit'),true);assert.ok(id);
+   await tab.waitFor(`globalThis.__legacyEvents.slice(${before}).some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='released')`);
+   assert.equal(await tab.evaluate(`globalThis.__legacyEvents.slice(${before}).some(event=>event.id===${JSON.stringify(scope.id)}&&event.reason==='settled')`),false);
+   assert.equal(await tab.evaluate('globalThis.__legacySnapshot.state'),'idle');assert.equal(await tab.evaluate('document.querySelector("#legacy-note").disabled'),false);assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent unsaved input');
+   await tab.evaluate(set('old independent input after peer failure'));await tab.waitFor('globalThis.__legacySnapshot.status==="saving"');await tab.waitFor('globalThis.__legacySnapshot.status==="failed"');
+   assert.equal(await tab.evaluate('document.querySelector("#legacy-note").value'),'old independent input after peer failure');assert.equal(await tab.evaluate('globalThis.__legacySnapshot.canSubmit'),false);
+   const surviving=await browser.evaluate('(async()=>{const {store}=globalThis.__legacyPeer,copy=await store.openDraft('+JSON.stringify(scope)+');return {value:JSON.parse(copy.text).value,operation:copy.handle.operation};})()');
+   assert.deepEqual(surviving,{value:'old saved input',operation:null});assert.ok(id);
   }catch(error){failure=error;}
   await closeBrowserTestResources([async()=>{await tab?.evaluate('globalThis.__legacyRestoreTimer?.();globalThis.__legacyClose?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  });

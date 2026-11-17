@@ -15,8 +15,9 @@ function invalidation(value:unknown):DraftInvalidation|null{
 }
 function publishToOtherTabs(value:DraftInvalidation){if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
 function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);publishToOtherTabs(value);}
-// Old tabs understand settled, but not released. Both describe removal of this operation.
-function publishReleased(scope:DraftScope){for(const listener of listeners)listener({...scope,reason:'released'});publishToOtherTabs({...scope,reason:'settled'});}
+// A settled notification may make an already-open page adopt and overwrite a
+// surviving peer draft. Only use it when no draft remains.
+function publishReleased(scope:DraftScope,hasDraft:boolean){for(const listener of listeners)listener({...scope,reason:'released'});if(!hasDraft)publishToOtherTabs({...scope,reason:'settled'});}
 export function matchesDraft(value:DraftInvalidation,scope:DraftScope){return value.principal===scope.principal&&(value.kind===undefined||value.kind===scope.kind)&&(value.id===undefined||value.id===scope.id)&&(value.purpose===undefined||value.purpose===scope.purpose);}
 export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>void{
   if(!globalThis.BroadcastChannel)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -215,7 +216,7 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   // Older pages cannot leave UNKNOWN without clearing their unsaved input. They
   // ignore the start hint and remain fenced by storage until settlement.
   if(committed.started)publishToOtherTabs({...handle.scope,reason:'released'});
-  if(committed.settled)publishToOtherTabs({...handle.scope,reason:'settled'});
+  if(committed.settled)publishToOtherTabs({...handle.scope,reason:'released'});
   return record;
 }
 // The caller must freshly authorize its own scope. This only refreshes a still-existing
@@ -298,7 +299,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
   if(handle.record&&handle.operation?.commandId===commandId&&handle.operation.prepared){
     try{
       await saveDraft(handle,text,{settledCommandId:commandId,releasePrepared:true});
-      publishReleased(scope);
+      publishReleased(scope,true);
       return;
     }catch(error){
       if(!(error instanceof DraftError)||!['DRAFT_CHANGED','DRAFT_EXPIRED'].includes(error.message))throw error;
@@ -312,7 +313,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
     value.control.delete(preparedKey(key,commandId));
     return true;
   });
-  if(removed)publishReleased(scope);
+  if(removed)publishReleased(scope,false);
 }
 export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=false}:{preserveOperations?:boolean}={}):Promise<void>{
   if(!invalidation(filter))throw new DraftError('DRAFT_SCOPE_INVALID');
