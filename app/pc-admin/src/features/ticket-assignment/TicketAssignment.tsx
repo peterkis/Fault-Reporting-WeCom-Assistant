@@ -43,7 +43,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   // Codex review: the kept outcome is reused only for the operation it belongs to.
   // Codex review: when another tab has already put a new operation in the shared draft, this outcome is reported as the earlier
   // operation's and the page moves on to the new one instead of offering to clear the old one again.
-  const replacedBy=(commandId:string,cleaned:boolean,text:string)=>{const now=draft.currentOperation();if(cleaned||!now||now===commandId)return false;settled.current=null;setCleanupFailed(false);setInput(EMPTY_ASSIGNMENT);setPending(null);setState('unknown');setMessage('操作尾号 '+shortCode(commandId,[now])+'：'+text+'。另一个页面已开始新的派单操作，点击「核对结果」查看新操作。');refresh();return true;};
+  const replacedBy=(commandId:string,cleaned:boolean,text:string)=>{const now=draft.currentOperation();if(cleaned||!now||now===commandId)return false;settled.current=null;setCleanupFailed(false);if(!draft.hasRetainedInput())setInput(EMPTY_ASSIGNMENT);setPending(null);setState('unknown');setMessage('操作尾号 '+shortCode(commandId,[now])+'：'+text+'。另一个页面已开始新的派单操作，点击「核对结果」查看新操作。');refresh();return true;};
   // A lookup that returns after another tab replaced its operation says only that, never the old result beside the new one.
   const operationChanged=(currentId:string|null)=>{
     settled.current=null;

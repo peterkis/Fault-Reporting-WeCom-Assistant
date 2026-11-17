@@ -11,8 +11,8 @@ function integer(value:unknown):number{assert.equal(typeof value,'number');asser
 function count(value:unknown):number{const result=integer(value);assert.ok(result<=2147483647);return result;}
 function closed(value:unknown,keys:readonly string[]):Record<string,unknown>{const row=record(value);assert.deepEqual(Object.keys(row).sort(),[...keys].sort());return row;}
 
-for(const source of ['observer','peer'] as const)test(`T33 blank observer keeps the peer failed delivery intent after ${source} settlement`,{timeout:240000},async()=>{
- await t33IncidentBrowser(async({browser,origin,incidentId,deliveryId,adminId})=>{
+for(const source of ['observer','peer','retained'] as const)test(`T33 ${source==='retained'?'independent':'blank'} observer keeps the peer failed delivery intent after ${source} settlement`,{timeout:240000},async()=>{
+ await t33IncidentBrowser(async({browser,origin,incidentId,deliveryId,siblingId,adminId})=>{
   const root='[data-control-purpose="INCIDENT_LIFECYCLE"]',status=root+' [data-incident-delivery-draft-status]',tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
   try{
    await browser.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="ready"');
@@ -21,22 +21,27 @@ for(const source of ['observer','peer'] as const)test(`T33 blank observer keeps 
    await choose('选择通知路',deliveryId);await tab.waitFor('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+')?.disabled===false');
    await choose('投递控制操作','RECONCILE');await choose('投递操作原因','OPERATOR_VERIFIED_DELIVERY');await choose('未知发送核对结论','CONFIRMED_SENT');
    await tab.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="saved"');
+   if(source==='retained'){
+    await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT33ObserverTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+    const selector=root+' .workbench-select[data-field-label="选择通知路"] select';await browser.evaluate(`(()=>{const field=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(field,${JSON.stringify(siblingId)});field.dispatchEvent(new Event('change',{bubbles:true}));})()`);await browser.waitFor(`document.querySelector(${JSON.stringify(selector)})?.value===${JSON.stringify(siblingId)}`);
+   }
    await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/reconcile')){globalThis.__t33PeerCommand=JSON.parse(options.body);return new Promise(resolve=>{globalThis.__t33Reject=()=>resolve(Response.json({error:{code:'P2_012_VERSION_CONFLICT',retryable:false}},{status:409}));});}return send(path,options);};})()");
    await tab.evaluate('document.querySelector('+JSON.stringify(root+' input[aria-label="确认本路投递操作"]')+').click()');
    await tab.waitFor('document.querySelector('+JSON.stringify(root+' [data-action="submit-incident-delivery-control"]')+')?.disabled===false');
    await tab.evaluate('document.querySelector('+JSON.stringify(root+' [data-action="submit-incident-delivery-control"]')+').click()');await tab.waitFor('Boolean(globalThis.__t33PeerCommand?.client_command_id)');
    await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+'))');
    const command=record(await tab.evaluate('globalThis.__t33PeerCommand')),id=text(command.client_command_id);
-   if(source==='observer'){
+   if(source!=='peer'){
     await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/notification-commands/${id}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
     await browser.evaluate('document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+').click()');
    }else{await tab.evaluate('globalThis.__t33Reject()');}
-   await browser.waitFor('!document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+')');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,500))');
+   await browser.waitFor('!document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+')');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,600))');
    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:adminId,kind:'incident',id:incidentId,purpose:'incident-delivery-lifecycle'};
    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
    assert.ok(saved.text);const copy=JSON.parse(saved.text) as {value:{deliveryId:string;reason:string};pending:unknown};assert.equal(copy.value.deliveryId,deliveryId);assert.equal(copy.value.reason,'OPERATOR_VERIFIED_DELIVERY');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
-  }finally{await tab.close();}
+   if(source==='retained')assert.equal(await browser.evaluate('document.querySelector('+JSON.stringify(root+' .workbench-select[data-field-label="选择通知路"] select')+')?.value'),siblingId);
+  }finally{await browser.evaluate('globalThis.__restoreT33ObserverTimer?.()');await tab.close();}
  },{draftRecovery:true});
 });
 

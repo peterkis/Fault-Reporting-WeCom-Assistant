@@ -12,8 +12,30 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createHash} from 'node:crypto';
 import {randomUUID} from 'node:crypto';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 async function recoveryModule(){const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>;return '/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;}
+
+test('closure FAILED uses freshly authorized context while the cached context is pending',{timeout:240000},async()=>{
+ await withT10Fixture(async context=>{
+  const target=context.tickets[0];assert.ok(target);const ticketId=target.ticket.id,http=await t11Http(context,2),bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {principal_id:string},path='/api/tickets/'+ticketId;
+  await withT10Browser(context,ticketId,2,'CLOSURE_PENDING_CONTEXT',async browser=>{
+   await browser.evaluate(`(()=>{const read=fetch;let held=false;fetch=async(url,options)=>{if(!held&&String(url)===${JSON.stringify(path)}&&(options?.method??'GET')==='GET'){held=true;const response=await read(url,options);return new Promise(resolve=>{globalThis.__releaseClosureContext=()=>resolve(response);});}return read(url,options);};})()`);
+   await browser.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=cancel]').click()");await browser.waitFor('typeof globalThis.__releaseClosureContext==="function"');
+   const tab=await yxxTab(browser,context.origin+'/workbench/app/items/ticket/'+ticketId);
+   try{
+    await tab.waitFor("document.querySelector('[data-action=cancel]')?.disabled===false");await tab.evaluate("document.querySelector('[data-action=cancel]').click()");await tab.waitFor("Boolean(document.querySelector('.detail-cancel-dialog input[value=OTHER]'))");await tab.evaluate("document.querySelector('.detail-cancel-dialog input[value=OTHER]').click()");await tab.evaluate(fillWaiting('.detail-cancel-dialog textarea','T10_FAILED_CLOSURE_PEER'));
+    await tab.waitFor("document.querySelector('[data-waiting-draft-status]')?.textContent.includes('草稿已保存')");await tab.evaluate(`(()=>{const send=fetch;fetch=(url,options)=>{if(options?.method==='POST'&&String(url)===${JSON.stringify(path+'/dismiss')}){globalThis.__closurePeer=JSON.parse(options.body);return new Promise(()=>{});}return send(url,options);};})()`);
+    await tab.waitFor("document.querySelector('.detail-cancel-dialog button[type=submit]')?.disabled===false");await tab.evaluate("document.querySelector('.detail-cancel-dialog button[type=submit]').click()");await tab.waitFor('Boolean(globalThis.__closurePeer?.client_command_id)');
+    await browser.waitFor("Boolean(document.querySelector('[data-action=check-cancel-command]'))");const command=await tab.evaluate('globalThis.__closurePeer') as {client_command_id:string},id=command.client_command_id;
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/dismiss/commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);await browser.evaluate("document.querySelector('[data-action=check-cancel-command]').click()");
+    const recovery=await recoveryModule(),scope={principal:bootstrap.principal_id,kind:'ticket',id:ticketId,purpose:'waiting-cancel'};
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
+    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.text;})()`) as string|null;assert.ok(saved);const copy=JSON.parse(saved) as {value:{note:string};pending:unknown};assert.equal(copy.value.note,'T10_FAILED_CLOSURE_PEER');assert.equal(copy.pending,null);
+   }finally{await browser.evaluate('globalThis.__releaseClosureContext?.()');await tab.close();}
+  });
+ },{closureUi:true,internalNotesEnabled:false});
+});
 
 test('Card 27C-B closure recovery uses its own capability when internal notes are disabled',{timeout:120000},async()=>{
  await withT10Fixture(async context=>{

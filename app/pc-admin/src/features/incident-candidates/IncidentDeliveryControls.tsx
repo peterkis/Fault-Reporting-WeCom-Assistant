@@ -157,7 +157,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   const replaced=draft.currentOperation();
   if(!replaced||replaced===commandId)return false;
   known.current=false;knownFailed.current=false;outcomeFor.current=null;setResult(null);
-  clearSensitive();setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);
+   if(!draft.hasRetainedInput())clearSensitive();else setPending(null);setCleanupPending(false);setOpaque(replaced);setState('unknown');setNeedsRead(true);
   setMessage('另一个页面已开始新的通知操作，这里的结果不再适用。点击「核对结果」查看新操作。');
   return true;
  }
@@ -171,13 +171,13 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
   try{
    await readCurrent(receiptResult?.delivery_id??deliveryId,controller,current,startIdentity);current();
    settling.current=true;let cleaned=false;
-   const preserveInput=receiptResult===null&&deliveryId!==null&&value.deliveryId===deliveryId;
+    const preserveInput=draft.hasRetainedInput()||receiptResult===null&&deliveryId!==null&&value.deliveryId===deliveryId;
    try{cleaned=receiptResult?await draft.success(commandId,preserveInput):await draft.knownFailure(commandId,!pending,{notifyLocal:false,notifyReplacement:false});}finally{settling.current=false;}
    current();
    if(adoptReplacement(commandId))return;
    setPending(null);setChecked(false);setConfirmed(false);setOpaque(cleaned?null:commandId);setCleanupPending(!cleaned);
    if(!cleaned){setState(receiptResult?'committed':'failed');setMessage((receiptResult?'已提交；':'上次操作没有成功；')+'草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}
-   if(receiptResult){setResult(receiptResult);clearSensitive();setState('committed');setNeedsRead(false);setMessage('本路操作已确认提交；当前权限和公共故障已重新读取，各路结果分别刷新。确认发送不代表报修人已读。');}
+    if(receiptResult){setResult(receiptResult);if(!preserveInput)clearSensitive();setState('committed');setNeedsRead(false);setMessage('本路操作已确认提交；当前权限和公共故障已重新读取，各路结果分别刷新。确认发送不代表报修人已读。'+(preserveInput?' 本页独立输入已保留，请先自行留存。':''));}
    else{
     if(!preserveInput)clearSensitive();
     setState('failed');setNeedsRead(preserveInput);

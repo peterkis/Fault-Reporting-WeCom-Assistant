@@ -125,6 +125,23 @@ test('T30 blank observer keeps the other page failed internal note',async()=>{
   });
 });
 
+test('T30 peer failure aborts stale restore without purging the retained draft',async()=>{
+ await t30Browser('t30abort',async({browser,incidentId,origin})=>{
+  const tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
+  try{
+   await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+   await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=内部处置记录]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"T30_DELAYED_RESTORE_PEER");el.dispatchEvent(new Event("input",{bubbles:true}));})()');await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');
+   await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))return new Promise(resolve=>{globalThis.__rejectT30RestorePeer=()=>resolve(Response.json({ok:false,error:{code:'P2_012_VERSION_CONFLICT',retryable:false},replayed:false},{status:409}));});return send(path,options);};})()");
+   await tab.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');await tab.waitFor('typeof globalThis.__rejectT30RestorePeer==="function"');await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note-operation]"))');
+   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const read=fetch;let count=0;fetch=async(path,options)=>{const url=String(path);if(url.startsWith('/api/incidents/${incidentId}/internal-notes?')&&++count===3){const response=await read(path,options);await new Promise(resolve=>{globalThis.__releaseT30OldRestore=resolve;});return response;}return read(path,options);};})()`});
+   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&typeof globalThis.__releaseT30OldRestore==='function'`);
+   await tab.evaluate('globalThis.__rejectT30RestorePeer()');await browser.waitFor('!document.querySelector("[data-action=check-internal-note-operation]")');
+   await browser.evaluate('globalThis.__releaseT30OldRestore()');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,500))');
+   const saved=record(await browser.evaluate(inspectT30Drafts));assert.ok(Array.isArray(saved.drafts));assert.equal(saved.drafts.length,1,'a stale restore must not purge the peer failed draft');assert.deepEqual(saved.operations,[]);
+  }finally{await tab.close();}
+ });
+});
+
 test('T30 checking a committed peer operation restores the independent local input',async()=>{
   await t30Browser('t30peerack',async({browser,incidentId,origin,put})=>{
     let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
