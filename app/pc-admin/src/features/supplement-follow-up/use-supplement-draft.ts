@@ -45,7 +45,8 @@ export function useSupplementDraft(options:Options){
   onRestore:copy=>{
    const controller=new AbortController(),captured=currentIdentity.current;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);
    void latest.current.onRestore(copy,controller.signal).catch(error=>{if(controller.signal.aborted||restoreRequest.current!==controller||captured!==currentIdentity.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')latest.current.onAuthorityFailure(error);else setRecoveryBlocked(true);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});
-  },onOperation:id=>latest.current.onOperation(id),onOperationCleared:conflict=>latest.current.onOperationCleared(conflict),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
+  },onOperation:id=>latest.current.onOperation(id),onOperationCleared:conflict=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onOperationCleared(conflict);},onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
  });
- return {...draft,scope,rawEnabled,existing,probing,restoring,recoveryBlocked,canSubmit:draft.canSubmit&&!recoveryBlocked,safeToLeave:draft.safeToLeave&&!recoveryBlocked,message:recoveryBlocked?'草稿暂未恢复：已保存的内容暂时读不到，请重新打开详情或刷新页面后再试。':draft.message};
+ return {...draft,scope,rawEnabled,existing,probing,restoring,recoveryBlocked,canSubmit:draft.canSubmit&&!recoveryBlocked,safeToLeave:draft.safeToLeave&&!recoveryBlocked,message:recoveryBlocked?'草稿暂未恢复：已保存的内容暂时读不到，请重新打开详情或刷新页面后再试。':draft.message,
+  async success(commandId:string,preserveInput=false){const cleaned=await draft.success(commandId,preserveInput);if(cleaned&&draft.currentOperation()===null){restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);setRecoveryBlocked(false);}return cleaned;}};
 }

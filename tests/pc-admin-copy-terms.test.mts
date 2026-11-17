@@ -119,4 +119,5 @@ test('Card 34C incident status values all have Chinese labels',async()=>{
     const labels=module[name] as Record<string,string>;assert.deepEqual(Object.keys(labels).sort(),[...values].sort(),name+' covers exactly the contract values');
     for(const value of values){const shown=module.label(labels,value);assert.match(shown,/\p{Script=Han}/u,name+'.'+value);assert.doesNotMatch(shown,/[A-Za-z]/u,name+'.'+value+' shows no raw value');}
   }
+  assert.equal(module.label(module.subscriptionStatusLabels as Record<string,string>,'ACTIVE'),'订阅已启用','subscription eligibility does not imply a notification is being sent');
 });

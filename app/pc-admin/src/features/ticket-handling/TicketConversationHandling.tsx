@@ -33,7 +33,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const sessionCodes=shortCodes([...(related.data?.items??[]).map(row=>row.session_id),...selected.map(row=>row.session_id),...sessionsSeen.seen.current.keys()]);
   const temporaryRelatedFailure=related.isError&&!(related.error instanceof ApiError&&[401,403,404].includes(related.error.status));
   const blocked=draft.restoring||draft.restorationBlocked||['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
-  const navigationBlocked=Boolean(boardMode&&pending)||(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
+  const navigationBlocked=Boolean(boardMode&&pending)||(['submitting','checking','unknown'].includes(state)||Boolean(pending||draft.operationId)||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT'||draft.hasUnsavedInput())))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
   useEffect(()=>()=>{request.current?.abort();},[]);
   useEffect(()=>{if(!navigationBlocked)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocked]);

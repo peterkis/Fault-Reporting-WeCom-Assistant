@@ -2,8 +2,28 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import type {IncomingMessage} from 'node:http';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
-import {candidateBrowser,record} from './helpers/wbint-t27-browser-fixture.mjs';
+import {candidateBrowser,record,text} from './helpers/wbint-t27-browser-fixture.mjs';
 import {candidateCopies} from './helpers/wbint-t27-draft-observation.mjs';
+import {readFile} from 'node:fs/promises';
+
+test('T27 a delayed receipt cannot replace the next peer operation while local input is retained',{timeout:240000},async()=>{
+ await candidateBrowser({purpose:'t27recpeer',recovery:true},async({f,candidateId,browser,root,origin,choose})=>{
+  await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.textContent.includes('最长24小时')`);await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.textContent.includes('草稿已保存')`);
+  await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT27Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");await choose('决定原因','INCORRECT_ASSOCIATION');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:text(record(f.admin).id),kind:'incident-candidate',id:candidateId,purpose:'incident-review'},tab=await yxxTab(browser,origin+'/workbench/app/');
+  try{
+   const oldId=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),v=JSON.parse(copy.text),id=crypto.randomUUID();v.pending={candidateId:${JSON.stringify(candidateId)},action:'START_REVIEW',body:{client_command_id:id,reason_code:'OPERATOR_REVIEWED',expected_row_version:v.value.capture.version}};await store.saveDraft(copy.handle,JSON.stringify(v),{commandId:id});globalThis.__t27Peer={store,copy,v,id};return id;})()`) as string;
+   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(root)})?.querySelector('[data-action=check-candidate-operation]'))`);
+   await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${oldId}')?new Promise(resolve=>{globalThis.__releaseT27Old=()=>resolve(Response.json({candidate_review_id:${JSON.stringify(candidateId)},client_command_id:${JSON.stringify(oldId)},state:'FAILED',error:{code:'P2_012_STATE_CONFLICT',retryable:false}}));}):read(path,options);})()`);
+   await browser.evaluate(`document.querySelector(${JSON.stringify(root)}).querySelector('[data-action=check-candidate-operation]').click()`);await browser.waitFor('typeof globalThis.__releaseT27Old==="function"');
+   const nextId=await tab.evaluate(`(async()=>{const {store,copy,v,id}=globalThis.__t27Peer,post=BroadcastChannel.prototype.postMessage;BroadcastChannel.prototype.postMessage=function(){};try{await store.settleDraft(copy.handle,id,copy.handle.record.revision);const next=await store.openDraft(${JSON.stringify(scope)}),replacement=crypto.randomUUID();v.pending.body.client_command_id=replacement;await store.saveDraft(next.handle,JSON.stringify(v),{commandId:replacement});return replacement;}finally{BroadcastChannel.prototype.postMessage=post;}})()`) as string;
+   await tab.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({...${JSON.stringify(scope)},reason:'released'});channel.close();})()`);
+   await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-diagnostics]')?.dataset.diagnostics.includes(${JSON.stringify(nextId)})`);await browser.evaluate('globalThis.__releaseT27Old()');
+   await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');assert.equal(await browser.evaluate(`document.querySelector('[data-candidate-outcome]')?.innerText.includes('原操作已明确失败')??false`),false);
+   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-diagnostics]')?.dataset.diagnostics.includes(${JSON.stringify(nextId)})`),true);
+  }finally{await browser.evaluate('globalThis.__restoreT27Timer?.()');await tab.close();}
+ });
+});
 test('T27 an explicit public clear in a second owned same-profile tab clears both canonical recovery consumers without replaying any command',async()=>{
  await candidateBrowser({purpose:'t27tabs',recovery:true},async({candidateId,browser,root,origin,server,choose})=>{
   await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.textContent.includes('最长24小时')`);await choose('人工决定','START_REVIEW');await choose('决定原因','OPERATOR_REVIEWED');await browser.waitFor(`document.querySelector(${JSON.stringify(root)})?.querySelector('[data-candidate-draft]')?.textContent.includes('草稿已保存')`);let posts=0;const observe=(request:IncomingMessage)=>{if(request.method==='POST')posts++;};server.on('request',observe);let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;

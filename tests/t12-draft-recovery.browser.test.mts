@@ -7,6 +7,10 @@ import {tmpdir} from 'node:os';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT12Profile} from './helpers/t12-profile-fixture.mjs';
 import {acceptedSetup,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import {createContactJourneyStore} from '../app/server/src/p2-015-contact-journey.mjs';
+import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
+import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
@@ -14,27 +18,42 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function input(browser:Browser,selector:string,value:string){await browser.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(element,${JSON.stringify(value)});element.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
 const stored="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.filter(row=>row.purpose==='ticket-takeover-completion').map(row=>({purpose:row.purpose,keys:Object.keys(row)})),operations:operations.result.filter(row=>row.purpose==='ticket-takeover-completion')});};};})";
 
-test('takeover completion keeps independent input visible when a failed peer draft meets temporary target failure',async()=>{
+for(const scenario of ['unavailable','targets404','relation404'] as const)test('takeover completion '+(scenario==='unavailable'?'keeps independent input when target reading is unavailable':'clears all Ticket views and drafts when '+scenario+' loses Ticket access'),async()=>{
  await withT12Profile(async f=>{
   const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_RECOVERY_START'})).status,200);
+  let relationSession='';
+  if(scenario==='relation404'){
+   const leg=(await f.pool.query<{journey_id:string;reporter_identity_hash:string;provider_context_hash:string;channel_identity_hash:string}>('SELECT journey_id::text,reporter_identity_hash,provider_context_hash,channel_identity_hash FROM intake.channel_leg WHERE source_intake_id=$1::uuid',[s.first.intake.intakeId])).rows[0];assert.ok(leg);
+   const source=object(await seedPersistedIntake({pool:f.pool,text:'T12合成关联会话',requestType:'INCIDENT',status:'RECEIVED'}));await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:text(source.intakeId),occurredAt:assertLocalDateTime(text(source.receivedAt)),traceId:'t12-recovery-related'});for(let i=0;i<3;i++)await f.runtime.coordinator.runOnce();
+   const session=(await f.pool.query<{id:string;thread_id:string}>('SELECT id::text,thread_id::text FROM conversation.session WHERE service_intake_id=$1::uuid',[source.intakeId])).rows[0];assert.ok(session);
+   await createContactJourneyStore().ensureLeg({transaction:f.pool,input:{journey_id:leg.journey_id,leg_type:'GROUP_CONTINUATION',source_intake_id:text(source.intakeId),conversation_thread_id:session.thread_id,conversation_session_id:session.id,origin_channel_message_id:text(source.messageId),provider_context_hash:leg.provider_context_hash,channel_identity_hash:leg.channel_identity_hash,reporter_identity_hash:leg.reporter_identity_hash,opened_at:text(source.receivedAt)}});
+   const related=await s.b.get(s.path+'/related-conversations');const selected=rows(related.value.items).find(row=>row.session_id===session.id&&row.take_allowed===true);assert.ok(selected);relationSession=session.id;
+  }
   const cookie=f.browserCookies[2];assert.ok(cookie);const bootstrap=(await s.b.get('/api/lifecycle/bootstrap')).value;
   let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
   try{
    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);
    await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
    await browser.evaluate("(()=>{const element=document.querySelector('.ticket-takeover-completion select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(element,'T07_NETWORK');element.dispatchEvent(new Event('change',{bubbles:true}));})()");
-   await browser.waitFor("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]')?.disabled===false");await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]').click()");
+   if(scenario==='relation404'){const selector='.ticket-takeover-completion [data-session-choice="'+relationSession+'"] input[type=checkbox]';await browser.waitFor('document.querySelector('+JSON.stringify(selector)+')?.disabled===false');await browser.evaluate('document.querySelector('+JSON.stringify(selector)+').click()');}
+   else{await browser.waitFor("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]')?.disabled===false");await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]').click()");}
    await input(browser,'#takeover-completion-process','T12 saved peer process');await browser.waitFor("document.querySelector('[data-takeover-completion-draft-status]')?.textContent.includes('草稿已保存')");
    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:text(bootstrap.principal_id),kind:'ticket',id:s.first.ticket.id,purpose:'ticket-takeover-completion'};
    tab=await yxxTab(browser,f.origin+'/workbench/app/');await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT12ConflictTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
    await input(browser,'#takeover-completion-process','T12 independent unsaved process');
-   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__t12PeerText=copy.text;globalThis.__failT12Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()`);
+   const other={...scope,purpose:'internal-note'};
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),extra=await store.openDraft(${JSON.stringify(other)}),id=crypto.randomUUID();await store.saveDraft(extra.handle,JSON.stringify({schema:1,note:'other private draft',pending:null}));await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__t12PeerText=copy.text;globalThis.__failT12Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()`);
    await browser.waitFor("Boolean(document.querySelector('[data-action=check-takeover-completion]'))");
-   await browser.evaluate("(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes('/takeover-completion-targets')){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()");
+   await browser.evaluate(`(()=>{const read=fetch;let used=false,armed=false;globalThis.__t12InjectedRead=false;fetch=async(path,options)=>{const url=String(path);if(!used&&(${JSON.stringify(scenario)}==='relation404'?armed&&url.includes('/related-conversations?'):url.includes('/takeover-completion-targets'))){used=true;globalThis.__t12InjectedRead=true;return new Response('{}',{status:${scenario==='unavailable'?503:404},headers:{'content-type':'application/json'}});}const response=await read(path,options);if(url.startsWith('/api/conversations/')&&response.ok)armed=true;return response;};})()`);
    await browser.evaluate('globalThis.__restoreT12ConflictTimer()');await tab.evaluate('globalThis.__failT12Peer()');
-   await browser.waitFor("document.querySelector('[data-takeover-completion-draft-status]')?.textContent.includes('草稿暂未恢复')");
-   assert.equal(await browser.evaluate("document.querySelector('#takeover-completion-process')?.value"),'T12 independent unsaved process');assert.equal(await browser.evaluate("document.querySelector('[data-action=takeover-and-complete]')?.disabled"),true);
-   const peer=object(await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,original:globalThis.__t12PeerText,operation:copy.handle.operation};})()`));assert.equal(peer.text,peer.original);assert.equal(peer.operation,null);
+   if(scenario==='unavailable'){
+    await browser.waitFor("document.querySelector('[data-takeover-completion-draft-status]')?.textContent.includes('草稿暂未恢复')");
+    assert.equal(await browser.evaluate("document.querySelector('#takeover-completion-process')?.value"),'T12 independent unsaved process');assert.equal(await browser.evaluate("document.querySelector('[data-action=takeover-and-complete]')?.disabled"),true);
+    const peer=object(await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,original:globalThis.__t12PeerText,operation:copy.handle.operation};})()`));assert.equal(peer.text,peer.original);assert.equal(peer.operation,null);
+   }else{
+    await browser.waitFor('globalThis.__t12InjectedRead===true&&!document.querySelector("#detail-title")');
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(other)});return copy.handle.record===null;})()`);
+   }
   }catch(error){primary=error;}
   await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__restoreT12ConflictTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
  },{recoveryEnabled:true,notesEnabled:false});

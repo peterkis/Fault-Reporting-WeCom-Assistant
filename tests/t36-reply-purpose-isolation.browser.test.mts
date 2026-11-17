@@ -1,9 +1,35 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
 import {withT36BoundReplyFixture} from './helpers/t36-bound-reply-fixture.mjs';
 import {withT36Browser,input,openReply,supplementRow} from './helpers/t36-browser-risk-journey.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+
+for(const mode of ['late','unavailable'] as const)test('T36 pending disposition '+(mode==='late'?'does not return after peer settlement':'unlocks after confirmed receipt following temporary restore failure'),{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
+ await withT36Browser(f,async browser=>{
+  const scope={principal:f.actorId,kind:'ticket',id:f.ticketId,purpose:'supplement-disposition'},id=randomUUID(),note='T36_PENDING_SYNTHETIC_NOTE';
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,tab=await yxxTab(browser,f.origin+'/workbench/app/');
+  try{
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),target=${JSON.stringify(f.r2)},pending={client_command_id:${JSON.stringify(id)},action:'RECORD_DISPOSITION',...target,disposition_note:${JSON.stringify(note)},mark_followed_up:true};await store.saveDraft(copy.handle,JSON.stringify({schema:1,value:{target,note:${JSON.stringify(note)}},pending}),{commandId:pending.client_command_id});globalThis.__t36PendingPeer={store,copy,pending};})()`);
+   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const read=fetch;let used=false;fetch=async(path,options)=>{if(!used&&String(path).includes('/supplement-follow-up/material?')){used=true;${mode==='late'?"const response=await read(path,options);await new Promise(resolve=>{globalThis.__releaseT36Restore=resolve;});return response;":"return new Response('{}',{status:503,headers:{'content-type':'application/json'}});"}}return read(path,options);};})()`});
+   const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.readyState==='complete'`);
+   if(mode==='late'){
+    await browser.waitFor('typeof globalThis.__releaseT36Restore==="function"');
+    await tab.evaluate('(async()=>{const {store,copy,pending}=globalThis.__t36PendingPeer;await store.settleDraft(copy.handle,pending.client_command_id,copy.handle.record.revision);})()');
+    await browser.waitFor('!document.querySelector("[data-action=check-supplement-receipt]")');await browser.evaluate('globalThis.__releaseT36Restore()');
+    await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+    assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-supplement-receipt]"))'),false);assert.notEqual(await browser.evaluate('document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+')?.value'),note);
+   }else{
+    await browser.waitFor('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("草稿暂未恢复")&&Boolean(document.querySelector("[data-action=check-supplement-receipt]"))');
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/supplement-follow-up/commands/')?Promise.resolve(Response.json({ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'COMMITTED',result:{ok:true,client_command_id:${JSON.stringify(id)},ticket_id:${JSON.stringify(f.ticketId)},source_ref:${JSON.stringify(f.r2.source_ref)},revision:${JSON.stringify(f.r2.revision)},follow_up_state:'FOLLOWED_UP',resolution_id:crypto.randomUUID(),basis:'RECORDED_DISPOSITION',replayed:true}})):read(path,options);})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-supplement-receipt]").click()');
+    await browser.waitFor('!document.querySelector("[data-action=check-supplement-receipt]")&&document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+')?.disabled===false');
+    assert.equal(await browser.evaluate('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("草稿暂未恢复")'),false);
+   }
+  }finally{await tab.close();}
+ });
+},{recovery:true}));
 test('T36 loss of only Session REPLY preserves readable Ticket and independent disposition input',{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
  await withT36Browser(f,async(browser,capture)=>{const row=supplementRow(f.r2),internal='T36_STILL_AUTHORIZED_INTERNAL_DISPOSITION';await input(browser,row+' textarea',internal);await browser.waitFor('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("已保存")');await openReply(browser,f.r2);await input(browser,'[data-supplement-bound-reply] textarea','T36原Session回复独立正文');await browser.waitFor('document.querySelector("[data-conversation-draft=messages]")?.textContent.includes("已保存")');
   await f.setActorRoles(['DISPATCHER']);const session=await f.read<{capabilities:string[]}>('/api/workbench/conversations/'+f.sessionId);assert.equal(session.capabilities.includes('REPLY'),false);assert.equal((await f.get('/api/tickets/'+f.ticketId)).status,200);assert.equal((await f.page()).items.some(item=>item.source_ref===f.r2.source_ref),true);

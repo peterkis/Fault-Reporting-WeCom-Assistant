@@ -3,11 +3,49 @@ import assert from 'node:assert/strict';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+import {readFile} from 'node:fs/promises';
 
 async function type(browser,text){await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(text)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
 async function saved(browser){await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");}
 async function reload(browser){const previous=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);}
 const counts="new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').count(),operations=tx.objectStore('operations').count();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result,operations:operations.result});};};})";
+
+test('a competing note started during preparation preserves this page\'s unsent text',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets})=>{
+    const path='/workbench/app/items/ticket/'+tickets[5].ticket.id+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await type(browser,'T03 shared base');await saved(browser);
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('#internal-note')?.value==='T03 shared base'");
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreRaceTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);const encrypt=crypto.subtle.encrypt.bind(crypto.subtle);crypto.subtle.encrypt=(...args)=>new Promise((resolve,reject)=>{globalThis.__releaseRaceEncryption=()=>encrypt(...args).then(resolve,reject);});const send=fetch;globalThis.__racePosts=0;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes'))globalThis.__racePosts++;return send(path,options);};})()");
+      await type(browser,'T03 independent pending preparation');await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor('typeof globalThis.__releaseRaceEncryption==="function"');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>options?.method==='POST'&&String(path).endsWith('/internal-notes')?new Promise(()=>{}):send(path,options);})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      assert.equal(await browser.evaluate("document.querySelector('#internal-note').value"),'T03 independent pending preparation');assert.equal(await browser.evaluate('globalThis.__racePosts'),0);
+      await browser.evaluate('globalThis.__releaseRaceEncryption();globalThis.__restoreRaceTimer()');
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__releaseRaceEncryption?.();globalThis.__restoreRaceTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+for(const expired of [false,true])test('an empty observer checking a failed peer note '+(expired?'clears the expired opaque operation':'preserves the peer\'s stored text'),async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,principals})=>{
+    const ticketId=tickets[5].ticket.id,path='/workbench/app/items/ticket/'+ticketId+'?detail=page';let browser,tab,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+path,width:1280,height:900,cookies:[browserCookies[0]]});await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      tab=await yxxTab(browser,origin+path);await tab.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
+      await type(tab,'T03 failed peer note to keep');await saved(tab);
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__failedPeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+      await tab.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await tab.waitFor('Boolean(globalThis.__failedPeerCommand?.client_command_id)');await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");
+      assert.equal(await browser.evaluate("document.querySelector('#internal-note').value"),'');const command=await tab.evaluate('globalThis.__failedPeerCommand');
+      if(expired){const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')),recovery='/workbench/app/'+manifest['src/feedback-recovery.ts'].file,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'internal-note'};await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});await store.removeSensitiveDraft(copy.handle,'expired');})()`);await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))");}
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/internal-notes/commands/${command.client_command_id}')?Promise.resolve(Response.json({ticket_id:${JSON.stringify(ticketId)},client_command_id:${JSON.stringify(command.client_command_id)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+      await browser.evaluate("document.querySelector('[data-action=check-expired-note]').click()");await browser.waitFor(`(async()=>{const c=await (${counts});return c.operations===0;})()`);
+      assert.deepEqual(await browser.evaluate(counts),{drafts:expired?0:1,operations:0});if(!expired){await reload(browser);await browser.waitFor("document.querySelector('#internal-note')?.value==='T03 failed peer note to keep'");}
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
 
 test('discard clears the same-profile copy and fences a second tab delayed native encryption from resurrecting it',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets})=>{

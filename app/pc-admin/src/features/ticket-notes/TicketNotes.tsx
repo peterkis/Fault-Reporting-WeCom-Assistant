@@ -53,9 +53,9 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
     onSuccess:async(result,variables)=>{if(!current(variables.signal))return;if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：未找到终态收据不代表未提交，请继续只读核对。');refresh();return;}// Codex review: the box is locked while the outcome is unknown, so text equal to the original note is that note, not later input.
     // A confirmed failure saved nothing, so the box keeps whatever it holds, the original note included.
     const committed=result.state==='COMMITTED',later=Boolean(note.trim())&&note.trim()!==pending?.note,preserveInput=committed?later:Boolean(note.trim()),
-      // Codex review: a failure keeps the saved draft in one write (only the operation is cleared), never delete-then-rebuild.
-      // With no text there is nothing to keep, so only the matching operation is cleared and no empty draft is written.
-      cleaned=committed||!preserveInput?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id).catch(()=>false);if(!current(variables.signal))return;if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
+      // A failed operation keeps its saved text, including when this page only observes another page's command.
+      // If the sensitive draft expired, only the matching opaque operation is cleared.
+      cleaned=committed?await draft.success(result.client_command_id,preserveInput):await draft.knownFailure(result.client_command_id,!preserveInput).catch(()=>false);if(!current(variables.signal))return;if(!preserveInput)setNote('');setPending(null);setState(committed?'succeeded':'conflict');setMessage((committed?'已保存：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(committed&&later?' 你后来输入的内容还在，确认后再提交。':!committed&&preserveInput?' 你的输入还在，确认后再提交。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();},
     onError:(_error,variables)=>{if(!current(variables.signal))return;setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');},onSettled:(_result,_error,variables)=>{if(current(variables.signal)){request.current=null;requestCommand.current=null;}}});
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.

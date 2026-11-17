@@ -36,6 +36,24 @@ test('the production detail names the sole conversation action without an extra 
   });
 });
 
+test('a temporary draft authorization failure does not trap a read-only detail without input',async()=>{
+  await browserScenario(async({browser,principals,tickets})=>{
+    const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'internal-note'};
+    await openOptions(browser);
+    await browser.evaluate(`(()=>{const read=fetch;globalThis.__t05BlockDraftBootstrap=false;globalThis.__t05DraftBootstrapFailed=false;fetch=async(path,options)=>{const url=String(path);if(url==='/api/lifecycle/bootstrap'&&globalThis.__t05BlockDraftBootstrap){globalThis.__t05DraftBootstrapFailed=true;return new Response('{}',{status:503,headers:{'content-type':'application/json'}});}const response=await read(path,options);if(url===${JSON.stringify('/api/tickets/'+ticketId)}&&response.ok){const body=await response.clone().json();body.allowed_actions=body.allowed_actions.filter(action=>!['take-and-start-with-conversations','accept-for-later-with-conversations'].includes(action));return Response.json(body);}return response;};})()`);
+    await browser.evaluate('document.querySelector("[data-action=refresh-conversation-handling]").click()');
+    await browser.waitFor('!document.querySelector("[data-action=take-and-start-with-conversations]")');
+    await browser.evaluate('globalThis.__t05BlockDraftBootstrap=true');
+    const tab=await yxxTab(browser,new URL('/workbench/app/',await browser.evaluate('location.origin')).href);
+    try{
+      await tab.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({...${JSON.stringify(scope)},reason:'settled'});channel.close();})()`);
+      await browser.waitFor('globalThis.__t05DraftBootstrapFailed===true');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+      assert.equal(await browser.evaluate('document.querySelector("[aria-label=关闭详情]")?.disabled'),false);
+      await browser.evaluate('document.querySelector("[aria-label=关闭详情]").click()');await browser.waitFor('!document.querySelector("#detail-title")');
+    }finally{await tab.close();}
+  },{workbenchDraftRecoveryEnabled:true});
+});
+
 test('refresh restores the explicit selection with its original Session version from the encrypted purpose copy',async()=>{
   await browserScenario(async({browser})=>{
     await openOptions(browser);

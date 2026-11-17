@@ -159,7 +159,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       const previousOperation=handle.current?.operation?.commandId;
       const previousRevision=handle.current?.record?.revision;
       const changed=value.reason==='settled'||released||value.reason==='discard'&&retainedInput.current!==null;
-      const unsaved=changed&&!latest.current.pending&&hasInput(latest.current.value)&&encode(latest.current)!==lastSaved.current;
+      const preparing=latest.current.pending!==null&&protocol.current.commandId(latest.current.pending)!==previousOperation;
+      const unsaved=changed&&hasInput(latest.current.value)&&(preparing||!latest.current.pending&&encode(latest.current)!==lastSaved.current);
       const preserve=released||changed&&retainedInput.current!==null||value.reason==='settled'&&encode(latest.current)!==lastSaved.current;
       cancelTimer();cancelAuthority();const token=++generation.current;lastSaved.current='';pendingRevision.current=undefined;
       if(!changed){retainedInput.current=null;retainedVisible.current=false;retainedRestore.current=null;setSharedConflict(false);}
@@ -279,7 +280,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
         async save(){
           cancelTimer();
           latest.current=editable;
-          // Legacy tabs see editable text only; the original command stays encrypted in control.
+          // Keep editable text separate while the original command stays encrypted in control.
           await write(editable,{commandId,prepared:true,preparedText});
         },
         async claim(){
@@ -340,11 +341,11 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       pendingRevision.current=undefined;lastSaved.current='';setOperationId(target?.operation?.commandId??null);setStatus('ready');setMessage(cleaned?'草稿已清空。':'');
       return cleaned;
     },
-    async knownFailure(commandId:string){
+    async knownFailure(commandId:string,preserveShared=false){
       if(!enabled)return true;
       const target=handle.current,token=generation.current;
       if(!writeEnabled||!target)return false;
-      if(retainedInput.current){
+      if(retainedInput.current||preserveShared){
         // This page's input is independent of the failed operation. Preserve
         // the other page's own draft rather than writing this page's value into it.
         const controller=new AbortController();authorityRequest.current=controller;let observed:DraftHandle|null=null;
@@ -353,7 +354,8 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;
           const copy=await openDraft(scope);
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;
-          if(copy.handle.operation?.commandId!==commandId||copy.text===null)return false;
+          if(copy.handle.operation?.commandId!==commandId)return false;
+          if(copy.text===null){if(!preserveShared)return false;await settleDraft(copy.handle,commandId);return copy.handle.operation===null;}
           observed={...copy.handle};
           const other=protocol.current.decode(copy.text);
           if(!other.pending||protocol.current.commandId(other.pending)!==commandId)return false;
@@ -361,8 +363,9 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;
           await saveDraft(copy.handle,encode({value:other.value,pending:null}),{settledCommandId:commandId});
           if(controller.signal.aborted||generation.current!==token||handle.current!==target)return false;
-          handle.current=copy.handle;setOperationId(null);setSharedConflict(true);setStatus('failed');
-          setMessage('本页输入未保存；另一页面仍有草稿，请先自行留存。');callbacks.current.onOperationCleared?.(true);
+          const conflict=retainedInput.current!==null;
+          handle.current=copy.handle;setOperationId(null);setSharedConflict(conflict);setStatus(conflict?'failed':'saved');
+          setMessage(conflict?'本页输入未保存；另一页面仍有草稿，请先自行留存。':'草稿已保存');callbacks.current.onOperationCleared?.(conflict);
           return true;
         }catch(error){
           if(!controller.signal.aborted&&generation.current===token){

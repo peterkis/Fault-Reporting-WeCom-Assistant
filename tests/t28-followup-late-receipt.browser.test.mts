@@ -8,6 +8,22 @@ import {prepareFollowup,navigateFollowup,chooseFollowup,rows} from './helpers/t2
 import {readFile} from 'node:fs/promises';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
+test('T28 a known committed receipt never becomes replayable after a later UNKNOWN',{timeout:240000},async()=>{
+  await candidateBrowser({purpose:'t28known',reporters:3,recovery:true},async context=>{
+    const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+    await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿已保存")');
+    await context.browser.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{const response=await send(path,options);if(options?.method==='POST'&&String(path).endsWith('/correct-scope'))throw new TypeError('T28_LOST_ACK');return response;};})()");
+    await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');
+    const original=record(await context.browser.evaluate(candidateCopies)),marker=rows(original.operations).find(row=>row.kind==='incident'&&row.id===id);assert.ok(marker);const commandId=text(marker.commandId);
+    await context.browser.evaluate("(()=>{const remove=IDBObjectStore.prototype.delete;IDBObjectStore.prototype.delete=function(key){if(this.name==='operations')throw new DOMException('synthetic cleanup failure','UnknownError');return remove.call(this,key);};globalThis.__restoreT28Delete=()=>{IDBObjectStore.prototype.delete=remove;};})()");
+    await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("草稿未能清空")');
+    await context.browser.evaluate(`globalThis.__restoreT28Delete();(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/commands/')?Promise.resolve(Response.json({incident_id:${JSON.stringify(id)},client_command_id:${JSON.stringify(commandId)},state:'UNKNOWN'})):read(path,options);})()`);
+    await context.browser.waitFor('document.querySelector("[data-action=check-incident-operation]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');await context.browser.waitFor('document.querySelector("[data-incident-outcome]")?.textContent.includes("终态已确认")');
+    assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=replay-incident-operation]"))'),false);
+    assert.equal(rows(await context.browser.evaluate('globalThis.__t27Posts')).filter(row=>String(row.path).startsWith(path+'/')).length,1);
+  });
+});
+
 test('T28 a held original receipt cannot restore sensitive input or UNKNOWN after current scope purpose is revoked',{timeout:240000},async()=>{
   await candidateBrowser({purpose:'t28lateread',reporters:3,recovery:true},async context=>{
     const {http,id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
@@ -32,6 +32,26 @@ async function type(browser:Browser,selector:string,value:string){
   await browser.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
 }
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t11Commands=[];globalThis.__t11Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t11Commands.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t11Reads.push(String(path));return original(path,options);};})()";
+
+test('completion exits peer UNKNOWN while retaining this page\'s independent input',{timeout:240000},async()=>{
+  await withT11Fixture(async context=>{
+    const id=context.tickets[0]?.ticket.id;assert.ok(id);const http=await t11Http(context);await http.start(id);const bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {principal_id:string};
+    await completionBrowser(context,async browser=>{
+      await ready(browser);await input(browser,'T11 shared process','T11 shared summary');await saved(browser);
+      const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:bootstrap.principal_id,kind:'ticket',id,purpose:'staff-completion'};
+      const tab=await yxxTab(browser,context.origin+'/workbench/app/');
+      try{
+        await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT11Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+        await type(browser,'#completion-process','T11 independent unsaved process');
+        await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__failT11Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()`);
+        await browser.waitFor("Boolean(document.querySelector('[data-action=check-completion-receipt]'))");await browser.evaluate('globalThis.__restoreT11Timer()');await tab.evaluate('globalThis.__failT11Peer()');
+        await browser.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('另一页面仍有草稿')");
+        assert.equal(await browser.evaluate("document.querySelector('#completion-process')?.value"),'T11 independent unsaved process');assert.equal(await browser.evaluate("document.querySelector('#completion-process')?.disabled"),false);
+        assert.equal(await browser.evaluate("document.querySelector('[data-action=complete-ticket]')?.disabled"),true);
+      }finally{await browser.evaluate('globalThis.__restoreT11Timer?.()');await tab.close();}
+    });
+  });
+});
 async function reload(browser:Browser){const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${before}&&document.readyState==='complete'`);}
 async function ready(browser:Browser,version=4){await openWorkbenchDialog(browser,'#completion-process','.detail-complete-button');await browser.waitFor(`document.querySelector('.ticket-completion-version')?.textContent===${JSON.stringify('工单版本 '+version)}&&document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿仅在当前浏览器')`);}
 async function saved(browser:Browser){await browser.waitFor("document.querySelector('[data-completion-draft-status]')?.textContent.includes('草稿已保存')");}

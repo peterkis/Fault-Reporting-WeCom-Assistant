@@ -28,12 +28,14 @@ let retainedNavigation:{location:string;state:unknown}|null=null;
 window.addEventListener('popstate',event=>{const retained=retainedNavigation;if(!retained)return;event.stopImmediatePropagation();window.history.pushState(retained.state,'',retained.location);},{capture:true});
 
 export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefresh}:{principal:Principal;detail:CandidateDetail;onBlockedChange:(blocked:boolean)=>void;onRefresh:()=>void}){
-  const client=useQueryClient(),request=useRef<AbortController|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
+  const client=useQueryClient(),request=useRef<AbortController|null>(null),requestOperation=useRef<string|null>(null),[value,setValue]=useState<CandidateDecisionValue>(emptyCandidateDecision),latest=useRef(value);latest.current=value;
   const [pending,setPending]=useState<CandidateOperation|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[reviewRequired,setReviewRequired]=useState(false),[known,setKnown]=useState<CandidateCommandResult|null>(null),[checkedUnknown,setCheckedUnknown]=useState(false);
   const draft=useCandidateDraft({principal,candidateId:detail.id,value,pending,emptyValue:emptyCandidateDecision,hasInput:candidateHasInput,
     onRestore:copy=>{setValue(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}},
-    onOperation:()=>{setPending(null);setState('unknown');setMessage('上次操作的结果还没确认，草稿内容已不可用，不能提交新的操作。点击「核对结果」。');},
-    onSensitiveClear:()=>{request.current?.abort();setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');setReviewRequired(false);setCheckedUnknown(false);}});
+    onOperation:id=>{if(request.current&&requestOperation.current!==id){request.current.abort();request.current=null;requestOperation.current=null;}setPending(null);setKnown(null);setCheckedUnknown(false);setState('unknown');setMessage('上次操作的结果还没确认，草稿内容已不可用，不能提交新的操作。点击「核对结果」。');},
+    onOperationCleared:conflict=>{request.current?.abort();request.current=null;requestOperation.current=null;setPending(null);setKnown(null);setCheckedUnknown(false);setReviewRequired(true);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，请重新核对。');},
+    onSensitiveClear:()=>{request.current?.abort();request.current=null;requestOperation.current=null;setValue(emptyCandidateDecision);setPending(null);setState('idle');setKnown(null);setMessage('');setReviewRequired(false);setCheckedUnknown(false);}});
+  const current=(signal:AbortSignal,id:string)=>!signal.aborted&&request.current?.signal===signal&&requestOperation.current===id&&(!draft.currentOperation()||draft.currentOperation()===id);
   const active=state==='submitting'||state==='checking',unknown=state==='unknown',purposeAllowed=detail.allowed_scopes.length>0,originalId=pending?.body.client_command_id??draft.operationId;
   const navigationBlocked=active||unknown||candidateHasInput(value);
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
@@ -54,21 +56,21 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   };
   const mutation=useMutation({mutationKey:['incident-candidate-command',principal.principal_id,detail.id],
     mutationFn:({operation,signal,csrfToken}:{operation:CandidateOperation;snapshot:string;signal:AbortSignal;csrfToken:string|null})=>candidateApi.perform(operation,csrfToken,signal),
-    onSuccess:async(result,variables)=>{const cleaned=await draft.success(variables.operation.body.client_command_id,JSON.stringify(latest.current)!==variables.snapshot);applyCommit(result,variables.snapshot);if(!cleaned)setMessage((result.result_ref_type==='INCIDENT'?'公共故障已确认':'候选决定已提交')+'；草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');},
+    onSuccess:async(result,variables)=>{const id=variables.operation.body.client_command_id;if(!current(variables.signal,id))return;const cleaned=await draft.success(id,JSON.stringify(latest.current)!==variables.snapshot);if(!current(variables.signal,id))return;applyCommit(result,variables.snapshot);if(!cleaned)setMessage((result.result_ref_type==='INCIDENT'?'公共故障已确认':'候选决定已提交')+'；草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');},
     onError:async(error,variables)=>{
-      if(variables.signal.aborted)return;
-      if(error instanceof CandidateCommandRefusal){let cleaned=true;try{await draft.knownFailure(variables.operation.body.client_command_id);}catch{cleaned=false;}setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error)+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();}
+      const id=variables.operation.body.client_command_id;if(!current(variables.signal,id))return;
+      if(error instanceof CandidateCommandRefusal){let cleaned=true;try{await draft.knownFailure(id);}catch{cleaned=false;}if(!current(variables.signal,id))return;setPending(null);setState('failed');setReviewRequired(true);setMessage('原操作已明确失败：'+refusalMessage(error)+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();}
       else if(error instanceof ApiError&&[401,403,404].includes(error.status)){setState('denied');setMessage('当前操作权限已变化，请重新核对。');refresh();}
       else{setPending(variables.operation);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
-    },onSettled:()=>{request.current=null;}});
+    },onSettled:(_result,_error,variables)=>{if(request.current?.signal===variables.signal){request.current=null;requestOperation.current=null;}}});
   const receipt=useMutation({mutationKey:['incident-candidate-receipt',principal.principal_id,detail.id],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>candidateApi.receipt(detail.id,commandId,signal),
     onSuccess:async(result,variables)=>{
-      if(result.state==='UNKNOWN'){setCheckedUnknown(true);setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
+      if(!current(variables.signal,variables.commandId))return;if(result.state==='UNKNOWN'){setCheckedUnknown(true);setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
       setCheckedUnknown(false);let cleaned=true;if(result.state==='COMMITTED')cleaned=await draft.success(variables.commandId,true);else try{await draft.knownFailure(variables.commandId);}catch{cleaned=false;}
-      setPending(null);setReviewRequired(true);refresh();
+      if(!current(variables.signal,variables.commandId))return;setPending(null);setReviewRequired(true);refresh();
       if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'已提交；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));}
-    },onError:(_error,variables)=>{if(variables.signal.aborted)return;setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
+    },onError:(_error,variables)=>{if(!current(variables.signal,variables.commandId))return;setState('unknown');setMessage('只读核对未能完成，原操作仍未知；尚未发送新的操作。');},onSettled:(_result,_error,variables)=>{if(request.current?.signal===variables.signal){request.current=null;requestOperation.current=null;}}});
   const owner=detail.eligible_owners.find(owner=>owner.id===value.owner),teamValid=value.team==='__NO_TEAM__'||Boolean(owner?.teams.some(team=>team.team_id===value.team)),sources=new Map(detail.report_sources.map(source=>[source.source_decision_id,source]));
   const primaryOptions=[...new Map(value.refs.flatMap(ref=>{const source=sources.get(ref);return source?.ticket_id?[[source.ticket_id,{id:source.ticket_id,label:source.ticket_no??'当前编号不可用'}] as const]:[];})).values()];
   const currentCapture=Boolean(value.capture&&value.capture.version===detail.row_version),confirm=value.action==='CONFIRM_INCIDENT';
@@ -76,7 +78,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   const canSubmit=Boolean(draft.canSubmit&&value.action&&value.reason&&detail.allowed_actions.includes(value.action)&&currentCapture&&!reviewRequired&&!active&&!pending&&(!confirm||canConfirm));
   const send=async(operation:CandidateOperation,snapshot:string)=>{
     if(request.current)return;
-    const controller=new AbortController();request.current=controller;setCheckedUnknown(false);setPending(operation);setState('submitting');setMessage('正在核对当前权限并提交明确决定…');
+    const controller=new AbortController();request.current=controller;requestOperation.current=operation.body.client_command_id;setCheckedUnknown(false);setPending(operation);setState('submitting');setMessage('正在核对当前权限并提交明确决定…');
     try{
       const fresh=await api.bootstrap(controller.signal);if(fresh.principal_id!==principal.principal_id||!fresh.incident_candidate_workspace_enabled)throw new ApiError(403,'AUTHORIZATION_REJECTED');
       const current=await candidateApi.detail(detail.id,controller.signal);
@@ -86,7 +88,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
       if(controller.signal.aborted)return;
       await draft.prepare(operation);if(controller.signal.aborted)return;
       mutation.mutate({operation,snapshot,signal:controller.signal,csrfToken:fresh.csrf_token});
-    }catch(error){request.current=null;setPending(null);setState('denied');setReviewRequired(true);setMessage('尚未发送：'+(error instanceof ApiError?refusalMessage(error):errorMessage(error)));refresh();}
+    }catch(error){if(!current(controller.signal,operation.body.client_command_id))return;request.current=null;requestOperation.current=null;setPending(null);setState('denied');setReviewRequired(true);setMessage('尚未发送：'+(error instanceof ApiError?refusalMessage(error):errorMessage(error)));refresh();}
   };
   const submit=()=>{
     if(!canSubmit||!value.action||!value.reason||!value.capture)return;
@@ -97,7 +99,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
     }else operation=Object.freeze({candidateId:detail.id,action:value.action,body:Object.freeze({...common,expected_row_version:value.capture.version})});
     void send(operation,JSON.stringify(value));
   };
-  const check=()=>{if(!originalId||request.current)return;const controller=new AbortController();request.current=controller;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({commandId:originalId,signal:controller.signal});};
+  const check=()=>{if(!originalId||request.current)return;const controller=new AbortController();request.current=controller;requestOperation.current=originalId;setState('checking');setMessage('正在只读核对原操作…');receipt.mutate({commandId:originalId,signal:controller.signal});};
   return <section className="candidate-decision" aria-label="人工候选决定">
     {principal.incident_candidate_draft_recovery_enabled?<DraftStatus data-candidate-draft>{draft.message}</DraftStatus>:null}
     {purposeAllowed?<HForm onSubmit={event=>{event.preventDefault();submit();}}><h2>人工决定</h2><p>各项由工作人员明确选择；刷新只更新当前事实，已捕获的决定依据保持不变。</p><div className="candidate-form-grid"><WorkbenchSelect label={<>人工决定</>} aria-label="人工决定" value={value.action} onChange={event=>update({action:event as CandidateAction|''})}><ListBox.Item id="" textValue={"请选择决定"}>请选择决定<ListBox.ItemIndicator/></ListBox.Item>{Object.entries(actionNames).map(([action,label])=><ListBox.Item key={action} id={action} isDisabled={!detail.allowed_actions.includes(action as CandidateAction)} textValue={String(label)+String(detail.allowed_actions.includes(action as CandidateAction)?'':'（当前不可用）')}>{label}{detail.allowed_actions.includes(action as CandidateAction)?'':'（当前不可用）'}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>

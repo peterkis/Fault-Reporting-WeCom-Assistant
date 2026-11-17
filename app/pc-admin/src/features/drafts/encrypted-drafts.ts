@@ -15,9 +15,8 @@ function invalidation(value:unknown):DraftInvalidation|null{
 }
 function publishToOtherTabs(value:DraftInvalidation){if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
 function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);publishToOtherTabs(value);}
-// A settled notification may make an already-open page adopt and overwrite a
-// surviving peer draft. Only use it when no draft remains.
-function publishReleased(scope:DraftScope,hasDraft:boolean){for(const listener of listeners)listener({...scope,reason:'released'});if(!hasDraft)publishToOtherTabs({...scope,reason:'settled'});}
+// A released operation may leave an editable draft; it is distinct from a successful settlement.
+function publishReleased(scope:DraftScope,notifyOtherTabs:boolean){for(const listener of listeners)listener({...scope,reason:'released'});if(notifyOtherTabs)publishToOtherTabs({...scope,reason:'released'});}
 export function matchesDraft(value:DraftInvalidation,scope:DraftScope){return value.principal===scope.principal&&(value.kind===undefined||value.kind===scope.kind)&&(value.id===undefined||value.id===scope.id)&&(value.purpose===undefined||value.purpose===scope.purpose);}
 export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>void{
   if(!globalThis.BroadcastChannel)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -46,8 +45,8 @@ function decode(value:unknown):DraftRecord {
 }
 function decodeOperation(value:unknown):OperationRecord{
   const v=object(value),scope=scopeOf(v);
-  if(Object.keys(v).length!==(v.prepared===true?8:7)||Object.hasOwn(v,'prepared')&&v.prepared!==true||typeof v.scope!=='string'||typeof v.commandId!=='string'||!UUID.test(v.commandId)||typeof v.createdAt!=='number'||!Number.isSafeInteger(v.createdAt)||v.createdAt<0||encoder.encode(JSON.stringify(v)).byteLength>512)throw new DraftError('DRAFT_CORRUPT');
-  return {scope:v.scope,...scope,commandId:v.commandId,createdAt:v.createdAt,...(v.prepared===true?{prepared:true as const}:{})};
+  if(Object.keys(v).length!==7||typeof v.scope!=='string'||typeof v.commandId!=='string'||!UUID.test(v.commandId)||typeof v.createdAt!=='number'||!Number.isSafeInteger(v.createdAt)||v.createdAt<0||encoder.encode(JSON.stringify(v)).byteLength>512)throw new DraftError('DRAFT_CORRUPT');
+  return {scope:v.scope,...scope,commandId:v.commandId,createdAt:v.createdAt};
 }
 interface PreparedPayload {baseRevision:string;revision:string;iv:Uint8Array<ArrayBuffer>;ciphertext:ArrayBuffer}
 function preparedRecord(value:unknown,current:DraftRecord):DraftRecord|null{
@@ -108,14 +107,6 @@ async function state<T>(run:(value:State)=>T):Promise<T>{
       const activeMarkers=new Set<string>();
       for(const row of operationValues){try{
         const operation=decodeOperation(row),marker=preparedKey(operation.scope,operation.commandId);
-        if(operation.prepared){
-          // A previous build could expose the command to an old tab already. Treat it as claimed.
-          const {prepared:_prepared,...compatible}=operation;
-          operationStore.put(compatible);
-          markers.delete(marker);control.delete(marker);
-          value.operations.push(compatible);
-          continue;
-        }
         if(markers.has(marker)){
           activeMarkers.add(marker);
           // The key lives only with the draft. Do not retain a prepared ciphertext after its draft expires.
@@ -205,7 +196,7 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
         value.control.delete(preparedKey(record.scope,nextOperation.commandId));
         const {prepared:_prepared,...claimed}=nextOperation;nextOperation=claimed;
       }
-      // The public operation row remains readable by the seven-field decoder in already-open tabs.
+      // Keep preparation state and encrypted command payload in control, separate from the opaque operation row.
       const {prepared:_prepared,...compatible}=nextOperation;value.operationStore.put(compatible);
     }
     value.draftStore.put(record);
@@ -213,8 +204,7 @@ export async function saveDraft(handle:DraftHandle,text:string,{commandId,settle
   });
   if('error' in committed)throw new DraftError(committed.error);
   handle.record=record;handle.operation=committed.operation;
-  // Older pages cannot leave UNKNOWN without clearing their unsaved input. They
-  // ignore the start hint and remain fenced by storage until settlement.
+  // Notify peer pages when an operation starts or releases its editable draft.
   if(committed.started)publishToOtherTabs({...handle.scope,reason:'released'});
   if(committed.settled)publishToOtherTabs({...handle.scope,reason:'released'});
   return record;
@@ -299,7 +289,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
   if(handle.record&&handle.operation?.commandId===commandId&&handle.operation.prepared){
     try{
       await saveDraft(handle,text,{settledCommandId:commandId,releasePrepared:true});
-      publishReleased(scope,true);
+      publishReleased(scope,false);
       return;
     }catch(error){
       if(!(error instanceof DraftError)||!['DRAFT_CHANGED','DRAFT_EXPIRED'].includes(error.message))throw error;
@@ -313,7 +303,7 @@ export async function releaseUnsentOperation(handle:DraftHandle,commandId:string
     value.control.delete(preparedKey(key,commandId));
     return true;
   });
-  if(removed)publishReleased(scope,false);
+  if(removed)publishReleased(scope,true);
 }
 export async function purgeDrafts(filter:DraftInvalidation,{preserveOperations=false}:{preserveOperations?:boolean}={}):Promise<void>{
   if(!invalidation(filter))throw new DraftError('DRAFT_SCOPE_INVALID');
