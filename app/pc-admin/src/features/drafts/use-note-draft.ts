@@ -39,7 +39,7 @@ function failureMessage(error:unknown,phase:'save'|'restore'='save'):string{
 }
 export interface AuthorizedDraftValue<T,C> {value:T;pending:C|null}
 export interface AuthorizedDraftOptions<T,C> {
-  scope:DraftScope;enabled:boolean;writeEnabled?:boolean;refreshBlankAfterPurposeRemoval?:boolean;value:T;pending:C|null;emptyValue:T;
+  scope:DraftScope;enabled:boolean;writeEnabled?:boolean;refreshBlankAfterPurposeRemoval?:boolean;revalidateRetained?:boolean;value:T;pending:C|null;emptyValue:T;
   hasInput:(value:T)=>boolean;serialise:(value:AuthorizedDraftValue<T,C>)=>string;
   decode:(text:string)=>AuthorizedDraftValue<T,C>;commandId:(command:C)=>string;
   authorize:(signal:AbortSignal,copy?:AuthorizedDraftValue<T,C>)=>Promise<boolean>;onAuthorityFailure:(error:unknown)=>void;
@@ -202,9 +202,9 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
                 setSharedConflict(true);
                 if(callbacks.current.onOperationCleared){
                   callbacks.current.onOperationCleared(true);
-                  if(!retainedVisible.current){latest.current=local;retainedRestore.current=text;restore.current(local,true);}
+                  if(!retainedVisible.current||protocol.current.revalidateRetained){latest.current=local;retainedRestore.current=text;restore.current(local,true);}
                 }
-                else{retainedVisible.current=false;callbacks.current.onSensitiveClear();latest.current=local;retainedRestore.current=text;restore.current(local,true);}
+                else{if(!retainedVisible.current)callbacks.current.onSensitiveClear();latest.current=local;retainedRestore.current=text;restore.current(local,true);}
                 setStatus('failed');setMessage('本页输入未保存；另一页面仍有草稿，请先自行留存。');return;
               }
               await saveDraft(target,text);

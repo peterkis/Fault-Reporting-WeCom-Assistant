@@ -14,6 +14,32 @@ type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 async function input(browser:Browser,selector:string,value:string){await browser.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(element,${JSON.stringify(value)});element.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
 const stored="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.filter(row=>row.purpose==='ticket-takeover-completion').map(row=>({purpose:row.purpose,keys:Object.keys(row)})),operations:operations.result.filter(row=>row.purpose==='ticket-takeover-completion')});};};})";
 
+test('takeover completion keeps independent input visible when a failed peer draft meets temporary target failure',async()=>{
+ await withT12Profile(async f=>{
+  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_RECOVERY_START'})).status,200);
+  const cookie=f.browserCookies[2];assert.ok(cookie);const bootstrap=(await s.b.get('/api/lifecycle/bootstrap')).value;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);
+   await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
+   await browser.evaluate("(()=>{const element=document.querySelector('.ticket-takeover-completion select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(element,'T07_NETWORK');element.dispatchEvent(new Event('change',{bubbles:true}));})()");
+   await browser.waitFor("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]')?.disabled===false");await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]').click()");
+   await input(browser,'#takeover-completion-process','T12 saved peer process');await browser.waitFor("document.querySelector('[data-takeover-completion-draft-status]')?.textContent.includes('草稿已保存')");
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:text(bootstrap.principal_id),kind:'ticket',id:s.first.ticket.id,purpose:'ticket-takeover-completion'};
+   tab=await yxxTab(browser,f.origin+'/workbench/app/');await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT12ConflictTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await input(browser,'#takeover-completion-process','T12 independent unsaved process');
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__t12PeerText=copy.text;globalThis.__failT12Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()`);
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-takeover-completion]'))");
+   await browser.evaluate("(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes('/takeover-completion-targets')){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()");
+   await browser.evaluate('globalThis.__restoreT12ConflictTimer()');await tab.evaluate('globalThis.__failT12Peer()');
+   await browser.waitFor("document.querySelector('[data-takeover-completion-draft-status]')?.textContent.includes('草稿暂未恢复')");
+   assert.equal(await browser.evaluate("document.querySelector('#takeover-completion-process')?.value"),'T12 independent unsaved process');assert.equal(await browser.evaluate("document.querySelector('[data-action=takeover-and-complete]')?.disabled"),true);
+   const peer=object(await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,original:globalThis.__t12PeerText,operation:copy.handle.operation};})()`));assert.equal(peer.text,peer.original);assert.equal(peer.operation,null);
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__restoreT12ConflictTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{recoveryEnabled:true,notesEnabled:false});
+});
+
 test('independent encrypted T12 recovery reauthorizes saved input, resets preview confirmation, and preserves the original UNKNOWN through closed actions for manual GET only',async()=>{
  await withT12Profile(async f=>{
   const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_RECOVERY_START'})).status,200);

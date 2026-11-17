@@ -7,6 +7,9 @@ import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedb
 import {DetailDialog} from '../../app/DetailDialog';
 import {ChevronDown} from 'lucide-react';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
+import {SelectedSessions,useSeenSessions} from '../../app/SelectedSessions';
+import {useFullNumbers} from '../../app/FullNumbers';
+import {shortCodes} from '../../app/short-code';
 import {useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -18,6 +21,7 @@ type Selection=P2016ConversationHandlingCommand['sessions'];
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketConversationHandling({ticketId,principal,onBlockedChange,boardMode=false,otherBlocked=false}:{ticketId:string;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),request=useRef<AbortController|null>(null);
+  const fullNumbers=useFullNumbers(),sessionsSeen=useSeenSessions();
   const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[pending,setPending]=useState<ConversationHandlingIntent|null>(null);
   const [choice,setChoice]=useState<P2016ConversationHandlingCommand['communication_choice']>('TAKE_SELECTED'),[selected,setSelected]=useState<Selection>([]),[cursor,setCursor]=useState<string|null>(null);
   const [manualSelection,setManualSelection]=useState(false),[open,setOpen]=useState(false),[needsReview,setNeedsReview]=useState(false);
@@ -25,6 +29,9 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   // Each page is bounded to 20. Only explicitly selected identities and original versions cross pages.
   const related=useQuery({queryKey:['ticket-related-conversations',principal.principal_id,ticketId,cursor],queryFn:({signal})=>api.relatedConversations(ticketId,cursor,signal),gcTime:0});
+  sessionsSeen.remember(related.data?.items);
+  const sessionCodes=shortCodes([...(related.data?.items??[]).map(row=>row.session_id),...selected.map(row=>row.session_id),...sessionsSeen.seen.current.keys()]);
+  const temporaryRelatedFailure=related.isError&&!(related.error instanceof ApiError&&[401,403,404].includes(related.error.status));
   const blocked=draft.restoring||draft.restorationBlocked||['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   const navigationBlocked=Boolean(boardMode&&pending)||(blocked||(draft.enabled&&(selected.length>0||choice==='RETAIN_CURRENT')))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(navigationBlocked);return()=>onBlockedChange(false);},[navigationBlocked,onBlockedChange]);
@@ -85,7 +92,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||state==='checking'||draft.restoring} title="接单选项" closeLabel="关闭接单选项" className="detail-action-dialog detail-accept-dialog">
       {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
       {noSessions?<p>接单后由您开始处理，当前没有需要接管的在线会话。</p>:<HRadioGroup className="workbench-radio-group" name={'communication-'+ticketId} value={choice??''} onChange={next=>{if(next==="TAKE_SELECTED"){setChoice('TAKE_SELECTED');}if(next==="RETAIN_CURRENT"){setChoice('RETAIN_CURRENT');}}} isDisabled={blocked||draft.status==='loading'}><HLabel>在线沟通由谁负责</HLabel><HRadio value={"TAKE_SELECTED"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>同时负责所选会话的回复</HRadio.Content></HRadio><HRadio value={"RETAIN_CURRENT"} data-action="retain-current-communicator"><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通人</HRadio.Content></HRadio></HRadioGroup>}
-      {related.isPending?<p role="status">正在读取关联会话…</p>:related.isError?<p role="alert">{errorMessage(related.error)}</p>:<>
+      {related.isPending?<p role="status">正在读取关联会话…</p>:related.isError?<><p role="alert">{errorMessage(related.error)}</p>{temporaryRelatedFailure&&draft.hasUnsavedInput()&&selected.length?<><p>以下为本页未保存的选择，请先自行留存。</p>{fullNumbers.toggle}<SelectedSessions selected={selected.map(row=>row.session_id)} page={related.data?.items??[]} seen={sessionsSeen.seen.current} codes={sessionCodes} fullShown={fullNumbers.shown} disabled onCancel={()=>{}}/></>:null}</>:<>
         {!noSessions?<p>已选择 {selected.length} 个会话（最多 8 个）。</p>:null}
         <ul className="conversation-choices">{related.data.items.map((row,index)=>{const selection=selected.find(item=>item.session_id===row.session_id),stale=selection&&String(selection.expected_row_version)!==row.session_row_version;return <li key={row.session_id}><HCheckbox data-session-choice={row.session_id} isSelected={Boolean(selection)} isDisabled={blocked||draft.status==='loading'||choice==='RETAIN_CURRENT'||(!selection&&(!row.take_allowed||selected.length>=8))} onChange={()=>toggle(row.session_id,row.session_row_version,row.take_allowed)}><HCheckbox.Content><HCheckbox.Control><HCheckbox.Indicator/></HCheckbox.Control><span>关联会话 {index+1} · {row.conversation_principal_name??'尚未分配沟通人'}<small>{stale?'内容已变化，请重新选择。':!row.take_allowed?'当前不能接管回复。':'接单后由您回复。'}</small></span></HCheckbox.Content></HCheckbox></li>;})}</ul>
         <div className="note-controls">{cursor?<HButton type="button" isDisabled={blocked||related.isPending||related.isError} onClick={()=>setCursor(null)} tone="secondary">回到首批会话</HButton>:null}{related.data.next_cursor?<HButton type="button" isDisabled={blocked||related.isPending||related.isError} onClick={()=>setCursor(related.data.next_cursor)} tone="secondary">下一批关联会话</HButton>:null}</div>

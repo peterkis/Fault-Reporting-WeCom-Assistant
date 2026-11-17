@@ -451,6 +451,50 @@ test('an actually bundled base-version draft hook keeps its unsaved input across
  });
 });
 
+test('a draft consumer without an operation-cleared callback keeps visible input when restore is unavailable',{timeout:240000},async()=>{
+ const sourceRoot=testRoots().sourceRoot,fixture=await mkdtemp(join(tmpdir(),'draft-visible-conflict-'));
+ const draftDir=join(fixture,'app/pc-admin/src/features/drafts'),apiDir=join(fixture,'app/pc-admin/src/api'),appDir=join(fixture,'app/pc-admin/src/app');
+ await Promise.all([mkdir(draftDir,{recursive:true}),mkdir(apiDir,{recursive:true}),mkdir(appDir,{recursive:true})]);
+ await Promise.all([
+  writeFile(join(draftDir,'use-note-draft.ts'),await readFile(sourceFile('app/pc-admin/src/features/drafts/use-note-draft.ts'),'utf8')),
+  writeFile(join(draftDir,'encrypted-drafts.ts'),await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8')),
+  writeFile(join(apiDir,'client.ts'),"export class ApiError extends Error {} export const api={};"),
+  writeFile(join(appDir,'authorization.ts'),"export const clearSessionAuthorization=()=>{};export const clearTicketAuthorization=()=>{};"),
+  symlink(join(sourceRoot,'node_modules'),join(fixture,'node_modules'),'junction'),
+ ]);
+ const entry=join(fixture,'current.ts');
+ await writeFile(entry,`import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {useAuthorizedDraft} from './app/pc-admin/src/features/drafts/use-note-draft';
+ const scope=globalThis.__currentScope;
+ function Page(){const [note,setNote]=useState(''),[state,setState]=useState('idle'),[unavailable,setUnavailable]=useState(false);
+ const draft=useAuthorizedDraft({scope,enabled:true,value:note,pending:null,emptyValue:'',hasInput:value=>Boolean(value),serialise:copy=>JSON.stringify(copy),decode:text=>JSON.parse(text),commandId:command=>command.client_command_id,authorize:async()=>true,onAuthorityFailure:()=>{},onRestore:(copy,retained)=>{if(retained&&globalThis.__failCurrentRestore){setUnavailable(true);return;}setNote(copy.value);},onOperation:()=>setState('unknown'),onSensitiveClear:()=>{setNote('');setState('idle');}});
+ globalThis.__currentSnapshot={state,status:draft.status,canSubmit:draft.canSubmit,unavailable};return React.createElement('textarea',{id:'current-note',value:note,disabled:state==='unknown',onChange:event=>setNote(event.target.value)});}
+ const host=document.createElement('div');document.body.appendChild(host);createRoot(host).render(React.createElement(Page));`);
+ const built=await viteBuild({root:fixture,configFile:false,logLevel:'silent',define:{'process.env.NODE_ENV':JSON.stringify('production')},build:{write:false,minify:false,lib:{entry,formats:['iife'],name:'CurrentDraftFixture'}}});
+ const chunks=Array.isArray(built)?built:[built],chunk=chunks.flatMap(item=>'output' in item?item.output:[]).find(item=>item.type==='chunk');assert.ok(chunk&&chunk.type==='chunk');
+ await withT22Fixture(async({origin,browserCookie})=>{
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,failure:unknown;
+  try{
+   browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:origin+'/'}]});assert.ok(browser);
+   tab=await yxxTab(browser,origin+'/workbench/app/');await tab.waitFor('document.readyState==="complete"&&Boolean(document.body)');
+   const scope={principal:randomUUID(),kind:'ticket',id:randomUUID(),purpose:'internal-note'};await tab.evaluate('globalThis.__currentScope='+JSON.stringify(scope));
+   const mountError=await tab.evaluate("(()=>{try{"+chunk.code+"\n;return null;}catch(error){return String(error?.stack??error);}})()");assert.equal(mountError,null);
+   await tab.waitFor('globalThis.__currentSnapshot?.status==="ready"&&Boolean(document.querySelector("#current-note"))');
+   const set=(value:string)=>`(()=>{const input=document.querySelector('#current-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`;
+   await tab.evaluate(set('peer saved base'));await tab.waitFor('globalThis.__currentSnapshot.status==="saved"');
+   await tab.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreCurrentTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await tab.evaluate(set('local unsaved input'));
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+   await browser.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__currentPeer={store,copy,id};})()`);
+   await tab.waitFor('globalThis.__currentSnapshot.state==="unknown"');await tab.evaluate('globalThis.__failCurrentRestore=true;globalThis.__restoreCurrentTimer()');
+   await browser.evaluate('(async()=>{const {store,copy,id}=globalThis.__currentPeer;await store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()');
+   await tab.waitFor('globalThis.__currentSnapshot.unavailable===true&&globalThis.__currentSnapshot.status==="failed"');
+   assert.equal(await tab.evaluate('document.querySelector("#current-note").value'),'local unsaved input');assert.equal(await tab.evaluate('globalThis.__currentSnapshot.canSubmit'),false);
+   const surviving=await browser.evaluate(`(async()=>{const {store}=globalThis.__currentPeer,copy=await store.openDraft(${JSON.stringify(scope)});return {value:JSON.parse(copy.text).value,operation:copy.handle.operation};})()`);assert.deepEqual(surviving,{value:'peer saved base',operation:null});
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await tab?.evaluate('globalThis.__restoreCurrentTimer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
 test('legacy prepared records remain unresolved and expiry notices are bounded',async()=>{
  await withT22Fixture(async({origin,browserCookie})=>{
   const source=await readFile(sourceFile('app/pc-admin/src/features/drafts/encrypted-drafts.ts'),'utf8');

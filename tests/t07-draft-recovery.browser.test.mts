@@ -1,17 +1,43 @@
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {test} from 'node:test';
 import type {Server,IncomingMessage,ServerResponse} from 'node:http';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {acceptedSetup,acceptedOptions,object,rows,text,version} from './helpers/t07-public-fixture.mjs';
 import type {T07Fixture} from './helpers/t07-public-fixture.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type Fixture=T07Fixture&{browserCookies:{name:string;value:string;url:string}[];runtime:T07Fixture['runtime']&{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>}}};
 const stored="new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({drafts:drafts.result.filter(row=>row.purpose==='ticket-takeover').map(row=>({purpose:row.purpose,keys:Object.keys(row)})),operations:operations.result.filter(row=>row.purpose==='ticket-takeover')});};};})";
+test('takeover keeps independent input visible when a failed peer draft meets temporary target failure',async()=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  const s=await acceptedSetup(f),cookie=f.browserCookies[2];assert.ok(cookie);const bootstrap=(await s.b.get('/api/lifecycle/bootstrap')).value;
+  let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[cookie]});assert.ok(browser);
+   await browser.waitFor("document.querySelector('.ticket-takeover select')?.options.length>2&&document.querySelector('.ticket-takeover select').disabled===false");
+   await browser.evaluate("(()=>{const input=document.querySelector('.ticket-takeover select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'T07_NETWORK');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+   await browser.waitFor("document.querySelector('.ticket-takeover input[value=RETAIN_CURRENT]')?.disabled===false");await browser.evaluate("document.querySelector('.ticket-takeover input[value=RETAIN_CURRENT]').click()");
+   await browser.waitFor("document.querySelector('[data-takeover-draft-status]')?.textContent.includes('草稿已保存')");
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:text(bootstrap.principal_id),kind:'ticket',id:s.first.ticket.id,purpose:'ticket-takeover'};
+   tab=await yxxTab(browser,f.origin+'/workbench/app/');await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT07Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate("document.querySelector('.ticket-takeover input[value=TAKE_SELECTED]').click()");
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__t07PeerText=copy.text;globalThis.__failT07Peer=()=>store.saveDraft(copy.handle,copy.text,{settledCommandId:id});})()`);
+   await browser.waitFor("Boolean(document.querySelector('[data-action=check-takeover-command]'))");
+   await browser.evaluate("(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes('/takeover-targets')){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()");
+   await browser.evaluate('globalThis.__restoreT07Timer()');await tab.evaluate('globalThis.__failT07Peer()');
+   await browser.waitFor("document.querySelector('[data-takeover-draft-status]')?.textContent.includes('草稿暂未恢复')");
+   assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover select')?.value"),'T07_NETWORK');assert.equal(await browser.evaluate("document.querySelector('.ticket-takeover input[value=TAKE_SELECTED]')?.checked"),true);
+   assert.equal(await browser.evaluate("document.querySelector('[data-action=takeover-and-start]')?.disabled"),true);
+   const peer=object(await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,original:globalThis.__t07PeerText,operation:copy.handle.operation};})()`));assert.equal(peer.text,peer.original);assert.equal(peer.operation,null);
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.evaluate('globalThis.__restoreT07Timer?.()');await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{...acceptedOptions,workbenchDraftRecoveryEnabled:true});
+});
 for(const mode of ['authorized','expired','context-503'] as const)test('UNKNOWN self takeover freezes its original intent through '+mode,async()=>{
  const expired=mode==='expired';let unavailable=false,faults=0;
  await withWeb01Fixture(async(f:Fixture)=>{
