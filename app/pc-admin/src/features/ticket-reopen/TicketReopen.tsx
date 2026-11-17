@@ -63,7 +63,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
    if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果未知：保留原操作，提交结果尚未确认，不会再次发送。');return;}
    const fresh=await api.ticketCommandContext(ticketId,controller.signal);if(!current())return;client.setQueryData(['ticket-command-context',principal.principal_id,ticketId],fresh);
    if(receipt.state==='COMMITTED'&&(command&&receipt.result.ticket_version!==command.expected_version+1||fresh.version<receipt.result.ticket_version||fresh.handling_cycle?.id!==receipt.result.handling_cycle.id))throw Error('REOPEN_CURRENT_FACTS_UNCONFIRMED');
-   const cleaned=receipt.state==='FAILED'?await draft.knownFailure(id,true,{notifyLocal:false}):await settle(id);if(!current())return;setReason('');setPending(null);setOpaque(cleaned?null:id);
+   const cleaned=receipt.state==='FAILED'?await draft.knownFailure(id,true,{notifyLocal:false}):await settle(id);if(!current())return;if(!draft.hasRetainedInput())setReason('');setPending(null);setOpaque(cleaned?null:id);
    if(!cleaned){setState('unknown');setMessage('已读到原操作终态，但恢复清理尚未确认；只读核对同一操作，不发起新操作。');return;}
    setState(receipt.state==='FAILED'?'denied':'succeeded');setMessage(receipt.state==='FAILED'?'上次操作没有成功，请重新操作。':fresh.handling_cycle?.first_responsibility_event_id===null?'已核对：原操作已重开，本轮等待重新接单。':'已核对：原操作已重开，当前轮次已有后续处理。');refresh();
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status))await deny(error);else{setState('unknown');setMessage('结果未知：只读核对尚未完成，保留原操作，不会再次发送。');}}

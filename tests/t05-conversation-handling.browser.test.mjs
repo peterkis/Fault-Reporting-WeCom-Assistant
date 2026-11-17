@@ -236,6 +236,25 @@ test('a failed peer operation leaves this page\'s independent conversation choic
  },{workbenchDraftRecoveryEnabled:true});
 });
 
+test('checking a failed peer operation keeps the independent conversation selection visible',async()=>{
+ await browserScenario(async({browser,principals,tickets})=>{
+  const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'},id=randomUUID();
+  await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]").click()');
+  await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')),recovery='/workbench/app/'+manifest['src/feedback-recovery.ts'].file,tab=await yxxTab(browser,new URL('/workbench/app/',await browser.evaluate('location.origin')).href);
+  try{
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT05CheckTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   await browser.evaluate('document.querySelector(".detail-accept-dialog input[value=TAKE_SELECTED]").click()');await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.disabled===false');await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").click()');
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),value=JSON.parse(copy.text);value.pending={action:'take-and-start-with-conversations',command:{client_command_id:${JSON.stringify(id)},expected_version:1,reason_code:'WORKBENCH_TAKE_AND_START',resolver_team_id:'PILOT_IT',communication_choice:value.choice,sessions:[]}};await store.saveDraft(copy.handle,JSON.stringify(value),{commandId:${JSON.stringify(id)}});})()`);
+   await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))');await browser.evaluate('globalThis.__restoreT05CheckTimer()');
+   await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/conversation-handling-commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+   await browser.evaluate('document.querySelector("[data-action=check-expired-conversation-handling]").click()');
+   await browser.waitFor('document.body.innerText.includes("本页输入未保存")');
+   assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-accept-dialog"))'),true);assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]")?.disabled'),true);
+  }finally{await browser.evaluate('globalThis.__restoreT05CheckTimer?.()');await tab.close();}
+ },{workbenchDraftRecoveryEnabled:true});
+});
+
 test('a temporarily unavailable related list still shows this page\'s unsaved selected session',async()=>{
  await browserScenario(async({browser})=>{
   await openOptions(browser);await browser.waitFor('document.querySelector(".detail-accept-dialog input[value=RETAIN_CURRENT]")?.disabled===false');

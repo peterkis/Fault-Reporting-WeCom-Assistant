@@ -32,6 +32,28 @@ for(const mode of ['expired','context-503'] as const)test('T12 original UNKNOWN 
 });
 
 
+test('T12 opaque FAILED receipt never deletes the peer encrypted draft',{timeout:240000},async()=>{
+ await withT12Profile(async f=>{
+  const s=await acceptedSetup(f);assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_OPAQUE_FAILED'})).status,200);const cookie=f.browserCookies[2];assert.ok(cookie);let browser:Browser|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/items/ticket/'+s.first.ticket.id,width:1280,height:900,cookies:[{...cookie,url:text(cookie.url)}]});assert.ok(browser);await browser.command('Page.enable');
+   await browser.waitFor("document.querySelector('.ticket-takeover-completion select')?.options.length>2&&document.querySelector('.ticket-takeover-completion select').disabled===false");
+   await browser.evaluate("(()=>{const element=document.querySelector('.ticket-takeover-completion select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(element,'T07_NETWORK');element.dispatchEvent(new Event('change',{bubbles:true}));})()");
+   await browser.waitFor("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]').disabled===false");await browser.evaluate("document.querySelector('.ticket-takeover-completion input[value=RETAIN_CURRENT]').click()");await input(browser,'#takeover-completion-process','T12_FAILED_PEER_PRIVATE');await input(browser,'#takeover-completion-summary','T12 failed peer public summary');await browser.waitFor("document.querySelector('#takeover-completion-confirmed').disabled===false");await browser.evaluate("document.querySelector('#takeover-completion-confirmed').click()");
+   await browser.evaluate(`(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path)===${JSON.stringify(s.path+'/takeover-and-complete')}){globalThis.__t12Peer=JSON.parse(options.body);throw new TypeError('T12_SYNTHETIC_LOST');}return send(path,options);};})()`);
+   await browser.waitFor("document.querySelector('[data-action=takeover-and-complete]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=takeover-and-complete]').click()");await browser.waitFor('Boolean(globalThis.__t12Peer?.client_command_id)');
+   const original=object(await browser.evaluate('globalThis.__t12Peer')),commandId=text(original.client_command_id),before=object(await browser.evaluate(stored));assert.equal(rows(before.drafts).length,1);
+   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const read=fetch;globalThis.__t12ContextUnavailable=true;fetch=(url,options)=>globalThis.__t12ContextUnavailable&&new URL(String(url),location.href).pathname===${JSON.stringify(s.path)}?Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}})):read(url,options);})()`});
+   const timeOrigin=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(timeOrigin)}&&document.querySelector('[data-action=check-takeover-completion]')?.disabled===false`);
+   assert.deepEqual(object(await browser.evaluate(stored)),before);
+   await browser.evaluate(`globalThis.__t12ContextUnavailable=false;(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/takeover-completion/commands/${commandId}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);
+   await browser.evaluate("document.querySelector('[data-action=check-takeover-completion]').click()");await browser.waitFor("document.querySelector('[data-toast-source=ticket-takeover-completion]')?.innerText.includes('没有成功')||document.querySelector('[data-toast-source=ticket-takeover-completion]')?.innerText.includes('明确失败')");
+   const after=object(await browser.evaluate(stored));assert.equal(rows(after.drafts).length,1,'FAILED opaque receipt must keep the encrypted draft');
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{recoveryEnabled:true,notesEnabled:false});
+});
+
 test('Card 18 takeover completion read failure retains a ghost retry and never submits a command',{timeout:240000},()=>withT12Profile(async f=>{
  const s=await acceptedSetup(f),cookie=f.browserCookies[2];assert.ok(cookie);
  assert.equal((await s.a.post(s.path+'/start',{client_command_id:randomUUID(),expected_version:version(s.before.version),reason_code:'T12_CARD18_START'})).status,200);

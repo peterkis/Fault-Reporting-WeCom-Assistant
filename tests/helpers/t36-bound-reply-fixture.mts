@@ -35,13 +35,13 @@ export interface T36BoundReplyFixture {
  get(path:string):Promise<Response>;
  read<T>(path:string):Promise<T>;
 }
-export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>,{recovery=false}:{recovery?:boolean}={}){return withT35Fixture(async base=>{
+export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<void>,{recovery=false,internalNotes=false}:{recovery?:boolean;internalNotes?:boolean}={}){return withT35Fixture(async base=>{
  await base.runtime.stop();await migrateWorkbenchSupplementFollowUp({databaseUrl:base.databaseUrl,mode:'apply'});await ensureCompletionDismissal(base.databaseUrl);
  const admin=base.principals[0];assert.ok(admin);
  const makeRuntime=(supplementEnabled:boolean)=>{const next=createP2016Runtime({pool:base.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:base.origin,
   listenPort:Number(new URL(base.origin).port),principalIds:[admin.id],externalSendEnabled:false,
   workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,workbenchConversationsEnabled:true,
-  workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:supplementEnabled,workbenchDraftRecoveryEnabled:recovery});if("disabled" in next)throw Error("T36_REAL_RUNTIME_REQUIRED");return next;};let runtime=makeRuntime(true);
+   workbenchPersonalReadEnabled:true,workbenchSupplementFollowUpEnabled:supplementEnabled,workbenchDraftRecoveryEnabled:recovery,workbenchInternalNotesEnabled:internalNotes});if("disabled" in next)throw Error("T36_REAL_RUNTIME_REQUIRED");return next;};let runtime=makeRuntime(true);
  let primaryError:unknown;
  try{
   const [cookie]=(await runtime.start()).cookies??[];assert.ok(cookie);let cookieHeader=cookie.name+'='+cookie.value;

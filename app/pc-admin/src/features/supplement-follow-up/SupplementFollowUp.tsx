@@ -50,7 +50,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   return fresh.supplement_follow_up_enabled===true&&fresh.supplement_follow_up_draft_recovery_enabled===true&&isStaff(fresh);
  }
  const draft=useSupplementDraft({ticketId,principal,readReady:currentRead,value,pending,authorize,onAuthorityFailure:error=>{void authorityFailure(error);},onSensitiveClear:sensitiveClear,
-  onOperation:id=>{setOperationId(id);if(!settling.current){setState('unknown');setMessage('原补充处置结果尚未确认，请核对上次操作。');}},
+  onOperation:id=>{const changed=Boolean(original.current&&original.current!==id);if(changed&&request.current){generation.current++;request.current.abort();request.current=null;}if(changed)setPending(null);setOperationId(id);if(changed||!settling.current){setState('unknown');setMessage(changed?'另一个页面已开始新的补充处置，请核对新操作。':'原补充处置结果尚未确认，请核对上次操作。');}},
   onOperationCleared:conflict=>{generation.current++;request.current?.abort();request.current=null;setOperationId(null);setPending(null);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},
   onRestore:async(copy,signal)=>{
    stage.current='purpose';const target=copy.pending??copy.value.target;
@@ -122,7 +122,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('原操作仍未知；未找到终态收据不代表未提交。');return;}
    if(receipt.state==='COMMITTED'&&pending&&!sameSupplementTarget(receipt.result,pending)){setState('unknown');setMessage('收据目标与原操作不一致，原操作保持锁定。');return;}
    settling.current=true;let cleaned:boolean;try{cleaned=receipt.state==='COMMITTED'?await draft.success(commandId):await draft.knownFailure(commandId,!pending,{notifyLocal:false});}catch{cleaned=false;}finally{settling.current=false;}
-   if(!current())return;if(receipt.state==='COMMITTED')resetInput();else setPending(null);
+   if(!current())return;const next=draft.currentOperation();if(next&&next!==commandId){setPending(null);setOperationId(next);setState('unknown');setMessage('另一个页面已开始新的补充处置，请核对新操作。');return;}if(receipt.state==='COMMITTED'&&!draft.hasRetainedInput())resetInput();else setPending(null);
    setOperationId(cleaned?null:commandId);setState(receipt.state==='COMMITTED'?'succeeded':'failed');setMessage((receipt.state==='COMMITTED'?'已核对本条补充处置成功。':'原操作已确认失败；内部输入保留，请重新读取当前材料。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
    try{await refresh();}catch{if(current())setMessage('原操作终态已确认；当前材料读取失败，请重新读取。');}
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorityFailure(error,commandId);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');}

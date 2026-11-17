@@ -115,6 +115,10 @@ test('T30 blank observer keeps the other page failed internal note',async()=>{
       await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');
       await browser.waitFor('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("上次提交没有成功")');
       const saved=record(await browser.evaluate(inspectT30Drafts));assert.ok(Array.isArray(saved.drafts));assert.equal(saved.drafts.length,1,'a FAILED receipt must retain the sender page draft');assert.deepEqual(saved.operations,[]);
+      await browser.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=内部处置记录]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"T30_OBSERVER_LATER_INPUT");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await browser.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("本页输入未保存")');
+      await browser.evaluate('new Promise(resolve=>setTimeout(resolve,900))');
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=submit-internal-note]")?.disabled'),true,'the observer cannot overwrite the other page draft');
       const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.querySelector("textarea[aria-label=内部处置记录]")?.value==="T30_FAILED_PEER_TEXT"`);
     }finally{await tab?.close();}

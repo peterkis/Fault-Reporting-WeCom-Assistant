@@ -62,6 +62,7 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
   // A different page's operation must not own this page's unsubmitted input.
   const retainedInput=useRef<AuthorizedDraftValue<T,C>|null>(null),retainedVisible=useRef(false),retainedRestore=useRef<string|null>(null);
   restore.current=options.onRestore;latest.current={value,pending};
+  if(sharedConflict&&!pending&&!retainedInput.current&&hasInput(value)){retainedInput.current={value,pending:null};retainedVisible.current=true;}
   if(retainedInput.current&&!pending){
     const rendered={value,pending:null};
     if(retainedVisible.current)retainedInput.current=rendered;
@@ -219,15 +220,20 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
           }finally{if(authorityRequest.current===controller)authorityRequest.current=null;}
         }else if((released||value.reason==='settled'&&copy.handle.record!==null)&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation)){
           const editable={...latest.current,pending:null};
-          if(callbacks.current.onOperationCleared)callbacks.current.onOperationCleared();else callbacks.current.onSensitiveClear();
+          const peerDraft=Boolean(released&&copy.handle.record&&!hasInput(editable.value));
+          if(callbacks.current.onOperationCleared)callbacks.current.onOperationCleared(peerDraft);else callbacks.current.onSensitiveClear();
           latest.current=editable;
-          restore.current(editable);
+          if(peerDraft){setSharedConflict(true);setStatus('failed');setMessage('另一页面的草稿仍在，本页暂时无法提交；请重新打开。');return;}
+          if(hasInput(editable.value))restore.current(editable);
         }else if(!preserve){const clearsPrevious=changed&&previousOperation&&(!latest.current.pending||protocol.current.commandId(latest.current.pending)===previousOperation);latest.current={value:emptyValue,pending:null};callbacks.current.onSensitiveClear();if(clearsPrevious)callbacks.current.onOperationCleared?.();}
         else if(changed&&previousOperation&&!latest.current.pending){if(callbacks.current.onOperationCleared)callbacks.current.onOperationCleared();else{const editable=latest.current;callbacks.current.onSensitiveClear();latest.current=editable;restore.current(editable);}}
         setStatus('ready');setMessage(unsaved&&copy.handle.operation?'本页输入未保存；请先核对另一页面的操作。':released?'':value.reason==='expired'?'草稿已过期，敏感内容已清理；原操作须核对。':'草稿已清除');setRefreshIndex(index=>index+1);
       }).catch(()=>{if(generation.current===token){setStatus('failed');setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}});
     });}catch(error){generation.current++;setInitialized(false);setStatus('failed');setMessage(failureMessage(error,'restore'));return;}
   },[enabled,scopeKey]);
+  useEffect(()=>{
+    if(sharedConflict&&!pending&&hasInput(value))setMessage('本页输入未保存；另一页面仍有草稿，请先自行留存。');
+  },[sharedConflict,pending,value]);
   useEffect(()=>{
     if(!writeEnabled){cancelTimer();return;}
     if(!enabled||!initialized||!handle.current||pending||operationId||sharedConflict||retainedInput.current!==null||status==='loading'||!hasInput(value)||encode(latest.current)===lastSaved.current)return;
@@ -341,13 +347,13 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
       pendingRevision.current=undefined;lastSaved.current='';setOperationId(target?.operation?.commandId??null);setStatus('ready');setMessage(cleaned?'草稿已清空。':'');
       return cleaned;
     },
-    async knownFailure(commandId:string,preserveShared=false,options:{revalidateBlocked?:boolean;notifyLocal?:boolean;notifyReplacement?:boolean;signal?:AbortSignal;requireCurrent?:()=>void}={}){
+    async knownFailure(commandId:string,preserveShared=false,options:{revalidateBlocked?:boolean;adoptShared?:boolean;notifyLocal?:boolean;notifyReplacement?:boolean;signal?:AbortSignal;requireCurrent?:()=>void}={}){
       if(!enabled)return true;
       const target=handle.current,token=generation.current;
       // A temporary restore error may block editing. Only the shared-copy
       // path can retry in that state: it reauthorizes the stored intent before
       // changing its revision and cannot replace it with this page's input.
-      if(!target||!writeEnabled&&!options.revalidateBlocked||options.revalidateBlocked&&!preserveShared)return false;
+      if(!target||!writeEnabled&&!options.revalidateBlocked||options.revalidateBlocked&&!preserveShared||options.adoptShared&&!options.revalidateBlocked)return false;
       if(retainedInput.current||preserveShared){
         // This page's input is independent of the failed operation. Preserve
         // the other page's own draft rather than writing this page's value into it.
@@ -377,9 +383,12 @@ export function useAuthorizedDraft<T,C>(options:AuthorizedDraftOptions<T,C>){
           if(generation.current!==token||handle.current!==target)return false;
           await saveDraft(copy.handle,encode({value:other.value,pending:null}),{settledCommandId:commandId});
           requireCurrent();if(generation.current!==token||handle.current!==target)return false;
-          const conflict=retainedInput.current!==null;
+          const own=latest.current.pending!==null&&protocol.current.commandId(latest.current.pending)===commandId;
+          const conflict=retainedInput.current!==null||preserveShared&&!own&&!options.adoptShared;
           handle.current=copy.handle;setOperationId(null);setSharedConflict(conflict);setStatus(conflict?'failed':'saved');
-          setMessage(conflict?'本页输入未保存；另一页面仍有草稿，请先自行留存。':'草稿已保存');if(options.notifyLocal!==false)callbacks.current.onOperationCleared?.(conflict);
+          setMessage(conflict?(retainedInput.current?'本页输入未保存；另一页面仍有草稿，请先自行留存。':'另一页面的草稿仍在，本页暂时无法提交；请重新打开。'):'草稿已保存');
+          if(options.adoptShared&&!conflict){const restored={value:other.value,pending:null};latest.current=restored;lastSaved.current=encode(restored);restore.current(restored,true,{...copy.handle});}
+          if(options.notifyLocal!==false)callbacks.current.onOperationCleared?.(conflict);
           return true;
         }catch(error){
           try{requireCurrent();}catch{return false;}

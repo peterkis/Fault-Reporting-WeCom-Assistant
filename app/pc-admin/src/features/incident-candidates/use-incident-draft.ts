@@ -69,7 +69,7 @@ export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,
     },
     async knownFailure(commandId:string,preserveShared=false,settings:{notifyLocal?:boolean;notifyReplacement?:boolean}={}){
       const retry=transientRecovery.current;
-      const cleaned=await draft.knownFailure(commandId,preserveShared||retry,{...settings,revalidateBlocked:retry});
+      const cleaned=await draft.knownFailure(commandId,preserveShared||retry,{...settings,revalidateBlocked:retry,adoptShared:retry});
       if(cleaned&&retry&&!draft.currentOperation()){transientRecovery.current=false;setAuthorityNotice('');}
       return cleaned;
     }};
