@@ -111,8 +111,9 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
     onSuccess:async(result,variables)=>{if(!mounted.current||variables.generation!==generation.current)return;
       if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：没有终态收据不代表未提交，请继续只读核对。');refresh();return;}
       if(result.state==='COMMITTED'){await committed(variables.commandId,pending?preserveNewer(pending):hasReviewInput(latest.current),'已记录人工结论：已核对原操作结果。');return;}
-      if(pending)await draft.knownFailure(variables.commandId);else await draft.success(variables.commandId,hasReviewInput(latest.current));
-      setPending(null);setState('conflict');setMessage('已核对原操作失败；选择已保留，请读取工单信息后明确新的操作。');refresh();
+      const cleaned=await draft.knownFailure(variables.commandId,!pending,{notifyLocal:false});
+      if(!mounted.current||variables.generation!==generation.current)return;
+      setPending(null);setState('conflict');setMessage('已核对原操作失败；选择已保留，请读取工单信息后明确新的操作。'+(cleaned?'':' 本机恢复记录尚未更新，请继续核对。'));refresh();
     },onError:error=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知，尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   // Codex review: with draft recovery off the operation number is still held in memory, so it can be looked up read-only too.
   const check=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;setState('checking');receipt.mutate({commandId,signal:controller.signal,generation:generation.current});};

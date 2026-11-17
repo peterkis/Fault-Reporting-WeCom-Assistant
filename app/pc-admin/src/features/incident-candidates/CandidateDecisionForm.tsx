@@ -66,7 +66,7 @@ export function CandidateDecisionForm({principal,detail,onBlockedChange,onRefres
   const receipt=useMutation({mutationKey:['incident-candidate-receipt',principal.principal_id,detail.id],mutationFn:({commandId,signal}:{commandId:string;signal:AbortSignal})=>candidateApi.receipt(detail.id,commandId,signal),
     onSuccess:async(result,variables)=>{
       if(!current(variables.signal,variables.commandId))return;if(result.state==='UNKNOWN'){setCheckedUnknown(true);setState('unknown');setMessage('结果仍未知：没有终态回执不代表未提交；尚未发送新的操作。');return;}
-      setCheckedUnknown(false);let cleaned=true;if(result.state==='COMMITTED')cleaned=await draft.success(variables.commandId,true);else try{await draft.knownFailure(variables.commandId);}catch{cleaned=false;}
+      setCheckedUnknown(false);let cleaned=true;if(result.state==='COMMITTED')cleaned=await draft.success(variables.commandId,true);else try{cleaned=await draft.knownFailure(variables.commandId,!pending,{notifyLocal:false});}catch{cleaned=false;}
       if(!current(variables.signal,variables.commandId))return;setPending(null);setReviewRequired(true);refresh();
       if(result.state==='COMMITTED'){setKnown(result.result);setState('committed');setMessage(cleaned?'原操作已确认提交；当前输入保留，请核对当前事实。':'已提交；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');}
       else{setState('failed');setMessage('原操作已明确失败；当前输入保留，请核对当前事实后再明确新的决定。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));}

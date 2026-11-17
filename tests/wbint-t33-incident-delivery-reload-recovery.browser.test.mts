@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {readFile} from 'node:fs/promises';
 import {t33IncidentBrowser} from './helpers/t33-incident-delivery-browser-fixture.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 function record(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function records(value:unknown):Record<string,unknown>[]{assert.ok(Array.isArray(value));return value.map(record);}
@@ -8,6 +10,32 @@ function text(value:unknown):string{assert.equal(typeof value,'string');return v
 function integer(value:unknown):number{assert.equal(typeof value,'number');assert.ok(Number.isSafeInteger(value));const result=value as number;assert.ok(result>=0);return result;}
 function count(value:unknown):number{const result=integer(value);assert.ok(result<=2147483647);return result;}
 function closed(value:unknown,keys:readonly string[]):Record<string,unknown>{const row=record(value);assert.deepEqual(Object.keys(row).sort(),[...keys].sort());return row;}
+
+test('T33 blank observer keeps the peer failed delivery intent',{timeout:240000},async()=>{
+ await t33IncidentBrowser(async({browser,origin,incidentId,deliveryId,adminId})=>{
+  const root='[data-control-purpose="INCIDENT_LIFECYCLE"]',status=root+' [data-incident-delivery-draft-status]',tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
+  try{
+   await browser.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="ready"');
+   await tab.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="ready"');
+   const choose=async(label:string,value:string)=>{const selector=root+' .workbench-select[data-field-label="'+label+'"] select';await tab.evaluate(`(()=>{const field=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(field,${JSON.stringify(value)});field.dispatchEvent(new Event('change',{bubbles:true}));})()`);};
+   await choose('选择通知路',deliveryId);await tab.waitFor('document.querySelector('+JSON.stringify(root+' option[value="RECONCILE"]')+')?.disabled===false');
+   await choose('投递控制操作','RECONCILE');await choose('投递操作原因','OPERATOR_VERIFIED_DELIVERY');await choose('未知发送核对结论','CONFIRMED_SENT');
+   await tab.waitFor('document.querySelector('+JSON.stringify(status)+')?.dataset.incidentDeliveryDraftStatus==="saved"');
+   await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/reconcile')){globalThis.__t33PeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+   await tab.evaluate('document.querySelector('+JSON.stringify(root+' input[aria-label="确认本路投递操作"]')+').click()');
+   await tab.waitFor('document.querySelector('+JSON.stringify(root+' [data-action="submit-incident-delivery-control"]')+')?.disabled===false');
+   await tab.evaluate('document.querySelector('+JSON.stringify(root+' [data-action="submit-incident-delivery-control"]')+').click()');await tab.waitFor('Boolean(globalThis.__t33PeerCommand?.client_command_id)');
+   await browser.waitFor('Boolean(document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+'))');
+   const command=record(await tab.evaluate('globalThis.__t33PeerCommand')),id=text(command.client_command_id);
+   await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/notification-commands/${id}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+   await browser.evaluate('document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+').click()');
+   await browser.waitFor('!document.querySelector('+JSON.stringify(root+' [data-action="check-incident-delivery-operation"]')+')');
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:adminId,kind:'incident',id:incidentId,purpose:'incident-delivery-lifecycle'};
+   const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+   assert.ok(saved.text);const copy=JSON.parse(saved.text) as {value:{deliveryId:string;reason:string};pending:unknown};assert.equal(copy.value.deliveryId,deliveryId);assert.equal(copy.value.reason,'OPERATOR_VERIFIED_DELIVERY');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
+  }finally{await tab.close();}
+ },{draftRecovery:true});
+});
 
 test('T33 production detail reloads its encrypted original v2 command after real COMMIT response loss with fixture recovery opt-in, then explicitly reads the original ACK',{timeout:240000},async()=>{
  await t33IncidentBrowser(async({browser,origin,incidentId,deliveryId,siblingId,adminId,get,getLifecycleRows,senderCalls,capture})=>{

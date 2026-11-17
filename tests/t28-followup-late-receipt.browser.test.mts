@@ -8,6 +8,26 @@ import {prepareFollowup,navigateFollowup,chooseFollowup,rows} from './helpers/t2
 import {readFile} from 'node:fs/promises';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
+for(const terminal of ['COMMITTED','FAILED'] as const)test(`T28 a ${terminal} receipt clears a transient incident restore lock`,{timeout:240000},async()=>{
+  await candidateBrowser({purpose:terminal==='COMMITTED'?'t28restok':'t28restfail',reporters:3,recovery:true},async context=>{
+    const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);
+    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');
+    await chooseFollowup(context.browser,'公共故障操作','CORRECT_SCOPE');await chooseFollowup(context.browser,'决定原因','SCOPE_CORRECTION');await chooseFollowup(context.browser,'确认范围','BUILDING');
+    await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("草稿已保存")');
+    await context.browser.evaluate(`(()=>{const send=fetch;fetch=async(input,options)=>{const target=new URL(typeof input==='string'?input:input.url,location.href).pathname;if(options?.method==='POST'&&target===${JSON.stringify(path+'/correct-scope')}){globalThis.__t28RestoreCommand=JSON.parse(options.body);${terminal==='COMMITTED'?'await send(input,options);':''}throw new TypeError('T28_SYNTHETIC_LOST_ACK');}return send(input,options);};})()`);
+    await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');await context.browser.waitFor('Boolean(document.querySelector("[data-incident-unknown]"))');
+    const command=record(await context.browser.evaluate('globalThis.__t28RestoreCommand')),commandId=text(command.client_command_id);
+    await context.browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const read=fetch;let count=0;fetch=(input,options)=>{const target=new URL(typeof input==='string'?input:input.url,location.href).pathname;if(target===${JSON.stringify(path)}&&(options?.method??'GET')==='GET'&&++count===3){globalThis.__t28RestoreUnavailable=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(input,options);};})()`});
+    const before=await context.browser.evaluate('performance.timeOrigin');await context.browser.command('Page.reload');
+    await context.browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&globalThis.__t28RestoreUnavailable===true&&document.querySelector('[data-incident-draft]')?.textContent.includes('草稿暂未恢复')&&Boolean(document.querySelector('[data-action=check-incident-operation]'))`);
+    if(terminal==='FAILED')await context.browser.evaluate(`(()=>{const read=fetch;fetch=(input,options)=>String(input).endsWith('/commands/${commandId}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(id)},client_command_id:${JSON.stringify(commandId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(input,options);})()`);
+    await context.browser.evaluate('document.querySelector("[data-action=check-incident-operation]").click()');
+    await context.browser.waitFor(`document.querySelector('[data-incident-outcome]')?.textContent.includes(${JSON.stringify(terminal==='COMMITTED'?'原操作已确认提交':'原操作已明确失败')})&&!document.querySelector('[data-incident-draft]')?.textContent.includes('草稿暂未恢复')&&!document.querySelector('[data-action=check-incident-operation]')`);
+    if(terminal==='COMMITTED')await context.browser.waitFor('document.querySelector("[data-action=new-incident-intent]")?.disabled===false');
+    else await context.browser.waitFor('document.querySelector(".workbench-select[data-field-label=公共故障操作] select")?.disabled===false');
+  });
+});
+
 test('T28 a known committed receipt never becomes replayable after a later UNKNOWN',{timeout:240000},async()=>{
   await candidateBrowser({purpose:'t28known',reporters:3,recovery:true},async context=>{
     const {id,path}=await prepareFollowup(context);await navigateFollowup(context,id);await context.browser.waitFor('document.querySelector("[data-incident-draft]")?.textContent.includes("最长24小时")');

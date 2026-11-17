@@ -97,6 +97,30 @@ test('T30 peer failure clears the receipt on a blank page',async()=>{
   });
 });
 
+test('T30 blank observer keeps the other page failed internal note',async()=>{
+  await t30Browser('t30obsfail',async({browser,incidentId,origin})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
+      await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=内部处置记录]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"T30_FAILED_PEER_TEXT");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await tab.waitFor('document.querySelector("[data-internal-note-draft]")?.textContent.includes("草稿已保存")');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/internal-notes')){globalThis.__t30PeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-internal-note]").click()');
+      await tab.waitFor('Boolean(globalThis.__t30PeerCommand?.client_command_id)');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note-operation]"))');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=内部处置记录]").value'),'');
+      const command=record(await tab.evaluate('globalThis.__t30PeerCommand')),id=text(command.client_command_id);
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${id}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+      await browser.evaluate('document.querySelector("[data-action=check-internal-note-operation]").click()');
+      await browser.waitFor('document.querySelector("[data-internal-note-outcome]")?.textContent.includes("上次提交没有成功")');
+      const saved=record(await browser.evaluate(inspectT30Drafts));assert.ok(Array.isArray(saved.drafts));assert.equal(saved.drafts.length,1,'a FAILED receipt must retain the sender page draft');assert.deepEqual(saved.operations,[]);
+      const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
+      await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.querySelector("textarea[aria-label=内部处置记录]")?.value==="T30_FAILED_PEER_TEXT"`);
+    }finally{await tab?.close();}
+  });
+});
+
 test('T30 checking a committed peer operation restores the independent local input',async()=>{
   await t30Browser('t30peerack',async({browser,incidentId,origin,put})=>{
     let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;

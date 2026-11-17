@@ -184,12 +184,12 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
       fence.requireCurrent();if(!enabled){const saved=await checkOpaque(fence,true);fence.requireCurrent();if(saved?.operation){onSensitiveClear();onOperation(saved.operation.commandId);throw new DraftError('DRAFT_OPERATION_PENDING');}}
       await draft.prepare(command);fence.requireCurrent();
     },
-    async settleKnown(commandId:string,fence:ReturnFence){
+    async settleKnown(commandId:string,fence:ReturnFence,failed=false){
       fence.requireCurrent();
       // Preserve current input before the shared method's await; its original revision/UUID CAS cannot erase a newer row.
-      // Do not use T06's stale ACK callback or knownFailure's post-await save path.
+      // Failed operations retain the authorized stored input, fenced by the current ACK job.
       if(!enabled){const saved=await checkOpaque(fence);fence.requireCurrent();if(!saved?.operation)return true;if(saved.operation.commandId!==commandId||saved.record!==null)return false;await settleDraft(saved,commandId);fence.requireCurrent();return saved.operation===null;}
-      const cleaned=await draft.success(commandId,true);fence.requireCurrent();return cleaned;
+      const cleaned=failed?await draft.knownFailure(commandId,true,{notifyLocal:false,signal:fence.signal,requireCurrent:fence.requireCurrent}):await draft.success(commandId,true);fence.requireCurrent();return cleaned;
     },
     async dropSensitive(expected:ReturnCopy,fence:ReturnFence){
       fence.requireCurrent();if(!enabled){onSensitiveClear();return true;}

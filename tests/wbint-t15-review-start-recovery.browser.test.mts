@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createHash,randomUUID} from 'node:crypto';
-import {mkdir,writeFile,rmdir} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {ReviewResolveAndStartCommand} from '../contracts/workbench_review_start_contracts.js';
 
@@ -43,6 +44,36 @@ const traceWrites=`(()=>{
     return response;
   };
 })()`;
+
+test('T15 blank observer keeps the peer failed resolve-and-start draft',{timeout:240000},async()=>{
+  await withWeb01Fixture(async(fixture:Fixture)=>{
+    await projectFixtureMaterial(fixture.runtime);const actor=fixture.principals[0],ticket=fixture.tickets[0],cookie=fixture.cookies[0],browserCookie=fixture.browserCookies[0];assert.ok(actor&&ticket&&cookie&&browserCookie);
+    const get=async(path:string)=>{const response=await fetch(fixture.origin+path,{headers:{cookie}});assert.equal(response.status,200);return object(await response.json());};
+    const reference=list((await get('/api/workbench/items/ticket/'+ticket.ticket.id)).review_refs)[0],session=list((await get('/api/tickets/'+ticket.ticket.id+'/related-conversations')).items)[0];assert.ok(reference&&session);const reviewId=text(reference.id),sessionId=text(session.session_id);
+    let browser:Browser|undefined,error:unknown;
+    try{
+      browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/',width:900,height:900,cookies:[{...browserCookie,url:fixture.origin+'/'}]});assert.ok(browser);
+      const link=`[data-kind="ticket"][data-item-id="${ticket.ticket.id}"] a`;await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(link)}))`);await browser.evaluate(`document.querySelector(${JSON.stringify(link)}).click()`);await browser.waitFor('Boolean(document.querySelector("[data-review-workspace] [data-review-materials]"))');
+      const tab=await yxxTab(browser,fixture.origin+'/workbench/app/');
+      try{
+        await tab.waitFor(`Boolean(document.querySelector(${JSON.stringify(link)}))`);await tab.evaluate(`document.querySelector(${JSON.stringify(link)}).click()`);await tab.waitFor('Boolean(document.querySelector("[data-review-workspace] [data-review-materials]"))');
+        await tab.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
+        await tab.evaluate(`(()=>{const set=(label,value)=>{const input=document.querySelector('[data-review-workspace] .workbench-select[data-field-label="'+label+'"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CONFIRM_TICKET_ELIGIBLE');set('复核原因','HUMAN_CONFIRMED');})()`);
+        await tab.waitFor(`Boolean(document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]:not(:disabled)'))`);await tab.evaluate(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+        await tab.waitFor('document.querySelector("[data-review-start-draft-status]")?.textContent.includes("草稿已保存")');
+        await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/resolve-and-start')){globalThis.__t15PeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+        await tab.waitFor('document.querySelector("[data-action=resolve-and-start-review]")?.disabled===false');await tab.evaluate('document.querySelector("[data-action=resolve-and-start-review]").click()');await tab.waitFor('Boolean(globalThis.__t15PeerCommand?.client_command_id)');
+        await browser.waitFor('Boolean(document.querySelector("[data-action=check-review-start-receipt]"))');const command=object(await tab.evaluate('globalThis.__t15PeerCommand')),id=text(command.client_command_id);
+        await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/resolve-and-start/commands/${id}')?Promise.resolve(Response.json({review_id:${JSON.stringify(reviewId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+        await browser.evaluate('document.querySelector("[data-action=check-review-start-receipt]").click()');await browser.waitFor('!document.querySelector("[data-action=check-review-start-receipt]")');
+        const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:actor.id,kind:'review',id:reviewId,purpose:'review-resolve-start'};
+        const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+        assert.ok(saved.text);const copy=object(JSON.parse(saved.text));assert.equal(copy.pending,null);assert.equal(object(copy.value).touched,true);assert.equal(saved.operation,null);
+      }finally{await tab.close();}
+    }catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchManualReviewEnabled:true,workbenchReviewResolveAndStartEnabled:true,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false,workbenchDraftRecoveryEnabled:true});
+});
 
 test('T15 lost composite ACK survives an explicitly safe close and reopen with its original UUID, Ticket capture and Session intent',async()=>{
   await withWeb01Fixture(async(fixture:Fixture)=>{

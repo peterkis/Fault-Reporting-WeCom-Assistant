@@ -121,7 +121,7 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
    stage.current='purpose';const receipt=await api.supplementFollowUpReceipt(ticketId,commandId,controller.signal);if(!current())return;
    if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('原操作仍未知；未找到终态收据不代表未提交。');return;}
    if(receipt.state==='COMMITTED'&&pending&&!sameSupplementTarget(receipt.result,pending)){setState('unknown');setMessage('收据目标与原操作不一致，原操作保持锁定。');return;}
-   settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(commandId,receipt.state==='FAILED');}catch{cleaned=false;}finally{settling.current=false;}
+   settling.current=true;let cleaned:boolean;try{cleaned=receipt.state==='COMMITTED'?await draft.success(commandId):await draft.knownFailure(commandId,!pending,{notifyLocal:false});}catch{cleaned=false;}finally{settling.current=false;}
    if(!current())return;if(receipt.state==='COMMITTED')resetInput();else setPending(null);
    setOperationId(cleaned?null:commandId);setState(receipt.state==='COMMITTED'?'succeeded':'failed');setMessage((receipt.state==='COMMITTED'?'已核对本条补充处置成功。':'原操作已确认失败；内部输入保留，请重新读取当前材料。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
    try{await refresh();}catch{if(current())setMessage('原操作终态已确认；当前材料读取失败，请重新读取。');}

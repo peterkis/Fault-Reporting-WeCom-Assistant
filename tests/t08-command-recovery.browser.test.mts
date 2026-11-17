@@ -3,13 +3,14 @@ import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {withT08Fixture,object,rows,text} from './helpers/t08-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 const root="document.querySelector('.ticket-unassign')";
 const feedback="document.querySelector('[data-toast-source=ticket-unassign]')";
@@ -18,6 +19,33 @@ const fill=(value:string)=>`(()=>{const input=${reasonInput};Object.getOwnProper
 const copies=`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1',2);request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['drafts','operations'],'readonly'),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{const result={drafts:drafts.result.filter(row=>row.purpose==='ticket-unassign').map(row=>({purpose:row.purpose,revision:row.revision,firstSavedAt:row.firstSavedAt,expiresAt:row.expiresAt,bytes:row.ciphertext.byteLength,extractable:row.key.extractable,algorithm:row.key.algorithm.name,keys:Object.keys(row)})),operations:operations.result.filter(row=>row.purpose==='ticket-unassign')};db.close();resolve(result);};};})`;
 const queued="document.querySelector('.ds-drawer-status .ds-status-badge')?.textContent?.trim()==='待接单'";
 function failure(error:unknown){return error instanceof Error?{name:error.name,message:error.message,stack:error.stack}:{value:String(error)};}
+
+test('T08 blank observer keeps a peer failed unassign draft',{timeout:240000},async()=>{
+ await withT08Fixture(async fixture=>{
+  const handler=await fixture.http(2),ticket=await fixture.createTicket(),path='/api/tickets/'+ticket;
+  assert.equal((await handler.post(path+'/accept',{client_command_id:randomUUID(),expected_version:1,reason_code:'T08_PEER_FAILED'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[0];assert.ok(cookie);let browser:Browser|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticket,width:600,height:1080,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);await openWorkbenchStep(browser,'.ticket-unassign');
+   await browser.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('最长24小时')");
+   const tab=await yxxTab(browser,fixture.origin+'/workbench/app/items/ticket/'+ticket);
+   try{
+    await openWorkbenchStep(tab,'.ticket-unassign');await tab.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('最长24小时')");
+    await tab.evaluate(fill('T08_FAILED_PEER_REASON'));await tab.waitFor("document.querySelector('[data-unassign-draft-status]')?.textContent.includes('草稿已保存')");
+    await tab.evaluate(`(()=>{const send=fetch;fetch=(url,options)=>{if(options?.method==='POST'&&String(url)===${JSON.stringify(path+'/unassign')}){globalThis.__t08Peer=JSON.parse(options.body);return new Promise(()=>{});}return send(url,options);};})()`);
+    await tab.waitFor("document.querySelector('[data-action=unassign]')?.disabled===false");await tab.evaluate("document.querySelector('[data-action=unassign]').click()");await tab.waitFor('Boolean(globalThis.__t08Peer?.client_command_id)');
+    await browser.waitFor("Boolean(document.querySelector('[data-action=check-unassign-command]'))");const command=object(await tab.evaluate('globalThis.__t08Peer')),id=text(command.client_command_id);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/unassign/commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);
+    await browser.evaluate("document.querySelector('[data-action=check-unassign-command]').click()");
+    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:fixture.admin,kind:'ticket',id:ticket,purpose:'ticket-unassign'};
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
+    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+    assert.ok(saved.text);const copy=object(JSON.parse(saved.text));assert.equal(object(copy.value).reason,'T08_FAILED_PEER_REASON');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
+   }finally{await tab.close();}
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{workbenchDraftRecoveryEnabled:true});
+});
 
 for(const recovery of [false,true])test('production unassign UNKNOWN '+(recovery?'survives 24h sensitive expiry and cleanup failure with only original read-only ACK':'stays in memory without storage and reconciles through GET without a second POST'),async()=>{
  await withT08Fixture(async fixture=>{

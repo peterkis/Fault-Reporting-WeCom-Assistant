@@ -164,7 +164,7 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
       }
       if(error instanceof ApiError){
         knownTerminal.current={commandId:variables.command.client_command_id,state:'FAILED'};
-        try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.command.client_command_id,variables.job);variables.job.requireCurrent();applyKnown(variables.command.client_command_id,'FAILED',variables.snapshot,cleaned,variables.job);setState(error.status===409?'conflict':'failed');setMessage((error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再提交。':errorMessage(error))+(cleaned?'':' 恢复清理尚未确认，禁止新提交，请只读核对。'));}
+        try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.command.client_command_id,variables.job,true);variables.job.requireCurrent();applyKnown(variables.command.client_command_id,'FAILED',variables.snapshot,cleaned,variables.job);setState(error.status===409?'conflict':'failed');setMessage((error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再提交。':errorMessage(error))+(cleaned?'':' 恢复清理尚未确认，禁止新提交，请只读核对。'));}
         catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.command.client_command_id);setState('failed');setMessage('草稿未能清空：上次操作没有成功。为避免重复提交，暂时只能查看。点击「核对结果」。');}}
       }else{variables.job.requireCurrent();pendingRef.current=variables.command;setPending(variables.command);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
     },onSettled:(_result,_error,variables)=>{end(variables.job);forgetMutationViews.current(variables);},
@@ -175,7 +175,7 @@ export function TicketUnassign({ticketId,principal,onBlockedChange,menuTarget=nu
       if(!current(variables.job))return;
       if(result.state==='UNKNOWN'){variables.job.requireCurrent();setState('unknown');setMessage('结果仍未确认：暂时查不到结果，不代表没有提交。稍后再点击「核对结果」。');return;}
       knownTerminal.current={commandId:variables.commandId,state:result.state};
-      try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.commandId,variables.job);variables.job.requireCurrent();applyKnown(variables.commandId,result.state,variables.snapshot,cleaned,variables.job);}
+      try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.commandId,variables.job,result.state==='FAILED');variables.job.requireCurrent();applyKnown(variables.commandId,result.state,variables.snapshot,cleaned,variables.job);}
       catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.commandId);setState(result.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');refresh();}}
     },onError:(error,variables)=>{
       if(!current(variables.job))return;

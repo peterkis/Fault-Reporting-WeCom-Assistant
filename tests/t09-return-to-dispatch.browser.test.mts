@@ -43,6 +43,37 @@ function safeRequest(fact:RequestFact){
   return {...safe,body_keys:body?Object.keys(body):[],body_sha256:typeof encoded==='string'?createHash('sha256').update(encoded).digest('hex'):null};
 }
 
+test('T09 blank observer keeps a peer failed return draft',{timeout:240000},async()=>{
+ await withT09Fixture(async fixture=>{
+  const admin=await fixture.http(0),handler=await fixture.http(2),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+  assert.equal((await admin.post(path+'/assign',{client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_ASSIGN',target_principal_id:fixture.handler,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})).status,200);
+  await fixture.runtime.coordinator.runOnce();
+  const source=rows((await publicGet(handler,path+'/responsibility')).conversations)[0];assert.ok(source);const sessionId=text(source.session_id);
+  assert.equal((await handler.post('/api/conversations/'+sessionId+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(Number(text(source.session_row_version))),reason_code:'T09_PEER_COMMUNICATOR'})).status,200);
+  for(const actionName of ['accept','start','wait-vendor'])assert.equal((await handler.post(path+'/'+actionName,{client_command_id:randomUUID(),expected_version:version((await publicGet(handler,path)).version),reason_code:'T09_PEER_FAILED'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[2];assert.ok(cookie);let browser:Browser|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);await openWorkbenchStep(browser,'.ticket-return-to-dispatch');
+   await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('最长24小时')");
+   const tab=await yxxTab(browser,fixture.origin+'/workbench/app/items/ticket/'+ticketId);
+   try{
+    await openWorkbenchStep(tab,'.ticket-return-to-dispatch');await tab.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('最长24小时')");
+    await tab.evaluate(fill(reasonInput,'T09_FAILED_PEER_REASON'));await tab.evaluate(fill(unfinishedInput,'T09_FAILED_PEER_WORK'));await tab.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('草稿已保存')");
+    await tab.evaluate(`(()=>{const send=fetch;fetch=(url,options)=>{if(options?.method==='POST'&&String(url)===${JSON.stringify(path+'/return-to-dispatch')}){globalThis.__t09Peer=JSON.parse(options.body);return new Promise(()=>{});}return send(url,options);};})()`);
+    await tab.waitFor(`(${action})?.disabled===false`);await tab.evaluate(`(${action}).click()`);await tab.waitFor('Boolean(globalThis.__t09Peer?.client_command_id)');
+    await browser.waitFor(`Boolean(${check})`);const command=object(await tab.evaluate('globalThis.__t09Peer')),id=text(command.client_command_id);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/return-to-dispatch/commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);
+    await browser.evaluate(`(${check}).click()`);
+    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:fixture.handler,kind:'ticket',id:ticketId,purpose:'ticket-return-to-dispatch'};
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
+    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+    assert.ok(saved.text);const copy=object(JSON.parse(saved.text)),value=object(copy.value);assert.equal(value.reason,'T09_FAILED_PEER_REASON');assert.equal(value.unfinished,'T09_FAILED_PEER_WORK');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
+   }finally{await tab.close();}
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
 // Existing host budget and browser launch/wait defaults; no timeout override or source runtime fallback.
 test('production PC current handler restores two required inputs and returns a real WAITING_VENDOR Ticket retaining communication, then reconciles only the original UNKNOWN command through GET',async()=>{
   await withT09Fixture(async fixture=>{

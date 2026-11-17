@@ -33,6 +33,25 @@ async function type(browser:Browser,selector:string,value:string){
 }
 const instrument="(()=>{const original=globalThis.fetch;globalThis.__t11Commands=[];globalThis.__t11Reads=[];globalThis.fetch=(path,options)=>{if(options?.method==='POST')globalThis.__t11Commands.push({path:String(path),body:JSON.parse(options.body)});else globalThis.__t11Reads.push(String(path));return original(path,options);};})()";
 
+test('completion blank observer keeps a peer failed draft',{timeout:240000},async()=>{
+  await withT11Fixture(async context=>{
+    const ticketId=context.tickets[0]?.ticket.id;assert.ok(ticketId);const http=await t11Http(context);await http.start(ticketId);const bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {principal_id:string};
+    await completionBrowser(context,async browser=>{
+      await ready(browser);const commandId=randomUUID(),scope={principal:bootstrap.principal_id,kind:'ticket',id:ticketId,purpose:'staff-completion'};
+      const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,tab=await yxxTab(browser,context.origin+'/workbench/app/');
+      try{
+        await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),value={process:'T11_FAILED_PEER_PROCESS',summary:'T11_FAILED_PEER_SUMMARY',confirmed:true},pending={client_command_id:${JSON.stringify(commandId)},expected_version:4,reason_code:'STAFF_COMPLETED',handling_cycle_id:crypto.randomUUID(),internal_process:value.process,external_summary:value.summary,external_summary_confirmed:true};await store.saveDraft(copy.handle,JSON.stringify({schema:1,value,pending}),{commandId:pending.client_command_id});})()`);
+        await browser.waitFor('Boolean(document.querySelector("[data-action=check-completion-receipt]"))');
+        await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/completion/commands/${commandId}')?Promise.resolve(Response.json({ticket_id:${JSON.stringify(ticketId)},client_command_id:${JSON.stringify(commandId)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+        await browser.evaluate('document.querySelector("[data-action=check-completion-receipt]").click()');
+        await browser.waitFor('!document.querySelector("[data-action=check-completion-receipt]")');
+        const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+        assert.ok(saved.text);const copy=JSON.parse(saved.text) as {value:{process:string;summary:string};pending:unknown};assert.equal(copy.value.process,'T11_FAILED_PEER_PROCESS');assert.equal(copy.value.summary,'T11_FAILED_PEER_SUMMARY');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
+      }finally{await tab.close();}
+    });
+  });
+});
+
 test('completion exits peer UNKNOWN while retaining this page\'s independent input',{timeout:240000},async()=>{
   await withT11Fixture(async context=>{
     const id=context.tickets[0]?.ticket.id;assert.ok(id);const http=await t11Http(context);await http.start(id);const bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {principal_id:string};

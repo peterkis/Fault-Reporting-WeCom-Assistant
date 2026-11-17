@@ -55,7 +55,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
     try{
       const result=await receipt.mutateAsync({commandId:draft.operationId,signal:controller.signal});if(!current())return;
       if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：查不到终态收据不代表未提交，请继续只读核对。');refresh();return;}
-      const before=latest.current,preserve=Boolean(before.process||before.summary);settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(result.client_command_id,preserve);}finally{settling.current=false;}if(!current())return;
+      const before=latest.current,preserve=Boolean(before.process||before.summary);settling.current=true;let cleaned:boolean;try{cleaned=result.state==='COMMITTED'?await draft.success(result.client_command_id,preserve):await draft.knownFailure(result.client_command_id,!pending,{notifyLocal:false});}finally{settling.current=false;}if(!current())return;
       if(!preserve)setValue(EMPTY_COMPLETION);setPending(null);setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage((result.state==='COMMITTED'?'已完工：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(preserve?' 较新的未提交输入已保留。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();
     }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorization(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');}
     finally{if(request.current===controller)request.current=null;}

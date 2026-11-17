@@ -162,11 +162,11 @@ export function useUnassignDraft({ticketId,principal,value,pending,actionAllowed
     safeToLeave:!restoring&&!unavailable&&(draft.safeToLeave||Boolean(enabled&&draft.operationId&&pending===null&&!hasUnassignInput(value)&&['ready','saved'].includes(draft.status))),
     message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对当前撤派、目标和会话授权…':draft.message,
     async prepare(command:P2016UnassignCommand,fence:UnassignFence){fence.requireCurrent();await draft.prepare(command);fence.requireCurrent();},
-    async settleKnown(commandId:string,fence:UnassignFence){
+    async settleKnown(commandId:string,fence:UnassignFence,failed=false){
       fence.requireCurrent();
       // Preserve current input before the shared method's await; its original revision/UUID CAS cannot erase a newer row.
-      // Do not use T06's stale ACK callback or knownFailure's post-await save path.
-      const cleaned=await draft.success(commandId,true);fence.requireCurrent();return cleaned;
+      // Failed operations retain the authorized stored input, fenced by the current ACK job.
+      const cleaned=failed?await draft.knownFailure(commandId,true,{notifyLocal:false,signal:fence.signal,requireCurrent:fence.requireCurrent}):await draft.success(commandId,true);fence.requireCurrent();return cleaned;
     },
     async dropSensitive(expected:UnassignCopy,fence:UnassignFence){
       fence.requireCurrent();if(!enabled){onSensitiveClear();return true;}

@@ -172,7 +172,7 @@ export function IncidentDeliveryControls({principal,detail,purpose,routes,readRe
    await readCurrent(receiptResult?.delivery_id??deliveryId,controller,current,startIdentity);current();
    settling.current=true;let cleaned=false;
    const preserveInput=receiptResult===null&&deliveryId!==null&&value.deliveryId===deliveryId;
-   try{cleaned=await draft.success(commandId,preserveInput);}finally{settling.current=false;}
+   try{cleaned=receiptResult?await draft.success(commandId,preserveInput):await draft.knownFailure(commandId,!pending,{notifyLocal:false,notifyReplacement:false});}finally{settling.current=false;}
    current();
    if(adoptReplacement(commandId))return;
    setPending(null);setChecked(false);setConfirmed(false);setOpaque(cleaned?null:commandId);setCleanupPending(!cleaned);

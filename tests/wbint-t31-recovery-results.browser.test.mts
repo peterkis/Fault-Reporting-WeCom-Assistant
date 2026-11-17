@@ -17,6 +17,30 @@ async function publish(browser:Browser){
 }
 const lostAck="(()=>{const send=fetch;globalThis.__t31Original=null;globalThis.__t31Writes=0;globalThis.__t31ReceiptReads=[];globalThis.fetch=async(path,options)=>{const url=String(path);if(options?.method==='POST'&&url.endsWith('/publish-update')){globalThis.__t31Writes++;globalThis.__t31Original=JSON.parse(options.body);const response=await send(path,options);await response.arrayBuffer();throw new TypeError('SYNTHETIC_ACK_LOSS_AFTER_REAL_COMMIT');}if(url.includes('/commands/'))globalThis.__t31ReceiptReads.push(url);return send(path,options);};})()";
 
+test('T31 blank observer keeps the other page failed public progress',async()=>{
+  await t31Browser('t31obsfail',async({browser,incidentId,origin})=>{
+    const tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
+    try{
+      await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=公开进展摘要]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"T31_FAILED_PEER_SUMMARY");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__t31PeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');
+      await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await tab.waitFor('Boolean(globalThis.__t31PeerCommand?.client_command_id)');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]").value'),'');
+      const command=record(await tab.evaluate('globalThis.__t31PeerCommand')),id=text(command.client_command_id);
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${id}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+      await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+      await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("上次提交没有成功")');
+      const saved=record(await browser.evaluate(inspectT31Drafts));assert.ok(Array.isArray(saved.drafts));assert.equal(saved.drafts.length,1);assert.deepEqual(saved.operations,[]);
+      const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
+      await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="T31_FAILED_PEER_SUMMARY"`);
+    }finally{await tab.close();}
+  });
+});
+
 test('T31 recovery disabled retains the original lost-ACK UUID and version after lawful CLOSED without replay',async()=>{
   await t31Browser('t31norecov',async({browser,incidentId,get,post,put})=>{
     const bootstrap=(await get('/api/lifecycle/bootstrap')).body;assert.equal(bootstrap.incident_public_progress_enabled,true);assert.equal(bootstrap.incident_public_progress_draft_recovery_enabled,false);assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-public-progress-draft]"))'),false);

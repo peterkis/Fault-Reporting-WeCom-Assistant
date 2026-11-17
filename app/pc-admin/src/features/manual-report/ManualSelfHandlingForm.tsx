@@ -59,7 +59,7 @@ export function ManualSelfHandlingForm({principal,initialValue,onOrdinary,onBloc
     const id=pending?.client_command_id??draft.operationId;if(!id||request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setState('checking');
     try{const receipt=await api.manualReportReceipt(id,controller.signal);if(!mounted.current||controller.signal.aborted||token!==epoch.current)return;
       if(receipt.state==='COMMITTED')await accepted(id,decodeManualSelfHandlingResult(receipt.result,id),token);
-      else if(receipt.state==='FAILED'){const cleaned=await draft.success(id,true);if(!mounted.current||controller.signal.aborted||token!==epoch.current)return;setPending(null);setState('denied');setMessage('已核对原操作失败，原输入保留；可明确新的操作。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));}
+      else if(receipt.state==='FAILED'){const cleaned=await draft.knownFailure(id,!pending,{notifyLocal:false});if(!mounted.current||controller.signal.aborted||token!==epoch.current)return;setPending(null);setState('denied');setMessage('已核对原操作失败，原输入保留；可明确新的操作。'+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));}
       else{setState('unknown');setMessage('结果仍未知，未找到终态不证明未提交；没有发送新的操作。');}
     }catch(error){if(!mounted.current||controller.signal.aborted||token!==epoch.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status))await refuse(error);else{setState('unknown');setMessage('只读核对失败，原操作保持未定；没有发送新操作。');}}
     finally{if(request.current===controller)request.current=null;}

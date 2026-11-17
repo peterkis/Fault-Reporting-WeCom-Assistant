@@ -58,5 +58,11 @@ export function useIncidentDeliveryDraft(options:Options){
   },
   onOperation:(id,preserveInput)=>latest.current.onOperation(id,preserveInput),onOperationCleared:conflict=>latest.current.onOperationCleared(conflict),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
  });
- return {...draft,scope,rawEnabled,probing,restoring,existing,ttl:DRAFT_TTL_MS};
+ return {...draft,scope,rawEnabled,probing,restoring,existing,ttl:DRAFT_TTL_MS,
+  async knownFailure(commandId:string,preserveShared=false,settings:{notifyLocal?:boolean;notifyReplacement?:boolean}={}){
+   // A blank observer has no selected route and therefore no cached capability.
+   // The shared-copy path reads and authorizes the actual stored route first.
+   const retry=preserveShared&&rawEnabled&&options.readReady&&!options.writeReady;
+   return draft.knownFailure(commandId,preserveShared,{...settings,revalidateBlocked:retry});
+  }};
 }

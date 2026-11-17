@@ -60,7 +60,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
   client.setQueryData(key,fresh);return fresh;
  }
  async function settle(id:string){settling.current=true;try{return await draft.success(id);}finally{settling.current=false;}}
- async function refuse(id:string){settling.current=true;try{return await draft.knownFailure(id);}catch{return false;}finally{settling.current=false;}}
+ async function refuse(id:string,preserveShared=false){settling.current=true;try{return await draft.knownFailure(id,preserveShared,{notifyLocal:false});}catch{return false;}finally{settling.current=false;}}
  async function send(command:SharedFollowUpCommand){
   if(request.current||commandId||!workbenchTransportWritable()||!draft.canSubmit)return;
   const controller=new AbortController(),token=++generation.current,currentRead=captureWorkbenchRead(controller.signal);request.current=controller;setPending(command);setState('submitting');setMessage('正在保存共享时间…');let dispatched=false,accepted=false;
@@ -121,7 +121,7 @@ export function SharedFollowUp({ticketId,principal,onBlockedChange}:{ticketId:st
      if(!(error instanceof ApiError&&error.status===503&&error.code==='P2_016_DISABLED'))throw error;
     }
    }
-   const cleaned=receipt.state==='FAILED'&&preserveFailedInput?await refuse(id):await settle(id);if(!current())return;setPending(null);if(receipt.state!=='FAILED'||!preserveFailedInput)setInput('');setOpaque(cleaned?null:id);
+   const cleaned=receipt.state==='FAILED'&&preserveFailedInput?await refuse(id,!command):await settle(id);if(!current())return;setPending(null);if(receipt.state!=='FAILED'||!preserveFailedInput)setInput('');setOpaque(cleaned?null:id);
    if(!cleaned){setState('unknown');setMessage('已读到本次操作终态，仍有恢复记录待核对；请只读核对当前操作。');return;}
    if(receipt.state==='FAILED'){setState('denied');setMessage('已核对原操作被拒绝，请读取当前安排后确认新的操作。');refresh();return;}
    setConfirmedResult(receipt.result);let settledMessage='已核对原操作提交成功。';

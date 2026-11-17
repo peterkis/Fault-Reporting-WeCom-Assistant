@@ -6,7 +6,24 @@ import {withT36BoundReplyFixture} from './helpers/t36-bound-reply-fixture.mjs';
 import {withT36Browser,input,openReply,supplementRow} from './helpers/t36-browser-risk-journey.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
-for(const mode of ['late','unavailable'] as const)test('T36 pending disposition '+(mode==='late'?'does not return after peer settlement':'unlocks after confirmed receipt following temporary restore failure'),{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
+test('T36 blank observer keeps a peer failed disposition draft',{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
+ await withT36Browser(f,async browser=>{
+  const scope={principal:f.actorId,kind:'ticket',id:f.ticketId,purpose:'supplement-disposition'},id=randomUUID(),note='T36_FAILED_PEER_DISPOSITION';
+  const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,tab=await yxxTab(browser,f.origin+'/workbench/app/');
+  try{
+   await browser.waitFor('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("最长24小时")');
+   await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),target=${JSON.stringify(f.r2)},pending={client_command_id:${JSON.stringify(id)},action:'RECORD_DISPOSITION',...target,disposition_note:${JSON.stringify(note)},mark_followed_up:true};await store.saveDraft(copy.handle,JSON.stringify({schema:1,value:{target,note:${JSON.stringify(note)}},pending}),{commandId:pending.client_command_id});})()`);
+   await browser.waitFor('Boolean(document.querySelector("[data-action=check-supplement-receipt]"))');
+   await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/supplement-follow-up/commands/')?Promise.resolve(Response.json({ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+   await browser.evaluate('document.querySelector("[data-action=check-supplement-receipt]").click()');
+   await browser.waitFor('!document.querySelector("[data-action=check-supplement-receipt]")');
+   const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+   assert.ok(saved.text);const value=JSON.parse(saved.text) as {value:{note:string};pending:unknown};assert.equal(value.value.note,note);assert.equal(value.pending,null);assert.equal(saved.operation,null);
+  }finally{await tab.close();}
+ });
+},{recovery:true}));
+
+for(const mode of ['late','unavailable','failed'] as const)test('T36 pending disposition '+(mode==='late'?'does not return after peer settlement':`unlocks after ${mode==='failed'?'failed':'committed'} receipt following temporary restore failure`),{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
  await withT36Browser(f,async browser=>{
   const scope={principal:f.actorId,kind:'ticket',id:f.ticketId,purpose:'supplement-disposition'},id=randomUUID(),note='T36_PENDING_SYNTHETIC_NOTE';
   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,tab=await yxxTab(browser,f.origin+'/workbench/app/');
@@ -22,7 +39,7 @@ for(const mode of ['late','unavailable'] as const)test('T36 pending disposition 
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-supplement-receipt]"))'),false);assert.notEqual(await browser.evaluate('document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+')?.value'),note);
    }else{
     await browser.waitFor('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("草稿暂未恢复")&&Boolean(document.querySelector("[data-action=check-supplement-receipt]"))');
-    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/supplement-follow-up/commands/')?Promise.resolve(Response.json({ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'COMMITTED',result:{ok:true,client_command_id:${JSON.stringify(id)},ticket_id:${JSON.stringify(f.ticketId)},source_ref:${JSON.stringify(f.r2.source_ref)},revision:${JSON.stringify(f.r2.revision)},follow_up_state:'FOLLOWED_UP',resolution_id:crypto.randomUUID(),basis:'RECORDED_DISPOSITION',replayed:true}})):read(path,options);})()`);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/supplement-follow-up/commands/')?Promise.resolve(Response.json(${mode==='failed'?`{ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}}`:`{ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'COMMITTED',result:{ok:true,client_command_id:${JSON.stringify(id)},ticket_id:${JSON.stringify(f.ticketId)},source_ref:${JSON.stringify(f.r2.source_ref)},revision:${JSON.stringify(f.r2.revision)},follow_up_state:'FOLLOWED_UP',resolution_id:crypto.randomUUID(),basis:'RECORDED_DISPOSITION',replayed:true}}`})):read(path,options);})()`);
     await browser.evaluate('document.querySelector("[data-action=check-supplement-receipt]").click()');
     await browser.waitFor('!document.querySelector("[data-action=check-supplement-receipt]")&&document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+')?.disabled===false');
     assert.equal(await browser.evaluate('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("草稿暂未恢复")'),false);

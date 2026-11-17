@@ -30,10 +30,10 @@ function decode(text:string,incidentId:string){
 }
 export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{principal:Principal;incidentId:string;value:IncidentDraftValue;pending:IncidentOperation|null;emptyValue:IncidentDraftValue;onRestore:(copy:{value:IncidentDraftValue;pending:IncidentOperation|null})=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),[restoring,setRestoring]=useState(false),[authorityNotice,setAuthorityNotice]=useState(''),scope={principal:principal.principal_id,kind:'incident' as const,id:incidentId,purpose:'incident-followup'},stage=useRef<'session'|'incident'>('session');
-  const restoreRequest=useRef<AbortController|null>(null),revocation=useRef(0);
+  const restoreRequest=useRef<AbortController|null>(null),revocation=useRef(0),transientRecovery=useRef(false);
   const revoke=(error:unknown)=>{
     if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');
-    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACCESS_REVOKED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){revocation.current++;restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');});}
+    else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACCESS_REVOKED','DRAFT_ACTION_REVOKED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED'){transientRecovery.current=false;revocation.current++;restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void purgeDrafts({...scope,reason:'revoked'}).catch(()=>{setAuthorityNotice('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');});}
   };
   async function authorize(signal:AbortSignal,copy?:{value:IncidentDraftValue;pending:IncidentOperation|null}){
     const epoch=captureWorkbenchRead(signal),revision=revocation.current,requireCurrent=()=>{epoch();if(revocation.current!==revision)throw new DraftError('DRAFT_ACTION_REVOKED');};stage.current='session';const fresh=await api.bootstrap(signal);requireCurrent();
@@ -48,14 +48,29 @@ export function useIncidentDraft({principal,incidentId,value,pending,emptyValue,
     }
     return true;
   }
-  useEffect(()=>()=>{restoreRequest.current?.abort();restoreRequest.current=null;},[incidentId,principal.principal_id]);
+  useEffect(()=>{transientRecovery.current=false;setAuthorityNotice('');return()=>{transientRecovery.current=false;restoreRequest.current?.abort();restoreRequest.current=null;};},[incidentId,principal.principal_id]);
   const draft=useAuthorizedDraft<IncidentDraftValue,IncidentOperation>({scope,enabled:principal.incident_candidate_draft_recovery_enabled,writeEnabled:principal.incident_candidate_draft_recovery_enabled&&!authorityNotice,value,pending,emptyValue,hasInput:value=>Boolean(value.action||value.reason||value.capturedVersion),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:text=>decode(text,incidentId),commandId:command=>command.body.client_command_id,authorize,onAuthorityFailure:revoke,
     onRestore:(copy,retained=false,owned)=>{const controller=new AbortController();let original:DraftHandle|null=owned??null;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);void(async()=>{
       if(!retained){const stored=await openDraft(scope);if(stored.text===null||JSON.stringify(decode(stored.text,incidentId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');original={...stored.handle};}
       const allowed=await authorize(controller.signal,copy);controller.signal.throwIfAborted();if(restoreRequest.current!==controller)return;if(!allowed)throw new DraftError('DRAFT_ACTION_REVOKED');
       if(!retained){const current=await openDraft(scope);if(current.handle.record?.revision!==original?.record?.revision||current.handle.operation?.commandId!==original?.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
       controller.signal.throwIfAborted();if(restoreRequest.current===controller)onRestore(copy);
-    })().catch(error=>{if(controller.signal.aborted||restoreRequest.current!==controller)return;if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){if(retained)draft.forgetRetainedInput();onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void removeOwnedSensitiveDraft(original).catch(()=>{});}else if(error instanceof ApiError&&[401,403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACCESS_REVOKED','DRAFT_IDENTITY_CHANGED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED')revoke(error);else setAuthorityNotice('草稿暂未恢复：已保存的内容暂时读不到，请重新打开详情或刷新页面后再试。');}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},
+    })().catch(error=>{if(controller.signal.aborted||restoreRequest.current!==controller)return;if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){transientRecovery.current=false;if(retained)draft.forgetRetainedInput();onSensitiveClear();setAuthorityNotice('当前用途权限已变化，恢复内容停止展示。');void removeOwnedSensitiveDraft(original).catch(()=>{});}else if(error instanceof ApiError&&[401,403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_DISABLED','DRAFT_ACCESS_REVOKED','DRAFT_IDENTITY_CHANGED'].includes(error.message)||error instanceof DOMException&&error.name==='AbortError'&&error.message==='AUTHORIZATION_EPOCH_CHANGED')revoke(error);else{transientRecovery.current=true;setAuthorityNotice('草稿暂未恢复：已保存的内容暂时读不到，请重新打开详情或刷新页面后再试。');}}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});},
     onOperation,onOperationCleared,onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);onSensitiveClear();}});
-  return {...draft,restoring,recoveryBlocked:Boolean(authorityNotice),revoke,canSubmit:draft.canSubmit&&!authorityNotice,message:authorityNotice||(restoring?'正在核对恢复操作的当前权限和目标…':draft.message)};
+  return {...draft,restoring,recoveryBlocked:Boolean(authorityNotice),revoke,canSubmit:draft.canSubmit&&!authorityNotice,message:authorityNotice||(restoring?'正在核对恢复操作的当前权限和目标…':draft.message),
+    async success(commandId:string,preserveInput=false,signal?:AbortSignal){
+      const cleaned=await draft.success(commandId,preserveInput);
+      if(cleaned&&transientRecovery.current&&signal&&!draft.currentOperation()){
+        const version=revocation.current;
+        try{if(await authorize(signal)&&!signal.aborted&&revocation.current===version&&!draft.currentOperation()){transientRecovery.current=false;setAuthorityNotice('');}}
+        catch(error){if(!signal.aborted)revoke(error);}
+      }
+      return cleaned;
+    },
+    async knownFailure(commandId:string,preserveShared=false,settings:{notifyLocal?:boolean;notifyReplacement?:boolean}={}){
+      const retry=transientRecovery.current;
+      const cleaned=await draft.knownFailure(commandId,preserveShared||retry,{...settings,revalidateBlocked:retry});
+      if(cleaned&&retry&&!draft.currentOperation()){transientRecovery.current=false;setAuthorityNotice('');}
+      return cleaned;
+    }};
 }

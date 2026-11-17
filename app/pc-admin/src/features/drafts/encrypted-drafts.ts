@@ -251,7 +251,7 @@ export async function removeSensitiveDraft(handle:DraftHandle,reason:DraftInvali
 export async function removeOwnedSensitiveDraft(handle:DraftHandle|null|undefined):Promise<void>{
   if(handle?.record)await removeSensitiveDraft({...handle},'discard',{requireMatchingRevision:true,requireMatchingOperation:true});
 }
-export async function settleDraft(handle:DraftHandle,commandId:string,revision?:string):Promise<void>{
+export async function settleDraft(handle:DraftHandle,commandId:string,revision?:string,options:{notifyLocal?:boolean}={}):Promise<void>{
   const key=draftScopeKey(handle.scope);
   const next=await state(value=>{
     const current=value.drafts.find(row=>row.scope===key),operation=value.operations.find(row=>row.scope===key);
@@ -260,7 +260,7 @@ export async function settleDraft(handle:DraftHandle,commandId:string,revision?:
     return {epoch:value.epoch,record:removed?null:current??null,operation:removed?null:operation??null,removed};
   });
   handle.record=next.record;handle.operation=next.operation;handle.epoch=next.epoch;
-  if(next.removed)publish({...handle.scope,reason:'settled'});
+  if(next.removed){const event={...handle.scope,reason:'settled' as const};if(options.notifyLocal===false)publishToOtherTabs(event);else publish(event);}
 }
 // Before a restored reply can be sent, it gives up the original page's right to cancel its preparation.
 export async function claimDraftReplay(scope:DraftScope,commandId:string,handle?:DraftHandle):Promise<boolean>{
