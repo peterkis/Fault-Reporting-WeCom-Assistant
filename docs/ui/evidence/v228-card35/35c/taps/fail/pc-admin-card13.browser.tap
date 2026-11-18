@@ -1,0 +1,63 @@
+TAP version 13
+# Subtest: Card 13 next step preserves original commands, inline wait/resume, note UUID recovery and four-width drawer
+ok 1 - Card 13 next step preserves original commands, inline wait/resume, note UUID recovery and four-width drawer
+  ---
+  duration_ms: 3338.956458
+  type: 'test'
+  ...
+# Subtest: Card 13 clears a mounted conversation count when the same principal loses the capability
+ok 2 - Card 13 clears a mounted conversation count when the same principal loses the capability
+  ---
+  duration_ms: 1816.36175
+  type: 'test'
+  ...
+# Subtest: Card 13 read-only drawer has no primary workflow action and tab navigation does not write
+ok 3 - Card 13 read-only drawer has no primary workflow action and tab navigation does not write
+  ---
+  duration_ms: 2337.211792
+  type: 'test'
+  ...
+# Subtest: Card 13 reopening a cached read-only Review settles its permission read without a parent reset
+ok 4 - Card 13 reopening a cached read-only Review settles its permission read without a parent reset
+  ---
+  duration_ms: 2030.739583
+  type: 'test'
+  ...
+# Subtest: Card 13 ordinary completion initial permission failure keeps its original retry reachable
+ok 5 - Card 13 ordinary completion initial permission failure keeps its original retry reachable
+  ---
+  duration_ms: 1492.686333
+  type: 'test'
+  ...
+# Subtest: Card 18 detail read error uses danger alert and a read-only ghost retry
+not ok 6 - Card 18 detail read error uses danger alert and a read-only ghost retry
+  ---
+  duration_ms: 30885.988458
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card13.browser.test.mjs:280:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card13.browser.test.mjs:294:9
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: Card 20 T5 T7 S7 S8 S9 D2 D6 drawer refinements preserve focus, records and original commands
+ok 7 - Card 20 T5 T7 S7 S8 S9 D2 D6 drawer refinements preserve focus, records and original commands
+  ---
+  duration_ms: 2461.533209
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 44564.392166

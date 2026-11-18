@@ -1,0 +1,26 @@
+TAP version 13
+# P2_006_BROWSER_COMMAND_TIMEOUT_CONTEXT {"method":"Page.captureScreenshot","sessionKind":"root"}
+# T43_INCIDENT_DIAGNOSTIC {"text":"医小修\\n信息服务团队\\n搜索工作区\\nCtrl K\\n\\n工作空间\\n\\n工作台\\n会话\\n公共故障\\n通知异常\\n在线同事\\n暂无\\nT\\nT43合成人员0\\n人工协作\\n信息服务团队 / 工作台\\n实时更新中\\n连接已断开，正在重新连接…\\n返回候选队列\\n刷新当前事实\\nINC-4BE4497A92A0400997018FF815A3A858 · 公共信息系统故障\\n状态\\n已确认\\n确认范围\\n局部\\n确认时间\\n2026-11-19 02:17:23（北京时间）\\n故障负责人\\nT43合成人员2\\n责任组\\nPILOT_IT\\n主处理参考\\n无主工单\\n\\n这是公共故障的汇总。各工单的状态和负责人不变；确认不代表通知已发出。\\n\\n跟进公共故障\\n草稿仅在当前浏览器恢复，最长24小时。\\n公共故障操作\\n请选择操作\\n \\n请选择操作\\n开始调查\\n纠正确认范围\\n设置或清除主工单\\n关联个人报修\\n解除报修关联\\n记录单人恢复\\n暂停通知订阅\\n恢复通知订阅\\n记录公共故障恢复\\n关闭公共故障\\n决定原因\\n请选择原因\\n \\n请选择原因\\nOPERATOR_REVIEWED\\nCONFIRMED_SHARED_FAULT\\nINCORRECT_ASSOCIATION\\nRECOVERY_CONFIRMED\\nSUBSCRIPTION_REQUEST\\nSCOPE_CORRECTION\\nMAINTENANCE_EXPIRED\\nWORKBENCH_CONFIRMED\\n提交明确操作\\n内部处置记录\\n\\n仅授权内部人员可见。追加记录不代表公开进展、恢复或关闭；不会发送通知。\\n\\n内部处置记录\\n\\n0/2000 字\\n\\n草稿仅在当前浏览器恢复，最长24小时。\\n保存内部处置\\n内部处置历史\\n记录 9 · T43合成人员0 · 2026-11-19 02:17:23（北京时间）\\n\\nT43_INCIDENT_PRIVATE_948f408f-e11b-4c08-824c-12789323327b\\n\\n当前页 1 条；已加载 1 条，最近最多三页，每页30。\\n\\n下一页内部记录\\n回到内部记录起点\\n公开进展摘要\\n\\n独立填写安全公开摘要，只定向有效个人订阅。不复制内部处置，不改变个人工单；已发布不代表已发送。\\n\\n公开进展摘要\\n\\n0/1000 字\\n\\n草稿仅在当前浏览器恢复，最长24小时。\\n预览公开摘要\\n明确发布安全进展\\n已发布公开进展\\n记录 11 · T43合成人员0 · 2026-11-19 02:17:23（北京时间）\\n\\n合成人工公开进展：已定位网络连接，正在分批核验恢复。\\n\\n查看本次按路结果\\n\\n当前页 1 条；已加载 1 条，最近最多三页，每页10。\\n\\n下一页公开进展\\n回到公开进展起点\\n本次按路投递结果\\n\\n每路独立；待发送、失败或未知不撤销已发布事实。\\n\\n个人渠道 1382c4d9 · 已发送 · 尝试 3 · 渠道已确认收到\\n\\n当前页 1 条，最多保留三页，每页30；无路由时没有有效个人意图。\\n\\n下一页本次投递\\n刷新本次结果\\n公开进展通知控制\\n\\n只操作选定通知路。结果未知须先核对；确认已发不再发送，核实未发才重新排队。发送结果不代表报修人已读。\\n\\n选择通知路\\n请选择本次控制的通知路\\n \\n请选择本次控制的通知路\\n个人渠道·1382c4d9·已发送\\n投递控制操作\\n请选择明确操作\\n \\n请选择明确操作\\n重试确定未发送的通知\\n核对未知发送结果\\n投递操作原因\\n请选择已实际完成的核对原因\\n \\n请选择已实际完成的核对原因\\n已核实此路确定未发送\\n已完成此路发送结果核对\\n结束此路后续处理，结果仍未知\\n已核对选定通知路、原因和结论，明确执行此操作\\n明确提交本路通知操作\\n草稿仅在当前浏览器恢复，最长24小时。\\n只读刷新当前事实\\n负责人交接\\n\\n目标须已能读取此公共故障。交接不授予读取权，不改变个人工单或自动发送通知。\\n\\n交接负责人\\n请选择已获权人员\\n \\n请选择已获权人员\\nT43合成人员0 · 尾号 9EF447CA\\nT43合成人员1 · 尾号 C79E7A43\\nT43合成人员2 · 尾号 33F60C9C\\n显示完整编号\\n交接责任组\\n请明确选择团队或无团队\\n \\n请明确选择团队或无团队\\n明确无责任组\\n交接原因\\n请选择原因\\n \\n请选择原因\\nOPERATOR_REVIEWED\\nCONFIRMED_SHARED_FAULT\\nINCORRECT_ASSOCIATION\\nRECOVERY_CONFIRMED\\nSUBSCRIPTION_REQUEST\\nSCOPE_CORRECTION\\nMAINTENANCE_EXPIRED\\nWORKBENCH_CONFIRMED\\n草稿仅在当前浏览器恢复，最长24小时。\\n提交负责人交接\\n\\n当前页 3 人；已加载 3 人，最近最多三页，每页30。\\n\\n下一页交接目标\\n回到交接目标起点\\n重新读取交接目标\\n关联个人报修\\nIT-20261119-0001 · 已关联 · 受影响\\nIT-20261119-0002 · 已关联 · 受影响\\nIT-20261119-0003 · 已关联 · 受影响\\n\\n报修：当前页 3 项；已加载窗口 3 项（最近最多三页，每页30）。\\n\\n下一页报修\\n回到报修起点\\n公共故障历史\\n记录 1 · 关联个人报修 · 2026-11-19 02:17:23\\n记录 2 · 建立通知订阅 · 2026-11-19 02:17:23\\n记录 3 · 关联个人报修 · 2026-11-19 02:17:23\\n记录 4 · 建立通知订阅 · 2026-11-19 02:17:23\\n记录 5 · 关联个人报修 · 2026-11-19 02:17:23\\n记录 6 · 建立通知订阅 · 2026-11-19 02:17:23\\n记录 7 · 确认公共故障 · 2026-11-19 02:17:23 · CONFIRMED_LOCAL · LOCAL\\n记录 8 · 交接公共故障负责人 · 2026-11-19 02:17:23\\n\\n操作人 01a1efe0-b2c4-7515-842a-8f909ef447ca · 原负责人 01a1efe0-b2c6-7735-9f8e-27ccc79e7a43 / 无团队 → 新负责人 01a1efe0-b2c7-7797-8c9b-5e9e33f60c9c / PILOT_IT\\n\\n记录 10 · 暂停通知订阅 · 2026-11-19 02:17:23\\n\\n历史：当前页 9 项；已加载窗口 9 项（最近最多三页，每页30）。\\n\\n下一页历史\\n回到历史起点\\n各路通知投递\\n\\n各路分别显示当前发送结果；个人工单、各人订阅和群通知保持独立。\\n\\n群渠道 · 已发送 · 尝试 3 次 · 2026-11-19 02:17:23\\n个人渠道 · 已发送 · 尝试 1 次 · 2026-11-19 02:17:23\\n个人渠道 · 待发送 · 尝试 0 次 · 2026-11-19 02:17:23\\n\\n通知：当前页 3 项；已加载窗口 3 项（最近最多三页，每页30）。\\n\\n下一页通知\\n回到通知起点\\n生命周期通知控制\\n\\n只操作选定通知路。结果未知须先核对；确认已发不再发送，核实未发才重新排队。发送结果不代表报修人已读。\\n\\n选择通知路\\n请选择本次控制的通知路\\n \\n请选择本次控制的通知路\\n群渠道·b5bfe2cc·已发送\\n个人渠道·594db6e8·已发送\\n个人渠道·b6390656·待发送\\n投递控制操作\\n请选择明确操作\\n \\n请选择明确操作\\n重试确定未发送的通知\\n核对未知发送结果\\n投递操作原因\\n请选择已实际完成的核对原因\\n \\n请选择已实际完成的核对原因\\n已核实此路确定未发送\\n已完成此路发送结果核对\\n结束此路后续处理，结果仍未知\\n已核对选定通知路、原因和结论，明确执行此操作\\n明确提交本路通知操作\\n草稿仅在当前浏览器恢复，最长24小时。\\n只读刷新当前事实\\n各人通知订阅\\n显示完整编号\\n订阅尾号 1A2C2D9F · 已暂停 · 受影响\\n订阅尾号 D50FD98D · 订阅已启用 · 受影响\\n订阅尾号 C7DA0703 · 待配置通知渠道 · 受影响\\n\\n订阅：当前页 3 项；已加载窗口 3 项（最近最多三页，每页30）。\\n\\n下一页订阅\\n回到订阅起点\\n可关联报修来源\\n\\n来源：当前页 0 项；已加载窗口 0 项（最近最多三页，每页30）。\\n\\n下一页来源\\n回到来源起点","url":"https://127.0.0.1:60892/workbench/app/incidents/4be4497a-92a0-4009-9701-8ff815a3a858"}
+# Subtest: T43 normal shared-group reports form a human-confirmed Incident, publish a separate safe personal summary and recover individual synthetic deliveries without mutating their Tickets
+not ok 1 - T43 normal shared-group reports form a human-confirmed Incident, publish a separate safe personal summary and recover individual synthetic deliveries without mutating their Tickets
+  ---
+  duration_ms: 12144.276542
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t43-incident-delivery.browser.test.mjs:6:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_COMMAND_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    Timeout._onTimeout (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:125:16)
+    listOnTimeout (node:internal/timers:605:17)
+    process.processTimers (node:internal/timers:541:7)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12310.2375

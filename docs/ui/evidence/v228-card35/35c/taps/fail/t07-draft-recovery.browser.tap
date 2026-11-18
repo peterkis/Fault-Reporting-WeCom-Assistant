@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: takeover keeps independent input visible when a failed peer draft meets temporary target failure
+ok 1 - takeover keeps independent input visible when a failed peer draft meets temporary target failure
+  ---
+  duration_ms: 2176.486708
+  type: 'test'
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-31866499-961d-4400-8c0d-2018d7a81456"}
+# Subtest: UNKNOWN self takeover freezes its original intent through authorized
+not ok 2 - UNKNOWN self takeover freezes its original intent through authorized
+  ---
+  duration_ms: 2489.862584
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-7872ef96-9953-4fc1-b01b-8dea82d76f80"}
+# Subtest: UNKNOWN self takeover freezes its original intent through expired
+not ok 3 - UNKNOWN self takeover freezes its original intent through expired
+  ---
+  duration_ms: 2261.904292
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-9d8c4d9d-9e9c-4cb5-9cf0-89f0e0aa6ee8"}
+# Subtest: UNKNOWN self takeover freezes its original intent through context-503
+not ok 4 - UNKNOWN self takeover freezes its original intent through context-503
+  ---
+  duration_ms: 2296.580542
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9393.177791

@@ -1,0 +1,40 @@
+TAP version 13
+# T12_RAW_OFF_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-raw-off-15a2d1d9-7d9c-471b-9d3f-d5e15cee48a8/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-raw-off-15a2d1d9-7d9c-471b-9d3f-d5e15cee48a8/failure.png","sha256":"648e5c039c5e731f06ee6b334c1cd49931a79d89bbdedd17b55f87dbf05470cd"}]}
+# Subtest: raw-off UNKNOWN retains the original capture and mounted controller but its check control never forwards another POST after a genuinely committed lost ACK
+not ok 1 - raw-off UNKNOWN retains the original capture and mounted controller but its check control never forwards another POST after a genuinely committed lost ACK
+  ---
+  duration_ms: 1679.098583
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withT12Profile.recoveryEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:64:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:12:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1847.098417

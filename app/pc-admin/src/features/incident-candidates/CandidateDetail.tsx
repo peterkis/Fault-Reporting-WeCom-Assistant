@@ -1,3 +1,9 @@
+import {InlineAlert} from '../../design/components/InlineAlert/InlineAlert';
+import {BlockSkeleton} from '../../design/components/Skeleton/Skeleton';
+import {ErrorState} from '../../design/components/ErrorState/ErrorState';
+import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
+import {copiedReadDiagnostics} from '../../app/read-state-diagnostics';
+import {EmptyState} from '../../design/components/EmptyState/EmptyState';
 import {DiagnosticCopy} from '../../app/DiagnosticCopy';
 import {label,manualReviewStatusLabels} from './labels';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
@@ -19,11 +25,12 @@ const scopeLabels:Record<string,string>={UNKNOWN:'未知',ROOM:'房间',DEPARTME
 const unavailable='不可用（来源未提供或当前权限不可见）';
 export function CandidateDetailPage({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
   const {id=''}=useParams();
-  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障候选</h1><p role="status">候选工作区尚未启用。</p><HLink href="/workbench">返回现有工作台</HLink></div>;
+  if(!principal.incident_candidate_workspace_enabled)return <div className="workspace"><h1>公共故障候选</h1><EmptyState size="page" title="公共故障页面尚未开放" description="返回工作台继续处理。"/><HLink href="/workbench">返回现有工作台</HLink></div>;
   return <CandidateDetail key={principal.principal_id+':'+id} principal={principal} candidateId={id} onBlockedChange={onBlockedChange}/>;
 }
 export function CandidateDetail({principal,candidateId,onBlockedChange}:{principal:Principal;candidateId:string;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),heading=useRef<HTMLHeadingElement|null>(null),query=useQuery({queryKey:['incident-candidate-detail',principal.principal_id,candidateId],queryFn:({signal})=>candidateApi.detail(candidateId,signal)}),detail=query.data;
+  const loading=useDelayedLoading(query.isPending&&!detail);
   const [refreshError,setRefreshError]=useState('');
   const [cleanupError,setCleanupError]=useState('');
   const refresh=async()=>{try{setRefreshError('');const fresh=await client.fetchQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),staleTime:0});const identity=(actor:Principal)=>JSON.stringify([actor.principal_id,actor.csrf_token,actor.authorization_revision,[...actor.roles].sort(),actor.incident_candidate_workspace_enabled,actor.incident_candidate_draft_recovery_enabled]);if(identity(fresh)!==identity(principal))advanceWorkbenchAuthorizationEpoch();await query.refetch();}catch(error){setRefreshError(errorMessage(error));if(error instanceof ApiError&&(error.status===401||error.status===403))await clearSessionAuthorization(client,principal.principal_id,error.status,'revoked');}};
@@ -33,9 +40,9 @@ export function CandidateDetail({principal,candidateId,onBlockedChange}:{princip
   useEffect(()=>{if(detail)heading.current?.focus();},[Boolean(detail)]);
   return <article className="detail-page" data-candidate-id={candidateId} aria-labelledby={'candidate-heading-'+candidateId}>
     <div className="detail-navigation"><Link to="/incidents/candidates" aria-label="返回候选队列" aria-disabled={blocked} onClick={event=>{if(blocked)event.preventDefault();}}>返回候选队列</Link><span>候选详情</span><HButton type="button" data-action="refresh-candidate" onClick={()=>{void refresh();}} tone="secondary">刷新当前事实</HButton></div>
-    {refreshError?<p role="alert">{refreshError}</p>:null}
+    {refreshError?<InlineAlert tone="danger">未更新。{refreshError}</InlineAlert>:null}
     {cleanupError?<p role="alert">{cleanupError}</p>:null}
-    {query.isPending?<p role="status">正在读取获权候选…</p>:query.isError?<p role="alert">{errorMessage(query.error)}</p>:detail?<div className="detail-body">
+    {loading.visible?<BlockSkeleton label="正在加载候选详情…" slow={loading.slow} onRetry={()=>{void refresh();}}/>:query.isPending?null:query.isError?<ErrorState size="page" title="候选详情没有打开" description="点击重试加载候选详情。" onRetry={()=>{void refresh();}} diagnostics={copiedReadDiagnostics(query.error,query.errorUpdatedAt)}/>:detail?<div className="detail-body">
       <header className="detail-heading"><p className="context-line">人工公共故障候选 · {candidateLabels[detail.status]}</p><h1 id={'candidate-heading-'+candidateId} ref={heading} tabIndex={-1}>{detail.service_family} · {detail.symptom_family}</h1><p>候选并非已确认公共故障。</p><p hidden data-candidate-version>{detail.row_version}</p></header>
       <section className="properties" aria-label="候选来源与数量"><dl><dt>来源观察人数</dt><dd>{detail.distinct_reporters??unavailable}</dd><dt>来源观察科室</dt><dd>{detail.distinct_departments??unavailable}</dd><dt>来源观察位置</dt><dd>{detail.distinct_locations??unavailable}</dd><dt>原观察窗口</dt><dd>{detail.correlation_window_ms===null?unavailable:detail.correlation_window_ms+' 毫秒'}</dd><dt>来源建议范围</dt><dd>{scopeLabels[detail.scope_candidate]??detail.scope_candidate}（尚未确认）</dd><dt>原观察时间</dt><dd>{detail.first_seen_at??unavailable} 至 {detail.last_seen_at??unavailable}</dd><dt>候选到期</dt><dd>{detail.expires_at}（北京时间）</dd></dl>
         <p>获权来源总数：{detail.visible_report_source_count}；已提供选项：{detail.report_sources.length}。{detail.report_sources_truncated?'选项已裁剪。':'当前获权选项已全部提供。'}以上来源观察不代表确认后的关联数或受影响全量。</p>

@@ -232,7 +232,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.evaluate('globalThis.__t23InvalidDenial=true');await change('T23拒绝后必须清理的输入');
       await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       assert.equal(await browser.evaluate('document.body.innerText.includes("T23拒绝后必须清理的输入")'),false);
       assert.deepEqual(await browser.evaluate('globalThis.__t23Statuses'),[200,200,409,200,403]);
@@ -242,7 +242,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.waitFor('Boolean(document.querySelector("[data-action=refresh-source-group]"))');await change('T23读取失权时须清理的输入');
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.evaluate('document.querySelector("[data-action=refresh-source-group]").click()');
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       assert.equal(await browser.evaluate('document.body.innerText.includes("T23读取失权时须清理的输入")'),false);
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
@@ -276,7 +276,7 @@ test('the default-off source group settings stays closed without requesting dire
   await withWeb01Fixture(async({origin,browserCookies,runtime})=>{
     const requests=[];runtime.server.on('request',request=>{if(request.url?.startsWith('/api/workbench/source-groups'))requests.push(request.url);});
     let browser,error;
-    try{browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups',width:900,height:900,cookies:[browserCookies[0]]});await browser.waitFor('document.body.innerText.includes("来源群目录未开放")');assert.equal(requests.length,0);assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);}
+    try{browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups',width:900,height:900,cookies:[browserCookies[0]]});await browser.waitFor('document.body.innerText.includes("来源群目录尚未开放")');assert.equal(requests.length,0);assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);}
     catch(failure){error=failure;}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   });
@@ -327,16 +327,16 @@ test('administrator source group settings searches the real directory across pag
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:300,downloadThroughput:-1,uploadThroughput:-1});
       await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="检索来源群"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'T23没有匹配的全新名称');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
       await browser.evaluate('document.querySelector("[data-action=search-source-groups]").click()');
-      await browser.waitFor('document.body.innerText.includes("正在读取来源群目录")');
-      await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
+      await browser.waitFor("Boolean(document.querySelector('[data-loading-status][aria-label=\"正在加载来源群目录…\"]'))");
+      await browser.waitFor('document.body.innerText.includes("没有符合条件的来源群")');assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
       await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
       await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');
-      await browser.waitFor('document.body.innerText.includes("目录读取失败")');assert.equal(await browser.evaluate('document.body.innerText.includes("未找到匹配来源群")'),false);
+      await browser.waitFor('document.body.innerText.includes("来源群目录没有读出来")');assert.equal(await browser.evaluate('document.body.innerText.includes("没有符合条件的来源群")'),false);
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
-      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');
+      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');await browser.waitFor('document.body.innerText.includes("没有符合条件的来源群")');
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/settings/source-groups'});
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
       assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+tickets[0].ticket.id+'?detail=page'});

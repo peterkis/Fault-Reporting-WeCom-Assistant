@@ -1,0 +1,118 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[]}
+# Subtest: completion blank observer keeps a peer failed draft
+ok 1 - completion blank observer keeps a peer failed draft
+  ---
+  duration_ms: 1448.715583
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[]}
+# Subtest: completion exits peer UNKNOWN while retaining this page's independent input
+ok 2 - completion exits peer UNKNOWN while retaining this page's independent input
+  ---
+  duration_ms: 1986.098458
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-e0c69323-c670-4c58-aeef-03eb3ac70423/new-detail-1920.png","width":1920,"height":1080,"sha256":"d45520cb05ee6d599fd25a910006adae5b6855d5bb27108f4d0e89b8924eb9dd"}]}
+# Subtest: MVP without drafts completes take, wait, resume, completion, reopen and retake in the same document
+ok 3 - MVP without drafts completes take, wait, resume, completion, reopen and retake in the same document
+  ---
+  duration_ms: 1994.6945
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-6d9b0982-bd47-4320-a103-d627b17606c9/new-detail-1920.png","width":1920,"height":1080,"sha256":"7bcb433e7e6c99f93d0655551569eddae70933fe5ea9b2f34dc36fc5fc017619"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-6d9b0982-bd47-4320-a103-d627b17606c9/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"148e0f8045f4a8b89c5bbb3c176ddda42229ee9252b53d982616fade6a67c240"}]}
+# Subtest: production detail completion dialog requires independent confirmed summaries and closes with one POST and current GET facts
+ok 4 - production detail completion dialog requires independent confirmed summaries and closes with one POST and current GET facts
+  ---
+  duration_ms: 1541.454
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-09331b04-183f-4a75-ad22-a4db57dd73fb/new-detail-1920.png","width":1920,"height":1080,"sha256":"9e755f7d0fa16d9dc960aa0e9b377dc8d76064eabc11c0a86a6c963f8e24b58e"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-09331b04-183f-4a75-ad22-a4db57dd73fb/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"7b72d79b0759004bab1b0b074ecdf69197d94df2ab73499b8eba3dd00ef0d21d"}]}
+# Subtest: completion purpose restores its encrypted independent fields with Notes disabled and discarding removes the copy without a command
+ok 5 - completion purpose restores its encrypted independent fields with Notes disabled and discarding removes the copy without a command
+  ---
+  duration_ms: 2423.879042
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[]}
+# Subtest: discard waits for local encryption already in flight and removes the final copy without a command
+ok 6 - discard waits for local encryption already in flight and removes the final copy without a command
+  ---
+  duration_ms: 1965.698959
+  type: 'test'
+  ...
+# Subtest: lost real committed completion responses retain the original command and refresh recovers only its safe read-only receipt
+not ok 7 - lost real committed completion responses retain the original command and refresh recovers only its safe read-only receipt
+  ---
+  duration_ms: 1346.064
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:286:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:304:24
+    async completionBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:26:9)
+    async withT11Fixture.notesEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:294:13)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:26:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT11Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:18:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:287:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-4c51c9e3-6518-4492-89db-a059bf04b175/new-detail-1920.png","width":1920,"height":1080,"sha256":"7339b13aaa9ccdfc45f1a22e94a346930381bd3d4aa3fa55816976d649aa0858"}]}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","staff_completion":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-5d748c0c-23bb-4bb3-8347-b2f4eccb4c32/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"036e7c8e56770650e9750a19308687fbc4b368893cad7128eaf143edef0da8a7"}]}
+# Subtest: completion conflict preserves independent input and current refetch focus while trusted cross-tab loss fences a late real acknowledgement
+ok 8 - completion conflict preserves independent input and current refetch focus while trusted cross-tab loss fences a late real acknowledgement
+  ---
+  duration_ms: 4283.476375
+  type: 'test'
+  ...
+# Subtest: raw recovery false keeps completion available without IndexedDB or receipt access and only explicitly replays the same unknown command
+not ok 9 - raw recovery false keeps completion available without IndexedDB or receipt access and only explicitly replays the same unknown command
+  ---
+  duration_ms: 1534.973792
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:423:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:449:24
+    async completionBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:26:9)
+    async withT11Fixture.notesEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:435:13)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:26:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT11Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:18:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t11-completion.browser.test.mjs:424:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 7
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18695.3345

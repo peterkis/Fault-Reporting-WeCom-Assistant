@@ -1,3 +1,6 @@
+import {BlockSkeleton} from '../../design/components/Skeleton/Skeleton';
+import {ErrorState} from '../../design/components/ErrorState/ErrorState';
+import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
 import {useCloseItem} from '../ticket-waiting/ClosureActions';
 import {emptyClosureForm} from '../../design/components/TicketCard/closure-presentation';
 import {ClosureReasonOptions} from '../../design/components/TicketCard/TicketCard';
@@ -40,12 +43,12 @@ function Evidence({view,principal}:{view:ReviewView;principal:Principal}){
     </section>:null}
     {!['UNKNOWN','NONE','LOW'].includes(e.risk)?<p role="alert">报修内容有风险提示。请先核实，再处理。</p>:null}
     <section data-review-original aria-label="原判断"><WorkbenchDisclosure title={<>查看系统核对提示</>}><p>{e.missing.length?'信息尚不完整。请核对原始报修内容。':'请人工核对原始报修内容。系统建议不能代替您的判断。'}</p>{e.missing.some(field=>fields[field])?<p>需要核对：{e.missing.flatMap(field=>fields[field]?[fields[field]]:[]).join('、')}。</p>:null}{e.conflicts.length?<p>部分信息不一致。请联系报修人核实。</p>:null}</WorkbenchDisclosure></section>
-    <section data-review-materials aria-label="当前来源材料"><h4>本次报修内容</h4>
+    {view.materials.length||view.material_basis.stale||view.materials_truncated?<section data-review-materials aria-label="当前来源材料"><h4>本次报修内容</h4>
       {view.material_basis.stale?<p role="alert">报修内容已变化。请取消旧复核，再选择新的待复核记录。</p>:null}
       {view.materials_truncated?<p>以下为本次可查看的材料。部分早期内容未显示。</p>:null}
       <ol>{view.materials.map(item=><li key={item.source_ref}><small>{item.in_original_basis?'原始报修':'后来补充'}</small><PersonalReadMaterial principal={principal} item={{kind:'review',id:view.id}} sourceRef={item.source_ref} revision={item.revision} text={item.text}/></li>)}</ol>
-      {!view.materials.length?<p>暂无可查看的报修内容。</p>:null}
-    </section>
+
+    </section>:null}
   </>;
 }
 export function ReviewWorkspace({principal,item,requested,refs,onBlockedChange,expanded=false,onReadStateChange}:{principal:Principal;item:WorkbenchCard;requested:CanonicalItem;refs:ReviewReference[];expanded?:boolean;onReadStateChange?:((state:StepReadState)=>void)|undefined;onBlockedChange:(blocked:boolean)=>void}){
@@ -117,8 +120,10 @@ function ReviewForm({principal,item,reviewId,onBlockedChange,expanded,onReadStat
     },onError:error=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){deny(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知，尚未发送新的操作。');},onSettled:()=>{request.current=null;}});
   // Codex review: with draft recovery off the operation number is still held in memory, so it can be looked up read-only too.
   const check=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;setState('checking');receipt.mutate({commandId,signal:controller.signal,generation:generation.current});};
-  if(context.isPending)return <p role="status">正在独立核对复核权限与材料…</p>;
-  if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">刷新</HButton></p>;
+  const loading=useDelayedLoading(context.isPending);
+  if(loading.visible)return <BlockSkeleton label="正在加载复核材料…" slow={loading.slow} onRetry={()=>{void context.refetch();}}/>;
+  if(context.isPending)return null;
+  if(context.isError)return <ErrorState title="复核材料没有读出来" onRetry={()=>{void context.refetch();}}/>;
   const view=context.data,capture=value.capture,changed=Boolean(capture&&(capture.row_version!==view.row_version||capture.material_basis!==view.material_basis.current_hash||!sameItem(capture.canonical_item,view.canonical_item)));
   const allowed=view.status==='PENDING'&&Boolean(value.choice)&&view.allowed_resolutions.includes(value.choice as keyof typeof resolutions)&&(!view.material_basis.stale||value.choice==='CANCEL_REVIEW');
   const canSubmit=allowed&&!changed&&!busy&&!unresolved&&state!=='succeeded'&&draft.canSubmit&&Boolean(value.reason)&&Boolean(capture)&&sameItem(item,view.canonical_item);

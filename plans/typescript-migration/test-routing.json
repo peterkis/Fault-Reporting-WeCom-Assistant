@@ -7052,6 +7052,15 @@
       "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card35c-states.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
     }
   ],
   "legacy_commands": {
@@ -9070,7 +9079,8 @@
       "tests/wbint-t32-exception-authorization.browser.test.mts",
       "tests/wbint-t22-realtime-tracer.browser.test.mts",
       "tests/pc-admin-legacy-retirement.browser.test.mts",
-      "tests/visual-regression.test.mts"
+      "tests/visual-regression.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts"
     ],
     "pr-core": [
       "tests/p2-016-ticket-lifecycle.integration.test.mjs",

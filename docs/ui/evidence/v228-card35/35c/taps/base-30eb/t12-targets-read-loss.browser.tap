@@ -1,0 +1,55 @@
+TAP version 13
+# T12_TARGETS_SCOPE_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-4cfe7241-4b7a-475d-8c5f-dc0551e9d6e7/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-4cfe7241-4b7a-475d-8c5f-dc0551e9d6e7/failure.png","sha256":"0afd6315c464203dd38ffc684d2738e53ef7bb9f8d19ab53400a6a95c15dbf07"}]}
+# Subtest: a trusted targets404 clears sensitive T12 input and shared Ticket caches before the independently delayed context can reject
+not ok 1 - a trusted targets404 clears sensitive T12 input and shared Ticket caches before the independently delayed context can reject
+  ---
+  duration_ms: 1586.0115
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-targets-read-loss.browser.test.mjs:26:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    trusted Ticket404 clears the shared cached detail, not only a target alert
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    withT12Profile.recoveryEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-targets-read-loss.browser.test.mjs:62:28)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-targets-read-loss.browser.test.mjs:27:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# T12_TARGETS_SCOPE_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-e6dd57b8-662f-4dab-833a-8892b8441220/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-e6dd57b8-662f-4dab-833a-8892b8441220/scope.png","sha256":"e181ca6af21c0ad9bc7a92708950761986bf0eaa0818489ca91069507a28b23a"}]}
+# Subtest: TARGET_INVALID403 never substitutes for loss of current Ticket READ or clears the shared detail
+ok 2 - TARGET_INVALID403 never substitutes for loss of current Ticket READ or clears the shared detail
+  ---
+  duration_ms: 1513.817166
+  type: 'test'
+  ...
+# T12_TARGETS_SCOPE_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-0fe2df00-df96-4c84-86d5-14c2f6d0d273/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-targets-scope-0fe2df00-df96-4c84-86d5-14c2f6d0d273/failure.png","sha256":"415d63529be9e762a70d2c98bc7fc7d0cbd3805bfd5283cf6f2636051e1b88ca"}]}
+# T12_NEGATIVE_CLEANUP_CHAIN {"preserved_actual_original_cleanup":true,"validation_and_closed_cdp_rescue_errors_retained":true,"owned":{"processes":0,"profiles":0,"commandTimers":0,"sockets":0}}
+# Subtest: a real failed deferred-context release preserves the body error while the targets driver closes its browser and later observer receipt
+ok 3 - a real failed deferred-context release preserves the body error while the targets driver closes its browser and later observer receipt
+  ---
+  duration_ms: 1396.568375
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4662.887875

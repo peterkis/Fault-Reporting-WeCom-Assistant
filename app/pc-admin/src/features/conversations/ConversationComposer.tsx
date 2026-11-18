@@ -1,3 +1,5 @@
+import {InlineAlert} from '../../design/components/InlineAlert/InlineAlert';
+import {DetailLoading} from '../../app/DetailLoading';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
@@ -48,7 +50,7 @@ export function ConversationComposer(props:ComposerProps){
   const preparing=target!==undefined&&binding?.identity!==identity;
   useEffect(()=>{if(!preparing)return;props.onBlockedChange(true);return()=>props.onBlockedChange(false);},[preparing,props.onBlockedChange]);
   if(!target)return <Composer {...props} draftPurpose={props.purpose==='messages'?'conversation-reply':'conversation-note'}/>;
-  if(preparing||failure||!binding)return <section className="conversation-composer" aria-label="回复报修人"><p role={failure?'alert':'status'} data-conversation-draft={props.purpose}>{failure??'正在加载…'}</p></section>;
+  if(preparing||failure||!binding)return <section className="conversation-composer" aria-label="回复报修人" data-conversation-draft={props.purpose}>{failure?<InlineAlert tone="danger">{failure}</InlineAlert>:<DetailLoading inline label="正在准备回复…"/>}</section>;
   return <Composer key={props.principal.principal_id+':'+binding.purpose} {...props} draftPurpose={binding.purpose}/>;
 }
 function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpTarget,draftPurpose,compact=false,receptionVisible=false}:ComposerProps&{draftPurpose:string}){

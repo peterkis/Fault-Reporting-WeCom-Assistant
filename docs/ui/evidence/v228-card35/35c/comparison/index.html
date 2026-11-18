@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Visual comparison — darwin-chrome</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-md);
+    margin: var(--space-6);
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+  section {
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-default);
+    padding: var(--space-4);
+    margin: var(--space-5) 0;
+  }
+  section[data-failed=true] { border-color: var(--tone-danger-fg); }
+  .images { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--space-3); }
+  figure { margin: 0; }
+  img { width: 100%; border: 1px solid var(--border-default); }
+  figcaption { font-weight: var(--fw-semibold); margin-bottom: var(--space-2); }
+  a { color: inherit; }
+</style>
+<h1>Visual comparison · darwin-chrome</h1>
+<p>Storage-only reduction: changed-screen triptychs use pixel-identical lossless WebP. Original PNG files were moved to the local archive; measurements and outcomes are unchanged.</p>
+<p>Scope: full-manifest; 18/18 manifest screens selected.</p>
+<p>
+  14 changed screens; 0 missing baselines.
+  0 unrecorded current files; 0 stale current files.
+  Review required.
+</p>
+<p>
+  Pixelmatch 0.1; default: any changed pixel (diff count &gt; 0; ratio &gt; 0).
+  Product-owner decision 2026-11-18; the card's original ratio &gt; 0.1% is superseded.
+  Per-screen overrides require a reason. <a href="report.json">report.json</a>
+</p>
+
+
+    <section data-failed="true">
+      <h2>board-default · changed</h2>
+      <p>
+        Diff: 48259 pixels /
+        3.351319% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/board-default-baseline.webp"><img alt="board-default baseline" src="images/board-default-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/board-default-current.webp"><img alt="board-default current" src="images/board-default-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/board-default-diff.webp"><img alt="board-default diff" src="images/board-default-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>board-presence · changed</h2>
+      <p>
+        Diff: 48259 pixels /
+        3.351319% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/board-presence-baseline.webp"><img alt="board-presence baseline" src="images/board-presence-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/board-presence-current.webp"><img alt="board-presence current" src="images/board-presence-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/board-presence-diff.webp"><img alt="board-presence diff" src="images/board-presence-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>board-filtered-empty · changed</h2>
+      <p>
+        Diff: 10595 pixels /
+        0.735764% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/board-filtered-empty-baseline.webp"><img alt="board-filtered-empty baseline" src="images/board-filtered-empty-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/board-filtered-empty-current.webp"><img alt="board-filtered-empty current" src="images/board-filtered-empty-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/board-filtered-empty-diff.webp"><img alt="board-filtered-empty diff" src="images/board-filtered-empty-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="false">
+      <h2>list-default · unchanged</h2>
+      <p>
+        Diff: 0 pixels /
+        0.000000% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: NO
+      </p>
+      <p>No changed pixels. Color threshold: 0.1.
+        
+      </p>
+      
+      <p>No pixel change. Only changed-screen triptychs are retained in the repository.</p>
+    </section>
+    <section data-failed="false">
+      <h2>list-closed-groups · unchanged</h2>
+      <p>
+        Diff: 0 pixels /
+        0.000000% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: NO
+      </p>
+      <p>No changed pixels. Color threshold: 0.1.
+        
+      </p>
+      
+      <p>No pixel change. Only changed-screen triptychs are retained in the repository.</p>
+    </section>
+    <section data-failed="true">
+      <h2>drawer-processing · changed</h2>
+      <p>
+        Diff: 15190 pixels /
+        1.054861% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/drawer-processing-baseline.webp"><img alt="drawer-processing baseline" src="images/drawer-processing-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/drawer-processing-current.webp"><img alt="drawer-processing current" src="images/drawer-processing-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/drawer-processing-diff.webp"><img alt="drawer-processing diff" src="images/drawer-processing-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>drawer-dismissed · changed</h2>
+      <p>
+        Diff: 47140 pixels /
+        3.273611% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/drawer-dismissed-baseline.webp"><img alt="drawer-dismissed baseline" src="images/drawer-dismissed-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/drawer-dismissed-current.webp"><img alt="drawer-dismissed current" src="images/drawer-dismissed-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/drawer-dismissed-diff.webp"><img alt="drawer-dismissed diff" src="images/drawer-dismissed-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>drawer-completed · changed</h2>
+      <p>
+        Diff: 37574 pixels /
+        2.609306% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/drawer-completed-baseline.webp"><img alt="drawer-completed baseline" src="images/drawer-completed-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/drawer-completed-current.webp"><img alt="drawer-completed current" src="images/drawer-completed-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/drawer-completed-diff.webp"><img alt="drawer-completed diff" src="images/drawer-completed-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>drawer-banner-editing · changed</h2>
+      <p>
+        Diff: 21119 pixels /
+        1.466597% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/drawer-banner-editing-baseline.webp"><img alt="drawer-banner-editing baseline" src="images/drawer-banner-editing-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/drawer-banner-editing-current.webp"><img alt="drawer-banner-editing current" src="images/drawer-banner-editing-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/drawer-banner-editing-diff.webp"><img alt="drawer-banner-editing diff" src="images/drawer-banner-editing-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>detail-fullpage-1280 · changed</h2>
+      <p>
+        Diff: 69 pixels /
+        0.005391% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/detail-fullpage-1280-baseline.webp"><img alt="detail-fullpage-1280 baseline" src="images/detail-fullpage-1280-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/detail-fullpage-1280-current.webp"><img alt="detail-fullpage-1280 current" src="images/detail-fullpage-1280-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/detail-fullpage-1280-diff.webp"><img alt="detail-fullpage-1280 diff" src="images/detail-fullpage-1280-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>close-dialog-out-of-scope · changed</h2>
+      <p>
+        Diff: 8155 pixels /
+        0.566319% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/close-dialog-out-of-scope-baseline.webp"><img alt="close-dialog-out-of-scope baseline" src="images/close-dialog-out-of-scope-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/close-dialog-out-of-scope-current.webp"><img alt="close-dialog-out-of-scope current" src="images/close-dialog-out-of-scope-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/close-dialog-out-of-scope-diff.webp"><img alt="close-dialog-out-of-scope diff" src="images/close-dialog-out-of-scope-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>close-dialog-duplicate · changed</h2>
+      <p>
+        Diff: 8155 pixels /
+        0.566319% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/close-dialog-duplicate-baseline.webp"><img alt="close-dialog-duplicate baseline" src="images/close-dialog-duplicate-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/close-dialog-duplicate-current.webp"><img alt="close-dialog-duplicate current" src="images/close-dialog-duplicate-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/close-dialog-duplicate-diff.webp"><img alt="close-dialog-duplicate diff" src="images/close-dialog-duplicate-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>restore-dialog · changed</h2>
+      <p>
+        Diff: 31598 pixels /
+        2.194306% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/restore-dialog-baseline.webp"><img alt="restore-dialog baseline" src="images/restore-dialog-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/restore-dialog-current.webp"><img alt="restore-dialog current" src="images/restore-dialog-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/restore-dialog-diff.webp"><img alt="restore-dialog diff" src="images/restore-dialog-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="false">
+      <h2>toast-tones · unchanged</h2>
+      <p>
+        Diff: 0 pixels /
+        0.000000% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: NO
+      </p>
+      <p>No changed pixels. Color threshold: 0.1.
+        
+      </p>
+      
+      <p>No pixel change. Only changed-screen triptychs are retained in the repository.</p>
+    </section>
+    <section data-failed="true">
+      <h2>toast-drawer-stack · changed</h2>
+      <p>
+        Diff: 15190 pixels /
+        1.054861% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/toast-drawer-stack-baseline.webp"><img alt="toast-drawer-stack baseline" src="images/toast-drawer-stack-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/toast-drawer-stack-current.webp"><img alt="toast-drawer-stack current" src="images/toast-drawer-stack-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/toast-drawer-stack-diff.webp"><img alt="toast-drawer-stack diff" src="images/toast-drawer-stack-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="true">
+      <h2>sidebar-online-popover · changed</h2>
+      <p>
+        Diff: 48243 pixels /
+        3.350208% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/sidebar-online-popover-baseline.webp"><img alt="sidebar-online-popover baseline" src="images/sidebar-online-popover-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/sidebar-online-popover-current.webp"><img alt="sidebar-online-popover current" src="images/sidebar-online-popover-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/sidebar-online-popover-diff.webp"><img alt="sidebar-online-popover diff" src="images/sidebar-online-popover-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+    <section data-failed="false">
+      <h2>conversation-default · unchanged</h2>
+      <p>
+        Diff: 0 pixels /
+        0.000000% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: NO
+      </p>
+      <p>No changed pixels. Color threshold: 0.1.
+        
+      </p>
+      
+      <p>No pixel change. Only changed-screen triptychs are retained in the repository.</p>
+    </section>
+    <section data-failed="true">
+      <h2>notifications-default · changed</h2>
+      <p>
+        Diff: 84 pixels /
+        0.005833% ·
+        limit any changed pixel (ratio &gt; 0) ·
+        over threshold: YES
+      </p>
+      <p>Changed: configured pixel limit exceeded. Color threshold: 0.1.
+        
+      </p>
+      
+      <div class="images">
+        <figure><figcaption>baseline</figcaption><a href="images/notifications-default-baseline.webp"><img alt="notifications-default baseline" src="images/notifications-default-baseline.webp" loading="lazy"></a></figure><figure><figcaption>current</figcaption><a href="images/notifications-default-current.webp"><img alt="notifications-default current" src="images/notifications-default-current.webp" loading="lazy"></a></figure><figure><figcaption>diff</figcaption><a href="images/notifications-default-diff.webp"><img alt="notifications-default diff" src="images/notifications-default-diff.webp" loading="lazy"></a></figure>
+      </div>
+    </section>
+</html>

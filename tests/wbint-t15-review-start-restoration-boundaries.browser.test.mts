@@ -132,7 +132,7 @@ async function runBoundary(mode:Boundary){
         assert.equal((await get('/api/lifecycle/bootstrap')).principal_id,actor.id);await get('/api/manual-reviews/'+reviewId);await get('/api/tickets/'+known.ticket.id);
         if(mode==='purpose-regrant'){
           await access.upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
-          await browser.evaluate("Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='重新核对确认并开始权限').click()");
+          await browser.evaluate("document.querySelector('[data-review-start-controls] .ds-error-state button').click()");
           await browser.waitFor("Boolean(document.querySelector('[data-review-start-controls] [data-session-choice] input[type=checkbox]'))");
           await browser.evaluate("document.querySelector('[data-review-workspace] [data-action=capture-review]').click()");
           await browser.waitFor(`document.querySelector('[data-review-workspace] [data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);

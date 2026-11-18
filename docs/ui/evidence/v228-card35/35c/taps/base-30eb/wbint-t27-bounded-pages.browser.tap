@@ -1,0 +1,31 @@
+TAP version 13
+# T27_NATIVE_HISTORY_TRACE {"before":{"path":"/workbench/app/incidents/candidates/01a1ef87-559e-7d2f-9191-52724bb6cdca","timeOrigin":1795019986959,"idx":2},"events":[{"path":"/workbench/app/incidents/candidates","idx":1}],"popstates":1,"path":"/workbench/app/incidents/candidates","timeOrigin":1795019986959,"idx":1,"input":null}
+# T27_FAILURE_DIRECTORY /private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-3025bd5b-bf1f-4663-9d4c-e8ecc7eda86f
+# Subtest: T27 real candidate paging keeps only its latest three 30-item pages with honest loaded counts and preserves explicit input across blocked narrow navigation
+not ok 1 - T27 real candidate paging keeps only its latest three 30-item pages with honest loaded counts and preserves explicit input across blocked narrow navigation
+  ---
+  duration_ms: 32492.12
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t27-bounded-pages.browser.test.mjs:4:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t27-bounded-pages.browser.test.mjs:29:13
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:70:17)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async candidateBrowser (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:19:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t27-bounded-pages.browser.test.mjs:5:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32662.271625

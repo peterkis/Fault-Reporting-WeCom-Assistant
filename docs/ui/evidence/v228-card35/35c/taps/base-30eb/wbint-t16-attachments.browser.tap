@@ -1,0 +1,76 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-5413659c-14ab-44a0-8f71-5f40fdb4ab03/new-detail-1920.png","width":1920,"height":1080,"sha256":"bd89a7841a7e6c6d8064b34d5cc79937c6520604547954c7e4ba5789392acd0f"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-5413659c-14ab-44a0-8f71-5f40fdb4ab03/new-detail-900.png","width":900,"height":1080,"sha256":"933428be3a459efcb666a0071e6c057d5de07488f4a9586579fb01f3078d5fac"}],"downloads":[{"mime_type":"image/png","byte_size":70,"sha256":"d5a51b6aed15684ec8c123e30fe5703155359d6543b6d7b47cb5766ef44939de"},{"mime_type":"image/jpeg","byte_size":761,"sha256":"31706d9755930b4d4b125bbaa8972382eb0a0e9ded9255946dd2b92277a0355a"}],"unmount_aborted":true,"blob_urls":0}
+# Subtest: production bundle displays a real authorized attachment and downloads actual stored bytes
+ok 1 - production bundle displays a real authorized attachment and downloads actual stored bytes
+  ---
+  duration_ms: 2092.293167
+  type: 'test'
+  ...
+# T16_TARGET_DOWNLOAD {"stage":"before-click","locker_pid":3773,"button":{"exists":true,"disabled":false}}
+# T16_TARGET_DOWNLOAD {"stage":"blocked","locker_pid":3773,"target_pid":3780,"target_arrivals":1,"target_finished":false,"relation_waiter_count":1,"blocked":true,"waiters":[{"pid":3780,"state":"active","wait_event_type":"Lock","wait_event":"relation","blocked_by_locker":true,"source_query":true,"query_sha256":"46fed91ae41c0a325813a299dae376ce60c86f2d970197d32a7f162b0a088bca"}]}
+# T16_TARGET_DOWNLOAD {"stage":"closed","target_arrivals":1,"target_finished":false,"disconnected":true,"headers_sent":false,"writable_ended":false,"destroyed":true}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-bdabbb66-088c-46a0-9a4a-6c5841ae3600/new-detail-1920.png","width":1920,"height":1080,"sha256":"9f05d2700be43618167cbb1148ff880fc72ba28049954f4098a32397cf5d1dc4"}]}
+# Subtest: production attachment UI reports disabled storage without reading it
+ok 2 - production attachment UI reports disabled storage without reading it
+  ---
+  duration_ms: 1301.031792
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-5ce0b68f-a936-412e-93aa-cb0804938d88/new-detail-1920.png","width":1920,"height":1080,"sha256":"e25f4a3afa9111441479fe0048a3f932a2418099e1e6ed8d87b8c4f52cd34e36"}]}
+# Subtest: real expiry, missing, oversized and HTML attachments stay unavailable and inactive identity clears the page
+ok 3 - real expiry, missing, oversized and HTML attachments stay unavailable and inactive identity clears the page
+  ---
+  duration_ms: 1400.838792
+  type: 'test'
+  ...
+# Subtest: real parent scope loss fences cached detail and attachment download authority together
+not ok 4 - real parent scope loss fences cached detail and attachment download authority together
+  ---
+  duration_ms: 31155.749708
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:250:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:260:9
+    async withAttachmentBrowser (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:184:9)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:35:13
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT16Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:10:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:251:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: attachment READ loss also clears the requested Review alias of its canonical Ticket
+not ok 5 - attachment READ loss also clears the requested Review alias of its canonical Ticket
+  ---
+  duration_ms: 31323.025167
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:266:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:283:13
+    async withAttachmentBrowser (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:184:9)
+    async withT16Fixture.manualReviewEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:277:9)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:35:13
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT16Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:10:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:267:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67440.851083

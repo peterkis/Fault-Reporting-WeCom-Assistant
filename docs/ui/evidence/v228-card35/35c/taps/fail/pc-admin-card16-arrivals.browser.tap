@@ -1,0 +1,144 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-f5ffb7d9-97a6-404c-907d-e579c8b662e0/new-detail-1920.png","width":1920,"height":1080,"sha256":"ff902c7219f8d9d0e6925a95065065a7400c2d5f095e3cc9626fbb11bcae9bf8"}]}
+# Subtest: Card 16 arrival keeps official new-card reads, bounded motion and reading position
+ok 1 - Card 16 arrival keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1834.706375
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-694f9153-3743-4396-9c96-83bd3110c0eb/new-detail-1920.png","width":1920,"height":1080,"sha256":"e9cdf38ff56fe95079a078d5beade7f67f3fb96f98b1df9e10da16fef6be563a"}]}
+# Subtest: Card 16 collapsed keeps official new-card reads, bounded motion and reading position
+ok 2 - Card 16 collapsed keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1700.028875
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-c444c6ad-cca0-4c36-9329-58e9c6c38be1/new-detail-1920.png","width":1920,"height":1080,"sha256":"b4918de871f7e8102354018c26b4f20e80480ed9ea1702a01e6186c65658a0e3"}]}
+# Subtest: Card 16 scrolling keeps official new-card reads, bounded motion and reading position
+not ok 3 - Card 16 scrolling keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1355.85975
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card16-arrivals.browser.test.mjs:9:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        {
+          id: '01a1efca-8b95-729c-a462-85447492e920',
+    +     top: 102
+    -     top: 100
+        },
+        {
+          id: '01a1efca-8b96-7fa7-b1f6-e7de3fa232ed',
+    +     top: 240
+    -     top: 238
+        },
+        {
+          id: '01a1efca-8b58-7bba-b584-1562ae65a6f3',
+    +     top: 425
+    -     top: 423
+        },
+        {
+          id: '01a1efca-8b5d-7b6e-91b9-6b52e1218605',
+    +     top: 565
+    -     top: 563
+        },
+        {
+          id: '01a1efca-8b62-72c1-b85f-9399b3f41412',
+    +     top: 705
+    -     top: 703
+        },
+        {
+          id: '01a1efca-8b66-74b3-b0b9-0f22a814c64f',
+    +     top: 845
+    -     top: 843
+        },
+        {
+          id: '01a1efca-8b6a-76ba-b618-403c8fa46bef',
+    +     top: 985
+    -     top: 983
+        }
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: '01a1efca-8b95-729c-a462-85447492e920'
+      top: 100
+    1:
+      id: '01a1efca-8b96-7fa7-b1f6-e7de3fa232ed'
+      top: 238
+    2:
+      id: '01a1efca-8b58-7bba-b584-1562ae65a6f3'
+      top: 423
+    3:
+      id: '01a1efca-8b5d-7b6e-91b9-6b52e1218605'
+      top: 563
+    4:
+      id: '01a1efca-8b62-72c1-b85f-9399b3f41412'
+      top: 703
+    5:
+      id: '01a1efca-8b66-74b3-b0b9-0f22a814c64f'
+      top: 843
+    6:
+      id: '01a1efca-8b6a-76ba-b618-403c8fa46bef'
+      top: 983
+  actual:
+    0:
+      id: '01a1efca-8b95-729c-a462-85447492e920'
+      top: 102
+    1:
+      id: '01a1efca-8b96-7fa7-b1f6-e7de3fa232ed'
+      top: 240
+    2:
+      id: '01a1efca-8b58-7bba-b584-1562ae65a6f3'
+      top: 425
+    3:
+      id: '01a1efca-8b5d-7b6e-91b9-6b52e1218605'
+      top: 565
+    4:
+      id: '01a1efca-8b62-72c1-b85f-9399b3f41412'
+      top: 705
+    5:
+      id: '01a1efca-8b66-74b3-b0b9-0f22a814c64f'
+      top: 845
+    6:
+      id: '01a1efca-8b6a-76ba-b618-403c8fa46bef'
+      top: 985
+  operator: 'deepStrictEqual'
+  stack: |-
+    withT42BoardBrowser.realtime (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card16-arrivals.browser.test.mjs:56:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:44:13
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT42BoardBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:11:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-5511df63-c15b-4c91-a24a-d5df21ebd0e4/new-detail-1920.png","width":1920,"height":1080,"sha256":"58070c62196a45390f85ff6b6decfe284524b91153224dd6000377acfe582b91"}]}
+# Subtest: Card 16 reduced keeps official new-card reads, bounded motion and reading position
+ok 4 - Card 16 reduced keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1377.756875
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-b7e066b0-158c-4114-9c92-47e5f2a5725b/new-detail-1920.png","width":1920,"height":1080,"sha256":"04db1b05b0e7cf0bda364ba4d252bd1f08284fc4e84576ca6e5fe6ea5af675ad"}]}
+# Subtest: Card 16 filtered keeps official new-card reads, bounded motion and reading position
+ok 5 - Card 16 filtered keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1703.508833
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8157.738875

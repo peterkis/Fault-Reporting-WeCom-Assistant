@@ -1,0 +1,37 @@
+TAP version 13
+# T06_BROWSER_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n"}
+# T06_BROWSER_FAILURE_DIR {"directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-f7deb8f3-8dbd-4623-9397-0aff7dd8153a"}
+# Subtest: disabled persistent recovery keeps UNKNOWN in memory and only explicit reconciliation replays the original assignment UUID and version
+not ok 1 - disabled persistent recovery keeps UNKNOWN in memory and only explicit reconciliation replays the original assignment UUID and version
+  ---
+  duration_ms: 1527.991333
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-memory-recovery.browser.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.ticketAssignmentEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-memory-recovery.browser.test.mjs:65:20)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-memory-recovery.browser.test.mjs:13:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1692.6885

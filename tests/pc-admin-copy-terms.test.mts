@@ -3,11 +3,32 @@ import {test} from 'node:test';
 import {readdir,readFile} from 'node:fs/promises';
 import {join,relative,resolve} from 'node:path';
 import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
+import {plainStatesFromSource,scanPlainStates} from './helpers/pc-admin-plain-state.mjs';
 
 // Card 34C: the PC workbench copy speaks to the user, not about the system (docs/ui/design-system.md 「界面文案」). Every Chinese
 // string literal and JSX text in app/ and features/ is scanned for the banned technical words and for English words.
 const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 const src=resolve(root,'app/pc-admin/src');
+interface PlainWhitelist {schema_version:number;entries:{file:string;kind:string;sha256:string;maxCount:number;inventory:string[];reason:string}[]}
+test('Card 35C plain loading/error paragraphs require an exact, documented whitelist entry',async()=>{
+  const whitelist=JSON.parse(await readFile(resolve(root,'plans/pc-admin-design-v21/card-35c-plain-state-whitelist.json'),'utf8')) as PlainWhitelist;
+  assert.equal(whitelist.schema_version,1);
+  const actual=await scanPlainStates(src),counts=new Map<string,number>();
+  const key=(entry:{file:string;kind:string;sha256:string})=>entry.file+'|'+entry.kind+'|'+entry.sha256;
+  for(const entry of actual)counts.set(key(entry),(counts.get(key(entry))??0)+1);
+  for(const entry of whitelist.entries){
+    assert.ok(entry.reason.length>20&&entry.inventory.some(id=>/^[A-Z]\d{2}$/u.test(id)),'every exception explains its inventory decision');
+    assert.equal(counts.get(key(entry)),entry.maxCount,entry.file+' whitelist drift: removed or duplicated paragraphs require review');
+    counts.delete(key(entry));
+  }
+  assert.deepEqual([...counts.keys()],[],'new plain loading/error <p> must use the design components or gain a reviewed inventory exception');
+});
+test('Card 35C paragraph guard detects literal, dynamic and native read placeholders, while ignoring hidden hooks',()=>{
+  for(const text of ['<p>正在加载联系人…</p>','<p hidden={false}>Loading…</p>','<p role="alert">{problem}</p>','<p>{errorMessage(query.error)}</p>','<p>{query.isPending?"正在读取":"读取失败"}</p>',"document.createElement('p')"])
+    assert.equal(plainStatesFromSource('probe.tsx',text).length,1,text);
+  assert.equal(plainStatesFromSource('probe.tsx','<p hidden>正在读取</p>').length,0);
+  assert.equal(plainStatesFromSource('probe.tsx','<Button>正在提交…</Button>').length,0);
+});
 const BANNED=['UUID','版本号','版本','核验','副本','加密','投影','快照','读取范围','读权限','契约','幂等','命令','行版本'];
 // Key names in shortcut hints.
 const ENGLISH_ALLOWED=new Set(['Ctrl','Esc','Enter','Tab','Shift','Alt','Cmd']);

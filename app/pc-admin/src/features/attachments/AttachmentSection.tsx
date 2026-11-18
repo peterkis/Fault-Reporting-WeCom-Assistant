@@ -1,3 +1,5 @@
+import {DiagnosticCopy} from '../../app/DiagnosticCopy';
+import {copiedReadDiagnostics} from '../../app/read-state-diagnostics';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Slider,Tooltip} from '@heroui/react';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
@@ -13,6 +15,8 @@ import {webReportApi,employeeMediaUrl} from '../web-report/client';
 import {mediaThumbnail} from './thumbnail';
 import {DetailDialog} from '../../app/DetailDialog';
 import {DetailLoading} from '../../app/DetailLoading';
+import {BlockSkeleton} from '../../design/components/Skeleton/Skeleton';
+import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
 import type {WebReportQuery} from '../web-report/use-web-report';
 import type {AttachmentMetadata,AttachmentReason} from '../../../../../contracts/workbench_attachment_contracts';
 import type {WorkbenchWebMedia} from '../../../../../contracts/workbench_web_report_contracts';
@@ -136,10 +140,11 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   const emptySettled=!materials.length&&!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)&&!legacyFailure&&(!principal.web_reports_enabled||!web.error);
   const storageUnavailable=emptySettled&&!legacy.data?.available&&!web.data?.applicable;
   const conversionErrors=materials.filter(item=>item.web?.conversion_error||item.web?.playback_status==='UNAVAILABLE');
-  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}{item.web?.conversion_error?' · '+item.web.conversion_error.code+' · '+item.web.conversion_error.at:''}</div>)}</Tooltip.Content></Tooltip>:null}</h4>
-    {initialLoading&&!materials.length?<DetailLoading label="正在加载报修资料…"/>:null}
+  const loading=useDelayedLoading(Boolean(readReady&&initialLoading&&!materials.length));
+  if(loading.visible)return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件</h4><BlockSkeleton label="正在加载报修附件…" slow={loading.slow}/></section>;
+  if(emptySettled&&!storageUnavailable&&!notice&&!modal&&!preview&&!busy)return null;
+  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<><Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}</div>)}</Tooltip.Content></Tooltip><DiagnosticCopy data={{...copiedReadDiagnostics(null),materials:conversionErrors.map(item=>({name:item.name,code:item.web?.conversion_error?.code??'未提供',time:item.web?.conversion_error?.at??'未提供'}))}}/></>:null}</h4>
     {legacyFailure?<p role="status">{errorMessage(legacyFailure)}</p>:null}
-    {emptySettled&&!storageUnavailable?<p className="media-empty">当前事项没有可读取的已保存附件。</p>:null}
     {visual.length?<div className="detail-media-grid">{visual.map(item=><HButton key={item.key} type="button" className="detail-media-card" aria-label={(thumbState[item.key]==='failed'?'重试查看':'查看')+item.name} isDisabled={!readReady||busy||(!item.ready&&!item.web)} onClick={()=>{void open(item);}} tone="secondary">{thumbs[item.key]?<img src={thumbs[item.key]} alt={item.name}/>:!item.ready?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.legacy?.reason?labels[item.legacy.reason]:'正在转换，暂时可下载原文件。'}</span></span>:employeeRead&&item.web&&item.web.thumbnail?.status!=='READY'?<span className="media-placeholder"><ImageIcon size={24}/><span>{item.web.thumbnail?.status==='PENDING'?'预览正在生成，点击查看':'暂无小图，点击查看'}</span></span>:thumbState[item.key]==='failed'?<span className="media-placeholder"><ImageIcon size={24}/><span>缩略图暂不可用，点击重试查看</span></span>:<DetailLoading compact label="加载预览…"/>}{item.kind==='VIDEO'?<><span className="media-video-play"><Play size={24}/></span>{item.duration!==null?<time>{clock(item.duration/1000)}</time>:null}</>:null}</HButton>)}</div>:null}
     {voices.map(item=><Voice key={item.key} item={item} sender={reporterName} url={preview?.item.key===item.key?preview.url:undefined} disabled={!readReady||busy} onPlay={()=>{void open(item);}} onDownload={()=>{void open(item,true);}} onError={()=>{void nativeMediaError(item);}}/>)}
     {legacy.data?.truncated?<p>当前仅显示前20个已关联附件。</p>:null}{notice?<ToastFeedback enabled={noticeToast} revision={noticeRevision} source="attachments" state={busy?'loading':undefined} role="status" aria-live="polite">{notice}</ToastFeedback>:null}

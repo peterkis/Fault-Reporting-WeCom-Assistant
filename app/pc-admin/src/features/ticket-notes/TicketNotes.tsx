@@ -1,3 +1,4 @@
+import {DetailLoading} from '../../app/DetailLoading';
 import {createPortal} from 'react-dom';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
@@ -60,9 +61,9 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.
   const checkReceipt=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;requestCommand.current=commandId;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId,signal:controller.signal});};
-  if(context.isPending)return <p role="status">正在加载…</p>;
+  if(context.isPending)return <DetailLoading inline label="正在加载可用操作…"/>;
   if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p>{actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost"><RefreshCw aria-hidden="true"/>刷新可用操作</HButton>,actionsTarget):null}</section>;
-  if(!context.data)return <p role="status">正在加载…</p>;
+  if(!context.data)return <DetailLoading inline label="正在加载可用操作…"/>;
   const allowed=context.data.allowed_actions.includes('add-note');
   const routineDraft=!note&&!pending&&!draft.operationId&&(draft.message===''||draft.message==='草稿仅在当前浏览器恢复，最长24小时。');
   return <section data-activity-field="internal-note" className="ticket-notes detail-note-composer" aria-label="工单操作">

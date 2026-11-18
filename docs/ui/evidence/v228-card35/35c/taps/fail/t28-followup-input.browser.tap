@@ -1,0 +1,304 @@
+TAP version 13
+# T27_FAILURE_DIRECTORY /private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-37fbc40d-7219-4d8f-ba9d-d6ca4ba5178c
+# Subtest: T28 follow-up preserves unsubmitted input across parent conflict and retains exact UNKNOWN intent
+not ok 1 - T28 follow-up preserves unsubmitted input across parent conflict and retains exact UNKNOWN intent
+  ---
+  duration_ms: 1674.976541
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t28-followup-input.browser.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          detail: {
+            allowed_actions: [
+              'accept',
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1efd6-5112-7a4a-b88c-e15e5aac4aa2',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1efd6-5115-7f19-ab62-ea29b8e6721d',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1efd6-5117-786c-97f1-5f2d16e1e5d4',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      ticketId: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+      detail:
+        id: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+        ticket_no: 'IT-20261119-0001'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4cf1-76fa-b7bc-086e441d5a83'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+    1:
+      ticketId: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+      detail:
+        id: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+        ticket_no: 'IT-20261119-0002'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4d01-7325-a609-21f57055dd25'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+    2:
+      ticketId: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+      detail:
+        id: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+        ticket_no: 'IT-20261119-0003'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4d09-770b-b7d7-8c1dbbd29298'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+  actual:
+    0:
+      ticketId: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+      detail:
+        id: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+        ticket_no: 'IT-20261119-0001'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4cf1-76fa-b7bc-086e441d5a83'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4cf4-702e-9410-ceff4c39e98c'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1efd6-5112-7a4a-b88c-e15e5aac4aa2'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+    1:
+      ticketId: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+      detail:
+        id: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+        ticket_no: 'IT-20261119-0002'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4d01-7325-a609-21f57055dd25'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4d02-795d-aa66-824a188a59f5'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1efd6-5115-7f19-ab62-ea29b8e6721d'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+    2:
+      ticketId: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+      detail:
+        id: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+        ticket_no: 'IT-20261119-0003'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 02:06:01'
+        updated_at: '2026-11-19 02:06:01'
+        intake_id: '01a1efd6-4d09-770b-b7d7-8c1dbbd29298'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1efd6-4d0a-7af7-9eca-9a53546962b2'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1efd6-5117-786c-97f1-5f2d16e1e5d4'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t28-followup-input.browser.test.mjs:53:16
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:70:17)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async candidateBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:19:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t28-followup-input.browser.test.mjs:8:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1839.217625

@@ -1,3 +1,5 @@
+import {DetailLoading} from '../../app/DetailLoading';
+import {ErrorState} from '../../design/components/ErrorState/ErrorState';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Label as HLabel,ListBox} from "@heroui/react";
@@ -105,8 +107,8 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     &&(communicationChoice==='RETAIN_CURRENT'||selected.length>0);
   if(!principal.manual_review_resolve_and_start_enabled)return null;
   if(value.choice!=='CONFIRM_TICKET_ELIGIBLE'&&!originalId&&!touched&&state==='idle')return null;
-  if(context.isPending)return <p role="status">正在核对确认并开始用途及真实责任选择…</p>;
-  if(context.isError)return <p role="alert">{errorMessage(context.error)} <HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重新核对确认并开始权限</HButton></p>;
+  if(context.isPending)return <DetailLoading inline label="正在加载接单选项…"/>;
+  if(context.isError)return <div data-review-start-controls><ErrorState title="接单选项没有读出来" onRetry={()=>{void context.refetch();}}/></div>;
   return <section data-review-start-controls aria-label="确认明确故障并开始处理">
     <h4>由我接单并开始处理</h4><p>确认后一次完成复核、建单和本人接单。若只登记待接单工单，可选择下方“记录复核结论”。</p>
     {draft.enabled?<DraftStatus data-review-start-draft-status role="status">{draft.message}</DraftStatus>:null}
