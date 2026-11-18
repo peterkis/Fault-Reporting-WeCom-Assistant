@@ -1,10 +1,10 @@
-import {useEffect,useState} from 'react';
+import {BlockSkeleton} from '../design/components/Skeleton/Skeleton';
 import {LoaderCircle} from 'lucide-react';
+import {useDelayedLoading} from '../design/hooks/useDelayedLoading';
 
-export function DetailLoading({label,compact=false}:{label:string;compact?:boolean}){
-  const [visible,setVisible]=useState(false);
-  useEffect(()=>{const timer=window.setTimeout(()=>setVisible(true),200);return()=>window.clearTimeout(timer);},[]);
-  return <span className={'detail-loading'+(compact?' is-compact':'')} role="status" aria-live="polite" aria-busy="true">
-    {visible?<><LoaderCircle size={compact?18:20} aria-hidden="true"/><span>{label}</span></>:null}
-  </span>;
+/** Only for a button or a single inline value. Sections use BlockSkeleton. */
+export function DetailLoading({label,compact=false,inline=false}:{label:string;compact?:boolean;inline?:boolean}){
+  const loading=useDelayedLoading(true);
+  if(!compact&&!inline)return loading.visible?<div className="detail-loading ds-block-loading"><BlockSkeleton label={label}/></div>:null;
+  return loading.visible?<span className={'detail-loading'+(compact?' is-compact':'')} role="status" aria-live="polite" aria-busy="true"><LoaderCircle aria-hidden="true"/><span>{label}</span></span>:null;
 }

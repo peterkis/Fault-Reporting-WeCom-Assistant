@@ -68,3 +68,51 @@ test('terminal stream unavailability cannot create an immediate reconnect loop w
   const recovery=[...timers.values()][0];assert.ok(recovery);assert.equal(recovery.delay,5000);timers.clear();recovery.callback();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(streams.length,2);client.dispose();assert.equal(timers.size,0);assert.ok(streams.every(stream=>stream.closed()));
 });
+
+const validHints=[['ticket.updated',hint,'search'],['message',undefined,'search'],['workbench.activity.changed','{"schema_version":1}','activity']] as const;
+for(const [name,data,kind]of validHints)test(name+' keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines',async t=>{
+  const stream=transport(),timers=new Map<number,{callback:()=>void;delay:number}>(),reads:number[]=[],hints={search:0,activity:0};
+  const reports:{status:WorkbenchRealtimeStatus;retryCount?:number;disconnectedAt?:number|null}[]=[];let serial=0,now=0,connects=0;
+  const client=createWorkbenchRealtimeClient({capability,retryDelays:[1000,3000,8000],connect:()=>{connects++;return stream.source;},
+    refresh:async()=>{reads.push(now);if(reads.length<4)throw Error('synthetic read failure');return {available:true};},activityTick:async()=>{},
+    onHint:()=>{hints.search++;},onActivityHint:()=>{hints.activity++;},authorizationDenied:()=>false,report:value=>reports.push(value),now:()=>now,
+    schedule:(callback,delay)=>{const id=++serial;timers.set(id,{callback,delay});assert.ok(timers.size<=1,'only one transport timer');return id;},cancel:handle=>{timers.delete(handle as number);}});
+  t.after(()=>client.dispose());
+  stream.emit('open');await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(reads,[0]);
+  for(const [index,delay]of [1000,3000,8000].entries()){
+    const before=[...timers.entries()];assert.equal(before.length,1);const [id,timer]=before[0]??[];assert.ok(id!==undefined&&timer);assert.equal(timer.delay,delay);
+    stream.emit(name,data);assert.equal(hints[kind],index+1,'deliver invalidation immediately, even while reads fail');
+    await new Promise(resolve=>setImmediate(resolve));assert.equal(reads.length,index+1,'a hint cannot admit another read');
+    assert.deepEqual([...timers.entries()],before,'a hint neither resets nor extends the original retry deadline');
+    timers.delete(id);now+=delay;timer.callback();await new Promise(resolve=>setImmediate(resolve));
+  }
+  assert.deepEqual(reads,[0,1000,4000,12000]);assert.equal(reports.at(-1)?.status,'live');assert.equal(reports.at(-1)?.retryCount,0);assert.equal(reports.at(-1)?.disconnectedAt,null);assert.equal(connects,1);
+  assert.equal([...timers.values()][0]?.delay,5000,'recovery resumes the existing normal cadence');
+  stream.emit(name,data);await new Promise(resolve=>setImmediate(resolve));assert.equal(hints[kind],4);assert.equal(reads.length,5,'outside backoff a hint still refreshes immediately');
+  assert.equal(hints[kind==='search'?'activity':'search'],0,'hint paths remain distinct');
+  client.dispose();assert.equal(timers.size,0);assert.equal(stream.closed(),true);
+});
+
+test('invalid decoded and activity events during read backoff deliver no invalidation and preserve the admitted retry',async t=>{
+  const stream=transport(),timers=new Map<number,{callback:()=>void;delay:number}>();let serial=0,reads=0,hints=0,activityHints=0;
+  const client=createWorkbenchRealtimeClient({capability,retryDelays:[1000,3000,8000],connect:()=>stream.source,refresh:async()=>{reads++;if(reads===1)throw Error('synthetic read failure');return {available:true};},activityTick:async()=>{},
+    onHint:()=>{hints++;},onActivityHint:()=>{activityHints++;},authorizationDenied:()=>false,report:()=>{},now:()=>0,
+    schedule:(callback,delay)=>{const id=++serial;timers.set(id,{callback,delay});return id;},cancel:handle=>{timers.delete(handle as number);}});
+  t.after(()=>client.dispose());client.refresh();await new Promise(resolve=>setImmediate(resolve));const before=[...timers.entries()];assert.equal(before.length,1);
+  for(const invalid of ['{',undefined,{event_type:'ticket.updated'},hint.replace('ticket.updated','incident.updated'),hint.replace('9007199254740993','09007199254740993')])stream.emit('ticket.updated',invalid);
+  for(const invalid of ['{','{"schema_version":2}',undefined])stream.emit('workbench.activity.changed',invalid);
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(hints,0);assert.equal(activityHints,0);assert.equal(reads,1);assert.deepEqual([...timers.entries()],before);
+  const [id,timer]=before[0]??[];assert.ok(id!==undefined&&timer);assert.equal(timer.delay,1000);timers.delete(id);timer.callback();await new Promise(resolve=>setImmediate(resolve));assert.equal(reads,2);
+  stream.emit('ticket.updated','{');await new Promise(resolve=>setImmediate(resolve));assert.equal(hints,0);assert.equal(reads,3,'invalid named events retain the existing outside-backoff read behaviour');
+});
+
+test('without retryDelays every valid hint retains its immediate invalidation and read after a failure',async()=>{
+  for(const [name,data,kind]of validHints){
+    const stream=transport(),timers=new Set<unknown>(),hints={search:0,activity:0};let reads=0;
+    const client=createWorkbenchRealtimeClient({capability,connect:()=>stream.source,refresh:async()=>{reads++;throw Error('synthetic read failure');},activityTick:async()=>{},
+      onHint:()=>{hints.search++;},onActivityHint:()=>{hints.activity++;},authorizationDenied:()=>false,report:()=>{},now:()=>0,
+      schedule:callback=>{timers.add(callback);return callback;},cancel:handle=>{timers.delete(handle);}});
+    try{client.refresh();await new Promise(resolve=>setImmediate(resolve));assert.equal(reads,1);stream.emit(name,data);await new Promise(resolve=>setImmediate(resolve));assert.equal(hints[kind],1);assert.equal(reads,2);}
+    finally{client.dispose();assert.equal(timers.size,0);}
+  }
+});

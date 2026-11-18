@@ -1,0 +1,34 @@
+TAP version 13
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":2,"inserted":2,"replayed":0,"channel_failures":0,"other_stream_failures":0}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"438e9b349336b410830d666d1fcae326d555991a6041410ed33491215659abd2"}]}
+# Subtest: Card 16 board keys follow visible cards and pause in inputs, IME and detail overlays
+ok 1 - Card 16 board keys follow visible cards and pause in inputs, IME and detail overlays
+  ---
+  duration_ms: 1965.26575
+  type: 'test'
+  ...
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":2,"inserted":2,"replayed":0,"channel_failures":0,"other_stream_failures":0}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"5efe5bf89b7b41ebb7468a12c75d128b0331fff18a699ebdff04a0636fe326c7"}]}
+# Subtest: Card 16 commands reuse current search, discard stale results and navigate without a business write
+ok 2 - Card 16 commands reuse current search, discard stale results and navigate without a business write
+  ---
+  duration_ms: 2611.5475
+  type: 'test'
+  ...
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":2,"inserted":2,"replayed":0,"channel_failures":0,"other_stream_failures":0}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"7c774414602a56a6b83ef5313778094765ade14ad9d8a85aeb81e08d548da5b3"}]}
+# Subtest: Card 16 command entries and N use the original manual-report capability and route
+ok 3 - Card 16 command entries and N use the original manual-report capability and route
+  ---
+  duration_ms: 2296.172041
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7081.240208

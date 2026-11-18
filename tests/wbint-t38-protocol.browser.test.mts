@@ -13,8 +13,8 @@ type Browser=Awaited<ReturnType<typeof launchSystemBrowser>>;
 interface Fixture {pool:PostgresPool;origin:string;cookies:string[];browserCookies:{name:string;value:string;url:string}[];tickets:{ticket:{id:string}}[];runtime:{server:Server;observability:{metrics:()=>Promise<{sse_clients:number}>};disconnectRealtimePrincipal:(index?:number)=>unknown}}
 test('native 32 admission preserves the budget; the 33rd production client polls bounded GET and permits a human command while REST stays authorized',async()=>{
   await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,runtime}:Fixture)=>{
-    const ticket=tickets[5],cookie=browserCookies[0];assert.ok(ticket&&cookie);let rejected=0,posts=0;
-    runtime.server.on('request',(request,response)=>{if(request.method==='POST')posts++;if((request.url??'').startsWith('/api/realtime/events')){const writeHead=response.writeHead;response.writeHead=(status:number,...args:unknown[])=>{if(status===503)rejected++;Reflect.apply(writeHead,response,[status,...args]);return response;};}});
+    const ticket=tickets[5],cookie=browserCookies[0];assert.ok(ticket&&cookie);let rejected=0,posts=0;const bootstrapReads:number[]=[];
+    runtime.server.on('request',(request,response)=>{if(request.method==='GET'&&request.url==='/api/lifecycle/bootstrap')bootstrapReads.push(performance.now());if(request.method==='POST')posts++;if((request.url??'').startsWith('/api/realtime/events')){const writeHead=response.writeHead;response.writeHead=(status:number,...args:unknown[])=>{if(status===503)rejected++;Reflect.apply(writeHead,response,[status,...args]);return response;};}});
     const peers:{close:()=>Promise<void>}[]=[],directory=await mkdtemp(join(tmpdir(),'web01-ui-'));let browser:Browser|undefined,error:unknown;
     try{
       for(let i=0;i<32;i++){
@@ -29,6 +29,13 @@ test('native 32 admission preserves the budget; the 33rd production client polls
       await browser.waitFor('Boolean(document.querySelector("textarea"))');
       for(let i=0;i<100&&rejected===0;i++)await new Promise(resolve=>setTimeout(resolve,50));assert.ok(rejected>0,'the real 33rd stream must be rejected by the native budget');
       const firstRejections=rejected;await new Promise(resolve=>setTimeout(resolve,1000));assert.equal(rejected,firstRejections,'a terminal503 must wait for the single 5s recovery cadence');assert.equal((await runtime.observability.metrics()).sse_clients,32);
+      const healthyStart=performance.now(),readsBefore=bootstrapReads.length;
+      while(performance.now()-healthyStart<12500)await new Promise(resolve=>setTimeout(resolve,100));
+      const healthyReads=bootstrapReads.length-readsBefore;
+      assert.ok(healthyReads>=2,'authorized GET polling continues past the 12s retry budget when only capacity is unavailable');
+      assert.ok(healthyReads<=8,'capacity recovery remains bounded by the existing single 5s scheduler');
+      assert.equal((await runtime.observability.metrics()).sse_clients,32);
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ds-connection-slot[data-open]'))"),false,'healthy REST during capacity exhaustion never shows a disconnected or stale bar');
       await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T38 manual REST command while capacity is full');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');await browser.waitFor('document.querySelector(".ticket-note-state")?.textContent.includes("已保存内部备注")');assert.equal(posts,1,'only the explicitly requested human operation is sent');
       await peers.pop()?.close();

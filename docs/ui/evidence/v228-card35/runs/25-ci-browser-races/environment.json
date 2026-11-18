@@ -1,0 +1,15 @@
+{
+  "os": "macOS 26.6.2",
+  "os_build": "25G83",
+  "darwin": "25.6.0",
+  "browser": "Google Chrome 157.0.8103.79",
+  "node": "v24.18.0",
+  "database": "postgresql://petervans@127.0.0.1:5432/postgres",
+  "isolation": "TS_MIGRATION_TEST_DB_ISOLATED=1, synthetic fixture-owned UUID databases only",
+  "required_browser": true,
+  "normal_cpu_rate": 1,
+  "throttled_cpu_rate": 6,
+  "fixture_temp_root": "/private/tmp/card35a-ci-races-6ug2iwfj/test-temp",
+  "actual_linux_execution_this_round": false,
+  "main_browser_execution": false
+}

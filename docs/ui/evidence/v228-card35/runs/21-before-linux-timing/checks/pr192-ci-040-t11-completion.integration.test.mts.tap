@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: current handler closes one real cycle through one HTTP completion with independent internal and safe external records
+ok 1 - current handler closes one real cycle through one HTTP completion with independent internal and safe external records
+  ---
+  duration_ms: 650.949083
+  type: 'test'
+  ...
+# Subtest: current handler authority, active membership and exact HTTP trust inputs fence completion without changing business facts
+ok 2 - current handler authority, active membership and exact HTTP trust inputs fence completion without changing business facts
+  ---
+  duration_ms: 614.579583
+  type: 'test'
+  ...
+# Subtest: competing actors, two UUIDs, original replay and terminal resubmission produce one completion and safe scoped receipts
+ok 3 - competing actors, two UUIDs, original replay and terminal resubmission produce one completion and safe scoped receipts
+  ---
+  duration_ms: 1608.062625
+  type: 'test'
+  ...
+# Subtest: lawful waiting completion retains resume and actual staff basis while legacy resolved confirmation remains separate
+ok 4 - lawful waiting completion retains resume and actual staff basis while legacy resolved confirmation remains separate
+  ---
+  duration_ms: 740.232916
+  type: 'test'
+  ...
+# Subtest: six DB commit failures roll back one target aggregate including waiting resume and leave only a stable FAILED audit
+ok 5 - six DB commit failures roll back one target aggregate including waiting resume and leave only a stable FAILED audit
+  ---
+  duration_ms: 786.148584
+  type: 'test'
+  ...
+# Subtest: disabled completion avoids migration040 and missing enabled schema fails closed before receipts or state writes
+ok 6 - disabled completion avoids migration040 and missing enabled schema fails closed before receipts or state writes
+  ---
+  duration_ms: 1066.5635
+  type: 'test'
+  ...
+# Subtest: default-false legacy Pilot profile cannot expose or execute staff completion outside the cycle and commitment transaction
+ok 7 - default-false legacy Pilot profile cannot expose or execute staff completion outside the cycle and commitment transaction
+  ---
+  duration_ms: 533.555583
+  type: 'test'
+  ...
+# Subtest: Reporter-safe and actual H5 owner projections show only confirmed summary and a fresh consumer rediscovers the original durable promise
+ok 8 - Reporter-safe and actual H5 owner projections show only confirmed summary and a fresh consumer rediscovers the original durable promise
+  ---
+  duration_ms: 565.984959
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6746.364459

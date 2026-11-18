@@ -1,0 +1,80 @@
+{
+  "status": "PASS",
+  "metrics": {
+    "bootstrapTimes": [
+      17.699999809265137,
+      5022.199999809265,
+      10107,
+      15163.199999809265
+    ],
+    "intervals": [
+      5004.5,
+      5084.800000190735,
+      5056.199999809265
+    ],
+    "boardReads": [
+      {
+        "time": 86.69999980926514,
+        "status": 200
+      },
+      {
+        "time": 86.89999985694885,
+        "status": 200
+      },
+      {
+        "time": 86.89999985694885,
+        "status": 200
+      },
+      {
+        "time": 5098.299999952316,
+        "status": 200
+      },
+      {
+        "time": 5098.5,
+        "status": 200
+      },
+      {
+        "time": 5098.699999809265,
+        "status": 200
+      },
+      {
+        "time": 10151.699999809265,
+        "status": 200
+      },
+      {
+        "time": 10152.099999904633,
+        "status": 200
+      },
+      {
+        "time": 10157.199999809265,
+        "status": 200
+      },
+      {
+        "time": 15236.5,
+        "status": 200
+      },
+      {
+        "time": 15236.799999952316,
+        "status": 200
+      },
+      {
+        "time": 15237.099999904633,
+        "status": 200
+      }
+    ],
+    "pollingScreenshot": {
+      "file": "connection-polling-healthy.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "4e7852f121e48dc2b267398452efef650009413780a052fb6ad97a6078320682"
+    },
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    }
+  },
+  "error": null
+}

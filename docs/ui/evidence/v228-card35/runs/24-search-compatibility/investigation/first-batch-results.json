@@ -1,0 +1,111 @@
+[
+  {
+    "path": "tests/t41-search-production.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card12.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_TEST_NOT_PASS: tests/pc-admin-card12.browser.test.mts",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-copy-terms.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-protocol.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.integration.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/workbench-toast-feedback.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_INPUT_DRIFT",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/workbench-detail-restructure.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_INPUT_DRIFT",
+    "directory": "<owned-temp>"
+  }
+]

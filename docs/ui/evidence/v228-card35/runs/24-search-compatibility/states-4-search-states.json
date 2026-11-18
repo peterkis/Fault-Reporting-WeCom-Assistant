@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "metrics": {
+    "reads": [
+      {
+        "at": 1639.9000000953674,
+        "failed": true
+      },
+      {
+        "at": 2641.7999999523163,
+        "failed": false
+      }
+    ],
+    "screenshot": {
+      "file": "search-backoff-refresh-required.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e5d599941f6be057530b1daae509b2b686f25e5cdb26bed009d986e6e0679c08"
+    },
+    "cpuRate": 4,
+    "filteredEmpty": {
+      "file": "search-empty-filtered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ef45c2cf42f96084612bf56096692b9d1d21f806719665789bd655d0b20a490e"
+    },
+    "unfilteredEmpty": {
+      "file": "search-empty-unfiltered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e29c4b0a6255fcdbb3200eb0c0dc70b803a21fdc0f78fae67ac7bece9e140721"
+    }
+  },
+  "error": null
+}

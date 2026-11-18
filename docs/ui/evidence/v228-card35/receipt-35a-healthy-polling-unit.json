@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "scenario": "server-unavailable",
+      "elapsed": 65000,
+      "reads": 13,
+      "nextDelay": 5000,
+      "retryCount": 0,
+      "disconnectedAt": null
+    },
+    {
+      "scenario": "terminal-closed",
+      "elapsed": 65000,
+      "reads": 27,
+      "nextDelay": 5000,
+      "retryCount": 0,
+      "disconnectedAt": null
+    },
+    {
+      "scenario": "read-recovered",
+      "elapsed": 66000,
+      "reads": 15,
+      "nextDelay": 5000,
+      "retryCount": 0,
+      "disconnectedAt": null
+    },
+    {
+      "scenario": "read-timeout-recovered",
+      "elapsed": 71000,
+      "reads": 15,
+      "nextDelay": 5000,
+      "retryCount": 0,
+      "disconnectedAt": null
+    }
+  ]
+}

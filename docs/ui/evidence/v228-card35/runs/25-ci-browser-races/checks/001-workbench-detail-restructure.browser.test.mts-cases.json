@@ -1,0 +1,26 @@
+[
+  {
+    "event_time": "2026-11-18 21:52:17",
+    "event_epoch_ms": "1795009937788",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "production detail shares report materials, uses responsive information and purpose-owned action dialogs",
+    "file": "tests/workbench-detail-restructure.browser.test.mjs",
+    "line": 11,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:52:20",
+    "event_epoch_ms": "1795009940197",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "real pointer helper waits for a moving control and an overlapping hit target",
+    "file": "tests/workbench-detail-restructure.browser.test.mjs",
+    "line": 197,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  }
+]

@@ -76,8 +76,9 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal((await fetch(origin+'/workbench/app/settings/source-groups')).status,401);
     assert.equal((await fetch(origin+'/workbench/app?view=list')).status,401);
     const html=await shell.text(),asset=html.match(/src="([^"]+\.js)"/u)?.[1];assert.ok(asset);assert.equal((await get(asset)).status,200);
-    const stylesheet=html.match(/href="([^"]+\.css)"/u)?.[1];assert.ok(stylesheet);
-    const css=await (await get(stylesheet)).text(),fonts=[...css.matchAll(/url\(["']?(\/workbench\/app\/assets\/[^"')]+\.woff2)["']?\)/gu)].map(match=>match[1]);
+    const stylesheets=[...html.matchAll(/href="([^"]+\.css)"/gu)].map(match=>match[1]);assert.ok(stylesheets.length);
+    const css=(await Promise.all(stylesheets.map(async stylesheet=>{const response=await get(stylesheet);assert.equal(response.status,200);return response.text();}))).join('\n');
+    const fonts=[...css.matchAll(/url\(["']?(\/workbench\/app\/assets\/[^"')]+\.woff2)["']?\)/gu)].map(match=>match[1]);
     const favicon=html.match(/href="([^" ]*yixiaoxiu-favicon-[^" ]+\.svg)"/u)?.[1];assert.ok(favicon);
     const inventory=JSON.parse(await readFile(new URL('../web/admin-workbench/asset-inventory.json',import.meta.url),'utf8'));
     const logoFile=inventory.find(file=>/^assets\/yixiaoxiu-logo-[A-Za-z0-9_-]+\.svg$/u.test(file));assert.ok(logoFile);const logo='/workbench/app/'+logoFile;

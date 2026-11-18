@@ -1,0 +1,245 @@
+{
+  "head": "c63b71dd1d71ef9fd0f665f4f9466dd97c6bff53",
+  "origin_main": "67999466deedacea714812f7cc23884c2a5b7db1",
+  "dirty": true,
+  "manifest_sha256": "3b69f0debb4be023f04928d8dbc104c0bfe85f213c5866e5d81e30e06c1cd933",
+  "source_input_hash": "d80ecfcf37c23b566215980c1e4737e61a4966ee5823abf23b4b42a2c13d5a75",
+  "recorded_at": "2026-11-18T12:48:40.530581+00:00",
+  "platform": "macOS 26.6.2 / Darwin 25.6.0",
+  "browser": "Chrome/157.0.8103.79",
+  "node": "24.18.0",
+  "results": [
+    {
+      "path": "tests/pc-admin-card35a-states.browser.test.mts",
+      "cpu_rate": 1,
+      "tap": "states-1.tap",
+      "status": "PASS",
+      "rate": 1,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 179526,
+      "manifest_sha256": "3b69f0debb4be023f04928d8dbc104c0bfe85f213c5866e5d81e30e06c1cd933",
+      "source_input_hash": "d80ecfcf37c23b566215980c1e4737e61a4966ee5823abf23b4b42a2c13d5a75"
+    },
+    {
+      "path": "tests/pc-admin-card35a-states.browser.test.mts",
+      "cpu_rate": 4,
+      "tap": "states-4.tap",
+      "status": "PASS",
+      "rate": 4,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 215637,
+      "manifest_sha256": "3b69f0debb4be023f04928d8dbc104c0bfe85f213c5866e5d81e30e06c1cd933",
+      "source_input_hash": "d80ecfcf37c23b566215980c1e4737e61a4966ee5823abf23b4b42a2c13d5a75"
+    },
+    {
+      "path": "tests/t41-search-production.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "01-t41-search-production.browser.test.mts.tap",
+      "executed_sha256": "44968bf8400dc463bc153f5769532081e27e76a96fdc1729a642d58aff55cd6e"
+    },
+    {
+      "path": "tests/pc-admin-card12.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "02-pc-admin-card12.browser.test.mts.tap",
+      "executed_sha256": "e04ca1f02f139095857ec4428d24499463f1fdb8fce06c07f2945febce711bef"
+    },
+    {
+      "path": "tests/t41-search-refresh-and-long-pages.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "03-t41-search-refresh-and-long-pages.browser.test.mts.tap",
+      "executed_sha256": "70fddba9a1e1e0af60025faa9c458456def5ce2872ae9be2a023bb58546a5951"
+    },
+    {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "04-pc-admin-copy-terms.test.mts.tap",
+      "executed_sha256": "965cf4661a9be75cd292e8b3a476d40fa73786378841614c8fab2b37170fd65c"
+    },
+    {
+      "path": "tests/wbint-t38-realtime.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "05-wbint-t38-realtime.test.mts.tap",
+      "executed_sha256": "fa0293dec51f13ec9e768ed66c3bbf92ab6070c2f3b6289a0c2af2b75d497804"
+    },
+    {
+      "path": "tests/wbint-t38-realtime.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "06-wbint-t38-realtime.browser.test.mts.tap",
+      "executed_sha256": "7acba7e58bb2eefd0a21cd1ded370c57f6435fa2316260a4ff2d833d73af791c"
+    },
+    {
+      "path": "tests/wbint-t38-protocol.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "07-wbint-t38-protocol.browser.test.mts.tap",
+      "executed_sha256": "ee2e09e60b1ab735affbd23f945d81247fa8e814fd564c5d4a2d2208d85f43fb"
+    },
+    {
+      "path": "tests/wbint-t38-realtime.integration.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "08-wbint-t38-realtime.integration.test.mts.tap",
+      "executed_sha256": "ed46b8f73a45bf3aaf5478757cdf0521a23cbc9ffc532851adf04893fbe0cba8"
+    },
+    {
+      "path": "tests/workbench-toast-feedback.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "09-workbench-toast-feedback.browser.test.mts.tap",
+      "executed_sha256": "5a3988951534a8bca6c187ce1f346d16998f13c6b200f99608937b6149ed036e"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "10-workbench-detail-restructure.browser.test.mts.tap",
+      "executed_sha256": "1d1a1768ef2be81a8b01aaa8f255646793afa126af9c19897a82c348fd1667b9"
+    }
+  ],
+  "not_run": [
+    {
+      "path": "tests/t41-search-pending-hint.browser.test.mts",
+      "status": "NOT_RUN",
+      "reason": "The unconditional Windows D-drive temp precondition also exists unchanged on origin/main; this host is macOS. Read and compared the whole file; no test/guard modification."
+    }
+  ],
+  "actual_linux_execution": "NOT_RUN",
+  "full_ci_selection": "NOT_RUN",
+  "commit_push": false
+}

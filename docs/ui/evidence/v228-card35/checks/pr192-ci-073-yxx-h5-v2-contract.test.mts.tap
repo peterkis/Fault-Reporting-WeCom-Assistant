@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: H5 V2 accepts independent voice/image/video references and contact without content
+ok 1 - H5 V2 accepts independent voice/image/video references and contact without content
+  ---
+  duration_ms: 1.286291
+  type: 'test'
+  ...
+# Subtest: H5 V2 rejects identity injection, missing and nested additional keys
+ok 2 - H5 V2 rejects identity injection, missing and nested additional keys
+  ---
+  duration_ms: 0.23275
+  type: 'test'
+  ...
+# Subtest: H5 V2 enforces canonical unique media references and Unicode limits
+ok 3 - H5 V2 enforces canonical unique media references and Unicode limits
+  ---
+  duration_ms: 0.163208
+  type: 'test'
+  ...
+# Subtest: H5 V2 dispatch preserves V1 closed input and raw V2 intent
+ok 4 - H5 V2 dispatch preserves V1 closed input and raw V2 intent
+  ---
+  duration_ms: 0.191541
+  type: 'test'
+  ...
+# Subtest: H5 declared form intention directly recommends the existing minimal Core action
+ok 5 - H5 declared form intention directly recommends the existing minimal Core action
+  ---
+  duration_ms: 0.83125
+  type: 'test'
+  ...
+# Subtest: H5 lifecycle inputs bind current Ticket version and a real completion reference
+ok 6 - H5 lifecycle inputs bind current Ticket version and a real completion reference
+  ---
+  duration_ms: 0.213417
+  type: 'test'
+  ...
+# Subtest: H5 progress requires bounded explicit public text and valid Shanghai time
+ok 7 - H5 progress requires bounded explicit public text and valid Shanghai time
+  ---
+  duration_ms: 0.363875
+  type: 'test'
+  ...
+# Subtest: member command authentication preserves unavailable qualification and never invokes a store
+ok 8 - member command authentication preserves unavailable qualification and never invokes a store
+  ---
+  duration_ms: 0.857708
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 108.045667

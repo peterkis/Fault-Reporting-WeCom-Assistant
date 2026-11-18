@@ -1,0 +1,11 @@
+✔ Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal (2.140334ms)
+✔ Card 35A native reconnect events cannot reset or bypass the bounded read budget (0.998583ms)
+✔ Card 35A option A: one scheduler polls successful reads for 65s under unavailable or CLOSED live transport, and clears a previous read failure (5.96325ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.918625

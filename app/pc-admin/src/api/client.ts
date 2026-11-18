@@ -56,7 +56,10 @@ export interface P2016ReopenCommand {client_command_id:string;expected_version:n
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null;reopen_follow_up?:NonNullable<P2016TicketDetail['reopen_follow_up']>}
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardCompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
-export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
+export class ApiError extends Error {
+  readonly requestId:string;readonly requestIdSource:'response'|'local';
+  constructor(public status:number,public code:string,requestId?:string){super(code);this.requestId=requestId||crypto.randomUUID();this.requestIdSource=requestId?'response':'local';}
+}
 export class ConfirmedManualReportRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}
 function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function text(value:unknown): string {if(typeof value!=='string')throw new ApiError(502,'INVALID_RESPONSE');return value;}
@@ -265,7 +268,7 @@ export async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';
   try {const value:unknown=await response.json(),candidate=text(object(object(value).error).code);if(/^[A-Z][A-Z0-9_]{0,100}$/u.test(candidate))code=candidate;}
   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
-  throw new ApiError(response.status,code);
+  throw new ApiError(response.status,code,response.headers.get('x-request-id')??undefined);
 }
 async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,response:Response)=>T,readInit:{method?:'POST';body?:string;headers?:Record<string,string>}={}):Promise<T> {
   const epoch=authorizationEpoch;
@@ -277,7 +280,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,respo
   if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
   const value:unknown=await response.json();
   requireCurrentRead(epoch,signal);
-  if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}
+  if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code),response.headers.get('x-request-id')??undefined);}
   return decode(value,response);
   }catch(error){requireCurrentRead(epoch,signal);throw error;}
 }

@@ -1,0 +1,8 @@
+file://<worktree>/.build/tools/pr-plan.mjs:257
+            throw Error('PR_DOCUMENT_LINKS: ' + JSON.stringify(issues));
+                  ^
+
+Error: PR_DOCUMENT_LINKS: [{"file":"docs/ui/evidence/v228-card35/runs/15-before-review/README.md","code":"LOCAL_LINK_MISSING","target":"../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html"},{"file":"docs/ui/evidence/v228-card35/runs/15-before-review/README.md","code":"LOCAL_LINK_MISSING","target":"../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a"},{"file":"docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md","code":"LOCAL_LINK_MISSING","target":"../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html"},{"file":"docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md","code":"LOCAL_LINK_MISSING","target":"../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a"}]
+    at file://<worktree>/.build/tools/pr-plan.mjs:257:19
+
+Node.js v24.18.0

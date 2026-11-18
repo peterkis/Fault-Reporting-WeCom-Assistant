@@ -1,0 +1,122 @@
+[
+  {
+    "event_time": "2026-11-18 20:15:59",
+    "event_epoch_ms": "1795004159254",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 74,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:16:01",
+    "event_epoch_ms": "1795004161378",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A PR192: empty handled column retains the completed drop zone and opens the existing form without a POST",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 138,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:17:05",
+    "event_epoch_ms": "1795004225270",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 191,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:27",
+    "event_epoch_ms": "1795004307375",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 430,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:28",
+    "event_epoch_ms": "1795004308750",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 654,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:50",
+    "event_epoch_ms": "1795004330232",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A option A: unavailable live stream keeps healthy reads on the 5s cadence beyond 12s without a connection bar",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 684,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:53",
+    "event_epoch_ms": "1795004333769",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 736,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:53",
+    "event_epoch_ms": "1795004333770",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 798,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:53",
+    "event_epoch_ms": "1795004333770",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A native reconnect events cannot reset or bypass the bounded read budget",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 834,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 20:18:53",
+    "event_epoch_ms": "1795004333773",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 35A option A: one scheduler polls successful reads for 65s under unavailable or CLOSED live transport, and clears a previous read failure",
+    "file": "tests/pc-admin-card35a-states.browser.test.mjs",
+    "line": 869,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  }
+]

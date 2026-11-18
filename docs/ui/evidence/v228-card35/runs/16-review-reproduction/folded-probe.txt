@@ -1,0 +1,25 @@
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (33543.979792ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33658.78125
+
+✖ failing tests:
+
+test at ../../../..<owned-temp>
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (33543.979792ms)
+  Error: Object reference chain is too long
+      at WebSocket.<anonymous> (file://<worktree>/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:197:39)
+      at callListener (<worktree>/node_modules/ws/lib/event-target.js:290:14)
+      at WebSocket.onMessage (<worktree>/node_modules/ws/lib/event-target.js:209:9)
+      at WebSocket.emit (node:events:509:28)
+      at Receiver.receiverOnMessage (<worktree>/node_modules/ws/lib/websocket.js:1239:20)
+      at Receiver.emit (node:events:509:28)
+      at Receiver.dataMessage (<worktree>/node_modules/ws/lib/receiver.js:633:14)
+      at <worktree>/node_modules/ws/lib/receiver.js:566:12
+      at <worktree>/node_modules/ws/lib/permessage-deflate.js:311:9
+      at <worktree>/node_modules/ws/lib/permessage-deflate.js:394:7

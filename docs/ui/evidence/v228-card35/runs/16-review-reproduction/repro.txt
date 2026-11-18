@@ -1,0 +1,31 @@
+{"bands":[{"tag":"SECTION","class":"ticket-notes ticket-assignment detail-action-controller","height":0,"children":""}],"topbar":"连接失败，显示最近已确认资料","scatteredErrors":["读取未完成","读取未完成"]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
++   duplicateOfflineLabel: true,
++   emptyBands: 1,
++   scatteredErrors: 2
+-   duplicateOfflineLabel: false,
+-   emptyBands: 0,
+-   scatteredErrors: 0
+  }
+
+    at file://<owned-temp>
+    at async run (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:179:21)
+    at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    at async withT43Fixture (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:85:9)
+    at async file://<owned-temp> {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: { emptyBands: 1, duplicateOfflineLabel: true, scatteredErrors: 2 },
+  expected: { emptyBands: 0, duplicateOfflineLabel: false, scatteredErrors: 0 },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.18.0

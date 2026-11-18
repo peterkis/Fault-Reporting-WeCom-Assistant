@@ -1,0 +1,25 @@
+.ds-skeleton {--skeleton-w:100%;--skeleton-h:var(--lh-xs);--radius-skeleton-block:var(--radius-skeleton);display:block;flex:none;width:var(--skeleton-w);height:var(--skeleton-h);border-radius:var(--radius-skeleton-block);background:var(--bg-muted);animation:ds-skeleton-pulse var(--load-pulse) ease-in-out infinite;}
+@keyframes ds-skeleton-pulse {50% {opacity:var(--state-content-opacity);}}
+.ds-loading-status {min-width:0;}
+.ds-skeleton-cards {display:grid;gap:var(--space-2);}
+.ds-ticket-skeleton {pointer-events:none;}
+.ds-ticket-skeleton .card-top>.ds-ticket-category {position:absolute;}
+.ds-loading-slow {display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);font-size:var(--fs-sm);color:var(--text-secondary);}
+.ds-detail-skeleton {display:flex;flex-direction:column;gap:var(--space-4);}
+.ds-skeleton-properties {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2) var(--space-4);}
+.ds-skeleton-properties>div {display:flex;align-items:center;gap:var(--space-3);height:var(--space-8);}
+.ds-skeleton-timeline {display:grid;gap:var(--space-4);}
+.ds-skeleton-timeline>div {display:flex;gap:var(--space-3);}
+.ds-skeleton-timeline>div>div {display:grid;gap:var(--space-2);flex:1;}
+.ds-block-skeleton {display:grid;gap:var(--space-2);padding:var(--space-3) 0;}
+.ds-state-region {position:relative;}
+.ds-state-region:is([data-refreshing],[data-stale])>.ds-state-content {opacity:var(--state-content-opacity);}
+.ds-state-region[data-refreshing]::before {content:'';position:absolute;inset:0 0 auto;height:var(--state-progress-h);background:var(--brand);z-index:1;animation:ds-refresh-progress var(--load-pulse) ease-in-out infinite;transform-origin:left;}
+@keyframes ds-refresh-progress {0%,100% {transform:scaleX(.2);}50% {transform:scaleX(1);}}
+@media (prefers-reduced-motion:reduce) {.ds-skeleton,.ds-state-region[data-refreshing]::before {animation:none;}}
+
+.ds-detail>.ds-detail-skeleton.detail-body {flex:1;min-height:0;overflow:auto;padding:var(--space-5) calc(var(--space-6) + var(--space-1)) var(--space-6);}
+.ds-detail-skeleton .ds-detail-hero>div {min-width:0;flex:1;}
+
+.ds-detail.detail-page>.ds-detail-skeleton.detail-body {width:100%;max-width:var(--reading-max);}
+@media (max-width:640px) {.ds-detail>.ds-detail-skeleton.detail-body {padding:var(--space-4);}}

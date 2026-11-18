@@ -1,0 +1,114 @@
+TAP version 13
+# Subtest: WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static
+ok 1 - WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static
+  ---
+  duration_ms: 872.7005
+  type: 'test'
+  ...
+# Subtest: WEB01 current communication responsibility excludes a retained assignment after a real topic boundary
+ok 2 - WEB01 current communication responsibility excludes a retained assignment after a real topic boundary
+  ---
+  duration_ms: 792.69975
+  type: 'test'
+  ...
+# Subtest: source group HTTP: ADMIN metadata, scoped group identity, replay, conflict, origin and retention
+ok 3 - source group HTTP: ADMIN metadata, scoped group identity, replay, conflict, origin and retention
+  ---
+  duration_ms: 794.16625
+  type: 'test'
+  ...
+# {"card11_projection_queries":{"one_card":6,"full_page":6}}
+# Subtest: Card 11 HTTP catalog, source projections, state events and legacy search shape
+ok 4 - Card 11 HTTP catalog, source projections, state events and legacy search shape
+  ---
+  duration_ms: 917.232708
+  type: 'test'
+  ...
+# Subtest: Card 11 Web explicit selection respects source revocation; unavailable catalog is HTTP 503
+ok 5 - Card 11 Web explicit selection respects source revocation; unavailable catalog is HTTP 503
+  ---
+  duration_ms: 1124.650542
+  type: 'test'
+  ...
+# Subtest: Card 11 preserves terminal Intake detail and resolved Review aliases
+ok 6 - Card 11 preserves terminal Intake detail and resolved Review aliases
+  ---
+  duration_ms: 718.635292
+  type: 'test'
+  ...
+# CARD27A_SYNTHETIC {"states":6,"manual_intake":"DISMISSED","automatic_intake":"DISMISSED","cancelled_reason_note_visible":true,"duplicate_original_available":false,"dismissed_restore":true,"retained_closure_time":true,"post_wait_record_stable":true,"all_group_counts":{"completed":6,"dismissed":5},"pages":6}
+# Subtest: Card 27A closure facts, default groups, date boundaries and list filters share the authorized canonical items
+ok 7 - Card 27A closure facts, default groups, date boundaries and list filters share the authorized canonical items
+  ---
+  duration_ms: 1564.672209
+  type: 'test'
+  ...
+# Subtest: Card 27A review rejects a newly matching prefix or sentinel after a real follow commit
+ok 8 - Card 27A review rejects a newly matching prefix or sentinel after a real follow commit
+  ---
+  duration_ms: 2537.9795
+  type: 'test'
+  ...
+# Subtest: Card 27A review normalizes valid legacy whitespace without changing stored internal facts
+ok 9 - Card 27A review normalizes valid legacy whitespace without changing stored internal facts
+  ---
+  duration_ms: 533.607792
+  type: 'test'
+  ...
+# Subtest: Card 27A review initial ignored closing time is its creation fact, not delayed input time
+ok 10 - Card 27A review initial ignored closing time is its creation fact, not delayed input time
+  ---
+  duration_ms: 526.242125
+  type: 'test'
+  ...
+# Subtest: Card 11 final statement rejects a revoked Principal after source, route or postflight waits
+ok 11 - Card 11 final statement rejects a revoked Principal after source, route or postflight waits
+  ---
+  duration_ms: 0.563583
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie board rejects logout during its read wait
+ok 12 - Card 11 real Cookie board rejects logout during its read wait
+  ---
+  duration_ms: 642.825916
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie board rejects physical-expiry during its read wait
+ok 13 - Card 11 real Cookie board rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3632.861208
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie detail rejects logout during its read wait
+ok 14 - Card 11 real Cookie detail rejects logout during its read wait
+  ---
+  duration_ms: 670.539167
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie detail rejects physical-expiry during its read wait
+ok 15 - Card 11 real Cookie detail rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3712.698
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie catalog rejects logout during its read wait
+ok 16 - Card 11 real Cookie catalog rejects logout during its read wait
+  ---
+  duration_ms: 607.186708
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie catalog rejects physical-expiry during its read wait
+ok 17 - Card 11 real Cookie catalog rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3572.223666
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23496.151417

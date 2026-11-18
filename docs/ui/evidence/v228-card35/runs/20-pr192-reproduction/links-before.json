@@ -1,0 +1,136 @@
+{
+  "documents": 8,
+  "local_links": 262,
+  "unique_targets": 248,
+  "git_check_ignore_stdout": "docs/ui/evidence/v228-card35/checks/typecheck.log\u0000docs/ui/evidence/v228-card35/checks/stylelint.log\u0000docs/ui/evidence/v228-card35/checks/eslint.log\u0000docs/ui/evidence/v228-card35/checks/build.log\u0000docs/ui/evidence/v228-card35/checks/states-browser.log\u0000docs/ui/evidence/v228-card35/checks/agent-docs.log\u0000docs/ui/evidence/v228-card35/checks/agent-docs-tests.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/typecheck.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/stylelint.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/eslint.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/build.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/states-browser.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs.log\u0000docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs-tests.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/typecheck.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/stylelint.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/eslint.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/build.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/states-browser.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs.log\u0000docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs-tests.log\u0000",
+  "issues": [
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/15-before-review/README.md",
+      "raw": "../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+      "target": "docs/ui/evidence/v228-card35/prototype/医小修 PC 管理端 v2.2.7 设计原型.html",
+      "code": "MISSING"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/15-before-review/README.md",
+      "raw": "../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+      "target": "docs/ui/evidence/v228-card35/design-system.md",
+      "code": "MISSING"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md",
+      "raw": "../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+      "target": "docs/ui/evidence/v228-card35/prototype/医小修 PC 管理端 v2.2.7 设计原型.html",
+      "code": "MISSING"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md",
+      "raw": "../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+      "target": "docs/ui/evidence/v228-card35/design-system.md",
+      "code": "MISSING"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/typecheck.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/stylelint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/eslint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/build.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/states-browser.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/agent-docs.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/checks/agent-docs-tests.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/typecheck.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/stylelint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/eslint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/build.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/states-browser.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs-tests.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/typecheck.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/stylelint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/eslint.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/build.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/states-browser.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "target": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs-tests.log",
+      "code": "GITIGNORED"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/15-before-review/README.md",
+      "code": "LOCAL_LINK_MISSING",
+      "target": "../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/15-before-review/README.md",
+      "code": "LOCAL_LINK_MISSING",
+      "target": "../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md",
+      "code": "LOCAL_LINK_MISSING",
+      "target": "../../prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.7%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html"
+    },
+    {
+      "file": "docs/ui/evidence/v228-card35/runs/17-before-option-a/README.md",
+      "code": "LOCAL_LINK_MISSING",
+      "target": "../../design-system.md#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a"
+    }
+  ]
+}

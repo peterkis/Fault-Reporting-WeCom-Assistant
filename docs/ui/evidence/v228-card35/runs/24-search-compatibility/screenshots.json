@@ -1,0 +1,27 @@
+{
+  "source": "final normal complete file",
+  "platform": "macOS 26.6.2 / Chrome 157.0.8103.79",
+  "dpr": 1,
+  "manifest_sha256": "3b69f0debb4be023f04928d8dbc104c0bfe85f213c5866e5d81e30e06c1cd933",
+  "source_input_hash": "d80ecfcf37c23b566215980c1e4737e61a4966ee5823abf23b4b42a2c13d5a75",
+  "files": [
+    {
+      "file": "search-empty-filtered.png",
+      "sha256": "ef45c2cf42f96084612bf56096692b9d1d21f806719665789bd655d0b20a490e",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "search-empty-unfiltered.png",
+      "sha256": "e29c4b0a6255fcdbb3200eb0c0dc70b803a21fdc0f78fae67ac7bece9e140721",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "file": "search-backoff-refresh-required.png",
+      "sha256": "e5d599941f6be057530b1daae509b2b686f25e5cdb26bed009d986e6e0679c08",
+      "width": 1440,
+      "height": 1000
+    }
+  ]
+}

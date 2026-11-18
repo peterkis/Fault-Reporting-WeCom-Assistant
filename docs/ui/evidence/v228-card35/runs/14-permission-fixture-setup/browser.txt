@@ -1,0 +1,46 @@
+✔ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (57167.043458ms)
+✔ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (84576.596625ms)
+✖ Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content (335.814833ms)
+✔ Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal (3.9235ms)
+✔ Card 35A native reconnect events cannot reset or bypass the bounded read budget (1.52225ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 142219.755583
+
+✖ failing tests:
+
+test at tests/pc-admin-card35a-states.browser.test.mjs:405:1
+✖ Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content (335.814833ms)
+  error: relation "intake.web_command_receipt" does not exist
+      at <worktree>/node_modules/pg/lib/client.js:694:17
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async acceptInTransaction (file://<worktree>/.build/runtime/app/server/src/yxx-self-service-store.mjs:164:26)
+      at async transactionP2016 (file://<worktree>/.build/runtime/app/server/src/p2-016-domain-contracts.mjs:105:24)
+      at async seedWeb01NoConversationIntake (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:163:19)
+      at async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:193:189)
+      at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    length: 126,
+    severity: 'ERROR',
+    code: '42P01',
+    detail: undefined,
+    hint: undefined,
+    position: '213',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'parse_relation.c',
+    line: '1480',
+    routine: 'parserOpenTable'
+  }

@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "timing": [
+      302.19999980926514
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "board-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c40aaea69b2c47fe7529c2b4c17bafb90e47a31f0c8c0c8fbc85804e3222fb0d"
+    },
+    {
+      "file": "list-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "91bf5ffc8a4ccb20e5d229b922b5be1300e6acd6ec2d8144685971448e14aa2f"
+    },
+    {
+      "file": "drawer-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "31bb9ddddba90fc19781bccdb164f8a04be42eda1295f1bc088697912f35f3ac"
+    },
+    {
+      "file": "board-refreshing.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "985b46b9cecb1394fa9ad5a68451600aa28060d96370c2d932ee4069f5bd230e"
+    },
+    {
+      "file": "board-stale-retry.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "dd862328b01d1a7542557249e5ad930f5a8dfe3b86cb310d8adb8722bd38ba2a"
+    },
+    {
+      "file": "board-empty-filtered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5610b7ab80a8c27f351d7b8096f167fd4dfc4ac6ba5c060bebd1b3492026848f"
+    },
+    {
+      "file": "intake-cleared.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "42a7a8224533ccebbad4ce1dbe5c9bbb52de4c5b800b44f1d88024373c2912d6"
+    },
+    {
+      "file": "workbench-error-page.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "dc2415f2d90486ad8576bb8789b9319850d2c89e4dc77fd87bd6c33163784fbe"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,82 @@
+{
+  "main": "67999466deedacea714812f7cc23884c2a5b7db1",
+  "head": "c21d00c7ef295670f124c368b1eca8b807ec0a4a",
+  "method": "Read-only git show and section comparison; no main worktree or main browser execution.",
+  "comparisons": [
+    {
+      "path": "tests/pc-admin-card12-review.browser.test.mts",
+      "main_sha256": "e783e4e89e4f84c34c591f82437a38172cbd53e5c1b3720df3c23116d5ef55dd",
+      "working_sha256": "e783e4e89e4f84c34c591f82437a38172cbd53e5c1b3720df3c23116d5ef55dd",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/features/ticket-assignment/TicketAssignment.tsx",
+      "main_sha256": "9c86324d3a664581a6b7360330f5252a4ccab89a8a675f58d2faafc706c6918e",
+      "working_sha256": "9c86324d3a664581a6b7360330f5252a4ccab89a8a675f58d2faafc706c6918e",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/features/ticket-assignment/use-assignment-draft.ts",
+      "main_sha256": "2823eaa1e5fc73c25d37952ffc2895a4b28793ce1b6cf8378fc7bd33e52d7d02",
+      "working_sha256": "2823eaa1e5fc73c25d37952ffc2895a4b28793ce1b6cf8378fc7bd33e52d7d02",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/app/WorkbenchButton.tsx",
+      "main_sha256": "cb2f53c5c01b89bc85d5ff4614a7cef0dc65e93baa1135333dbf6a9c07b0f6c8",
+      "working_sha256": "cb2f53c5c01b89bc85d5ff4614a7cef0dc65e93baa1135333dbf6a9c07b0f6c8",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/app/DetailDialog.tsx",
+      "main_sha256": "5b875028f8e9b30bed8d162878d1b92f0b7cea49eb8ef9b1baaaf978de682ff9",
+      "working_sha256": "5b875028f8e9b30bed8d162878d1b92f0b7cea49eb8ef9b1baaaf978de682ff9",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/design/components/InlineAlert/feedback.css",
+      "main_sha256": "8a28d12af487e2a7e8332bc8d57f4dbd1565932c9455a76df2709ab4fedfec23",
+      "working_sha256": "8a28d12af487e2a7e8332bc8d57f4dbd1565932c9455a76df2709ab4fedfec23",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/app/authorization.ts",
+      "main_sha256": "23e0efdcf5d1c71f22b0bfe08e312bcf9d5777e91367f7534eccbc5bced45fed",
+      "working_sha256": "23e0efdcf5d1c71f22b0bfe08e312bcf9d5777e91367f7534eccbc5bced45fed",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/api/client.ts",
+      "main_sha256": "596908d96406e5622ec5a8287f8f7b78a87046bbb50c9099d8aeba7dceff584b",
+      "working_sha256": "bbf6cbe6f19950a7d79f824085d8325ce547e522bd9652aa07af16ade295b243",
+      "byte_identical": false,
+      "diff": "diff --git a/app/pc-admin/src/api/client.ts b/app/pc-admin/src/api/client.ts\nindex a4727efc..cceeceb8 100644\n--- a/app/pc-admin/src/api/client.ts\n+++ b/app/pc-admin/src/api/client.ts\n@@ -56,7 +56,10 @@ export interface P2016ReopenCommand {client_command_id:string;expected_version:n\n export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null;reopen_follow_up?:NonNullable<P2016TicketDetail['reopen_follow_up']>}\n export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}\n export type { BoardColumn, CompletionRange, BoardCompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };\n-export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }\n+export class ApiError extends Error {\n+  readonly requestId:string;readonly requestIdSource:'response'|'local';\n+  constructor(public status:number,public code:string,requestId?:string){super(code);this.requestId=requestId||crypto.randomUUID();this.requestIdSource=requestId?'response':'local';}\n+}\n export class ConfirmedManualReportRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}\n function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}\n function text(value:unknown): string {if(typeof value!=='string')throw new ApiError(502,'INVALID_RESPONSE');return value;}\n@@ -265,7 +268,7 @@ export async function rejectAuthorization(response:Response):Promise<never>{\n   let code='AUTHORIZATION_REJECTED';\n   try {const value:unknown=await response.json(),candidate=text(object(object(value).error).code);if(/^[A-Z][A-Z0-9_]{0,100}$/u.test(candidate))code=candidate;}\n   catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }\n-  throw new ApiError(response.status,code);\n+  throw new ApiError(response.status,code,response.headers.get('x-request-id')??undefined);\n }\n async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,response:Response)=>T,readInit:{method?:'POST';body?:string;headers?:Record<string,string>}={}):Promise<T> {\n   const epoch=authorizationEpoch;\n@@ -277,7 +280,7 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown,respo\n   if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');\n   const value:unknown=await response.json();\n   requireCurrentRead(epoch,signal);\n-  if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}\n+  if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code),response.headers.get('x-request-id')??undefined);}\n   return decode(value,response);\n   }catch(error){requireCurrentRead(epoch,signal);throw error;}\n }\n",
+      "note": "Diagnostic request ID metadata only; status/code and read/authorization control flow unchanged."
+    },
+    {
+      "path": "app/pc-admin/src/app/ui-store.ts",
+      "main_sha256": "bb95328e2fda9380258d53096a5035404e7fd891e7e1e1ada0387a961d1cb888",
+      "working_sha256": "bb95328e2fda9380258d53096a5035404e7fd891e7e1e1ada0387a961d1cb888",
+      "byte_identical": true
+    },
+    {
+      "path": "app/server/src/p2-016-workbench-http.mts",
+      "main_sha256": "807c60934b1ec1e16014b8b3e0ae836d5958b4f87429e4b4b981ab9e6e4b54cb",
+      "working_sha256": "807c60934b1ec1e16014b8b3e0ae836d5958b4f87429e4b4b981ab9e6e4b54cb",
+      "byte_identical": true
+    },
+    {
+      "path": "app/pc-admin/src/app/ToastFeedback.tsx",
+      "section": "DraftStatus to EOF",
+      "byte_identical": true,
+      "diff": "diff --git a/app/pc-admin/src/app/ToastFeedback.tsx b/app/pc-admin/src/app/ToastFeedback.tsx\nindex 9d496d9f..877706d4 100644\n--- a/app/pc-admin/src/app/ToastFeedback.tsx\n+++ b/app/pc-admin/src/app/ToastFeedback.tsx\n@@ -1,3 +1,4 @@\n+import {useReportReadOnlyOperation} from '../design/components/ReadOnlyBar/ReadOnlyBar';\n import {WorkbenchButton as HButton} from './WorkbenchButton';\n import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState} from 'react';\n import type {HTMLAttributes,SetStateAction} from 'react';\n@@ -174,6 +175,7 @@ export interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'chil\n \n /** Presentation only: a close button never settles, retries or discards an operation. */\n export function ToastFeedback({children,source,state,enabled=true,persistent=false,revision,role,title,'aria-live':live,...attributes}:FeedbackProps){\n+  useReportReadOnlyOperation(source,state);\n   const id=useId(),latest=useRef(attributes);latest.current=attributes;\n   useEffect(()=>{\n     if(!enabled||!children){toast.remove(id);return;}\n"
+    },
+    {
+      "path": "app/pc-admin/src/realtime/useRealtime.ts",
+      "section": "refresh callback including identity reconciliation and authorization denial catch",
+      "byte_identical": true,
+      "main_sha256": "ed536414f86f026a688ddffbb98711a74fc4d0a84f33df25ed05211421b93f2a",
+      "working_sha256": "ed536414f86f026a688ddffbb98711a74fc4d0a84f33df25ed05211421b93f2a"
+    }
+  ]
+}

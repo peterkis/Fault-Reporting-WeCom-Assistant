@@ -1,0 +1,55 @@
+{
+  "status": "FAIL",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "retries": [
+      16774.900000095367,
+      19775.800000190735,
+      27777.10000014305
+    ],
+    "failure": {
+      "text": "医小修\n信息服务团队\n搜索工作区\nCtrl K\n\n工作空间\n\n工作台\n会话\n公共故障\n通知异常\n在线同事\nT\n1\nT\nT43合成人员0\n人工协作\n信息服务团队 / 工作台\n实时更新中\n连接已断开，正在重新连接…\n团队工作台\n刷新\n新报修\nN\n全部\n4\n我负责\n3\n与我有关\n已超时\n0\n今日完成\n1\n看板\n列表\n/\n编号、描述、报修时资料或位置\n搜索全部\n搜索选项\n\n提交条件后检索全部当前可读事项；空条件可查询全部。搜索不改变报修或回复草稿。\n\n类别\n类别\n：\n \n全部\n核心临床与病历工作流\n挂号、签到、叫号与诊间预约\n检验与影像结果\n药品、审方与合理用药\n收费、支付、退费与医保\n互联网医院与线上服务\n终端、显示与打印\n网络与连接\n身份、签名与安全策略\n主数据、规则与客户端配置\n非 IT 与跨部门转办\n未分类\n处理人\n处理人\n：\n \n全部\n未领取\nT43合成人员1\nT43合成人员0\n已处理\n今天\n近两天\n近 7 天\n本月\n全部日期\n待受理\n0\n等待最久\n待受理已清空\n\n新报修进来会出现在这里\n\n处理中\n2\nIT-20261118-0001\n未分类\n35A 他人接手与转交（合成）\n\nT43合成电话位置 · T43合成电话报修人（身份未核实）\n·\n电话代录\n\nT\nT43合成人员1\n1 分钟前\n查看详情\n业务动作\nIT-20261118-0002\n未分类\n35A 上次操作确认（合成）\n\nT43合成电话位置 · T43合成电话报修人（身份未核实）\n·\n电话代录\n\n我负责\nT\nT43合成人员0\n1 分钟前\n查看详情\n业务动作\n已处理\n2\n最新完成\n已完成\n1\nIT-20261118-0003\n11:01 完成\n未分类\n35A 已完成（合成）\n\nT43合成电话位置 · T43合成电话报修人（身份未核实）\n·\n电话代录\n\n我负责\nT\nT43合成人员0\n1 分钟前\n查看详情\n业务动作\n已关闭\n1\n不计入完成数\n已加载 4 项\n工单\n/\nIT-20261118-0002\n2 / 4\n详情没有打开\n\n找不到这条事项，或您目前无法查看。\n\n重试\n复制诊断信息",
+      "route": "/workbench/app/items/ticket/01a1ec9a-5e3e-71ec-babb-41f7b48e5f38"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ef2ce1def2edf8a853608b39e251dc17d5e8e2c9fa625efdd5132ac326de7702"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "4dc94043f47f3b1bf1bc45eaf7eed4731533327537338f06a129cd92ce1e40f4"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d9a741f28d72240c90cbc3cede7d2c492521295d4ca1df43c6146616581572e0"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ae13342dd263e5a8f92225fafcd31da1144916da552e1f73a90ba083e237c867"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e875a6410f386eb76b06e1f619a19f971935278e88bfa122ca3e17c84fdb4010"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "fad0172d64477c73673b3ac4e7e417c5a750dd09562d03364b291cdcbd14769e"
+    }
+  ],
+  "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+}

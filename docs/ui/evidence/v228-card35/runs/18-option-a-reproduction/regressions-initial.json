@@ -1,0 +1,223 @@
+[
+  {
+    "path": "tests/pc-admin-card32a.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card32b.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card32c-d.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card32d-toast.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card34a-toast-modal.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card34b-detail.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card34c-copy.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/workbench-detail-restructure.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/workbench-toast-feedback.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-offline.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-unknown.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-gap.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-authority.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t38-protocol.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-design-foundation.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-copy-terms.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card12-review.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-card16.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/web01-workbench.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/web01-workbench.integration.test.mjs",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/wbint-t22-realtime-tracer.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/pc-admin-legacy-retirement.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/t35-account-switch.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/t35-current-authority-wait.integration.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  },
+  {
+    "path": "tests/t35-unknown-read.browser.test.mts",
+    "status": "FAIL",
+    "error": "Error: MIGRATION_ISOLATED_DATABASE_REQUIRED",
+    "directory": "<owned-temp>"
+  }
+]

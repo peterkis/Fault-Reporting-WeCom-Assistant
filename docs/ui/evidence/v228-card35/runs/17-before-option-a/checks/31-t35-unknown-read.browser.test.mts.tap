@@ -1,0 +1,19 @@
+TAP version 13
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":15,"inserted":15,"replayed":0,"channel_failures":0,"other_stream_failures":3}
+# T35_READ_UNKNOWN_COMMITTED {"original_command_id":"643c6fb3-8378-49d5-b7f5-c94ca57a37c0","A":"1","B":"0","delivery_failed":true}
+# T35_READ_UNKNOWN_RECOVERED {"directory":"<owned-temp>","original_uuid":true,"read_only_receipt":true,"posts":1}
+# Subtest: T35 a real committed read with lost ACK delivery keeps its UUID across remount and checks only its safe receipt
+ok 1 - T35 a real committed read with lost ACK delivery keeps its UUID across remount and checks only its safe receipt
+  ---
+  duration_ms: 2039.75625
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2214.062708

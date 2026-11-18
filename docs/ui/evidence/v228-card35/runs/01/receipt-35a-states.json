@@ -1,0 +1,8 @@
+{
+  "status": "FAIL",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {},
+  "screenshots": [],
+  "error": "P2_006_BROWSER_WAIT_TIMEOUT"
+}

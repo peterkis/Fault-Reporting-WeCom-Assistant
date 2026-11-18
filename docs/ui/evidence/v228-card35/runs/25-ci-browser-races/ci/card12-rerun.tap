@@ -1,0 +1,59 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-fa3440c1-9878-40d8-86d2-ccbc4c7e8c89/new-detail-1920.png","width":1920,"height":1080,"sha256":"9e442d825b12bfd603b2dd41e8d267b090cc691434da03b65960547b267a269e"}]}
+# Subtest: Card 12 UNKNOWN survives board-flag for the same authorized principal
+ok 1 - Card 12 UNKNOWN survives board-flag for the same authorized principal
+  ---
+  duration_ms: 5208.607909
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-f4ef2888-284e-45ce-af1e-f032fcd27cd2/new-detail-1920.png","width":1920,"height":1080,"sha256":"b8492869afe580e9afdadf75473ab00aa5085248ad0b019a97d7026b7cb5010b"}]}
+# Subtest: Card 12 UNKNOWN survives revision for the same authorized principal
+ok 2 - Card 12 UNKNOWN survives revision for the same authorized principal
+  ---
+  duration_ms: 4388.832871
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-2f192a5d-0509-4121-a89f-6489bc12a45d/new-detail-1920.png","width":1920,"height":1080,"sha256":"c59aafc18f203224663fc429e139de5a3efe2a74caea45d303402c3db5eb23ab"}]}
+# Subtest: Card 12 absent or null active-state start never borrows old creation time
+ok 3 - Card 12 absent or null active-state start never borrows old creation time
+  ---
+  duration_ms: 3596.306008
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-9ea10e5e-7f70-42fb-88e6-51119c590a4e/new-detail-1920.png","width":1920,"height":1080,"sha256":"892786b6b53590b388bbde777023e346f1953b6ea983872a5c2adfe140899f4b"}]}
+# Subtest: Card 12 credible Ticket READ 403 clears the pending card controller without replay
+ok 4 - Card 12 credible Ticket READ 403 clears the pending card controller without replay
+  ---
+  duration_ms: 3860.178972
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-5e5aab57-2512-44bc-a249-eb7e056c4bef/new-detail-1920.png","width":1920,"height":1080,"sha256":"2ae1172b60f6a1f1d7163893c7c8fc98c77d1c83009435bdd9deb0d2575e459c"}]}
+# Subtest: Card 12 credible Ticket READ 404 clears the pending card controller without replay
+ok 5 - Card 12 credible Ticket READ 404 clears the pending card controller without replay
+  ---
+  duration_ms: 3750.944447
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-d5ab5950-0940-4a55-a326-d5a78e29a877/new-detail-1920.png","width":1920,"height":1080,"sha256":"00db9c6c6c42be7b968788fc698f4375d18e38ce9217700dd8dcd361e3c87b9a"}]}
+# Subtest: Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+ok 6 - Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 4179.719373
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-f77eb66e-0f8e-4694-9b87-c78996d06373/new-detail-1920.png","width":1920,"height":1080,"sha256":"bbffc2ef3de54e8a0034dc88f323b7be67ded0bbf2a03afbaefd8e428163b443"}]}
+# Subtest: Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+ok 7 - Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 4568.639508
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30034.176396

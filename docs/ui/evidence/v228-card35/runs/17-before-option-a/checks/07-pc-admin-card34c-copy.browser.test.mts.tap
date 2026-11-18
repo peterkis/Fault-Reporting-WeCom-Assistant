@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Card 34C rendered copy: board and detail drawer show no banned technical words; the saved draft hint
+ok 1 - Card 34C rendered copy: board and detail drawer show no banned technical words; the saved draft hint
+  ---
+  duration_ms: 3303.345417
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3494.58975

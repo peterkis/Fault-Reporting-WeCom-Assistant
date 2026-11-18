@@ -1,0 +1,25 @@
+✔ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (56962.758833ms)
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (37931.300875ms)
+✔ Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal (1.721375ms)
+✔ Card 35A native reconnect events cannot reset or bypass the bounded read budget (0.566583ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95019.023125
+
+✖ failing tests:
+
+test at tests/pc-admin-card35a-states.browser.test.mjs:222:1
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (37931.300875ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file://<worktree>/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+      at async file://<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:268:9
+      at async run (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:179:21)
+      at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+      at async withT43Fixture (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:85:9)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)

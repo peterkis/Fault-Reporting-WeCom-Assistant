@@ -1,0 +1,72 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-9645d81b-b01b-430b-a8e2-85ccb6c06877/new-detail-1920.png","width":1920,"height":1080,"sha256":"86ff0d1319092bf52460bb16d43ac93f39007f7c513507e74a1604227cb2b311"}]}
+# Subtest: Card 12 UNKNOWN survives board-flag for the same authorized principal
+ok 1 - Card 12 UNKNOWN survives board-flag for the same authorized principal
+  ---
+  duration_ms: 26406.738189
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-498610a4-9a1b-4dad-bbaa-5e2d2e9388a8/new-detail-1920.png","width":1920,"height":1080,"sha256":"367bf5d2ac977a74e3c79df4ca371c311ea1d7b0e705e8157949ec9862b06876"}]}
+# Subtest: Card 12 UNKNOWN survives revision for the same authorized principal
+not ok 2 - Card 12 UNKNOWN survives revision for the same authorized principal
+  ---
+  duration_ms: 32136.388053
+  type: 'test'
+  location: '/home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/pc-admin-card12-review.browser.test.mjs:6:5'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withT42BoardBrowser.dropSelfHandlingResponses (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/pc-admin-card12-review.browser.test.mjs:32:13)
+    async file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:44:13
+    async run (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT42BoardBrowser (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:11:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-7abb5876-c3ad-499d-a673-78869b38efb4/new-detail-1920.png","width":1920,"height":1080,"sha256":"8e99dfed762ec1733ee62dcfe628e22fcf5827774af4a473e61b7c93310b88fd"}]}
+# Subtest: Card 12 absent or null active-state start never borrows old creation time
+ok 3 - Card 12 absent or null active-state start never borrows old creation time
+  ---
+  duration_ms: 2376.24996
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-e5de842e-6939-4725-8ec3-a24e407e9eea/new-detail-1920.png","width":1920,"height":1080,"sha256":"ba80a331f6c8086ce611336d503495a7c21e9dde34bd629423fc3c150aa3cf37"}]}
+# Subtest: Card 12 credible Ticket READ 403 clears the pending card controller without replay
+ok 4 - Card 12 credible Ticket READ 403 clears the pending card controller without replay
+  ---
+  duration_ms: 2308.29156
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-74a2cdc0-9a08-4ad8-94a8-def3f8d81b27/new-detail-1920.png","width":1920,"height":1080,"sha256":"0c02dd5840f4fe0fd4ea64368f123c1532375af4fa328ee4015e5563007984d5"}]}
+# Subtest: Card 12 credible Ticket READ 404 clears the pending card controller without replay
+ok 5 - Card 12 credible Ticket READ 404 clears the pending card controller without replay
+  ---
+  duration_ms: 2305.043647
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-2cb36242-c91e-4b91-81e1-fb8ec9ee15e4/new-detail-1920.png","width":1920,"height":1080,"sha256":"6dddf5fc45a2d6539abd76c92cc7f6e3bbe4acb9201b78683fc21b83b59a6652"}]}
+# Subtest: Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+ok 6 - Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 2915.083086
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/tmp/web01-ui-bec576bd-40ce-43ea-a13d-e52c0bd4fa09/new-detail-1920.png","width":1920,"height":1080,"sha256":"6bee4a07f44290f027b86c118b6fdb5d059f940129c09cda0206f8de62b9d067"}]}
+# Subtest: Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+ok 7 - Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 2660.513846
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 71455.403254

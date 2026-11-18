@@ -1,14 +1,8 @@
-import {Skeleton} from '@heroui/react/skeleton';
+import {BoardColumnSkeleton} from '../design/components/Skeleton/Skeleton';
 
-export function BoardColumnLoading(){
-  return <div className="startup-column" role="status" aria-label="正在读取事项">
-    <div aria-hidden="true"><Skeleton className="startup-line" animationType="pulse"/><Skeleton className="startup-card" animationType="pulse"/><Skeleton className="startup-line startup-short" animationType="pulse"/></div>
-  </div>;
-}
-
-export function WorkbenchLoading(){
-  return <div className="workbench-startup" data-startup role="status" aria-label="正在打开工作台" aria-busy="true">
-    <div className="startup-heading"><strong>医小修 · 工作台</strong><p>正在打开工作台…</p></div>
-    <div className="startup-columns" aria-hidden="true"><BoardColumnLoading/><BoardColumnLoading/><BoardColumnLoading/></div>
+export function WorkbenchLoading({slow=false,onRetry}:{slow?:boolean;onRetry?:()=>void}){
+  return <div className="workbench-startup" data-startup>
+    <div className="startup-heading"><strong>医小修 · 工作台</strong></div>
+    <div className="startup-columns"><BoardColumnSkeleton column="pending" label="待受理" slow={slow} {...(onRetry?{onRetry}:{})}/><BoardColumnSkeleton column="active" label="处理中"/><BoardColumnSkeleton column="handled" label="已处理"/></div>
   </div>;
 }

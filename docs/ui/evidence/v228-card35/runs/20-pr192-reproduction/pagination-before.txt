@@ -1,0 +1,30 @@
+✖ Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted (1692.841167ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1812.006042
+
+✖ failing tests:
+
+test at .build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:44:1
+✖ Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted (1692.841167ms)
+  AssertionError [ERR_ASSERTION]: board: an unloaded next page must not be hidden by the board-wide filtered empty state
+  
+  true !== false
+  
+      at withWeb01Fixture.precisionV212 (file://<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:85:28)
+      at async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+      at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

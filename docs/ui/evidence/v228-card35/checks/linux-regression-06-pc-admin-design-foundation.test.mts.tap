@@ -1,0 +1,460 @@
+TAP version 13
+# Subtest: Card 27C-B six fixed reasons keep notification copy independent from private explanations
+ok 1 - Card 27C-B six fixed reasons keep notification copy independent from private explanations
+  ---
+  duration_ms: 32.640667
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time today
+ok 2 - V1 Shanghai list time today
+  ---
+  duration_ms: 0.517667
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time yesterday
+ok 3 - V1 Shanghai list time yesterday
+  ---
+  duration_ms: 0.035125
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time earlier this year
+ok 4 - V1 Shanghai list time earlier this year
+  ---
+  duration_ms: 0.027875
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time previous year
+ok 5 - V1 Shanghai list time previous year
+  ---
+  duration_ms: 0.021083
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time midnight today
+ok 6 - V1 Shanghai list time midnight today
+  ---
+  duration_ms: 0.073666
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time midnight yesterday
+ok 7 - V1 Shanghai list time midnight yesterday
+  ---
+  duration_ms: 0.027583
+  type: 'test'
+  ...
+# Subtest: V1 Shanghai list time year boundary yesterday
+ok 8 - V1 Shanghai list time year boundary yesterday
+  ---
+  duration_ms: 0.025291
+  type: 'test'
+  ...
+# Subtest: V1 list and timeline dividers share Shanghai midnight
+ok 9 - V1 list and timeline dividers share Shanghai midnight
+  ---
+  duration_ms: 0.041
+  type: 'test'
+  ...
+# Subtest: B3 waiting shares heat thresholds, Shanghai starts and whole-day labels
+ok 10 - B3 waiting shares heat thresholds, Shanghai starts and whole-day labels
+  ---
+  duration_ms: 0.391625
+  type: 'test'
+  ...
+# Subtest: D2 waiting label at 0 seconds
+ok 11 - D2 waiting label at 0 seconds
+  ---
+  duration_ms: 0.04725
+  type: 'test'
+  ...
+# Subtest: D2 waiting label at 59 seconds
+ok 12 - D2 waiting label at 59 seconds
+  ---
+  duration_ms: 0.025084
+  type: 'test'
+  ...
+# Subtest: D2 waiting label at 60 seconds
+ok 13 - D2 waiting label at 60 seconds
+  ---
+  duration_ms: 0.019334
+  type: 'test'
+  ...
+# Subtest: B5 minute clock pauses while hidden, resumes immediately and owns no request timer
+ok 14 - B5 minute clock pauses while hidden, resumes immediately and owns no request timer
+  ---
+  duration_ms: 0.347209
+  type: 'test'
+  ...
+# Subtest: heat thresholds are the frozen shared minute tuple
+ok 15 - heat thresholds are the frozen shared minute tuple
+  ---
+  duration_ms: 0.030833
+  type: 'test'
+  ...
+# Subtest: heat boundary 4:59
+ok 16 - heat boundary 4:59
+  ---
+  duration_ms: 0.027667
+  type: 'test'
+  ...
+# Subtest: heat boundary 5:00
+ok 17 - heat boundary 5:00
+  ---
+  duration_ms: 0.021
+  type: 'test'
+  ...
+# Subtest: heat boundary 19:59
+ok 18 - heat boundary 19:59
+  ---
+  duration_ms: 0.026625
+  type: 'test'
+  ...
+# Subtest: heat boundary 20:00
+ok 19 - heat boundary 20:00
+  ---
+  duration_ms: 0.023083
+  type: 'test'
+  ...
+# Subtest: heat boundary 59:59
+ok 20 - heat boundary 59:59
+  ---
+  duration_ms: 0.022458
+  type: 'test'
+  ...
+# Subtest: heat boundary 60:00
+ok 21 - heat boundary 60:00
+  ---
+  duration_ms: 0.015958
+  type: 'test'
+  ...
+# Subtest: heat boundary 239:59
+ok 22 - heat boundary 239:59
+  ---
+  duration_ms: 0.023916
+  type: 'test'
+  ...
+# Subtest: heat boundary 240:00
+ok 23 - heat boundary 240:00
+  ---
+  duration_ms: 0.024125
+  type: 'test'
+  ...
+# Subtest: heat boundary 23h59
+ok 24 - heat boundary 23h59
+  ---
+  duration_ms: 0.014417
+  type: 'test'
+  ...
+# Subtest: heat boundary 24h00
+ok 25 - heat boundary 24h00
+  ---
+  duration_ms: 0.012584
+  type: 'test'
+  ...
+# Subtest: heat boundary 720h
+ok 26 - heat boundary 720h
+  ---
+  duration_ms: 0.013209
+  type: 'test'
+  ...
+# Subtest: heat floors units, uses the supplied clock, and respects explicit zones
+ok 27 - heat floors units, uses the supplied clock, and respects explicit zones
+  ---
+  duration_ms: 0.041
+  type: 'test'
+  ...
+# Subtest: missing, invalid, unzoned and future inputs never invent an overdue label
+ok 28 - missing, invalid, unzoned and future inputs never invent an overdue label
+  ---
+  duration_ms: 0.040042
+  type: 'test'
+  ...
+# Subtest: the visual map covers exactly the existing ServiceCatalog domains
+ok 29 - the visual map covers exactly the existing ServiceCatalog domains
+  ---
+  duration_ms: 3.751833
+  type: 'test'
+  ...
+# Subtest: printer services keep their category color, and mismatched or unknown services use the domain icon
+ok 30 - printer services keep their category color, and mismatched or unknown services use the domain icon
+  ---
+  duration_ms: 0.088542
+  type: 'test'
+  ...
+# Subtest: unknown domains always use the neutral circle-help fallback
+ok 31 - unknown domains always use the neutral circle-help fallback
+  ---
+  duration_ms: 0.033625
+  type: 'test'
+  ...
+# Subtest: solid badges meet white-text AA and every category meets its specified contrast
+ok 32 - solid badges meet white-text AA and every category meets its specified contrast
+  ---
+  duration_ms: 3.982709
+  type: 'test'
+  ...
+# Subtest: Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at
+ok 33 - Card 27B today counts completed only and excludes duplicate, cancelled and system rejection even with same-day completed_at
+  ---
+  duration_ms: 0.234583
+  type: 'test'
+  ...
+# Subtest: R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets
+ok 34 - R1 avatarInitial strips repeated suffixes, keeps Unicode and falls back without brackets
+  ---
+  duration_ms: 2.834708
+  type: 'test'
+  ...
+# Subtest: R2 a–e share civil-time starts, never substitute created_at for a missing active stage
+ok 35 - R2 a–e share civil-time starts, never substitute created_at for a missing active stage
+  ---
+  duration_ms: 0.135166
+  type: 'test'
+  ...
+# Subtest: R2 board overdue follows the heat of pending and active cards of every rendered kind
+ok 36 - R2 board overdue follows the heat of pending and active cards of every rendered kind
+  ---
+  duration_ms: 0.055166
+  type: 'test'
+  ...
+# Subtest: board mine requires the caller-only HANDLING relation, never names, follow or conversation responsibility
+ok 37 - board mine requires the caller-only HANDLING relation, never names, follow or conversation responsibility
+  ---
+  duration_ms: 0.041458
+  type: 'test'
+  ...
+# Subtest: board today follows Shanghai midnight and completion time rather than activity time
+ok 38 - board today follows Shanghai midnight and completion time rather than activity time
+  ---
+  duration_ms: 0.046625
+  type: 'test'
+  ...
+# Subtest: board sorting leaves active order intact, uses completion for closed, and does not mutate DTOs
+ok 39 - board sorting leaves active order intact, uses completion for closed, and does not mutate DTOs
+  ---
+  duration_ms: 0.075791
+  type: 'test'
+  ...
+# Subtest: pharmacy uses the existing pill bottle icon
+ok 40 - pharmacy uses the existing pill bottle icon
+  ---
+  duration_ms: 0.02175
+  type: 'test'
+  ...
+# Subtest: Card 18 Beijing short times retain seconds in the full title across local/ISO/year boundaries
+ok 41 - Card 18 Beijing short times retain seconds in the full title across local/ISO/year boundaries
+  ---
+  duration_ms: 0.401041
+  type: 'test'
+  ...
+# Subtest: Card 18 record kinds distinguish explicit note events from real status transitions
+ok 42 - Card 18 record kinds distinguish explicit note events from real status transitions
+  ---
+  duration_ms: 0.090833
+  type: 'test'
+  ...
+# Subtest: Card 18 next step NEW self
+ok 43 - Card 18 next step NEW self
+  ---
+  duration_ms: 0.058625
+  type: 'test'
+  ...
+# Subtest: Card 18 next step NEW other
+ok 44 - Card 18 next step NEW other
+  ---
+  duration_ms: 0.02475
+  type: 'test'
+  ...
+# Subtest: Card 18 next step QUEUED self
+ok 45 - Card 18 next step QUEUED self
+  ---
+  duration_ms: 0.012917
+  type: 'test'
+  ...
+# Subtest: Card 18 next step QUEUED other
+ok 46 - Card 18 next step QUEUED other
+  ---
+  duration_ms: 0.011833
+  type: 'test'
+  ...
+# Subtest: Card 18 next step ACCEPTED self
+ok 47 - Card 18 next step ACCEPTED self
+  ---
+  duration_ms: 0.0105
+  type: 'test'
+  ...
+# Subtest: Card 18 next step ACCEPTED other
+ok 48 - Card 18 next step ACCEPTED other
+  ---
+  duration_ms: 0.01
+  type: 'test'
+  ...
+# Subtest: Card 18 next step IN_PROGRESS self
+ok 49 - Card 18 next step IN_PROGRESS self
+  ---
+  duration_ms: 0.009709
+  type: 'test'
+  ...
+# Subtest: Card 18 next step IN_PROGRESS other
+ok 50 - Card 18 next step IN_PROGRESS other
+  ---
+  duration_ms: 0.018333
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_REQUESTER self
+ok 51 - Card 18 next step WAITING_REQUESTER self
+  ---
+  duration_ms: 0.017541
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_REQUESTER other
+ok 52 - Card 18 next step WAITING_REQUESTER other
+  ---
+  duration_ms: 0.012333
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_VENDOR self
+ok 53 - Card 18 next step WAITING_VENDOR self
+  ---
+  duration_ms: 0.012292
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_VENDOR other
+ok 54 - Card 18 next step WAITING_VENDOR other
+  ---
+  duration_ms: 0.013
+  type: 'test'
+  ...
+# Subtest: Card 18 next step RESOLVED self
+ok 55 - Card 18 next step RESOLVED self
+  ---
+  duration_ms: 0.010625
+  type: 'test'
+  ...
+# Subtest: Card 18 next step RESOLVED other
+ok 56 - Card 18 next step RESOLVED other
+  ---
+  duration_ms: 0.011
+  type: 'test'
+  ...
+# Subtest: Card 18 next step COMPLETED self
+ok 57 - Card 18 next step COMPLETED self
+  ---
+  duration_ms: 0.009333
+  type: 'test'
+  ...
+# Subtest: Card 18 next step COMPLETED other
+ok 58 - Card 18 next step COMPLETED other
+  ---
+  duration_ms: 0.01175
+  type: 'test'
+  ...
+# Subtest: Card 18 next step DISMISSED self
+ok 59 - Card 18 next step DISMISSED self
+  ---
+  duration_ms: 0.013583
+  type: 'test'
+  ...
+# Subtest: Card 18 next step DISMISSED other
+ok 60 - Card 18 next step DISMISSED other
+  ---
+  duration_ms: 0.011625
+  type: 'test'
+  ...
+# Subtest: Card 18 next step REOPENED self
+ok 61 - Card 18 next step REOPENED self
+  ---
+  duration_ms: 0.012333
+  type: 'test'
+  ...
+# Subtest: Card 18 next step REOPENED other
+ok 62 - Card 18 next step REOPENED other
+  ---
+  duration_ms: 0.012125
+  type: 'test'
+  ...
+# Subtest: Card 18 next step PENDING self
+ok 63 - Card 18 next step PENDING self
+  ---
+  duration_ms: 0.011916
+  type: 'test'
+  ...
+# Subtest: Card 18 next step PENDING other
+ok 64 - Card 18 next step PENDING other
+  ---
+  duration_ms: 0.008916
+  type: 'test'
+  ...
+# Subtest: Card 18 next step RECEIVED self
+ok 65 - Card 18 next step RECEIVED self
+  ---
+  duration_ms: 0.008958
+  type: 'test'
+  ...
+# Subtest: Card 18 next step RECEIVED other
+ok 66 - Card 18 next step RECEIVED other
+  ---
+  duration_ms: 0.010791
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_TRIAGE self
+ok 67 - Card 18 next step WAITING_TRIAGE self
+  ---
+  duration_ms: 0.029083
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_TRIAGE other
+ok 68 - Card 18 next step WAITING_TRIAGE other
+  ---
+  duration_ms: 0.0115
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_DESCRIPTION self
+ok 69 - Card 18 next step WAITING_DESCRIPTION self
+  ---
+  duration_ms: 0.015208
+  type: 'test'
+  ...
+# Subtest: Card 18 next step WAITING_DESCRIPTION other
+ok 70 - Card 18 next step WAITING_DESCRIPTION other
+  ---
+  duration_ms: 0.009583
+  type: 'test'
+  ...
+# Subtest: Card 18 next step FAILED self
+ok 71 - Card 18 next step FAILED self
+  ---
+  duration_ms: 0.009208
+  type: 'test'
+  ...
+# Subtest: Card 18 next step FAILED other
+ok 72 - Card 18 next step FAILED other
+  ---
+  duration_ms: 0.01075
+  type: 'test'
+  ...
+# Subtest: Card 18 next step does not offer takeover without allowed action or invent a wait under five minutes
+ok 73 - Card 18 next step does not offer takeover without allowed action or invent a wait under five minutes
+  ---
+  duration_ms: 0.032084
+  type: 'test'
+  ...
+# Subtest: Card 20 T3 semantic colors reference the primitive palette and retire the board underlay
+ok 74 - Card 20 T3 semantic colors reference the primitive palette and retire the board underlay
+  ---
+  duration_ms: 3.573584
+  type: 'test'
+  ...
+# Subtest: Card 27B dismissed sort uses proven closed_at and keeps unknown time last
+ok 75 - Card 27B dismissed sort uses proven closed_at and keeps unknown time last
+  ---
+  duration_ms: 0.116542
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 299.491208

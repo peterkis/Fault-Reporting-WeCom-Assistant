@@ -1,0 +1,10 @@
+import fs from 'node:fs';import ts from '<worktree>/node_modules/typescript/lib/typescript.js';
+const root='<worktree>',target=root+'/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs';
+fs.copyFileSync(target,'<owned-temp>');
+let s=fs.readFileSync(root+'/tests/pc-admin-card35a-states.browser.test.mts','utf8');
+s=s.replaceAll('await launchSystemBrowser(', 'await launchDiagnosticBrowser(');
+s += '\nasync function launchDiagnosticBrowser(options:Parameters<typeof launchSystemBrowser>[0]){const b=await launchSystemBrowser(options);if(b)await b.command("Emulation.setCPUThrottlingRate",{rate:6});return b;}\n';
+s=s.replace('const response=await real(input,init);\n  const delay=', 'const response=await real(input,init);if(cfg.bootstrapDelay===80||column&&cfg.boardDelay?.[column]===80)await new Promise(resolve=>setTimeout(resolve,220));\n  const delay=');
+s=s.replace('await b.waitFor("Boolean(document.querySelector(\'.detail-body[data-refreshing]\'))");assert.equal', 'await b.waitFor("Boolean(document.querySelector(\'.detail-body[data-refreshing]\'))");metrics.sseDiagnostic=await b.evaluate("({bodySame:window.__retainedBody===document.querySelector(\'.detail-body\'),skeletons:[...document.querySelectorAll(\'.ds-detail [data-skeleton]\')].map(n=>({parent:n.parentElement.className,region:n.closest(\'[data-loading-status]\')?.outerHTML.slice(0,650),section:n.closest(\'section\')?.className})),fullSkeleton:!!document.querySelector(\'.ds-detail-skeleton\')})");assert.equal');
+s=s.replace("window.__documentToken='same-document-35a';window.__detailDelay=1000", "window.__documentToken='same-document-35a';window.__retainedBody=document.querySelector('.detail-body');window.__detailDelay=1000");
+fs.writeFileSync(target,ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);

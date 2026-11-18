@@ -7,10 +7,11 @@ import {Button as ActionButton} from '../Button/Button';
 import type {BoardSort} from '../../board-presentation';
 import {StatusBadge} from '../StatusBadge/StatusBadge';
 import {stagePresentation} from '../../status-map';
+import {readGroupExpanded} from './column-groups';
 import './board-column.css';
 
-type Props=HTMLAttributes<HTMLElement> & {column:keyof typeof stagePresentation;label:string;count:number|string;countTitle?:string;sort?:BoardSort;onSort?:(value:BoardSort)=>void;blocked?:boolean;newCount?:number;onReveal?:()=>void};
-export function BoardColumn({column,label,count,countTitle='当前筛选后已加载的事项',sort='oldest',onSort,blocked=false,newCount=0,onReveal,className='',children,...props}:Props){
+type Props=HTMLAttributes<HTMLElement> & {column:keyof typeof stagePresentation;label:string;count:number|string;countTitle?:string;feedback?:React.ReactNode;sort?:BoardSort;onSort?:(value:BoardSort)=>void;blocked?:boolean;newCount?:number;onReveal?:()=>void};
+export function BoardColumn({column,label,count,countTitle='当前筛选后已加载的事项',sort='oldest',onSort,blocked=false,newCount=0,onReveal,feedback,className='',children,...props}:Props){
   const section=useRef<HTMLElement>(null);
   useDragDropMonitor({onCollision(event,manager){
     if(column!=='handled')return;
@@ -20,7 +21,7 @@ export function BoardColumn({column,label,count,countTitle='当前筛选后已�
     if(rect&&rect.width>0&&rect.height>0&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=rect.left&&point.x<=rect.right&&point.y>=rect.top&&point.y<=rect.bottom)event.collisions.splice(0);
   }});
   const labels=column==='handled'?{oldest:'最早完成',newest:'最新完成'}:{oldest:'等待最久',newest:'最新到达'};
-  return <section {...props} ref={section} data-has-arrivals={newCount>0?'true':undefined} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading" data-summary-filter={column==='pending'?'pending':undefined} data-summary-tone={column==='pending'?'warning':undefined} aria-label={label+' '+count}><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count ds-summary-value" title={countTitle}>{count}</span>
+  return <section {...props} ref={section} data-has-arrivals={newCount>0?'true':undefined} aria-label={label} className={'board-column ds-board-column '+column+' '+className}><div className="column-heading" data-summary-filter={column==='pending'?'pending':undefined} data-summary-tone={column==='pending'?'warning':undefined} aria-label={label+' '+count}><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-stage-count ds-summary-value" title={countTitle}>{count}</span>{feedback}
     {newCount>0?<ActionButton className="ds-column-arrivals" tone="ghost" size="sm" isDisabled={blocked} onPress={()=>onReveal?.()} aria-label={'显示 '+newCount+' 条新报修'}><ArrowUp aria-hidden="true"/>{newCount} 条新报修</ActionButton>:null}
     {onSort&&column!=='active'?<Dropdown><Dropdown.Trigger className="ds-column-sort" aria-label={label+'排序'} isDisabled={blocked}><ArrowDownWideNarrow aria-hidden="true"/><span>{labels[sort]}</span><ChevronDown aria-hidden="true"/></Dropdown.Trigger>
       <Dropdown.Popover><Dropdown.Menu aria-label={label+'排序方式'} selectionMode="single" disallowEmptySelection selectedKeys={new Set([sort])} onSelectionChange={keys=>{if(keys!=='all'){const key=[...keys][0];if(key==='oldest'||key==='newest')onSort(key);}}}>
@@ -30,13 +31,10 @@ export function BoardColumn({column,label,count,countTitle='当前筛选后已�
     </div>{children}</section>;
 }
 
-export function BoardGroup({label,count,children,note,defaultExpanded=true,preferenceKey}: {label:string;count:number;children:React.ReactNode;note?:string;defaultExpanded?:boolean;preferenceKey?:string}){
-  const [expanded,setExpanded]=useState(()=>{
-    if(preferenceKey)try{const saved=sessionStorage.getItem(preferenceKey);if(saved==='true'||saved==='false')return saved==='true';}catch{/* Storage may be disabled; keep the session's in-memory preference. */}
-    return defaultExpanded;
-  });
+export function BoardGroup({label,count,children,note,defaultExpanded=true,preferenceKey,loading=false}: {label:string;count:number|string;children:React.ReactNode;note?:string;defaultExpanded?:boolean;preferenceKey?:string;loading?:boolean}){
+  const [expanded,setExpanded]=useState(()=>readGroupExpanded(defaultExpanded,preferenceKey));
   return <Disclosure className="ds-board-group" data-board-group={label} isExpanded={expanded} onExpandedChange={value=>{setExpanded(value);if(preferenceKey)try{sessionStorage.setItem(preferenceKey,String(value));}catch{/* Folding remains usable without browser storage. */}}}>
-    <Disclosure.Heading><Button slot="trigger" variant="ghost" className="ds-board-group-trigger"><Disclosure.Indicator/><span>{label}</span><span className="ds-board-group-count">{count}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></Disclosure.Heading>
+    <Disclosure.Heading><Button slot="trigger" variant="ghost" className="ds-board-group-trigger" isDisabled={loading}><Disclosure.Indicator/><span>{label}</span><span className="ds-board-group-count">{count}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></Disclosure.Heading>
     <Disclosure.Content><Disclosure.Body>{children}</Disclosure.Body></Disclosure.Content>
   </Disclosure>;
 }

@@ -1,0 +1,24 @@
+TAP version 13
+# WEB01_BROWSER {"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"2926c13e0a008514ecab7ec2cb934689f4524567e7b1cfdcc15c9b746b5f52e6"}]}
+# Subtest: T41 real production pages: short-with-T38
+ok 1 - T41 real production pages: short-with-T38
+  ---
+  duration_ms: 57511.76575
+  type: 'test'
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"a539a964cc57124c52b8bde089abc4fb51152cad1e827c996a52e737a50a95f1"}]}
+# Subtest: T41 real production pages: unicode128
+ok 2 - T41 real production pages: unicode128
+  ---
+  duration_ms: 2005.639916
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 59701.151416

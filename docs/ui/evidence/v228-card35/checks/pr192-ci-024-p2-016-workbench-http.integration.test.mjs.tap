@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: internal notes have an explicit internal-only HTTP contract and one durable receipt
+ok 1 - internal notes have an explicit internal-only HTTP contract and one durable receipt
+  ---
+  duration_ms: 824.518875
+  type: 'test'
+  ...
+# Subtest: P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions and durable SSE
+ok 2 - P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions and durable SSE
+  ---
+  duration_ms: 492.808
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1525.679792

@@ -1,3 +1,4 @@
+import {useReportReadOnlyOperation} from '../design/components/ReadOnlyBar/ReadOnlyBar';
 import {WorkbenchButton as HButton} from './WorkbenchButton';
 import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState} from 'react';
 import type {HTMLAttributes,SetStateAction} from 'react';
@@ -174,6 +175,7 @@ export interface FeedbackProps extends Omit<HTMLAttributes<HTMLDivElement>,'chil
 
 /** Presentation only: a close button never settles, retries or discards an operation. */
 export function ToastFeedback({children,source,state,enabled=true,persistent=false,revision,role,title,'aria-live':live,...attributes}:FeedbackProps){
+  useReportReadOnlyOperation(source,state);
   const id=useId(),latest=useRef(attributes);latest.current=attributes;
   useEffect(()=>{
     if(!enabled||!children){toast.remove(id);return;}

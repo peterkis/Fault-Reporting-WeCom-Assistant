@@ -1,0 +1,2068 @@
+TAP version 13
+# MIGRATION_EMIT_CHILD {"pid":33949,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":33949,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 335ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 319ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 157ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# MIGRATION_EMIT_CHILD {"pid":37287,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":37287,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 352ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 328ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 159ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# TAP version 13
+# \# Subtest: compiled TypeScript is called by legacy MJS within one runtime module graph
+# ok 1 - compiled TypeScript is called by legacy MJS within one runtime module graph
+#   ---
+#   duration_ms: 0.734458
+#   type: 'test'
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 46.452459
+# MIGRATION_EMIT_CHILD {"pid":40237,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":40237,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 369ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 339ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 156ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# TAP version 13
+# \# Subtest: compiled TypeScript is called by legacy MJS within one runtime module graph
+# ok 1 - compiled TypeScript is called by legacy MJS within one runtime module graph
+#   ---
+#   duration_ms: 0.792667
+#   type: 'test'
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 47.32175
+# {"selection":"canary","tests":1,"pass":1,"fail":0,"cancelled":0,"skipped":0,"todo":0,"log_directory":"<owned-temp>","production_ready":false}
+# MIGRATION_EMIT_CHILD {"pid":44287,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":44287,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 352ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 337ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 153ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# TAP version 13
+# \# Subtest: synthetic archival fixture, not browser acceptance
+# ok 1 - synthetic archival fixture, not browser acceptance
+#   ---
+#   duration_ms: 0.872208
+#   type: 'test'
+#   ...
+# \# SS010_BROWSER {"synthetic_archival_fixture":true,"real_browser":false,"screenshots":[{"file":"<owned-temp>","width":1,"height":1,"sha256":"f6b8d63aff676f1d788a91ff0349140a6b19b0373d22ee864497c19a02b3e424"}]}
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 49.893583
+# {"selection":"canary","tests":1,"pass":1,"fail":0,"cancelled":0,"skipped":0,"todo":0,"log_directory":"<owned-temp>","production_ready":false}
+# MIGRATION_EMIT_CHILD {"pid":47883,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":47883,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 357ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 366ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 155ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# MIGRATION_EMIT_CHILD {"pid":50221,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<owned-temp>"],"root":"<owned-temp>"}
+# MIGRATION_EMIT_COMPLETED {"pid":50221,"status":"STRICT_EMIT_SUCCEEDED"}
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 5788 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/admin-workbench/index.html                                                  0.84 kB │ gzip:   0.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/admin-workbench/assets/yixiaoxiu-favicon-DQprI6II.svg                       4.59 kB │ gzip:   1.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/admin-workbench/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/admin-workbench/.vite/manifest.json                                        45.67 kB │ gzip:   2.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/admin-workbench/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/admin-workbench/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-oIAZk7wZ.css                             43.41 kB │ gzip:   7.08 kB
+# .build/emit/web/admin-workbench/assets/Workbench-BC1OaaWS.css                             155.88 kB │ gzip:  22.80 kB
+# .build/emit/web/admin-workbench/assets/workbench-fQfijgYy.css                             622.99 kB │ gzip:  92.18 kB
+# .build/emit/web/admin-workbench/assets/feedbackRecovery-DdZYhsYc.js                         0.25 kB │ gzip:   0.17 kB
+# .build/emit/web/admin-workbench/assets/encrypted-drafts-P9mAVVXK.js                        16.40 kB │ gzip:   5.05 kB
+# .build/emit/web/admin-workbench/assets/workbench-DYdyhfaF.js                              222.84 kB │ gzip:  69.84 kB
+# .build/emit/web/admin-workbench/assets/ErrorState-Ds_CdP8-.js                             659.63 kB │ gzip: 201.22 kB
+# .build/emit/web/admin-workbench/assets/Workbench-DzpGJrUT.js                            1,263.45 kB │ gzip: 344.47 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 347ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./desktop-login-prepare-plugin" without a file extension (vite.login.config.ts:4:41). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 2096 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/web/desktop-login/assets/noto-sans-sc-97-wght-normal-9u6Aiav-.woff2           2.07 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-98-wght-normal-BR-H2C0V.woff2           3.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-4-wght-normal-AR5bdDjz.woff2            3.76 kB
+# .build/emit/web/desktop-login/assets/yixiaoxiu-logo-R_gqPPgq.svg                          4.57 kB │ gzip:   1.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-88-wght-normal-BXYxwf2t.woff2           7.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-87-wght-normal-DioZSHnU.woff2           7.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-91-wght-normal-DTr9RQcS.woff2           8.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-90-wght-normal-BnOlPreP.woff2           9.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-99-wght-normal-BI6XPoxp.woff2           9.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-89-wght-normal-ClMFrFaL.woff2          10.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-21-wght-normal-D0x9-yBt.woff2          11.27 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-6-wght-normal-ChnZIQfQ.woff2           11.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-5-wght-normal-CfWugllB.woff2           20.04 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-85-wght-normal-CjI3qdxG.woff2          26.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-80-wght-normal-Bje1Fxy1.woff2          32.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-84-wght-normal-zMBmUocm.woff2          32.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-86-wght-normal-BHY8TVEH.woff2          33.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-41-wght-normal-Hthm7FFi.woff2          36.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-77-wght-normal-B3MVY9Ax.woff2          36.66 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-73-wght-normal-B1ZoOTgM.woff2          39.09 kB
+# .build/emit/web/desktop-login/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2     40.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-79-wght-normal-BIoZy8fr.woff2          41.06 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-60-wght-normal-B7QOYsXJ.woff2          41.30 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-68-wght-normal-DGbCD9xu.woff2          41.38 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-65-wght-normal-DMPCXBvK.woff2          41.39 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-64-wght-normal-DVB11t7j.woff2          41.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-51-wght-normal-BlFLOjcP.woff2          41.47 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-36-wght-normal-CkITyjoT.woff2          41.69 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-70-wght-normal-RgTO941D.woff2          42.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-53-wght-normal-CwyWNT6x.woff2          43.28 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-83-wght-normal-99rD8YO-.woff2          43.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-75-wght-normal-Cp2wp4si.woff2          43.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-61-wght-normal-C8JjQS7w.woff2          45.09 kB
+# .build/emit/web/desktop-login/.vite/manifest.json                                        45.39 kB │ gzip:   2.88 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-42-wght-normal-eaS2gKds.woff2          45.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-50-wght-normal-DAOGW-Dr.woff2          45.72 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-118-wght-normal-xhBB7f6V.woff2         45.99 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-82-wght-normal-CUggNZi4.woff2          46.00 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-40-wght-normal-BQ5xpS5j.woff2          46.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-43-wght-normal-o-T53XXV.woff2          46.48 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-34-wght-normal-Bspba0wC.woff2          46.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-72-wght-normal-C4oWy3ul.woff2          46.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-31-wght-normal-Wfi_lutW.woff2          47.08 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-27-wght-normal-COFdrquJ.woff2          47.32 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-33-wght-normal-CUVQXNAJ.woff2          47.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-59-wght-normal-BS4Kwzxx.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-81-wght-normal-B2NN7Qi3.woff2          47.50 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-71-wght-normal-D9sG-CWv.woff2          47.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-55-wght-normal-DBK2wUOR.woff2          47.94 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-76-wght-normal-B494D7xS.woff2          48.24 kB
+# .build/emit/web/desktop-login/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.25 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-78-wght-normal-5jX7iNMC.woff2          48.91 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-63-wght-normal-BJr8P-OB.woff2          49.05 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-28-wght-normal-DMgdNu1o.woff2          50.01 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-35-wght-normal-K8fX_YPG.woff2          50.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-48-wght-normal-BNMfTR6k.woff2          50.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-26-wght-normal-C0sF2Z2f.woff2          50.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-39-wght-normal-BMZNLWQU.woff2          51.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-52-wght-normal-OZjrybnw.woff2          51.77 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-54-wght-normal-DM0nRe18.woff2          51.81 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-117-wght-normal-siZzFqgK.woff2         52.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-32-wght-normal-BRJQ4PY5.woff2          52.36 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-67-wght-normal-Dzk7WhCR.woff2          52.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-66-wght-normal-BobaG10V.woff2          52.62 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-49-wght-normal-DX-0y7wg.woff2          52.76 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-116-wght-normal-B4HVAfHo.woff2         52.79 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-56-wght-normal-C-VKK1LS.woff2          53.33 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-37-wght-normal-WCZ2zfEe.woff2          53.35 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-29-wght-normal-Cmq8em30.woff2          53.84 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-44-wght-normal-BJH5J4Ez.woff2          54.09 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-30-wght-normal-CZWqZ3yU.woff2          54.41 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-38-wght-normal-DeM7CUce.woff2          54.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-57-wght-normal-Cdbfh5kq.woff2          55.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-69-wght-normal-Ctrv1EqA.woff2          55.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-47-wght-normal-CyY7gKNX.woff2          55.97 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-74-wght-normal-F7dH_rZJ.woff2          56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-115-wght-normal-BWy07H14.woff2         56.26 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-23-wght-normal-Du1oYWkE.woff2          56.70 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-112-wght-normal-BcFuP3w6.woff2         57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-58-wght-normal-CflMKARZ.woff2          57.46 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-46-wght-normal-BR_5Mu6e.woff2          57.52 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-114-wght-normal-CO_5Xo-i.woff2         57.74 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-101-wght-normal-CPkZHnw0.woff2         58.02 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-25-wght-normal-BFHiqilg.woff2          58.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-113-wght-normal-Dk932kmj.woff2         58.42 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-62-wght-normal-bS4wq1Gg.woff2          58.95 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-109-wght-normal-Dsp-De_0.woff2         60.20 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-102-wght-normal-gzIulUH6.woff2         60.51 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-107-wght-normal-D7fvVprN.woff2         60.82 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-110-wght-normal-DE_6NUrb.woff2         61.18 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-104-wght-normal-B3QMglgE.woff2         61.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-105-wght-normal-xXh_OMfk.woff2         61.61 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-111-wght-normal-C4S-TlTn.woff2         62.40 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-106-wght-normal-B9n3jMjP.woff2         62.44 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-24-wght-normal-CmWjJ0gt.woff2          62.55 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-103-wght-normal-CJfSBxFo.woff2         63.73 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-108-wght-normal-J0_LhxVo.woff2         64.34 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-100-wght-normal-DluiXYzi.woff2         64.37 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-22-wght-normal-BBUVTShg.woff2          65.22 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-45-wght-normal-BKuxSCOJ.woff2          67.43 kB
+# .build/emit/web/desktop-login/assets/noto-sans-sc-119-wght-normal-Ck_g2FGz.woff2         76.32 kB
+# .build/emit/web/desktop-login/assets/login-environment-v1-DGxlGJlV.pmrem                880.17 kB
+# .build/emit/web/desktop-login/assets/Lanyard-DUPadfyl.css                                 0.72 kB │ gzip:   0.29 kB
+# .build/emit/web/desktop-login/assets/main-DYApkho2.css                                  120.18 kB │ gzip:  40.38 kB
+# .build/emit/web/desktop-login/assets/jsx-runtime-ERbzFvN6.js                              0.37 kB │ gzip:   0.27 kB
+# .build/emit/web/desktop-login/assets/main-CXxDeA6g.js                                   250.32 kB │ gzip:  79.93 kB
+# .build/emit/web/desktop-login/assets/Lanyard-CLbBQVHx.js                                602.58 kB │ gzip: 156.33 kB
+# .build/emit/web/desktop-login/assets/LoginBackdrop-BVcvDmfY.js                        2,565.99 kB │ gzip: 712.58 kB
+# [plugin builtin:vite-reporter] 
+# (!) Some chunks are larger than 500 kB after minification. Consider:
+# - Using dynamic import() to code-split the application
+# - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+# - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+# ✓ built in 329ms
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 215 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js        0.67 kB
+# .build/emit/h5/index.html                                 0.68 kB │ gzip:   0.40 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-R_gqPPgq.svg         4.57 kB │ gzip:   1.41 kB
+# .build/emit/h5/assets/yixiaoxiu-favicon-DQprI6II.svg      4.59 kB │ gzip:   1.44 kB
+# .build/emit/h5/assets/yixiaoxiu-logo-dark-DPKdKsFw.svg    4.78 kB │ gzip:   1.53 kB
+# .build/emit/h5/.vite/manifest.json                        9.37 kB │ gzip:   1.52 kB
+# .build/emit/h5/assets/inter-4-CBcvBZtf.woff2             10.25 kB
+# .build/emit/h5/assets/inter-2-DlzME5K_.woff2             11.23 kB
+# .build/emit/h5/assets/inter-1-DqGufNeO.woff2             18.74 kB
+# .build/emit/h5/assets/inter-3-CkhJZR-_.woff2             18.99 kB
+# .build/emit/h5/assets/inter-0-BOeWTOD4.woff2             25.96 kB
+# .build/emit/h5/assets/inter-6-Dx4kXJAl.woff2             48.25 kB
+# .build/emit/h5/assets/symbols-0-DrYhfNI4.woff2           75.03 kB
+# .build/emit/h5/assets/inter-5-DO1Apj_S.woff2             85.06 kB
+# .build/emit/h5/assets/ReporterPage-CyT229GP.css           1.65 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/index-DauxW-fd.css                 51.21 kB │ gzip:  10.80 kB
+# .build/emit/h5/assets/useQuery-CxqfgklZ.js                0.09 kB │ gzip:   0.10 kB
+# .build/emit/h5/assets/PageFailure-BuDgGU7m.js             0.60 kB │ gzip:   0.39 kB
+# .build/emit/h5/assets/report-DNu6JNgj.js                  0.64 kB │ gzip:   0.36 kB
+# .build/emit/h5/assets/ProfileDialog-CkjnskHG.js           0.83 kB │ gzip:   0.42 kB
+# .build/emit/h5/assets/useDisplayProfile-C52ndQyH.js       1.07 kB │ gzip:   0.59 kB
+# .build/emit/h5/assets/useInfiniteQuery-DfqsOdDL.js        1.15 kB │ gzip:   0.49 kB
+# .build/emit/h5/assets/CommandNotice-C1dAcTRx.js           1.15 kB │ gzip:   0.55 kB
+# .build/emit/h5/assets/raw-upload-D2c3ey8R.js              1.32 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Common-ApWRY4WT.js                  1.39 kB │ gzip:   0.74 kB
+# .build/emit/h5/assets/Department-CH8MK40_.js              1.67 kB │ gzip:   0.81 kB
+# .build/emit/h5/assets/HelpDialog-CJK2ft91.js              2.12 kB │ gzip:   1.13 kB
+# .build/emit/h5/assets/legacy-entry-BrSLWQYQ.js            2.21 kB │ gzip:   0.85 kB
+# .build/emit/h5/assets/ReportCard-VCEQYVXT.js              2.38 kB │ gzip:   1.02 kB
+# .build/emit/h5/assets/Reports-CHkwut3r.js                 3.16 kB │ gzip:   1.26 kB
+# .build/emit/h5/assets/action-client-DiBIK8Yj.js           3.78 kB │ gzip:   1.48 kB
+# .build/emit/h5/assets/DetailDialogs-D7HBraSh.js           4.08 kB │ gzip:   1.67 kB
+# .build/emit/h5/assets/command-messages-CQ6xiGCG.js        4.14 kB │ gzip:   1.58 kB
+# .build/emit/h5/assets/AuthState-DhEfuNAz.js               4.72 kB │ gzip:   2.17 kB
+# .build/emit/h5/assets/Home-CuPzrrx0.js                    5.06 kB │ gzip:   1.90 kB
+# .build/emit/h5/assets/voice-capture-DsgSF6ab.js           5.37 kB │ gzip:   2.32 kB
+# .build/emit/h5/assets/useBaseQuery-Bhf-A7l_.js            7.91 kB │ gzip:   2.92 kB
+# .build/emit/h5/assets/feedback-1nfI1yk-.js                9.89 kB │ gzip:   3.82 kB
+# .build/emit/h5/assets/ReporterPage-CRvq53sb.js           11.41 kB │ gzip:   4.29 kB
+# .build/emit/h5/assets/recovery-cbcRnAr1.js               13.83 kB │ gzip:   4.46 kB
+# .build/emit/h5/assets/Detail-DfxG9F4W.js                 21.59 kB │ gzip:   7.21 kB
+# .build/emit/h5/assets/Report-BtPR5aw-.js                 26.11 kB │ gzip:   9.46 kB
+# .build/emit/h5/assets/dialog-CM5bWSKN.js                 30.35 kB │ gzip:   9.53 kB
+# .build/emit/h5/assets/wecom-7lv8BPc5.js                  53.41 kB │ gzip:  17.84 kB
+# .build/emit/h5/assets/index-6L20t8PM.js                 350.47 kB │ gzip: 110.25 kB
+# ✓ built in 162ms
+# {"status":"MIGRATION_ALL_COMPILED_NODE_SYNTAX_CHECKS_PASS","started":957,"checked":957,"active":0,"max_active":2,"concurrency_limit":2}
+# TAP version 13
+# \# Subtest: intentional runtime failure
+# not ok 1 - intentional runtime failure
+#   ---
+#   duration_ms: 0.29375
+#   type: 'test'
+#   location: '<owned-temp>'
+#   failureType: 'testCodeFailure'
+#   error: 'T02_EXPECTED_FAILURE'
+#   code: 'ERR_TEST_FAILURE'
+#   stack: |-
+#     TestContext.<anonymous> (file://<owned-temp>
+#     Test.runInAsyncScope (node:async_hooks:227:14)
+#     Test.run (node:internal/test_runner/test:1325:25)
+#     Test.start (node:internal/test_runner/test:1191:17)
+#     startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 0
+# \# fail 1
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 45.291875
+# Subtest: G2 synthetic wrapper executes runtime tests and keeps source receipts
+ok 1 - G2 synthetic wrapper executes runtime tests and keeps source receipts
+  ---
+  duration_ms: 949.223792
+  type: 'test'
+  ...
+# Subtest: P2 staged live checks read canonical source evidence before database gates
+ok 2 - P2 staged live checks read canonical source evidence before database gates
+  ---
+  duration_ms: 965.375542
+  type: 'test'
+  ...
+# Subtest: ARCH-005 staged failure receipts target canonical source evidence with exclusive creation
+ok 3 - ARCH-005 staged failure receipts target canonical source evidence with exclusive creation
+  ---
+  duration_ms: 921.112917
+  type: 'test'
+  ...
+# Subtest: G2 staged preflight binds the source candidate and reads relative manifests from that source
+ok 4 - G2 staged preflight binds the source candidate and reads relative manifests from that source
+  ---
+  duration_ms: 34600.079042
+  type: 'test'
+  ...
+# Subtest: P02 affected CLI launchers reach their safety guards from verified artifacts
+ok 5 - P02 affected CLI launchers reach their safety guards from verified artifacts
+  ---
+  duration_ms: 1425.512083
+  type: 'test'
+  ...
+# Subtest: G1 synthetic wrapper runs its nested assembly tests from the staged tree
+ok 6 - G1 synthetic wrapper runs its nested assembly tests from the staged tree
+  ---
+  duration_ms: 1123.49525
+  type: 'test'
+  ...
+# Subtest: routed reporter rejects a case trace naming a different execution file
+ok 7 - routed reporter rejects a case trace naming a different execution file
+  ---
+  duration_ms: 32929.159417
+  type: 'test'
+  ...
+# Subtest: routed reporter binds each case to the actual compiled entry and original logs
+ok 8 - routed reporter binds each case to the actual compiled entry and original logs
+  ---
+  duration_ms: 35442.175167
+  type: 'test'
+  ...
+# Subtest: routed runner archives original screenshot bytes before the owned temporary images disappear
+ok 9 - routed runner archives original screenshot bytes before the owned temporary images disappear
+  ---
+  duration_ms: 33635.524958
+  type: 'test'
+  ...
+# Subtest: T02 routes, actual roots and candidate coverage reject invalid inputs
+    # Subtest: all legacy entries and aliases remain represented
+    ok 1 - all legacy entries and aliases remain represented
+      ---
+      duration_ms: 6.018125
+      type: 'test'
+      ...
+    # Subtest: wildcards expand deterministically and empty matches fail
+    ok 2 - wildcards expand deterministically and empty matches fail
+      ---
+      duration_ms: 5.379125
+      type: 'test'
+      ...
+    # Subtest: old UI retirement is explicit, bounded and preserves operational legacy aliases
+    ok 3 - old UI retirement is explicit, bounded and preserves operational legacy aliases
+      ---
+      duration_ms: 309.338125
+      type: 'test'
+      ...
+    # Subtest: V1 self-service UI retirement is a separate class bound to the original page driver
+    ok 4 - V1 self-service UI retirement is a separate class bound to the original page driver
+      ---
+      duration_ms: 244.946958
+      type: 'test'
+      ...
+    # Subtest: removed, duplicate and unregistered tests are rejected
+    ok 5 - removed, duplicate and unregistered tests are rejected
+      ---
+      duration_ms: 127.588666
+      type: 'test'
+      ...
+    # Subtest: original command arguments cannot be weakened by editing the route
+    ok 6 - original command arguments cannot be weakened by editing the route
+      ---
+      duration_ms: 255.447875
+      type: 'test'
+      ...
+    # Subtest: frozen checks cannot be redirected to current runtime
+    ok 7 - frozen checks cannot be redirected to current runtime
+      ---
+      duration_ms: 110.083458
+      type: 'test'
+      ...
+    # Subtest: legacy G2 executor refuses typed source tests before reading an env file
+    ok 8 - legacy G2 executor refuses typed source tests before reading an env file
+      ---
+      duration_ms: 3503.932584
+      type: 'test'
+      ...
+    # Subtest: all contract declarations must enter the real type program
+    ok 9 - all contract declarations must enter the real type program
+      ---
+      duration_ms: 2830.764875
+      type: 'test'
+      ...
+    # Subtest: database tests fail closed before test launch
+    ok 10 - database tests fail closed before test launch
+      ---
+      duration_ms: 0.241958
+      type: 'test'
+      ...
+    # Subtest: runtime path is an artifact, source path is the real checkout
+    ok 11 - runtime path is an artifact, source path is the real checkout
+      ---
+      duration_ms: 0.412417
+      type: 'test'
+      ...
+    # Subtest: missing compiled output never falls back to source
+    ok 12 - missing compiled output never falls back to source
+      ---
+      duration_ms: 0.30275
+      type: 'test'
+      ...
+    # Subtest: incomplete, skipped and failed TAP are not transformed into passing counts
+    ok 13 - incomplete, skipped and failed TAP are not transformed into passing counts
+      ---
+      duration_ms: 0.224625
+      type: 'test'
+      ...
+    # Subtest: SQL resource and routing changes invalidate the existing build
+    ok 14 - SQL resource and routing changes invalidate the existing build
+      ---
+      duration_ms: 328.009208
+      type: 'test'
+      ...
+    # Subtest: current source guards still reject substantive violations in MTS
+    ok 15 - current source guards still reject substantive violations in MTS
+      ---
+      duration_ms: 187.299666
+      type: 'test'
+      ...
+    # Subtest: candidate binds MTS, declaration and build-control bytes
+    ok 16 - candidate binds MTS, declaration and build-control bytes
+      ---
+      duration_ms: 680.566458
+      type: 'test'
+      ...
+    # Subtest: browser discovery rejects missing explicit path and retains platform candidates
+    ok 17 - browser discovery rejects missing explicit path and retains platform candidates
+      ---
+      duration_ms: 36.353958
+      type: 'test'
+      ...
+    # Subtest: worker launch rejects absent synthetic database before spawning
+    ok 18 - worker launch rejects absent synthetic database before spawning
+      ---
+      duration_ms: 23.75625
+      type: 'test'
+      ...
+    # Subtest: a real failing test leaves FAIL and unexecuted files in its receipt
+    ok 19 - a real failing test leaves FAIL and unexecuted files in its receipt
+      ---
+      duration_ms: 28211.355334
+      type: 'test'
+      ...
+    1..19
+ok 10 - T02 routes, actual roots and candidate coverage reject invalid inputs
+  ---
+  duration_ms: 69298.83725
+  type: 'test'
+  ...
+1..10
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 211446.012375

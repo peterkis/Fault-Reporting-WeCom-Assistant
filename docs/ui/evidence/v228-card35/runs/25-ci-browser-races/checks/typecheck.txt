@@ -1,0 +1,17 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:typecheck
+> npm run migration:tools && node .build/tools/gate.mjs types
+
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:tools
+> node --experimental-strip-types tools/ts-migration/bootstrap.mts
+
+{"event":"MIGRATION_GATE_PHASE","phase":"css","status":"PASS","elapsed_ms":212,"rss_before":128516096,"rss_after":128581632,"heap_used_after":16303016}
+{"event":"DESIGN_VARIABLES","files":59,"undefined":0,"primitive_leaks":0}
+{"event":"MIGRATION_GATE_PHASE","phase":"design-variables","status":"PASS","elapsed_ms":46,"rss_before":128696320,"rss_after":147718144,"heap_used_after":24343584}
+{"event":"MIGRATION_GATE_PHASE","phase":"feature-syntax","status":"PASS","elapsed_ms":782,"rss_before":147718144,"rss_after":147734528,"heap_used_after":24491984}
+MIGRATION_EMIT_CHILD {"pid":9535,"executable":"/Users/petervans/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["/Users/petervans/Projects/ticket-wt-35a/.build/tools/emit.mjs","--root","/Users/petervans/Projects/ticket-wt-35a","--types"],"root":"/Users/petervans/Projects/ticket-wt-35a"}
+MIGRATION_EMIT_COMPLETED {"pid":9535,"status":"COMPLETE_STRICT_TYPES_SUCCEEDED"}
+{"event":"MIGRATION_GATE_PHASE","phase":"strict","status":"PASS","elapsed_ms":13667,"rss_before":128499712,"rss_after":151306240,"heap_used_after":20717416}
+{"event":"MIGRATION_GATE_PHASE","phase":"negative-types","status":"PASS","elapsed_ms":638,"rss_before":151306240,"rss_after":506527744,"heap_used_after":209243528}
+{"status":"MIGRATION_GATE_PASS","scope":"types","compiler":"5.9.3","production_ready":false}

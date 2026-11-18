@@ -1,0 +1,98 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "timing": [
+      302.90000009536743
+    ],
+    "subgroupGeometry": [
+      {
+        "view": "board",
+        "column": "pending",
+        "before": 300,
+        "after": 300,
+        "delta": 0
+      },
+      {
+        "view": "board",
+        "column": "handled",
+        "before": 300,
+        "after": 300,
+        "delta": 0
+      },
+      {
+        "view": "list",
+        "column": "pending",
+        "before": 335,
+        "after": 335,
+        "delta": 0
+      },
+      {
+        "view": "list",
+        "column": "handled",
+        "before": 899,
+        "after": 899,
+        "delta": 0
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "board-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "144c93d628c2aa636297e870931c302d0df8cc6ec68358f67557655af103d948"
+    },
+    {
+      "file": "list-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ff126d2f720ecdc80e68c489ad6680704fd2c542bdd4f24700a236d6883d2012"
+    },
+    {
+      "file": "drawer-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "30b2e6e68563cbad1ddc569ca63bf55ba3943e5dcd055120219a8907c432116c"
+    },
+    {
+      "file": "board-refreshing.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c5352e6da0b9cf02fbff90a2a399c4b67998a10b02367ee3cf9c3a35b2cfc506"
+    },
+    {
+      "file": "board-stale-retry.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "fbbfc36acf48df3fbd5589fe556e320f37f3747803afcf20bb4a72c2dd183bbc"
+    },
+    {
+      "file": "board-empty-filtered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5610b7ab80a8c27f351d7b8096f167fd4dfc4ac6ba5c060bebd1b3492026848f"
+    },
+    {
+      "file": "intake-cleared.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5f71849bdf640bc886255e8445a887ea3e1080462d4583bd0e95d10124116592"
+    },
+    {
+      "file": "workbench-error-page.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "dc2415f2d90486ad8576bb8789b9319850d2c89e4dc77fd87bd6c33163784fbe"
+    }
+  ],
+  "error": null
+}

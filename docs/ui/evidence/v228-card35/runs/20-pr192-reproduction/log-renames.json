@@ -1,0 +1,294 @@
+{
+  "phase": "before the new PR192 validation overwrote current check outputs",
+  "count": 48,
+  "files": [
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/artifact-after-tests.log",
+      "after": "docs/ui/evidence/v228-card35/checks/artifact-after-tests.txt",
+      "sha256": "04bc0aacdf8d50dede3570caff0a8ba1a9854a4315d68ce96b9e2353cee4dcd9",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/artifact-after-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/eslint.log",
+      "after": "docs/ui/evidence/v228-card35/checks/eslint.txt",
+      "sha256": "613e3c6a507c793d26dbb0d62938f43f973f483fa2bcde310559e88724ca930f",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/eslint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/states-browser.log",
+      "after": "docs/ui/evidence/v228-card35/checks/states-browser.txt",
+      "sha256": "6094143f6f9c1773766a50767354536affdfe96fe6c6504d20f92f906985d3f7",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/states-browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/agent-docs-tests.log",
+      "after": "docs/ui/evidence/v228-card35/checks/agent-docs-tests.txt",
+      "sha256": "2a381c68a9222a756c1b09d2f92c626c949eb74814e03caf8973fcb29618dbf0",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/agent-docs-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/agent-docs.log",
+      "after": "docs/ui/evidence/v228-card35/checks/agent-docs.txt",
+      "sha256": "4e2e54f9626e5eaa66fabacbbb36a3e1e3e272867dac37da7268e144b0b61843",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/agent-docs.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/typecheck.log",
+      "after": "docs/ui/evidence/v228-card35/checks/typecheck.txt",
+      "sha256": "b471a3a261b2e17c207d8679152cd30af765b92813aa24eddf9693c961ea5ffe",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/typecheck.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/artifact.log",
+      "after": "docs/ui/evidence/v228-card35/checks/artifact.txt",
+      "sha256": "04bc0aacdf8d50dede3570caff0a8ba1a9854a4315d68ce96b9e2353cee4dcd9",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/artifact.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/stylelint.log",
+      "after": "docs/ui/evidence/v228-card35/checks/stylelint.txt",
+      "sha256": "f63c7c64a77f209d9abab662928ed53b471657ac17b8f63dacfb9185d03d7f06",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/stylelint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/option-a-units.log",
+      "after": "docs/ui/evidence/v228-card35/checks/option-a-units.txt",
+      "sha256": "7ff7bba97b17d039139c96ffd305bac81da1117387ec98374d8aca66b8a98e60",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/option-a-units.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/checks/build.log",
+      "after": "docs/ui/evidence/v228-card35/checks/build.txt",
+      "sha256": "87bf32783d75a9b704512b30fb11cc7c213b03ad6b2751560928de682e6e49b9",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/19-before-pr192/checks/build.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/08-report-directory-reuse.log",
+      "after": "docs/ui/evidence/v228-card35/runs/08-report-directory-reuse.txt",
+      "sha256": "c67b78fa3ddaaf55920d25e095d5b6433430186a4db24026887767d5d3b42459",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/08-report-directory-reuse.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/09-navigation-wait/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/09-navigation-wait/browser.txt",
+      "sha256": "1a12082450e2fb3908a9473a5036ef3075d4ab698a6983b0c27af976c79110b7",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/09-navigation-wait/browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/14-permission-fixture-setup/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/14-permission-fixture-setup/browser.txt",
+      "sha256": "3c0974471d24cb82cf34a6759baa9eedda910c2425d7faacb453f55ee99d99b4",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/14-permission-fixture-setup/browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact-after-tests.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact-after-tests.txt",
+      "sha256": "04bc0aacdf8d50dede3570caff0a8ba1a9854a4315d68ce96b9e2353cee4dcd9",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact-after-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/eslint.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/eslint.txt",
+      "sha256": "613e3c6a507c793d26dbb0d62938f43f973f483fa2bcde310559e88724ca930f",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/eslint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/states-browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/states-browser.txt",
+      "sha256": "6944966510401ae3ff79046f3a2077df6170d6efad7077facd21cd05fae0f869",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/states-browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs-tests.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs-tests.txt",
+      "sha256": "600ad033ecda6d8ddc8401ef0072c14c361cf204594fb3d04ca1185b6e895d53",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs.txt",
+      "sha256": "4e2e54f9626e5eaa66fabacbbb36a3e1e3e272867dac37da7268e144b0b61843",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/agent-docs.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/typecheck.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/typecheck.txt",
+      "sha256": "6a49caf4c12c991606d8f4963b4525925571e5a6a8f2099f2757e12b788c11cf",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/typecheck.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact.txt",
+      "sha256": "04bc0aacdf8d50dede3570caff0a8ba1a9854a4315d68ce96b9e2353cee4dcd9",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/artifact.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/stylelint.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/stylelint.txt",
+      "sha256": "f63c7c64a77f209d9abab662928ed53b471657ac17b8f63dacfb9185d03d7f06",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/stylelint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/build.log",
+      "after": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/build.txt",
+      "sha256": "b067a1d07eadd4bb85b5e572114c1451259a67b5f7279b84838b540b2452376b",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/17-before-option-a/checks/build.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/11-navigation-diagnostic/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/11-navigation-diagnostic/browser.txt",
+      "sha256": "0554c12993c8e33c9e7fc23d4f695901075920f25a758af437f752aa7a5b5e36",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/11-navigation-diagnostic/browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/typecheck-before-fix.log",
+      "after": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/typecheck-before-fix.txt",
+      "sha256": "35a3560d7b8b3176932a40eba914fa3d96123f0fd5fdb454e7ede55edf583d9a",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/typecheck-before-fix.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/regressions-missing-isolation-flag.log",
+      "after": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/regressions-missing-isolation-flag.txt",
+      "sha256": "40cfdf2561934ce2c8a114c6ac6be77e255fc74b8144afbaf7fedf78bce67e86",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/regressions-missing-isolation-flag.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/red-before.log",
+      "after": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/red-before.txt",
+      "sha256": "89a7030f74809c0803e4bf6adb323f3cfad5ca806dd2300dce0295b8529a3b73",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/18-option-a-reproduction/red-before.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact-after-tests.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact-after-tests.txt",
+      "sha256": "970fd7aab4f02ed684030ed7158f96a73697e3b94db627be77948628ac7aa340",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact-after-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/eslint.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/eslint.txt",
+      "sha256": "613e3c6a507c793d26dbb0d62938f43f973f483fa2bcde310559e88724ca930f",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/eslint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/states-browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/states-browser.txt",
+      "sha256": "c660bec6dbbd4c62954e696f52a6f5602ada23b47c0e9907d69d1c98833f9a96",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/states-browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs-tests.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs-tests.txt",
+      "sha256": "b2606636066ee821275a9c3654abce555aa997386f1be19cbf8d002bbf60158c",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs-tests.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs.txt",
+      "sha256": "4e2e54f9626e5eaa66fabacbbb36a3e1e3e272867dac37da7268e144b0b61843",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/agent-docs.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/typecheck.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/typecheck.txt",
+      "sha256": "75953acfa66ef2467632101a51574d62f021e15ad147def12fb6fd183d2bdf71",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/typecheck.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact.txt",
+      "sha256": "970fd7aab4f02ed684030ed7158f96a73697e3b94db627be77948628ac7aa340",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/artifact.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/stylelint.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/stylelint.txt",
+      "sha256": "f63c7c64a77f209d9abab662928ed53b471657ac17b8f63dacfb9185d03d7f06",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/stylelint.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/build.log",
+      "after": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/build.txt",
+      "sha256": "df2809de561fc3362ab1633de5cde0e74a8a19b1d959a458612ed744238f9c22",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/15-before-review/checks/build.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-handled.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-handled.txt",
+      "sha256": "f460295b6b65bc13e5c18aae0163367c801f2367ed4cd2e1b57b1155e6f97029",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-handled.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-layout.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-layout.txt",
+      "sha256": "e693ee2de434a6b98455d008ddbad2232bc598b92dcfb009bd90c424e80a9145",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/unknown-layout.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-precise.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-precise.txt",
+      "sha256": "f861bb4ad849d8db7046a5e93a3c57bcbe28b1497f9961faa69527a5aba8dfee",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-precise.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/typecheck.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/typecheck.txt",
+      "sha256": "7b1bcf163acd696c2c2dcd7b30bcb96d038b99e90d727f2ac6d2cc72d6f4e8e7",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/typecheck.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-fixed.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-fixed.txt",
+      "sha256": "f40c22fe389ea3ce07b9023e7bf3cfdd837820a9a8264efdbc36dda79bca1059",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-fixed.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-fixed.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-fixed.txt",
+      "sha256": "1d87e9e2fd86057b42d17c8d246f29e050854b15d447cae2f0812fed1676f6eb",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro-fixed.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-repro.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-repro.txt",
+      "sha256": "ac6412784a254f3470440e3a6f19a3cf827a06caee810f3b09f42d1466ec9e85",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/geometry-repro.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe2.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe2.txt",
+      "sha256": "4e411716f476f9f28a18304c9ac3b7fbda40e85742b0f990dd5de1f77e86af8d",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe2.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro.txt",
+      "sha256": "a4e99363793a45dce803db4e2c492977caf314d98099dd8cdabd9878358553f3",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/repro.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe.log",
+      "after": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe.txt",
+      "sha256": "ad99ec96eb1918c3d51e79bde879ba69be89730a6a21d94fd1dfd1f556eb9317",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/16-review-reproduction/folded-probe.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/06/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/06/browser.txt",
+      "sha256": "3b7924d7df684e22b2f23f8209c64dc83541e273d7079a07f7076a7d5e4eea6e",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/06/browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/13-original-revocation-normalization/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/13-original-revocation-normalization/browser.txt",
+      "sha256": "de1c1b05910518969a70bb7241083958bec5aaad2989594e30078a6c189d2b70",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/13-original-revocation-normalization/browser.txt"
+    },
+    {
+      "before": "docs/ui/evidence/v228-card35/runs/12-permission-seam/browser.log",
+      "after": "docs/ui/evidence/v228-card35/runs/12-permission-seam/browser.txt",
+      "sha256": "13171bb3be22980b47d34d8d3101e15f557dc456f96065e094f0ff92187cb302",
+      "original_bytes_preserved_at": "docs/ui/evidence/v228-card35/runs/12-permission-seam/browser.txt"
+    }
+  ]
+}

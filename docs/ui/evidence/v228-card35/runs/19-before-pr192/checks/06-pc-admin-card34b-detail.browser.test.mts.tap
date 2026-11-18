@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Card 34B detail drawer: chain in the timeline, no empty unassign block, composer draft line, single hairlines
+ok 1 - Card 34B detail drawer: chain in the timeline, no empty unassign block, composer draft line, single hairlines
+  ---
+  duration_ms: 6379.497417
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6560.11125

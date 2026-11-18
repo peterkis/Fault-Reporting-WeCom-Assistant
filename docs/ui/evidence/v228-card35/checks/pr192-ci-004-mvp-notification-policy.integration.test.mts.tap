@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: MVP actual handling and completion use independent private notices and only the exact configured group completion Webhooks
+ok 1 - MVP actual handling and completion use independent private notices and only the exact configured group completion Webhooks
+  ---
+  duration_ms: 884.434584
+  type: 'test'
+  ...
+# Subtest: MVP original Bot private and group completion notices recover from temporary member lookup outages without duplicate sends
+ok 2 - MVP original Bot private and group completion notices recover from temporary member lookup outages without duplicate sends
+  ---
+  duration_ms: 12808.250333
+  type: 'test'
+  ...
+# Subtest: MVP upgrade respects the original side-effect evidence of DEAD_LETTER
+ok 3 - MVP upgrade respects the original side-effect evidence of DEAD_LETTER
+  ---
+  duration_ms: 559.284333
+  type: 'test'
+  ...
+# Subtest: MVP upgrade respects the original side-effect evidence of SENT
+ok 4 - MVP upgrade respects the original side-effect evidence of SENT
+  ---
+  duration_ms: 563.812875
+  type: 'test'
+  ...
+# Subtest: MVP upgrade respects the original side-effect evidence of RECONCILIATION_REQUIRED
+ok 5 - MVP upgrade respects the original side-effect evidence of RECONCILIATION_REQUIRED
+  ---
+  duration_ms: 628.657916
+  type: 'test'
+  ...
+# Subtest: MVP upgrade respects the original side-effect evidence of CANCELLED_UNKNOWN
+ok 6 - MVP upgrade respects the original side-effect evidence of CANCELLED_UNKNOWN
+  ---
+  duration_ms: 551.979958
+  type: 'test'
+  ...
+# Subtest: MVP Bot member qualification rechecks the retained original inbox after its last await before sending a private card
+ok 7 - MVP Bot member qualification rechecks the retained original inbox after its last await before sending a private card
+  ---
+  duration_ms: 1564.983583
+  type: 'test'
+  ...
+# Subtest: MVP queued assignment stays silent and cancels an obsolete unattempted notice; real handling and reopened rounds preserve original responsibility facts
+ok 8 - MVP queued assignment stays silent and cancels an obsolete unattempted notice; real handling and reopened rounds preserve original responsibility facts
+  ---
+  duration_ms: 673.958708
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18400.449375

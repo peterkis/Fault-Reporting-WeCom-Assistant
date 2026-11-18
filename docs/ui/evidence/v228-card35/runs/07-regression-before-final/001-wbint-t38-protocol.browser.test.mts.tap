@@ -1,0 +1,42 @@
+TAP version 13
+# Subtest: native 32 admission preserves the budget; the 33rd production client polls bounded GET and permits a human command while REST stays authorized
+not ok 1 - native 32 admission preserves the budget; the 33rd production client polls bounded GET and permits a human command while REST stays authorized
+  ---
+  duration_ms: 2218.786333
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/wbint-t38-protocol.browser.test.mjs:10:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a terminal503 must wait for the single 5s recovery cadence
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.workbenchRealtimeEnabled (file://<worktree>/.build/runtime/tests/wbint-t38-protocol.browser.test.mjs:47:20)
+    async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file://<worktree>/.build/runtime/tests/wbint-t38-protocol.browser.test.mjs:11:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","current_target_position":true,"fresh_order_after_close":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: an actual colleague update does not reorder the card being operated on while its detail editor is open
+ok 2 - an actual colleague update does not reorder the card being operated on while its detail editor is open
+  ---
+  duration_ms: 1721.92625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4106.122167

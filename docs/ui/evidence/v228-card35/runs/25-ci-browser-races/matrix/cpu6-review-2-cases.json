@@ -1,0 +1,86 @@
+[
+  {
+    "event_time": "2026-11-18 21:49:54",
+    "event_epoch_ms": "1795009794444",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 UNKNOWN survives board-flag for the same authorized principal",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 6,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:49:59",
+    "event_epoch_ms": "1795009799495",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 UNKNOWN survives revision for the same authorized principal",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 6,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:50:02",
+    "event_epoch_ms": "1795009802975",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 absent or null active-state start never borrows old creation time",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 51,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:50:07",
+    "event_epoch_ms": "1795009807480",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 credible Ticket READ 403 clears the pending card controller without replay",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 74,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:50:11",
+    "event_epoch_ms": "1795009811732",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 credible Ticket READ 404 clears the pending card controller without replay",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 74,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:50:16",
+    "event_epoch_ms": "1795009816174",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 related profile READ 403 clears UNKNOWN with realtime disabled",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 98,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  },
+  {
+    "event_time": "2026-11-18 21:50:20",
+    "event_epoch_ms": "1795009820782",
+    "time_basis": "REPORTER_OBSERVED_AT",
+    "event": "test:pass",
+    "name": "Card 12 related profile READ 404 clears UNKNOWN with realtime disabled",
+    "file": "tests/pc-admin-card12-review.browser.test.mjs",
+    "line": 98,
+    "nesting": 0,
+    "skip": false,
+    "todo": false
+  }
+]

@@ -1,0 +1,6886 @@
+{
+  "main": "67999466deedacea714812f7cc23884c2a5b7db1",
+  "head": "c63b71dd1d71ef9fd0f665f4f9466dd97c6bff53",
+  "identical": [
+    {
+      "file": "app/pc-admin/src/features/search/WorkbenchSearch.tsx",
+      "main_sha256": "94278cbaa1275b72f5db9889d97970fd7a36219042df98821336d238089223a8",
+      "worktree_sha256": "94278cbaa1275b72f5db9889d97970fd7a36219042df98821336d238089223a8",
+      "identical": true
+    },
+    {
+      "file": "app/pc-admin/src/design/components/PageHeader/PageHeader.tsx",
+      "main_sha256": "f2817720fb1e5e9ed99d317619c70aec80a056e85b4bba79e9094998fced4a2a",
+      "worktree_sha256": "f2817720fb1e5e9ed99d317619c70aec80a056e85b4bba79e9094998fced4a2a",
+      "identical": true
+    },
+    {
+      "file": "tests/t41-search-production.browser.test.mts",
+      "main_sha256": "ddc4b65fb2260489d9dcfd1ed8ff139c0925d5315e7db50d14874bee853880cb",
+      "worktree_sha256": "ddc4b65fb2260489d9dcfd1ed8ff139c0925d5315e7db50d14874bee853880cb",
+      "identical": true
+    },
+    {
+      "file": "tests/t41-search-pending-hint.browser.test.mts",
+      "main_sha256": "0e2f015664092f1c83ab36671bc361a89031e7de9fea5e04c745713faa368b60",
+      "worktree_sha256": "0e2f015664092f1c83ab36671bc361a89031e7de9fea5e04c745713faa368b60",
+      "identical": true
+    },
+    {
+      "file": "tests/pc-admin-card12.browser.test.mts",
+      "main_sha256": "0c74bb7d14eaddc21a2bc4883b22c155783b9ba69da793717bf9e77a5713e240",
+      "worktree_sha256": "0c74bb7d14eaddc21a2bc4883b22c155783b9ba69da793717bf9e77a5713e240",
+      "identical": true
+    },
+    {
+      "file": "shared/workbench-search-contracts.mts",
+      "main_sha256": "2dbd1f840013772f67a9aac1ea97c50b492ff34e4329e97208dde2c12b09136b",
+      "worktree_sha256": "2dbd1f840013772f67a9aac1ea97c50b492ff34e4329e97208dde2c12b09136b",
+      "identical": true
+    }
+  ],
+  "preserved": [
+    {
+      "file": "app/pc-admin/src/app/Workbench.tsx",
+      "function": "leaveSearch",
+      "identical": true
+    },
+    {
+      "file": "app/pc-admin/src/design/components/BoardColumn/BoardColumn.tsx",
+      "function": "boardEmptyMessage",
+      "identical": true
+    }
+  ],
+  "main_pending_hint_windows_precondition": " assert.match(tmpdir(),/^D:[\\\\/]/iu,'owned TLS/browser resources require D temp before fixture creation');",
+  "comparisons": [
+    {
+      "file": "app/pc-admin/src/app/Workbench.tsx",
+      "main": [
+        {
+          "text": "state-message",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 89
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 89
+        },
+        {
+          "text": "secondary",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 89
+        },
+        {
+          "text": "secondary",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 89
+        },
+        {
+          "text": "重新读取",
+          "kind": "JSX_TEXT",
+          "line": 89
+        },
+        {
+          "text": "shared-follow-up-summary",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": " is-due",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "共享跟进 · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "已到期",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "已安排",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 93
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 94
+        },
+        {
+          "text": "共享跟进 · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 94
+        },
+        {
+          "text": "已到期",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 94
+        },
+        {
+          "text": "已安排",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 94
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 95
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 95
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 95
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_TEXT",
+          "line": 95
+        },
+        {
+          "text": "card-meta",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 103
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 103
+        },
+        {
+          "text": "ds-reporter-text",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 103
+        },
+        {
+          "text": "ds-reporter-text",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 103
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 103
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 103
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 103
+        },
+        {
+          "text": "·",
+          "kind": "JSX_TEXT",
+          "line": 103
+        },
+        {
+          "text": "neutral-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 103
+        },
+        {
+          "text": "neutral-chip",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 103
+        },
+        {
+          "text": "is-selected",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "DISMISSED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 111
+        },
+        {
+          "text": "DISMISSED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "ds-dismissed-card-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 112
+        },
+        {
+          "text": "ds-dismissed-card-content",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "card-open ds-dismissed-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 112
+        },
+        {
+          "text": "card-open ds-dismissed-open",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "link",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 112
+        },
+        {
+          "text": "link",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 112
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 112
+        },
+        {
+          "text": "card-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 112
+        },
+        {
+          "text": "card-open",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "link",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 112
+        },
+        {
+          "text": "link",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 112
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 113
+        },
+        {
+          "text": "owner",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 116
+        },
+        {
+          "text": "owner",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": "等待领取",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 116
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": "owner-name",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": " sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 116
+        },
+        {
+          "text": "activity-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 117
+        },
+        {
+          "text": "activity-time",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "最新活动：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 118
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 118
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 118
+        },
+        {
+          "text": "ds-column-footer",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 123
+        },
+        {
+          "text": "读取未完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "已加载 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "读取未完成",
+          "kind": "JSX_TEXT",
+          "line": 123
+        },
+        {
+          "text": "column-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 123
+        },
+        {
+          "text": "column-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "expand-column",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 123
+        },
+        {
+          "text": "expand-column",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 123
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "收起",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "显示剩余 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 123
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "（当前已加载范围）",
+          "kind": "JSX_TEXT",
+          "line": 123
+        },
+        {
+          "text": "compact-account",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 154
+        },
+        {
+          "text": "account account-menu-trigger",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 154
+        },
+        {
+          "text": "open-user-menu",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 154
+        },
+        {
+          "text": "compact",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 154
+        },
+        {
+          "text": "sidebar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 154
+        },
+        {
+          "text": "用户菜单",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 154
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 155
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "account-copy",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 155
+        },
+        {
+          "text": "account-copy",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "read-only-badge",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 155
+        },
+        {
+          "text": "read-only-badge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "account-menu-chevron",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 155
+        },
+        {
+          "text": "account-menu-chevron",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 155
+        },
+        {
+          "text": "user-account-menu",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 156
+        },
+        {
+          "text": "bottom end",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 156
+        },
+        {
+          "text": "top start",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 156
+        },
+        {
+          "text": "用户操作",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 156
+        },
+        {
+          "text": "settings",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 157
+        },
+        {
+          "text": "open-settings",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 157
+        },
+        {
+          "text": "设置",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 157
+        },
+        {
+          "text": "设置",
+          "kind": "JSX_TEXT",
+          "line": 157
+        },
+        {
+          "text": "logout",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 158
+        },
+        {
+          "text": "logout",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 158
+        },
+        {
+          "text": "logout-workbench",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 158
+        },
+        {
+          "text": "logout-workbench",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 158
+        },
+        {
+          "text": "退出工作台",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 158
+        },
+        {
+          "text": "退出工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 158
+        },
+        {
+          "text": "正在退出…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 158
+        },
+        {
+          "text": "退出工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 158
+        },
+        {
+          "text": "app ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "sidebar-collapsed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "sidebar",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 163
+        },
+        {
+          "text": "主导航",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 163
+        },
+        {
+          "text": "nav-label",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 165
+        },
+        {
+          "text": "工作空间",
+          "kind": "JSX_TEXT",
+          "line": 165
+        },
+        {
+          "text": "nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 165
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 165
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 165
+        },
+        {
+          "text": "/",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 165
+        },
+        {
+          "text": "page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 165
+        },
+        {
+          "text": "工作台",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 165
+        },
+        {
+          "text": "工作台",
+          "kind": "JSX_TEXT",
+          "line": 165
+        },
+        {
+          "text": "nav-item conversation-nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "/conversations",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 166
+        },
+        {
+          "text": "/conversations",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "会话",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 166
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "open-conversations",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 166
+        },
+        {
+          "text": "open-conversations",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_TEXT",
+          "line": 166
+        },
+        {
+          "text": "brand",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 166
+        },
+        {
+          "text": "brand",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "conversation-unread-badge",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 166
+        },
+        {
+          "text": "conversation-unread-badge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 166
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": " 条未读",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "99+",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "nav-item",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 166
+        },
+        {
+          "text": "nav-item",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "/incidents/candidates",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 166
+        },
+        {
+          "text": "/incidents/candidates",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "open-incident-candidates",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 166
+        },
+        {
+          "text": "open-incident-candidates",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "公共故障",
+          "kind": "JSX_TEXT",
+          "line": 166
+        },
+        {
+          "text": "nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "/notification-exceptions",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 166
+        },
+        {
+          "text": "/notification-exceptions",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "open-notification-exceptions",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 166
+        },
+        {
+          "text": "open-notification-exceptions",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "通知异常",
+          "kind": "JSX_TEXT",
+          "line": 166
+        },
+        {
+          "text": "sidebar-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 167
+        },
+        {
+          "text": "sidebar-bottom",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 167
+        },
+        {
+          "text": "topbar",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "icon-button",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "展开侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "收起侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 168
+        },
+        {
+          "text": "展开侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "收起侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "user",
+          "kind": "ATTRIBUTE",
+          "name": "reducedMotion",
+          "line": 168
+        },
+        {
+          "text": "slash",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "/",
+          "kind": "JSX_TEXT",
+          "line": 168
+        },
+        {
+          "text": "设置",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "通知异常",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "新报修",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "topbar-actions",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "connection-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 168
+        },
+        {
+          "text": "连接状态：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "disabled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 168
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 168
+        },
+        {
+          "text": "topbar-desktop-settings",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "topbar-settings",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 168
+        },
+        {
+          "text": "设置",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 168
+        },
+        {
+          "text": "compact-user-menu",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 168
+        },
+        {
+          "text": "empty",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 187
+        },
+        {
+          "text": "已加载的事项中暂无匹配结果",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 187
+        },
+        {
+          "text": "—",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 188
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 188
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 188
+        },
+        {
+          "text": "当前日期范围内的事项总数",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 188
+        },
+        {
+          "text": "当前筛选后已加载的事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 188
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 189
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 189
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "连接中断，显示最近已确认资料。",
+          "kind": "JSX_TEXT",
+          "line": 189
+        },
+        {
+          "text": "column-cards",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 189
+        },
+        {
+          "text": "column-cards",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "cards-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "ds-completed-drop-zone",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 189
+        },
+        {
+          "text": "ds-completed-drop-zone",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "dismissed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "待判断",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 189
+        },
+        {
+          "text": "待判断",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "待接单",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 189
+        },
+        {
+          "text": "待接单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "cards-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "load-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 190
+        },
+        {
+          "text": "load-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 190
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 190
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 190
+        },
+        {
+          "text": "加载下一页",
+          "kind": "JSX_TEXT",
+          "line": 190
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "pc-admin:processed-group:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "workspace ds-page",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 311
+        },
+        {
+          "text": "workspace ds-page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "ds-board-page-header",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 311
+        },
+        {
+          "text": "ds-board-page-header",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "团队工作台",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 311
+        },
+        {
+          "text": "团队工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 311
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "刷新",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 311
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "刷新",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 311
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 311
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 311
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_TEXT",
+          "line": 311
+        },
+        {
+          "text": "ds-board-toolbar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 312
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 312
+        },
+        {
+          "text": " ds-list-toolbar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 312
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 312
+        },
+        {
+          "text": "ds-board-toolbar-top",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 313
+        },
+        {
+          "text": "ds-board-toolbar-top",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 313
+        },
+        {
+          "text": "team",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 314
+        },
+        {
+          "text": "view-tabs",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 315
+        },
+        {
+          "text": "view-tabs",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "展示方式",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 315
+        },
+        {
+          "text": "展示方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 315
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "看板",
+          "kind": "JSX_TEXT",
+          "line": 315
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 315
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 315
+        },
+        {
+          "text": "列表",
+          "kind": "JSX_TEXT",
+          "line": 315
+        },
+        {
+          "text": "ds-board-toolbar-bottom",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 317
+        },
+        {
+          "text": "ds-board-toolbar-bottom",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 317
+        },
+        {
+          "text": "ds-board-search",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 318
+        },
+        {
+          "text": "ds-board-search",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 318
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 318
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 318
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 318
+        },
+        {
+          "text": "/",
+          "kind": "JSX_TEXT",
+          "line": 318
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 318
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 318
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 318
+        },
+        {
+          "text": "搜索入口当前关闭，已返回原分页看板。",
+          "kind": "JSX_TEXT",
+          "line": 318
+        },
+        {
+          "text": "ds-board-toolbar-divider",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 319
+        },
+        {
+          "text": "ds-board-toolbar-divider",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 319
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 319
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 319
+        },
+        {
+          "text": "ds-board-filter-layout",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 320
+        },
+        {
+          "text": "ds-board-filter-layout",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 320
+        },
+        {
+          "text": "ds-board-filter-row",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 320
+        },
+        {
+          "text": "ds-board-filter-row",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 320
+        },
+        {
+          "text": "group",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 320
+        },
+        {
+          "text": "group",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 320
+        },
+        {
+          "text": "筛选已加载事项",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 320
+        },
+        {
+          "text": "筛选已加载事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 320
+        },
+        {
+          "text": "类别和处理人仅筛选已加载事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 320
+        },
+        {
+          "text": "类别和处理人仅筛选已加载事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 320
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "类别",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 321
+        },
+        {
+          "text": "类别",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "类别",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 321
+        },
+        {
+          "text": "类别",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 321
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 321
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 321
+        },
+        {
+          "text": "unclassified",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 321
+        },
+        {
+          "text": "unclassified",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "未分类",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 321
+        },
+        {
+          "text": "未分类",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 321
+        },
+        {
+          "text": "未分类",
+          "kind": "JSX_TEXT",
+          "line": 321
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "处理人",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 322
+        },
+        {
+          "text": "处理人",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "处理人",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 322
+        },
+        {
+          "text": "处理人",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 322
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 322
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 322
+        },
+        {
+          "text": "unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 322
+        },
+        {
+          "text": "unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "未领取",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 322
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_TEXT",
+          "line": 322
+        },
+        {
+          "text": "name:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 322
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "结束方式",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 323
+        },
+        {
+          "text": "结束方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "按当前日期和结束方式筛选已处理事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 323
+        },
+        {
+          "text": "按当前日期和结束方式筛选已处理事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "结束方式",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 323
+        },
+        {
+          "text": "结束方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 323
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 323
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 323
+        },
+        {
+          "text": "completed",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 323
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "已完成",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 323
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_TEXT",
+          "line": 323
+        },
+        {
+          "text": "dismissed",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 323
+        },
+        {
+          "text": "dismissed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "已关闭",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 323
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 323
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_TEXT",
+          "line": 323
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 325
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 325
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 325
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 325
+        },
+        {
+          "text": "clear-board-filters",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 325
+        },
+        {
+          "text": "clear-board-filters",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 325
+        },
+        {
+          "text": "清除",
+          "kind": "JSX_TEXT",
+          "line": 325
+        },
+        {
+          "text": "alert",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 330
+        },
+        {
+          "text": "alert",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 330
+        },
+        {
+          "text": "error",
+          "kind": "ATTRIBUTE",
+          "name": "data-search-state",
+          "line": 330
+        },
+        {
+          "text": "error",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 330
+        },
+        {
+          "text": "查询未完成，请重新读取。搜索输入仍保留。",
+          "kind": "JSX_TEXT",
+          "line": 330
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 331
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 331
+        },
+        {
+          "text": "empty",
+          "kind": "ATTRIBUTE",
+          "name": "data-search-state",
+          "line": 331
+        },
+        {
+          "text": "empty",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 331
+        },
+        {
+          "text": "reminder-location",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 332
+        },
+        {
+          "text": "reminder-location",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 332
+        },
+        {
+          "text": "已定位事项",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 332
+        },
+        {
+          "text": "已定位事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 332
+        },
+        {
+          "text": "column-heading",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 332
+        },
+        {
+          "text": "column-heading",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 332
+        },
+        {
+          "text": "已定位事项",
+          "kind": "JSX_TEXT",
+          "line": 332
+        },
+        {
+          "text": "返回当前工作台",
+          "kind": "JSX_TEXT",
+          "line": 332
+        },
+        {
+          "text": "当前提醒定位不可用，请重新选择有效事项。",
+          "kind": "ATTRIBUTE",
+          "name": "text",
+          "line": 333
+        },
+        {
+          "text": "当前提醒定位不可用，请重新选择有效事项。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "正在加载…",
+          "kind": "ATTRIBUTE",
+          "name": "text",
+          "line": 333
+        },
+        {
+          "text": "正在加载…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "该事项当前不可读取，旧定位资料已清除。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "本次定位未完成，原定位目标已保留。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "board",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 335
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "recent",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "custom",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 335
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "view-earlier",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 335
+        },
+        {
+          "text": "view-earlier",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "查看更早",
+          "kind": "JSX_TEXT",
+          "line": 335
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "row-link card-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 337
+        },
+        {
+          "text": "：正在读取…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 340
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 340
+        },
+        {
+          "text": "显示最近已确认资料。",
+          "kind": "JSX_TEXT",
+          "line": 340
+        },
+        {
+          "text": "load-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 341
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 341
+        },
+        {
+          "text": "加载下一页",
+          "kind": "JSX_TEXT",
+          "line": 341
+        },
+        {
+          "text": "range-bar sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 343
+        },
+        {
+          "text": "range-bar sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "部分事项读取失败",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "已加载 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 350
+        }
+      ],
+      "current": [
+        {
+          "text": "state-message",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 96
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 96
+        },
+        {
+          "text": "secondary",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 96
+        },
+        {
+          "text": "secondary",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 96
+        },
+        {
+          "text": "重新读取",
+          "kind": "JSX_TEXT",
+          "line": 96
+        },
+        {
+          "text": "shared-follow-up-summary",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": " is-due",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "共享跟进 · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "已到期",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "已安排",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 100
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 101
+        },
+        {
+          "text": "共享跟进 · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 101
+        },
+        {
+          "text": "已到期",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 101
+        },
+        {
+          "text": "已安排",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 101
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 102
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 102
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 102
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_TEXT",
+          "line": 102
+        },
+        {
+          "text": "card-meta",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 110
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "ds-reporter-text",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 110
+        },
+        {
+          "text": "ds-reporter-text",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 110
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "·",
+          "kind": "JSX_TEXT",
+          "line": 110
+        },
+        {
+          "text": "neutral-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 110
+        },
+        {
+          "text": "neutral-chip",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 110
+        },
+        {
+          "text": "is-selected",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "DISMISSED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 118
+        },
+        {
+          "text": "DISMISSED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "ds-dismissed-card-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 119
+        },
+        {
+          "text": "ds-dismissed-card-content",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "card-open ds-dismissed-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 119
+        },
+        {
+          "text": "card-open ds-dismissed-open",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "link",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 119
+        },
+        {
+          "text": "link",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 119
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 119
+        },
+        {
+          "text": "card-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 119
+        },
+        {
+          "text": "card-open",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "link",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 119
+        },
+        {
+          "text": "link",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 119
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 120
+        },
+        {
+          "text": "owner",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 123
+        },
+        {
+          "text": "owner",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "等待领取",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 123
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "owner-name",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": " sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "activity-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 124
+        },
+        {
+          "text": "activity-time",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": "最新活动：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 124
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 125
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 125
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 125
+        },
+        {
+          "text": "ds-column-footer",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 131
+        },
+        {
+          "text": "已加载 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "column-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 131
+        },
+        {
+          "text": "column-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "expand-column",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 131
+        },
+        {
+          "text": "expand-column",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 131
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "收起",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "显示剩余 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 131
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 131
+        },
+        {
+          "text": "（当前已加载范围）",
+          "kind": "JSX_TEXT",
+          "line": 131
+        },
+        {
+          "text": "compact-account",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 162
+        },
+        {
+          "text": "account account-menu-trigger",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 162
+        },
+        {
+          "text": "open-user-menu",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 162
+        },
+        {
+          "text": "compact",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 162
+        },
+        {
+          "text": "sidebar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 162
+        },
+        {
+          "text": "用户菜单",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 162
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 163
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "account-copy",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 163
+        },
+        {
+          "text": "account-copy",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "read-only-badge",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 163
+        },
+        {
+          "text": "read-only-badge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": " · ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "account-menu-chevron",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 163
+        },
+        {
+          "text": "account-menu-chevron",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 163
+        },
+        {
+          "text": "user-account-menu",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 164
+        },
+        {
+          "text": "bottom end",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 164
+        },
+        {
+          "text": "top start",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 164
+        },
+        {
+          "text": "用户操作",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 164
+        },
+        {
+          "text": "settings",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 165
+        },
+        {
+          "text": "open-settings",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 165
+        },
+        {
+          "text": "设置",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 165
+        },
+        {
+          "text": "设置",
+          "kind": "JSX_TEXT",
+          "line": 165
+        },
+        {
+          "text": "logout",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 166
+        },
+        {
+          "text": "logout",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "logout-workbench",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 166
+        },
+        {
+          "text": "logout-workbench",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "退出工作台",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 166
+        },
+        {
+          "text": "退出工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "正在退出…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "退出工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 166
+        },
+        {
+          "text": "app ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 171
+        },
+        {
+          "text": "sidebar-collapsed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 171
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 171
+        },
+        {
+          "text": "sidebar",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 171
+        },
+        {
+          "text": "主导航",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 171
+        },
+        {
+          "text": "nav-label",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 173
+        },
+        {
+          "text": "工作空间",
+          "kind": "JSX_TEXT",
+          "line": 173
+        },
+        {
+          "text": "nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 173
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 173
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 173
+        },
+        {
+          "text": "/",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 173
+        },
+        {
+          "text": "page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 173
+        },
+        {
+          "text": "工作台",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 173
+        },
+        {
+          "text": "工作台",
+          "kind": "JSX_TEXT",
+          "line": 173
+        },
+        {
+          "text": "nav-item conversation-nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "/conversations",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 174
+        },
+        {
+          "text": "/conversations",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "会话",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 174
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "open-conversations",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 174
+        },
+        {
+          "text": "open-conversations",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_TEXT",
+          "line": 174
+        },
+        {
+          "text": "brand",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 174
+        },
+        {
+          "text": "brand",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "conversation-unread-badge",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 174
+        },
+        {
+          "text": "conversation-unread-badge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 174
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": " 条未读",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "99+",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "nav-item",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 174
+        },
+        {
+          "text": "nav-item",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "/incidents/candidates",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 174
+        },
+        {
+          "text": "/incidents/candidates",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "open-incident-candidates",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 174
+        },
+        {
+          "text": "open-incident-candidates",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "公共故障",
+          "kind": "JSX_TEXT",
+          "line": 174
+        },
+        {
+          "text": "nav-item ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "current",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "/notification-exceptions",
+          "kind": "ATTRIBUTE",
+          "name": "to",
+          "line": 174
+        },
+        {
+          "text": "/notification-exceptions",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "open-notification-exceptions",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 174
+        },
+        {
+          "text": "open-notification-exceptions",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 174
+        },
+        {
+          "text": "通知异常",
+          "kind": "JSX_TEXT",
+          "line": 174
+        },
+        {
+          "text": "sidebar-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 175
+        },
+        {
+          "text": "sidebar-bottom",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 175
+        },
+        {
+          "text": "topbar",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "icon-button",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "展开侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "收起侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 176
+        },
+        {
+          "text": "展开侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "收起侧栏",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "user",
+          "kind": "ATTRIBUTE",
+          "name": "reducedMotion",
+          "line": 176
+        },
+        {
+          "text": "slash",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "/",
+          "kind": "JSX_TEXT",
+          "line": 176
+        },
+        {
+          "text": "设置",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "会话",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "通知异常",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "新报修",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "topbar-actions",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "connection-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 176
+        },
+        {
+          "text": "连接状态：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "disabled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 176
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 176
+        },
+        {
+          "text": "topbar-desktop-settings",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "topbar-settings",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 176
+        },
+        {
+          "text": "设置",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 176
+        },
+        {
+          "text": "compact-user-menu",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 176
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "compact",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "success",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "待受理已清空",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "ds-completed-drop-zone",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 197
+        },
+        {
+          "text": "…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "—",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "当前日期范围内的事项总数",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "当前筛选后已加载的事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "ds-state-region",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 199
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 199
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 199
+        },
+        {
+          "text": "没有读出来",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "ds-state-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 200
+        },
+        {
+          "text": "ds-state-content",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "column-cards",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 200
+        },
+        {
+          "text": "column-cards",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "cards-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "cards-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "load-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 202
+        },
+        {
+          "text": "load-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 202
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 202
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 202
+        },
+        {
+          "text": "加载下一页",
+          "kind": "JSX_TEXT",
+          "line": 202
+        },
+        {
+          "text": "workspace ds-page",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 333
+        },
+        {
+          "text": "workspace ds-page",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "ds-board-page-header",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 333
+        },
+        {
+          "text": "ds-board-page-header",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "团队工作台",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 333
+        },
+        {
+          "text": "团队工作台",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 333
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "刷新",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 333
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "刷新",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 333
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 333
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 333
+        },
+        {
+          "text": "刷新",
+          "kind": "JSX_TEXT",
+          "line": 333
+        },
+        {
+          "text": "ds-board-toolbar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 334
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 334
+        },
+        {
+          "text": " ds-list-toolbar",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 334
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 334
+        },
+        {
+          "text": "ds-board-toolbar-top",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 335
+        },
+        {
+          "text": "ds-board-toolbar-top",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 335
+        },
+        {
+          "text": "team",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 336
+        },
+        {
+          "text": "view-tabs",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 337
+        },
+        {
+          "text": "view-tabs",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "展示方式",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 337
+        },
+        {
+          "text": "展示方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 337
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "看板",
+          "kind": "JSX_TEXT",
+          "line": 337
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 337
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 337
+        },
+        {
+          "text": "列表",
+          "kind": "JSX_TEXT",
+          "line": 337
+        },
+        {
+          "text": "ds-board-toolbar-bottom",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 339
+        },
+        {
+          "text": "ds-board-toolbar-bottom",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 339
+        },
+        {
+          "text": "ds-board-search",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 340
+        },
+        {
+          "text": "ds-board-search",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 340
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "/",
+          "kind": "JSX_TEXT",
+          "line": 340
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "status",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 340
+        },
+        {
+          "text": "status",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "搜索入口当前关闭，已返回原分页看板。",
+          "kind": "JSX_TEXT",
+          "line": 340
+        },
+        {
+          "text": "ds-board-toolbar-divider",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 341
+        },
+        {
+          "text": "ds-board-toolbar-divider",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 341
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 341
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 341
+        },
+        {
+          "text": "ds-board-filter-layout",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 342
+        },
+        {
+          "text": "ds-board-filter-layout",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 342
+        },
+        {
+          "text": "ds-board-filter-row",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 342
+        },
+        {
+          "text": "ds-board-filter-row",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 342
+        },
+        {
+          "text": "group",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 342
+        },
+        {
+          "text": "group",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 342
+        },
+        {
+          "text": "筛选已加载事项",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 342
+        },
+        {
+          "text": "筛选已加载事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 342
+        },
+        {
+          "text": "类别和处理人仅筛选已加载事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 342
+        },
+        {
+          "text": "类别和处理人仅筛选已加载事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 342
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "类别",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 343
+        },
+        {
+          "text": "类别",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "类别",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 343
+        },
+        {
+          "text": "类别",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 343
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 343
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 343
+        },
+        {
+          "text": "unclassified",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 343
+        },
+        {
+          "text": "unclassified",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "未分类",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 343
+        },
+        {
+          "text": "未分类",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 343
+        },
+        {
+          "text": "未分类",
+          "kind": "JSX_TEXT",
+          "line": 343
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "处理人",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 344
+        },
+        {
+          "text": "处理人",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "处理人",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 344
+        },
+        {
+          "text": "处理人",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 344
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 344
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 344
+        },
+        {
+          "text": "unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 344
+        },
+        {
+          "text": "unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "未领取",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 344
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_TEXT",
+          "line": 344
+        },
+        {
+          "text": "name:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 344
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "结束方式",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 345
+        },
+        {
+          "text": "结束方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "按当前日期和结束方式筛选已处理事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 345
+        },
+        {
+          "text": "按当前日期和结束方式筛选已处理事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "结束方式",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 345
+        },
+        {
+          "text": "结束方式",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "all",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 345
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "全部",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 345
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "全部",
+          "kind": "JSX_TEXT",
+          "line": 345
+        },
+        {
+          "text": "completed",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 345
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "已完成",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 345
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_TEXT",
+          "line": 345
+        },
+        {
+          "text": "dismissed",
+          "kind": "ATTRIBUTE",
+          "name": "id",
+          "line": 345
+        },
+        {
+          "text": "dismissed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "已关闭",
+          "kind": "ATTRIBUTE",
+          "name": "textValue",
+          "line": 345
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 345
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_TEXT",
+          "line": 345
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 347
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 347
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 347
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 347
+        },
+        {
+          "text": "clear-board-filters",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 347
+        },
+        {
+          "text": "clear-board-filters",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 347
+        },
+        {
+          "text": "清除",
+          "kind": "JSX_TEXT",
+          "line": 347
+        },
+        {
+          "text": "danger",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 352
+        },
+        {
+          "text": "danger",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 352
+        },
+        {
+          "text": "error",
+          "kind": "ATTRIBUTE",
+          "name": "data-search-state",
+          "line": 352
+        },
+        {
+          "text": "error",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 352
+        },
+        {
+          "text": "查询未完成，请重新读取。搜索输入仍保留。",
+          "kind": "JSX_TEXT",
+          "line": 352
+        },
+        {
+          "text": "filtered",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 353
+        },
+        {
+          "text": "empty",
+          "kind": "ATTRIBUTE",
+          "name": "data-search-state",
+          "line": 353
+        },
+        {
+          "text": "empty",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 353
+        },
+        {
+          "text": "reminder-location",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 354
+        },
+        {
+          "text": "reminder-location",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 354
+        },
+        {
+          "text": "已定位事项",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 354
+        },
+        {
+          "text": "已定位事项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 354
+        },
+        {
+          "text": "column-heading",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 354
+        },
+        {
+          "text": "column-heading",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 354
+        },
+        {
+          "text": "已定位事项",
+          "kind": "JSX_TEXT",
+          "line": 354
+        },
+        {
+          "text": "返回当前工作台",
+          "kind": "JSX_TEXT",
+          "line": 354
+        },
+        {
+          "text": "当前提醒定位不可用，请重新选择有效事项。",
+          "kind": "ATTRIBUTE",
+          "name": "text",
+          "line": 355
+        },
+        {
+          "text": "当前提醒定位不可用，请重新选择有效事项。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 355
+        },
+        {
+          "text": "正在加载…",
+          "kind": "ATTRIBUTE",
+          "name": "text",
+          "line": 355
+        },
+        {
+          "text": "正在加载…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 355
+        },
+        {
+          "text": "该事项当前不可读取，旧定位资料已清除。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 355
+        },
+        {
+          "text": "本次定位未完成，原定位目标已保留。",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 355
+        },
+        {
+          "text": "SEARCH_REFRESH_REQUIRED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 357
+        },
+        {
+          "text": "warning",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 357
+        },
+        {
+          "text": "warning",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 357
+        },
+        {
+          "text": "filtered",
+          "kind": "ATTRIBUTE",
+          "name": "variant",
+          "line": 358
+        },
+        {
+          "text": "filtered",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "没有符合条件的工单",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 358
+        },
+        {
+          "text": "没有符合条件的工单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "board",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 358
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "error",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "board",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "recent",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "custom",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 358
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "view-earlier",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 358
+        },
+        {
+          "text": "view-earlier",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "查看更早",
+          "kind": "JSX_TEXT",
+          "line": 358
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "row-link card-open",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 360
+        },
+        {
+          "text": "没有读出来",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 363
+        },
+        {
+          "text": "block",
+          "kind": "ATTRIBUTE",
+          "name": "size",
+          "line": 363
+        },
+        {
+          "text": "待受理已清空",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 363
+        },
+        {
+          "text": "success",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 363
+        },
+        {
+          "text": "新报修进来会出现在这里",
+          "kind": "ATTRIBUTE",
+          "name": "description",
+          "line": 363
+        },
+        {
+          "text": "load-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 364
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 364
+        },
+        {
+          "text": "加载下一页",
+          "kind": "JSX_TEXT",
+          "line": 364
+        },
+        {
+          "text": "range-bar sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 366
+        },
+        {
+          "text": "range-bar sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 366
+        },
+        {
+          "text": "部分事项读取失败",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 366
+        },
+        {
+          "text": "已加载 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 366
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 366
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 368
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 368
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 373
+        }
+      ],
+      "removed": [
+        {
+          "text": "读取未完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 123
+        },
+        {
+          "text": "读取未完成",
+          "kind": "JSX_TEXT",
+          "line": 123
+        },
+        {
+          "text": "已加载的事项中暂无匹配结果",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 187
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 189
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "连接中断，显示最近已确认资料。",
+          "kind": "JSX_TEXT",
+          "line": 189
+        },
+        {
+          "text": "待判断",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 189
+        },
+        {
+          "text": "待判断",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "待接单",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 189
+        },
+        {
+          "text": "待接单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 189
+        },
+        {
+          "text": "pc-admin:processed-group:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "alert",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 330
+        },
+        {
+          "text": "alert",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 330
+        },
+        {
+          "text": "：正在读取…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "：",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 340
+        },
+        {
+          "text": "confirmed-facts",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 340
+        },
+        {
+          "text": "显示最近已确认资料。",
+          "kind": "JSX_TEXT",
+          "line": 340
+        }
+      ],
+      "added": [
+        {
+          "text": "success",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "待受理已清空",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 196
+        },
+        {
+          "text": "…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 198
+        },
+        {
+          "text": "ds-state-region",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 199
+        },
+        {
+          "text": "没有读出来",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "ds-state-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 200
+        },
+        {
+          "text": "ds-state-content",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 200
+        },
+        {
+          "text": "danger",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 352
+        },
+        {
+          "text": "danger",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 352
+        },
+        {
+          "text": "filtered",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 353
+        },
+        {
+          "text": "SEARCH_REFRESH_REQUIRED",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 357
+        },
+        {
+          "text": "warning",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 357
+        },
+        {
+          "text": "warning",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 357
+        },
+        {
+          "text": "filtered",
+          "kind": "ATTRIBUTE",
+          "name": "variant",
+          "line": 358
+        },
+        {
+          "text": "filtered",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "没有符合条件的工单",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 358
+        },
+        {
+          "text": "没有符合条件的工单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 358
+        },
+        {
+          "text": "没有读出来",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 363
+        },
+        {
+          "text": "block",
+          "kind": "ATTRIBUTE",
+          "name": "size",
+          "line": 363
+        },
+        {
+          "text": "待受理已清空",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 363
+        },
+        {
+          "text": "success",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 363
+        },
+        {
+          "text": "新报修进来会出现在这里",
+          "kind": "ATTRIBUTE",
+          "name": "description",
+          "line": 363
+        }
+      ]
+    },
+    {
+      "file": "app/pc-admin/src/design/components/WorkTable/WorkTable.tsx",
+      "main": [
+        {
+          "text": "status-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 42
+        },
+        {
+          "text": "success",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 42
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_TEXT",
+          "line": 42
+        },
+        {
+          "text": "status-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 46
+        },
+        {
+          "text": "WAITING_DESCRIPTION",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "active",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "info",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "success",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 46
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 46
+        },
+        {
+          "text": "ds-list-time is-dismissed",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 50
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 50
+        },
+        {
+          "text": " 关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 50
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 50
+        },
+        {
+          "text": "ds-list-time is-completed",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 51
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 51
+        },
+        {
+          "text": "完成",
+          "kind": "JSX_TEXT",
+          "line": 51
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 51
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 51
+        },
+        {
+          "text": "ds-list-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 53
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 53
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 53
+        },
+        {
+          "text": "list-item-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": "-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": "ds-work-row",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": " is-selected",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 63
+        },
+        {
+          "text": "row",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 64
+        },
+        {
+          "text": "ds-list-identity",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 64
+        },
+        {
+          "text": "ds-list-number",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 64
+        },
+        {
+          "text": "ds-list-problem",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "ds-list-issue-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "ds-list-title",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "ds-list-title",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "—",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 65
+        },
+        {
+          "text": "ds-list-tags",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "bell",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 65
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "urge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "催 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": " 次",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 65
+        },
+        {
+          "text": "ds-list-presence",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 65
+        },
+        {
+          "text": "ds-list-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 66
+        },
+        {
+          "text": "ds-list-reporter",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 68
+        },
+        {
+          "text": "WECOM_DIRECT",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "ds-list-source-icon",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 68
+        },
+        {
+          "text": "ds-list-source-icon",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 68
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "ds-list-person-location",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 68
+        },
+        {
+          "text": "ds-list-person-location",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "ds-list-separator",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 68
+        },
+        {
+          "text": "ds-list-separator",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "·",
+          "kind": "JSX_TEXT",
+          "line": 68
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 68
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 68
+        },
+        {
+          "text": "ds-list-owner-cell",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "SYSTEM",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner is-system",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner is-system",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "系统判定",
+          "kind": "JSX_TEXT",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner-name",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner-name",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner is-unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-owner is-unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "ds-list-unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 69
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_TEXT",
+          "line": 69
+        },
+        {
+          "text": "ds-list-claim-key",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 69
+        },
+        {
+          "text": "E",
+          "kind": "JSX_TEXT",
+          "line": 69
+        },
+        {
+          "text": "activity-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "-empty",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "ds-list-empty",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 75
+        },
+        {
+          "text": "暂无事项",
+          "kind": "JSX_TEXT",
+          "line": 75
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 75
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 75
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "expand-column",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 75
+        },
+        {
+          "text": "expand-column",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 75
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "收起",
+          "kind": "JSX_TEXT",
+          "line": 75
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 75
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "显示剩余 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "ds-list-subgroup",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 79
+        },
+        {
+          "text": "rowgroup",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 79
+        },
+        {
+          "text": "ds-board-group-trigger",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 79
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 79
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 79
+        },
+        {
+          "text": "-empty",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 79
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 79
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 79
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 79
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 79
+        },
+        {
+          "text": "ds-board-group-count",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 79
+        },
+        {
+          "text": "ds-board-group-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 79
+        },
+        {
+          "text": "ds-board-group-note",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 79
+        },
+        {
+          "text": "list-group",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 83
+        },
+        {
+          "text": "ds-list-stage",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 84
+        },
+        {
+          "text": "事项列表",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "rowgroup",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 84
+        },
+        {
+          "text": "column-heading",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 84
+        },
+        {
+          "text": "ds-list-stage-toggle",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 84
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 84
+        },
+        {
+          "text": "折叠",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "展开",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 84
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 84
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "stage-pill ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 84
+        },
+        {
+          "text": "ds-list-stage-count",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 84
+        },
+        {
+          "text": "当前筛选后已加载的事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 84
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 85
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "按结束方式筛选时只显示已处理事项",
+          "kind": "JSX_TEXT",
+          "line": 85
+        },
+        {
+          "text": "ds-list-feedback",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 85
+        },
+        {
+          "text": "ds-list-feedback",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "待接单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "待判断",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "pc-admin:list-pending:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "ticket",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "intake",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "dismissed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "pc-admin:processed-group:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 85
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "table-wrap ds-work-table-wrap",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 90
+        },
+        {
+          "text": "region",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 90
+        },
+        {
+          "text": "工作台列表，可横向滚动",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 90
+        },
+        {
+          "text": "work-table ds-work-table",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 90
+        },
+        {
+          "text": "工作台事项列表",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 90
+        },
+        {
+          "text": "ds-work-col-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 90
+        },
+        {
+          "text": "col",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 90
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 90
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 90
+        }
+      ],
+      "current": [
+        {
+          "text": "status-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 47
+        },
+        {
+          "text": "success",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 47
+        },
+        {
+          "text": "已完成",
+          "kind": "JSX_TEXT",
+          "line": 47
+        },
+        {
+          "text": "status-chip",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 51
+        },
+        {
+          "text": "WAITING_DESCRIPTION",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "active",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "info",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "success",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "neutral",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 51
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 51
+        },
+        {
+          "text": "ds-list-time is-dismissed",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 55
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 55
+        },
+        {
+          "text": " 关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 55
+        },
+        {
+          "text": "已关闭",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 55
+        },
+        {
+          "text": "ds-list-time is-completed",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 56
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 56
+        },
+        {
+          "text": "完成",
+          "kind": "JSX_TEXT",
+          "line": 56
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 56
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 56
+        },
+        {
+          "text": "ds-list-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 58
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 58
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 58
+        },
+        {
+          "text": "list-item-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "ds-work-row",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": " is-selected",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 68
+        },
+        {
+          "text": "row",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 69
+        },
+        {
+          "text": "ds-list-identity",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-number",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 69
+        },
+        {
+          "text": "ds-list-problem",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "ds-list-issue-content",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "ds-list-title",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "ds-list-title",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "—",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "sr-only",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "sr-only",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "查看详情",
+          "kind": "JSX_TEXT",
+          "line": 70
+        },
+        {
+          "text": "ds-list-tags",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "bell",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 70
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "urge",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "催 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": " 次",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 70
+        },
+        {
+          "text": "ds-list-presence",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 70
+        },
+        {
+          "text": "ds-list-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 71
+        },
+        {
+          "text": "ds-list-reporter",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 73
+        },
+        {
+          "text": "WECOM_DIRECT",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "ds-list-source-icon",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 73
+        },
+        {
+          "text": "ds-list-source-icon",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 73
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "ds-list-person-location",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 73
+        },
+        {
+          "text": "ds-list-person-location",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "ds-list-separator",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 73
+        },
+        {
+          "text": "ds-list-separator",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "·",
+          "kind": "JSX_TEXT",
+          "line": 73
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 73
+        },
+        {
+          "text": "ds-list-missing",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 73
+        },
+        {
+          "text": "—",
+          "kind": "JSX_TEXT",
+          "line": 73
+        },
+        {
+          "text": "ds-list-owner-cell",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "SYSTEM",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner is-system",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner is-system",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "系统判定",
+          "kind": "JSX_TEXT",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner-name",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner-name",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner is-unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "ds-list-owner is-unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "ds-list-unassigned",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "ds-list-unassigned",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 74
+        },
+        {
+          "text": "未领取",
+          "kind": "JSX_TEXT",
+          "line": 74
+        },
+        {
+          "text": "ds-list-claim-key",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 74
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 74
+        },
+        {
+          "text": "E",
+          "kind": "JSX_TEXT",
+          "line": 74
+        },
+        {
+          "text": "activity-time",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 75
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "T",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "+08:00",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "（北京时间）",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 75
+        },
+        {
+          "text": "-empty",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "ds-list-empty",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 80
+        },
+        {
+          "text": "compact",
+          "kind": "ATTRIBUTE",
+          "name": "size",
+          "line": 80
+        },
+        {
+          "text": "这里暂时没有工单",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 80
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 80
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 80
+        },
+        {
+          "text": "ghost",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "expand-column",
+          "kind": "ATTRIBUTE",
+          "name": "data-action",
+          "line": 80
+        },
+        {
+          "text": "expand-column",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": " ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 80
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "收起",
+          "kind": "JSX_TEXT",
+          "line": 80
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 80
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "显示剩余 ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": " 项",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 80
+        },
+        {
+          "text": "ds-list-subgroup",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 86
+        },
+        {
+          "text": "rowgroup",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 86
+        },
+        {
+          "text": "ds-board-group-trigger",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 86
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 86
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 86
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 86
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "ds-board-group-count",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 86
+        },
+        {
+          "text": "…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "ds-board-group-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 86
+        },
+        {
+          "text": "ds-board-group-note",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "-loading",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 95
+        },
+        {
+          "text": "list-group",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 97
+        },
+        {
+          "text": "ds-list-stage",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 98
+        },
+        {
+          "text": "事项列表",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "rowgroup",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 98
+        },
+        {
+          "text": "column-heading",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 98
+        },
+        {
+          "text": "ds-list-stage-toggle",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 98
+        },
+        {
+          "text": "ghost",
+          "kind": "ATTRIBUTE",
+          "name": "tone",
+          "line": 98
+        },
+        {
+          "text": "折叠",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "展开",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 98
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 98
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "stage-pill ",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 98
+        },
+        {
+          "text": "ds-list-stage-count",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 98
+        },
+        {
+          "text": "当前筛选后已加载的事项",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 98
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 99
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "按结束方式筛选时只显示已处理事项",
+          "kind": "JSX_TEXT",
+          "line": 99
+        },
+        {
+          "text": "handled",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "all",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 99
+        },
+        {
+          "text": "ds-list-note",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "按结束方式筛选时只显示已处理事项",
+          "kind": "JSX_TEXT",
+          "line": 99
+        },
+        {
+          "text": "ds-list-feedback",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 99
+        },
+        {
+          "text": "ds-list-feedback",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 99
+        },
+        {
+          "text": "ds-list-more",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 99
+        },
+        {
+          "text": "ds-work-col-",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 104
+        },
+        {
+          "text": "col",
+          "kind": "ATTRIBUTE",
+          "name": "scope",
+          "line": 104
+        },
+        {
+          "text": "ds-work-header-label",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 104
+        },
+        {
+          "text": "ds-work-row ds-work-skeleton-row",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 107
+        },
+        {
+          "text": "true",
+          "kind": "ATTRIBUTE",
+          "name": "aria-hidden",
+          "line": 107
+        },
+        {
+          "text": "ds-list-identity",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 107
+        },
+        {
+          "text": "ds-list-identity",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "ATTRIBUTE",
+          "name": "w",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "ATTRIBUTE",
+          "name": "h",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "60%",
+          "kind": "ATTRIBUTE",
+          "name": "w",
+          "line": 107
+        },
+        {
+          "text": "60%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "85%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "65%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "ds-work-skeleton-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 107
+        },
+        {
+          "text": "正在读取工单列表…",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 107
+        },
+        {
+          "text": "table-wrap ds-work-table-wrap",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 110
+        },
+        {
+          "text": "region",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 110
+        },
+        {
+          "text": "工作台列表，可横向滚动",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 110
+        },
+        {
+          "text": "work-table ds-work-table",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 110
+        },
+        {
+          "text": "工作台事项列表",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 110
+        },
+        {
+          "text": "ds-state-region ds-table-state",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 117
+        },
+        {
+          "text": "error",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "true",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": "table-wrap ds-work-table-wrap",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 117
+        },
+        {
+          "text": "region",
+          "kind": "ATTRIBUTE",
+          "name": "role",
+          "line": 117
+        },
+        {
+          "text": "工作台列表，可横向滚动",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 117
+        },
+        {
+          "text": "work-table ds-work-table",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 117
+        },
+        {
+          "text": "工作台事项列表",
+          "kind": "ATTRIBUTE",
+          "name": "aria-label",
+          "line": 117
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        },
+        {
+          "text": ":",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        }
+      ],
+      "removed": [
+        {
+          "text": "暂无事项",
+          "kind": "JSX_TEXT",
+          "line": 75
+        },
+        {
+          "text": "pending",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "待接单",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "待判断",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "pc-admin:list-pending:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "ticket",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "intake",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "dismissed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "pc-admin:processed-group:",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        },
+        {
+          "text": "completed",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 85
+        }
+      ],
+      "added": [
+        {
+          "text": "compact",
+          "kind": "ATTRIBUTE",
+          "name": "size",
+          "line": 80
+        },
+        {
+          "text": "这里暂时没有工单",
+          "kind": "ATTRIBUTE",
+          "name": "title",
+          "line": 80
+        },
+        {
+          "text": "…",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "-loading",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 86
+        },
+        {
+          "text": "list",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 95
+        },
+        {
+          "text": "ds-work-header-label",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 104
+        },
+        {
+          "text": "ds-work-row ds-work-skeleton-row",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "ATTRIBUTE",
+          "name": "w",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "ATTRIBUTE",
+          "name": "h",
+          "line": 107
+        },
+        {
+          "text": "var(--space-6)",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "60%",
+          "kind": "ATTRIBUTE",
+          "name": "w",
+          "line": 107
+        },
+        {
+          "text": "60%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "85%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "65%",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 107
+        },
+        {
+          "text": "ds-work-skeleton-status",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 107
+        },
+        {
+          "text": "正在读取工单列表…",
+          "kind": "ATTRIBUTE",
+          "name": "label",
+          "line": 107
+        },
+        {
+          "text": "ds-state-region ds-table-state",
+          "kind": "ATTRIBUTE",
+          "name": "className",
+          "line": 117
+        },
+        {
+          "text": "error",
+          "kind": "JSX_EXPRESSION_LITERAL",
+          "line": 117
+        }
+      ]
+    }
+  ]
+}

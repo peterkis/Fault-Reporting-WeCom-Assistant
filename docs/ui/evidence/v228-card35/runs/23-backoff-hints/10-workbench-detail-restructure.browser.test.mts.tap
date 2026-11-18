@@ -1,0 +1,24 @@
+TAP version 13
+# DETAIL_RESTRUCTURE {"two_column":true,"report_time":true,"single_material_view":true,"delayed_loader":true,"atomic_accept":true,"public_progress_unknown_recovery":true,"assignment_dialog":true,"cancel_dialog":true,"visible_notifications":true,"legacy_detail_compatible":true,"screenshot":{"file":"<owned-temp>","sha256":"6e1e5f6f5c87f166eb0aa15182f836308c206604978154d136090a78ea90e1a1"}}
+# Subtest: production detail shares report materials, uses responsive information and purpose-owned action dialogs
+ok 1 - production detail shares report materials, uses responsive information and purpose-owned action dialogs
+  ---
+  duration_ms: 10473.385334
+  type: 'test'
+  ...
+# HEROUI_POINTER_ACTIONABILITY {"real_browser":true,"moving_control_waited":true,"overlapping_hit_target_waited":true,"native_target_clicks":2}
+# Subtest: real pointer helper waits for a moving control and an overlapping hit target
+ok 2 - real pointer helper waits for a moving control and an overlapping hit target
+  ---
+  duration_ms: 2246.154792
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12909.828083

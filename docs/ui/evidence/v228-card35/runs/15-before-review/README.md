@@ -1,0 +1,131 @@
+# Card 35A 状态呈现交付证据
+
+已在交付前逐行重读A1–A4；下表逐条记录满足范围与偏差。
+
+本目录对应未提交工作区，基线 `f76fffef7c693ddcee0139b4f6f03bf59376e358`。本次只实现35A；没有改动35B目录、视觉脚本或任何 `features/**` 文件。用户原型原件保留在 [v2.2.7 原型（含 v2.2.8 画板07）](../../../../prototype/医小修%20PC%20管理端%20v2.2.7%20设计原型.html)。没有 commit、push、PR、部署、真实发送或现场业务写入。
+
+环境：macOS 26.6.2 / Darwin 25.6.0，系统 Chrome 157.0.8103.79，Node.js 24.18.0；应用截图1440×1000、DPR 1。全部业务数据由已有 Web01 / T43 fixtures 创建，名称带「（合成）」，使用本任务独立随机数据库。原型参考图由浏览器直接导出1440宽整图及四段裁片，嵌入原件已保存的Inter字体；不可用的外部Google中文字体改为系统回退，仅影响参考导出，不修改原件，不作为像素基线。
+
+## 改动与删除
+
+- 新增共享 Skeleton / 四个组合骨架、延迟加载钩子、ErrorState、ConnectionBar、ReadOnlyBar、只读徽标及可聚焦禁用按钮；扩展原 EmptyState，danger 图标统一 CircleX。CSS令牌是加载及连接时间唯一数值源。
+- 接入首次工作台、看板列、列表、抽屉/整页详情、局部详情加载；保留旧内容的刷新/失败呈现、筛选清除、待受理清空、隐藏空活动区、复制私有诊断。默认/行内调用者保留原控制器；其余feature页面的迁移属于35C。
+- 连接状态沿原实时适配器和浏览器在线事件传播，应用恢复读取最多1/3/8秒三次，不新增轮询。保留READ/写入终检、原生续传及授权清理。手动模式只在在线/可见事件及人工刷新触发有限恢复。
+- 只读原因复用已有可信判断；原接管、重开、恢复、核对控制器继续拥有权限、草稿、未知结果和提交。未新造业务命令或改变接口。
+- 新测试沿卡34方式注册到 `plans/typescript-migration/test-routing.json`。更新设计系统「状态」章及实时前向说明。
+- 删除：静态 `index.html` 启动骨架；`BoardColumnLoading`、`DelayedWorkbenchLoading`；旧 `startup-column`、`startup-line`、`startup-short`、`startup-card`、`startup-heading p` 样式；旧详情 `Message`/`confirmed-facts` 占位、局部转圈区块样式、看板散装 `.empty` 样式。保留仍在使用的 `startup-columns` / `startup-heading` 和 `.detail-loading` 测试钩子。行内/按钮内转圈仍可用。
+
+## A1–A3 逐条复核
+
+| 要求 | 结果与依据 |
+| --- | --- |
+| A1.1 基础骨架、28分类块、3卡列、真实列头、5行共享列宽、详情组合、读屏/减少动效 | 已实现；新测试验证真实头部、全表5行、已知编号/标题、status/busy、静止动画。动态子分组零位移限制见下方Q1。4px使用既有 `--radius-xs` 的别名，未全局修改6px的 `--radius-sm`。 |
+| A1.2 150/300ms、8s慢读、重试、时间唯一源 | 已实现；`tokens.css` → `state-timing.ts` → `useDelayedLoading`；80/400/9000ms可控假端点验证。最少呈现从首帧计算。 |
+| A1.3 三处刷新、60%、2px品牌条、旧内容 | 已实现；看板/列表/详情均验证刷新无骨架及 `data-refreshing`。 |
+| A1.4 原EmptyState三尺寸、成功、filtered必传onClear、摘要/清除、事实文案/隐藏空区块 | 已实现并有三尺寸/筛选恢复/搜索不误报清空/空活动区不在DOM断言。现存features内部区块不在35A迁移范围。 |
+| A1.5 block/page错误、就近、保留旧内容、诊断仅复制、图标 | 已实现；列/表头重试可点击；详情页保留关闭；剪贴板包含请求编号/时间/错误码/路由，页面无这些值。服务端无编号时复制本地编号并标明来源，见Q4。 |
+| A1.6 主区32px连接条、三态、2s/60s/1-3-8s、停止、无新增轮询、不禁写 | 已实现；有限恢复调度器及真实浏览器几何/状态测试。原生连接握手由浏览器控制，见Q5。 |
+| A1.7 固定中性只读条/徽标、优先级、原动作、禁用可聚焦/tooltip、备注框、可用动作、实时收起 | 已实现可复用的呈现与五原因场景；接管/重开复用原入口，关闭的恢复只留下一步。权限撤销清理/缺少可信他人身份/未知备注无独立核对入口/原导航栅栏见Q2、Q3。 |
+| A2 首次工作台、列、列表、待受理、详情、连接条接入 | 已实现；启动错误标题「工作台没有打开」；详情错误保留「关闭详情」；DetailLoading非行内默认区块骨架。无35C文件改动。 |
+| A2 删除旧样式与转圈用途限制 | 已执行，删除清单见上；共享组件自然影响调用者，未重写features的生命周期。 |
+| A3 状态章与旧描述跳转 | [设计系统](../../../../design-system.md#状态v228--卡35a) 包含尺寸、令牌、规则、只读优先级及就近原则；6.11及旧空列说明转到该章。 |
+
+## A4 验收
+
+`S1` = `tests/pc-admin-card35a-states.browser.test.mts` 的延迟/布局/空/错误用例；`S2` = 五原因/连接/原型导出用例；`S3` = 首次明确403用例；`S4/S5` = 有限调度器及原生事件预算单测。最终结果与原始回执在本目录，早期失败在 `runs/`，不得混同为最终通过。
+
+| 项 | 结果 | 证据 / 范围 |
+| --- | --- | --- |
+| A4.1 时间 | PASS | S1：80ms无骨架/busy、400ms呈现≥300ms、9s慢读/重试。 |
+| A4.2 零位移 | FAIL（覆盖缺口） | S1测量的处理中列头/首卡、列表表头/处理中首行、抽屉工具栏/标题、整页工具栏/阅读列≤1px；未证明动态待受理/已处理子分组首卡零位移，见Q1。未降低原几何阈值。 |
+| A4.3 刷新 | PASS | S1/S2：看板、列表、详情旧内容保留，刷新无骨架且带属性；详情包含实时重读。 |
+| A4.4 空 | PASS | S1：compact/block/page、清除筛选恢复、空活动区不存在；备注功能关闭时空底栏仍隐藏。 |
+| A4.5 错误 | PASS | S1：有/无旧内容、重试、剪贴板诊断及页面不可见断言。 |
+| A4.6 连接条 | PASS | S2：离线→恢复2s→60s且3次预算→刷新；主区恰好32px、无重叠。S1含手动模式整页输入区仍在视口。S4/S5验证单计时器/停止/人工恢复/原生事件不可重置预算。 |
+| A4.7 只读 | FAIL（合同偏差） | S2/S3五原因/唯一条/原动作/可聚焦tooltip/复制关注前后导航/实时收起；有效内部备注UNKNOWN只有原「重新提交」，没有可安全复用的独立「重新确认」，见Q3。权限撤销保持原敏感内容清理，未强行保留可读正文。 |
+| A4.8 无障碍 | PASS | S1/S2验证status、busy、aria-disabled、焦点/tooltip、减少动效。 |
+| A4.9 截图 | PASS | 下方16张应用图、画板07及四段裁片；[尺寸与哈希](screenshots.json)。 |
+| A4.10 检查 | PASS | 下方命令和逐入口结果。 |
+
+## 与画板07并排
+
+[完整画板07](artboard-07.png)。裁片来自浏览器导出，没有编辑用户原件；应用仍沿当前MVP实际资料、分组及权限。
+
+| 画板07 | 实际工作台 / 详情 |
+| --- | --- |
+| ![07A 加载](artboard-07-loading.png) | ![看板加载](board-loading.png)<br>![列表加载](list-loading.png)<br>![详情加载](drawer-loading.png)<br>![保留内容刷新](board-refreshing.png) |
+| ![07B 空](artboard-07-empty.png) | ![筛选无结果](board-empty-filtered.png)<br>![待受理清空](intake-cleared.png) |
+| ![07C 错误](artboard-07-error.png) | ![保留旧内容重试](board-stale-retry.png)<br>![启动失败](workbench-error-page.png)<br>![连接断开](connection-offline.png)<br>![内容陈旧](connection-stale.png) |
+| ![07D 只读](artboard-07-readonly.png) | ![无权限](drawer-readonly-permission.png)<br>![他人负责](drawer-readonly-assigned.png)<br>![完成](drawer-readonly-completed.png)<br>![关闭](drawer-readonly-dismissed.png)<br>![结果未确认](drawer-readonly-pending.png)<br>![键盘聚焦禁用按钮](readonly-disabled-tooltip.png) |
+
+## 检查命令与结果
+
+类型检查会清空运行产物，实际顺序为类型检查→构建→制品校验→浏览器测试。Postgres连接由本地环境提供，未写入本目录。最新完整本地31入口批次全部通过，共161个用例，0失败/取消/跳过。批次后仅修正独立403用例的fixture配置，应用源码输入完全一致，见 [来源差异](checks/source-delta.json)；未把旧批次的失败抹除。
+
+| 命令 / 检查 | 结果 | 原始记录 |
+| --- | --- | --- |
+| `npm run migration:typecheck` | PASS，strict及negative types | [typecheck](checks/typecheck.txt) |
+| `npm --prefix app/pc-admin run lint:css` | PASS | [Stylelint](checks/stylelint.txt) |
+| `npm --prefix app/pc-admin run lint:features` | PASS | [ESLint](checks/eslint.txt) |
+| `npm run migration:build` | PASS；957 typed、329 legacy、3020 outputs；staged未启用 | [build](checks/build.txt) |
+| `node .build/tools/verify-artifact.mjs` | PASS；最终源输入 `1a6bb3846ca31b2a82732f85d9ccbf166ecbe5142b70f7c9df8dbccdd1ebf4e2` | [制品证明](checks/artifact-proof.json) |
+| `tests/pc-admin-copy-terms.test.mts`，由现有runSelection/STAGED_RUNTIME执行 | PASS，6/6 | [TAP](checks/18-pc-admin-copy-terms.test.mts.tap) |
+| `node --test --test-concurrency=1 tests/pc-admin-card35a-states.browser.test.mjs`（编译运行目录，注入fixture环境和证据路径） | PASS，5/5；0失败/取消/跳过 | [S1回执](receipt-35a-states.json)、[S2回执](receipt-35a-readonly-connection.json)、[S3回执](receipt-35a-permission.json)、[完整日志](checks/states-browser.txt) |
+| 既有runSelection：`pr-pc` + `pr-read-safety` + card32/34、工作台/抽屉、t38相关注册入口 | PASS，31入口 / 161用例；无跳过 | [逐入口JSON](checks/regressions.json)，逐项TAP见下 |
+| `node .build/tools/check-agent-docs.mjs`；`node --test .build/tools/check-agent-docs.test.mjs` | PASS；20/20 | [文档](checks/agent-docs.txt)、[测试](checks/agent-docs-tests.txt) |
+| `git diff --check` | PASS | [交付JSON](delivery.json) |
+
+最终类型检查/构建完成后未再修改应用或测试源码；以上均为本地验证，不是部署或现场Gate批准。
+
+`pr-plan --base ... --head HEAD` 只能看到提交差异，本次按用户要求不提交，因此NOT_RUN；直接执行注册的 `pr-pc`、`pr-read-safety` 及改动相关card32/34、工作台/抽屉、t38入口。没有把未执行入口标为PASS。
+
+### 已执行的31个既有入口
+
+| 注册入口 | 结果 | 用例 | 记录 |
+| --- | --- | --- | --- |
+| `tests/pc-admin-card32a.browser.test.mts` | PASS | 1/1 | [TAP](checks/01-pc-admin-card32a.browser.test.mts.tap) |
+| `tests/pc-admin-card32b.browser.test.mts` | PASS | 1/1 | [TAP](checks/02-pc-admin-card32b.browser.test.mts.tap) |
+| `tests/pc-admin-card32c-d.browser.test.mts` | PASS | 1/1 | [TAP](checks/03-pc-admin-card32c-d.browser.test.mts.tap) |
+| `tests/pc-admin-card32d-toast.browser.test.mts` | PASS | 2/2 | [TAP](checks/04-pc-admin-card32d-toast.browser.test.mts.tap) |
+| `tests/pc-admin-card34a-toast-modal.browser.test.mts` | PASS | 2/2 | [TAP](checks/05-pc-admin-card34a-toast-modal.browser.test.mts.tap) |
+| `tests/pc-admin-card34b-detail.browser.test.mts` | PASS | 1/1 | [TAP](checks/06-pc-admin-card34b-detail.browser.test.mts.tap) |
+| `tests/pc-admin-card34c-copy.browser.test.mts` | PASS | 1/1 | [TAP](checks/07-pc-admin-card34c-copy.browser.test.mts.tap) |
+| `tests/workbench-detail-restructure.browser.test.mts` | PASS | 2/2 | [TAP](checks/08-workbench-detail-restructure.browser.test.mts.tap) |
+| `tests/workbench-toast-feedback.browser.test.mts` | PASS | 1/1 | [TAP](checks/09-workbench-toast-feedback.browser.test.mts.tap) |
+| `tests/wbint-t38-realtime.test.mts` | PASS | 6/6 | [TAP](checks/10-wbint-t38-realtime.test.mts.tap) |
+| `tests/wbint-t38-realtime.browser.test.mts` | PASS | 2/2 | [TAP](checks/11-wbint-t38-realtime.browser.test.mts.tap) |
+| `tests/wbint-t38-offline.browser.test.mts` | PASS | 2/2 | [TAP](checks/12-wbint-t38-offline.browser.test.mts.tap) |
+| `tests/wbint-t38-unknown.browser.test.mts` | PASS | 1/1 | [TAP](checks/13-wbint-t38-unknown.browser.test.mts.tap) |
+| `tests/wbint-t38-gap.browser.test.mts` | PASS | 2/2 | [TAP](checks/14-wbint-t38-gap.browser.test.mts.tap) |
+| `tests/wbint-t38-authority.browser.test.mts` | PASS | 4/4 | [TAP](checks/15-wbint-t38-authority.browser.test.mts.tap) |
+| `tests/wbint-t38-protocol.browser.test.mts` | PASS | 2/2 | [TAP](checks/16-wbint-t38-protocol.browser.test.mts.tap) |
+| `tests/pc-admin-design-foundation.test.mts` | PASS | 75/75 | [TAP](checks/17-pc-admin-design-foundation.test.mts.tap) |
+| `tests/pc-admin-copy-terms.test.mts` | PASS | 6/6 | [TAP](checks/18-pc-admin-copy-terms.test.mts.tap) |
+| `tests/pc-admin-card12-review.browser.test.mts` | PASS | 7/7 | [TAP](checks/19-pc-admin-card12-review.browser.test.mts.tap) |
+| `tests/pc-admin-card16.browser.test.mts` | PASS | 3/3 | [TAP](checks/20-pc-admin-card16.browser.test.mts.tap) |
+| `tests/web01-workbench.test.mts` | PASS | 9/9 | [TAP](checks/21-web01-workbench.test.mts.tap) |
+| `tests/web01-workbench.integration.test.mjs` | PASS | 17/17 | [TAP](checks/22-web01-workbench.integration.test.mjs.tap) |
+| `tests/wbint-t19-manual-self-handling-contracts.test.mts` | PASS | 4/4 | [TAP](checks/23-wbint-t19-manual-self-handling-contracts.test.mts.tap) |
+| `tests/wbint-t19-manual-self-handling-authority.integration.test.mts` | PASS | 1/1 | [TAP](checks/24-wbint-t19-manual-self-handling-authority.integration.test.mts.tap) |
+| `tests/wbint-t19-manual-self-handling-unknown.browser.test.mts` | PASS | 1/1 | [TAP](checks/25-wbint-t19-manual-self-handling-unknown.browser.test.mts.tap) |
+| `tests/wbint-t32-exception-authorization.browser.test.mts` | PASS | 1/1 | [TAP](checks/26-wbint-t32-exception-authorization.browser.test.mts.tap) |
+| `tests/wbint-t22-realtime-tracer.browser.test.mts` | PASS | 1/1 | [TAP](checks/27-wbint-t22-realtime-tracer.browser.test.mts.tap) |
+| `tests/pc-admin-legacy-retirement.browser.test.mts` | PASS | 2/2 | [TAP](checks/28-pc-admin-legacy-retirement.browser.test.mts.tap) |
+| `tests/t35-account-switch.browser.test.mts` | PASS | 1/1 | [TAP](checks/29-t35-account-switch.browser.test.mts.tap) |
+| `tests/t35-current-authority-wait.integration.test.mts` | PASS | 1/1 | [TAP](checks/30-t35-current-authority-wait.integration.test.mts.tap) |
+| `tests/t35-unknown-read.browser.test.mts` | PASS | 1/1 | [TAP](checks/31-t35-unknown-read.browser.test.mts.tap) |
+
+## Open questions / 偏差
+
+1. **动态分组零位移**：待受理含「待判断/待接单」，已处理含「已完成/已关闭」及空组/折叠状态。首次响应前无可靠组成资料，通用3卡/5行骨架不能预测第一个真实卡片跨过几条分组头或空行。没有删除现有分组、预造业务数量或降低≤1px要求；该范围尚未验收。需要确定分组骨架的专门布局合同。
+2. **可信只读原因与READ撤销**：他人负责仅使用已有 `attention.related_reasons` 的HANDLING事实和原allowed_actions；缺少该投影时不猜姓名/角色。当前denied路径是可信403并清空敏感详情；载入后的草稿撤权传播还会按原合同归并成404，此时不推断成处理权限不足。首次明确403在无草稿功能的fixture验证只读条，载入后撤权单独验证敏感区清理。和原型「仅无处理权但仍可读」并不完全等同；后者缺少独立可靠判断，不扩大读取权限。
+3. **UNKNOWN与原可用操作**：有效内部备注在结果未确认时只提供同一操作编号的「重新提交」，无独立只读核对。不能把重放包装成「重新确认」；只读条仅在已有可见「核对结果」时代理其原入口，否则无按钮并保留原恢复入口。原未知结果/草稿的离开栅栏继续生效，所以前后导航只在原合同允许时可用。只读条也不撤销仍被原控制器允许的备注、协作、关注能力。
+4. **诊断来源与圆角**：服务端未总返回请求编号，客户端生成的引用显式带 `requestIdSource: local`，不冒充服务端关联编号；原始响应正文、查询串、凭据不复制。卡中 `--radius-sm（4）` 与现有sm=6冲突，骨架以xs=4别名实现，不更改全站圆角。
+5. **连接恢复时序**：1/3/8秒是应用读取恢复预算；原生EventSource预算内保留续传，其握手时序由浏览器控制；预算耗尽关闭原连接等待人工刷新。没有并行第二轮询。参考原型中文字体使用系统回退，不能当作像素级字体对齐证明。
+6. **35B / 35C**：35B未合并，`visual:compare` NOT_RUN；没有变更视觉清单或approve基线。按B3最后一条，35A作者应在35B合并后补充状态画面到其manifest，本次按用户要求延期。其余feature状态统一属于35C，本次未做。
+
+## 回退与资源
+
+所有改动未提交，可由审查者按文件差异回退；无数据库Schema、业务/API合同、持久开关或生产部署变更。用户原型不得随源码回退误删。测试通过现有fixture清理其自有数据库、服务器及Chrome profile；共享Postgres服务和其他会话的资源不清理。三个新浏览器用例及31个既有入口均在fixture的finally中释放自有服务/数据库；浏览器关闭校验进程、profile、命令计时器与socket为0。私有失败原件与临时测试图片作为证据保留，不占用运行进程。共享Postgres及非自有库未做清理。最终制品再次核验通过。
+
+收尾只读资源观察：初始记录的3个库中现仍有2个；另有并行会话使用同一Postgres，缺失库的删除执行者未核验。本会话没有对这3个初始名称执行删除，fixture只清理自身刚创建的UUID库；不把该快照差异归因为本次清理。

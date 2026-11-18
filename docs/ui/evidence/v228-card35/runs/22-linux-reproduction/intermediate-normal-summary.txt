@@ -1,0 +1,19 @@
+CARD35A_MATRIX {"run":1,"rate":1,"status":"PASS","counts":{"tests":9,"pass":9,"fail":0,"cancelled":0,"skipped":0,"todo":0},"browser_configurations":[{"rate":1},{"rate":1},{"rate":1},{"rate":1},{"rate":1},{"rate":1}],"elapsed_ms":174645,"manifest_sha256":"684e87883fd21c459ba7358d5c6a14f2b4959d6be4c0f958476bd9366446c3fe","source_input_hash":"a7178ed6f1995a2f9996fbdb6dad814584a73d35b69c0a3cc2dd768a790e890c","directory":"<owned-temp>"}
+CARD35A_MATRIX {"run":2,"rate":1,"status":"PASS","counts":{"tests":9,"pass":9,"fail":0,"cancelled":0,"skipped":0,"todo":0},"browser_configurations":[{"rate":1},{"rate":1},{"rate":1},{"rate":1},{"rate":1},{"rate":1}],"elapsed_ms":179613,"manifest_sha256":"684e87883fd21c459ba7358d5c6a14f2b4959d6be4c0f958476bd9366446c3fe","source_input_hash":"a7178ed6f1995a2f9996fbdb6dad814584a73d35b69c0a3cc2dd768a790e890c","directory":"<owned-temp>"}
+node:fs:1350
+  const result = binding.mkdir(
+                         ^
+
+Error: EEXIST: file already exists, mkdir '<owned-temp>'
+    at Object.mkdirSync (node:fs:1350:26)
+    at file://<owned-temp>
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -17,
+  code: 'EEXIST',
+  syscall: 'mkdir',
+  path: '<owned-temp>'
+}
+
+Node.js v24.18.0

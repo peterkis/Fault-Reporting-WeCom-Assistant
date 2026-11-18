@@ -1,0 +1,14 @@
+{
+  "head": "b4fa7fb831d2a76bcf94f50455e6428d46291671",
+  "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+  "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+  "application_javascript_unchanged": true,
+  "application_css_changes": [
+    "app/pc-admin/src/design/components/WorkTable/work-table.css"
+  ],
+  "test_changes": [
+    "tests/pc-admin-card35a-states.browser.test.mts"
+  ],
+  "full_current_ci_selection_rerun": false,
+  "note": "Only the user-requested timing matrix and regressions are current results. The earlier full selection is historical."
+}

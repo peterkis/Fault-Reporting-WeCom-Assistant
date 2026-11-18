@@ -1,0 +1,23 @@
+TAP version 13
+# {"event":"DESIGN_VARIABLES","files":2,"undefined":0,"primitive_leaks":0}
+# Subtest: feature ESLint rejects HeroUI variants, alias imports, inline styles and legacy status classes
+ok 1 - feature ESLint rejects HeroUI variants, alias imports, inline styles and legacy status classes
+  ---
+  duration_ms: 1215.078125
+  type: 'test'
+  ...
+# Subtest: design variable gate rejects undefined fallbacks and primitive palette leaks
+ok 2 - design variable gate rejects undefined fallbacks and primitive palette leaks
+  ---
+  duration_ms: 28.553292
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1368.644084

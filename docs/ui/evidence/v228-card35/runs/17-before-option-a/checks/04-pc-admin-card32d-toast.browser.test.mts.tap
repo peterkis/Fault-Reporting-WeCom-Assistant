@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: Card 32D-T toasts stay clear of detail controls in the drawer, the full page and the closing dialog at four widths
+ok 1 - Card 32D-T toasts stay clear of detail controls in the drawer, the full page and the closing dialog at four widths
+  ---
+  duration_ms: 42422.058083
+  type: 'test'
+  ...
+# Subtest: Card 33 toasts show five tones and a single-line notice with a full-height colour block and centred icon and close
+ok 2 - Card 33 toasts show five tones and a single-line notice with a full-height colour block and centred icon and close
+  ---
+  duration_ms: 7272.986083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49873.302959

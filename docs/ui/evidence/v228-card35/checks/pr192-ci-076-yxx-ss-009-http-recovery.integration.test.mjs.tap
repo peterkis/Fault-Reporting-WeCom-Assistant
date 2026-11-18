@@ -1,0 +1,54 @@
+TAP version 13
+# Subtest: SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+not ok 1 - SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+  ---
+  duration_ms: 5913.753833
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: 'SS009_WAIT_FAILED'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    eventually (file://<worktree>/.build/runtime/tests/helpers/yxx-ss-009-http-fixture.mjs:33:147)
+    async run (file://<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:23:7)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withSS009Database (file://<worktree>/.build/runtime/tests/helpers/yxx-ss-009-resources.mjs:14:16)
+    async TestContext.<anonymous> (file://<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:14:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+not ok 2 - SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+  ---
+  duration_ms: 528.958042
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:31:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    503 !== 404
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 404
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    run (file://<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:50:269)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withSS009Database (file://<worktree>/.build/runtime/tests/helpers/yxx-ss-009-resources.mjs:14:16)
+    async TestContext.<anonymous> (file://<worktree>/.build/runtime/tests/yxx-ss-009-http-recovery.integration.test.mjs:32:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6618.538709

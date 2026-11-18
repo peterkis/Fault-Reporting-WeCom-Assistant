@@ -1,0 +1,51 @@
+✖ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (3708.166458ms)
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (12857.021875ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16679.279875
+
+✖ failing tests:
+
+test at tests/pc-admin-card35a-states.browser.test.mjs:161:1
+✖ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (3708.166458ms)
+  AssertionError [ERR_ASSERTION]: 80ms never sets busy or renders a skeleton
+  
+  true !== false
+  
+      at withWeb01Fixture.precisionV212 (file://<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:177:16)
+      at async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+      at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/pc-admin-card35a-states.browser.test.mjs:373:1
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (12857.021875ms)
+  AssertionError [ERR_ASSERTION]: SSE refresh retains the drawer body
+  
+  true !== false
+  
+      at file://<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:447:16
+      at async run (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:179:21)
+      at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+      at async withT43Fixture (file://<worktree>/.build/runtime/tests/helpers/t43-full-service-fixture.mjs:85:9)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

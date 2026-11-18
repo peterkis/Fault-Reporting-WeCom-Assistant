@@ -1,0 +1,139 @@
+TAP version 13
+# CARD28_STICKY_POINTER {"width":1280,"x":360,"y":521,"id":"01a1eeae-bbd6-703f-a2e6-1e74b7f61ed9"}
+# CARD28_STICKY_POINTER {"width":900,"x":112,"y":521,"id":"01a1eeae-bbd6-703f-a2e6-1e74b7f61ed9"}
+# Subtest: Card 28 single table preserves read actions, grouped preferences and one-line search across Windows widths
+ok 1 - Card 28 single table preserves read actions, grouped preferences and one-line search across Windows widths
+  ---
+  duration_ms: 8906.4535
+  type: 'test'
+  ...
+# CARD28_SEARCH_DISABLED {"kinds":["dismissed","completed"],"ordinaryStages":[{"column":"pending","count":3},{"column":"active","count":4},{"column":"handled","count":9}],"total":16,"searchReads":0,"businessPosts":0,"fixtureSystemClosure":"01a1eeae-dd93-75b1-b6df-60790bd16959"}
+# Subtest: Card 28 saved closure filters fall back to all ordinary stages when search capability is disabled
+ok 2 - Card 28 saved closure filters fall back to all ordinary stages when search capability is disabled
+  ---
+  duration_ms: 2041.546125
+  type: 'test'
+  ...
+# CARD27B_BOARD {"directory":"<owned-temp>"}
+# Subtest: Card 27B separates closure groups, rejects dismissed drops and filters the real read model without writes
+ok 3 - Card 27B separates closure groups, rejects dismissed drops and filters the real read model without writes
+  ---
+  duration_ms: 5777.321875
+  type: 'test'
+  ...
+# CARD27B_B5 {"directory":"<owned-temp>"}
+# Subtest: Card 27B B5 date presets and custom dates compose with every closure kind through the real search contract
+ok 4 - Card 27B B5 date presets and custom dates compose with every closure kind through the real search contract
+  ---
+  duration_ms: 9347.806333
+  type: 'test'
+  ...
+# CARD27B_OVERLAP {"directory":"<owned-temp>"}
+# Subtest: Card 27B pending searches lock date and closure controls until the genuine server read settles
+ok 5 - Card 27B pending searches lock date and closure controls until the genuine server read settles
+  ---
+  duration_ms: 2478.314167
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"1c85219cdf818db54e05f2277925c32a698315bbd13a1de83cfe92beaa0a31aa"}]}
+# Subtest: Card 17 stages, date presets and custom calendar keep the original read-only range requests
+ok 6 - Card 17 stages, date presets and custom calendar keep the original read-only range requests
+  ---
+  duration_ms: 2269.408667
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":900,"height":1080,"sha256":"539876cb820d36ae421e52b8b4a015b96c0e5be4e85e29cc938c7eda03a12157"}]}
+# Subtest: Card 17 combined long filters stay inside the toolbar while date segments keep their original sizes
+ok 7 - Card 17 combined long filters stay inside the toolbar while date segments keep their original sizes
+  ---
+  duration_ms: 1820.50025
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":900,"height":1080,"sha256":"a1caee47702a5bd077578f3ace29c6869ba82fdf137504e4ace6d36f78395761"}]}
+# Subtest: Card 17 advanced search keeps a visible pointer submit and applies the original read criteria
+ok 8 - Card 17 advanced search keeps a visible pointer submit and applies the original read criteria
+  ---
+  duration_ms: 2086.282458
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"af265446bbfcf7a8f59e7a5f34b792ccd3f8616364a2e885282abfa3080012b7"}]}
+# Subtest: Card 17 location hint requires both location and all reporter fields missing, and never appears in done
+ok 9 - Card 17 location hint requires both location and all reporter fields missing, and never appears in done
+  ---
+  duration_ms: 1462.378209
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"6f1ec7a94ee1ce371a5eb6528d455b1dcb62abb7ae9451f0f93bdc60c7120e7b"}]}
+# Subtest: Card 12 category, state heat, missing fields and loaded filters use the real read projections
+ok 10 - Card 12 category, state heat, missing fields and loaded filters use the real read projections
+  ---
+  duration_ms: 2007.512208
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"23e4d8b1219f4d2cb33c1ba020bd1db317db4a0266d4fc6f9f049e2610ef14b6"}]}
+# Subtest: Card 12 pointer claim reuses one original command and animates the official column change
+ok 11 - Card 12 pointer claim reuses one original command and animates the official column change
+  ---
+  duration_ms: 1556.338334
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"684be77292813ea149d53ce512c53ca396c7fa825fe59be411661d0e91c0ffe4"}]}
+# Subtest: Card 12 keyboard claim reuses one original command and animates the official column change
+ok 12 - Card 12 keyboard claim reuses one original command and animates the official column change
+  ---
+  duration_ms: 1271.647958
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"c5421341890572edea08dac7036926aded285680b2dbf1d314a4d90a4c58c8ea"}]}
+# Subtest: Card 12 UNKNOWN keeps the original controller and UUID when a current board read moves its card
+ok 13 - Card 12 UNKNOWN keeps the original controller and UUID when a current board read moves its card
+  ---
+  duration_ms: 1810.57325
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"b4dc36bf394b02341404d57eb94ce6a42c2962ee99806dc6e1336d7d3f653ac7"}]}
+# Subtest: Card 12 combined responsibility claim opens the original choice form without posting
+ok 14 - Card 12 combined responsibility claim opens the original choice form without posting
+  ---
+  duration_ms: 1373.121583
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"d92f06ac01dfcd999b585003d856f965549d3d5851f989937393915f17effe9e"}]}
+# Subtest: Card 12 stale claim permission is rejected by the original command without a state or event change
+ok 15 - Card 12 stale claim permission is rejected by the original command without a state or event change
+  ---
+  duration_ms: 1258.658584
+  type: 'test'
+  ...
+# CARD26_HEADER_ANCHOR {"width":1920,"titleTextGap":14,"titleOffset":2,"blockGap":12}
+# CARD26_HEADER_ANCHOR {"width":1440,"titleTextGap":14,"titleOffset":2,"blockGap":12}
+# CARD26_HEADER_ANCHOR {"width":1280,"titleTextGap":14,"titleOffset":2,"blockGap":12}
+# CARD26_HEADER_ANCHOR {"width":900,"titleTextGap":14,"titleOffset":2,"blockGap":12}
+# CARD26_BOARD {"directory":"<owned-temp>","platform":"MacIntel","width":1440,"height":1080,"scale":1,"viewportScale":1,"categories":[{"category":"unclassified","color":"rgb(241, 241, 239)"},{"category":"unclassified","color":"rgb(241, 241, 239)"},{"category":"ENDPOINT_PRINT","color":"rgb(236, 238, 242)"},{"category":"CLINICAL_CORE","color":"rgb(239, 233, 248)"},{"category":"unclassified","color":"rgb(241, 241, 239)"},{"category":"NETWORK_INFRASTRUCTURE","color":"rgb(227, 241, 248)"},{"category":"DIAGNOSTIC","color":"rgb(225, 243, 239)"},{"category":"NETWORK_INFRASTRUCTURE","color":"rgb(227, 241, 248)"},{"category":"DIAGNOSTIC","color":"rgb(225, 243, 239)"},{"category":"unclassified","color":"rgb(241, 241, 239)"},{"category":"DIAGNOSTIC","color":"rgb(225, 243, 239)"},{"category":"ENDPOINT_PRINT","color":"rgb(236, 238, 242)"},{"category":"unclassified","color":"rgb(241, 241, 239)"},{"category":"unclassified","color":"rgb(241, 241, 239)"}],"lanes":[{"outlineStyle":"none","outlineWidth":"0px","shadow":"rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"},{"outlineStyle":"none","outlineWidth":"0px","shadow":"rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"},{"outlineStyle":"none","outlineWidth":"0px","shadow":"rgba(55, 53, 47, 0.05) 0px 0px 0px 1px inset"}]}
+# Subtest: Card 20 K3 K4 categories, spacing and clear filters use real synthetic projections without writes
+ok 16 - Card 20 K3 K4 categories, spacing and clear filters use real synthetic projections without writes
+  ---
+  duration_ms: 2925.583542
+  type: 'test'
+  ...
+# Subtest: Card 20 K3 unavailable ownership projection omits the count and explains why
+ok 17 - Card 20 K3 unavailable ownership projection omits the count and explains why
+  ---
+  duration_ms: 963.807541
+  type: 'test'
+  ...
+# Subtest: R1 R2 R5 card22 avatars, shared overdue membership and aligned board filters
+ok 18 - R1 R2 R5 card22 avatars, shared overdue membership and aligned board filters
+  ---
+  duration_ms: 2717.087042
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 52266.966042

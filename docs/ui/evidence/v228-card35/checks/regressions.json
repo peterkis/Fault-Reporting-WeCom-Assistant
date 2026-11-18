@@ -1,0 +1,87 @@
+{
+  "scope": "Linux timing correction requested regressions plus SS009 and design foundation",
+  "head": "b4fa7fb831d2a76bcf94f50455e6428d46291671",
+  "dirty": true,
+  "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+  "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+  "results": [
+    {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-01-pc-admin-copy-terms.test.mts.tap"
+    },
+    {
+      "path": "tests/workbench-toast-feedback.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-02-workbench-toast-feedback.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-03-workbench-detail-restructure.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/wbint-t38-protocol.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-04-wbint-t38-protocol.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-05-yxx-ss-009-http-recovery.integration.test.mjs.tap"
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 75,
+        "pass": 75,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-06-pc-admin-design-foundation.test.mts.tap"
+    }
+  ]
+}

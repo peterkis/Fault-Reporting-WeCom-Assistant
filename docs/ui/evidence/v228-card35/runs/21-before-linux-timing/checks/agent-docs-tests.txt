@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: agent navigation resolves Chinese, duplicate, explicit and setext anchors with encoded local paths
+ok 1 - agent navigation resolves Chinese, duplicate, explicit and setext anchors with encoded local paths
+  ---
+  duration_ms: 13.506958
+  type: 'test'
+  ...
+# Subtest: a missing local document is reported at its referring file
+ok 2 - a missing local document is reported at its referring file
+  ---
+  duration_ms: 5.125083
+  type: 'test'
+  ...
+# Subtest: an existing document with a stale fragment fails while its valid link remains accepted
+ok 3 - an existing document with a stale fragment fails while its valid link remains accepted
+  ---
+  duration_ms: 1.144166
+  type: 'test'
+  ...
+# Subtest: only actual HTML id attributes create explicit anchors
+ok 4 - only actual HTML id attributes create explicit anchors
+  ---
+  duration_ms: 1.805167
+  type: 'test'
+  ...
+# Subtest: HTML comments hide links, explicit anchors and headings while inline code remains literal
+ok 5 - HTML comments hide links, explicit anchors and headings while inline code remains literal
+  ---
+  duration_ms: 1.740458
+  type: 'test'
+  ...
+# Subtest: balanced, escaped and angle-wrapped destinations retain complete paths and fragments
+ok 6 - balanced, escaped and angle-wrapped destinations retain complete paths and fragments
+  ---
+  duration_ms: 1.371791
+  type: 'test'
+  ...
+# Subtest: nested and escaped link labels still validate their destinations
+ok 7 - nested and escaped link labels still validate their destinations
+  ---
+  duration_ms: 0.9465
+  type: 'test'
+  ...
+# Subtest: Markdown punctuation escapes are decoded before checking local paths
+ok 8 - Markdown punctuation escapes are decoded before checking local paths
+  ---
+  duration_ms: 0.9335
+  type: 'test'
+  ...
+# Subtest: rendered references, images and HTML links decode entities and ignore unused definitions
+ok 9 - rendered references, images and HTML links decode entities and ignore unused definitions
+  ---
+  duration_ms: 1.471541
+  type: 'test'
+  ...
+# Subtest: heading slugs use rendered text, decoded entities and duplicate numbering
+ok 10 - heading slugs use rendered text, decoded entities and duplicate numbering
+  ---
+  duration_ms: 2.171667
+  type: 'test'
+  ...
+# Subtest: indented code cannot create links or explicit anchors
+ok 11 - indented code cannot create links or explicit anchors
+  ---
+  duration_ms: 1.068416
+  type: 'test'
+  ...
+# Subtest: the root budget counts UTF-8 bytes rather than visible characters
+ok 12 - the root budget counts UTF-8 bytes rather than visible characters
+  ---
+  duration_ms: 2.701458
+  type: 'test'
+  ...
+# Subtest: external links and fenced or inline link examples do not require local targets
+ok 13 - external links and fenced or inline link examples do not require local targets
+  ---
+  duration_ms: 0.765084
+  type: 'test'
+  ...
+# Subtest: local links cannot leave the repository through traversal, encoding or a directory junction
+ok 14 - local links cannot leave the repository through traversal, encoding or a directory junction
+  ---
+  duration_ms: 0.963167
+  type: 'test'
+  ...
+# Subtest: an in-repository linked documentation directory is scanned
+ok 15 - an in-repository linked documentation directory is scanned
+  ---
+  duration_ms: 1.359791
+  type: 'test'
+  ...
+# Subtest: an external linked documentation directory is rejected without an incoming link
+ok 16 - an external linked documentation directory is rejected without an incoming link
+  ---
+  duration_ms: 1.418
+  type: 'test'
+  ...
+# Subtest: directory aliases validate links relative to each logical parent
+ok 17 - directory aliases validate links relative to each logical parent
+  ---
+  duration_ms: 1.704875
+  type: 'test'
+  ...
+# Subtest: cyclic directory links terminate while distinct aliases are scanned
+ok 18 - cyclic directory links terminate while distinct aliases are scanned
+  ---
+  duration_ms: 1.395167
+  type: 'test'
+  ...
+# Subtest: unrelated Markdown and source-index JSON contents are outside the link scan
+ok 19 - unrelated Markdown and source-index JSON contents are outside the link scan
+  ---
+  duration_ms: 0.82
+  type: 'test'
+  ...
+# Subtest: changed documents outside the fixed navigation surface are checked once and cannot escape
+ok 20 - changed documents outside the fixed navigation surface are checked once and cannot escape
+  ---
+  duration_ms: 0.782166
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87.95775

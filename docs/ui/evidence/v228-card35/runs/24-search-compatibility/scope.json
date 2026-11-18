@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "head": "c63b71dd1d71ef9fd0f665f4f9466dd97c6bff53",
+  "assertions": [
+    {
+      "file": "tests/pc-admin-card35a-states.browser.test.mts",
+      "before": 181,
+      "after": 206,
+      "missing": []
+    },
+    {
+      "file": "tests/wbint-t38-realtime.test.mts",
+      "before": 50,
+      "after": 83,
+      "missing": []
+    }
+  ],
+  "restricted_paths_unchanged": [
+    ".gitignore",
+    "app/pc-admin/src/features",
+    "app/pc-admin/src/realtime/useRealtime.ts",
+    "tools/visual-regression",
+    "tests/visual",
+    "docs/ui/visual-baseline",
+    "docs/ui/evidence/v228-card35/35b",
+    "package.json",
+    "package-lock.json",
+    "plans/testing-policy.json",
+    "plans/typescript-migration/test-routing.json",
+    "docs/ui/prototype"
+  ],
+  "changed_source": [
+    {
+      "file": "app/pc-admin/src/app/Workbench.tsx",
+      "sha256": "ca8b41f047d79df9f8bd42c7ab43a2c3728a714642296e6e1e95dde3406589f9"
+    },
+    {
+      "file": "app/pc-admin/src/design/components/WorkTable/work-table.css",
+      "sha256": "5a04fc0674670eec61907901e978b3b13d1c5ca2c35f545cffa953c66c7c926e"
+    },
+    {
+      "file": "app/pc-admin/src/realtime/workbench-realtime-client.mts",
+      "sha256": "8ee0bc9a8427fe65e806c4cf359a947783a8403ffe54c736fe12d2011defc457"
+    },
+    {
+      "file": "tests/pc-admin-card35a-states.browser.test.mts",
+      "sha256": "a5433f7ac449120745ac48373f7e13113870c2bd2c8173e347a8eb85b2709b24"
+    },
+    {
+      "file": "tests/wbint-t38-realtime.test.mts",
+      "sha256": "c96c55dd22451707907295e5f3813d461c5adc4b573bfff7f6c3cdffa3b1e205"
+    }
+  ]
+}

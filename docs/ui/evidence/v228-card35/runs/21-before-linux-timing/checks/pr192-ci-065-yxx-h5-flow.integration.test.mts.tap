@@ -1,0 +1,17 @@
+TAP version 13
+# WORKBENCH_DETAIL_MEDIA {"pending_original_preview":true,"pending_original_download":true,"image_preview":true,"video_preview":true,"voice_play_pause_seek_countdown":true,"voice_lazy":true,"blob_urls_after_close":0,"screenshots":[{"file":"<owned-temp>","sha256":"9474c05ba20cc85aa2ca4be926ea7d2c1b13c93c3d25021278bbe80a142ea28d"}]}
+# Subtest: H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID
+ok 1 - H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID
+  ---
+  duration_ms: 5182.53175
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5365.901584

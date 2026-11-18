@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "screenshot": {
+    "file": "drawer-readonly-permission.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "d91edc16a3bd0ec26941545aab1bea19d77a57a98d640838f73139608b5a82eb"
+  }
+}

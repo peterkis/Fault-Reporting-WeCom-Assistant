@@ -1,0 +1,37 @@
+TAP version 13
+# Subtest: H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID
+not ok 1 - H5 real HTTP, Core, media Worker and current workbench READ share one isolated source and original UUID
+  ---
+  duration_ms: 737.929958
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/yxx-h5-flow.integration.test.mjs:206:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'UNAVAILABLE'
+    - 'READY'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'READY'
+  actual: 'UNAVAILABLE'
+  operator: 'strictEqual'
+  stack: |-
+    run (file://<worktree>/.build/runtime/tests/yxx-h5-flow.integration.test.mjs:350:28)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file://<worktree>/.build/runtime/tests/yxx-h5-flow.integration.test.mjs:216:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 909.708916

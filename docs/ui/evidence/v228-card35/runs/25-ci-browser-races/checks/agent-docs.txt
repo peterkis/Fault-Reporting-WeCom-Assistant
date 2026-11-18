@@ -1,0 +1,5 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 docs:agents:check
+> node .build/tools/check-agent-docs.mjs
+
+Agent documentation budget and local links passed.

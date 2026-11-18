@@ -1,5 +1,6 @@
 import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -26,14 +27,20 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+first.ticket.id});
     await browser.waitFor("document.querySelector('[data-action=open-assignment]')?.disabled===false&&document.querySelector('.media-empty')&&document.querySelector('.notification-empty')&&!document.querySelector('.report-materials .detail-loading')");
     const cspBaseline=await browser.evaluate('globalThis.__toastCsp');
+    await browser.evaluate('document.fonts.ready');await waitForAnimationsSettled(browser);
     const actionGeometry=await browser.evaluate("(()=>{const root=document.querySelector('.ds-next-step-actions'),top=root.getBoundingClientRect().top;return [...root.querySelectorAll(':scope>div>button')].filter(button=>button.checkVisibility()).map(button=>({text:button.textContent,y:button.getBoundingClientRect().y-top,height:button.getBoundingClientRect().height}));})()");
     assert.ok(actionGeometry.length>=1,'geometry check includes visible command buttons');
     await click('[data-action=open-assignment]');await choose(group,'PILOT_IT');await choose(person,target.id);await click(dialog+' input[value=RETAIN_CURRENT]');
     await browser.waitFor("document.querySelector('[data-action=assign]')?.disabled===false");
+    // Autosave adds the saved-draft affordance independently of command feedback.
+    // Compare the same settled workflow on both sides of the conflict toast.
+    await browser.waitFor("document.querySelector('[data-assignment-draft-status]')?.getAttribute('aria-label')?.startsWith('草稿已保存')&&Boolean(document.querySelector('.detail-assignment-dialog [data-action=toggle-draft-limit]'))");
+    await browser.evaluate('document.fonts.ready');await waitForAnimationsSettled(browser);
     const geometry=await browser.evaluate(`(()=>{const r=document.querySelector('${dialog}').getBoundingClientRect();return {width:r.width,height:r.height};})()`);
     const before=await http.detail(first.ticket.id),conflict=await http.post(first.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'TOAST_REAL_CONFLICT',note:'Synthetic concurrency note for toast layout.',external_visible:false});assert.equal(conflict.status,200);
     await click('[data-action=assign]');await browser.waitFor(`document.querySelector('${toast}')?.textContent.includes('操作冲突')`);
     assert.equal(await browser.evaluate(`document.querySelectorAll('${toast}').length`),1);
+    await waitForAnimationsSettled(browser);
     assert.deepEqual(await browser.evaluate(`(()=>{const r=document.querySelector('${dialog}').getBoundingClientRect();return {width:r.width,height:r.height};})()`),geometry,'toast does not reflow the inline workflow');
     assert.equal(await browser.evaluate(`(()=>{const button=document.querySelector('${dialog} [aria-label=关闭派单窗口]'),r=button.getBoundingClientRect();return button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()`),true,'feedback must leave the workflow close action visible and clickable');
     assert.equal(await browser.evaluate(`(()=>{const button=document.querySelector('${toast}').closest('.workbench-toast').querySelector('button'),r=button.getBoundingClientRect();return button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))&&Boolean(button.closest('[data-workbench-overlay]'));})()`),true,'toast is clickable in the current drawer focus scope');
@@ -58,7 +65,7 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     await browser.waitFor(`document.querySelector('${toast}')?.dataset.toastState==='unknown'&&Boolean(document.querySelector('[data-action=check-assignment-command]'))`);
     const committed=await http.detail(first.ticket.id);assert.equal(committed.assignee_id,transfer.id);const unknown=await browser.evaluate('globalThis.__toastPosts.filter(row=>row.path.endsWith("/transfer-assignment"))') as {body:{client_command_id:string}}[];assert.equal(unknown.length,1);assert.ok(unknown[0]);
     await browser.evaluate('new Promise(resolve=>setTimeout(resolve,9000))');assert.equal(await browser.evaluate(`document.querySelector('${toast}')?.closest('.workbench-toast').dataset.visible`),'true');
-    await closeToast();await browser.waitFor(`!document.querySelector('${toast}')`);assert.equal(await browser.evaluate("document.querySelector('[data-action=transfer-assignment]').disabled"),true);assert.equal(await browser.evaluate(`document.querySelector('${person} select').value`),transfer.id);
+    await closeToast();await browser.waitFor(`!document.querySelector('${toast}')`);assert.equal(await browser.evaluate("document.querySelector('[data-action=transfer-assignment]').getAttribute('aria-disabled')"),'true');assert.equal(await browser.evaluate("document.querySelector('[data-action=transfer-assignment]').disabled"),false,'read-only disabled controls remain focusable; original UUID and no-extra-POST assertions below remain unchanged');assert.equal(await browser.evaluate(`document.querySelector('${person} select').value`),transfer.id);
     await click('[aria-label="关闭派单窗口"]');await click('[data-action=open-assignment]');await click('[data-action=check-assignment-command]');await browser.waitFor(`document.querySelector('${toast}')?.textContent.includes('已核对原操作结果：已提交')&&!document.querySelector('${dialog}')`);
     assert.equal(await browser.evaluate('globalThis.__toastPosts.filter(row=>row.path.endsWith("/transfer-assignment")).length'),1);assert.equal(await browser.evaluate(`globalThis.__toastReads.filter(row=>row.path.endsWith('/assignment/commands/${unknown[0].body.client_command_id}')).length`),1);assert.equal((await http.detail(first.ticket.id)).version,committed.version);
     assert.equal(await browser.evaluate("[...document.querySelectorAll('[data-assignment-draft-status]')].every(node=>node.getBoundingClientRect().height<=20)"),true);
@@ -66,7 +73,8 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     const identity=(await f.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[actor.id])).rows[0];assert.ok(identity);
     await createPilotAccessService({pool:f.pool}).upsertPrincipal({wecomUserId:identity.wecom_user_id,displayName:identity.display_name,roles:['HANDLER'],resolverTeamIds:[]});
     await browser.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='刷新可用操作').click()");
-    await browser.waitFor("!document.querySelector('#detail-title')&&!document.querySelector('[data-toast-source=ticket-assignment]')");
+    await browser.waitFor("!document.querySelector('.ds-detail-view')&&!document.querySelector('[data-toast-source=ticket-assignment]')&&document.querySelector('#detail-title')?.textContent==='详情没有打开'");
+    assert.equal(await browser.evaluate("document.querySelectorAll('.ds-detail .detail-assignment-dialog,.ds-detail .detail-heading,.ds-detail .ds-detail-footer').length"),0,'revocation removes the protected body, command dialog and note editor; only the generic error heading retains the accessible title id');
     assert.deepEqual(await browser.evaluate('globalThis.__toastCsp'),cspBaseline,'toast lifecycle must not add CSP violations to the settled page baseline');
     console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',purpose:'toast-feedback',screenshots}));
     console.log('WORKBENCH_TOAST '+JSON.stringify({actualConflict:true,modalGeometry:true,modalTopLayer:true,narrowViewport:true,explicitCurrentVersionRetry:true,unknownOriginalUuid:true,closeDoesNotSettle:true,currentReadRevocationClears:true,cspBaseline,newCspViolations:0,screenshots}));

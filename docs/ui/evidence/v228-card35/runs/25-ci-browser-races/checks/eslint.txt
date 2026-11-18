@@ -1,0 +1,4 @@
+
+> lint:features
+> eslint "src/features/**/*.{ts,tsx}"
+

@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: T19 the original captured self handling command round trips a full Unicode intent without losing its UUID or selected group
+ok 1 - T19 the original captured self handling command round trips a full Unicode intent without losing its UUID or selected group
+  ---
+  duration_ms: 1.212541
+  type: 'test'
+  ...
+# Subtest: T19 its closed command and recovery decoder reject actor injection, directory-selection substitution and changed or incomplete envelopes
+ok 2 - T19 its closed command and recovery decoder reject actor injection, directory-selection substitution and changed or incomplete envelopes
+  ---
+  duration_ms: 0.227708
+  type: 'test'
+  ...
+# Subtest: T19 current-context decoder rejects false eligibility, duplicate or oversized group pages and extra authority fields
+ok 3 - T19 current-context decoder rejects false eligibility, duplicate or oversized group pages and extra authority fields
+  ---
+  duration_ms: 0.148375
+  type: 'test'
+  ...
+# Subtest: T19 never decodes a queued or Review-only admission as successful immediate handling
+ok 4 - T19 never decodes a queued or Review-only admission as successful immediate handling
+  ---
+  duration_ms: 0.205791
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50.293125

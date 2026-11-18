@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: H5 migration check reports missing SQL without DDL or changing existing facts/receipts
+ok 1 - H5 migration check reports missing SQL without DDL or changing existing facts/receipts
+  ---
+  duration_ms: 766.184167
+  type: 'test'
+  ...
+# Subtest: H5 maintenance rejects a prerequisite receipt with a broken ARCH005 time pair before H5 DDL
+ok 2 - H5 maintenance rejects a prerequisite receipt with a broken ARCH005 time pair before H5 DDL
+  ---
+  duration_ms: 539.734125
+  type: 'test'
+  ...
+# Subtest: H5 migration applies real 064/065/066 and ARCH005 receipts once, preserving staff and facts
+ok 3 - H5 migration applies real 064/065/066 and ARCH005 receipts once, preserving staff and facts
+  ---
+  duration_ms: 621.604458
+  type: 'test'
+  ...
+# Subtest: a nonpreview installation resumes with 066 and never removes existing preview schema
+ok 4 - a nonpreview installation resumes with 066 and never removes existing preview schema
+  ---
+  duration_ms: 616.877083
+  type: 'test'
+  ...
+# Subtest: H5 migration rejects wrong receipts, missing constraints, and a superficially named weak CHECK
+ok 5 - H5 migration rejects wrong receipts, missing constraints, and a superficially named weak CHECK
+  ---
+  duration_ms: 661.741208
+  type: 'test'
+  ...
+# Subtest: unreceipted H5 objects and a different expected database fail before application
+ok 6 - unreceipted H5 objects and a different expected database fail before application
+  ---
+  duration_ms: 533.4965
+  type: 'test'
+  ...
+# Subtest: a real 066 DDL error rolls back preceding 064/065 DDL and their receipts together
+ok 7 - a real 066 DDL error rolls back preceding 064/065 DDL and their receipts together
+  ---
+  duration_ms: 557.823
+  type: 'test'
+  ...
+# Subtest: concurrent explicit H5 maintenance serializes to one apply and one verified NOOP
+ok 8 - concurrent explicit H5 maintenance serializes to one apply and one verified NOOP
+  ---
+  duration_ms: 603.52925
+  type: 'test'
+  ...
+# Subtest: H5 maintenance detects trigger/function drift, composite FK actions, and widened partial indexes
+ok 9 - H5 maintenance detects trigger/function drift, composite FK actions, and widened partial indexes
+  ---
+  duration_ms: 709.309292
+  type: 'test'
+  ...
+# Subtest: required H5 guards tolerate nonconflicting successor columns, checks, and indexes
+ok 10 - required H5 guards tolerate nonconflicting successor columns, checks, and indexes
+  ---
+  duration_ms: 608.54725
+  type: 'test'
+  ...
+# Subtest: H5 stage receipts must be contiguous and retain exact original UTF8 checksums
+ok 11 - H5 stage receipts must be contiguous and retain exact original UTF8 checksums
+  ---
+  duration_ms: 644.892625
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7037.602708

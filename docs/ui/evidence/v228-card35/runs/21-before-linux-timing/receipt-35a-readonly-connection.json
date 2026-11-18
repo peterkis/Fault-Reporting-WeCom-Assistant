@@ -1,0 +1,97 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "closedSubgroupGeometry": {
+      "board": {
+        "before": 340,
+        "after": 340,
+        "delta": 0
+      },
+      "list": {
+        "before": 693,
+        "after": 693,
+        "delta": 0
+      }
+    },
+    "followUpBorders": {
+      "innerTop": "0px",
+      "innerBottom": "0px",
+      "outerBottom": "1px",
+      "emptyDividers": 0
+    },
+    "retries": {
+      "initialFailedRead": 14797.399999856949,
+      "retryReads": [
+        15814.799999952316,
+        18816.200000047684,
+        26818.299999952316
+      ],
+      "intervals": [
+        1017.4000000953674,
+        3001.4000000953674,
+        8002.099999904633
+      ]
+    },
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    },
+    "referenceFonts": "Saved Inter assets; system Chinese fallback. External Google fonts are blocked for an offline reference export."
+  },
+  "screenshots": [
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "39dc971ad98979293c28c07246b7dee203c0a2fce4622f7a414b48678e7854e9"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "511fab40ff3d5480b0ba8dbfa38e7aa7a388ac4393e198c02ad7962eae338641"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "999e58b47da80bd15ff483158426d3260f9dcf39980aa2d2e3c26cf9cafdca45"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ce978cbf67cfb091d92e8b4505e22091420a44a25f7f951026a06fb022b9ad38"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "74cbad7c79731dac86dfc396239d99da9a5093eafebf4d09c044a4ccf2961b07"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "77ec76de209d3e73a348ad3006fe0bd9df3b501b1b51e4db861fcc5815b582e4"
+    },
+    {
+      "file": "drawer-readonly-pending.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d2b8c2d714e9222fa90f04c05a2c5f0536e8416570c828f84efaccbe7c79885a"
+    },
+    {
+      "file": "artboard-07.png",
+      "width": 1440,
+      "height": 2150,
+      "sha256": "db4cc361303fbb8a7601f53fa69111a52149f855d0749165f680e67df5b55d14"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,17 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"CARD32CD","screenshots":[]}
+# Subtest: Card 32C-D completed and dismissed Tickets read 已完成 / 已关闭 with distinct timeline dots, list groups and search labels
+ok 1 - Card 32C-D completed and dismissed Tickets read 已完成 / 已关闭 with distinct timeline dots, list groups and search labels
+  ---
+  duration_ms: 3164.620791
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3344.381959

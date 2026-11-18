@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "rate": 1,
+  "counts": {
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "browser_configurations": [
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    },
+    {
+      "rate": 1
+    }
+  ],
+  "elapsed_ms": 181977,
+  "manifest_sha256": "d857e9c4153bfc859a157f332e977f4f84991d5b49cafc33efcbe2c188be4b52",
+  "source_input_hash": "1c4a7ab21c7c6874bf0ecc92cd13a123e76090c64e6ebbd602fed9f4fb62103b"
+}

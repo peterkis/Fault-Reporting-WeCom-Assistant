@@ -1,0 +1,137 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "fastReads": [
+      {
+        "key": "board:pending:recent",
+        "target": 80,
+        "elapsed": 81.5
+      },
+      {
+        "key": "board:active:recent",
+        "target": 80,
+        "elapsed": 81.40000009536743
+      },
+      {
+        "key": "board:handled:recent",
+        "target": 80,
+        "elapsed": 81.40000009536743
+      }
+    ],
+    "cpuRate": 1,
+    "timing": [
+      313.2999999523163
+    ],
+    "mediumReads": [
+      {
+        "key": "board:active:all",
+        "target": 400,
+        "elapsed": 401.30000019073486
+      }
+    ],
+    "subgroupGeometry": [
+      {
+        "view": "board",
+        "column": "pending",
+        "before": 300,
+        "after": 300,
+        "delta": 0
+      },
+      {
+        "view": "board",
+        "column": "handled",
+        "before": 300,
+        "after": 300,
+        "delta": 0
+      },
+      {
+        "view": "list",
+        "column": "pending",
+        "before": 335,
+        "after": 335,
+        "delta": 0
+      },
+      {
+        "view": "list",
+        "column": "handled",
+        "before": 899,
+        "after": 899,
+        "delta": 0
+      }
+    ],
+    "initialListHeader": {
+      "before": {
+        "x": 272,
+        "y": 213,
+        "width": 1120,
+        "height": 36
+      },
+      "after": {
+        "x": 272,
+        "y": 213,
+        "width": 1120,
+        "height": 36
+      }
+    },
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "board-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5b838ed8aec1a5497c88f6a5114789f86b3758b3093918eb45fd01223fa351ff"
+    },
+    {
+      "file": "list-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5b37f154f79d1c8cbc0b13f16a9227c8e3846abbb8e6775c0db53104aa2cc8a4"
+    },
+    {
+      "file": "drawer-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "31bb9ddddba90fc19781bccdb164f8a04be42eda1295f1bc088697912f35f3ac"
+    },
+    {
+      "file": "board-refreshing.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d693e147e418d6fcdc4bf6b8a062403b2e0e08ccac2995182b34bc58ed22803b"
+    },
+    {
+      "file": "board-stale-retry.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e6eec0a87d8f5abfc67bc7cdfab6e085cb2aa53e3887e43de601fda3995ebfe1"
+    },
+    {
+      "file": "board-empty-filtered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5610b7ab80a8c27f351d7b8096f167fd4dfc4ac6ba5c060bebd1b3492026848f"
+    },
+    {
+      "file": "intake-cleared.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d3542d490bdc66049dc6516c78e5eca6d50bafd19400123da3f9e7fd062f13c5"
+    },
+    {
+      "file": "workbench-error-page.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "dc2415f2d90486ad8576bb8789b9319850d2c89e4dc77fd87bd6c33163784fbe"
+    }
+  ],
+  "error": null
+}

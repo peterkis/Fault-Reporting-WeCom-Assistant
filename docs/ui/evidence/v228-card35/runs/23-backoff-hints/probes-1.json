@@ -1,0 +1,27 @@
+[
+  {
+    "run": 1,
+    "rate": 1,
+    "status": "PASS"
+  },
+  {
+    "run": 2,
+    "rate": 1,
+    "status": "PASS"
+  },
+  {
+    "run": 3,
+    "rate": 1,
+    "status": "PASS"
+  },
+  {
+    "run": 4,
+    "rate": 1,
+    "status": "PASS"
+  },
+  {
+    "run": 5,
+    "rate": 1,
+    "status": "PASS"
+  }
+]

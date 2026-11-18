@@ -1,0 +1,10 @@
+✔ Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted (3735.780625ms)
+✔ Card 35A PR192: empty handled column retains the completed drop zone and opens the existing form without a POST (2013.811208ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5890.031083

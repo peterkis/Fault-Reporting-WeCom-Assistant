@@ -1,0 +1,103 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "closedSubgroupGeometry": {
+      "board": {
+        "before": 340,
+        "after": 340,
+        "delta": 0
+      },
+      "list": {
+        "before": 693,
+        "after": 693,
+        "delta": 0
+      }
+    },
+    "followUpBorders": {
+      "innerTop": "0px",
+      "innerBottom": "0px",
+      "outerBottom": "1px",
+      "emptyDividers": 0
+    },
+    "sseRefresh": {
+      "samples": 323,
+      "elapsed": 1001.2000000476837,
+      "violations": []
+    },
+    "cpuRate": 1,
+    "retries": {
+      "initialFailedRead": 16194.700000047684,
+      "retryReads": [
+        17204.400000095367,
+        20205.5,
+        28207.400000095367
+      ],
+      "intervals": [
+        1009.7000000476837,
+        3001.0999999046326,
+        8001.900000095367
+      ]
+    },
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    },
+    "referenceFonts": "Saved Inter assets; system Chinese fallback. External Google fonts are blocked for an offline reference export."
+  },
+  "screenshots": [
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "14148443cdb56a59d6beb286bbdab0a6dbe8ead8dda2645c19b1b66f4d286c5c"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c82171356021e825bbaa5d824d5dd35acc7b3e5932089db46ee1f0e8afc1f8b3"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "1a5473b2c186b8f317dcca92fe46f328a06f058b340c0921d64a9674ff6a0cfa"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "6df95dcf88e3930c8213f6537cc9e876e934e658f1f2f2c49ef3a04a747b3cf0"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "3f922ccbadfc0f6c18f24d071bed079b38bfd846adf2f1640ffda667d9b5c844"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "1d4735a1cf644ee389569c7699218c02c81aa7f22955272bf65cb6e7ed5929d9"
+    },
+    {
+      "file": "drawer-readonly-pending.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a2eee664373f12b64725361cb520905adb0c00dcf47e91b4a144075979b0ea31"
+    },
+    {
+      "file": "artboard-07.png",
+      "width": 1440,
+      "height": 2150,
+      "sha256": "db4cc361303fbb8a7601f53fa69111a52149f855d0749165f680e67df5b55d14"
+    }
+  ],
+  "error": null
+}

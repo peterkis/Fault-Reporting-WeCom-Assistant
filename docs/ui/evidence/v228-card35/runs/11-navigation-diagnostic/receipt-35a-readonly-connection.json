@@ -1,0 +1,77 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "retries": [
+      16727.300000190735,
+      19728.800000190735,
+      27729.60000014305
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    },
+    "referenceFonts": "Saved Inter assets; system Chinese fallback. External Google fonts are blocked for an offline reference export."
+  },
+  "screenshots": [
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "70b5a359d9eb490ff8f4edb580a0ef3af14918a0cedaed0f45ae6a9d6d1800ab"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "6c285263472664eabb50288b61e2b4f2a2f08aa38d8c941ca6389dd21f6a43e4"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d7f2750a550df2de984cd8e40d7458a92e3f457a9cb247887310aea42cb1239c"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a9036bcb0b4d268e69d2a5c403632913197c3d9bb9a55d7aa6e86ec1eb274b6f"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "be5b4f00d34eb1b68acd4b52a63b6ed2007fe0c883d6d7ac90b2a2c0f96fca89"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "3f19d91cd39d5c35c655a74c700b2181a8c91f420ffe7fced77fc88b6443c5cc"
+    },
+    {
+      "file": "drawer-readonly-permission.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "b0fd7ba94655d6bc287bfb0fa08d3431fb7c5b510a14fbfee5b9e1cde0e95270"
+    },
+    {
+      "file": "drawer-readonly-pending.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "caa4d9427383f705450ccf4e56df356c78f6d69f88ef941f2641274088fd7a75"
+    },
+    {
+      "file": "artboard-07.png",
+      "width": 1440,
+      "height": 2150,
+      "sha256": "db4cc361303fbb8a7601f53fa69111a52149f855d0749165f680e67df5b55d14"
+    }
+  ],
+  "error": null
+}

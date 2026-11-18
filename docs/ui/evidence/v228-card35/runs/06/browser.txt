@@ -1,0 +1,23 @@
+✔ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (34760.050334ms)
+P2_006_BROWSER_COMMAND_TIMEOUT_CONTEXT {"method":"Runtime.evaluate","sessionKind":"root","expressionSha256":"6d7ae019d615dc2bee34c1d35a5b4be2e1ca76ab5d03bbafd1f21a90880147e1","expressionLength":20}
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (106289.773542ms)
+✔ Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal (1.991958ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 141175.024666
+
+✖ failing tests:
+
+test at tests/pc-admin-card35a-states.browser.test.mjs:188:1
+✖ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (106289.773542ms)
+  Error: P2_006_BROWSER_COMMAND_TIMEOUT
+      at Timeout._onTimeout (file://<worktree>/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:123:16)
+      at listOnTimeout (node:internal/timers:605:17)
+      at process.processTimers (node:internal/timers:541:7) {
+    [cause]: { method: 'Runtime.evaluate', sessionKind: 'root', expressionSha256: '6d7ae019d615dc2bee34c1d35a5b4be2e1ca76ab5d03bbafd1f21a90880147e1', expressionLength: 20 }
+  }

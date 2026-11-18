@@ -1,0 +1,1 @@
+{"status":"CONFIRMED_PRE_EXISTING_SS009_SETUP","same_initializer_as_ss009":"migrateCurrentBaselineWithYxx","closure_record":null,"web_request_binding_present":true,"error_code":"42P01","source_unchanged":true,"scope":"owned isolated database only"}

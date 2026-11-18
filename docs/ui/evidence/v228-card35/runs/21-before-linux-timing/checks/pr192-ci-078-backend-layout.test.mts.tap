@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: server layout binds all 382 original files to unique physical and logical identities
+ok 1 - server layout binds all 382 original files to unique physical and logical identities
+  ---
+  duration_ms: 1.774084
+  type: 'test'
+  ...
+# Subtest: only the explicitly retired scripts can be absent and their resurrection is rejected
+ok 2 - only the explicitly retired scripts can be absent and their resurrection is rejected
+  ---
+  duration_ms: 8.122167
+  type: 'test'
+  ...
+# Subtest: only the recorded automatic-completion rename may move a historical source, and the old name cannot come back
+ok 3 - only the recorded automatic-completion rename may move a historical source, and the old name cannot come back
+  ---
+  duration_ms: 3.080167
+  type: 'test'
+  ...
+# Subtest: a missing source and duplicate logical module are rejected before emit
+ok 4 - a missing source and duplicate logical module are rejected before emit
+  ---
+  duration_ms: 2.167791
+  type: 'test'
+  ...
+# Subtest: editing the forward map cannot borrow a legacy exemption or hide a duplicate
+ok 5 - editing the forward map cannot borrow a legacy exemption or hide a duplicate
+  ---
+  duration_ms: 1.178667
+  type: 'test'
+  ...
+# Subtest: old roots and a missing mapping cannot silently retain source implementations
+ok 6 - old roots and a missing mapping cannot silently retain source implementations
+  ---
+  duration_ms: 0.942042
+  type: 'test'
+  ...
+# Subtest: shared modules reject Node, package and dynamic runtime dependencies
+ok 7 - shared modules reject Node, package and dynamic runtime dependencies
+  ---
+  duration_ms: 4.2785
+  type: 'test'
+  ...
+# Subtest: new production roots include unimported MTS and keep legacy identity after relocation
+ok 8 - new production roots include unimported MTS and keep legacy identity after relocation
+  ---
+  duration_ms: 0.085958
+  type: 'test'
+  ...
+# Subtest: parent junctions are rejected for backend and shared files
+ok 9 - parent junctions are rejected for backend and shared files
+  ---
+  duration_ms: 1.025667
+  type: 'test'
+  ...
+# Subtest: historical comparison normalizes module and resource locations without erasing executable changes
+ok 10 - historical comparison normalizes module and resource locations without erasing executable changes
+  ---
+  duration_ms: 3.245042
+  type: 'test'
+  ...
+# Subtest: cloud preparation resolves the repository root and keeps private settings at their explicit original path with synthetic IO
+ok 11 - cloud preparation resolves the repository root and keeps private settings at their explicit original path with synthetic IO
+  ---
+  duration_ms: 28.771875
+  type: 'test'
+  ...
+# Subtest: P2-015 keeps committed type and directory identity while rejecting executable, SQL and duplicate-source changes
+ok 12 - P2-015 keeps committed type and directory identity while rejecting executable, SQL and duplicate-source changes
+  ---
+  duration_ms: 18.410833
+  type: 'test'
+  ...
+# Subtest: P2-016 preserves historical logical identifiers and resolves current source IO without old-root fallback
+ok 13 - P2-016 preserves historical logical identifiers and resolves current source IO without old-root fallback
+  ---
+  duration_ms: 1.117042
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 206.311417

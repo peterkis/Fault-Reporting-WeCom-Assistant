@@ -1,0 +1,47 @@
+{
+  "path": "tests/wbint-t38-realtime.test.mts",
+  "runtime_path": "tests/wbint-t38-realtime.test.mjs",
+  "executed_path": ".build/runtime/tests/wbint-t38-realtime.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "executable": "/Users/petervans/.local/share/fnm/node-versions/v24.18.0/installation/bin/node",
+  "argv": [
+    "--test-concurrency=1",
+    "--test",
+    "--test-reporter=tap",
+    "--test-reporter-destination=stdout",
+    "--test-reporter=file:///Users/petervans/Projects/ticket-wt-35a/.build/runtime/app/server/scripts/p2-g2-case-reporter.mjs",
+    "--test-reporter-destination=/private/tmp/card35a-ci-races-6ug2iwfj/regressions/3/001-wbint-t38-realtime.test.mts.cases.jsonl",
+    "/Users/petervans/Projects/ticket-wt-35a/.build/runtime/tests/wbint-t38-realtime.test.mjs"
+  ],
+  "source_sha256": "c96c55dd22451707907295e5f3813d461c5adc4b573bfff7f6c3cdffa3b1e205",
+  "executed_sha256": "fa0293dec51f13ec9e768ed66c3bbf92ab6070c2f3b6289a0c2af2b75d497804",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-wbint-t38-realtime.test.mts.tap",
+  "tap_sha256": "5304d26e88b9c88a29176938be6c1631478eae1332befd4bab9c75cebfcb943a",
+  "tap_bytes": 3223,
+  "stderr_path": "001-wbint-t38-realtime.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "001-wbint-t38-realtime.test.mts.cases.jsonl",
+  "case_trace_sha256": "7e30cfe2bd792534446a694415cbb3a4be2d1b74bdbacb08b2c8ced6f958aa2a",
+  "case_trace_bytes": 3665,
+  "counts": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "observed_subprocess_entries": [],
+  "case_count": 11
+}

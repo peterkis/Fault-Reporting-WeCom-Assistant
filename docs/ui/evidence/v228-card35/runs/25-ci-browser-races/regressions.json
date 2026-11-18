@@ -1,0 +1,77 @@
+[
+  {
+    "path": "tests/pc-admin-card35a-states.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tap": "checks/001-pc-admin-card35a-states.browser.test.mts.tap",
+    "receipt": "checks/001-pc-admin-card35a-states.browser.test.mts-receipt.json",
+    "cases": "checks/001-pc-admin-card35a-states.browser.test.mts-cases.json"
+  },
+  {
+    "path": "tests/wbint-t38-protocol.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tap": "checks/001-wbint-t38-protocol.browser.test.mts.tap",
+    "receipt": "checks/001-wbint-t38-protocol.browser.test.mts-receipt.json",
+    "cases": "checks/001-wbint-t38-protocol.browser.test.mts-cases.json"
+  },
+  {
+    "path": "tests/wbint-t38-realtime.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tap": "checks/001-wbint-t38-realtime.test.mts.tap",
+    "receipt": "checks/001-wbint-t38-realtime.test.mts-receipt.json",
+    "cases": "checks/001-wbint-t38-realtime.test.mts-cases.json"
+  },
+  {
+    "path": "tests/workbench-detail-restructure.browser.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tap": "checks/001-workbench-detail-restructure.browser.test.mts.tap",
+    "receipt": "checks/001-workbench-detail-restructure.browser.test.mts-receipt.json",
+    "cases": "checks/001-workbench-detail-restructure.browser.test.mts-cases.json"
+  },
+  {
+    "path": "tests/pc-admin-copy-terms.test.mts",
+    "status": "PASS",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tap": "checks/001-pc-admin-copy-terms.test.mts.tap",
+    "receipt": "checks/001-pc-admin-copy-terms.test.mts-receipt.json",
+    "cases": "checks/001-pc-admin-copy-terms.test.mts-cases.json"
+  }
+]

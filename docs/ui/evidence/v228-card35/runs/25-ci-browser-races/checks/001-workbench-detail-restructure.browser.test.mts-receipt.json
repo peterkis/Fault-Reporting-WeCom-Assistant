@@ -1,0 +1,47 @@
+{
+  "path": "tests/workbench-detail-restructure.browser.test.mts",
+  "runtime_path": "tests/workbench-detail-restructure.browser.test.mjs",
+  "executed_path": ".build/runtime/tests/workbench-detail-restructure.browser.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "executable": "/Users/petervans/.local/share/fnm/node-versions/v24.18.0/installation/bin/node",
+  "argv": [
+    "--test-concurrency=1",
+    "--test",
+    "--test-reporter=tap",
+    "--test-reporter-destination=stdout",
+    "--test-reporter=file:///Users/petervans/Projects/ticket-wt-35a/.build/runtime/app/server/scripts/p2-g2-case-reporter.mjs",
+    "--test-reporter-destination=/private/tmp/card35a-ci-races-6ug2iwfj/regressions/4/001-workbench-detail-restructure.browser.test.mts.cases.jsonl",
+    "/Users/petervans/Projects/ticket-wt-35a/.build/runtime/tests/workbench-detail-restructure.browser.test.mjs"
+  ],
+  "source_sha256": "7902958f30a28a95048b39a64407edf0fa93dbeefe34200f25955cf9359d3102",
+  "executed_sha256": "1d1a1768ef2be81a8b01aaa8f255646793afa126af9c19897a82c348fd1667b9",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-workbench-detail-restructure.browser.test.mts.tap",
+  "tap_sha256": "d0a7bed7653064e6263324026818551334e477c562957726163f9b8f2bf69106",
+  "tap_bytes": 1286,
+  "stderr_path": "001-workbench-detail-restructure.browser.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "001-workbench-detail-restructure.browser.test.mts.cases.jsonl",
+  "case_trace_sha256": "5d6cef0c8b01bd5cd1c4115005f26fb4e57a59ff176f0ed2fe027773a90a04f1",
+  "case_trace_bytes": 670,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

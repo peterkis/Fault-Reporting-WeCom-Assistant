@@ -1,0 +1,23 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","real_retention_gap":true,"fresh_native_cursor":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: a real retained replay gap falls back to current GET facts and creates a fresh native source without carrying the obsolete cursor
+ok 1 - a real retained replay gap falls back to current GET facts and creates a fresh native source without carrying the obsolete cursor
+  ---
+  duration_ms: 13952.397
+  type: 'test'
+  ...
+# Subtest: a replay gap on the board with an open drawer re-reads the list, the detail and the timeline without duplicating facts
+ok 2 - a replay gap on the board with an open drawer re-reads the list, the detail and the timeline without duplicating facts
+  ---
+  duration_ms: 13911.133875
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28028.129084

@@ -1,0 +1,43 @@
+{
+  "status": "OBSERVED_UNRESOLVED_LAYOUT_AMBIGUITY",
+  "request_and_fold_state": "identical; both groups expanded",
+  "observations": [
+    {
+      "response": "mixed",
+      "skeletonTop": 300,
+      "firstTop": 300,
+      "groups": [
+        {
+          "label": "已完成",
+          "count": "1",
+          "height": 173
+        },
+        {
+          "label": "已关闭",
+          "count": "1",
+          "height": 139
+        }
+      ],
+      "delta": 0
+    },
+    {
+      "response": "dismissed",
+      "skeletonTop": 300,
+      "firstTop": 343,
+      "groups": [
+        {
+          "label": "已完成",
+          "count": "0",
+          "height": 43
+        },
+        {
+          "label": "已关闭",
+          "count": "1",
+          "height": 139
+        }
+      ],
+      "delta": 43
+    }
+  ],
+  "firstCardDifference": 43
+}
