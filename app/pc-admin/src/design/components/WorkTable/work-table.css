@@ -1,5 +1,5 @@
 .ds-work-table-wrap {max-height:calc(100dvh - var(--space-16) * 3 - var(--space-12));overflow:auto;isolation:isolate;container-type:inline-size;container-name:work-table;}
-.work-table.ds-work-table {--z-list-link:calc(var(--z-sticky) + 1);--z-list-claim:calc(var(--z-sticky) + 2);--shadow-list-row:inset 0 -1px 0 color-mix(in srgb,var(--border-hair) 78%,transparent);--shadow-list-selected:inset var(--space-0-5) 0 0 var(--brand),inset 0 -1px 0 var(--border-hair);--shadow-list-sticky:inset -1px 0 0 var(--border-hair),inset 0 -1px 0 var(--border-hair);--shadow-list-selected-sticky:inset var(--space-0-5) 0 0 var(--brand),inset -1px 0 0 var(--border-hair),inset 0 -1px 0 var(--border-hair);--list-number-width:calc(var(--space-16) * 3);--list-status-width:calc(var(--space-16) + var(--space-10) + var(--space-1));--list-time-width:calc(var(--space-16) + var(--space-12) + var(--space-3));--list-reporter-width:calc(var(--space-16) * 3 - var(--space-1));--list-activity-width:calc(var(--space-16) + var(--space-6) + var(--space-1));min-width:calc(var(--space-16) * 16 + var(--space-12) + var(--space-2));border-collapse:separate;border-spacing:0;}
+.work-table.ds-work-table {--z-list-link:calc(var(--z-sticky) + 1);--z-list-claim:calc(var(--z-sticky) + 2);--shadow-list-row:inset 0 -1px 0 color-mix(in srgb,var(--border-hair) 78%,transparent);--shadow-list-selected:inset var(--space-0-5) 0 0 var(--brand),inset 0 -1px 0 var(--border-hair);--shadow-list-sticky:inset -1px 0 0 var(--border-hair),inset 0 -1px 0 var(--border-hair);--shadow-list-selected-sticky:inset var(--space-0-5) 0 0 var(--brand),inset -1px 0 0 var(--border-hair),inset 0 -1px 0 var(--border-hair);--list-number-width:calc(var(--space-16) * 3);--list-status-width:calc(var(--space-16) + var(--space-10) + var(--space-1));--list-time-width:calc(var(--space-16) + var(--space-12) + var(--space-3));--list-reporter-width:calc(var(--space-16) * 3 - var(--space-1));--list-activity-width:calc(var(--space-16) + var(--space-8) + var(--space-2));min-width:calc(var(--space-16) * 16 + var(--space-12) + var(--space-2));border-collapse:separate;border-spacing:0;}
 .ds-work-table .ds-work-col-0 {width:var(--list-number-width);}
 .ds-work-table .ds-work-col-2 {width:var(--list-status-width);}
 .ds-work-table .ds-work-col-3,.ds-work-table .ds-work-col-5 {width:var(--list-time-width);}
@@ -72,7 +72,6 @@
 .ds-work-table .ds-list-more .button[data-tone] {height:var(--space-6);min-height:var(--space-6);padding:0 var(--space-1);color:var(--text-secondary);font-size:var(--fs-xs);font-weight:var(--fw-regular);}
 .work-table.ds-work-table .ds-list-empty>td {height:var(--space-10);font-size:var(--fs-sm);color:var(--text-tertiary);text-align:left;}
 .work-table.ds-work-table .ds-list-note>td {height:var(--space-8);font-size:var(--fs-xs);color:var(--text-tertiary);text-align:left;}
-.ds-list-feedback .state-message {margin:var(--space-2);}
 @container work-table (max-width:1080px) {
   .work-table.ds-work-table .ds-work-row>th,.work-table.ds-work-table thead th:first-child {position:sticky;left:0;z-index:var(--z-sticky);background:var(--bg-canvas);box-shadow:var(--shadow-list-sticky);}
   .work-table.ds-work-table .ds-work-row:is(:hover,:focus-within)>th {background:var(--bg-subtle);}
@@ -94,3 +93,16 @@
 .ds-work-table .ds-list-more .button[data-tone] svg {width:var(--icon-sm);height:var(--icon-sm);}
 /* Card 30B B3: presence tags at the problem cell's right edge; the title still truncates first. List rows get no outline. */
 .ds-list-issue-content .ds-list-presence {margin-left: auto; flex: none;}
+
+.work-table.ds-work-table .ds-work-skeleton-status>td {height:0;padding:0;}
+.ds-work-skeleton-status .ds-loading-slow {padding:var(--space-2) var(--space-3);}
+.ds-work-table thead th:last-child:has(.ds-stale-retry) {white-space:nowrap;}
+.ds-work-table thead .ds-stale-retry {margin-left:var(--space-2);}
+
+.ds-table-state:is([data-refreshing],[data-stale]) .list-group {opacity:var(--state-content-opacity);}
+.ds-empty-state[data-tone=success][data-size=block] .ds-empty-icon>svg {width:var(--space-6);height:var(--space-6);}
+
+/* The label and retry share the existing 36px header, keeping every old row in place. */
+.ds-work-table thead th:last-child:has(.ds-stale-retry)>.ds-work-header-label {display:block;line-height:var(--lh-xs);}
+.ds-work-table thead .ds-stale-retry {display:flex;align-items:center;height:var(--lh-xs);margin-left:0;line-height:var(--lh-xs);}
+.ds-work-table thead .ds-stale-retry .ds-button.button[data-tone] {height:var(--lh-xs);min-height:var(--lh-xs);line-height:var(--lh-xs);}

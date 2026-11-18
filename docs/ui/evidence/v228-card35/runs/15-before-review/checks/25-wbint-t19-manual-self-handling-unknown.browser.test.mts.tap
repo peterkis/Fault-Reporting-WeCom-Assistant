@@ -1,0 +1,17 @@
+TAP version 13
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":2,"inserted":2,"replayed":0,"channel_failures":0,"other_stream_failures":0}
+# Subtest: T19 a committed lost ACK retains the full original command, restores its exact valid group beyond the first 100 and expires sensitive content without another POST
+ok 1 - T19 a committed lost ACK retains the full original command, restores its exact valid group beyond the first 100 and expires sensitive content without another POST
+  ---
+  duration_ms: 2499.649375
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2685.762917

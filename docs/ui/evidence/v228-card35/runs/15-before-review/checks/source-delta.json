@@ -1,0 +1,8 @@
+{
+  "regression_input_hash": "b83474c29ca6e8ce9d4d100328612c37bd555b3cf16a81a299288d7e14253339",
+  "final_input_hash": "1a6bb3846ca31b2a82732f85d9ccbf166ecbe5142b70f7c9df8dbccdd1ebf4e2",
+  "changed_paths": [
+    "tests/pc-admin-card35a-states.browser.test.mts"
+  ],
+  "application_inputs_unchanged": true
+}

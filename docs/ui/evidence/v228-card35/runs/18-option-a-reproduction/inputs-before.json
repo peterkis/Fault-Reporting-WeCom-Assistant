@@ -1,0 +1,7 @@
+{
+  "app/pc-admin/src/realtime/useRealtime.ts": "5fe25d8631ea992ed73e95e0c828676c4137dc203a0960eb138fe5ff10d6d478",
+  "app/pc-admin/src/realtime/workbench-realtime-client.mts": "ce1b60b15b948d77ee6c157af405bc25e8c6fad8e782bd7ce5d2ab7c49c429b8",
+  "tests/wbint-t38-protocol.browser.test.mts": "8507d651392f04634493a26051333a00aee876da8b3b00c97f4a5439d48f01a1",
+  "app/pc-admin/src/design/components/ConnectionBar/ConnectionBar.tsx": "8fd342f94f7d4e578e2148df93990844ce473ca6f6378643042b15f253516584",
+  "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
+}

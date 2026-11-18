@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: Card 27C-A Core and closure storage load in either entry order without eager circular state bindings
+ok 1 - Card 27C-A Core and closure storage load in either entry order without eager circular state bindings
+  ---
+  duration_ms: 117.374958
+  type: 'test'
+  ...
+# Subtest: WEB01 grouping preserves terminal meaning and rejects unknown states
+ok 2 - WEB01 grouping preserves terminal meaning and rejects unknown states
+  ---
+  duration_ms: 0.36525
+  type: 'test'
+  ...
+# Subtest: Card 27A closure maps all six states and both proven sources without inventing reasons or restore paths
+ok 3 - Card 27A closure maps all six states and both proven sources without inventing reasons or restore paths
+  ---
+  duration_ms: 0.660667
+  type: 'test'
+  ...
+# Subtest: Card 27A restore projection reuses the current Ticket action authority and never grants dismissed or Intake restoration
+ok 4 - Card 27A restore projection reuses the current Ticket action authority and never grants dismissed or Intake restoration
+  ---
+  duration_ms: 0.147875
+  type: 'test'
+  ...
+# Subtest: Card 11 service evidence preserves source priority without promoting a classification
+ok 5 - Card 11 service evidence preserves source priority without promoting a classification
+  ---
+  duration_ms: 4.668666
+  type: 'test'
+  ...
+# Subtest: Card 11 refuses conflicting, stale, inherited, disabled and absent service facts
+ok 6 - Card 11 refuses conflicting, stale, inherited, disabled and absent service facts
+  ---
+  duration_ms: 5.368041
+  type: 'test'
+  ...
+# Subtest: Card 11 directory is a bounded whitelist with enabled services only
+ok 7 - Card 11 directory is a bounded whitelist with enabled services only
+  ---
+  duration_ms: 7.074666
+  type: 'test'
+  ...
+# Subtest: source group directory search accepts bounded Unicode and literal punctuation but rejects injected control input
+ok 8 - source group directory search accepts bounded Unicode and literal punctuation but rejects injected control input
+  ---
+  duration_ms: 0.139375
+  type: 'test'
+  ...
+# Subtest: source group naming validates bounded text and decimal versions without losing precision
+ok 9 - source group naming validates bounded text and decimal versions without losing precision
+  ---
+  duration_ms: 0.321958
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.896208

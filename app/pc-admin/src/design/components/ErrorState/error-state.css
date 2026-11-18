@@ -1,0 +1,8 @@
+.ds-error-page {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-8) var(--space-4);text-align:center;}
+.ds-error-page .ds-error-heading {font-size:var(--fs-md);font-weight:var(--fw-semibold);line-height:var(--lh-md);}
+.ds-error-page p {color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-sm);}
+.ds-error-icon {width:var(--state-icon);height:var(--state-icon);color:var(--text-tertiary);}
+.ds-error-actions {display:flex;gap:var(--space-2);margin-top:var(--space-2);}
+.ds-stale-retry {display:inline-flex;align-items:center;flex:none;margin-left:auto;font-size:var(--fs-xs);color:var(--tone-warning-fg);white-space:nowrap;}
+.ds-stale-retry .ds-button.button[data-tone] {color:var(--tone-warning-fg);height:var(--space-6);min-height:var(--space-6);padding:0 var(--space-0-5);font-size:var(--fs-xs);text-decoration:underline;}
+.ds-error-state .ds-inline-alert .ds-button.button[data-tone] {color:var(--tone-danger-fg);}

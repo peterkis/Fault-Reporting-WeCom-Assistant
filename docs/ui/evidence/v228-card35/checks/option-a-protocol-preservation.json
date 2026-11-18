@@ -1,0 +1,8 @@
+{
+  "baseline": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "main_file_sha256": "b2cbb8407f184b1b40f96bff593969ef28de22bdb5c19f4bddcb86c6e41ac9ee",
+  "current_file_sha256": "a91d35a11f5d611f529a12780b46a89e6c68fb5f84de45afece6f2c98a8eb136",
+  "original_assertion_lines": 21,
+  "original_assertion_lines_preserved_in_order": true,
+  "changes": "Only additive GET timestamps, a 12.5s bounded continuation window and no ConnectionBar assertion; original capacity, single 5s cadence, manual REST, peer-close recovery and authority tests preserved."
+}

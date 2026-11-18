@@ -1,5 +1,27 @@
 # 医小修 PC 管理端 · 统一设计系统规范 v2.0
 
+## 状态（v2.2.8 / 卡35A）
+
+依据原型「07 状态：加载 / 空 / 错误 / 只读 v2.2.8」。本章前向替代各组件中零散的加载、空、错误和只读外观描述；不改变当前 READ、写入权限、原操作核对或业务状态。
+
+- **加载**：统一使用 `design/components/Skeleton`。基础块 `w / h / r`、`--bg-muted`、4px 圆角（沿现有 `--radius-xs`；现有 `--radius-sm` 为6px，不全局改名）。脉冲 `--load-pulse:1.4s`，减少动效时静止。组合为28px分类块、两行文字与两个标签的 `TicketCardSkeleton`；真实列头和「…」计数、3张卡的 `BoardColumnSkeleton`；真实表头、共享列宽、全表共用5行预算的 `WorkTableSkeleton`；保留工具栏、已知编号/标题、正文下一步/2×4属性/两条记录的 `DetailSkeleton`。容器 `role="status" aria-busy="true"`，说明供读屏，块 `aria-hidden`。工具栏、表头、列头在加载前后保持同一结构。 待受理/已处理的分组标签、顺序、默认折叠与存储键统一来自 `BoardColumn/column-groups.ts`，真实内容和骨架共用 `BoardGroup`/列表分组行，禁止另写分组头高度。首次未知响应的空首组歧义及实测范围见[卡35A交付证据](evidence/v228-card35/README.md#open-questions--偏差)。
+- **时间**：唯一数值源为 `tokens.css`：`--load-delay:150ms`、`--load-min:300ms`、`--load-slow:8s`；`design/hooks/state-timing.ts` 统一读取并转换，JS不再复制默认数值。`useDelayedLoading` 在150ms内不显示骨架或busy；出现后至少300ms；8秒后显示「比平时慢，仍在读取…」和「重试」。首次工作台可整页骨架，其余局部骨架；`DetailLoading` 的转圈仅用于按钮内/行内。
+- **刷新**：已有内容不换骨架；看板列、列表、抽屉正文 `data-refreshing`，内容 `--state-content-opacity:60%`，顶部 `--state-progress-h:2px` 的 `--brand` 进度条。失败保留旧内容及60%外观，列头/表头/工具栏就近显示 warning「未更新 · 重试」，不以错误占位替换。
+- **空**：扩展原 `EmptyState`：compact 一行虚线框且无图标；block 24px图标与标题；page 默认36px图标、标题、说明和可选动作。正向清空才用 success（「待受理已清空」）；filtered 必须有 `onClear` 和筛选摘要，只在整个筛选区域显示一次「清除筛选」。标题≤12字、说明≤30字；不写「暂无数据」。抽屉无内容的区块不渲染。
+- **错误与就近原则**：字段错误留在字段下；区块保留标题、正文 `ErrorState block` = danger InlineAlert +「重试」；无旧内容的整区用 `ErrorState page` = 图标、标题、说明、主「重试」、次「复制诊断信息」。详情失败仍保留「关闭详情」。操作结果用Toast。danger图标统一 `CircleX`，warning仍为 `TriangleAlert`。列头/表头的「未更新 · 重试」替代卡片下方的散装失败文字；显示剩余项的控件只在确有更多项时渲染。共享下一步工作流只由外层绘制一条分隔线，非空内部区块不再叠画上下边框。请求编号、时间、错误码与路由只复制到剪贴板，正文与复制失败提示不显示诊断文本；成功Toast「已复制诊断信息」。
+- **连接**：`ConnectionBar` 位于主区顶栏下方，占位32px，以 `--dur-base` 高度过渡，不覆盖内容，`role="status"`；整页详情从可用高度扣除连接条占位，底部输入区仍留在视口内。消费原实时连接和浏览器在线状态，不新增轮询。断开 warning「连接已断开，正在重新连接…」；完整重读成功才显示 success「已重新连接，内容已更新」，`--connection-recovered:2s` 后收起。原适配器的单一调度器仅在浏览器离线（`navigator.onLine===false`）或获权业务读取失败/超时时，最多按 `--connection-retry-1/2/3`（1s/3s/8s）重试；用尽后等待人工刷新，断开超过 `--connection-stale:60s` 才显示neutral陈旧条。完整授权读取成功即清零失败预算和断开时间。若只是实时流不可用（容量503、服务端realtime unavailable、CLOSED）且GET成功，则保留main的单调度器5秒重读、polling状态及原标签，持续重试至live恢复；不显示断开/陈旧条，不消耗三次预算。正常5秒周期来自原capability，无新增轮询器；原生握手与续传规则保持。不得在呈现层因断线禁用写按钮；原提交/结果未确认流程保持。 连接条显示时，顶栏的连接中/重试/失败/陈旧类提示隐藏；原 `[data-realtime-status]` 节点与值保留，正常「手动刷新」「实时更新中」指示保留。画板07的主区连接条是持续异常说明的唯一位置，工作台/列表外壳画板的正常连接指示继续适用。
+- **只读**：工具栏紧下方固定通栏 `ReadOnlyBar`，不随正文滚动，`--bg-subtle`和下发丝线，15px图标，「标题 · 原因」，可选small动作；编号旁中性锁形「只读」徽标。同一时间只取下表最高优先级。只读外观中性灰；原控制器继续决定每个动作与输入是否可用，不能因展示条而撤销仍获准的备注、协作等操作。
+
+| 优先级 | 已有判断 | 标题 · 原因 | 动作 |
+| --- | --- | --- | --- |
+| 1 | 原处理权限 denied | 只能查看 · 你的账号没有处理这类工单的权限 | 无 |
+| 2 | 已确认他人负责且原处理动作不可用 | 只能查看 · {姓名}已接手这张工单 | 原协作/接手入口存在才展示 |
+| 3 | COMPLETED | 已完成 · 如需继续处理，先重开 | 有原权限时重开 |
+| 3 | DISMISSED | 已关闭 · 如需继续处理，先恢复 | 下一步卡已有恢复，条内不重复 |
+| 4 | 原 UNKNOWN / 只读核对 | 暂时只能查看 · 上次操作的结果还在确认 | 重新确认，指向原核对入口 |
+
+不可用控件保留原位，`--state-disabled-opacity:0.48`，`aria-disabled="true"`且键盘可聚焦，悬停/聚焦tooltip解释原因；拦截激活，不用原生disabled剥夺焦点。无写入权限的备注框保留外框、「只读时不能添加内部备注」。复制编号、关注、查看记录及原允许的前后导航保持可用；原操作恢复栅栏仍有效。原因消失由原实时重读更新，无需刷新。没有可靠原判断时不按姓名或角色猜测，在交付Open questions中记录。
+
 ## v2.2.1 协作在场（卡30B）
 
 原型依据：[v2.2.3 原型](prototype/医小修%20PC%20管理端%20v2.2.3%20设计原型.html) 01e（协作在场与在线同事）、01f V3（角标名牌，已选定）；数据合同见 [ADR-0057](../../adr/0057_workbench_activity_batch_view.md)。
@@ -442,7 +464,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 
 - 尺寸：sm 28 / md 32（默认）/ lg 36；水平内边距 12；图标 16、与文字间距 6；圆角 6。
 - 图标按钮：32×32，ghost，必须有 `aria-label` 和 tooltip。
-- 状态：hover 底色加深一级；pressed `--bg-active`；disabled 文字 `--text-tertiary`、不降透明度；loading 保持宽度，文字替换为 14px spinner。
+- 状态：hover 底色加深一级；pressed `--bg-active`；普通 disabled 文字 `--text-tertiary`、不降透明度；只读禁用控件见[状态](#状态v228--卡35a)；loading 保持宽度，文字替换为 14px spinner。
 - 按钮组顺序：从左到右 ghost → secondary → primary；弹窗底部「取消」在左、「确认」在右。
 - MUST NOT：近黑实心按钮（现有 `take-and-start`、`complete-ticket`、`send-conversation-reply` 的 `--text-1` 底色）、任何硬编码蓝。
 - HeroUI 映射：`primary`→`variant="primary"`，`secondary`→`variant="outline"`（或自定义），`ghost`→`variant="ghost"`。封装为 `<WbButton tone>`，业务代码不直接写 HeroUI variant。
@@ -504,7 +526,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 - 保留每列默认三项与原列尾展开合同；两组均非空时，待判断最多占两个默认名额，为待接单至少保留一个。列头/组头计数显示已加载范围，折叠不修改事实。SSE 抽屉打开时只冻结当前展示的事项键，继续使用当前获权 DTO，不退回服务器排序。
 - 持续冻结期间的新键仍按固定列与受理分组加入最终共享序列，旧键在各组内保持顺序；抽屉前后项与分组后的看板使用同一序列，不把新受理放到其它列之后导航。
 - 2026-11-02 用户确认：排序提供「等待最久」（默认）和「最新到达」，仅排列已加载项；待受理按 created_at、已处理按 completed_at，处理中在卡 11 前保持服务器顺序并提示缺少状态起始时间，不用 updated_at 代替。
-- 空列：虚线圆角框内 13 secondary 一句话，如「这段时间没有已处理的工单」。
+- 空列、筛选空与正向清空：见[状态](#状态v228--卡35a)，保留已处理日期范围与「查看更早」入口。
 
 **v2.1 概况条（卡 10）**：PageHeader 下方四个可点击统计卡「待受理 / 已超时 / 我负责 / 今日已处理」，点击筛选已加载数据，再点取消；选中为品牌蓝描边，图标块分别用 warning / danger / brand / success tone。数字使用 tabular-nums，tooltip 均包含「基于已加载的 N 项」；加载未完成时显示「—」，部分失败如实提示。四卡宽屏同行、窄屏两列，沿现有 Token，不新增业务查询。
 
@@ -573,8 +595,7 @@ PageHeader 的原获权「新报修」primary 内附 `N` 提示；本卡只加�
 
 ### 6.11 空状态 / 加载 / 错误
 
-- **EmptyState**：居中；40px 线性图标（tertiary）→ 标题 14/600 → 说明 13 secondary（最大 32 字宽）→ 可选 secondary 按钮。同一区域只有一个空状态。
-- **Skeleton**：`--bg-muted` 块，圆角与真实元素一致，1.2s 微光；不用转圈替代整页。
+- **EmptyState / Skeleton / ErrorState / ReadOnlyBar / ConnectionBar**：尺寸、时间与就近原则统一见[状态](#状态v228--卡35a)。
 - **InlineAlert**：圆角 8、内边距 10 12、tone 底色 + 16px 图标 + 13 文字 + 可选链接动作。
 - **Toast**：默认在视口**右下角**（right 20 / bottom 20），宽 `min(400px, 100vw - 32px)`，`--shadow-toast`，圆角 12（`--radius-lg`），新的一条在最下方，向上堆叠，间距 `--space-3`。
   - **结构（卡33）**：`.workbench-toast[data-tone]` = 左侧色块 `.workbench-toast-tone`（含图标）+ 文字区 `.workbench-toast-content` + 关闭按钮 `.workbench-toast-close`。卡片 `display:flex; align-items:stretch`，白底 `--bg-canvas`，`overflow:hidden` 让色块跟随圆角，最小高 64。

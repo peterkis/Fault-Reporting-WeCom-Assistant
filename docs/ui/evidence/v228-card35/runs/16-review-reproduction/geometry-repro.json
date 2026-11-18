@@ -1,0 +1,14 @@
+{
+  "before": {
+    "pending": 300,
+    "handled": 300
+  },
+  "after": {
+    "pending": 300,
+    "handled": 300
+  },
+  "delta": {
+    "pending": 0,
+    "handled": 0
+  }
+}

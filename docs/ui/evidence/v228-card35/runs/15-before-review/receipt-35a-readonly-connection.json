@@ -1,0 +1,71 @@
+{
+  "status": "PASS",
+  "platform": "darwin",
+  "release": "25.6.0",
+  "metrics": {
+    "retries": [
+      16796.200000047684,
+      19798,
+      27799.89999985695
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/157.0.8103.79",
+      "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+      "jsVersion": "15.7.112.43"
+    },
+    "referenceFonts": "Saved Inter assets; system Chinese fallback. External Google fonts are blocked for an offline reference export."
+  },
+  "screenshots": [
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "028af93ea041b50553f8f59eb19f6d681235485db613585e8540acc61145a86f"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "2f6b5cb442c5d7a88a6a7b50daf680b95a6bc4a1d749c5ca4182cbe6beb56e56"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c8f8f4720a22df27db80cd4e282f2cfd3357a2068162d3e54d4544191eb4e066"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "4eb64800739d66c5452f60e66ff5e40f423489b5496d5805c5bf64946b30e749"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e244ce7365775ad366600e32981ab9460e0048277accd7f6f7f64eb13ad55e71"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "2c3ef2e824191f5e532ea0313b894f8ba176995f7b004c5eade35df24f957203"
+    },
+    {
+      "file": "drawer-readonly-pending.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "16c9c3b0ca9fe4b64fba489118269bb74128c3de843f2fe37212bc1ac5f3266b"
+    },
+    {
+      "file": "artboard-07.png",
+      "width": 1440,
+      "height": 2150,
+      "sha256": "db4cc361303fbb8a7601f53fa69111a52149f855d0749165f680e67df5b55d14"
+    }
+  ],
+  "error": null
+}

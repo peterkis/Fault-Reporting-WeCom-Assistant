@@ -66,7 +66,7 @@
 .ds-detail .ds-step-inline-form {position:static;inset:auto;width:auto;max-width:none;height:auto;max-height:none;transform:none;border:0;border-bottom:1px solid var(--border-hair);border-radius:0;background:transparent;box-shadow:none;overflow:visible;}
 .ds-step-inline-form>header {display:flex;align-items:center;justify-content:space-between;}
 .ds-step-inline-form>header h3 {margin:0;font-size:var(--fs-md);font-weight:var(--fw-semibold);}
-.ds-step-workflow>.ticket-notes {margin:0;}
+.ds-step-workflow>.ticket-notes {margin:0;border-top:0;border-bottom:0;}
 .ds-step-controllers .manual-review:has(.ds-step-workflow[hidden])>h3,.ds-step-controllers .manual-review:has(.ds-step-workflow[hidden])>.workbench-select {display:none;}
 .ds-detail .ds-property-list.detail-properties .ds-detail-missing {display:block;grid-column:1/-1;margin-top:var(--space-1-5);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);background:var(--bg-subtle);}
 .ds-detail .ds-property-list .ds-detail-missing dd {display:flex;align-items:center;gap:var(--space-2);padding:0;font-size:var(--fs-xs);color:var(--text-secondary);flex-wrap:wrap;}

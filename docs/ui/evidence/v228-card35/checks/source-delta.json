@@ -1,0 +1,17 @@
+{
+  "previous_review_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e",
+  "final_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
+  "changed_paths_since_previous_review": [
+    "app/pc-admin/src/design/components/ConnectionBar/ConnectionBar.tsx",
+    "app/pc-admin/src/realtime/useRealtime.ts",
+    "app/pc-admin/src/realtime/workbench-realtime-client.mts",
+    "tests/pc-admin-card35a-states.browser.test.mts",
+    "tests/wbint-t38-protocol.browser.test.mts"
+  ],
+  "layout_inputs_unchanged": true,
+  "note": "Only the realtime presentation/adapter and their two test files changed since the previous review. All current test batches use the new build manifest. Prior unknown-first-group counterexamples remain historical evidence of unchanged layout inputs.",
+  "regression_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
+  "states_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
+  "all_final_tests_share_manifest": true,
+  "final_manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b"
+}

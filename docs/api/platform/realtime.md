@@ -37,9 +37,9 @@ Electron 前向适配见 [ADR-0047](../../../adr/0047_electron_pc_admin_mvp.md)�
 
 新启用路径以既有256总预算完整表示去重的Session+Thread+SYSTEM Ticket授权范围。合法超预算返回bootstrap200/availablefalse以及SSE503 `TEMPORARY_UNAVAILABLE`，仅做有界授权GET回退；不截断范围、提高预算或把权限403变成503。关闭时保留原SSE授权profile。无数据库变更、第二Ticket事实源、新连接池或进程。
 
-[单适配器](../../../app/pc-admin/src/realtime/workbench-realtime-client.mts) 与 [Query接入](../../../app/pc-admin/src/realtime/useRealtime.ts) 每个当前主体只有一个原生EventSource、一个5秒timer、一个当前读AbortController和一个pending位。只失效当前主体静态识别且已挂载的活动GET families，不重读后台inactive对象。公开事件unknown解码保留string BIGINT，验证九字段及64KiB/深度6/节点4096等边界，只取安全event_id/event_type作为重读提示；payload不覆盖业务状态，重复/乱序不执行POST。
+[单适配器](../../../app/pc-admin/src/realtime/workbench-realtime-client.mts) 与 [Query接入](../../../app/pc-admin/src/realtime/useRealtime.ts) 每个当前主体只有一个原生EventSource、一个调度timer（正常/仅流不可用时5秒，真实读取失败时用下述有限预算）、一个当前读AbortController和一个pending位。只失效当前主体静态识别且已挂载的活动GET families，不重读后台inactive对象。公开事件unknown解码保留string BIGINT，验证九字段及64KiB/深度6/节点4096等边界，只取安全event_id/event_type作为重读提示；payload不覆盖业务状态，重复/乱序不执行POST。
 
-CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fresh bootstrap与当前GET，再按有界节奏创建新原生源，清旧cursor。同一timer对长GET提供5秒截止与迟到完成栅栏，不并行轮询。隐藏/离线停止流、读和timer，恢复先完整重验。主体或有效范围变化取消并栅栏旧GET/回调；新主体不能继承旧cursor、事实或草稿。可信401/403/404沿既有范围清理，不能因编辑而保留失权明文。
+CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fresh bootstrap与当前GET，再按有界节奏创建新原生源，清旧cursor。同一timer对长GET提供5秒截止与迟到完成栅栏，不并行轮询。隐藏时暂停流、读和timer；离线停止流与业务GET，唯一调度器只维护有限重试预算，恢复先完整重验。主体或有效范围变化取消并栅栏旧GET/回调；新主体不能继承旧cursor、事实或草稿。可信401/403/404沿既有范围清理，不能因编辑而保留失权明文。
 
 断线、轮询和最近成功读取时间在正式页可见。短暂REST失败保留最后确认数据与输入/焦点并标明；已接入的备注、处理与群名表单阻止新的prepare/POST，原UNKNOWN显式核对与只读receipt继续沿原合同。无关GET成功不能解除此限制，完整fresh周期成功才恢复。SSE单独断线、容量或授权预算不可用，而REST健康时仍允许人工操作。打开的看板操作对象只固定仍获权的ID显示顺序，最新字段仍取当前GET；对象失权即移除，关闭详情/离开操作对象后恢复服务器排序。没有卡片快照或新的排序事实。
 
@@ -48,3 +48,14 @@ CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fres
 默认资源：[SSE defaults](../../../app/server/src/p2-003-realtime-sse.mts) 32 clients、20秒heartbeat、5秒恢复poll、每批50、64KiB写缓冲、5秒drain截止；event-log默认保留168小时，实际有效窗口以store为准。SSE可清理、可重建，不是业务事实源。
 
 核对：[event-log unit](../../../tests/p2-003-realtime-event-log.test.mjs)、[integration](../../../tests/p2-003-realtime-event-log.integration.test.mjs)、[说明](../../39_p2_003_realtime_event_log_sse.md)及T38已注册Unit/真实HTTP/正式bundle浏览器入口。实际浏览器流在任务自有合成环境验证，不代表部署或现场授权。
+
+## 卡35A：连接提示与恢复分流（v2.2.8，产品方案A）
+
+产品决定保留main的单调度器5秒恢复重读，仅把真实离线/获权业务读取失败纳入卡35A的有限预算：
+
+- `navigator.onLine === false`，或当前获权业务读取发生网络失败/超时：沿原单一调度器按1s、3s、8s最多重试三次；用尽后停止自动重试，等待连接条「刷新」。断开超过60s且预算已用尽，显示「显示的是 N 分钟前的内容 · 刷新」。完整授权读取恢复成功才清除失败时间/预算并显示恢复成功两秒。
+- 只有实时连接不可用而完整授权读取成功：包括原生容量503、服务端声明realtime unavailable、EventSource CLOSED后GET成功。保持main的`polling`及原标签，原单一调度器持续按既有5秒节奏重读，没有三次上限；有空位后先fresh bootstrap和当前GET，再恢复live。此时不显示ConnectionBar断开/陈旧提示，也不消耗失败重试预算。CONNECTING仍保留原生实例和Last-Event-ID。
+
+两条路径复用同一个timer、当前读AbortController和pending位，不新增轮询器。5秒长读取截止、并发上限、身份清理、当前READ与UNKNOWN合同不变；SSE单独不可用不撤销仍获权的人工REST操作。只用GET返回事实，事件仍是提示，不自动POST。预算内浏览器自己的握手间隔不通过另造cursor或Header改写；只有真实读取失败预算用尽才关闭源并等待人工刷新。手动模式没有SSE或周期轮询，只在离线/恢复事件后使用有限读取预算。
+
+1s/3s/8s、60s与2s的呈现时间仅在PC `tokens.css`定义，经共享入口读取；正常5秒恢复继续来自原capability的`polling_interval_ms`。规格与就近原则见[设计系统状态章](../../ui/design-system.md#状态v228--卡35a)。

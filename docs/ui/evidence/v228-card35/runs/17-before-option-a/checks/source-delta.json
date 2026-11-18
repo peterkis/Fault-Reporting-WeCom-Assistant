@@ -1,0 +1,7 @@
+{
+  "regression_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e",
+  "final_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e",
+  "changed_paths": [],
+  "application_inputs_unchanged": true,
+  "note": "The updated states test and existing regression batch use the same frozen candidate."
+}

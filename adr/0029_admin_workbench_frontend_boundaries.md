@@ -42,3 +42,7 @@ Morphicons 只增强状态切换的图标反馈，使用与 lucide-react 同版�
 退役web/p2-workbench页面/JS/CSS及专属预览、静态资源装配。正式PC宿主的/workbench（含尾斜杠）与/workbench/lifecycle以302/no-store转到/workbench/app/；/workbench/incidents转到/workbench/app/incidents/candidates。旧/static/workbench资源404，裸G1等没有正式PC的宿主不重定向到不存在的页面。原认证、回调/退出及原回跳白名单继续服务入口跳转，不提供旧HTML或旧业务流。
 
 现行导航改用已有新PC入口；缺少对应功能的旧专属入口及处置承诺删除，不为退役补新流程。共享HTTP、现有域查询/命令、当前READ、原UUID与UNKNOWN恢复及已存在的新PC能力不删除。旧DOM测试按逐项处置退役，仍有效的后端权限、版本、恢复、隐私和发送断言保留在当前HTTP/新PC覆盖；历史来源、别名原命令和冻结checkout证据保持其原对象。范围与结果见[退役执行记录](../plans/pc-admin-design-v21/legacy-workbench-retirement.md)及[Issue #145](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/145)。不推进部署、现场、真实发送、full/certify或Gate。
+
+## 2026-11-18 卡35A 状态呈现补充
+
+依据用户v2.2.8任务卡，工作台/列表/详情统一骨架、空、错误、只读与连接条。新增呈现复用原Query、事件提示、权限与操作恢复控制器；只读条不创建授权判断。按产品方案A，只有浏览器真实离线或当前获权业务读取失败/超时才进入1s/3s/8s三次预算，超过60s且预算用尽后显示陈旧条并等待刷新。只有实时流不可用（容量503、服务端声明不可用、CLOSED）而GET成功时，保留main原单调度器持续5秒重读、polling状态及原标签，待空位恢复live；不进入陈旧预算，不显示断开/陈旧条，不新增轮询器。完整成功读取清除失败预算；身份/READ/UNKNOWN底线、原截止、正常周期和写入终检不变。状态时长由CSS Token唯一提供，原5秒周期沿capability配置。现有「他人负责但仍可备注」、原有效UNKNOWN只有同操作重放等差异不能被外观覆盖。详情READ被拒仍清理敏感正文，不因只读条保留旧内容。

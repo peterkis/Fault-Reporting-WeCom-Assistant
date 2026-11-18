@@ -1,0 +1,134 @@
+TAP version 13
+# Subtest: WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static
+not ok 1 - WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static
+  ---
+  duration_ms: 731.53725
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/web01-workbench.integration.test.mjs:21:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    F1 all unicode-range shards remain separate local files
+    
+    0 !== 99
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 99
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    file://<worktree>/.build/runtime/tests/web01-workbench.integration.test.mjs:87:12
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file://<worktree>/.build/runtime/tests/web01-workbench.integration.test.mjs:22:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: WEB01 current communication responsibility excludes a retained assignment after a real topic boundary
+ok 2 - WEB01 current communication responsibility excludes a retained assignment after a real topic boundary
+  ---
+  duration_ms: 549.665083
+  type: 'test'
+  ...
+# Subtest: source group HTTP: ADMIN metadata, scoped group identity, replay, conflict, origin and retention
+ok 3 - source group HTTP: ADMIN metadata, scoped group identity, replay, conflict, origin and retention
+  ---
+  duration_ms: 653.398334
+  type: 'test'
+  ...
+# {"card11_projection_queries":{"one_card":6,"full_page":6}}
+# Subtest: Card 11 HTTP catalog, source projections, state events and legacy search shape
+ok 4 - Card 11 HTTP catalog, source projections, state events and legacy search shape
+  ---
+  duration_ms: 660.133583
+  type: 'test'
+  ...
+# Subtest: Card 11 Web explicit selection respects source revocation; unavailable catalog is HTTP 503
+ok 5 - Card 11 Web explicit selection respects source revocation; unavailable catalog is HTTP 503
+  ---
+  duration_ms: 911.9595
+  type: 'test'
+  ...
+# Subtest: Card 11 preserves terminal Intake detail and resolved Review aliases
+ok 6 - Card 11 preserves terminal Intake detail and resolved Review aliases
+  ---
+  duration_ms: 485.0465
+  type: 'test'
+  ...
+# CARD27A_SYNTHETIC {"states":6,"manual_intake":"DISMISSED","automatic_intake":"DISMISSED","cancelled_reason_note_visible":true,"duplicate_original_available":false,"dismissed_restore":true,"retained_closure_time":true,"post_wait_record_stable":true,"all_group_counts":{"completed":6,"dismissed":5},"pages":6}
+# Subtest: Card 27A closure facts, default groups, date boundaries and list filters share the authorized canonical items
+ok 7 - Card 27A closure facts, default groups, date boundaries and list filters share the authorized canonical items
+  ---
+  duration_ms: 1217.097125
+  type: 'test'
+  ...
+# Subtest: Card 27A review rejects a newly matching prefix or sentinel after a real follow commit
+ok 8 - Card 27A review rejects a newly matching prefix or sentinel after a real follow commit
+  ---
+  duration_ms: 2120.171417
+  type: 'test'
+  ...
+# Subtest: Card 27A review normalizes valid legacy whitespace without changing stored internal facts
+ok 9 - Card 27A review normalizes valid legacy whitespace without changing stored internal facts
+  ---
+  duration_ms: 417.469708
+  type: 'test'
+  ...
+# Subtest: Card 27A review initial ignored closing time is its creation fact, not delayed input time
+ok 10 - Card 27A review initial ignored closing time is its creation fact, not delayed input time
+  ---
+  duration_ms: 399.808667
+  type: 'test'
+  ...
+# Subtest: Card 11 final statement rejects a revoked Principal after source, route or postflight waits
+ok 11 - Card 11 final statement rejects a revoked Principal after source, route or postflight waits
+  ---
+  duration_ms: 0.435792
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie board rejects logout during its read wait
+ok 12 - Card 11 real Cookie board rejects logout during its read wait
+  ---
+  duration_ms: 543.871125
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie board rejects physical-expiry during its read wait
+ok 13 - Card 11 real Cookie board rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3663.296
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie detail rejects logout during its read wait
+ok 14 - Card 11 real Cookie detail rejects logout during its read wait
+  ---
+  duration_ms: 552.853917
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie detail rejects physical-expiry during its read wait
+ok 15 - Card 11 real Cookie detail rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3609.458917
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie catalog rejects logout during its read wait
+ok 16 - Card 11 real Cookie catalog rejects logout during its read wait
+  ---
+  duration_ms: 468.240334
+  type: 'test'
+  ...
+# Subtest: Card 11 real Cookie catalog rejects physical-expiry during its read wait
+ok 17 - Card 11 real Cookie catalog rejects physical-expiry during its read wait
+  ---
+  duration_ms: 3589.57025
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20763.022542

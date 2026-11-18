@@ -1,0 +1,18 @@
+TAP version 13
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":15,"inserted":15,"replayed":0,"channel_failures":0,"other_stream_failures":3}
+# T35_CURRENT_AUTHORITY_WAIT {"post_status":404,"body":{"error":{"code":"P2_016_NOT_FOUND","retryable":false}},"revoke_committed_before_receipt_release":true}
+# Subtest: T35 a public replay waiting on its real receipt rechecks current authority before returning committed data
+ok 1 - T35 a public replay waiting on its real receipt rechecks current authority before returning committed data
+  ---
+  duration_ms: 924.990083
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1101.530542

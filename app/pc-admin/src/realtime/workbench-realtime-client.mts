@@ -43,7 +43,8 @@ export interface RealtimeClientOptions {
   /** Card 30B: a presence change somewhere; the presence store coalesces it into one batch read. */
   onActivityHint?:()=>void;
   authorizationDenied:(error:unknown)=>boolean;
-  report:(state:{status:WorkbenchRealtimeStatus;lastReadAt:number|null})=>void;
+  retryDelays?:readonly number[];
+  report:(state:{status:WorkbenchRealtimeStatus;lastReadAt:number|null;retryCount?:number;disconnectedAt?:number|null})=>void;
   now:()=>number;
   schedule:(callback:()=>void,delay:number)=>unknown;
   cancel:(handle:unknown)=>void;
@@ -55,19 +56,28 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
   let disposed=false,blocked=false,online=true,visible=true,available=options.capability.realtime_sse_available;
   let source:RealtimeTransport|null=null,sourceEpoch=0,unlisten:(()=>void)[]=[],timer:unknown=null,request:AbortController|null=null,activityRequest:AbortController|null=null;
   let running=false,pending=false,replacementAllowed=false,lastReadAt:number|null=null,status:WorkbenchRealtimeStatus=options.capability.realtime_sse_enabled?'connecting':'disabled';
+  let retryCount=0,disconnectedAt:number|null=null;
   const alive=()=>!disposed&&!blocked&&online&&visible&&options.capability.realtime_sse_enabled;
-  const report=(next:WorkbenchRealtimeStatus)=>{status=next;options.report({status,lastReadAt});};
+  const report=(next:WorkbenchRealtimeStatus)=>{status=next;options.report({status,lastReadAt,retryCount,disconnectedAt});};
   const cancelTimer=()=>{if(timer!==null)options.cancel(timer);timer=null;};
   function stopActivity(){activityRequest?.abort();activityRequest=null;}
   function closeSource(){stopActivity();sourceEpoch++;for(const remove of unlisten)remove();unlisten=[];const old=source;source=null;old?.close();}
+  function disconnected(){disconnectedAt??=options.now();}
+  function scheduleRetry(){
+    cancelTimer();
+    const delay=options.retryDelays?.[retryCount];
+    if(disposed||blocked||!visible)return;
+    if(delay===undefined){closeSource();return;}
+    timer=options.schedule(()=>{timer=null;retryCount++;report(online?'reconnecting':'offline');if(alive()){replacementAllowed=true;refresh();}else scheduleRetry();},delay);
+  }
   function schedule(delay=interval){cancelTimer();if(alive())timer=options.schedule(()=>{timer=null;replacementAllowed=true;refresh();},delay);}
   function openSource(){
     if(!alive()||!available||source)return;
     replacementAllowed=false;
     const current=options.connect(options.capability.sse_endpoint as string),epoch=++sourceEpoch;source=current;
     const valid=()=>alive()&&source===current&&epoch===sourceEpoch;
-    unlisten=[current.listen('open',()=>{if(valid()){report('live');refresh();}}),current.listen('error',()=>{if(valid()){report(current.state()===2?'polling':'reconnecting');refresh();}}),
-      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){if(decodeWorkbenchRealtimeHint(event.data,name))options.onHint?.();refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}'){options.onActivityHint?.();refresh();}})]:[]),current.listen('message',()=>{if(valid()){options.onHint?.();refresh();}})];
+    unlisten=[current.listen('open',()=>{if(valid()){const recovering=options.retryDelays&&disconnectedAt!==null;report(recovering?'reconnecting':'live');if(!recovering)refresh();}}),current.listen('error',()=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){report(current.state()===2?'polling':'reconnecting');refresh();}}),
+      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){if(decodeWorkbenchRealtimeHint(event.data,name))options.onHint?.();refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)&&event.data==='{"schema_version":1}'){options.onActivityHint?.();refresh();}})]:[]),current.listen('message',()=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){options.onHint?.();refresh();}})];
     report('connecting');
   }
   function refresh(){
@@ -75,10 +85,11 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     if(running){pending=true;return;}running=true;pending=false;cancelTimer();stopActivity();
     const cycle=new AbortController();request=cycle;
     let expired=false;
-    const deadline=new Promise<never>((_resolve,reject)=>{timer=options.schedule(()=>{timer=null;expired=true;cycle.abort();if(alive())report('offline');reject(new Error('WORKBENCH_REFRESH_TIMED_OUT'));},interval);});
+    const deadline=new Promise<never>((_resolve,reject)=>{timer=options.schedule(()=>{timer=null;expired=true;cycle.abort();if(alive()){disconnected();report('offline');}reject(new Error('WORKBENCH_REFRESH_TIMED_OUT'));},interval);});
     void Promise.race([options.refresh(cycle.signal),deadline]).then(result=>{
       if(!alive()||cycle.signal.aborted)return;
-      available=result.available;lastReadAt=options.now();
+      // A successful authorized read clears network/read failure independently of the live stream.
+      available=result.available;lastReadAt=options.now();retryCount=0;disconnectedAt=null;
       if(!available){closeSource();report('polling');}
       else if(!source||source.state()===2&&replacementAllowed){closeSource();openSource();}
       else report(source.state()===2?'polling':source.state()===1?'live':'reconnecting');
@@ -91,24 +102,24 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     }).catch(error=>{
       if(disposed||cycle.signal.aborted)return;
       if(options.authorizationDenied(error)){blocked=true;closeSource();cancelTimer();report('auth-blocked');}
-      else report('offline');
+      else {disconnected();report('offline');}
     }).finally(()=>{
       cancelTimer();
       if(request===cycle)request=null;running=false;
-      if(!alive())return;
-      if(pending&&!expired){pending=false;refresh();}else {pending=false;schedule(expired?0:interval);}
+      if(!alive()){if(options.retryDelays&&!online)scheduleRetry();return;}
+      if(options.retryDelays&&disconnectedAt!==null){pending=false;scheduleRetry();}else if(pending&&!expired){pending=false;refresh();}else {pending=false;schedule(expired?0:interval);}
     });
   }
-  options.report({status,lastReadAt});
+  options.report({status,lastReadAt,retryCount,disconnectedAt});
   if(options.capability.realtime_sse_enabled){if(available)openSource();else report('polling');schedule();}
   return {
-    refresh(){if(alive())refresh();},
+    refresh(){retryCount=0;if(alive())refresh();else if(options.retryDelays)scheduleRetry();},
     dispose(){if(disposed)return;disposed=true;pending=false;cancelTimer();closeSource();request?.abort();},
     setEnvironment(nextOnline:boolean,nextVisible:boolean){
       if(disposed||online===nextOnline&&visible===nextVisible)return;
       online=nextOnline;visible=nextVisible;
-      if(!alive()){cancelTimer();closeSource();pending=false;request?.abort();if(!online)report('offline');}
-      else refresh();
+      if(!alive()){cancelTimer();closeSource();pending=false;request?.abort();if(!online){disconnected();report('offline');if(options.retryDelays)scheduleRetry();}}
+      else {retryCount=0;refresh();}
     },
   };
 }

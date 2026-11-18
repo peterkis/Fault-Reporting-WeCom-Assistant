@@ -1,0 +1,13 @@
+.ds-connection-slot {height:0;overflow:hidden;transition:height var(--dur-base) var(--ease-standard);flex:none;}
+.ds-connection-slot[data-open=true] {height:var(--space-8);}
+.ds-connection-bar {display:flex;align-items:center;justify-content:center;gap:var(--space-2);height:var(--space-8);padding:0 var(--page-pad-x);background:var(--tone-warning-bg);color:var(--tone-warning-fg);font-size:var(--fs-xs);line-height:var(--lh-xs);}
+.ds-connection-bar[data-connection=recovered] {background:var(--tone-success-bg);color:var(--tone-success-fg);}
+.ds-connection-bar[data-connection=stale] {background:var(--tone-neutral-bg);color:var(--tone-neutral-fg);}
+.ds-connection-bar>svg {width:var(--icon-sm);height:var(--icon-sm);}
+.ds-connection-bar .ds-button.button[data-tone] {height:var(--space-6);min-height:var(--space-6);padding:0 var(--space-1);font-size:var(--fs-xs);}
+@media (prefers-reduced-motion:reduce) {.ds-connection-slot {transition:none;}}
+
+/* Keep the status hooks and normal labels. A shown notice owns failure/recovery messaging. */
+main:has(>.ds-connection-slot[data-open=true]) .topbar .connection-status:is([data-realtime-status=connecting],[data-realtime-status=reconnecting],[data-realtime-status=polling],[data-realtime-status=offline]) {display:none;}
+
+main:has(>.ds-connection-slot[data-open=true]) .ds-detail.detail-page {height:calc(100dvh - var(--topbar-h) - var(--space-8));}

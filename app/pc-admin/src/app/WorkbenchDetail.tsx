@@ -13,7 +13,6 @@ import { DrawerTabs } from '../design/components/Drawer/DrawerTabs';
 import { DrawerStageGlyph } from '../design/components/Drawer/DrawerStageGlyph';
 import { NextStep,StepEntry } from '../design/components/Drawer/NextStep';
 import { nextSummary } from '../design/components/Drawer/next-summary';
-import { InlineAlert } from '../design/components/InlineAlert/InlineAlert';
 import { BeijingTime } from '../design/components/Timeline/BeijingTime';
 import { PropertyList } from '../design/components/PropertyList/PropertyList';
 import { Tag } from '../design/components/Tag/Tag';
@@ -50,13 +49,15 @@ import { ActivityTimeline } from './DetailPresentation';
 import { WorkbenchLink as Link } from './WorkbenchLink';
 
 
+import {DetailSkeleton} from '../design/components/Skeleton/Skeleton';
+import {ErrorState,StaleRetry,readDiagnostics} from '../design/components/ErrorState/ErrorState';
+import {ReadOnlyBar,ReadOnlyBadge,ReadOnlyButton,ReadOnlyNote,ReadOnlyOperationProvider,readOnlyCopy,readOnlyReason,useReadOnlyOperation} from '../design/components/ReadOnlyBar/ReadOnlyBar';
+import {DisabledReasonContext} from '../design/components/ReadOnlyBar/read-only-context';
+import {useDelayedLoading} from '../design/hooks/useDelayedLoading';
 import { itemLink,Owner,Status,useReporterProfile } from './WorkbenchItemPresentation';
 // A denied or missing item reads as such (design-system card 6 copy table); only other read failures ask to check the network.
 function readFailure(error:unknown):string{
   return error instanceof ApiError&&[401,403,404].includes(error.status)?errorMessage(error):'加载失败，请检查网络后重试';
-}
-function Message({text,retry}:{text:string;retry?:()=>void}){
-  return retry?<InlineAlert className="state-message" tone="danger" action={<Button tone="ghost" onPress={retry}>重试</Button>}>{text}</InlineAlert>:<div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p></div>;
 }
 function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:Principal}){
   const item=detail.item,profile=useReporterProfile(item,principal),requested=detail.requested_item;
@@ -87,10 +88,12 @@ export function WorkbenchDetailDrawer(props:DetailProps){
   const close=()=>{if(blocked.current)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
   // Keep the overlay's focus/restore scope while each requested item owns fresh controllers.
   const content=<WorkbenchDetailContent key={props.principal.principal_id+':'+kind+':'+id} {...props} onNavigationBlocked={reportBlocked} onClose={close}/>;
-  return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>;
+  return <ReadOnlyOperationProvider>{props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-label="事项详情" aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>}</ReadOnlyOperationProvider>;
 }
 
 function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocked,onClose}:DetailProps&{onClose:()=>void}){
+  const pendingOperation=useReadOnlyOperation();
+  const [readOnlyActionTarget,setReadOnlyActionTarget]=useState<HTMLDivElement|null>(null);
   const [tab,setTab]=useState('activity'),[copied,setCopied]=useState(false),[attachmentCount,setAttachmentCount]=useState<number|null>(null),[conversationCount,setConversationCount]=useState<number|null>(null),[reviewReadState,setReviewReadState]=useState<StepReadState>('pending');
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false),[reviewBlocked,setReviewBlocked]=useState(false),[completionBlocked,setCompletionBlocked]=useState(false),[assignmentBlocked,setAssignmentBlocked]=useState(false),[takeoverBlocked,setTakeoverBlocked]=useState(false),[takeoverCompletionBlocked,setTakeoverCompletionBlocked]=useState(false),[unassignBlocked,setUnassignBlocked]=useState(false),[returnBlocked,setReturnBlocked]=useState(false),[waitingBlocked,setWaitingBlocked]=useState(false);
   const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false),[itemFollowBlocked,setItemFollowBlocked]=useState(false),[supplementBlocked,setSupplementBlocked]=useState(false);
@@ -114,6 +117,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const boardMode=Boolean(boardIntent&&boardSelector),[cancelledBoardIntent,setCancelledBoardIntent]=useState<string|null>(null),boardIntentKey=boardIntent?JSON.stringify(boardIntent):'';
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
     queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
+  const loading=useDelayedLoading(result.isPending&&!result.data);
   const close=()=>{if(!commandsBlocked)onClose();};
   const activityRoot=useRef<HTMLDivElement>(null);
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
@@ -138,23 +142,40 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const heat=detail?cardHeat(detail.item,now):null;
   // Card 29 D1/D2: a dismissed item is gray 「已关闭」, not the completed stage, and its next step is the neutral restore card.
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
-  const content=<DetailDialogProvider>
+  const denied=result.error instanceof ApiError&&result.error.status===403;
+  const openedItem=denied?undefined:items.find(item=>item.kind===kind&&item.id===id);
+  const actions=commandRead.data?.allowed_actions??[];
+  // These are the existing caller-only HANDLING fact and original action admission, never a display-name identity comparison.
+  const assignedName=detail?.item.column==='active'&&detail.item.attention&&!detail.item.attention.related_reasons.includes('HANDLING')&&commandRead.isSuccess&&!actions.includes('complete')?detail.item.assignee_name??undefined:undefined;
+  const readonly=readOnlyReason({denied,assignedName,completed:detail?.item.status==='COMPLETED',dismissed:Boolean(dismissed),pending:pendingOperation});
+  const readonlyText=readonly?readOnlyCopy(readonly,assignedName).reason:'';
+  const noteUnavailable=Boolean(detail?.item.kind==='ticket'&&commandRead.isSuccess&&!actions.includes('add-note')&&!pendingOperation);
+  const [confirmation,setConfirmation]=useState<HTMLButtonElement|null>(null);
+  useEffect(()=>{
+    if(!pendingOperation)return;
+    const root=activityRoot.current;if(!root)return;
+    const update=()=>setConfirmation(Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-action]')).find(button=>button.textContent?.trim()==='核对结果'&&button.checkVisibility())??null);
+    update();const observer=new MutationObserver(update);observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','disabled','aria-disabled']});return()=>observer.disconnect();
+  },[pendingOperation]);
+  const confirmOriginal=()=>confirmation?.click();
+  const content=<DisabledReasonContext.Provider value={pendingOperation?readOnlyCopy('pending').reason:null}><DetailDialogProvider>
     <div className="detail-navigation" data-toast-avoid="top">
-      <div className="detail-breadcrumb"><Ticket size={17}/><span>{detail?.item.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??'读取中'}</span><HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail} onPress={()=>{if(detail)void navigator.clipboard.writeText(detail.item.number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
+      <div className="detail-breadcrumb" title={detail?.item.title??openedItem?.title}><Ticket size={17}/><span>{(detail?.item??openedItem)?.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??openedItem?.number??'读取中'}</span>{readonly?<ReadOnlyBadge/>:null}<HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void navigator.clipboard.writeText(number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
       <div className="detail-toolbar-actions">
         <span className="ds-presence-capsule-slot" ref={setPresenceTarget}/>
         {!fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||commandsBlocked} onClick={()=>move(previous)} tone="ghost"><ChevronUp size={17}/></HButton><span className="ds-detail-position" aria-label="已加载范围中的位置">{index>=0?index+1:'—'} / {items.length}</span><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||commandsBlocked} onClick={()=>move(next)} tone="ghost"><ChevronDown size={17}/></HButton><span className="ds-detail-toolbar-divider" aria-hidden="true"/><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
         {detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}
         <DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>
+        {result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}
         <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={commandsBlocked} onClick={close} tone="ghost">{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
       </div>
     </div>
-    {result.isPending?<Message text="正在读取事项详情…"/>:result.isError&&!detail?<Message text={readFailure(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body">
-      {result.isError?<><Message text={readFailure(result.error)} retry={()=>{void result.refetch();}}/><p role="status" className="confirmed-facts">以下为最近一次的内容。网络恢复后点击「重试」更新。</p></>:null}
+    {readonly?<ReadOnlyBar reason={readonly} name={assignedName} action={readonly==='completed'||readonly==='assigned'?<div ref={setReadOnlyActionTarget}/>:readonly==='pending'&&confirmation?<Button size="sm" onPress={confirmOriginal}>重新确认</Button>:undefined}/>:null}
+    {loading.visible?<DetailSkeleton {...(openedItem?{title:openedItem.title}:{})} slow={loading.slow} onRetry={()=>{void result.refetch();}}/>:result.isPending?null:result.isError&&!detail?<ErrorState size="page" titleId="detail-title" heading={fullPage?'h1':'h2'} title="详情没有打开" description={readFailure(result.error)} onRetry={()=>{void result.refetch();}} diagnostics={readDiagnostics(result.error,result.errorUpdatedAt)}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body ds-state-region" data-refreshing={result.isFetching&&!result.isFetchingNextPage?'true':undefined} data-stale={result.isError?'true':undefined}><div className="ds-state-content">
       <header className="detail-heading ds-detail-hero"><TicketCategoryTile service={detail.item.service}/><div><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2><div className="ds-detail-state">{dismissed?<span className="ds-status-badge ds-stage-pill ds-dismissed-pill" data-tone="neutral" data-closure-state="dismissed"><CircleX aria-hidden="true"/><span className="ds-status-text">已关闭</span></span>:<DrawerStageGlyph stage={detail.item.column}/>}<span className="ds-drawer-status" data-waiting={detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'} hidden={Boolean(dismissed)||statusLabels[detail.item.status]===stagePresentation[detail.item.column].label}>{detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'?<Pause className="ds-drawer-pause-glyph" aria-hidden="true"/>:null}<Status item={detail.item}/></span>{heat?<Tag className="ds-ticket-heat" tone={heat.tone}><Clock3 size={14}/>{heat.label}</Tag>:null}<div className="ds-drawer-urgency" ref={setUrgencyTarget}/><span>报修于 {detail.reported_at?<BeijingTime value={detail.reported_at} now={now}/>: '时间未记录'} · {detail.item.source_label}</span></div></div></header>
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError} capsuleTarget={presenceTarget}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
-      <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} dismissed={Boolean(dismissed)} summary={dismissed?<><span className="ds-next-step-kicker">已关闭 · 不计入完成数</span><span className="ds-next-step-message" data-closure-summary>{closureReasonText(dismissed)+(dismissedOriginal?' · '+dismissedOriginal:'')}</span></>:<><span className="ds-next-step-message">{nextSummary(detail.item,heat?.label,detail.item.attention?.related_reasons.includes('HANDLING')===true,commandRead.data?.allowed_actions)}</span>{detail.item.follow_up_schedule?<span className="ds-next-step-follow-up"><span className="ds-next-step-separator"> · </span>下次跟进 <BeijingTime value={detail.item.follow_up_schedule.due_at} now={now}/></span>:null}</>} readState={stepReadState}>
+      <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} dismissed={Boolean(dismissed)} summary={dismissed?<><span className="ds-next-step-kicker">已关闭 · 不计入完成数</span><span className="ds-next-step-message" data-closure-summary>{closureReasonText(dismissed)+(dismissedOriginal?' · '+dismissedOriginal:'')}</span></>:<><span className="ds-next-step-message">{nextSummary(detail.item,heat?.label,detail.item.attention?.related_reasons.includes('HANDLING')===true,commandRead.data?.allowed_actions)}</span>{detail.item.follow_up_schedule?<span className="ds-next-step-follow-up"><span className="ds-next-step-separator"> · </span>下次跟进 <BeijingTime value={detail.item.follow_up_schedule.due_at} now={now}/></span>:null}</>} readState={stepReadState} reopenTarget={readonly==='completed'?readOnlyActionTarget:null} takeoverTarget={readonly==='assigned'?readOnlyActionTarget:null} unavailableAction={readonly==='assigned'&&!actions.includes('complete')?<ReadOnlyButton tone="primary" reason={(assignedName??'处理人')+'已接手，只有处理人可以登记完工'}>登记完工</ReadOnlyButton>:undefined}>
       {dismissed?<StepEntry action="restore" label="恢复">{()=> <RestoreClosedItem item={detail.item} principal={principal} inline/>}</StepEntry>:null}
         {detail.item.kind==='ticket'?<>          {principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('assignment')} onBlockedChange={setAssignmentBlocked}/>:null}
           {principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:null}
@@ -168,17 +189,16 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
       <div role="tabpanel" id="detail-tab-activity" aria-labelledby="detail-tab-trigger-activity" hidden={tab!=='activity'}>
 
 
-      <ActivityTimeline description={detail.description} key={principal.principal_id+':activity:'+detail.item.kind+':'+detail.item.id} records={records} principal={principal} item={detail.item} active={tab==='activity'&&!completionOpen&&!mediaOpen} now={now} assignments={assignments.byEvent}>
-        {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}
-        {assignments.failed?<InlineAlert className="activity-assignment-error" tone="danger" action={<Button tone="ghost" onPress={assignments.retry}>重试</Button>}>接单与转交记录暂未读取，其余记录不受影响。</InlineAlert>:null}
+      {detail.description||records.length||assignments.failed||result.hasNextPage?<ActivityTimeline description={detail.description} key={principal.principal_id+':activity:'+detail.item.kind+':'+detail.item.id} records={records} principal={principal} item={detail.item} active={tab==='activity'&&!completionOpen&&!mediaOpen} now={now} assignments={assignments.byEvent}>
+        {assignments.failed?<ErrorState title="接单与转交记录没有读出来" onRetry={assignments.retry}/>:null}
         {result.hasNextPage?<Button tone="secondary" data-action="view-earlier-records" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>显示更早的记录</Button>:null}
-      </ActivityTimeline>
+      </ActivityTimeline>:null}
       {detail.item.kind==='ticket'&&principal.ticket_round_notifications_enabled?<TicketRoundNotifications key={principal.principal_id+':round-notifications:'+detail.item.id} ticketId={detail.item.id} principalId={principal.principal_id} readReady={result.isSuccess&&!result.isError} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}}/>:null}
       </div>
       <div role="tabpanel" id="detail-tab-attachments" aria-labelledby="detail-tab-trigger-attachments" hidden={tab!=='attachments'}>      <ReportMaterialsSection key={principal.principal_id+':materials:'+detail.item.kind+':'+detail.item.id} principal={principal} kind={detail.item.kind} id={detail.item.id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} readReady={result.isSuccess&&!result.isError} reporterName={detail.item.reporter_name} otherBlocked={otherCommandsBlocked} onBlockedChange={setWebReportBlocked} onCountChange={setAttachmentCount} onMediaOpenChange={setMediaOpen} urgencyTarget={urgencyTarget}/></div>
       <div className="workflow-support" role="tabpanel" id="detail-tab-conversations" aria-labelledby="detail-tab-trigger-conversations" hidden={tab!=='conversations'}><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id} onCountChange={setConversationCount}/></div>
-      </div><div className="ds-detail-footer" data-toast-avoid="bottom">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}</div>
+      </div></div><div className="ds-detail-footer" data-toast-avoid="bottom">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<>{noteUnavailable?<ReadOnlyNote reason={readonlyText||'当前没有内部备注写入权限'}/>:null}<div hidden={noteUnavailable}><TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/></div></>:null}</div>
     </div>:null}
-  </DetailDialogProvider>;
+  </DetailDialogProvider></DisabledReasonContext.Provider>;
   return content;
 }

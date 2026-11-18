@@ -1,0 +1,129 @@
+{
+  "scope": "Card 35A review rework",
+  "baseline_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "dirty": true,
+  "source_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e",
+  "artifact_proof": {
+    "manifest_sha256": "270f986d8d7d7d115e5f4c3f8b91985f74517d1b4ab256ada3f17130fa12b27e",
+    "source_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e"
+  },
+  "recorded_at": "2026-11-18T04:04:54.955871+00:00",
+  "review_requests": {
+    "1_dynamic_subgroups": "PARTIAL: six default/known-fold positions are zero shift; unknown empty-first-group ambiguity remains",
+    "2_duplicate_connection": "PASS",
+    "3_scattered_error_footer": "PASS",
+    "4_empty_drawer_band": "PASS: duplicate nested borders removed; DOM assertions passed",
+    "5_realtime_frozen": "PASS",
+    "6_checks_and_evidence": "PASS"
+  },
+  "new_state_tests": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "existing_registered_entries": 31,
+  "existing_tests": 161,
+  "total_tests": 166,
+  "screenshots": {
+    "application": 16,
+    "reference": 5,
+    "width": 1440
+  },
+  "acceptance": {
+    "A4.1": "PASS",
+    "A4.2": "FAIL",
+    "A4.3": "PASS",
+    "A4.4": "PASS",
+    "A4.5": "PASS",
+    "A4.6": "PASS",
+    "A4.7": "FAIL",
+    "A4.8": "PASS",
+    "A4.9": "PASS",
+    "A4.10": "PASS"
+  },
+  "subgroup_geometry": [
+    {
+      "view": "board",
+      "column": "pending",
+      "before": 300,
+      "after": 300,
+      "delta": 0
+    },
+    {
+      "view": "board",
+      "column": "handled",
+      "before": 300,
+      "after": 300,
+      "delta": 0
+    },
+    {
+      "view": "list",
+      "column": "pending",
+      "before": 335,
+      "after": 335,
+      "delta": 0
+    },
+    {
+      "view": "list",
+      "column": "handled",
+      "before": 899,
+      "after": 899,
+      "delta": 0
+    }
+  ],
+  "closed_subgroup_geometry": {
+    "board": {
+      "before": 340,
+      "after": 340,
+      "delta": 0
+    },
+    "list": {
+      "before": 693,
+      "after": 693,
+      "delta": 0
+    }
+  },
+  "follow_up_borders": {
+    "innerTop": "0px",
+    "innerBottom": "0px",
+    "outerBottom": "1px",
+    "emptyDividers": 0
+  },
+  "frozen_inputs": {
+    "comparison": "start of review rework, not git HEAD",
+    "status": "PASS",
+    "files": {
+      "app/pc-admin/src/realtime/useRealtime.ts": {
+        "before": "5fe25d8631ea992ed73e95e0c828676c4137dc203a0960eb138fe5ff10d6d478",
+        "after": "5fe25d8631ea992ed73e95e0c828676c4137dc203a0960eb138fe5ff10d6d478"
+      },
+      "app/pc-admin/src/realtime/workbench-realtime-client.mts": {
+        "before": "ce1b60b15b948d77ee6c157af405bc25e8c6fad8e782bd7ce5d2ab7c49c429b8",
+        "after": "ce1b60b15b948d77ee6c157af405bc25e8c6fad8e782bd7ce5d2ab7c49c429b8"
+      },
+      "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": {
+        "before": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9",
+        "after": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
+      }
+    }
+  },
+  "not_run": [
+    "pr-plan: uncommitted changes are not part of HEAD",
+    "visual:compare and manifest append: Card 35B not merged",
+    "full/certify: outside requested local scope"
+  ],
+  "remaining_open_questions": [
+    "Unknown empty-first-group membership needs pre-response group metadata or a revised empty-group/drop-target layout contract. Identical request/prefs produce first-card differences of 55px (pending) and 43px (handled).",
+    "The existing valid internal-note UNKNOWN action is same-operation replay; no independent read-only confirmation is invented. Original READ revocation and navigation guards remain.",
+    "Capacity 503/live unavailable while normal reads succeed: product decision pending; realtime implementations unchanged this rework."
+  ],
+  "source_scope_verified": {
+    "features_unchanged": true,
+    "card35b_paths_unchanged": true,
+    "prototype_preserved": true,
+    "no_git_commit_push_or_pr": true
+  },
+  "resource_cleanup": "Fixtures close only their owned services, isolated UUID databases, browser processes/profiles/timers/sockets. Private failure artifacts retained. Shared Postgres service is retained."
+}

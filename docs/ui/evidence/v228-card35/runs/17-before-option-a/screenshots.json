@@ -1,0 +1,137 @@
+{
+  "viewport_application": [
+    1440,
+    1000
+  ],
+  "dpr": 1,
+  "os": "macOS 26.6.2 / Darwin 25.6.0",
+  "browser": "Chrome/157.0.8103.79",
+  "screenshots": [
+    {
+      "file": "artboard-07-empty.png",
+      "width": 1440,
+      "height": 427,
+      "sha256": "ea3d8c703931e602efe2df542328f4ae90ddf0ab2453513de4b3ab25a6e6d743"
+    },
+    {
+      "file": "artboard-07-error.png",
+      "width": 1440,
+      "height": 508,
+      "sha256": "835c6f1ed76563f3394018ff20a6c30afe861e9cc642dbf1e8756f09a56e9d0a"
+    },
+    {
+      "file": "artboard-07-loading.png",
+      "width": 1440,
+      "height": 573,
+      "sha256": "e67a963339e9f0a07af0dbdc7688fda0bf44849af11ad03c23ddc21af0fcac40"
+    },
+    {
+      "file": "artboard-07-readonly.png",
+      "width": 1440,
+      "height": 518,
+      "sha256": "82918648bb6cbc683d5d990730089399eb02c394c8ac05c98db84b10d6be193b"
+    },
+    {
+      "file": "artboard-07.png",
+      "width": 1440,
+      "height": 2150,
+      "sha256": "db4cc361303fbb8a7601f53fa69111a52149f855d0749165f680e67df5b55d14"
+    },
+    {
+      "file": "board-empty-filtered.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5610b7ab80a8c27f351d7b8096f167fd4dfc4ac6ba5c060bebd1b3492026848f"
+    },
+    {
+      "file": "board-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5b838ed8aec1a5497c88f6a5114789f86b3758b3093918eb45fd01223fa351ff"
+    },
+    {
+      "file": "board-refreshing.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "40c49a53ea4d61dbd4c37c09608cac51e0559b837eb15dfba3aec70e8cc87abd"
+    },
+    {
+      "file": "board-stale-retry.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "2c35bdac61d99fc8b1064e9b61d9a0d762656789129c7ae020b4cd1a3f562374"
+    },
+    {
+      "file": "connection-offline.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "f69475c54272c3dd846211ae356d9289b5ca92e4500836de1855e2bf348a382d"
+    },
+    {
+      "file": "connection-stale.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "0354a1a034b561422158479408b4f0574ec590a0f4d97ac96456bec631b6d81f"
+    },
+    {
+      "file": "drawer-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "30b2e6e68563cbad1ddc569ca63bf55ba3943e5dcd055120219a8907c432116c"
+    },
+    {
+      "file": "drawer-readonly-assigned.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "0c6e7aeb32c528c36b34c3c79a5bbbe64f032d3363e1c1799d561c3a150b55a4"
+    },
+    {
+      "file": "drawer-readonly-completed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "a7015839dc78387b8c981129d5ddbf50e61e1b693eb79531c2bd0b20b77ccdb6"
+    },
+    {
+      "file": "drawer-readonly-dismissed.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "50ec172c00076aa29f170b1185e10b329614e620ecf53d1558dba47eef6051f6"
+    },
+    {
+      "file": "drawer-readonly-pending.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "af10efc9798810b36bfdafe48f1d8e6749062ef30c7627a17259bec6ff3aca2f"
+    },
+    {
+      "file": "drawer-readonly-permission.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "d91edc16a3bd0ec26941545aab1bea19d77a57a98d640838f73139608b5a82eb"
+    },
+    {
+      "file": "intake-cleared.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "595402f2a38a6ebe53a5a782c6e68086d0aaa21944ea8587f54303c3d2d9985d"
+    },
+    {
+      "file": "list-loading.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ff126d2f720ecdc80e68c489ad6680704fd2c542bdd4f24700a236d6883d2012"
+    },
+    {
+      "file": "readonly-disabled-tooltip.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "ccae462204970969c8db4256d4ab278bb7b34b44fefaf1117e691ecc8d26f59e"
+    },
+    {
+      "file": "workbench-error-page.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "dc2415f2d90486ad8576bb8789b9319850d2c89e4dc77fd87bd6c33163784fbe"
+    }
+  ]
+}

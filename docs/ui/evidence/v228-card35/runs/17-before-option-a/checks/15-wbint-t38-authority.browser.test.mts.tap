@@ -1,0 +1,39 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","effective_scope_revoke":true,"malformed_credible_denial":true,"new_grant_reauth":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: effective scope changes revoke facts and draft authority without relying on a visible SSE event, and a later grant re-reads
+ok 1 - effective scope changes revoke facts and draft authority without relying on a visible SSE event, and a later grant re-reads
+  ---
+  duration_ms: 1795.669208
+  type: 'test'
+  ...
+# T38_AUTHORITY_READS [{"kind":"bootstrap","phase":"initial","started_ms":329,"status":200,"finished_ms":336,"closed_ms":336},{"kind":"realtime","phase":"initial","started_ms":339,"status":null,"finished_ms":null,"closed_ms":null},{"kind":"item","phase":"initial","started_ms":356,"status":200,"finished_ms":385,"closed_ms":385},{"kind":"bootstrap","phase":"initial","started_ms":364,"status":200,"finished_ms":367,"closed_ms":367},{"kind":"command-context","phase":"initial","started_ms":399,"status":200,"finished_ms":401,"closed_ms":401},{"kind":"bootstrap","phase":"initial","started_ms":409,"status":200,"finished_ms":410,"closed_ms":410},{"kind":"command-context","phase":"initial","started_ms":418,"status":200,"finished_ms":422,"closed_ms":422},{"kind":"bootstrap","phase":"preparing-current-read","started_ms":1034,"status":200,"finished_ms":1115,"closed_ms":1115},{"kind":"command-context","phase":"preparing-current-read","started_ms":1054,"status":404,"finished_ms":1056,"closed_ms":1056},{"kind":"bootstrap","phase":"revoked-bootstrap","started_ms":1107,"status":200,"finished_ms":1110,"closed_ms":1110},{"kind":"item","phase":"regrant-wait","started_ms":1116,"status":200,"finished_ms":1147,"closed_ms":1147},{"kind":"bootstrap","phase":"regrant-wait","started_ms":1148,"status":200,"finished_ms":1149,"closed_ms":1149},{"kind":"command-context","phase":"regrant-wait","started_ms":1151,"status":200,"finished_ms":1152,"closed_ms":1152},{"kind":"bootstrap","phase":"regrant-wait","started_ms":1153,"status":200,"finished_ms":1153,"closed_ms":1153},{"kind":"item","phase":"regrant-wait","started_ms":1161,"status":null,"finished_ms":null,"closed_ms":null},{"kind":"command-context","phase":"regrant-wait","started_ms":1161,"status":200,"finished_ms":1165,"closed_ms":1165}]
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_TLS_HTTP_PG","real_session_expiry":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: a genuinely expired current Cookie session stops its production stream, facts and editor
+ok 2 - a genuinely expired current Cookie session stops its production stream, facts and editor
+  ---
+  duration_ms: 1834.619458
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","real_cookie_principal_change":true,"old_get_fenced":true,"former_draft_not_inherited":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: a real Cookie principal change fences an old in-flight GET and does not carry the former draft into the newly authorized page
+ok 3 - a real Cookie principal change fences an old in-flight GET and does not carry the former draft into the newly authorized page
+  ---
+  duration_ms: 1807.901375
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_TLS_HTTP_PG","valid_cookie_nullable_csrf_reads":true,"missing_csrf_write403":true,"automatic_posts":0,"screenshots":[]}
+# Subtest: a valid current Cookie without the independent CSRF cookie can still read production GET/SSE facts; writes retain the original CSRF requirement
+ok 4 - a valid current Cookie without the independent CSRF cookie can still read production GET/SSE facts; writes retain the original CSRF requirement
+  ---
+  duration_ms: 1095.67175
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6701.421

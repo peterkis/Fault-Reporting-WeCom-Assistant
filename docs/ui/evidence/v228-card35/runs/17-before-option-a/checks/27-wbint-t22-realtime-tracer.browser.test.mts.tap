@@ -1,0 +1,17 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","conversation_realtime_tracer":true,"real_sse":true,"query_families":4,"explicit_posts":4,"automatic_posts":0,"unknown_get_only":true,"scoped_draft_revoke":true,"screenshots":[]}
+# Subtest: one real stream refreshes conversation families and exact Delivery while preserving input, UNKNOWN and scoped authority
+ok 1 - one real stream refreshes conversation families and exact Delivery while preserving input, UNKNOWN and scoped authority
+  ---
+  duration_ms: 10801.624333
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10965.619791

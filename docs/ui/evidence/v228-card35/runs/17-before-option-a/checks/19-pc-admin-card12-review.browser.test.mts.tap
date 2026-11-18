@@ -1,0 +1,59 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"31ee6346b8fd24235b4b8fa75e2e90c9bca8d5e3a7a62aafdc14bcd10aed9978"}]}
+# Subtest: Card 12 UNKNOWN survives board-flag for the same authorized principal
+ok 1 - Card 12 UNKNOWN survives board-flag for the same authorized principal
+  ---
+  duration_ms: 2027.809458
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"b58ccf1d31db794193af2904130dfc84d9bcfb4ab943da4b6fd203f15a7026a0"}]}
+# Subtest: Card 12 UNKNOWN survives revision for the same authorized principal
+ok 2 - Card 12 UNKNOWN survives revision for the same authorized principal
+  ---
+  duration_ms: 1980.084542
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"ba7c3ebc42e5231b9c42167fa11d988ae397a0870b42bb56f302d41e1908c79e"}]}
+# Subtest: Card 12 absent or null active-state start never borrows old creation time
+ok 3 - Card 12 absent or null active-state start never borrows old creation time
+  ---
+  duration_ms: 1527.06
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"ac79e129d19516563a83b3f3bc1b3bb5ef56cdaec19aa56b851cdcc9b8550fa6"}]}
+# Subtest: Card 12 credible Ticket READ 403 clears the pending card controller without replay
+ok 4 - Card 12 credible Ticket READ 403 clears the pending card controller without replay
+  ---
+  duration_ms: 1921.972792
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"6230e632588aceba71f49cec95a842b6a3ad7c872223135869501d66a9d015b5"}]}
+# Subtest: Card 12 credible Ticket READ 404 clears the pending card controller without replay
+ok 5 - Card 12 credible Ticket READ 404 clears the pending card controller without replay
+  ---
+  duration_ms: 1926.244
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"af4454600fface136831abdbcea75071c7915937f4bdde326f95b76b69b20c20"}]}
+# Subtest: Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+ok 6 - Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 1690.281
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"fadcc1017e597b2bd043633b19fa91832d50c51eeaf91c5a628801da5c947772"}]}
+# Subtest: Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+ok 7 - Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 1818.798417
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13085.916958

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: authorized SSE hints coalesce into authoritative reads and disposal closes the owned transport
+ok 1 - authorized SSE hints coalesce into authoritative reads and disposal closes the owned transport
+  ---
+  duration_ms: 2.156583
+  type: 'test'
+  ...
+# Subtest: public hints preserve BIGINT and discard payload authority, while malformed input stays bounded
+ok 2 - public hints preserve BIGINT and discard payload authority, while malformed input stays bounded
+  ---
+  duration_ms: 0.486041
+  type: 'test'
+  ...
+# Subtest: native CONNECTING retains its source; terminal CLOSED is replaced only after successful GET and stale callbacks are fenced
+ok 3 - native CONNECTING retains its source; terminal CLOSED is replaced only after successful GET and stale callbacks are fenced
+  ---
+  duration_ms: 0.514875
+  type: 'test'
+  ...
+# Subtest: disabled capability allocates no transport/timer and credible denial stops recovery without clearing facts on ordinary failures
+ok 4 - disabled capability allocates no transport/timer and credible denial stops recovery without clearing facts on ordinary failures
+  ---
+  duration_ms: 0.309709
+  type: 'test'
+  ...
+# Subtest: a stalled authoritative GET cannot indefinitely block authorization recovery; its late completion has no effect
+ok 5 - a stalled authoritative GET cannot indefinitely block authorization recovery; its late completion has no effect
+  ---
+  duration_ms: 0.820542
+  type: 'test'
+  ...
+# Subtest: terminal stream unavailability cannot create an immediate reconnect loop while authorized REST stays available
+ok 6 - terminal stream unavailability cannot create an immediate reconnect loop while authorized REST stays available
+  ---
+  duration_ms: 0.607208
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 63.842667

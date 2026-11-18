@@ -1,0 +1,389 @@
+{
+  "files": 31,
+  "pass": 31,
+  "fail": 0,
+  "counts": {
+    "tests": 161,
+    "pass": 161,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "manifest_sha256": "270f986d8d7d7d115e5f4c3f8b91985f74517d1b4ab256ada3f17130fa12b27e",
+  "source_input_hash": "640a6cd76b969c99e43d2d1872d7ac76c745f2cd9a9d21e4341aebd73572a73e",
+  "results": [
+    {
+      "path": "tests/pc-admin-card32a.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card32b.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card32c-d.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card32d-toast.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card34a-toast-modal.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card34b-detail.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card34c-copy.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/workbench-toast-feedback.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-realtime.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-realtime.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-offline.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-unknown.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-gap.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-authority.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t38-protocol.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 75,
+        "pass": 75,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card12-review.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-card16.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/web01-workbench.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/web01-workbench.integration.test.mjs",
+      "status": "PASS",
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/wbint-t22-realtime-tracer.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/pc-admin-legacy-retirement.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/t35-account-switch.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/t35-current-authority-wait.integration.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "tests/t35-unknown-read.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  ]
+}

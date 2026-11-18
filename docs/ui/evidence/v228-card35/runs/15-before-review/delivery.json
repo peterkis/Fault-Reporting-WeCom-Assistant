@@ -1,0 +1,67 @@
+{
+  "scope": "Card 35A only",
+  "baseline_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "dirty": true,
+  "source_input_hash": "1a6bb3846ca31b2a82732f85d9ccbf166ecbe5142b70f7c9df8dbccdd1ebf4e2",
+  "artifact_proof": {
+    "manifest_sha256": "93860c4287af957e169f0d45d2126feaa7bc0d43acf66a5b6011b888729113bf",
+    "source_input_hash": "1a6bb3846ca31b2a82732f85d9ccbf166ecbe5142b70f7c9df8dbccdd1ebf4e2"
+  },
+  "recorded_at": "2026-11-18T03:23:05.855847+00:00",
+  "new_state_tests": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "existing_registered_entries": 31,
+  "existing_tests": 161,
+  "total_tests": 166,
+  "screenshots": {
+    "application": 16,
+    "reference": 5,
+    "width": 1440
+  },
+  "acceptance": {
+    "A4.1": "PASS",
+    "A4.2": "FAIL",
+    "A4.3": "PASS",
+    "A4.4": "PASS",
+    "A4.5": "PASS",
+    "A4.6": "PASS",
+    "A4.7": "FAIL",
+    "A4.8": "PASS",
+    "A4.9": "PASS",
+    "A4.10": "PASS"
+  },
+  "not_run": [
+    "pr-plan: uncommitted changes are not part of HEAD",
+    "visual:compare: Card 35B not merged",
+    "full/certify: outside requested local scope"
+  ],
+  "deviations": [
+    "Dynamic pending/handled subgroup zero shift not proved",
+    "Existing valid note UNKNOWN has same-operation replay but no independent confirmation read",
+    "READ revocation cleans sensitive details and draft propagation can normalize to 404; no new processing-only permission judgment",
+    "Unavailable HANDLING facts do not infer an assignee by display name",
+    "Skeleton radius uses existing 4px xs alias; existing sm remains 6px",
+    "Diagnostic request references without a server id are explicitly local",
+    "Native EventSource handshake timing remains browser-owned within bounded recovery",
+    "Reference export uses saved Inter assets and system Chinese fallback",
+    "Card 35B manifest append postponed until 35B merges"
+  ],
+  "source_scope_verified": {
+    "features_unchanged": true,
+    "card35b_paths_unchanged": true,
+    "prototype_preserved": true,
+    "no_git_commit_push_or_pr": true
+  },
+  "resource_cleanup": "Existing fixtures close their owned servers, browsers, profiles, timers, sockets and isolated UUID databases. Failure artifacts retained privately. Shared Postgres service and unrelated databases are outside cleanup.",
+  "resource_observation": {
+    "initial_snapshot_databases": 3,
+    "still_present_at_finish": 2,
+    "deletion_actor_for_missing_database": "not_verified",
+    "note": "A sibling task shares Postgres. No command in this session targeted any initial snapshot database for deletion; fixture teardown owns only freshly generated UUID database names."
+  }
+}

@@ -9,7 +9,7 @@ import {StageGlyph} from '../StageGlyph/StageGlyph';
 
 type Entry={id:string;action:string};
 export type StepReadState='pending'|'unknown'|'ready';
-type Scope={entries:Entry[];register:(entry:Entry)=>()=>void;reportRead:(id:string,state:StepReadState)=>()=>void;targets:(HTMLDivElement|null)[];primary:string|undefined;label:(action:string,fallback:string)=>string};
+type Scope={reopenTarget:HTMLElement|null;takeoverTarget:HTMLElement|null;entries:Entry[];register:(entry:Entry)=>()=>void;reportRead:(id:string,state:StepReadState)=>()=>void;targets:(HTMLDivElement|null)[];primary:string|undefined;label:(action:string,fallback:string)=>string};
 const Context=createContext<Scope|null>(null);
 const orders:Record<string,string[]>={
   NEW:['take','assign'],QUEUED:['take','assign'],REOPENED:['take','assign'],ACCEPTED:['take','assign','return'],
@@ -19,7 +19,7 @@ const orders:Record<string,string[]>={
 };
 
 /** Only arranges entries already admitted by their original command owners. */
-export function NextStep({status,stage,summary,readState,dismissed=false,children}:{status:string;stage:WorkbenchCard['column'];summary:ReactNode;readState:StepReadState;dismissed?:boolean;children:ReactNode}){
+export function NextStep({status,stage,summary,readState,dismissed=false,children,reopenTarget=null,takeoverTarget=null,unavailableAction}:{status:string;stage:WorkbenchCard['column'];summary:ReactNode;readState:StepReadState;dismissed?:boolean;children:ReactNode;reopenTarget?:HTMLElement|null;takeoverTarget?:HTMLElement|null;unavailableAction?:ReactNode}){
   const waiting=status==='WAITING_VENDOR'||status==='WAITING_REQUESTER';
   const [entries,setEntries]=useState<Entry[]>([]),[main,setMain]=useState<HTMLDivElement|null>(null),[secondary,setSecondary]=useState<HTMLDivElement|null>(null),[more,setMore]=useState<HTMLDivElement|null>(null);
   const [reads,setReads]=useState<Record<string,StepReadState>>({});
@@ -28,13 +28,13 @@ export function NextStep({status,stage,summary,readState,dismissed=false,childre
   const states=[readState,...Object.values(reads)],currentRead:StepReadState=states.includes('unknown')?'unknown':states.includes('pending')?'pending':'ready';
   const order=orders[status]??[],rank=(entry:Entry)=>{const index=order.indexOf(entry.action);return index<0?order.length:index;};
   const sorted=[...entries].sort((a,b)=>rank(a)-rank(b)),primary=sorted[0]?.id;
-  const label=useCallback((action:string,fallback:string)=>action==='take'?(status==='ACCEPTED'?'开始处理':'领取并开始'):fallback,[status]);
-  const scope=useMemo(()=>({entries:sorted,register,reportRead,targets:[main,secondary,more],primary,label}),[entries,register,reportRead,main,secondary,more,primary,label,status]);
+  const label=useCallback((action:string,fallback:string)=>action==='take'?(status==='ACCEPTED'?'开始处理':'领取并开始'):action==='reopen'?'重开':fallback,[status]);
+  const scope=useMemo(()=>({reopenTarget,takeoverTarget,entries:sorted,register,reportRead,targets:[main,secondary,more],primary,label}),[entries,register,reportRead,main,secondary,more,primary,label,status,reopenTarget,takeoverTarget]);
   return <Context.Provider value={scope}>
     <section className="ds-next-step" data-stage={stage} data-status={status} data-read-state={currentRead} data-dismissed={dismissed?'true':undefined} aria-label="下一步">
       {dismissed?<span className="ds-next-step-icon is-dismissed" aria-hidden="true"><CircleX/></span>:waiting?<span className="ds-next-step-wait-icon" aria-hidden="true"><Clock3/></span>:<span className="ds-next-step-icon" data-stage={stage} aria-hidden="true"><StageGlyph stage={stage}/></span>}
       <div className="ds-next-step-copy"><h3 className={waiting?'sr-only':undefined}>下一步</h3><p>{summary}</p>{!entries.length&&!dismissed?<small>{currentRead==='pending'?'正在核对可用操作…':currentRead==='unknown'?'可用操作暂未确认，请刷新或选择复核项':'你当前为只读'}</small>:null}</div>
-      <div className="ds-next-step-actions ds-drawer-command-buttons"><div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
+      <div className="ds-next-step-actions ds-drawer-command-buttons">{unavailableAction}<div ref={setMain}/><div className="ds-next-step-secondary" ref={setSecondary}/><DrawerMoreActions label="更多处理操作"><div ref={setMore}/></DrawerMoreActions></div>
     </section>
     <div className="ds-step-controllers">{children}</div>
   </Context.Provider>;
@@ -45,7 +45,7 @@ export function StepEntry({action,label,children,fallbackTone='secondary'}:{acti
   const scope=useContext(Context),id=useId(),register=scope?.register;
   useLayoutEffect(()=>register?.({id,action}),[register,id,action]);
   if(!scope)return children(fallbackTone,label);
-  const index=scope.entries.findIndex(entry=>entry.id===id),target=scope.targets[index===0?0:index<=2?1:2];
+  const index=scope.entries.findIndex(entry=>entry.id===id),target=action==='reopen'&&scope.reopenTarget?scope.reopenTarget:action==='takeover'&&scope.takeoverTarget?scope.takeoverTarget:scope.targets[index===0?0:index<=2?1:2];
   return target?createPortal(children(scope.primary===id?'primary':'secondary',scope.label(action,label)),target):null;
 }
 
