@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
 import {once} from 'node:events';
 import {randomUUID} from 'node:crypto';
-import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {withSS009Database,closeSS009Resources,migrateSS009RuntimeDatabase} from './helpers/yxx-ss-009-resources.mjs';
 import {minimalG2Environment} from '../app/server/src/p2-g2-validation-config.mjs';
 import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
@@ -24,7 +23,7 @@ test('SS-009 failed and stalled child startup releases every owned process',{tim
 test('SS-009 real process kills recover all acceptance and processing commit boundaries', {timeout:180000},async t=>{
   const cases=[];let kills=0;
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009kill',run:async({pool,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});
+    await migrateSS009RuntimeDatabase({databaseUrl});
     for(const [action,barrier] of [['accept','before-commit'],['accept','after-commit'],['process','before-process'],['process','before-commit'],['process','after-commit']]){
       const body=input('处方提交不了');let c=await child(databaseUrl,observeResource);let ref;
       try{
@@ -47,7 +46,7 @@ test('SS-009 real process kills recover all acceptance and processing commit bou
 
 test('SS-009 committed supplement survives a real kill without a second Ticket or duplicate event',{timeout:120000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009supp',run:async({pool,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});let c=await child(databaseUrl,observeResource);
+    await migrateSS009RuntimeDatabase({databaseUrl});let c=await child(databaseUrl,observeResource);
     try{
       const body=input('处方提交不了'),ref=(await c.send({action:'accept',input:body})).result.receipt.request_ref;await c.send({action:'process',ref});
       const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'补充：只有这一台受影响'};
@@ -64,7 +63,7 @@ test('SS-009 committed supplement survives a real kill without a second Ticket o
 
 test('SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor', {timeout:120000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009dbfail',run:async({pool,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});let c=await child(databaseUrl,observeResource);
+    await migrateSS009RuntimeDatabase({databaseUrl});let c=await child(databaseUrl,observeResource);
     try{
       const body=input('处方提交不了'),ref=(await c.send({action:'accept',input:body})).result.receipt.request_ref;
       assert.equal((await c.send({action:'process',ref,barrier:'before-commit'})).type,'barrier');

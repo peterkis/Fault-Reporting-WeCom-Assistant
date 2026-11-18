@@ -4,15 +4,14 @@ import {request} from 'node:http';
 import {randomUUID} from 'node:crypto';
 import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
-import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
-import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {withSS009Database,closeSS009Resources,migrateSS009RuntimeDatabase} from './helpers/yxx-ss-009-resources.mjs';
 import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../app/server/src/p2-g2-evidence-time.mjs';
 import {origin,secret,flags,config,oauthOptions,mapping,browser,login,input,post,eventually} from './helpers/yxx-ss-009-http-fixture.mjs';
 
 test('SS-009 lost actual HTTP response recovers the same authorized command without a second intake',{timeout:120000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ack',run:async({pool,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});const runtime=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool,publicOrigin:origin,oauth:createWeComWebOAuth(oauthOptions),reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret,yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
+    await migrateSS009RuntimeDatabase({databaseUrl});const runtime=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool,publicOrigin:origin,oauth:createWeComWebOAuth(oauthOptions),reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret,yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
     observeResource('http_listener',()=>runtime.server.listening?1:0);
     try{
       await runtime.start();const a=browser(runtime.server),b=browser(runtime.server);await login(a);await login(b,'b');const csrf=(await a.request('/api/yixiaoxiu/bootstrap')).json().csrf_token,body=input('处方提交不了');
@@ -30,7 +29,7 @@ test('SS-009 lost actual HTTP response recovers the same authorized command with
 
 test('SS-009 locked HTTP supplements recheck logout write shutdown and request revocation',{timeout:120000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009locks',run:async({pool,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});const switches={...flags};
+    await migrateSS009RuntimeDatabase({databaseUrl});const switches={...flags};
     const runtime=createYxxProfile({profile:'MEMBER_SELF_SERVICE',pool,publicOrigin:origin,oauth:createWeComWebOAuth({...oauthOptions,resolveCode:async code=>({userid:code.startsWith('b-')?'open-b':'open-a'})}),reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret,yxxSelfService:{featureFlags:switches,pollMilliseconds:100}});
     observeResource('http_listener',()=>runtime.server.listening?1:0);
     try{
