@@ -17,6 +17,7 @@ import {Section} from '../../design/components/Section/Section';
 import {StatusBadge} from '../../design/components/StatusBadge/StatusBadge';
 import {statusTones,stagePresentation} from '../../design/status-map';
 import type {ConversationChatEntry} from './inbox-client';
+import {publicChannelLabel,sourceLabel} from './client';
 
 export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean}){
   const item=entry.canonical_item,client=useQueryClient(),[open,setOpen]=useState(false);
@@ -33,7 +34,7 @@ export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChat
     </Link></TicketCard><Link className="inbox-open-summary" to={full} onClick={openSummary}>在抽屉中打开<ArrowUpRight aria-hidden="true"/></Link>
   </>:<p>暂无可展示的关联事项</p>}
     <section className="inbox-reporter"><h3>报修人</h3><div className="inbox-reporter-person"><Avatar name={entry.participant_label} size={32}/><div><strong>{entry.participant_label}</strong>{entry.department_label?<p title={entry.department_label}>{entry.department_label}</p>:null}</div></div></section>
-    <div className="inbox-origin"><h3>来源</h3><p><span>原始来源：</span><span>{entry.original_source.label}</span></p><p><span>当前沟通：</span><span>{entry.current_contact_channel==='group'?'群内原始沟通':'Bot 私聊'}</span></p><p className="inbox-reply-target"><span>回复方式：</span><span>{entry.reply_channel_label}</span></p></div>
+    <div className="inbox-origin"><h3>来源</h3><p><span>原始来源：</span><span>{sourceLabel(entry.original_source)}</span></p><p><span>当前沟通：</span><span>{entry.current_contact_channel==='group'?'群内原始沟通':'医小修私聊'}</span></p><p className="inbox-reply-target"><span>回复方式：</span><span>{publicChannelLabel(entry.reply_channel_label)}</span></p></div>
     {open&&item&&!denied?<Drawer dismissBlocked={false} onClose={()=>setOpen(false)}><div className="detail-navigation" data-toast-avoid="top"><div className="detail-breadcrumb">关联事项 / {item.number}</div><Button tone="ghost" isIconOnly aria-label="关闭详情" onPress={()=>setOpen(false)}><X/></Button></div><div className="detail-body inbox-associated-detail">
       <h2 id="detail-title">{item.title}</h2>{current?<><StatusBadge tone={statusTones[current.status]??'neutral'}>{statusLabels[current.status]??current.status}</StatusBadge><Section title="事项信息"><dl className="properties"><dt>处理人</dt><dd>{current.assignee_name??'待安排'}</dd>{current.location?<><dt>位置</dt><dd>{current.location}</dd></>:null}{current.reporter_name?<><dt>报修人</dt><dd>{current.reporter_name}</dd></>:null}</dl></Section>{detail.data?.description?<Section title="报修描述"><p>{detail.data.description}</p></Section>:null}</>:<p role={detail.isError?'alert':'status'}>{detail.isError?errorMessage(detail.error):'正在加载事项摘要…'}</p>}
       <Link className="inbox-full-item" to={full} onClick={event=>{if(blocked)event.preventDefault();}}>打开完整事项 <ArrowUpRight size={16}/></Link>

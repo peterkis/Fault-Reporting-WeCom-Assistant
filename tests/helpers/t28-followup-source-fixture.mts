@@ -55,7 +55,7 @@ export async function submitFollowup(context:Context,id:string,action:string,rea
   for(const [label,value] of controls)await chooseFollowup(context.browser,label,value);
   await context.browser.waitFor('document.querySelector("[data-action=submit-incident]")?.disabled===false');
   await context.browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');
-  await context.browser.waitFor(`(()=>{const r=document.querySelector('[data-incident-id="${id}"]'),dt=[...(r?.querySelectorAll('dt')??[])].find(x=>x.textContent==='公共故障版本');return dt?.nextElementSibling?.textContent===${JSON.stringify(expectedVersion)};})()`);
+  await context.browser.waitFor(`(()=>{const r=document.querySelector('[data-incident-id="${id}"]');return r?.dataset.rowVersion===${JSON.stringify(expectedVersion)};})()`);
 }
 export async function assertClosedUiCommand(browser:Browser,path:string,expected:Record<string,unknown>){
   const posts=rows(await browser.evaluate('globalThis.__t28Posts')).filter(item=>item.path===path);assert.equal(posts.length,1);

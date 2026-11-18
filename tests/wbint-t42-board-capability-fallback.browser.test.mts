@@ -15,7 +15,7 @@ test('T42 capability fallback preserves the mounted original UNKNOWN controller 
     await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-action-target=active]')}).click()`);
     await browser.waitFor("document.querySelector('[data-action=take-and-start]')?.disabled===false");
     await browser.evaluate("document.querySelector('[data-action=take-and-start]').click()");
-    await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未知')");
+    await browser.waitFor("document.querySelector('.ticket-handling-state')?.textContent.includes('结果未确认')");
     const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
     const committed=await get(path);assert.equal(committed.status,'IN_PROGRESS');
     await browser.evaluate("globalThis.__t42OriginalDetail=document.querySelector('.detail-dialog');globalThis.__t42OriginalController=document.querySelector('.ticket-self-handling');globalThis.__t42CapabilityOff=true");

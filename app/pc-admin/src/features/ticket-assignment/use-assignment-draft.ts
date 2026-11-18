@@ -2,7 +2,8 @@ import {useEffect,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError} from '../../api/client';
 import type {Principal,P2016AssignmentAction,P2016AssignmentCommand} from '../../api/client';
-import {DraftError,openDraft,removeSensitiveDraft,purgeDrafts} from '../drafts/encrypted-drafts';
+import {DraftError,openDraft,removeOwnedSensitiveDraft,purgeDrafts} from '../drafts/encrypted-drafts';
+import type {DraftHandle} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 export type AssignmentIntent=Readonly<{action:P2016AssignmentAction;command:P2016AssignmentCommand}>;
@@ -23,27 +24,27 @@ function decode(text:string){const value=object(JSON.parse(text)),input=object(v
  }
  return {value:current,pending};
 }
-export function useAssignmentDraft({ticketId,principal,value,pending,onRestore,onOperation,onSensitiveClear}:{ticketId:string;principal:Principal;value:AssignmentInput;pending:AssignmentIntent|null;onRestore:(copy:{value:AssignmentInput;pending:AssignmentIntent|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useAssignmentDraft({ticketId,principal,value,pending,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{ticketId:string;principal:Principal;value:AssignmentInput;pending:AssignmentIntent|null;onRestore:(copy:{value:AssignmentInput;pending:AssignmentIntent|null})=>void;onOperation:(id:string)=>void;onOperationCleared:()=>void;onSensitiveClear:()=>void}){
  const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'ticket-assignment'},enabled=principal.ticket_assignment_draft_recovery_enabled;
  const [restoring,setRestoring]=useState(enabled),[unavailable,setUnavailable]=useState(false),generation=useRef(0),validating=useRef(false),request=useRef<AbortController|null>(null),stage=useRef<'session'|'ticket'>('session'),actions=useRef<readonly string[]>([]);
  const serialise=(copy:{value:AssignmentInput;pending:AssignmentIntent|null})=>JSON.stringify({schema:1,...copy});
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;validating.current=false;setUnavailable(false);setRestoring(false);onSensitiveClear();};
- const draft=useAuthorizedDraft<AssignmentInput,AssignmentIntent>({scope,enabled,value,pending,emptyValue:EMPTY_ASSIGNMENT,hasInput:value=>Boolean(value.team||value.person||value.choice||value.sessions.length),serialise,decode,commandId:intent=>intent.command.client_command_id,
+ const draft=useAuthorizedDraft<AssignmentInput,AssignmentIntent>({scope,enabled,revalidateRetained:true,value,pending,emptyValue:EMPTY_ASSIGNMENT,hasInput:value=>Boolean(value.team||value.person||value.choice||value.sessions.length),serialise,decode,commandId:intent=>intent.command.client_command_id,
   authorize:async signal=>{stage.current='session';const fresh=await api.bootstrap(signal);client.setQueryData(['session'],fresh);if(fresh.principal_id!==scope.principal)throw new DraftError('DRAFT_IDENTITY_CHANGED');if(!fresh.ticket_assignment_enabled||!fresh.ticket_assignment_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');stage.current='ticket';const context=await api.ticketCommandContext(ticketId,signal);client.setQueryData(['ticket-command-context',scope.principal,ticketId],context);actions.current=context.allowed_actions;return actions.current.some(action=>action==='assign'||action==='transfer-assignment');},
   onAuthorityFailure:error=>{if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,scope.principal,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,scope.principal,ticketId,error);else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')void purgeDrafts({...scope,reason:'revoked'});else setUnavailable(true);},
-  onRestore:copy=>{const token=++generation.current,controller=new AbortController();request.current?.abort();request.current=controller;validating.current=true;setUnavailable(false);setRestoring(true);
-   void(async()=>{if(!copy.pending&&!actions.current.some(action=>action==='assign'||action==='transfer-assignment'))throw new DraftError('DRAFT_ACTION_REVOKED');
+  onRestore:(copy,retained=false,owned)=>{const token=++generation.current,controller=new AbortController();let original:DraftHandle|null=owned??null;request.current?.abort();request.current=controller;validating.current=true;setUnavailable(false);setRestoring(true);
+   void(async()=>{if(!retained){const stored=await openDraft(scope);if(stored.text!==serialise(copy)||Boolean(copy.pending)!==Boolean(stored.handle.operation)||copy.pending&&copy.pending.command.client_command_id!==stored.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');original={...stored.handle};}if(!copy.pending&&!actions.current.some(action=>action==='assign'||action==='transfer-assignment'))throw new DraftError('DRAFT_ACTION_REVOKED');
     if(copy.value.team){const current=await api.assignmentTargets(ticketId,copy.value.team,controller.signal,copy.value.person||null);if(copy.value.person&&!current.items.some(row=>row.principal_id===copy.value.person))throw new DraftError('DRAFT_TARGET_REVOKED');}
     for(const row of copy.value.sessions)await api.readConversation(row.session_id,controller.signal);const remaining=new Set(copy.value.sessions.map(row=>row.session_id));let cursor:string|null=null;
     while(remaining.size){const page=await api.relatedConversations(ticketId,cursor,controller.signal);for(const row of page.items)remaining.delete(row.session_id);if(!page.next_cursor){if(remaining.size)throw new DraftError('DRAFT_RELATION_CHANGED');break;}if(cursor===page.next_cursor)throw new DraftError('DRAFT_RELATION_CHANGED');cursor=page.next_cursor;}
-    const current=await openDraft(scope);if(current.text!==serialise(copy)||Boolean(copy.pending)!==Boolean(current.handle.operation)||copy.pending&&copy.pending.command.client_command_id!==current.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+    if(!retained){const current=await openDraft(scope);if(current.text!==serialise(copy)||Boolean(copy.pending)!==Boolean(current.handle.operation)||copy.pending&&copy.pending.command.client_command_id!==current.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
     if(controller.signal.aborted||generation.current!==token)return;onRestore(copy);validating.current=false;setRestoring(false);request.current=null;
    })().catch(error=>{if(controller.signal.aborted||generation.current!==token)return;validating.current=false;setRestoring(false);request.current=null;if(error instanceof ApiError&&error.status===401){void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
-    if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_ACTION_REVOKED','DRAFT_TARGET_REVOKED','DRAFT_RELATION_CHANGED'].includes(error.message)){void openDraft(scope,{restore:false}).then(copy=>removeSensitiveDraft(copy.handle,'revoked')).catch(()=>{});return;}
+    if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_ACTION_REVOKED','DRAFT_TARGET_REVOKED','DRAFT_RELATION_CHANGED'].includes(error.message)){if(retained){draft.forgetRetainedInput();onSensitiveClear();setUnavailable(true);}void removeOwnedSensitiveDraft(original).catch(()=>{});return;}
     setUnavailable(true);if(copy.pending)onOperation(copy.pending.command.client_command_id);
    });
-  },onOperation,onSensitiveClear:clear,
+  },onOperation,onOperationCleared:conflict=>{if(conflict)onOperationCleared();else clear();},onSensitiveClear:clear,
  });
  useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- return {...draft,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后刷新重试。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
+ return {...draft,restoring,restorationBlocked:unavailable,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',safeToLeave:draft.safeToLeave&&!restoring,message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对恢复选择的当前授权…':draft.message,settle:(id:string)=>draft.success(id)};
 }

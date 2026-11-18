@@ -31,7 +31,7 @@ export async function appendT22LiveItem(pool:PostgresPool,sessionId:string,text:
   }catch(error){try{await transaction.query('ROLLBACK');}catch{/* preserve the arrangement failure */}throw error;}
   finally{transaction.release();}
 }
-export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false,search=false}:{search?:boolean;enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
+export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{enabled=true,inbox=false,realtime=false,personalRead=false,recovery=true,dropResponses=false,bootstrapRoleRace=false,search=false,selfServiceSchema=false}:{selfServiceSchema?:boolean;search?:boolean;enabled?:boolean;inbox?:boolean;realtime?:boolean;personalRead?:boolean;recovery?:boolean;dropResponses?:boolean;bootstrapRoleRace?:boolean}={}){
   await withWeb01Fixture(async(f:Base)=>{
     await f.runtime.stop();const sessions:T22Session[]=[];
     const identity=buildConversationThreadIdentity({provider:'WECOM_AIBOT',botId:'t22-synthetic-bot',chatType:'group',chatId:'t22-private-group-id',senderUserId:'t22-reporter-a'});
@@ -64,6 +64,9 @@ export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{en
     try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');
       await run({...f,runtime,sessions,cookie:first.name+'='+first.value,outsiderCookie:other.name+'='+other.value,handlerCookie:handler.name+'='+handler.value,browserCookie:first,restoreResponses:()=>{dropping=false;},...(bootstrapAuthenticationBoundary?{bootstrapAuthenticationBoundary}:{})});
     }finally{nextBootstrapCallback=null;await runtime.stop();if(runtime.server.listening)throw Error('T22_SERVER_NOT_CLOSED');}
-  },{beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{if(personalRead){const input={databaseUrl,mode:'apply' as const};await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}}});
+  },{beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{const input={databaseUrl,mode:'apply' as const};if(personalRead){await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
+    // ADR-0058: schemas a test needs are applied here, before 072 rewrites the closure vocabulary; applying them afterwards fails the
+    // P2-016 catalog check (P2_016_SCHEMA_DRIFT).
+    else if(selfServiceSchema){await migrateP2012(input);await migrateYxxSelfService(input);}}});
 }
 

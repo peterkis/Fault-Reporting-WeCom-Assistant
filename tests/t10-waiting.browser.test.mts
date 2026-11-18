@@ -98,7 +98,7 @@ test('production waiting Reporter form preserves its reason on a real version co
       const concurrent=await http.post(id,'internal-notes',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'T10_CONCURRENT_NOTE',note:'INTERNAL_T10_CONCURRENT：另一公开命令已更新工单版本。',external_visible:false});
       assert.equal(concurrent.status,200);await concurrent.json();
       await browser.evaluate('globalThis.__t10ReleaseWaiting();delete globalThis.__t10ReleaseWaiting');
-      await browser.waitFor("globalThis.__t10Commands[0]?.status===409&&document.querySelector('.ticket-waiting-state')?.textContent.includes('冲突')");
+      await browser.waitFor("globalThis.__t10Commands[0]?.status===409&&document.querySelector('.ticket-waiting-state')?.textContent.includes('已被他人更新')");
       await browser.waitFor(`document.querySelector('.ticket-command-version')?.textContent===${JSON.stringify('工单版本 '+(current.version+1))}`);
       assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(input)}).value`),'  '+reason+'  ');
       assert.equal(await browser.evaluate("document.querySelector('.properties')?.innerText.includes('等待补充')||document.querySelector('.ticket-waiting-state')?.textContent.includes('已等待')"),false,'a real 409 cannot appear as waiting success');

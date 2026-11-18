@@ -78,7 +78,7 @@ async function prepare(browser:Browser){await fill(browser,'报修来源','ON_SI
   // fallback when the selected UI hides that field and the candidate flag changes.
   await fill(browser,'联系方式',contact);await select(browser);}
 async function saved(browser:Browser,principalId:string){
-  await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
+  await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");
   const stored=object(await browser.evaluate(copies));assert.ok(Array.isArray(stored.drafts)&&stored.drafts.length===1);const draft=object(stored.drafts[0]);
   assert.equal(draft.principal,principalId);assert.equal(draft.algorithm,'AES-GCM');assert.equal(draft.extractable,false);assert.equal(draft.plaintext,false);assert.ok(typeof draft.bytes==='number'&&draft.bytes>0);
   return stored;

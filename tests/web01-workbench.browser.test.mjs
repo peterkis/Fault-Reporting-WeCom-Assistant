@@ -194,13 +194,13 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await change('T23未知结果名称');await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
       await browser.waitFor('globalThis.__t23Statuses.length===1');
       assert.equal((await read(itemPath)).item.source_group.row_version,'9007199254740994');
-      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("结果未确认")');
       assert.equal(await browser.evaluate('document.querySelector("input[name=source-group-name]").disabled'),true);
       assert.equal(await browser.evaluate('document.querySelector("[data-action=search-source-groups]").disabled'),true);
       await browser.evaluate('document.querySelector("aside a[title=工作台]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/settings/source-groups','UNKNOWN must not silently lose its original command through the sidebar');
-      assert.ok(await browser.evaluate('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")'));
+      assert.ok(await browser.evaluate('document.querySelector(".source-group-save-state")?.textContent.includes("结果未确认")'));
       await openWorkbenchUserMenu(browser);await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.search'),'?q='+ref,'the settings link must preserve the selected UNKNOWN command and its directory');
@@ -216,7 +216,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.waitFor('document.querySelector("[data-source-group-ref]")?.textContent.includes("T23同事的新名称")');
       assert.ok(await browser.evaluate('document.querySelector(".source-group-version").textContent.includes("9007199254740994")'));
       await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
-      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("冲突")');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已被他人修改")');
       await browser.waitFor('Boolean(document.querySelector("[data-action=refresh-source-group]"))&&document.querySelector("input[name=source-group-name]")?.disabled===false');
       assert.equal(await browser.evaluate('document.querySelector("input[name=source-group-name]").value'),'T23冲突后仍保留我的名称');
       assert.equal(await browser.evaluate('globalThis.__t23Commands.length'),3);
@@ -250,7 +250,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.waitFor('Boolean(document.querySelector("input[name=source-group-name]"))');
       await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t23DetailCommands=[];globalThis.__t23DropDetailSuccess=true;globalThis.fetch=async(path,options)=>{if(!String(path).includes('/api/workbench/source-groups/')||!String(path).endsWith('/name'))return original(path,options);globalThis.__t23DetailCommands.push(JSON.parse(options.body));const response=await original(path,options);if(response.status===200&&globalThis.__t23DropDetailSuccess){globalThis.__t23DropDetailSuccess=false;await response.text();return new Response('{"ok":true}',{status:200,headers:{'content-type':'application/json'}});}return response;};})()`);
       await change('T23详情未知结果名称');await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
-      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("结果未确认")');
       await browser.evaluate('document.querySelector("aside a[title=工作台]").click()');
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/items/ticket/'+tickets[0].ticket.id,'detail UNKNOWN must survive sidebar navigation attempts');
@@ -300,7 +300,7 @@ test('administrator source group settings searches the real directory across pag
       await openWorkbenchUserMenu(browser);
       await browser.evaluate('document.querySelector("[data-action=open-settings]").click()');await browser.waitFor('Boolean(document.querySelector(".workbench-settings"))');await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
       await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===50');
-      assert.ok(await browser.evaluate('document.body.innerText.includes("群名称未登记")'));
+      assert.ok(await browser.evaluate('document.body.innerText.includes("企微群聊")'));
       await browser.evaluate('document.querySelector("[data-action=next-source-groups]").click()');
       await browser.waitFor('document.querySelector("[data-source-group-page]")?.textContent.includes("第 2 页")&&document.querySelectorAll("[data-source-group-ref]").length>0&&document.querySelectorAll("[data-source-group-ref]").length<50');
       await browser.evaluate('document.querySelector("[data-action=previous-source-groups]").click()');
@@ -360,7 +360,7 @@ test('a real object denial clears cached note actions even when the rejection bo
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
       await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')&&!document.querySelector('[aria-label=\"内部备注\"]')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
-      assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
+      assert.equal(await browser.evaluate("document.body.innerText.includes('结果未确认')"),false);
       assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
     }catch(failure){error=failure;try{console.log('T02_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
@@ -385,7 +385,7 @@ for(const fault of ['disconnect','invalid-success'])test('Ticket internal note p
       await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('正在保存')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=save-internal-note]').disabled"),true);
       await browser.evaluate("globalThis.__t02ReleaseResponse()");
-      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未确认')");
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
       assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"内部备注\"]').disabled"),true);
       assert.equal(await browser.evaluate("globalThis.__t02Commands.length"),1);
@@ -413,7 +413,7 @@ test('Ticket note conflict retains input without resending and a later identity 
       await browser.evaluate(`(async()=>{const bootstrap=await fetch('/api/lifecycle/bootstrap').then(r=>r.json()),body={client_command_id:crypto.randomUUID(),expected_version:2,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T02 independent version update',external_visible:false};const response=await fetch('/api/tickets/${ticketId}/internal-notes',{method:'POST',headers:{'content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"2"','x-csrf-token':bootstrap.csrf_token},body:JSON.stringify(body)});if(response.status!==200)throw Error('setup command failed');})()`);
       await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t02Commands=[];globalThis.__t02PostStatuses=[];globalThis.__t02InFlight=0;globalThis.fetch=(path,options)=>{globalThis.__t02InFlight++;const note=String(path).endsWith('/internal-notes');if(note)globalThis.__t02Commands.push(JSON.parse(options.body));return original(path,options).then(response=>{if(note)globalThis.__t02PostStatuses.push(response.status);return response;}).finally(()=>{globalThis.__t02InFlight--;});};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 conflict retained input');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
-      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('保存冲突')&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 3'");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已被他人更新')&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 3'");
       assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'T02 conflict retained input');assert.equal(await browser.evaluate('globalThis.__t02Commands.length'),1);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
       await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已保存')");
@@ -601,7 +601,7 @@ test('source group administrator edits real HTTP metadata and refreshes card, li
       await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${id}"] .card-open'))`);
       await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
       await browser.waitFor("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"] input'))");
-      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('群名称未登记')"));
+      assert.ok(await browser.evaluate("document.querySelector('.detail-dialog').innerText.includes('企微群聊')"));
       const change=async name=>{
         // Refreshed names can render while the previous save still awaits its refresh.
         await browser.waitFor("(()=>{const input=document.querySelector('input[name=\"source-group-name\"]');return input instanceof HTMLInputElement&&!input.disabled&&!input.matches(':disabled');})()");

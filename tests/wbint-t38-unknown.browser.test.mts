@@ -23,12 +23,16 @@ test('temporary GET unavailability preserves UNKNOWN and permits explicit origin
       assert.ok(browser);
       await browser.waitFor('Boolean(document.querySelector("textarea"))&&document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
       await browser.evaluate(`(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T38 original committed but unreadable result');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("已保存恢复副本")');
+      await browser.waitFor('document.querySelector("[data-draft-status]")?.textContent.includes("草稿已保存")');
       await browser.evaluate('document.querySelector("form:has(textarea)").requestSubmit()');
       await browser.waitFor('Boolean(document.querySelector("[data-action=check-internal-note]"))');assert.equal(commands.length,1);
       unreadable=true;
       await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="offline"');
-      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("结果未知")'));
+      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("结果未确认")'));
+      // Codex review: the only action held for this unknown save re-sends the original command, so it is named 「重新提交」 and the
+      // message points to it (the same operation number, so a save that already went through is not done twice).
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=check-internal-note]").textContent.trim()'),'重新提交');
+      assert.ok(await browser.evaluate('document.querySelector(".ticket-note-state")?.textContent.includes("点击「重新提交」")'),'the message names the action that is offered');
       assert.equal(commands.length,1,'failed reads must not infer a retry or settle the unknown command');
       restoreInternalNoteResponses();
       await browser.evaluate('document.querySelector("[data-action=check-internal-note]").click()');

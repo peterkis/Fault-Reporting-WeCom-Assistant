@@ -7,6 +7,7 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {appendReviewMaterial} from './helpers/wbint-t14-review-material.mjs';
 import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 interface Fixture {origin:string;cookies:string[];browserCookies:{name:string;value:string}[];pool:PostgresPool;principals:{id:string}[];processReviewIntake:(id:string)=>Promise<unknown>;tickets:{ticket:{id:string}}[]}
@@ -26,7 +27,7 @@ test('Card 27B existing out-of-scope reasons use pointer and keyboard radios wit
     assert.equal((await pool.query<{pilot_ticket_id:string|null}>('SELECT pilot_ticket_id::text FROM intake.service_intake WHERE id=$1::uuid',[selected.intake_id])).rows[0]?.pilot_ticket_id,null);
     const ticketCount=(await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count;
     const beforeEvents=(await pool.query<{count:number}>("SELECT count(*)::integer AS count FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.rule_decision_applied'",[selected.intake_id])).rows[0]?.count;assert.ok(typeof beforeEvents==='number');
-    let browser:Browser|undefined,error:unknown;
+    let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,error:unknown;
     try{
       browser=await launchSystemBrowser({url:origin+'/workbench/app/items/review/'+selected.id+'?detail=page',width:1440,height:1060,cookies:[{...cookie,url:origin+'/'}]});assert.ok(browser);
       await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await openWorkbenchStep(browser,'[data-review-id]');
@@ -38,7 +39,23 @@ test('Card 27B existing out-of-scope reasons use pointer and keyboard radios wit
       assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog fieldset[aria-label=关闭原因] input:checked').value"),'NOT_IT_SCOPE');
       await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=OTHER]');await browser.evaluate("(()=>{const input=document.querySelector('.detail-cancel-dialog textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'切换入口保留说明（合成）');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
       const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:principals[0]?.id,kind:'intake',id:selected.intake_id,purpose:'service-close'};
-      await browser.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return JSON.parse(copy.text??'{}').value?.note==='切换入口保留说明（合成）';})()`);await clickWorkbenchControl(browser,'[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");
+      await browser.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return JSON.parse(copy.text??'{}').value?.note==='切换入口保留说明（合成）';})()`);
+      tab=await yxxTab(browser,origin+'/workbench/app/');
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreClosureTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await browser.evaluate("(()=>{const input=document.querySelector('.detail-cancel-dialog textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'本页独立关闭说明（合成）');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      const firstId=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__replaceClosure=async()=>{const post=BroadcastChannel.prototype.postMessage;BroadcastChannel.prototype.postMessage=function(){};try{await store.settleDraft(copy.handle,id,copy.handle.record.revision);const next=await store.openDraft(${JSON.stringify(scope)}),nextId=crypto.randomUUID();await store.saveDraft(next.handle,copy.text,{commandId:nextId});globalThis.__finishClosure=()=>store.settleDraft(next.handle,nextId,next.handle.record.revision);return nextId;}finally{BroadcastChannel.prototype.postMessage=post;}};return id;})()`) as string;
+      await browser.waitFor("Boolean(document.querySelector('[data-action=check-cancel-command]'))");
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.endsWith('/close/commands/${firstId}'))return new Promise(resolve=>{globalThis.__releaseOldClosure=()=>resolve(Response.json({state:'COMMITTED',result:{ok:true,subject_type:'INTAKE',subject_id:${JSON.stringify(selected.intake_id)},version:2,closure_id:crypto.randomUUID(),event_id:crypto.randomUUID(),replayed:false}}));});if(url.includes('/close/commands/')){globalThis.__checkedClosure=url.split('/').at(-1);return Promise.resolve(Response.json({state:'UNKNOWN'}));}return read(path,options);};})()`);
+      await browser.evaluate("document.querySelector('[data-action=check-cancel-command]').click()");await browser.waitFor('typeof globalThis.__releaseOldClosure==="function"');
+      const nextId=await tab.evaluate('(async()=>await globalThis.__replaceClosure())()') as string;
+      await tab.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({...${JSON.stringify(scope)},reason:'settled'});channel.close();})()`);
+      await browser.waitFor("document.querySelector('[data-action=check-cancel-command]')?.disabled===false");await browser.evaluate('globalThis.__releaseOldClosure()');
+      assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog input[value=OTHER]')?.checked"),true);assert.equal(await browser.evaluate("document.querySelector('.detail-cancel-dialog textarea')?.value"),'本页独立关闭说明（合成）');
+      await browser.evaluate("document.querySelector('[data-action=check-cancel-command]').click()");await browser.waitFor('Boolean(globalThis.__checkedClosure)');assert.equal(await browser.evaluate('globalThis.__checkedClosure'),nextId);
+      await browser.evaluate('globalThis.__restoreClosureTimer()');await tab.evaluate('(async()=>{await globalThis.__finishClosure();})()');
+      await browser.waitFor("document.querySelector('.detail-cancel-dialog input[value=OTHER]')?.checked===true&&document.querySelector('.detail-cancel-dialog textarea')?.value==='本页独立关闭说明（合成）'&&document.querySelector('.detail-cancel-dialog [data-waiting-draft-status]')?.textContent.includes('草稿已保存')");
+      await browser.evaluate("(()=>{const input=document.querySelector('.detail-cancel-dialog textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'切换入口保留说明（合成）');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await browser.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return JSON.parse(copy.text??'{}').value?.note==='切换入口保留说明（合成）';})()`);await tab.close();tab=undefined;await clickWorkbenchControl(browser,'[aria-label="关闭取消窗口"]');await browser.waitFor("!document.querySelector('.detail-cancel-dialog')");
       await reload(browser);await browser.evaluate(traceClosure);await openWorkbenchStep(browser,'[data-review-id]');await clickWorkbenchControl(browser,'.workbench-select[data-field-label=复核结论] [data-slot=select-trigger]');await clickWorkbenchControl(browser,'[role=option][data-key=MARK_OUT_OF_SCOPE]');await browser.waitFor("document.querySelector('.detail-cancel-dialog input[value=NOT_IT_SCOPE]')?.checked===true&&document.querySelector('.detail-cancel-dialog textarea')?.value==='切换入口保留说明（合成）'");
       await clickWorkbenchControl(browser,'[data-action=discard-cancel-draft]');await browser.waitFor("document.querySelector('.detail-cancel-dialog textarea')?.value===''&&!document.querySelector('.detail-cancel-dialog fieldset[aria-label=关闭原因] input:checked')");await clickWorkbenchControl(browser,'.detail-cancel-dialog input[value=NOT_IT_SCOPE]');
 
@@ -72,7 +89,7 @@ test('Card 27B existing out-of-scope reasons use pointer and keyboard radios wit
       const restoredReview=await (await get('/api/manual-reviews/'+selected.id)).json() as {status:string};assert.equal(restoredReview.status,'PENDING');assert.equal((await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count,ticketCount);
 
     }catch(failure){error=failure;try{console.log('CARD27B_REVIEW_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText,commands:globalThis.__card27ReviewCommands})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
-    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   },{workbenchManualReviewEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
 
@@ -102,7 +119,7 @@ test('T14 formal same Item Review restores explicit choices and records consulta
       await browser.waitFor("Boolean(document.querySelector('.detail-page [data-review-materials]'))");
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=document.documentElement.clientWidth'),true);
       await browser.evaluate("(()=>{const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       const storage=await browser.evaluate("new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,read=db.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{const row=read.result[0];db.close();resolve({kind:row.kind,id:row.id,purpose:row.purpose,ttl:row.expiresAt-row.firstSavedAt,extractable:row.key.extractable,plain:JSON.stringify(row).includes('BUSINESS_CONSULTATION_CONFIRMED')});};};})");
       assert.deepEqual(storage,{kind:'review',id:selected.id,purpose:'manual-review',ttl:86400000,extractable:false,plain:false});
       await reload(browser);
@@ -130,8 +147,8 @@ test('T14 expired UNKNOWN keeps only its original opaque operation and checks a 
     try{
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");await browser.evaluate(traceCommands);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");await browser.evaluate(traceCommands);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t14Commands[0]') as {client_command_id:string};assert.ok(original.client_command_id);
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:traceCommands+";(()=>{const now=Date.now;Date.now=()=>now()+86400001;})()"});await reload(browser);
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已过期')&&Boolean(document.querySelector('[data-action=check-review-receipt]'))");
@@ -154,9 +171,9 @@ test('T14 trusted independent Review denial with unreadable body clears its view
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+other.ticket.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
       await browser.waitFor("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))");
       await browser.evaluate("(()=>{const input=document.querySelector('[aria-label=\"内部备注\"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T14 other authorized purpose private text');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
-      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page'});await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
-      await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       await pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[principal.id]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[principal.id]);
       await pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('OTHER_TEAM','合成另组')");await pool.query("UPDATE pilot_ticket.ticket SET resolver_team_id='OTHER_TEAM',assignee_id=NULL WHERE id=$1::uuid",[foreign.ticket.id]);
       await pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1::uuid)',[selected.id,foreign.ticket.id]);
@@ -177,7 +194,7 @@ test('T14 real source revision preserves edited input and explicitly selects a n
     let browser:Browser|undefined,error:unknown;
     try{
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/review/'+selected.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       const originalBasis=await browser.evaluate("document.querySelector('[data-captured-material-basis]').getAttribute('data-captured-material-basis')");
       await appendReviewMaterial(pool,selected.intake_id,'后来咨询补充 <img src=x onerror="globalThis.__t14MarkupExecuted=true">');await processReviewIntake(selected.intake_id);
       await browser.evaluate("document.querySelector('[data-action=refresh-review]').click()");await browser.waitFor("document.querySelector('[data-review-materials]')?.textContent.includes('后来咨询补充')");
@@ -187,7 +204,7 @@ test('T14 real source revision preserves edited input and explicitly selects a n
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"选择复核项\"] select').value"),selected.id);
       const refs=await(await get('/api/workbench/items/review/'+selected.id)).json() as {review_refs:{id:string}[]};const next=refs.review_refs.find(ref=>ref.id!==selected.id);assert.ok(next);
       await browser.evaluate(`(()=>{const input=document.querySelector('.workbench-select[data-field-label="选择复核项"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(next.id)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
-      await browser.waitFor(`Boolean(document.querySelector('[data-review-id="${next.id}"] [data-review-draft-status]'))`);await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor(`Boolean(document.querySelector('[data-review-id="${next.id}"] [data-review-draft-status]'))`);await choose(browser,'CLASSIFY_BUSINESS_CONSULTATION','BUSINESS_CONSULTATION_CONFIRMED');await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=submit-review]').disabled"),false);await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('已记录人工结论')");
       assert.equal((await pool.query<{count:number}>('SELECT count(*)::integer AS count FROM pilot_ticket.ticket')).rows[0]?.count,13);
     }catch(failure){error=failure;try{console.log('T14_STALE_SELECTOR_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}catch(diagnosticFailure){error=new AggregateError([error,diagnosticFailure],'BROWSER_FAILURE_DIAGNOSTICS');}}
@@ -204,16 +221,16 @@ test('T14 linked Review UNKNOWN survives refresh without replacing its captured 
       const launched=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+first.ticket.id+'?detail=page',width:900,height:900,cookies:[{...cookie,url:origin+'/'}]});assert.ok(launched);browser=launched;
       await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
       await browser.evaluate("(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};const set=(label,value)=>{const input=document.querySelector('.workbench-select[data-field-label=\"'+label+'\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('change',{bubbles:true}));};set('复核结论','CLASSIFY_BUSINESS_CONSULTATION');set('复核原因','BUSINESS_CONSULTATION_CONFIRMED');})()");
-      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-review-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.evaluate("document.querySelector('[data-action=submit-review]').click()");
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')");
       const original=await browser.evaluate('globalThis.__t14Commands[0]');assert.ok(original);
       await browser.command('Page.enable');
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{globalThis.__t14Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/resolve'))globalThis.__t14Commands.push(JSON.parse(options.body));return original(path,options);};})()"});
       await reload(browser);
       await browser.waitFor("Boolean(document.querySelector('.detail-page .detail-heading h2'))");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-review-workspace]'))"),true,'the committed associated Review must still locate its original UNKNOWN recovery scope');
-      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未知')&&Boolean(document.querySelector('[data-action=reconcile-review]'))");
+      await browser.waitFor("document.querySelector('[data-review-result]')?.textContent.includes('结果未确认')&&Boolean(document.querySelector('[data-action=reconcile-review]'))");
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核结论\"] select').value"),'CLASSIFY_BUSINESS_CONSULTATION');
       assert.equal(await browser.evaluate("document.querySelector('.workbench-select[data-field-label=\"复核原因\"] select').value"),'BUSINESS_CONSULTATION_CONFIRMED');
       assert.equal(await browser.evaluate('globalThis.__t14Commands.length'),0);

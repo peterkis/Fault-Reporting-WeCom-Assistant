@@ -155,7 +155,7 @@ export function WorkbenchReminders({principal,realtime,navigationBlocked,desktop
     if(desktopHost&&nativeArmed){
       const first=unheard[0];if(first)void desktopHost.showReminder({epoch:desktopEpoch,id:first.reminder_id,kind:first.canonical_item.kind,itemId:first.canonical_item.id}).then(shown=>{if(!shown&&epoch===generation.current)setMessage('系统提醒暂不可用，站内提醒继续。');}).catch(()=>{if(epoch===generation.current)setMessage('系统提醒暂不可用，站内提醒继续。');});
     }else if(!desktopHost&&nativeArmed&&typeof Notification==='function'&&Notification.permission==='granted'){
-      try{const first=unheard[0];if(!first)return;closeNotifications();const notice=new Notification('工作台有新的服务事项',{body:'请回到工作台核验当前事项。',tag:'wbint-'+first.reminder_id,silent:true});notifications.current.add(notice);notice.onclose=()=>notifications.current.delete(notice);}
+      try{const first=unheard[0];if(!first)return;closeNotifications();const notice=new Notification('工作台有新的服务事项',{body:'请回到工作台查看这个事项。',tag:'wbint-'+first.reminder_id,silent:true});notifications.current.add(notice);notice.onclose=()=>notifications.current.delete(notice);}
       catch{setMessage('桌面通知暂不可用，视觉提醒继续。');}
       // Ordinary browser notifications retain their original no-navigation behavior.
     }

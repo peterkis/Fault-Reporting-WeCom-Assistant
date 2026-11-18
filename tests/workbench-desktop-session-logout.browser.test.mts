@@ -71,12 +71,12 @@ for(const mode of ['browser','desktop','logout-unknown','logout-cleanup-failure'
     const ticket=f.tickets[5];assert.ok(ticket);await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+ticket.ticket.id+'?detail=page'});
     await browser.waitFor('document.querySelector("#internal-note")?.disabled===false');
     await browser.evaluate(`(()=>{const e=document.querySelector('#internal-note');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,'SYNTHETIC_MENU_DRAFT');e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-    await browser.waitFor('document.body.innerText.includes("已保存恢复副本")');
+    await browser.waitFor('document.body.innerText.includes("草稿已保存")');
     await browser.evaluate(`(()=>{const original=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...args){if(this.name==='wecom-workbench-drafts-v1'&&mode==='readwrite')throw Error('SYNTHETIC_CLEANUP_REFUSED');return original.call(this,stores,mode,...args);};})()`);
    }
    await openWorkbenchUserMenu(browser);await clickWorkbenchControl(browser,'[data-action="logout-workbench"]');
    if(mode==='logout-unknown'||mode==='logout-cleanup-failure'){
-    await browser.waitFor(mode==='logout-unknown'?'document.body.innerText.includes("尚未确认")':'document.body.innerText.includes("清理尚未确认")');assert.equal(qr,0);
+    await browser.waitFor(mode==='logout-unknown'?'document.body.innerText.includes("未确认")':'document.body.innerText.includes("还没清除完")');assert.equal(qr,0);
    }else{
     await browser.waitFor('location.pathname==="/workbench/desktop"&&document.body.innerText.includes("合成企业微信二维码登录")');assert.equal(qr,1);
     if(mode==='desktop'){const proof=await browser.evaluate('JSON.parse(sessionStorage.getItem("synthetic-login-proof"))') as {calls:number;blocked:boolean;counts:{drafts:number;operations:number}};assert.equal(proof.calls,1);assert.equal(proof.blocked,false);assert.deepEqual(proof.counts,{drafts:0,operations:0});}

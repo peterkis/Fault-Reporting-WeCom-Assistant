@@ -31,7 +31,7 @@ test('a truly committed manual report with an unreadable HTTP acknowledgement re
       browser=await launchSystemBrowser({url:origin+'/workbench/app/reports/new',width:900,height:900,cookies:browserCookies,certificateSpki});assert.ok(browser);
       await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿仅在当前浏览器')");
       await type(browser,'报修人姓名','T17 UNKNOWN actual reporter');await type(browser,'联系方式','合成人工联系5566');await type(browser,'故障描述','T17 UNKNOWN actual intent：打印机无法打印');await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");const saved=object(await browser.evaluate(copies));
+      await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");const saved=object(await browser.evaluate(copies));
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:trace});await browser.evaluate(trace);await browser.evaluate("document.querySelector('[data-action=submit-manual-report]').click()");
       await browser.waitFor("document.querySelector('[data-toast-source=manual-report]')?.textContent.includes('结果未知')");
       const sent=await browser.evaluate("globalThis.__t17Requests.filter(row=>row.method==='POST')");assert.ok(Array.isArray(sent));assert.equal(sent.length,1);const command=object(object(sent[0]).body),id=string(command.client_command_id);

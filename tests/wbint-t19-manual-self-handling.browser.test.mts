@@ -28,7 +28,7 @@ test('T19 production form explicitly chooses self handling, restores the encrypt
       await browser.evaluate("(()=>{const e=document.querySelector('.workbench-select[data-field-label=\"本人处理组\"] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,'PILOT_IT');e.dispatchEvent(new Event('change',{bubbles:true}));})()");
       await fill(browser,'报修人姓名','T19 合成电话报修人');await fill(browser,'联系方式','合成人工联系内线9919');await fill(browser,'故障描述','T19 browser original intent：打印机无法打印');
       await browser.evaluate("document.querySelector('[aria-label=\"位置暂不清楚\"]').click()");
-      await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");
       await browser.command('Page.enable');await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:trace});
       const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
       await browser.waitFor(`performance.timeOrigin!==${before}&&document.querySelector('[aria-label="故障描述"]')?.value==='T19 browser original intent：打印机无法打印'`);

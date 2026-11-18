@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
+import {ApiError} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {DraftError,hasExistingDraft} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
@@ -23,28 +24,31 @@ interface Options {
  authorize:(signal:AbortSignal,copy?:{value:SupplementDispositionInput;pending:SupplementFollowUpCommand|null})=>Promise<boolean>;
  onAuthorityFailure:(error:unknown)=>void;
  onRestore:(copy:{value:SupplementDispositionInput;pending:SupplementFollowUpCommand|null},signal:AbortSignal)=>Promise<void>;
- onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+ onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }
 export function useSupplementDraft(options:Options){
  const {ticketId,principal,value,pending}=options,scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'supplement-disposition'};
  const rawEnabled=principal.supplement_follow_up_enabled===true&&principal.supplement_follow_up_draft_recovery_enabled===true;
- const [existing,setExisting]=useState(false),[probing,setProbing]=useState(true),[restoring,setRestoring]=useState(false),latest=useRef(options);latest.current=options;
+ const [existing,setExisting]=useState(false),[probing,setProbing]=useState(true),[restoring,setRestoring]=useState(false),[recoveryBlocked,setRecoveryBlocked]=useState(false),latest=useRef(options);latest.current=options;
  const identity=JSON.stringify([principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,principal.csrf_token,principal.roles,principal.supplement_follow_up_enabled,principal.supplement_follow_up_draft_recovery_enabled,ticketId]);
- const currentIdentity=useRef(identity);currentIdentity.current=identity;const restoreRequest=useRef<AbortController|null>(null);
+ const currentIdentity=useRef(identity);currentIdentity.current=identity;const restoreRequest=useRef<AbortController|null>(null),restoreInterrupted=useRef(false);
  useEffect(()=>{
   const controller=new AbortController();setExisting(false);setProbing(true);
   if(!options.readReady||rawEnabled){setProbing(false);return()=>controller.abort();}
   void hasExistingDraft(scope).then(found=>{if(!controller.signal.aborted)setExisting(found);}).catch(error=>{if(!controller.signal.aborted)latest.current.onAuthorityFailure(error);}).finally(()=>{if(!controller.signal.aborted)setProbing(false);});
   return()=>controller.abort();
  },[identity,rawEnabled,options.readReady]);
- useEffect(()=>{setRestoring(false);return()=>{restoreRequest.current?.abort();restoreRequest.current=null;};},[identity]);
- const draft=useAuthorizedDraft<SupplementDispositionInput,SupplementFollowUpCommand>({scope,enabled:rawEnabled||existing,writeEnabled:rawEnabled,value,pending,emptyValue:EMPTY_SUPPLEMENT_INPUT,
+ useEffect(()=>{if(restoreInterrupted.current){restoreInterrupted.current=false;setRecoveryBlocked(true);}setRestoring(false);return()=>{if(restoreRequest.current){restoreInterrupted.current=true;restoreRequest.current.abort();restoreRequest.current=null;}};},[identity]);
+ useEffect(()=>{restoreInterrupted.current=false;setRecoveryBlocked(false);},[principal.principal_id,ticketId]);
+ const draft=useAuthorizedDraft<SupplementDispositionInput,SupplementFollowUpCommand>({scope,enabled:rawEnabled||existing,writeEnabled:rawEnabled&&!recoveryBlocked,value,pending,emptyValue:EMPTY_SUPPLEMENT_INPUT,
   hasInput:input=>Boolean(input.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeCopy,commandId:command=>command.client_command_id,
   authorize:(signal,copy)=>latest.current.authorize(signal,copy),onAuthorityFailure:error=>latest.current.onAuthorityFailure(error),refreshBlankAfterPurposeRemoval:true,
   onRestore:copy=>{
    const controller=new AbortController(),captured=currentIdentity.current;restoreRequest.current?.abort();restoreRequest.current=controller;setRestoring(true);
-   void latest.current.onRestore(copy,controller.signal).catch(error=>{if(!controller.signal.aborted&&restoreRequest.current===controller&&captured===currentIdentity.current)latest.current.onAuthorityFailure(error);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});
-  },onOperation:id=>latest.current.onOperation(id),onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
+   void latest.current.onRestore(copy,controller.signal).catch(error=>{if(controller.signal.aborted||restoreRequest.current!==controller||captured!==currentIdentity.current)return;if(error instanceof ApiError&&[401,403,404].includes(error.status)||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')latest.current.onAuthorityFailure(error);else setRecoveryBlocked(true);}).finally(()=>{if(restoreRequest.current===controller){restoreRequest.current=null;setRestoring(false);}});
+  },onOperation:id=>latest.current.onOperation(id),onOperationCleared:conflict=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onOperationCleared(conflict);},onSensitiveClear:()=>{restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);latest.current.onSensitiveClear();}
  });
- return {...draft,scope,rawEnabled,existing,probing,restoring};
+ return {...draft,scope,rawEnabled,existing,probing,restoring,recoveryBlocked,canSubmit:draft.canSubmit&&!recoveryBlocked,safeToLeave:draft.safeToLeave&&!recoveryBlocked,message:recoveryBlocked?'草稿暂未恢复：已保存的内容暂时读不到，请重新打开详情或刷新页面后再试。':draft.message,
+  async success(commandId:string,preserveInput=false){const cleaned=await draft.success(commandId,preserveInput);if(cleaned&&draft.currentOperation()===null){restoreRequest.current?.abort();restoreRequest.current=null;setRestoring(false);setRecoveryBlocked(false);}return cleaned;},
+  async knownFailure(commandId:string,preserveShared=false,options:{notifyLocal?:boolean}={}){const retry=rawEnabled&&recoveryBlocked,cleaned=await draft.knownFailure(commandId,preserveShared||retry,{...options,revalidateBlocked:retry,adoptShared:retry});if(cleaned&&retry&&draft.currentOperation()===null){setRecoveryBlocked(false);}return cleaned;}};
 }

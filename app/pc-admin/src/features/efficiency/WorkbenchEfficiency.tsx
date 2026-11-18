@@ -16,12 +16,12 @@ import './efficiency.css';
 const EfficiencyContext=createContext<{open:()=>void;blocked:boolean}|null>(null);
 const editable='input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox],[role=combobox],[role=spinbutton]';
 const overlays='[role=dialog],[role=alertdialog],[role=menu],[role=listbox],.detail-dialog,.detail-page';
-const shortcuts=[['J / K','下一张 / 上一张'],['H / L','左列 / 右列'],['Enter','打开工单'],['E','领取当前工单'],['N','新报修'],['/','聚焦搜索'],['Ctrl + K','搜索与命令'],['?','查看快捷键']];
+const shortcuts=[['J / K','下一张 / 上一张'],['H / L','左列 / 右列'],['Enter','打开工单'],['E','领取当前工单'],['N','新报修'],['/','聚焦搜索'],['Ctrl + K','搜索与快捷操作'],['?','查看快捷键']];
 
 /** Both entry points share one panel and one window listener. */
 export function EfficiencyEntry({compact=false}:{compact?:boolean}){
   const context=useContext(EfficiencyContext);
-  return context?<Button className={compact?'efficiency-compact':'sidebar-search efficiency-entry'} tone="ghost" isDisabled={context.blocked} aria-label="搜索与命令" aria-haspopup="dialog" onPress={context.open}><Search size={16}/>{compact?null:<span>搜索工作区</span>}<kbd>Ctrl K</kbd></Button>:null;
+  return context?<Button className={compact?'efficiency-compact':'sidebar-search efficiency-entry'} tone="ghost" isDisabled={context.blocked} aria-label="搜索与快捷操作" aria-haspopup="dialog" onPress={context.open}><Search size={16}/>{compact?null:<span>搜索工作区</span>}<kbd>Ctrl K</kbd></Button>:null;
 }
 
 export function WorkbenchEfficiency({principal,blocked,children}:{principal:Principal;blocked:boolean;children:ReactNode}){
@@ -81,8 +81,8 @@ function CommandPanel({principal,blocked,canCreate,go,close}:{principal:Principa
   const options=[...commands.map(command=>({...command,description:'工作区操作'})),...items.map(item=>({name:item.number+' · '+item.title,description:[item.reporter_name,item.reporter_department].filter(Boolean).join(' · '),path:'/items/'+item.kind+'/'+item.id,icon:ArrowUpRight}))];
   const index=Math.min(selected,Math.max(0,options.length-1));
   useEffect(()=>{document.getElementById(id+'-'+index)?.scrollIntoView({block:'nearest',behavior:'instant'});},[id,index,options.length]);
-  return <Modal.Backdrop className="workbench-modal-backdrop" isOpen onOpenChange={value=>{if(!value)close();}} isDismissable><Modal.Container size="md"><Modal.Dialog className="efficiency-panel" aria-label="搜索与命令">
-    <header><Modal.Heading>搜索与命令</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭命令面板" onPress={close}><X size={18}/></Button></header>
+  return <Modal.Backdrop className="workbench-modal-backdrop" isOpen onOpenChange={value=>{if(!value)close();}} isDismissable><Modal.Container size="md"><Modal.Dialog className="efficiency-panel" aria-label="搜索与快捷操作">
+    <header><Modal.Heading>搜索与快捷操作</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭快捷操作" onPress={close}><X size={18}/></Button></header>
     <SearchField autoFocus role="combobox" aria-label="搜索工单号、报修人或科室" aria-expanded="true" aria-controls={id} aria-autocomplete="list" aria-activedescendant={options.length?id+'-'+index:undefined} placeholder="工单号、报修人、科室，或输入操作名称" value={text} maxLength={128} disabled={blocked} onChange={event=>{setText(event.target.value);setSelected(0);}} onKeyDown={event=>{
       if(event.nativeEvent.isComposing)return;
       if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();setSelected(value=>Math.max(0,Math.min(options.length-1,value+(event.key==='ArrowDown'?1:-1))));}

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {ownerTransferBrowser} from './helpers/t29-owner-transfer-browser-fixture.mjs';
 import {record,text} from './helpers/t29-owner-transfer-http-fixture.mjs';
+import {readFile} from 'node:fs/promises';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 const inspect="(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('wecom-workbench-drafts-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise((resolve,reject)=>{const t=db.transaction(['drafts','operations'],'readonly'),r=t.objectStore('drafts').getAll(),o=t.objectStore('operations').getAll();t.oncomplete=()=>resolve({drafts:r.result.map(row=>({purpose:row.purpose,firstSavedAt:row.firstSavedAt,expiresAt:row.expiresAt,extractable:row.key.extractable,algorithm:row.key.algorithm.name,keys:Object.keys(row)})),operations:o.result});t.onabort=()=>reject(t.error);});}finally{db.close();}})()";
 test('T29 a legitimate NONE team survives encrypted refresh and lost real ACK; manual GET settles the original UUID without sending',{timeout:240000},async()=>{
   await ownerTransferBrowser(async({browser,incidentId,choose,pool,f,get})=>{
@@ -13,10 +15,17 @@ test('T29 a legitimate NONE team survives encrypted refresh and lost real ACK; m
     assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);await browser.command('Page.reload');await browser.waitFor('document.querySelector(".workbench-select[data-field-label=交接责任组] select")?.value==="NONE"');await browser.waitFor('!document.querySelector("[data-action=submit-owner-transfer]").disabled');
     const restored=record(await browser.evaluate(inspect));assert.ok(Array.isArray(restored.drafts));assert.equal(restored.drafts.map(record).find(row=>row.purpose==='incident-owner-transfer')?.firstSavedAt,draft.firstSavedAt);
     await browser.evaluate("(()=>{const send=globalThis.fetch;let lost=false;globalThis.fetch=async(path,options)=>{const response=await send(path,options);if(!lost&&options?.method==='POST'&&String(path).endsWith('/transfer-owner')&&response.status===200){lost=true;throw Error('T29_REAL_ACK_LOST');}return response;};})()");
-    await browser.evaluate('document.querySelector("[data-action=submit-owner-transfer]").click()');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("结果未知")');
+    await browser.evaluate('document.querySelector("[data-action=submit-owner-transfer]").click()');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("结果未确认")');
     const sent=await browser.evaluate('globalThis.__t29Posts.filter(post=>post.path.endsWith("/transfer-owner"))');assert.ok(Array.isArray(sent));assert.equal(sent.length,1);const body=record(JSON.parse(text(record(sent[0]).body)));assert.equal(body.owner_team_id,'NONE');const id=text(body.client_command_id);assert.equal((await get(path)).body.owner_team_id,'NONE');assert.equal((await get(path)).body.row_version,'2');
-    await browser.command('Page.reload');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("结果未知")');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);assert.equal(await browser.evaluate(`document.body.innerText.includes(${JSON.stringify(id)})`),true);
-    await browser.evaluate('document.querySelector("[data-action=check-owner-transfer-operation]").click()');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("交接已提交")');await browser.waitFor('Boolean(document.querySelector("[data-action=new-owner-transfer-intent]"))');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);assert.equal((await pool.query("SELECT 1 FROM incident.incident_event WHERE incident_id=$1::uuid AND event_type='incident.owner.transferred'",[incidentId])).rowCount,1);
+    await browser.command('Page.reload');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("结果未确认")');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);// The recovered operation's controls render with the restored state; wait for them rather than read on the same tick as the toast.
+    await browser.waitFor(`document.querySelector('[data-action=copy-diagnostics]')?.dataset.diagnostics.includes(${JSON.stringify(id)})===true`);
+    // Codex review: the hint beside 「核对结果」 states an unconfirmed outcome; without a clipboard the diagnostics are offered as
+    // selectable text and the failure is said, instead of failing silently.
+    assert.equal(await browser.evaluate('document.querySelector("[data-action=check-owner-transfer-operation]")?.parentElement?.textContent.includes("上次操作的结果还没确认")'),true);
+    await browser.evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});document.querySelector('[data-action=copy-diagnostics]').click()");
+    await browser.waitFor(`document.querySelector('[data-diagnostic-copy=failed] textarea')?.value.includes(${JSON.stringify(id)})&&document.querySelector('[data-diagnostic-copy=failed]').textContent.includes('无法自动复制')`);
+    // The lookup stays disabled while the restored draft is re-authorized; a click before then is ignored, so wait for it to enable.
+    await browser.waitFor('document.querySelector("[data-action=check-owner-transfer-operation]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=check-owner-transfer-operation]").click()');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("交接已提交")');await browser.waitFor('Boolean(document.querySelector("[data-action=new-owner-transfer-intent]"))');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);assert.equal((await pool.query("SELECT 1 FROM incident.incident_event WHERE incident_id=$1::uuid AND event_type='incident.owner.transferred'",[incidentId])).rowCount,1);
     await browser.evaluate('document.querySelector("[data-action=new-owner-transfer-intent]").click()');await choose('交接负责人',target);await choose('交接责任组','');await choose('交接原因','OPERATOR_REVIEWED');await browser.waitFor('!document.querySelector("[data-action=submit-owner-transfer]").disabled');await browser.evaluate('document.querySelector("[data-action=submit-owner-transfer]").click()');await browser.waitFor('document.querySelector("[data-owner-transfer-outcome]")?.textContent.includes("交接已提交")');assert.equal((await get(path)).body.owner_team_id,null);assert.equal((await get(path)).body.row_version,'3');
   },{recovery:true});
 });
@@ -24,4 +33,28 @@ test('T29 an actual browser cookie loss yields real401 and global Session invali
   await ownerTransferBrowser(async({browser,incidentId,choose,f,get})=>{
     const target=text(record(f.dispatcher).id);await browser.waitFor(`Boolean(document.querySelector('.workbench-select[data-field-label="交接负责人"] select option[value="${target}"]'))`);await choose('交接负责人',target);await choose('交接责任组','PILOT_IT');await choose('交接原因','OPERATOR_REVIEWED');await browser.command('Network.clearBrowserCookies');await browser.evaluate('document.querySelector("[data-action=refresh-owner-transfer]").click()');await browser.waitFor('globalThis.__t29Reads.some(read=>read.path.includes("/owner-transfer-targets")&&read.status===401)');await browser.waitFor('document.body.innerText.includes("会话已失效")');assert.equal(await browser.evaluate('globalThis.__t29Posts.length'),0);assert.equal((await get('/api/incidents/'+incidentId)).body.row_version,'1');
   });
+});
+
+test('T29 restored owner choices cannot be cleared or replaced while authorization is pending',{timeout:240000},async()=>{
+  await ownerTransferBrowser(async({browser,incidentId,choose,f,origin})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      const target=text(record(f.dispatcher).id);await browser.waitFor('document.querySelector(".workbench-select[data-field-label=交接负责人] select")?.options.length>1');
+      await choose('交接负责人',target);await choose('交接责任组','PILOT_IT');await choose('交接原因','OPERATOR_REVIEWED');await browser.waitFor('document.querySelector("[data-owner-transfer-draft]")?.textContent.includes("已保存")');
+      await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/transfer-owner')){globalThis.__heldOwner=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+      await browser.waitFor('document.querySelector("[data-action=submit-owner-transfer]")?.disabled===false');await browser.evaluate('document.querySelector("[data-action=submit-owner-transfer]").click()');await browser.waitFor('Boolean(globalThis.__heldOwner?.client_command_id)');
+      await browser.evaluate("(()=>{const read=fetch;let held=false;fetch=(path,options)=>{if(!held&&String(path)==='/api/lifecycle/bootstrap'){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseOwnerRestore=()=>read(path,options).then(resolve,reject);});}return read(path,options);};})()");
+      const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+      const scope={principal:text(record(f.admin).id),kind:'incident',id:incidentId,purpose:'incident-owner-transfer'};
+      tab=await yxxTab(browser,origin+'/workbench/app/');
+      await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),value=JSON.parse(copy.text);value.pending=null;await store.saveDraft(copy.handle,JSON.stringify(value),{settledCommandId:copy.handle.operation.commandId});})()');
+      await browser.waitFor('typeof globalThis.__releaseOwnerRestore==="function"');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=clear-owner-transfer-input]"))');
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=clear-owner-transfer-input]").disabled'),true);
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=adopt-owner-transfer-version]").disabled'),true);
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=discard-owner-transfer-draft]").disabled'),true);
+      await browser.evaluate('globalThis.__releaseOwnerRestore()');await browser.waitFor('document.querySelector("[data-action=clear-owner-transfer-input]")?.disabled===false');
+      assert.equal(await browser.evaluate('document.querySelector(".workbench-select[data-field-label=交接负责人] select")?.value'),target);
+    }finally{await tab?.close();}
+  },{recovery:true});
 });

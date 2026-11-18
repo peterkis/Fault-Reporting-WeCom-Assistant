@@ -79,7 +79,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   if(!principal.workbench_follow_enabled&&!commandId&&!existing)return;
   try{return subscribeDrafts(event=>{
    if(event.principal!==principal.principal_id||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;
-   if(event.reason==='logout'||event.reason==='logout-unknown'){clear();clearSessionView(client,undefined,'会话已退出，请重新核验。');}
+   if(event.reason==='logout'||event.reason==='logout-unknown'){clear();clearSessionView(client,undefined,'登录已过期，请重新登录。');}
    else if(event.reason==='revoked'&&matchesDraft(event,scope)){clear();void clearItemView(client,principal.principal_id,requested.kind,requested.id,new ApiError(404,'AUTHORIZATION_REJECTED'));}
   });}catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_STORAGE_UNAVAILABLE'))throw error;}
  },[principal.principal_id,requested.kind,requested.id,principal.workbench_follow_enabled,commandId,existing]);
@@ -123,7 +123,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   }catch(error){
    if(!current())return;
    if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof FollowSessionRejected||error instanceof ApiError&&error.status===401)authorityFailure(error);
-   else if(!dispatched){if(replay){setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}else{setPending(null);setOpaque(null);setState('denied');setMessage('恢复副本未能确认，关注操作尚未发送。');}}
+   else if(!dispatched){if(replay){setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}else{setPending(null);setOpaque(null);setState('denied');setMessage('关注没有提交：本机草稿未能保存。点击重试。');}}
    else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,command.client_command_id,controller,current);
    else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current);
    else{setState('unknown');setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');}
@@ -151,7 +151,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  return <section className="compact-follow" aria-label="个人关注">
   {principal.workbench_follow_enabled&&attention?<div className="note-controls"><HButton type="button" data-action="toggle-item-follow" className="icon-button" aria-label={attention.following?'取消关注':'关注此事项'} title={attention.following?'取消关注此事项':'关注此事项，接收后续动态'} aria-pressed={attention.following} isDisabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}} tone="secondary"><Star size={18} fill={attention.following?'currentColor':'none'}/></HButton><span className="follow-tooltip" role="tooltip">{attention.following?'已关注此事项':'关注此事项'}<small>接收后续动态；不改变处理或沟通责任。</small></span></div>:null}
   <div className={state==='succeeded'&&!commandId&&!needsRead?'sr-only':'follow-feedback'} hidden={!commandId&&!needsRead&&draft.status!=='failed'&&!message}>
-  {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} tone="secondary">只读核对原操作</HButton>{pending&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}} tone="secondary">明确重放原操作</HButton>:null}</div>:null}
+  {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead||state==='conflict'||state==='denied'?<HButton type="button" data-action="follow-refresh" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">重新读取当前状态</HButton>:null}
   {draft.enabled&&draft.status==='failed'?<DraftStatus role="status" data-follow-draft-status={draft.status}>{draft.message}</DraftStatus>:null}
   {message?<ToastFeedback revision={messageRevision} source="item-follow" state={state} className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}

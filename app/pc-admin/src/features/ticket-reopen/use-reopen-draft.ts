@@ -14,7 +14,7 @@ function decode(text:string){
  if(copy.pending!==null){const command=object(copy.pending);if(Object.keys(command).length!==4||typeof command.client_command_id!=='string'||!UUID.test(command.client_command_id)||typeof command.expected_version!=='number'||!Number.isSafeInteger(command.expected_version)||command.expected_version<1||command.expected_version>2147483647||command.reason_code!=='STAFF_REOPEN'||typeof command.note!=='string'||!command.note.trim()||command.note.length>2000||command.note!==copy.value.trim())throw new DraftError('DRAFT_CORRUPT');pending=Object.freeze({client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'STAFF_REOPEN',note:command.note});}
  return {value:copy.value,pending};
 }
-export function useReopenDraft({ticketId,principal,reason,pending,onRestore,onOperation,onSensitiveClear}:{ticketId:string;principal:Principal;reason:string;pending:P2016ReopenCommand|null;onRestore:(copy:{value:string;pending:P2016ReopenCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useReopenDraft({ticketId,principal,reason,pending,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{ticketId:string;principal:Principal;reason:string;pending:P2016ReopenCommand|null;onRestore:(copy:{value:string;pending:P2016ReopenCommand|null})=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void}){
  const client=useQueryClient(),stage=useRef<'session'|'ticket'>('session'),[existing,setExisting]=useState(false),[probing,setProbing]=useState(true);
  const scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'staff-reopen'};
  const authorityFailure=(error:unknown)=>{
@@ -33,6 +33,6 @@ export function useReopenDraft({ticketId,principal,reason,pending,onRestore,onOp
   void (async()=>{if(!await hasExistingDraft(scope)||controller.signal.aborted)return;await authorize(controller.signal);if(!controller.signal.aborted)setExisting(true);})().catch(error=>{if(!controller.signal.aborted)authorityFailure(error);}).finally(()=>{if(!controller.signal.aborted)setProbing(false);});
   return()=>controller.abort();
  },[principal.principal_id,principal.csrf_token,principal.ticket_reopen_draft_recovery_enabled,ticketId]);
- const draft=useAuthorizedDraft<string,P2016ReopenCommand>({scope,enabled:principal.ticket_reopen_draft_recovery_enabled===true||existing,writeEnabled:principal.ticket_reopen_draft_recovery_enabled===true,value:reason,pending,emptyValue:'',hasInput:input=>Boolean(input),serialise:copy=>JSON.stringify({schema:1,...copy}),decode,commandId:command=>command.client_command_id,authorize,onAuthorityFailure:authorityFailure,onRestore,onOperation,onSensitiveClear});
+ const draft=useAuthorizedDraft<string,P2016ReopenCommand>({scope,enabled:principal.ticket_reopen_draft_recovery_enabled===true||existing,writeEnabled:principal.ticket_reopen_draft_recovery_enabled===true,value:reason,pending,emptyValue:'',hasInput:input=>Boolean(input),serialise:copy=>JSON.stringify({schema:1,...copy}),decode,commandId:command=>command.client_command_id,authorize,onAuthorityFailure:authorityFailure,onRestore,onOperation,onOperationCleared,onSensitiveClear});
  return {...draft,probing};
 }

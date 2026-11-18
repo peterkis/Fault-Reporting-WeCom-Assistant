@@ -42,7 +42,7 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange,othe
   };
   const draft=useWaitingDraft({ticketId,action,principal,value:note,pending,allowed,
     onRestore:copy=>{latest.current=copy.value;pendingRef.current=copy.pending;setOpen(true);setNote(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage('结果未知，已恢复您上次的填写内容。请先核对上次操作。');}},
-    onOperation:id=>{if(opaqueRef.current&&opaqueRef.current!==id){generation.current++;request.current?.controller.abort();request.current=null;}opaqueRef.current=id;pendingRef.current=null;setOpaque(id);setPending(null);setState(known.current?.id===id?known.current.state==='COMMITTED'?'succeeded':'denied':'unknown');setMessage('上次操作结果尚未确认。请先核对，避免重复提交。');},onSensitiveClear:clearSensitive});
+    onOperation:id=>{if(opaqueRef.current&&opaqueRef.current!==id){generation.current++;request.current?.controller.abort();request.current=null;}opaqueRef.current=id;pendingRef.current=null;setOpaque(id);setPending(null);setState(known.current?.id===id?known.current.state==='COMMITTED'?'succeeded':'denied':'unknown');setMessage('上次操作结果尚未确认。请先核对，避免重复提交。');},onOperationCleared:conflict=>{generation.current++;request.current?.controller.abort();request.current=null;known.current=null;storedId.current=null;opaqueRef.current=null;pendingRef.current=null;setOpaque(null);setPending(null);setCleanupBlocked(false);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:clearSensitive});
   storedId.current=draft.operationId;
   const originalId=pending?.client_command_id??opaque??draft.operationId,busy=state==='submitting'||state==='checking',blocked=busy||cleanupBlocked||Boolean(originalId)||draft.restoring;
   const navigationBlocked=busy||cleanupBlocked||((Boolean(originalId)||Boolean(note))&&!draft.safeToLeave);
@@ -83,24 +83,24 @@ function WaitingActionController({action,ticketId,principal,onBlockedChange,othe
       if(committed){setCleanupBlocked(true);opaqueRef.current=command.client_command_id;setOpaque(command.client_command_id);setState('succeeded');setMessage('原操作已提交，工单信息或本地清理尚待重新核对。');}
       else if(error instanceof ApiError||!sent){
         if((!readConfirmed||error instanceof ApiError&&error.status===401||error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')&&readDenied(error))return;
-        let cleaned=true;if(sent){known.current={id:command.client_command_id,state:'FAILED'};try{cleaned=await draft.settle(command.client_command_id,job);job.requireCurrent();}catch{if(!current(job))return;cleaned=false;}applyKnown(command.client_command_id,'FAILED',snapshot,cleaned);}else{pendingRef.current=null;setPending(null);}
-        setState(error instanceof ApiError&&error.status===409?'conflict':'denied');setMessage(error instanceof ApiError&&error.status===409?'版本冲突：原因已保留，请读取当前版本后明确新的操作。':errorMessage(error));await refresh();
+        let cleaned=true;if(sent){known.current={id:command.client_command_id,state:'FAILED'};try{cleaned=await draft.settle(command.client_command_id,job,true);job.requireCurrent();}catch{if(!current(job))return;cleaned=false;}applyKnown(command.client_command_id,'FAILED',snapshot,cleaned);}else{pendingRef.current=null;setPending(null);}
+        setState(error instanceof ApiError&&error.status===409?'conflict':'denied');setMessage(error instanceof ApiError&&error.status===409?'内容已被他人更新：你的修改还在，查看最新内容后再保存。':errorMessage(error));await refresh();
       }else{pendingRef.current=command;setPending(command);setState('unknown');setMessage('结果未知，您的填写内容已保留。请先核对上次操作。');}
     }finally{end(job);}
   };
   const check=async()=>{
     const id=pendingRef.current?.client_command_id??opaqueRef.current??draft.operationId;if(!id||request.current||draft.restoring)return;const snapshot=pendingRef.current?latest.current:null,job=begin('ack');if(!job)return;setState('checking');
-    try{await freshRead(job);job.requireCurrent();const result=await api.waitingAcknowledgement(ticketId,action,id,job.signal);job.requireCurrent();if(result.state==='UNKNOWN'){setState('unknown');setMessage('提交结果尚未确认；请先核对上次操作。');return;}known.current={id,state:result.state};const cleaned=await draft.settle(id,job);job.requireCurrent();applyKnown(id,result.state,snapshot,cleaned);await refresh();job.requireCurrent();}
+    try{await freshRead(job);job.requireCurrent();const result=await api.waitingAcknowledgement(ticketId,action,id,job.signal);job.requireCurrent();if(result.state==='UNKNOWN'){setState('unknown');setMessage('提交结果尚未确认；请先核对上次操作。');return;}known.current={id,state:result.state};const cleaned=await draft.settle(id,job,result.state==='FAILED');job.requireCurrent();applyKnown(id,result.state,snapshot,cleaned);await refresh();job.requireCurrent();}
     catch(error){if(!current(job))return;if(readDenied(error))return;const terminal=known.current?.id===id?known.current:null;if(terminal)setCleanupBlocked(true);setState(terminal?terminal.state==='COMMITTED'?'succeeded':'denied':'unknown');setMessage(terminal?'原操作终态已确认，本地清理或工单信息仍须重读；未发送新的操作。':'只读核对暂未完成，未重复提交。');}finally{end(job);}
   };
-  const discard=async()=>{if(request.current||busy)return;const copy={value:latest.current,pending:pendingRef.current},job=begin('privacy');if(!job)return;try{await freshRead(job);job.requireCurrent();const cleaned=await draft.dropSensitive(copy,job);if(!cleaned){setCleanupBlocked(true);setMessage('存在不同恢复修订，未删除其内容；当前输入保留。');}}catch(error){if(current(job)&&!readDenied(error))setMessage('敏感副本清理暂未确认，当前输入保留。');}finally{end(job);}};
+  const discard=async()=>{if(request.current||busy)return;const copy={value:latest.current,pending:pendingRef.current},job=begin('privacy');if(!job)return;try{await freshRead(job);job.requireCurrent();const cleaned=await draft.dropSensitive(copy,job);if(!cleaned){setCleanupBlocked(true);setMessage('存在不同恢复修订，未删除其内容；当前输入保留。');}}catch(error){if(current(job)&&!readDenied(error))setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');}finally{end(job);}};
   if(!allowed&&!originalId&&!note&&!busy&&!draft.restoring&&!message)return null;
   const noteLabel=action==='resume'?'恢复原因':'等待原因';
   const form=(allowed||note||originalId)?<HForm aria-label={labels[action]} onSubmit={event=>{event.preventDefault();void submit();}}><HLabel>{noteLabel}<HTextArea aria-label={noteLabel} maxLength={2000} value={note} disabled={blocked||!allowed} onChange={event=>setNote(event.target.value)}/></HLabel><p>{action==='resume'?'记录已收到的信息或恢复处理的原因；仍由当前处理人继续本轮。':action==='request-information'?'请另行联系报修人，说明需要补充什么。此处仅记录内部等待原因，不会自动发送。':'记录厂商待办及联系情况；保留当前处理人和处理轮次。'}</p><div className="note-controls"><HButton type="button" isDisabled={busy} onClick={()=>setOpen(false)} tone="secondary">关闭表单</HButton>
     <HButton type="submit" isDisabled={blocked||otherBlocked||!allowed||!draft.canSubmit||!note.trim()||note.length>2000||(context.isPending||context.isError)} tone="secondary">{action==='resume'?'确认恢复':'确认等待'}</HButton></div></HForm>:null;
   const recovery=<>
     {draft.enabled?<DraftStatus notify={false} data-waiting-draft-status role="status">{draft.message}</DraftStatus>:null}
-    {originalId&&!busy?<HButton type="button" data-action={'check-'+action+'-command'} isDisabled={draft.restoring} onClick={()=>{void check();}} tone="secondary">核对上次操作</HButton>:null}
+    {originalId&&!busy?<HButton type="button" data-action={'check-'+action+'-command'} isDisabled={draft.restoring} onClick={()=>{void check();}} tone="secondary">核对结果</HButton>:null}
     {note&&!busy?<HButton type="button" data-action={'discard-'+action+'-draft'} onClick={()=>{void discard();}} tone="secondary">清空填写内容</HButton>:null}
 
   </>;

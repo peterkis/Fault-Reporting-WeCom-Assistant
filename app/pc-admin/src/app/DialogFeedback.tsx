@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {InlineAlert} from '../design/components/InlineAlert/InlineAlert';
-import {feedbackTone} from './ToastFeedback';
+import {DRAFT_WARNING,feedbackTone} from './ToastFeedback';
 import type {FeedbackProps} from './ToastFeedback';
 
 // Card 34A: kept apart from ToastFeedback, which the loading shell imports eagerly, so InlineAlert and its stylesheet stay in the
@@ -26,6 +26,6 @@ export function useDialogToast(open:boolean,key:unknown):boolean{
 }
 /** Card 34A: a draft notice (warning or restored) shown inline in the dialog that owns the draft. */
 export function DialogDraftAlert({children}:{children:string}){
-  const warning=/未知|过期|失败|不可用|无法|未确认|须核对|只能只读/u.test(children);
+  const warning=DRAFT_WARNING.test(children);
   return warning||/已恢复/u.test(children)?<DialogAlert source="draft" state={warning?'unknown':undefined}>{children}</DialogAlert>:null;
 }

@@ -16,7 +16,7 @@ function decode(text:string){
   if(v.pending!==null){const c=record(v.pending);if(Object.keys(c).length!==7||typeof c.client_command_id!=='string'||!UUID.test(c.client_command_id)||typeof c.handling_cycle_id!=='string'||!UUID.test(c.handling_cycle_id)||typeof c.expected_version!=='number'||!Number.isSafeInteger(c.expected_version)||c.expected_version<1||c.expected_version>2147483647||c.reason_code!=='STAFF_COMPLETED'||c.external_summary_confirmed!==true||typeof c.internal_process!=='string'||!c.internal_process.trim()||c.internal_process.length>2000||typeof c.external_summary!=='string'||!c.external_summary.trim()||c.external_summary.length>500)throw new DraftError('DRAFT_CORRUPT');pending=Object.freeze({client_command_id:c.client_command_id,expected_version:c.expected_version,reason_code:'STAFF_COMPLETED',handling_cycle_id:c.handling_cycle_id,internal_process:c.internal_process,external_summary:c.external_summary,external_summary_confirmed:true});}
   return {value:{process:value.process,summary:value.summary,confirmed:value.confirmed},pending};
 }
-export function useCompletionDraft({ticketId,principal,value,pending,onRestore,onOperation,onSensitiveClear}:{ticketId:string;principal:Principal;value:CompletionInput;pending:P2016CompletionCommand|null;onRestore:(copy:{value:CompletionInput;pending:P2016CompletionCommand|null})=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void}){
+export function useCompletionDraft({ticketId,principal,value,pending,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{ticketId:string;principal:Principal;value:CompletionInput;pending:P2016CompletionCommand|null;onRestore:(copy:{value:CompletionInput;pending:P2016CompletionCommand|null})=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void}){
   const client=useQueryClient(),stage=useRef<'session'|'ticket'>('session'),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'staff-completion'};
   return useAuthorizedDraft<CompletionInput,P2016CompletionCommand>({scope,enabled:principal.staff_completion_draft_recovery_enabled,value,pending,emptyValue:EMPTY_COMPLETION,hasInput:v=>Boolean(v.process||v.summary),serialise:copy=>JSON.stringify({schema:1,...copy}),decode,commandId:command=>command.client_command_id,
     authorize:async signal=>{
@@ -28,5 +28,5 @@ export function useCompletionDraft({ticketId,principal,value,pending,onRestore,o
       if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,principal.principal_id,undefined,'revoked');
       else if(error instanceof ApiError&&(error.status===401||error.status===403&&stage.current==='session'))void clearSessionAuthorization(client,principal.principal_id,error.status as 401|403,'revoked');
       else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,principal.principal_id,ticketId,error);
-    },onRestore,onOperation,onSensitiveClear});
+    },onRestore,onOperation,onOperationCleared,onSensitiveClear});
 }

@@ -4,7 +4,7 @@ import {openWorkbenchStep} from './helpers/heroui-workbench-controls.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
@@ -12,6 +12,7 @@ import {withT09Fixture,object,rows,text,version} from './helpers/t09-fixture.mjs
 import type {T09Http} from './helpers/t09-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
 type RequestFact={order:number;method:string;path:string;status:number|null;body:unknown;idempotency_key:string|null;if_match:string|null;csrf_present:boolean;origin_same:boolean};
@@ -41,6 +42,37 @@ function safeRequest(fact:RequestFact){
   const {body:_body,...safe}=fact;
   return {...safe,body_keys:body?Object.keys(body):[],body_sha256:typeof encoded==='string'?createHash('sha256').update(encoded).digest('hex'):null};
 }
+
+test('T09 blank observer keeps a peer failed return draft',{timeout:240000},async()=>{
+ await withT09Fixture(async fixture=>{
+  const admin=await fixture.http(0),handler=await fixture.http(2),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+  assert.equal((await admin.post(path+'/assign',{client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_ASSIGN',target_principal_id:fixture.handler,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})).status,200);
+  await fixture.runtime.coordinator.runOnce();
+  const source=rows((await publicGet(handler,path+'/responsibility')).conversations)[0];assert.ok(source);const sessionId=text(source.session_id);
+  assert.equal((await handler.post('/api/conversations/'+sessionId+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(Number(text(source.session_row_version))),reason_code:'T09_PEER_COMMUNICATOR'})).status,200);
+  for(const actionName of ['accept','start','wait-vendor'])assert.equal((await handler.post(path+'/'+actionName,{client_command_id:randomUUID(),expected_version:version((await publicGet(handler,path)).version),reason_code:'T09_PEER_FAILED'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[2];assert.ok(cookie);let browser:Browser|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);await openWorkbenchStep(browser,'.ticket-return-to-dispatch');
+   await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('最长24小时')");
+   const tab=await yxxTab(browser,fixture.origin+'/workbench/app/items/ticket/'+ticketId);
+   try{
+    await openWorkbenchStep(tab,'.ticket-return-to-dispatch');await tab.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('最长24小时')");
+    await tab.evaluate(fill(reasonInput,'T09_FAILED_PEER_REASON'));await tab.evaluate(fill(unfinishedInput,'T09_FAILED_PEER_WORK'));await tab.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('草稿已保存')");
+    await tab.evaluate(`(()=>{const send=fetch;fetch=(url,options)=>{if(options?.method==='POST'&&String(url)===${JSON.stringify(path+'/return-to-dispatch')}){globalThis.__t09Peer=JSON.parse(options.body);return new Promise(()=>{});}return send(url,options);};})()`);
+    await tab.waitFor(`(${action})?.disabled===false`);await tab.evaluate(`(${action}).click()`);await tab.waitFor('Boolean(globalThis.__t09Peer?.client_command_id)');
+    await browser.waitFor(`Boolean(${check})`);const command=object(await tab.evaluate('globalThis.__t09Peer')),id=text(command.client_command_id);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/return-to-dispatch/commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);
+    await browser.evaluate(`(${check}).click()`);
+    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:fixture.handler,kind:'ticket',id:ticketId,purpose:'ticket-return-to-dispatch'};
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
+    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return {text:copy.text,operation:copy.handle.operation};})()`) as {text:string|null;operation:unknown};
+    assert.ok(saved.text);const copy=object(JSON.parse(saved.text)),value=object(copy.value);assert.equal(value.reason,'T09_FAILED_PEER_REASON');assert.equal(value.unfinished,'T09_FAILED_PEER_WORK');assert.equal(copy.pending,null);assert.equal(saved.operation,null);
+   }finally{await tab.close();}
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
 
 // Existing host budget and browser launch/wait defaults; no timeout override or source runtime fallback.
 test('production PC current handler restores two required inputs and returns a real WAITING_VENDOR Ticket retaining communication, then reconciles only the original UNKNOWN command through GET',async()=>{
@@ -78,7 +110,7 @@ test('production PC current handler restores two required inputs and returns a r
     const capture=async()=>{assert.ok(browser);if(screenshots.length)return;const bytes=Buffer.from(text(await browser.screenshot()),'base64');assert.ok(bytes.length>=24);assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(bytes.readUInt32BE(8),13);assert.equal(bytes.subarray(12,16).toString('ascii'),'IHDR');const width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20);assert.equal(width,1280);assert.equal(height,900);const file=join(directory,'new-detail-1280.png');await writeFile(file,bytes);screenshots.push({file:file.replaceAll('\\','/'),width,height,sha256:createHash('sha256').update(bytes).digest('hex')});};
     const captureReadiness=async(point:'BEFORE_INPUT'|'FAILURE')=>{
       if(!browser)return;
-      const ui=object(await browser.evaluate(`(()=>{const reason=${reasonInput},unfinished=${unfinishedInput},button=${action},status=document.querySelector('[data-return-to-dispatch-draft-status]'),prompt=status?.textContent??'';return {reason:{present:reason instanceof HTMLTextAreaElement,disabled:reason instanceof HTMLTextAreaElement?reason.disabled:null,length:reason instanceof HTMLTextAreaElement?reason.value.length:null},unfinished:{present:unfinished instanceof HTMLTextAreaElement,disabled:unfinished instanceof HTMLTextAreaElement?unfinished.disabled:null,length:unfinished instanceof HTMLTextAreaElement?unfinished.value.length:null},action_disabled:button instanceof HTMLButtonElement?button.disabled:null,draft_prompt:{present:Boolean(status),length:prompt.length,saved_copy:prompt.includes('已保存恢复副本'),checking_authorization:prompt.includes('正在核对'),cleanup_pending:prompt.includes('清理尚未确认')}};})()`));
+      const ui=object(await browser.evaluate(`(()=>{const reason=${reasonInput},unfinished=${unfinishedInput},button=${action},status=document.querySelector('[data-return-to-dispatch-draft-status]'),prompt=status?.textContent??'';return {reason:{present:reason instanceof HTMLTextAreaElement,disabled:reason instanceof HTMLTextAreaElement?reason.disabled:null,length:reason instanceof HTMLTextAreaElement?reason.value.length:null},unfinished:{present:unfinished instanceof HTMLTextAreaElement,disabled:unfinished instanceof HTMLTextAreaElement?unfinished.disabled:null,length:unfinished instanceof HTMLTextAreaElement?unfinished.value.length:null},action_disabled:button instanceof HTMLButtonElement?button.disabled:null,draft_prompt:{present:Boolean(status),length:prompt.length,saved_copy:prompt.includes('草稿已保存'),checking_authorization:prompt.includes('正在核对'),cleanup_pending:prompt.includes('清理尚未确认')}};})()`));
       readiness.push({stage:activeStage,point,ui,related_gets:requests.filter(row=>row.method==='GET'&&[path,webPath,path+'/related-conversations'].includes(row.path)).map(({order,path,status})=>({request_start_order:order,path,response_finish_status:status})),time_basis:'SNAPSHOT_AT_CAPTURE_NO_RECONSTRUCTED_REQUEST_TIMESTAMPS'});
     };
     fixture.runtime.server.on('request',observe);
@@ -91,14 +123,14 @@ test('production PC current handler restores two required inputs and returns a r
       activeStage='DUAL_REQUIRED';assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=RETAIN_CURRENT]')?.checked`),true);assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=TRANSFER_SELECTED]')?.checked`),false);
       assert.equal(await browser.evaluate(`(${reasonInput}).maxLength`),500);assert.equal(await browser.evaluate(`(${unfinishedInput}).maxLength`),1400);assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);
       await browser.evaluate(fill(reasonInput,reason));assert.equal(await browser.evaluate(`(${action}).disabled`),true);await browser.evaluate(fill(unfinishedInput,'   '));assert.equal(await browser.evaluate(`(${action}).disabled`),true);assert.equal(posts().length,0);
-      await browser.evaluate(fill(unfinishedInput,unfinished));await browser.waitFor(`(${action})?.disabled===false&&document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('已保存恢复副本')`);assert.equal(posts().length,0);completed.push(activeStage);
+      await browser.evaluate(fill(unfinishedInput,unfinished));await browser.waitFor(`(${action})?.disabled===false&&document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('草稿已保存')`);assert.equal(posts().length,0);completed.push(activeStage);
       activeStage='PRE_SUBMIT_REFRESH_RESTORE';const saved=object(await browser.evaluate(stored)),drafts=rows(saved.drafts);assert.equal(drafts.length,1);const draft=drafts[0];assert.ok(draft);assert.equal(draft.extractable,false);assert.equal(draft.algorithm,'AES-GCM');assert.equal(Number(draft.expiresAt)-Number(draft.firstSavedAt),86400000);assert.ok(Number(draft.bytes)<=16400);assert.equal(JSON.stringify(saved).includes(reason),false);assert.equal(JSON.stringify(saved).includes(unfinished),false);assert.deepEqual(saved.operations,[]);
       const timeOrigin=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(timeOrigin)}&&(${reasonInput})?.value===${JSON.stringify(reason)}&&(${unfinishedInput})?.value===${JSON.stringify(unfinished)}&&(${action})?.disabled===false`);
       assert.equal(await browser.evaluate(`(${root})?.querySelector('input[value=RETAIN_CURRENT]')?.checked`),true);assert.equal(posts().length,0);assert.equal(acks().length,0);completed.push(activeStage);
       activeStage='ACTUAL_POST_UNKNOWN';
       // Await the genuine server commit before losing only its client acknowledgement; never forge a response.
       await browser.evaluate(`(()=>{const send=fetch;globalThis.fetch=async(url,options)=>{const response=await send(url,options);if(options?.method==='POST'&&String(url)===${JSON.stringify(path+'/return-to-dispatch')}){globalThis.__t09RealCommit={status:response.status,body:await response.clone().json()};globalThis.__t09OriginalCommand=JSON.parse(options.body);throw new TypeError('T09_REAL_ACK_LOST');}return response;};})()`);
-      await browser.evaluate(`(${action}).click()`);await browser.waitFor(`document.querySelector('[data-toast-source=ticket-return-to-dispatch]')?.innerText.includes('结果未知')&&Boolean(${check})`);
+      await browser.evaluate(`(${action}).click()`);await browser.waitFor(`document.querySelector('[data-toast-source=ticket-return-to-dispatch]')?.innerText.includes('结果未确认')&&Boolean(${check})`);
       const commit=object(await browser.evaluate('globalThis.__t09RealCommit')),result=object(commit.body),original=object(await browser.evaluate('globalThis.__t09OriginalCommand'));assert.equal(commit.status,200);assert.equal(result.ok,true);assert.equal(result.replayed,false);assert.equal(result.ticket_version,version(before.version)+1);assert.deepEqual(result.handling_cycle,cycle);assert.deepEqual(result.conversations,[]);
       const commandId=text(original.client_command_id);assert.match(commandId,UUID);assert.deepEqual(original,{client_command_id:commandId,expected_version:version(before.version),reason_code:'WORKBENCH_RETURN_TO_DISPATCH',reason,unfinished_work:unfinished,communication_choice:'RETAIN_CURRENT',communication_target_principal_id:null,sessions:[]});
       assert.equal(posts().length,1);const post=posts()[0];assert.ok(post);assert.equal(post.path,path+'/return-to-dispatch');assert.equal(post.status,200);assert.deepEqual(post.body,original);assert.equal(post.idempotency_key,commandId);assert.equal(post.if_match,'"'+version(before.version)+'"');assert.equal(post.csrf_present,true);assert.equal(post.origin_same,true);assert.equal(acks().length,0);
@@ -133,4 +165,56 @@ test('production PC current handler restores two required inputs and returns a r
       console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',status:terminal?'FAIL':'BROWSER_SLICE_COMPLETE',t09_first_public_tracer:true,scenario:'PC_CURRENT_HANDLER_WAITING_VENDOR_DEFAULT_RETAIN_REFRESH_REAL_UNKNOWN_GET_ONLY',active_stage:activeStage,completed,screenshots}));if(terminal)throw terminal;
     }
   },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
+});
+
+for(const revoked of [false,true])test('a saved retained return draft '+(revoked?'is cleared when its selected target is revoked':'is shown after delayed reauthorization'),{timeout:240000},async()=>{
+ await withT09Fixture(async fixture=>{
+  const admin=await fixture.http(0),handler=await fixture.http(2),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+  assert.equal((await admin.post(path+'/assign',{client_command_id:randomUUID(),expected_version:1,reason_code:'WORKBENCH_ASSIGN',target_principal_id:fixture.handler,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]})).status,200);
+  await fixture.runtime.coordinator.runOnce();
+  const source=rows((await publicGet(handler,path+'/responsibility')).conversations)[0];assert.ok(source);const sessionId=text(source.session_id);
+  assert.equal((await handler.post('/api/conversations/'+sessionId+'/takeover',{client_command_id:randomUUID(),expected_row_version:version(Number(text(source.session_row_version))),reason_code:'T09_RETAIN_COMMUNICATOR'})).status,200);
+  for(const actionName of ['accept','start','wait-vendor'])assert.equal((await handler.post(path+'/'+actionName,{client_command_id:randomUUID(),expected_version:version((await publicGet(handler,path)).version),reason_code:'T09_RETAIN_TEST'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[2];assert.ok(cookie);let browser:Browser|undefined,tab:Awaited<ReturnType<typeof yxxTab>>|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:1280,height:900,cookies:[{...cookie,url:fixture.origin}]});assert.ok(browser);
+   await openWorkbenchStep(browser,'.ticket-return-to-dispatch');
+   await browser.waitFor(`Boolean(${reasonInput})&&Boolean(${unfinishedInput})&&!(${reasonInput}).disabled`);
+   if(revoked){
+    await browser.evaluate(`(${root}).querySelector('input[value=TRANSFER_SELECTED]').click()`);
+    await browser.waitFor(`(${root})?.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);
+    await browser.evaluate(`(${root}).querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+    await browser.waitFor(`!(${root})?.querySelector('select')?.disabled&&Array.from((${root})?.querySelector('select')?.options??[]).some(option=>option.value&&!option.disabled)`);
+    const target=await browser.evaluate(`Array.from((${root}).querySelector('select').options).find(option=>option.value&&!option.disabled).value`) as string;
+    await browser.evaluate(`(()=>{const select=(${root}).querySelector('select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,${JSON.stringify(target)});select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    await browser.waitFor(`(${root})?.querySelector('select')?.value===${JSON.stringify(target)}`);
+   }
+   await browser.evaluate(fill(reasonInput,'T09 peer reason'));await browser.evaluate(fill(unfinishedInput,'T09 peer unfinished'));
+   await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('草稿已保存')");
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+   const scope={principal:fixture.handler,kind:'ticket',id:ticketId,purpose:'ticket-return-to-dispatch'};
+   tab=await yxxTab(browser,fixture.origin+'/workbench/app/');
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT09Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   const local='T09 retained reason '+randomUUID();await browser.evaluate(fill(reasonInput,local));
+   const peerId=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT09Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);return id;})()') as string;
+   await browser.waitFor(`Boolean(${check})`);
+   assert.equal(await browser.evaluate('document.body.innerText.includes('+JSON.stringify(peerId)+')'),false);assert.equal(await browser.evaluate('JSON.parse(document.querySelector(".ticket-return-to-dispatch [data-diagnostics]").dataset.diagnostics).operation_id'),peerId);
+   if(revoked)await browser.evaluate("(()=>{const read=fetch,held=[];let released=false;fetch=(path,options)=>{if(!released&&String(path).includes('/eligible-principals'))return new Promise(resolve=>{held.push(resolve);globalThis.__t09HeldCount=held.length;globalThis.__releaseT09Restore=()=>{released=true;for(const done of held.splice(0))done(new Response('{}',{status:403,headers:{'content-type':'application/json'}}));};});return read(path,options);};})()");
+   else await browser.evaluate("(()=>{const read=crypto.subtle.decrypt.bind(crypto.subtle);let held=false;crypto.subtle.decrypt=(...args)=>{if(!held&&new TextDecoder().decode(args[0].additionalData).includes('ticket-return-to-dispatch')){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseT09Restore=()=>read(...args).then(resolve,reject);});}return read(...args);};})()");
+   await browser.evaluate('globalThis.__restoreT09Timer()');await tab.evaluate('globalThis.__finishT09Peer()');
+   await browser.waitFor('typeof globalThis.__releaseT09Restore==="function"');
+   if(revoked)await browser.waitFor("document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent.includes('正在核对当前退回')");
+   await browser.waitFor(`(${reasonInput})?.disabled===true`);
+   assert.equal(await browser.evaluate(`(${reasonInput})?.disabled`),true);
+   await browser.evaluate('globalThis.__releaseT09Restore()');
+   if(revoked){
+    await browser.waitFor(`(async()=>{const saved=await (${copies(fixture.handler,ticketId)});return saved.drafts.length===0&&saved.operations.length===0;})()`);
+    assert.equal(await browser.evaluate(`(${reasonInput})?.value??''`),'');assert.equal(await browser.evaluate(`(${unfinishedInput})?.value??''`),'');
+   }else{
+    await browser.waitFor(`(${reasonInput})?.value===${JSON.stringify(local)}&&(${reasonInput}).disabled===false`);
+    assert.equal(await browser.evaluate(`(${unfinishedInput})?.value`),'T09 peer unfinished');assert.equal(rows(object(await browser.evaluate(copies(fixture.handler,ticketId))).drafts).length,1);
+   }
+  }catch(error){if(browser)console.error('T09_RETAIN_DIAGNOSTIC '+JSON.stringify(await browser.evaluate(`({status:document.querySelector('[data-return-to-dispatch-draft-status]')?.textContent??null,reasonPresent:Boolean(${reasonInput}),reasonDisabled:(${reasonInput})?.disabled??null,reasonLength:(${reasonInput})?.value.length??null,choice:(${root})?.querySelector('input[value=TRANSFER_SELECTED]')?.checked??null,target:(${root})?.querySelector('select')?.value??null,selected:(${root})?.querySelectorAll('[data-session-choice] input:checked').length??0,held:globalThis.__t09HeldCount??0})`)));primary=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
+ },{ticketReturnToDispatchEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

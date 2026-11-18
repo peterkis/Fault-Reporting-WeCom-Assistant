@@ -6,6 +6,7 @@ import {record,text} from './helpers/t31-public-progress-fixture.mjs';
 import type {Browser} from './helpers/wbint-t27-browser-fixture.mjs';
 import {createP2012Runtime} from '../app/server/src/p2-012-workbench-assembly.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 
 async function publish(browser:Browser){
   await browser.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');
@@ -16,15 +17,39 @@ async function publish(browser:Browser){
 }
 const lostAck="(()=>{const send=fetch;globalThis.__t31Original=null;globalThis.__t31Writes=0;globalThis.__t31ReceiptReads=[];globalThis.fetch=async(path,options)=>{const url=String(path);if(options?.method==='POST'&&url.endsWith('/publish-update')){globalThis.__t31Writes++;globalThis.__t31Original=JSON.parse(options.body);const response=await send(path,options);await response.arrayBuffer();throw new TypeError('SYNTHETIC_ACK_LOSS_AFTER_REAL_COMMIT');}if(url.includes('/commands/'))globalThis.__t31ReceiptReads.push(url);return send(path,options);};})()";
 
+test('T31 blank observer keeps the other page failed public progress',async()=>{
+  await t31Browser('t31obsfail',async({browser,incidentId,origin})=>{
+    const tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);
+    try{
+      await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=公开进展摘要]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"T31_FAILED_PEER_SUMMARY");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__t31PeerCommand=JSON.parse(options.body);return new Promise(()=>{});}return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');
+      await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await tab.waitFor('Boolean(globalThis.__t31PeerCommand?.client_command_id)');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]").value'),'');
+      const command=record(await tab.evaluate('globalThis.__t31PeerCommand')),id=text(command.client_command_id);
+      await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${id}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+      await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+      await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("上次提交没有成功")');
+      const saved=record(await browser.evaluate(inspectT31Drafts));assert.ok(Array.isArray(saved.drafts));assert.equal(saved.drafts.length,1);assert.deepEqual(saved.operations,[]);
+      const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
+      await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="T31_FAILED_PEER_SUMMARY"`);
+    }finally{await tab.close();}
+  });
+});
+
 test('T31 recovery disabled retains the original lost-ACK UUID and version after lawful CLOSED without replay',async()=>{
   await t31Browser('t31norecov',async({browser,incidentId,get,post,put})=>{
     const bootstrap=(await get('/api/lifecycle/bootstrap')).body;assert.equal(bootstrap.incident_public_progress_enabled,true);assert.equal(bootstrap.incident_public_progress_draft_recovery_enabled,false);assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-public-progress-draft]"))'),false);
-    await browser.evaluate(lostAck);await put('合成安全摘要：真实提交后仅丢 ACK。');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未知")');
+    await browser.evaluate(lostAck);await put('合成安全摘要：真实提交后仅丢 ACK。');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
     const original=record(await browser.evaluate('globalThis.__t31Original')),id=text(original.client_command_id),path='/api/incidents/'+incidentId;assert.equal(original.expected_row_version,'1');assert.equal((await get(path+'/commands/'+id)).body.state,'COMMITTED');
     for(const [action,version,reason] of [['start-investigating','2','OPERATOR_REVIEWED'],['resolve','3','RECOVERY_CONFIRMED'],['close','4','RECOVERY_CONFIRMED']])assert.equal((await post(path+'/'+action,{client_command_id:randomUUID(),expected_row_version:version,reason_code:reason})).status,200);
-    await browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.textContent.includes('CLOSED')`);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("公共故障已关闭")');
+    await browser.evaluate('document.querySelector("[data-action=refresh-incident]").click()');await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"] dl dd')?.textContent==='已关闭'`);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("公共故障已关闭")');
     assert.equal(await browser.evaluate('Boolean(document.querySelector("textarea[aria-label=公开进展摘要]"))'),false);assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))'),true);
-    assert.equal(await browser.evaluate(`document.querySelector('[aria-label="公开进展摘要"]')?.textContent.includes(${JSON.stringify('原操作 UUID：'+id+'；原提交版本：1')})`),true);
+    assert.equal(await browser.evaluate(`(diagnostics=>diagnostics.operation_id===${JSON.stringify(id)}&&String(diagnostics.expected_row_version)==='1')(JSON.parse(document.querySelector('[aria-label="公开进展摘要"] [data-diagnostics]')?.dataset.diagnostics??'{}'))`),true);
     await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("已发布")');
     assert.equal(await browser.evaluate('globalThis.__t31Writes'),1);assert.deepEqual(await browser.evaluate('globalThis.__t31ReceiptReads'),[path+'/commands/'+id]);
     const page=(await get(path+'/public-progress')).body;assert.ok(Array.isArray(page.items));assert.equal(page.items.length,1);assert.equal(record(page.items[0]).summary,original.summary);assert.equal(record(page.items[0]).incident_row_version,'2');assert.equal((await get(path)).body.row_version,'5');
@@ -34,24 +59,121 @@ test('T31 recovery disabled retains the original lost-ACK UUID and version after
 test('T31 encrypted lost-ACK recovery uses only the original operation and displays actual UNKNOWN and failed Delivery rows',async()=>{
   await t31Browser('t31restore',async({browser,incidentId,get,put,pool,f,origin,capture})=>{
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"globalThis.__t31Posts=[];(()=>{const send=fetch;globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t31Posts.push({path:String(path),body:options.body});return send(path,options);};})()"});
-    await browser.evaluate(lostAck);await put('合成人工安全摘要：与内部记录独立。');await capture('preview-input');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未知")');
+    await browser.evaluate(lostAck);await put('合成人工安全摘要：与内部记录独立。');await capture('preview-input');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
     const original=record(await browser.evaluate('globalThis.__t31Original')),copy=record(await browser.evaluate(inspectT31Drafts));assert.ok(Array.isArray(copy.operations));assert.equal(copy.operations.length,1);assert.equal(record(copy.operations[0]).commandId,original.client_command_id);assert.ok(Array.isArray(copy.drafts));const draft=record(copy.drafts[0]);assert.equal(draft.purpose,'incident-public-progress');assert.equal(draft.extractable,false);assert.equal(draft.algorithm,'AES-GCM');assert.equal(Number(draft.expiresAt)-Number(draft.firstSavedAt),86400000);assert.ok(Array.isArray(draft.keys));assert.equal(draft.keys.some(k=>['value','body','summary','text'].includes(String(k))),false);
-    await browser.command('Page.reload');await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("已恢复原 UUID")');assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),original.summary);assert.equal(await browser.evaluate('document.querySelector("[data-action=submit-public-progress]")?.disabled'),true);assert.deepEqual(await browser.evaluate('globalThis.__t31Posts'),[]);
+    await browser.command('Page.reload');await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("已找回上次的内容")');assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),original.summary);assert.equal(await browser.evaluate('document.querySelector("[data-action=submit-public-progress]")?.disabled'),true);assert.deepEqual(await browser.evaluate('globalThis.__t31Posts'),[]);
     await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("已发布")');assert.deepEqual(await browser.evaluate('globalThis.__t31Posts'),[]);const after=record(await browser.evaluate(inspectT31Drafts));assert.deepEqual(after.drafts,[]);assert.deepEqual(after.operations,[]);
     const path='/api/incidents/'+incidentId,page=(await get(path+'/public-progress')).body;assert.ok(Array.isArray(page.items));assert.equal(page.items.length,1);const publication=text(record(page.items[0]).id),routes=(await get(path+'/public-progress/'+publication+'/deliveries')).body;assert.ok(Array.isArray(routes.items));const ids=routes.items.map(row=>text(record(row).id));assert.equal(ids.length,2);
-    for(const id of ids)await browser.waitFor(`document.querySelector('[data-publication-id="${publication}"] [data-delivery-id="${id}"]')?.dataset.deliveryStatus==='PENDING'`);
+    for(const id of ids){await browser.waitFor(`document.querySelector('[data-publication-id="${publication}"] [data-delivery-id="${id}"]')?.dataset.deliveryStatus==='PENDING'`);assert.equal(await browser.evaluate(`document.querySelector('[data-publication-id="${publication}"] [data-delivery-id="${id}"]')?.textContent.includes('尚未发送')`),true);assert.equal(await browser.evaluate(`document.querySelector('[data-publication-id="${publication}"] [data-delivery-id="${id}"]')?.textContent.includes('NOT_ATTEMPTED')`),false);}
     let calls=0;const senderRuntime=createP2012Runtime({pool,principalIds:[text(record(f.admin).id)],publicOrigin:origin,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true},incidentBackgroundMaintenance:false,incidentCandidateWorkspaceEnabled:true,incidentPublicProgressEnabled:true,externalSendEnabled:false,senderAdapter:{send:async()=>{calls++;return {outcome:calls===1?'UNKNOWN':'REJECTED_NOT_APPLIED',provider_message_id:null,error_code:calls===1?'SYNTHETIC_UNKNOWN':'SYNTHETIC_REJECTED',retryable:false};}}});let error:unknown;
     try{for(const id of ids)await senderRuntime.communicationWorker.deliver({deliveryId:id});assert.equal(calls,2);await browser.evaluate("[...document.querySelectorAll('[data-public-progress-routes] button')].find(button=>button.textContent==='刷新本次结果').click()");
       for(const [index,status] of ['RECONCILIATION_REQUIRED','DEAD_LETTER'].entries())await browser.waitFor(`document.querySelector('[data-publication-id="${publication}"] [data-delivery-id="${ids[index]}"]')?.dataset.deliveryStatus==='${status}'`);
-      assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[0]}"]')?.textContent.includes('结果未知待核对')`),true);assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[1]}"]')?.textContent.includes('发送失败')`),true);await capture('actual-route-results');assert.equal((await get(path+'/commands/'+text(original.client_command_id))).body.state,'COMMITTED');assert.deepEqual(await browser.evaluate('globalThis.__t31Posts'),[]);
+      assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[0]}"]')?.textContent.includes('结果未知待核对')`),true);assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[0]}"]')?.textContent.includes('发送结果未确认')`),true);assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[0]}"]')?.textContent.includes('UNKNOWN')`),false);assert.equal(await browser.evaluate(`JSON.parse(document.querySelector('[data-delivery-id="${ids[0]}"] [data-diagnostics]')?.dataset.diagnostics??'{}').error_code`),'SYNTHETIC_UNKNOWN');assert.equal(await browser.evaluate(`document.querySelector('[data-delivery-id="${ids[1]}"]')?.textContent.includes('发送失败')`),true);await capture('actual-route-results');assert.equal((await get(path+'/commands/'+text(original.client_command_id))).body.state,'COMMITTED');assert.deepEqual(await browser.evaluate('globalThis.__t31Posts'),[]);
     }catch(e){error=e;}await closeBrowserTestResources([()=>senderRuntime.stop()],error);
+  });
+});
+
+test('T31 failed receipt without recovered text clears the operation without claiming the text remains',async()=>{
+  await t31Browser('t31opaqfail',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成暂存的公开摘要');await publish(browser);
+    await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
+    const command=record(await browser.evaluate('globalThis.__opaqueCommand')),commandId=text(command.client_command_id);
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-public-progress')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const originalDocument=await browser.evaluate('performance.timeOrigin');
+    await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${originalDocument}&&Boolean(document.querySelector("[data-action=check-public-progress-operation]"))&&Boolean(document.querySelector("textarea[aria-label=公开进展摘要]"))`);
+    assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),'');
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/commands/${commandId}')?Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(commandId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+    await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("上次提交没有成功")');
+    assert.equal(await browser.evaluate('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("内容还在")'),false);
+    const after=record(await browser.evaluate(inspectT31Drafts));assert.deepEqual(after.drafts,[]);assert.deepEqual(after.operations,[]);
+  });
+});
+
+test('T31 opaque failed receipt switches to a newer shared operation without waiting for a notification',async()=>{
+  await t31Browser('t31newop',async({browser,incidentId,put})=>{
+    await browser.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){globalThis.__opaqueCommand=JSON.parse(options.body);throw new TypeError('SYNTHETIC_LOST_REQUEST');}return send(path,options);};})()");
+    await put('合成旧操作摘要');await publish(browser);await browser.waitFor('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("结果未确认")');
+    const oldId=text(record(await browser.evaluate('globalThis.__opaqueCommand')).client_command_id),nextId=randomUUID();
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('drafts','readwrite'),store=tx.objectStore('drafts'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.purpose==='incident-public-progress')store.delete(row.scope);};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    const previousDocument=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${previousDocument}&&Boolean(document.querySelector("[data-action=check-public-progress-operation]"))`);
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>{const url=String(path);if(url.endsWith('/commands/${oldId}'))return new Promise(resolve=>{globalThis.__releaseOldReceipt=()=>resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(oldId)},state:'FAILED',error:{code:'P2_012_VERSION_CONFLICT',retryable:false}}));});if(url.endsWith('/commands/${nextId}')){globalThis.__checkedNew=true;return Promise.resolve(Response.json({incident_id:${JSON.stringify(incidentId)},client_command_id:${JSON.stringify(nextId)},state:'UNKNOWN'}));}return read(path,options);};})()`);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('typeof globalThis.__releaseOldReceipt==="function"');
+    await browser.evaluate(`new Promise((resolve,reject)=>{const request=indexedDB.open('wecom-workbench-drafts-v1');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('operations','readwrite'),store=tx.objectStore('operations'),rows=store.getAll();rows.onsuccess=()=>{for(const row of rows.result)if(row.commandId===${JSON.stringify(oldId)})store.put({...row,commandId:${JSON.stringify(nextId)}});};tx.oncomplete=()=>{db.close();resolve();};};})`);
+    await browser.evaluate('globalThis.__releaseOldReceipt()');await browser.waitFor(`JSON.parse(document.querySelector('[aria-label="公开进展摘要"] [data-diagnostics]')?.dataset.diagnostics??'{}').operation_id===${JSON.stringify(nextId)}`);
+    assert.equal(await browser.evaluate('document.querySelector("[data-public-progress-outcome]")?.textContent.includes("另一个页面已开始新的操作")'),true);
+    await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');await browser.waitFor('globalThis.__checkedNew===true');
+  });
+});
+
+test('T31 peer failure and discard leave the independent local input available',async()=>{
+  await t31Browser('t31peerfail',async({browser,incidentId,origin,put})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await put('合成对方公开摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成对方公开摘要"');
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await put('合成本页独立公开输入');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({ok:false,error:{code:'P2_012_VERSION_CONFLICT',retryable:false},replayed:false},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');
+      await tab.waitFor('typeof globalThis.__rejectNote==="function"');await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("另一页面仍有草稿")');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.value'),'合成本页独立公开输入');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.disabled'),false);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))'),false);
+      await browser.evaluate('globalThis.__restoreTimer()');await tab.evaluate('document.querySelector("[data-action=discard-public-progress-draft]").click()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成本页独立公开输入"&&document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+    }finally{await tab?.close();}
+  });
+});
+
+test('T31 peer failure clears the receipt on a blank page',async()=>{
+  await t31Browser('t31peerblank',async({browser,incidentId,origin})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿仅在当前浏览器")');
+      await tab.evaluate('(()=>{const el=document.querySelector("textarea[aria-label=公开进展摘要]");Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value").set.call(el,"合成另一页公开摘要");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await tab.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await tab.evaluate("(()=>{const send=fetch;fetch=(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update'))return new Promise(resolve=>{globalThis.__rejectNote=()=>resolve(Response.json({ok:false,error:{code:'P2_012_VERSION_CONFLICT',retryable:false},replayed:false},{status:409}));});return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await tab.waitFor('typeof globalThis.__rejectNote==="function"');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');await tab.evaluate('globalThis.__rejectNote()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.disabled===false&&!document.querySelector("[data-action=check-public-progress-operation]")');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]").value'),'');
+    }finally{await tab?.close();}
+  });
+});
+
+test('T31 checking a committed peer operation restores the independent local input',async()=>{
+  await t31Browser('t31peerack',async({browser,incidentId,origin,put})=>{
+    let tab:Awaited<ReturnType<typeof yxxTab>>|undefined;
+    try{
+      await put('合成对方已发布摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      tab=await yxxTab(browser,origin+'/workbench/app/incidents/'+incidentId);await tab.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成对方已发布摘要"');
+      await tab.evaluate('document.querySelector("[data-action=preview-public-progress]").click()');await tab.waitFor('Boolean(document.querySelector("[data-public-progress-preview]"))');await tab.evaluate('document.querySelector("input[aria-label=确认安全公开摘要]").click()');await tab.waitFor('document.querySelector("[data-action=submit-public-progress]")?.disabled===false');
+      await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreTimer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+      await put('合成本页待保存摘要');
+      await tab.evaluate("(()=>{const send=fetch;fetch=async(path,options)=>{if(options?.method==='POST'&&String(path).endsWith('/publish-update')){const response=await send(path,options);return new Promise(resolve=>{globalThis.__releaseNote=()=>resolve(response);});}return send(path,options);};})()");
+      await tab.evaluate('document.querySelector("[data-action=submit-public-progress]").click()');await tab.waitFor('typeof globalThis.__releaseNote==="function"');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))');await browser.evaluate('globalThis.__restoreTimer()');
+      await browser.evaluate("(()=>{const read=fetch;let count=0;fetch=(path,options)=>{if(String(path)==='/api/lifecycle/bootstrap'&&++count===3)return new Promise((resolve,reject)=>{globalThis.__releaseRestoreRead=()=>read(path,options).then(resolve,reject);});return read(path,options);};})()");
+      await browser.evaluate('document.querySelector("[data-action=check-public-progress-operation]").click()');
+      await browser.waitFor('typeof globalThis.__releaseRestoreRead==="function"');
+      assert.equal(await browser.evaluate('document.querySelector("textarea[aria-label=公开进展摘要]")?.disabled'),true);
+      await browser.evaluate('globalThis.__releaseRestoreRead()');
+      await browser.waitFor('document.querySelector("textarea[aria-label=公开进展摘要]")?.value==="合成本页待保存摘要"&&document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-public-progress-operation]"))'),false);
+    }finally{await tab?.close();}
   });
 });
 
 test('T31 a held real public page cannot repopulate the projection or draft after current purpose loss',async()=>{
   await t31Browser('t31late',async({browser,incidentId,pool,f,post,put})=>{
     const path='/api/incidents/'+incidentId,summary='合成晚到公开记录：失权后停止展示';assert.equal((await post(path+'/publish-update',{client_command_id:randomUUID(),expected_row_version:'1',reason_code:'WORKBENCH_PUBLIC_PROGRESS',summary,preview_confirmed:true})).status,200);
-    await put('合成尚未提交的独立摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("已保存恢复副本")');
+    await put('合成尚未提交的独立摘要');await browser.waitFor('document.querySelector("[data-public-progress-draft]")?.textContent.includes("草稿已保存")');
     await browser.evaluate("(()=>{const send=fetch;globalThis.__t31Held=[];globalThis.__t31Hold=true;globalThis.fetch=async(path,options)=>{if(globalThis.__t31Hold&&(!options?.method||options.method==='GET')&&String(path).includes('/public-progress')){const response=await send(path,options),bytes=await response.arrayBuffer(),headers=[...response.headers];return new Promise(resolve=>globalThis.__t31Held.push(()=>resolve(new Response(bytes,{status:response.status,headers}))));}return send(path,options);};})()");
     await browser.evaluate("[...document.querySelectorAll('button')].find(button=>button.textContent==='回到公开进展起点').click()");await browser.waitFor('globalThis.__t31Held.length>0');
     const admin=text(record(f.admin).id);await pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$1::uuid WHERE id=$2::uuid',[admin,text(record(f.reports[0]).ticketId)]);await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[admin]);await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[admin]);

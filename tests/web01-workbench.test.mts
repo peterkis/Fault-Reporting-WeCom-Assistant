@@ -137,7 +137,7 @@ test('source group naming validates bounded text and decimal versions without lo
   for(const display_name of ['', ' '.repeat(2),'a'.repeat(129),'不可\n换行'])assert.throws(()=>sourceGroupNameCommand({...command,display_name}),{code:'P2_016_INPUT_INVALID'});
   for(const expected_row_version of ['-1','01',1,'9223372036854775807'])assert.throws(()=>sourceGroupNameCommand({...command,expected_row_version}),{code:'P2_016_INPUT_INVALID'});
   assert.throws(()=>sourceGroupNameCommand({...command,chatid:'client-injected'}),{code:'P2_016_INPUT_INVALID'});
-  assert.equal(sourceLabel('WECOM_GROUP'),'群聊报修 · 群名称未登记');
+  assert.equal(sourceLabel('WECOM_GROUP'),'群聊报修 · 企微群聊');
   assert.equal(sourceLabel('WECOM_GROUP','信息科支持群'),'群聊报修 · 信息科支持群');
   assert.equal(sourceLabel('WECOM_DIRECT'),'企业微信私聊');
 });

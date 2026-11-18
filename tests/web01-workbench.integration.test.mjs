@@ -142,7 +142,7 @@ test('source group HTTP: ADMIN metadata, scoped group identity, replay, conflict
     assert.equal((await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'})).status,'NOOP_ALREADY_APPLIED');
     const itemPath=id=>'/api/workbench/items/ticket/'+id;
     const first=(await read(itemPath(tickets[0].ticket.id))).item,ref=first.source_group.ref;
-    assert.match(ref,/^[a-f0-9]{64}$/u);assert.equal(first.source_label,'群聊报修 · 群名称未登记');assert.equal(first.source_group.row_version,'0');
+    assert.match(ref,/^[a-f0-9]{64}$/u);assert.equal(first.source_label,'群聊报修 · 企微群聊');assert.equal(first.source_group.row_version,'0');
     const raw=(await pool.query('SELECT source_bot_id,source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[first.intake_id])).rows[0];
     // Different Bot + same chatid must resolve to a different name record.
     await pool.query('UPDATE intake.service_intake SET source_chat_id=$2,source_bot_id=$3 WHERE id=$1::uuid',[tickets[1].intake.intakeId,raw.source_chat_id,'other-synthetic-bot']);

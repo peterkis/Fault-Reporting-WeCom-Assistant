@@ -1,9 +1,34 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {readFile} from 'node:fs/promises';
 import type {IncomingMessage} from 'node:http';
 import {withT10Fixture} from './helpers/t10-waiting-fixture.mjs';
 import {t11Http} from './helpers/t11-completion-fixture.mjs';
 import {withT10Browser,fillWaiting} from './helpers/t10-browser-fixture.mjs';
+import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+
+test('T10 blank observer preserves a peer failed waiting draft',{timeout:240000},async()=>{
+ await withT10Fixture(async context=>{
+  const http=await t11Http(context,2),target=context.tickets[0];assert.ok(target);await http.start(target.ticket.id);const bootstrap=await (await http.get('/api/lifecycle/bootstrap')).json() as {principal_id:string},ticketId=target.ticket.id,path='/api/tickets/'+ticketId+'/request-information';
+  await withT10Browser(context,ticketId,2,'T10_FAILED_PEER',async browser=>{
+   await browser.waitFor("document.querySelector('[data-action=request-information]')?.disabled===false");await browser.evaluate("document.querySelector('[data-action=request-information]').click()");
+   const form='form[aria-label="等待补充"]',input=form+' textarea[aria-label="等待原因"]';await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(input)}))`);
+   const tab=await yxxTab(browser,context.origin+'/workbench/app/items/ticket/'+ticketId);
+   try{
+    await tab.waitFor("document.querySelector('[data-action=request-information]')?.disabled===false");await tab.evaluate("document.querySelector('[data-action=request-information]').click()");await tab.waitFor(`Boolean(document.querySelector(${JSON.stringify(input)}))`);await tab.evaluate(fillWaiting(input,'T10_FAILED_PEER_NOTE'));
+    await tab.waitFor("document.querySelector('[data-waiting-purpose=request-information] .workbench-draft-status')?.textContent.includes('草稿已保存')");
+    await tab.evaluate(`(()=>{const send=fetch;fetch=(url,options)=>{if(options?.method==='POST'&&String(url)===${JSON.stringify(path)}){globalThis.__t10Peer=JSON.parse(options.body);return new Promise(()=>{});}return send(url,options);};})()`);
+    await tab.waitFor(`document.querySelector(${JSON.stringify(form+' button[type="submit"]')})?.disabled===false`);await tab.evaluate(`document.querySelector(${JSON.stringify(form+' button[type="submit"]')}).click()`);await tab.waitFor('Boolean(globalThis.__t10Peer?.client_command_id)');
+    await browser.waitFor("Boolean(document.querySelector('[data-action=check-request-information-command]'))");const original=await tab.evaluate('globalThis.__t10Peer') as {client_command_id:string},id=original.client_command_id;
+    await browser.evaluate(`(()=>{const read=fetch;fetch=(url,options)=>String(url).endsWith('/request-information/commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(url,options);})()`);
+    await browser.evaluate("document.querySelector('[data-action=check-request-information-command]').click()");
+    const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file,scope={principal:bootstrap.principal_id,kind:'ticket',id:ticketId,purpose:'waiting-requester'};
+    await tab.waitFor(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.handle.operation===null;})()`);
+    const saved=await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)});return copy.text;})()`) as string|null;assert.ok(saved);const copy=JSON.parse(saved) as {note:string;pending:unknown};assert.equal(copy.note,'T10_FAILED_PEER_NOTE');assert.equal(copy.pending,null);
+   }finally{await tab.close();}
+  });
+ });
+});
 
 test('production UNKNOWN keeps the original waiting UUID and uses only explicit safe GET after the action disappears and reloads',async()=>{
   await withT10Fixture(async context=>{

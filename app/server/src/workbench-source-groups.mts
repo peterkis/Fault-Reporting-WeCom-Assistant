@@ -38,7 +38,7 @@ function group(row:{ref:string;display_name:string|null;row_version:string}):Sou
   return {ref:row.ref,display_name:row.display_name,row_version:row.row_version,name_source:row.display_name===null?'UNREGISTERED':'ADMIN_CONFIRMED'};
 }
 export function sourceLabel(source:string,displayName:string|null=null):string {
-  return source==='WECOM_GROUP'?'群聊报修 · '+(displayName??'群名称未登记'):(LABELS[source]??source);
+  return source==='WECOM_GROUP'?'群聊报修 · '+(displayName??'企微群聊'):(LABELS[source]??source);
 }
 export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;query:P2016TicketQuery}) {
   async function admin(authContext:unknown,tx:PostgresTransaction=pool) {

@@ -3,7 +3,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {IncomingMessage,ServerResponse} from 'node:http';
@@ -83,7 +83,7 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    await writer.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(writer,oldTarget);
    await writer.waitFor(`Boolean(document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]'))&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').disabled===false`);
    await writer.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
-   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').checked`);
+   await writer.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${reasonInput})?.value===${JSON.stringify(reasonR1)}&&document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').checked`);
    r1=object(await writer.evaluate(snapshot(fixture.admin,ticketId)));assert.ok(r1.revision);assert.equal(r1.operation,null);
    // Writer B itself completes a real authorized R1 restore while X is still valid.
    const timeOrigin=await writer.evaluate('performance.timeOrigin');await writer.command('Page.reload');
@@ -104,14 +104,14 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    assert.equal(await stale.evaluate(`(${reasonInput})?.value??null`),'','R1 restore has not exposed its selected body before the held target authorization');
    assert.equal(await writer.evaluate(`(${reasonInput})?.value`),reasonR1);
    await choose(writer,newTarget);await writer.evaluate(input(reasonR2));
-   await writer.waitFor(`(${draftStatus})?.textContent.includes('已保存恢复副本')&&(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}`);
+   await writer.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')&&(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}`);
    r2=object(await writer.evaluate(snapshot(fixture.admin,ticketId)));assert.ok(r2.revision);assert.notEqual(r2.revision,r1.revision);assert.equal(r2.operation,null);assert.equal(r2.epoch,r1.epoch);
    // Same existing T22 seam: hold actual encryption so new public UI text remains demonstrably unsaved.
    await writer.evaluate(holdEncryption);await writer.evaluate(input(unsaved));await writer.waitFor('globalThis.__t08EncryptionHeld===1');
    assert.equal(await writer.evaluate(`(${reasonInput})?.value`),unsaved);assert.deepEqual(await writer.evaluate(snapshot(fixture.admin,ticketId)),r2);
    releaseTargets();await pollYxx(()=>held.size===0);
    // Both original and minimally fixed code have a public completion state. No assertion requires the buggy broadcast.
-   await stale.waitFor(`globalThis.__t08TargetReplies?.includes(403)&&Boolean(${draftStatus})&&((${draftStatus}).textContent.includes('恢复核验暂时不可用')||(${draftStatus}).textContent.includes('恢复副本已清理')||(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}&&(${reasonInput}).disabled===false)`);
+   await stale.waitFor(`globalThis.__t08TargetReplies?.includes(403)&&Boolean(${draftStatus})&&((${draftStatus}).textContent.includes('草稿暂未恢复')||(${draftStatus}).textContent.includes('恢复副本已清理')||(${reasonInput})?.value===${JSON.stringify(reasonR2)}&&(${targetInput})?.value===${JSON.stringify(newTarget)}&&(${reasonInput}).disabled===false)`);
    // An observation marker has no principal/reason and is rejected by production invalidation().
    // It drains the same native cross-tab channel after the old restore completed, without creating a revoked message.
    const barrier=randomUUID();await stale.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({t08RaceBarrier:${JSON.stringify(barrier)}});channel.close();})()`);
@@ -138,5 +138,44 @@ test('a stale R1 target refusal cannot revoke another tab current valid R2 revis
    async()=>{await writer?.close();if(writer)assert.deepEqual(writer.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
    async()=>{fixture.runtime.server.removeListener('request',observe);assert.equal(held.size,0);assert.equal((await fixture.runtime.observability.metrics()).sse_clients,0);},
   ],primary);
+ },{ticketUnassignEnabled:true,ticketAssignmentEnabled:false,ticketConversationSelfHandlingEnabled:false,workbenchDraftRecoveryEnabled:true,workbenchRealtimeEnabled:false});
+});
+
+for(const revoked of [false,true])test('a retained unassign draft '+(revoked?'is removed if its selected target is revoked':'returns to the form after authorization'),{timeout:240000},async()=>{
+ await withT08Fixture(async fixture=>{
+  const admin=await fixture.http(0),handler=await fixture.http(2),ticketId=await fixture.createTicket(),path='/api/tickets/'+ticketId;
+  assert.equal((await handler.post(path+'/accept',{client_command_id:randomUUID(),expected_version:1,reason_code:'T08_RETAIN_ACCEPT'})).status,200);
+  await fixture.runtime.coordinator.runOnce();const source=rows((await handler.get(path+'/responsibility')).value.conversations)[0];assert.ok(source);
+  const sessionId=text(source.session_id);assert.equal((await handler.post('/api/conversations/'+sessionId+'/takeover',{client_command_id:randomUUID(),expected_row_version:Number(source.session_row_version),reason_code:'T08_RETAIN_COMMUNICATOR'})).status,200);
+  const cookie=fixture.runtime.authenticate.browserCookies?.()[0];assert.ok(cookie);
+  let browser:Browser|undefined,tab:Tab|undefined,primary:unknown;
+  try{
+   browser=await launchSystemBrowser({url:fixture.origin+'/workbench/app/items/ticket/'+ticketId,width:600,height:1080,cookies:[{...cookie,url:fixture.origin+'/'}]});assert.ok(browser);
+   await browser.waitFor(ready);await browser.evaluate(input('T08 saved peer'));
+   await browser.evaluate("document.querySelector('.ticket-unassign input[value=TRANSFER_SELECTED]').click()");await choose(browser,fixture.otherHandler);
+   await browser.waitFor(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]')?.disabled===false`);
+   await browser.evaluate(`document.querySelector('[data-session-choice="${sessionId}"] input[type=checkbox]').click()`);
+   await browser.waitFor(`(${draftStatus})?.textContent.includes('草稿已保存')`);
+   const manifest=JSON.parse(await readFile(new URL('../web/admin-workbench/.vite/manifest.json',import.meta.url),'utf8')) as Record<string,{file:string}>,recovery='/workbench/app/'+manifest['src/feedback-recovery.ts']?.file;
+   const scope={principal:fixture.admin,kind:'ticket',id:ticketId,purpose:'ticket-unassign'};
+   tab=await yxxTab(browser,fixture.origin+'/workbench/app/');
+   await browser.evaluate("(()=>{const timer=window.setTimeout;globalThis.__restoreT08Timer=()=>{window.setTimeout=timer;};window.setTimeout=(fn,ms,...args)=>ms===500?timer(()=>{},2147483647):timer(fn,ms,...args);})()");
+   const local='T08 retained local reason '+randomUUID();await browser.evaluate(input(local));
+   const peerId=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+'),id=crypto.randomUUID();await store.saveDraft(copy.handle,copy.text,{commandId:id});globalThis.__finishT08Peer=()=>store.settleDraft(copy.handle,id,copy.handle.record.revision);return id;})()') as string;
+   await browser.waitFor('Boolean(document.querySelector("[data-action=check-unassign-command]"))');
+   assert.equal(await browser.evaluate('document.body.innerText.includes('+JSON.stringify(peerId)+')'),false);assert.equal(await browser.evaluate('JSON.parse(document.querySelector(".ticket-unassign [data-diagnostics]").dataset.diagnostics).operation_id'),peerId);
+   await browser.evaluate("(()=>{const read=fetch;let held=false;fetch=(path,options)=>{if(!held&&String(path).includes('/unassign/communication-targets?')){held=true;return new Promise((resolve,reject)=>{globalThis.__releaseT08Restore=()=>"+(revoked?"resolve(new Response('{}',{status:403,headers:{'content-type':'application/json'}}))":"read(path,options).then(resolve,reject)")+";});}return read(path,options);};})()");
+   await browser.evaluate('globalThis.__restoreT08Timer()');await tab.evaluate('globalThis.__finishT08Peer()');
+   await browser.waitFor('typeof globalThis.__releaseT08Restore==="function"');await browser.waitFor(`(${reasonInput})?.disabled===true`);assert.equal(await browser.evaluate(`(${reasonInput})?.disabled`),true);
+   await browser.evaluate('globalThis.__releaseT08Restore()');
+   if(revoked){
+    await browser.waitFor(`(async()=>{const value=await (${snapshot(fixture.admin,ticketId)});return value.revision===null&&value.operation===null;})()`);
+    assert.equal(await browser.evaluate(`(${reasonInput})?.value??''`),'');
+   }else{
+    await browser.waitFor(`(${reasonInput})?.value===${JSON.stringify(local)}&&(${reasonInput}).disabled===false`);
+    assert.ok(object(await browser.evaluate(snapshot(fixture.admin,ticketId))).revision);
+   }
+  }catch(error){primary=error;}
+  await closeBrowserTestResources([async()=>{await tab?.close();},async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],primary);
  },{ticketUnassignEnabled:true,ticketAssignmentEnabled:false,ticketConversationSelfHandlingEnabled:false,workbenchDraftRecoveryEnabled:true,workbenchRealtimeEnabled:false});
 });

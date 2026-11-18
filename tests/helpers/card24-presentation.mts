@@ -35,6 +35,7 @@ export async function card24Kbd(browser:Browser,selector:string){
 }
 
 export async function card24Conversation(browser:Browser,mode:'allowed'|'denied'|'waiting'|'failed'){
+ await browser.waitFor(`(()=>{const input=document.querySelector('textarea[data-purpose=messages]'),shortcut=document.querySelector('#conversation-reply-panel .ds-composer-shortcut');if(!input||!shortcut)return false;const visible=shortcut.checkVisibility()&&getComputedStyle(shortcut).clipPath==='none';return input.disabled===${mode==='waiting'||mode==='denied'}&&visible===${mode!=='waiting'&&mode!=='denied'};})()`);
  const sample=record(await browser.evaluate(`(()=>{
   const chat=document.querySelector('.inbox-chat'),rect=n=>n.getBoundingClientRect(),css=n=>getComputedStyle(n),visible=n=>Boolean(n&&n.checkVisibility()&&css(n).clipPath==='none');
   const corners=n=>{const s=css(n);return [s.borderTopLeftRadius,s.borderTopRightRadius,s.borderBottomRightRadius,s.borderBottomLeftRadius,s.paddingTop,s.paddingRight,s.paddingBottom,s.paddingLeft];};

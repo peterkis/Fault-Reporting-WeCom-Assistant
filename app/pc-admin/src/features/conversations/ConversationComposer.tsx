@@ -42,13 +42,13 @@ export function ConversationComposer(props:ComposerProps){
       let letters='';while(number>0n){letters=String.fromCharCode(97+Number(number%26n))+letters;number/=26n;}
       // 55 base26 letters represent the complete 256-bit digest inside the existing closed purpose grammar.
       if(!cancelled)setBinding({identity,purpose:'sr-'+letters.padStart(55,'a')});
-    })().catch(()=>{if(!cancelled)setFailure('无法核验原补充回复的草稿范围，敏感内容未恢复，尚未发送。');});
+    })().catch(()=>{if(!cancelled)setFailure('草稿暂未恢复：补充回复的草稿暂时读不到，无法确认上次是否已发送，请先不要再次发送。重新打开会话后再试。');});
     return()=>{cancelled=true;};
   },[identity]);
   const preparing=target!==undefined&&binding?.identity!==identity;
   useEffect(()=>{if(!preparing)return;props.onBlockedChange(true);return()=>props.onBlockedChange(false);},[preparing,props.onBlockedChange]);
   if(!target)return <Composer {...props} draftPurpose={props.purpose==='messages'?'conversation-reply':'conversation-note'}/>;
-  if(preparing||failure||!binding)return <section className="conversation-composer" aria-label="回复报修人"><p role={failure?'alert':'status'} data-conversation-draft={props.purpose}>{failure??'正在核验原补充回复的草稿范围…'}</p></section>;
+  if(preparing||failure||!binding)return <section className="conversation-composer" aria-label="回复报修人"><p role={failure?'alert':'status'} data-conversation-draft={props.purpose}>{failure??'正在加载…'}</p></section>;
   return <Composer key={props.principal.principal_id+':'+binding.purpose} {...props} draftPurpose={binding.purpose}/>;
 }
 function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpTarget,draftPurpose,compact=false,receptionVisible=false}:ComposerProps&{draftPurpose:string}){
@@ -57,7 +57,9 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   const [value,setValue]=useState(''),[pending,setPending]=useState<SavedCommand|null>(null),[outcome,setOutcome,outcomeRevision]=useFeedbackState(''),[busy,setBusy]=useState(false);
   const composing=useRef(false),request=useRef<AbortController|null>(null),epoch=useRef(0),latest=useRef(value),alive=useRef(true);latest.current=value;
   const draftAuthority=useRef<AuthorityAttempt|null>(null);
-  const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome('');};
+  // Codex review: the reply-permission notice outlives the draft hook's own clean-up of the purged reply, so the page still says why it was cleared.
+  const revokedNotice=useRef<string|null>(null);
+  const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome(revokedNotice.current??'');};
   const isCurrent=(attempt:AuthorityAttempt)=>!attempt.signal.aborted&&epoch.current===attempt.token&&client.getQueryData<Principal>(['session'])?.principal_id===principal.principal_id;
   const authorityFailure=(error:unknown,attempt:AuthorityAttempt)=>{
     if(!isCurrent(attempt)||!(error instanceof ApiError))return false;
@@ -65,7 +67,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
     if([403,404].includes(error.status)){
       if(followUpTarget){
         // A lost REPLY or exact target read clears only this original reply purpose.
-        void purgeDrafts({principal:principal.principal_id,kind:'ticket',id:followUpTarget.ticket_id,purpose:draftPurpose,reason:'revoked'},{preserveOperations:true}).then(()=>{if(!alive.current||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;sensitiveClear();setOutcome('当前会话回复或原补充材料权限已失效，敏感回复已清理；已有原操作只能只读核对。');}).catch(()=>{if(!alive.current)return;sensitiveClear();setOutcome('当前回复权限已失效；恢复清理尚未确认，不能发送新操作。');});
+        void purgeDrafts({principal:principal.principal_id,kind:'ticket',id:followUpTarget.ticket_id,purpose:draftPurpose,reason:'revoked'},{preserveOperations:true}).then(()=>{if(!alive.current||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;revokedNotice.current='当前会话回复或原补充材料权限已失效，敏感回复已清理；已有原操作只能只读核对。';sensitiveClear();}).catch(()=>{if(!alive.current)return;revokedNotice.current='当前回复权限已失效；恢复清理尚未确认，不能发送新操作。';sensitiveClear();});
       }else void clearItemAuthorization(client,principal.principal_id,'conversation',session,error);return true;
     }
     return false;
@@ -81,51 +83,69 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       try{const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled||!fresh.conversation_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');attempt.stage='conversation';const current=await conversations.detail(session,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');if(followUpTarget){if(!fresh.supplement_follow_up_enabled||!fresh.supplement_follow_up_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');}return current.capabilities.includes(action);}
       catch(error){attempt.failure=error;throw error;}
     },onAuthorityFailure:error=>{const attempt=draftAuthority.current;if(attempt&&attempt.failure===error)authorityFailure(error,attempt);},
-    onRestore:v=>{setValue(v.value);setPending(v.pending);if(v.pending)setOutcome('结果未知：请核对原操作，正文与版本保持不变。');},onOperation:()=>setOutcome('结果未知：敏感内容不可用，只能只读核对原操作。'),onSensitiveClear:sensitiveClear});
-  const unknown=Boolean(pending||draft.operationId||boundOperationId),allowed=entry.capabilities.includes(action),blocked=(busy||unknown||(Boolean(value)&&draft.enabled))&&!draft.safeToLeave;
+    onRestore:v=>{revokedNotice.current=null;setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:(_id,preserveInput)=>{if(preserveInput){epoch.current++;request.current?.abort();request.current=null;setPending(null);setBusy(false);}setOutcome(preserveInput?'另一个页面的操作尚待核对；本页输入未保存。':'结果未知：敏感内容不可用，只能只读核对原操作。');},onOperationCleared:conflict=>{epoch.current++;request.current?.abort();request.current=null;setPending(null);setBoundOperationId(null);setBusy(false);setOutcome(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:sensitiveClear});
+  const unknown=Boolean(pending||draft.operationId||boundOperationId),recovering=draft.enabled&&draft.status==='loading',allowed=entry.capabilities.includes(action),blocked=(busy||unknown||recovering||(Boolean(value)&&draft.enabled))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;epoch.current++;request.current?.abort();};},[]);
   useEffect(()=>{if(!blocked)return;const warn=(e:BeforeUnloadEvent)=>e.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[blocked]);
-  async function confirmed(nonce:string,result:ConversationMessageResult,original:string|undefined,token:number){
-    if(epoch.current!==token||request.current?.signal.aborted)return;
+  async function confirmed(nonce:string,result:ConversationMessageResult,original:string|undefined,token:number,controller:AbortController){
+    if(epoch.current!==token||request.current!==controller||controller.signal.aborted)return;
     const preserve=original===undefined?Boolean(latest.current):latest.current!==original;
-    const cleaned=await draft.success(nonce,preserve);if(epoch.current!==token||request.current?.signal.aborted)return;
+    const cleaned=await draft.success(nonce,preserve);if(epoch.current!==token||request.current!==controller||controller.signal.aborted)return;
     if(!preserve){latest.current='';setValue('');}setPending(null);if(followUpTarget&&cleaned)setBoundOperationId(null);onCommitted(result);
-    setOutcome((purpose==='messages'?'已受理发送；请查看本条回复的投递状态。':'已保存内部备注，仅供有权限的工作人员查看。')+(preserve?' 较新的输入已保留。':'')+(cleaned?'':' 恢复副本清理尚未确认，请只读核对。'));
+    setOutcome((purpose==='messages'?'已受理发送；请查看本条回复的投递状态。':'已保存内部备注，仅供有权限的工作人员查看。')+(preserve?' 较新的输入已保留。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));
   }
   async function send(saved?:SavedCommand){
-    if(!saved&&!workbenchTransportWritable()){setOutcome('连接尚未完成事实核验，新回复或备注尚未准备或发送；输入已保留，请刷新后重试。');return;}
-    if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
-    const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token};
-    let command=saved;
+    if(!saved&&!workbenchTransportWritable()){setOutcome('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
+    if(request.current)return;revokedNotice.current=null;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
+    const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token},current=()=>request.current===controller&&isCurrent(attempt);
+    let command=saved,dispatched=false,preparation:ReturnType<typeof draft.prepareSend>=null;
     try{
       const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled)throw new DraftError('DRAFT_DISABLED');
-      attempt.stage='conversation';const current=await conversations.detail(session,controller.signal);if(!isCurrent(attempt))return;if(!current.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
-      if(followUpTarget){if(!fresh.supplement_follow_up_enabled)throw new ApiError(404,'AUTHORIZATION_REJECTED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,controller.signal);if(!isCurrent(attempt))return;}
-      if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:current.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
+      attempt.stage='conversation';const detail=await conversations.detail(session,controller.signal);if(!current())return;if(!detail.capabilities.includes(action))throw new ApiError(403,'AUTHORIZATION_REJECTED');
+      if(followUpTarget){if(!fresh.supplement_follow_up_enabled)throw new ApiError(404,'AUTHORIZATION_REJECTED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,controller.signal);if(!current())return;}
+      if(!command)command={session_id:session,purpose,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_row_version:detail.session.row_version,text:latest.current.trim(),...(followUpTarget?{follow_up_target:Object.freeze({...followUpTarget})}:{})})};
+      if(saved){
+        if(!await draft.claimReplay(saved.command.client_command_id)){
+          if(current())setOutcome('原操作已在另一页面处理，请重新打开详情后查看。');
+          return;
+        }
+      }else{
+        preparation=draft.prepareSend(command);
+        await preparation?.save();
+        if(!current())return;
+      }
+      if(!current())return;
       if(followUpTarget)setBoundOperationId(command.command.client_command_id);
-      if(!saved)await draft.prepare(command);if(!isCurrent(attempt))return;
-      setPending(command);setOutcome('正在提交原操作…');const result=await conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal);await confirmed(command.command.client_command_id,result,command.command.text,token);
-    }catch(error){if(!isCurrent(attempt))return;
-      if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(command){try{await draft.knownFailure(command.command.client_command_id);setPending(null);if(followUpTarget)setBoundOperationId(null);}catch{setPending(command);}}setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
-      else if(command){setPending(command);setOutcome('结果未知：请求可能已提交。请只读核对原操作，或使用保留的原命令核对。');}
-      else setOutcome('恢复副本未保存，尚未发送；请保留输入并重新核验。');
-    }finally{if(request.current===controller){request.current=null;setBusy(false);}}
+      setPending(command);setOutcome('正在提交原操作…');dispatched=true;
+      const sending=conversations.send(session,purpose,command.command,fresh.csrf_token,controller.signal),claiming=preparation?.claim().catch(()=>{});
+      const result=await sending.finally(async()=>{await claiming;});await confirmed(command.command.client_command_id,result,command.command.text,token,controller);
+    }catch(error){if(!current())return;
+      if(error instanceof ApiError){if(authorityFailure(error,attempt))return;if(!dispatched&&!saved){setPending(null);if(followUpTarget)setBoundOperationId(null);setOutcome('本次没有提交，你的输入还在。'+errorMessage(error));return;}if(command){try{const cleaned=await draft.knownFailure(command.command.client_command_id);if(!current())return;if(cleaned){setPending(null);if(followUpTarget)setBoundOperationId(null);}else{setPending(command);setOutcome('上次操作未成功，但本地恢复标记尚未清理；请先核对。');return;}}catch{if(!current())return;setPending(command);}}if(!current())return;setOutcome(error.status===409?'资料已更新，内容已保留；请刷新并核对后重新操作。':errorMessage(error));}
+      // Codex review: only a request that went out (or a replayed original) can have an unknown result; a new reply whose draft
+      // could not be saved was never sent, so its number is released and the text stays.
+      else if(command&&(dispatched||saved)){setPending(command);setOutcome('结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。');}
+      else if(command){setPending(null);if(followUpTarget)setBoundOperationId(null);setOutcome('草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}
+      else setOutcome(error instanceof DraftError?'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。':'网络中断：本次没有提交，你的输入还在。网络恢复后重试。');
+    }finally{
+      if(preparation&&!dispatched)await preparation.release().catch(()=>{});
+      if(request.current===controller){request.current=null;setBusy(false);}
+    }
   }
   async function check(){
     const nonce=draft.operationId??pending?.command.client_command_id??boundOperationId;if(!nonce||request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'conversation',signal:controller.signal,token};
-    try{const result=await conversations.receipt(session,purpose,nonce,controller.signal);if(epoch.current!==token||controller.signal.aborted)return;if(result.state==='UNKNOWN'){setOutcome('结果仍未知；未找到收据不代表未提交，请继续只读核对。');return;}await confirmed(nonce,result.result,pending?.command.text,token);}
-    catch(error){if(isCurrent(attempt)){if(authorityFailure(error,attempt))return;setOutcome('只读核对失败，原操作仍未知。');}}
+    try{const result=await conversations.receipt(session,purpose,nonce,controller.signal);if(request.current!==controller||!isCurrent(attempt))return;if(result.state==='UNKNOWN'){setOutcome('结果仍未知；未找到收据不代表未提交，请继续只读核对。');return;}await confirmed(nonce,result.result,pending?.command.text,token,controller);}
+    catch(error){if(request.current===controller&&isCurrent(attempt)){if(authorityFailure(error,attempt))return;setOutcome('只读核对失败，原操作仍未知。');}}
     finally{if(request.current===controller){request.current=null;setBusy(false);}}
   }
   const label=purpose==='messages'?'回复报修人':'内部备注',awaitingReception=compact&&entry.assignment.status!=='ASSIGNED';
   const disabledReason=!allowed?(purpose==='messages'?'你当前没有回复权限':'你当前没有内部备注权限'):awaitingReception?(purpose==='messages'?'领取接待后可回复':'领取接待后可添加内部备注'):null;
   const reporter=entry.participant_label.replace(/（资料未提供）$/u,'').trim();
-  return <section className={'conversation-composer '+(purpose==='internal-notes'?'internal-composer':'')} aria-label={label} data-composer-disabled={!allowed||awaitingReception||busy||unknown?'true':undefined} data-composer-no-permission={!allowed?'true':undefined} data-composer-shortcut={allowed&&!awaitingReception&&!busy?'true':undefined}>
-    <HForm onSubmit={e=>{e.preventDefault();if(allowed&&!awaitingReception&&!busy&&!unknown&&draft.canSubmit&&value.trim())void send();}}><HLabel htmlFor={'conversation-'+purpose}>{label}</HLabel>{!disabledReason?<p className={compact?'sr-only':undefined} id={'audience-'+purpose}>{purpose==='messages'?'发给本服务主题的原报修人；群来源通过 Bot 私聊回复。':'仅供有权限的工作人员协作，不向报修人发送。'}</p>:null}<HTextArea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} placeholder={purpose==='messages'?'回复将通过 Bot 私聊发送给'+(reporter&&reporter!=='报修人'?reporter:'报修人')+'…':'仅内部协作可见，不会发送给报修人…'} maxLength={2000} value={value} disabled={!allowed||awaitingReception||busy||unknown} onChange={e=>setValue(e.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={e=>{if(e.key!=='Enter'||!e.ctrlKey||e.shiftKey||composing.current||e.nativeEvent.isComposing||e.keyCode===229)return;e.preventDefault();e.currentTarget.form?.requestSubmit();}}/><div className="ds-composer-bottom"><div className="ds-composer-status">{disabledReason?<p className={'ds-composer-disabled-reason'+(receptionVisible?' sr-only':'')} id={'audience-'+purpose}><LockKeyhole aria-hidden="true"/>{disabledReason}</p>:null}<small className="ds-composer-count">{value.length} / 2000</small>{draft.enabled?<DraftStatus inlineText={compact} role="status" data-conversation-draft={purpose}>{draft.message}</DraftStatus>:null}{value&&draft.enabled&&!busy?<><span aria-hidden="true">·</span><HButton className="ds-composer-discard" type="button" data-action={'discard-'+purpose} onClick={()=>void draft.discard()} tone="ghost">清理敏感草稿</HButton></>:null}</div><div className="note-controls"><HButton type="submit" data-action={purpose==='messages'?'send-conversation-reply':'save-conversation-note'} isDisabled={!allowed||awaitingReception||busy||unknown||!draft.canSubmit||!value.trim()} tone={(purpose==='messages'||compact)&&allowed&&!awaitingReception?'primary':'secondary'}>{purpose==='messages'?<Send className="inbox-submit-icon" aria-hidden="true"/>:<Save className="inbox-submit-icon" aria-hidden="true"/>}{busy?'正在核对…':compact?(purpose==='messages'?'发送':'保存备注'):label}</HButton>{compact?<span className="ds-composer-shortcut"><kbd>Ctrl</kbd> ↵ {purpose==='messages'?'发送':'保存'}</span>:null}
-        {unknown?<HButton type="button" data-action={'check-'+purpose} isDisabled={busy} onClick={()=>void check()} tone="secondary">只读核对原操作</HButton>:null}
-        {pending&&allowed&&!followUpTarget?<HButton type="button" isDisabled={busy} onClick={()=>void send(pending)} tone="secondary">用原命令核对</HButton>:null}
+  return <section className={'conversation-composer '+(purpose==='internal-notes'?'internal-composer':'')} aria-label={label} data-composer-disabled={!allowed||awaitingReception||busy||unknown||recovering?'true':undefined} data-composer-no-permission={!allowed?'true':undefined} data-composer-shortcut={allowed&&!awaitingReception&&!busy&&!recovering?'true':undefined}>
+    <HForm onSubmit={e=>{e.preventDefault();if(allowed&&!awaitingReception&&!busy&&!unknown&&draft.canSubmit&&value.trim())void send();}}><HLabel htmlFor={'conversation-'+purpose}>{label}</HLabel>{!disabledReason?<p className={compact?'sr-only':undefined} id={'audience-'+purpose}>{purpose==='messages'?'回复会发给报修人；在群里报修的，会通过医小修私聊回复。':'仅供有权限的工作人员协作，不向报修人发送。'}</p>:null}<HTextArea id={'conversation-'+purpose} data-purpose={purpose} aria-describedby={'audience-'+purpose} placeholder={purpose==='messages'?'回复将通过医小修私聊发送给'+(reporter&&reporter!=='报修人'?reporter:'报修人')+'…':'仅内部协作可见，不会发送给报修人…'} maxLength={2000} value={value} disabled={!allowed||awaitingReception||busy||unknown||recovering} onChange={e=>{latest.current=e.target.value;setValue(e.target.value);}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={e=>{if(e.key!=='Enter'||!e.ctrlKey||e.shiftKey||composing.current||e.nativeEvent.isComposing||e.keyCode===229)return;e.preventDefault();e.currentTarget.form?.requestSubmit();}}/><div className="ds-composer-bottom"><div className="ds-composer-status">{disabledReason?<p className={'ds-composer-disabled-reason'+(receptionVisible?' sr-only':'')} id={'audience-'+purpose}><LockKeyhole aria-hidden="true"/>{disabledReason}</p>:null}<small className="ds-composer-count">{value.length} / 2000</small>{draft.enabled?<DraftStatus inlineText={compact} role="status" data-conversation-draft={purpose}>{draft.message}</DraftStatus>:null}{value&&draft.enabled&&!busy?<><span aria-hidden="true">·</span><HButton className="ds-composer-discard" type="button" data-action={'discard-'+purpose} onClick={()=>void draft.discard()} tone="ghost">清理敏感草稿</HButton></>:null}</div><div className="note-controls"><HButton type="submit" data-action={purpose==='messages'?'send-conversation-reply':'save-conversation-note'} isDisabled={!allowed||awaitingReception||busy||unknown||!draft.canSubmit||!value.trim()} tone={(purpose==='messages'||compact)&&allowed&&!awaitingReception?'primary':'secondary'}>{purpose==='messages'?<Send className="inbox-submit-icon" aria-hidden="true"/>:<Save className="inbox-submit-icon" aria-hidden="true"/>}{busy?'正在核对…':compact?(purpose==='messages'?'发送':'保存备注'):label}</HButton>{compact?<span className="ds-composer-shortcut"><kbd>Ctrl</kbd> ↵ {purpose==='messages'?'发送':'保存'}</span>:null}
+        {unknown?<HButton type="button" data-action={'check-'+purpose} isDisabled={busy} onClick={()=>void check()} tone="secondary">核对结果</HButton>:null}
+        {pending&&allowed&&!followUpTarget?<HButton type="button" isDisabled={busy} onClick={()=>void send(pending)} tone="secondary">重新提交</HButton>:null}
 
       </div></div><ToastFeedback revision={outcomeRevision} source="conversations" state={busy?'checking':unknown?'unknown':undefined} role="status" {...(purpose==='messages'?{'data-reply-outcome':''}:{'data-note-outcome':''})}>{outcome}</ToastFeedback></HForm>
   </section>;

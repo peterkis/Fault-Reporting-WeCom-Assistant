@@ -3,7 +3,8 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import {clearSessionAuthorization} from '../../app/authorization';
-import {DraftError,hasExistingDraft,openDraft,purgeDrafts,removeSensitiveDraft} from '../drafts/encrypted-drafts';
+import {DraftError,hasExistingDraft,openDraft,purgeDrafts,removeOwnedSensitiveDraft,removeSensitiveDraft} from '../drafts/encrypted-drafts';
+import type {DraftHandle} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {canonicalItem,reviewVersion,resolutions} from './client';
 import type {ReviewInput} from './use-review-draft';
@@ -75,10 +76,12 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
       else if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')void clearSessionAuthorization(client,scope.principal,401,'revoked');
       else if(error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED')void revoke(error).catch(()=>setUnavailable(true));
       else{setUnavailable(true);if(error instanceof DraftError&&error.message==='DRAFT_CORRUPT')void openDraft(scope,{restore:false}).then(copy=>removeSensitiveDraft(copy.handle,'revoked')).catch(()=>{});}
-    },onRestore:copy=>{
-      const controller=new AbortController(),token=++revision.current,current=captureWorkbenchRead(controller.signal);restoreRequest.current?.abort();restoreRequest.current=controller;validating.current=true;setRestoring(true);
+    },onRestore:(copy,retained=false,owned)=>{
+      const controller=new AbortController(),token=++revision.current,current=captureWorkbenchRead(controller.signal);let original:DraftHandle|null=owned??null,contextRead=true;restoreRequest.current?.abort();restoreRequest.current=controller;validating.current=true;setRestoring(true);
       void(async()=>{
+        if(!retained){const stored=await openDraft(scope);current();if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');original={...stored.handle};}
         const context=await reviewStartApi.context(reviewId,controller.signal,copy.value.capture?.team||undefined);current();
+        contextRead=false;
         if(copy.value.capture?.team&&!context.resolver_teams.some(team=>team.team_id===copy.value.capture?.team))throw new DraftError('DRAFT_ACTION_REVOKED');
         const selected=copy.value.sessions;
         const ticketId=copy.value.capture?.ticket?.ticket_id??context.expected_ticket?.ticket_id;
@@ -88,18 +91,18 @@ export function useReviewStartDraft({principal,reviewId,value,pending,onRestore,
           const related=await reviewStartApi.relatedSession(reviewId,row.session_id,controller.signal);current();
           if(related.ticket_id!==ticketId)throw new DraftError('DRAFT_RELATION_CHANGED');
         }
-        const stored=await openDraft(scope);current();
-        if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy))throw new DraftError('DRAFT_CHANGED');
+        if(!retained){const stored=await openDraft(scope);current();
+        if(stored.text===null||JSON.stringify(decode(stored.text,reviewId))!==JSON.stringify(copy)||stored.handle.record?.revision!==original?.record?.revision||stored.handle.operation?.commandId!==original?.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
         if(controller.signal.aborted||token!==revision.current)return;
         onRestore(copy);validating.current=false;setRestoring(false);restoreRequest.current=null;
       })().catch(error=>{if(controller.signal.aborted||token!==revision.current)return;validating.current=false;restoreRequest.current=null;setRestoring(false);setUnavailable(true);
         if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,scope.principal,401,'revoked');
-        else if(error instanceof ApiError&&[403,404].includes(error.status))void revoke(error).catch(()=>setUnavailable(true));
-        else if(error instanceof DraftError&&error.message!=='DRAFT_CHANGED')void draft.discard();
+        else if(error instanceof ApiError&&[403,404].includes(error.status)&&contextRead)void revoke(error).catch(()=>setUnavailable(true));
+        else if(error instanceof ApiError&&[403,404].includes(error.status)||error instanceof DraftError&&['DRAFT_ACTION_REVOKED','DRAFT_RELATION_CHANGED','DRAFT_CORRUPT'].includes(error.message)){if(retained){draft.forgetRetainedInput();onSensitiveClear();}void removeOwnedSensitiveDraft(original).catch(()=>{});}
       });
     },onSensitiveClear:clear,onOperation});
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   useEffect(()=>()=>{revision.current++;restoreRequest.current?.abort();},[]);
   return {...draft,revoke,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable,safeToLeave:draft.safeToLeave&&!restoring&&!unavailable,
-    message:unavailable?'恢复核验暂未完成；当前不会发送新操作，请保持原副本并重新读取。':restoring?'正在核对原复合意图的当前权限与关系…':draft.message};
+    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对原复合意图的当前权限与关系…':draft.message};
 }

@@ -91,7 +91,7 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
         WHEN ct.id IS NULL AND $2::boolean THEN jsonb_build_object('kind','intake','id',i.id,'number','服务受理','title',i.summary) END AS canonical_item,
       CASE WHEN ct.id IS NOT NULL AND ($2::boolean OR ct.assignee_id=$1::uuid OR ('HANDLER'=ANY($3::text[]) AND ct.resolver_team_id=ANY($4::text[])))
         THEN ct.title ELSE COALESCE(NULLIF(left(i.summary,512),''),'服务主题资料不可用') END AS topic,
-      CASE WHEN oi.source_chat_type='group' AND oi.source_chat_id IS NOT NULL THEN jsonb_build_object('kind','group','label',COALESCE(gn.display_name,'群名称未登记'),'ref',${groupRef})
+      CASE WHEN oi.source_chat_type='group' AND oi.source_chat_id IS NOT NULL THEN jsonb_build_object('kind','group','label',COALESCE(gn.display_name,'企微群聊'),'ref',${groupRef})
         WHEN oi.source_chat_type='single' THEN jsonb_build_object('kind','direct','label','Bot 私聊来源','ref',NULL)
         ELSE jsonb_build_object('kind','unknown','label','来源资料不可用','ref',NULL) END AS source,
       th.chat_type,COALESCE(i.source_provider='WECOM_AIBOT' AND th.provider=i.source_provider AND th.channel_account_id=i.source_bot_id

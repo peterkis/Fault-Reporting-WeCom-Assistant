@@ -120,7 +120,7 @@ test('a real post-commit 403 preserves the original verified command for explici
       await fill(browser,'报修人姓名','合成');
       await browser.waitFor("[...document.querySelectorAll('[role=option]')].some(row=>row.textContent.includes('合成成员甲')&&row.textContent.includes('合成门诊'))");
       await browser.evaluate("(()=>{const option=[...document.querySelectorAll('[role=option]')].find(row=>row.textContent.includes('合成成员甲')&&row.textContent.includes('合成门诊'));if(!option)throw Error('T18_POSTCOMMIT_OPTION_MISSING');option.click();})()");
-      await browser.waitFor("Boolean(document.querySelector('[data-selected-reporter]'))&&document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('已保存恢复副本')");
+      await browser.waitFor("Boolean(document.querySelector('[data-selected-reporter]'))&&document.querySelector('[data-manual-report-draft-status]')?.textContent.includes('草稿已保存')");
       const before=await admissionFacts(pool,principal.id),outward=await externalCounts(pool);
       assert.equal(before.receipts,0);assert.equal(before.intakes,0);assert.equal(before.tickets,0);
       assert.deepEqual(outward,{communications:0,outbox:0,deliveries:0,notifications:0,notification_deliveries:0});

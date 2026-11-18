@@ -95,16 +95,16 @@ await browser.waitFor('Boolean(document.querySelector(".detail-workflows"))');aw
       const restored=await browser.evaluate(stored) as StorageFacts;
       // Wait for asynchronous restoration only when an existing operation was actually observed.
       // With current disabled recovery there is no stored operation, so the next assertion is the first product RED.
-      if(restored.operations===1)await browser.waitFor(readyButton('只读核对原操作'));
-      assert.equal(await browser.evaluate(hasButton('只读核对原操作')),true,'T37_RELOAD_MUST_RETAIN_ORIGINAL_UUID_ACK_ENTRY');
+      if(restored.operations===1)await browser.waitFor(readyButton('核对结果'));
+      assert.equal(await browser.evaluate(hasButton('核对结果')),true,'T37_RELOAD_MUST_RETAIN_ORIGINAL_UUID_ACK_ENTRY');
       assert.equal(restored.operations,1);assert.equal(restored.commandId,originalId);assert.deepEqual(restored.operationKeys,['commandId','createdAt','id','kind','principal','purpose','scope']);
       assert.equal(restored.drafts,1);assert.equal(restored.extractable,false);assert.equal(restored.plainDuePresent,false);assert.equal(typeof restored.firstSavedAt,'number');assert.equal(typeof restored.expiresAt,'number');assert.equal((restored.expiresAt??0)-(restored.firstSavedAt??0),86400000);
       assert.equal(restored.firstSavedAt,prepared.firstSavedAt);assert.equal(restored.expiresAt,prepared.expiresAt);
       assert.deepEqual(await browser.evaluate('globalThis.__t37RecoveryWrites'),[],'reload must not resend the original command or generate a fresh command');
       assert.equal(await browser.evaluate(`globalThis.__t37RecoveryReads.some(value=>value.path.startsWith(${JSON.stringify(schedulePath+'/commands/')}))`),false,'reload preserves UNKNOWN until an explicit read-only acknowledgement');
       await writeFile(join(directory,'restored-storage-observation.json'),JSON.stringify(restored,null,2));
-      await browser.evaluate(clickButton('只读核对原操作'));
-      await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${hasButton('只读核对原操作')})`);
+      await browser.evaluate(clickButton('核对结果'));
+      await browser.waitFor(`document.querySelector('[data-toast-source=follow-up]')?.textContent.includes('已核对原操作提交成功')&&!(${hasButton('核对结果')})`);
       const reads=await browser.evaluate(`globalThis.__t37RecoveryReads.filter(value=>value.path.startsWith(${JSON.stringify(schedulePath+'/commands/')}))`) as Read[];
       assert.equal(reads.length,1,'exactly one explicit purpose GET is sufficient');const acknowledgement=reads[0];assert.ok(acknowledgement);assert.equal(acknowledgement.path,ackPath);assert.equal(acknowledgement.status,200);
       assert.deepEqual(acknowledgement.body,{ticket_id:ticketId,client_command_id:originalId,state:'COMMITTED',result:{...original.body,replayed:true}});

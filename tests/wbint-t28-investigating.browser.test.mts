@@ -30,7 +30,7 @@ test('T28 an authorized operator starts investigation from the production Incide
     }));
     await browser.command('Page.navigate',{url:origin+'/workbench/app/incidents/'+incidentId});
     await browser.waitFor(`Boolean(document.querySelector('[data-incident-id="${incidentId}"]'))`);
-    assert.equal(await browser.evaluate(`document.querySelector('[data-incident-id="${incidentId}"]').innerText.includes('CONFIRMED_LOCAL')`),true);
+    assert.equal(await browser.evaluate(`document.querySelector('[data-incident-id="${incidentId}"]').innerText.includes('已确认')&&document.querySelector('[data-incident-id="${incidentId}"]').innerText.includes('局部')`),true);
     // This is the first genuine missing user behavior. Source inspection is
     // not RED; preserve this assertion before the first product change.
     assert.equal(await browser.evaluate('Boolean(document.querySelector(\'.workbench-select[data-field-label="公共故障操作"] select\'))'),true,'production Incident detail must offer the currently authorized follow-up action');
@@ -39,7 +39,7 @@ test('T28 an authorized operator starts investigation from the production Incide
     }
     assert.equal(await browser.evaluate('document.querySelector("[data-action=submit-incident]")?.disabled'),false);
     await browser.evaluate('document.querySelector("[data-action=submit-incident]").click()');
-    await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.innerText.includes('INVESTIGATING')===true`);
+    await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.innerText.includes('调查中')===true`);
     const after=await get(path);assert.equal(after.status,'INVESTIGATING');assert.equal(after.row_version,'2');
     const eventPage=await get(path+'/events?limit=200');assert.ok(Array.isArray(eventPage.items));
     const investigation=eventPage.items.map(record).filter(event=>event.event_type==='incident.investigating');
@@ -49,7 +49,7 @@ test('T28 an authorized operator starts investigation from the production Incide
     const command=record(JSON.parse(text(investigationPosts[0]?.body)));assert.equal(command.expected_row_version,'1');assert.equal(command.reason_code,'OPERATOR_REVIEWED');
     assert.deepEqual(Object.keys(command).sort(),['client_command_id','expected_row_version','reason_code']);
     for(const before of personal){assert.deepEqual(await get('/api/tickets/'+before.ticketId),before.detail);assert.deepEqual(await get('/api/tickets/'+before.ticketId+'/events?limit=200'),before.events);assert.deepEqual(await get('/api/tickets/'+before.ticketId+'/responsibility'),before.responsibility);}
-    await browser.command('Page.reload');await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.innerText.includes('INVESTIGATING')===true`);
+    await browser.command('Page.reload');await browser.waitFor(`document.querySelector('[data-incident-id="${incidentId}"]')?.innerText.includes('调查中')===true`);
     assert.equal((await get(path)).row_version,'2');
   });
 });

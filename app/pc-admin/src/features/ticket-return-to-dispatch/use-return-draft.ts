@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {P2016ReturnToDispatchCommand,P2016ReturnSession} from '../../../../../contracts/workbench_return_to_dispatch_contracts';
-import {DraftError,hasExistingDraft,openDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
+import {DraftError,hasExistingDraft,openDraft,removeOwnedSensitiveDraft,removeSensitiveDraft,settleDraft} from '../drafts/encrypted-drafts';
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 
@@ -89,9 +89,9 @@ export async function readReturnChoices(ticketId:string,value:ReturnInput,fence:
   }
 }
 
-export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onSensitiveClear}:{
+export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,onRestore,onOperation,onOperationCleared,onSensitiveClear}:{
   ticketId:string;principal:Principal;value:ReturnInput;pending:P2016ReturnToDispatchCommand|null;actionAllowed:boolean;
-  onRestore:(copy:ReturnCopy)=>void;onOperation:(id:string)=>void;onSensitiveClear:()=>void;
+  onRestore:(copy:ReturnCopy)=>void;onOperation:(id:string)=>void;onOperationCleared:(conflict?:boolean)=>void;onSensitiveClear:()=>void;
 }){
   const client=useQueryClient(),scope={principal:principal.principal_id,kind:'ticket' as const,id:ticketId,purpose:'ticket-return-to-dispatch'};
   const enabled=principal.ticket_return_to_dispatch_draft_recovery_enabled;
@@ -122,14 +122,14 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
       }else if(error instanceof DraftError&&error.message==='DRAFT_DISABLED')clear();
       else setUnavailable(true); // A temporary read/storage failure never purges a saved copy.
     },
-    onRestore:copy=>{
+    onRestore:(copy,retained=false,owned)=>{
       const controller=new AbortController(),token=++generation.current,requireRead=captureWorkbenchRead(controller.signal),inputBefore=returnInputSnapshot(latest.current.value);
       request.current?.abort();request.current=controller;validating.current=true;setRestoring(true);setUnavailable(false);
       const fence:ReturnFence={signal:controller.signal,requireCurrent:()=>current(controller,token,requireRead)};
       void(async()=>{
-        fence.requireCurrent();const original=await openDraft(scope);fence.requireCurrent();
-        if(original.text!==serialiseReturn(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
-          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
+        fence.requireCurrent();const original=retained?(owned?{handle:owned,text:serialiseReturn(copy)}:null):await openDraft(scope);fence.requireCurrent();
+        if(original&&(original.text!==serialiseReturn(copy)||Boolean(copy.pending)!==Boolean(original.handle.operation)
+          ||copy.pending&&copy.pending.client_command_id!==original.handle.operation?.commandId))throw new DraftError('DRAFT_CHANGED');
         try{
           if(!actions.current.includes('return-to-dispatch'))throw new DraftError('DRAFT_ACTION_REVOKED');
           await readReturnChoices(ticketId,copy.value,fence);fence.requireCurrent();
@@ -137,21 +137,23 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
           fence.requireCurrent();
           if(isReturnChoiceRevocation(error)||error instanceof DraftError&&error.message==='DRAFT_ACTION_REVOKED'){
             // Only the originally observed revision is removed; a newer tab's value is never guessed or deleted.
-            fence.requireCurrent();await removeSensitiveDraft(original.handle,'revoked',{requireMatchingRevision:true});fence.requireCurrent();
+            if(retained){draft.forgetRetainedInput();onSensitiveClear();}
+            if(original){fence.requireCurrent();try{await removeOwnedSensitiveDraft(original.handle);}catch(error){if(!(error instanceof DraftError&&error.message==='DRAFT_CHANGED'))throw error;}fence.requireCurrent();}
           }
           throw error;
         }
-        const checked=await openDraft(scope);fence.requireCurrent();
+        if(original){const checked=await openDraft(scope);fence.requireCurrent();
         if(checked.text!==serialiseReturn(copy)||checked.handle.record?.revision!==original.handle.record?.revision
-          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');
-        if(returnInputSnapshot(latest.current.value)!==inputBefore){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
+          ||checked.handle.operation?.commandId!==original.handle.operation?.commandId)throw new DraftError('DRAFT_CHANGED');}
+        const currentInput=returnInputSnapshot(latest.current.value);
+        if(currentInput!==inputBefore&&!(retained&&owned&&currentInput===returnInputSnapshot(EMPTY_RETURN))){if(copy.pending)onOperation(copy.pending.client_command_id);return;}
         onRestore(copy);
       })().catch(error=>{
         try{fence.requireCurrent();}catch{return;}
         if(error instanceof ApiError&&error.status===401){clear();void clearSessionAuthorization(client,scope.principal,401,'revoked');return;}
         setUnavailable(true);if(copy.pending)onOperation(copy.pending.client_command_id);
       }).finally(()=>{if(request.current===controller&&generation.current===token){request.current=null;validating.current=false;setRestoring(false);}});
-    },onOperation,onSensitiveClear:clear,
+    },onOperation,onOperationCleared,onSensitiveClear:clear,
   });
   useEffect(()=>{if(!validating.current&&['ready','saved','failed','disabled'].includes(draft.status))setRestoring(false);},[draft.status]);
   const checkOpaque=async(fence:ReturnFence,purge=false)=>{
@@ -177,17 +179,17 @@ export function useReturnDraft({ticketId,principal,value,pending,actionAllowed,o
     enabled: draft.enabled,status:draft.status,operationId:draft.operationId,
     restorationBlocked:unavailable,restoring,canSubmit:draft.canSubmit&&!restoring&&!unavailable&&draft.status!=='loading',
     safeToLeave:!restoring&&!unavailable&&(draft.safeToLeave||Boolean(enabled&&draft.operationId&&pending===null&&!hasReturnInput(value)&&['ready','saved'].includes(draft.status))),
-    message:unavailable?'恢复核验暂时不可用，已保留加密副本；请恢复服务后重新读取。':restoring?'正在核对当前退回、目标和会话授权…':draft.message,
+    message:unavailable?'草稿暂未恢复：本机草稿暂时读不到，当前输入可能还没保存，离开或刷新页面可能丢失。请先自行留存需要的内容，再重新打开详情或刷新页面。':restoring?'正在核对当前退回、目标和会话授权…':draft.message,
     async prepare(command:P2016ReturnToDispatchCommand,fence:ReturnFence){
       fence.requireCurrent();if(!enabled){const saved=await checkOpaque(fence,true);fence.requireCurrent();if(saved?.operation){onSensitiveClear();onOperation(saved.operation.commandId);throw new DraftError('DRAFT_OPERATION_PENDING');}}
       await draft.prepare(command);fence.requireCurrent();
     },
-    async settleKnown(commandId:string,fence:ReturnFence){
+    async settleKnown(commandId:string,fence:ReturnFence,failed=false){
       fence.requireCurrent();
       // Preserve current input before the shared method's await; its original revision/UUID CAS cannot erase a newer row.
-      // Do not use T06's stale ACK callback or knownFailure's post-await save path.
+      // Failed operations retain the authorized stored input, fenced by the current ACK job.
       if(!enabled){const saved=await checkOpaque(fence);fence.requireCurrent();if(!saved?.operation)return true;if(saved.operation.commandId!==commandId||saved.record!==null)return false;await settleDraft(saved,commandId);fence.requireCurrent();return saved.operation===null;}
-      const cleaned=await draft.success(commandId,true);fence.requireCurrent();return cleaned;
+      const cleaned=failed?await draft.knownFailure(commandId,true,{notifyLocal:false,signal:fence.signal,requireCurrent:fence.requireCurrent}):await draft.success(commandId,true);fence.requireCurrent();return cleaned;
     },
     async dropSensitive(expected:ReturnCopy,fence:ReturnFence){
       fence.requireCurrent();if(!enabled){onSensitiveClear();return true;}
