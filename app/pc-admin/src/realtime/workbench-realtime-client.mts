@@ -76,8 +76,12 @@ export function createWorkbenchRealtimeClient(options:RealtimeClientOptions){
     replacementAllowed=false;
     const current=options.connect(options.capability.sse_endpoint as string),epoch=++sourceEpoch;source=current;
     const valid=()=>alive()&&source===current&&epoch===sourceEpoch;
+    // Invalidation must survive backoff; only authoritative reads wait for the admitted retry.
+    const refreshHint=()=>{if(!options.retryDelays||disconnectedAt===null)refresh();};
     unlisten=[current.listen('open',()=>{if(valid()){const recovering=options.retryDelays&&disconnectedAt!==null;report(recovering?'reconnecting':'live');if(!recovering)refresh();}}),current.listen('error',()=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){report(current.state()===2?'polling':'reconnecting');refresh();}}),
-      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){if(decodeWorkbenchRealtimeHint(event.data,name))options.onHint?.();refresh();}})),...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)&&event.data==='{"schema_version":1}'){options.onActivityHint?.();refresh();}})]:[]),current.listen('message',()=>{if(valid()&&(!options.retryDelays||disconnectedAt===null)){options.onHint?.();refresh();}})];
+      ...WORKBENCH_REALTIME_EVENT_TYPES.map(name=>current.listen(name,event=>{if(valid()){if(decodeWorkbenchRealtimeHint(event.data,name))options.onHint?.();refreshHint();}})),
+      ...(options.activityTick?[current.listen('workbench.activity.changed',event=>{if(valid()&&event.data==='{"schema_version":1}'){options.onActivityHint?.();refreshHint();}})]:[]),
+      current.listen('message',()=>{if(valid()){options.onHint?.();refreshHint();}})];
     report('connecting');
   }
   function refresh(){

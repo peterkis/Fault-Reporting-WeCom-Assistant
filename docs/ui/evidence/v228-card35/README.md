@@ -1,4 +1,32 @@
-# Card 35A / PR 192 — Linux timing correction
+# Card 35A / PR 192 — search compatibility restored
+
+The prior “legacy search-production failure” classification was wrong: 35A replaced main’s search copy. This product regression is now corrected against `origin/main` (`67999466deedacea714812f7cc23884c2a5b7db1`), without editing search-production or card12 assertions.
+
+[Current full report, main comparison, intentional state-rule differences and per-test results](runs/24-search-compatibility/README.md). Both original empty sentences and generic error/alert semantics are restored. Search emptiness keeps the native table/header/stages. Actual search criteria can be cleared completely; no-criteria search adds no clear action. Non-search filtered copy is unchanged. The 92px activity column is also restored to main while retaining zero-shift retry feedback.
+
+Final current results: search-production **2/2**, card12 **18/18**, search-refresh/long-pages **2/2**, 35A **10/10 normal + 10/10 CPU4**, realtime unit **11/11**, realtime browser **2/2**, protocol **2/2**, integration **2/2**, copy terms **6/6**, toast **1/1**, detail **2/2**. Typecheck/build/Stylelint/ESLint, artifact and docs checks pass. Pending-hint is **NOT_RUN** on macOS after confirming its same unconditional Windows D-drive guard on main. Actual Linux/Windows and full CI execution were not run.
+
+[Current filtered search](runs/24-search-compatibility/search-empty-filtered.png), [unfiltered search](runs/24-search-compatibility/search-empty-unfiltered.png), [restored error](runs/24-search-compatibility/search-backoff-refresh-required.png), [machine results](runs/24-search-compatibility/results.json). All changes remain uncommitted; no push and no 35B changes.
+
+Historical reports and original failures below retain their own source identities. The old search-production “legacy” interpretation is withdrawn; its failure evidence is kept.
+
+---
+
+# Historical backoff-hint delivery (c63b71dd dirty candidate)
+
+Current baseline `c63b71dd1d71ef9fd0f665f4f9466dd97c6bff53`; all changes uncommitted. [Current report: root cause, design, per-test results and failures](runs/23-backoff-hints/README.md).
+
+Valid named/message/activity hints now deliver their original invalidations immediately during read backoff, while only business refresh waits for the existing 1s/3s/8s budget. Workbench shows the existing refresh-required copy for invalidated search snapshots, including after live recovery. Invalid event decoding and normal/no-budget behaviour are unchanged. No new poller, permissions or API changes.
+
+Current final results: realtime unit **11/11**, integration **2/2**, realtime browser **2/2**, protocol **2/2**; full 35A **10/10 normal + 10/10 CPU 4x**; copy terms **6/6**; long-page/search refresh **2/2**; toast **1/1**; detail **2/2**. Typecheck/build/Stylelint/ESLint and artifact/docs checks pass. **The requested regression set is not entirely green**: the older search-production entry is 1/2 (obsolete empty copy); pending-hint is 0/2 (Windows D-drive preflight on macOS). Original assertions and failure evidence are preserved, with HEAD comparison in the report.
+
+[Current 1440px search-recovery screenshot](runs/23-backoff-hints/search-backoff-refresh-required.png), [machine results](runs/23-backoff-hints/results.json), [original assertions/scope](runs/23-backoff-hints/scope.json). [Realtime contract](../../../api/platform/realtime.md) documents immediate invalidation without extra retry admissions. No commit/push; no 35B changes. Actual Linux/full-CI execution is NOT_RUN this round.
+
+The complete prior report below is historical and retains its original source identity, screenshots, failures and ten-run matrix. It is not reassigned to this candidate.
+
+---
+
+# Historical Linux timing correction (b4fa7fb8)
 
 本轮基于审查者已提交的 `b4fa7fb831d2a76bcf94f50455e6428d46291671`。修复留在未提交工作区，没有 commit、push 或 PR 写操作。源输入 `a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5`，制品清单 `ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea`；先 typecheck，再 build，随后所有最终压力测试和应用回归使用同一制品。
 

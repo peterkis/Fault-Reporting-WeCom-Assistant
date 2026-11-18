@@ -1,0 +1,38 @@
+{
+  "status": "FAIL",
+  "rate": 4,
+  "counts": {
+    "tests": 10,
+    "pass": 9,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "browser_configurations": [
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    },
+    {
+      "rate": 4
+    }
+  ],
+  "elapsed_ms": 199130,
+  "manifest_sha256": "d857e9c4153bfc859a157f332e977f4f84991d5b49cafc33efcbe2c188be4b52",
+  "source_input_hash": "1c4a7ab21c7c6874bf0ecc92cd13a123e76090c64e6ebbd602fed9f4fb62103b"
+}

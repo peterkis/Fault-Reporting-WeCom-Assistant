@@ -1,0 +1,18 @@
+TAP version 13
+# CARD35A_CPU {"rate":1}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart
+ok 1 - Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart
+  ---
+  duration_ms: 3702.269917
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3818.48525

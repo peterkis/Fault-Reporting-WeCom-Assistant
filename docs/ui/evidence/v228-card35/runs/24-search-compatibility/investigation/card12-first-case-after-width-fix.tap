@@ -1,0 +1,18 @@
+TAP version 13
+# CARD28_STICKY_POINTER {"width":1280,"x":360,"y":521,"id":"01a1eea7-f48d-7e5d-8554-659a7c5f0770"}
+# CARD28_STICKY_POINTER {"width":900,"x":112,"y":521,"id":"01a1eea7-f48d-7e5d-8554-659a7c5f0770"}
+# Subtest: Card 28 single table preserves read actions, grouped preferences and one-line search across Windows widths
+ok 1 - Card 28 single table preserves read actions, grouped preferences and one-line search across Windows widths
+  ---
+  duration_ms: 8905.963125
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9015.864083

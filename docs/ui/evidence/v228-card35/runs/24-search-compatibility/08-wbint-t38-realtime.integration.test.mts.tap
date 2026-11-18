@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: legitimate total scope beyond 256 is an SSE availability fallback while ordinary authorized GET remains available
+ok 1 - legitimate total scope beyond 256 is an SSE availability fallback while ordinary authorized GET remains available
+  ---
+  duration_ms: 653.70875
+  type: 'test'
+  ...
+# Subtest: narrow authorized sessionless SYSTEM Tickets count in the same 256 budget without silent clipping
+ok 2 - narrow authorized sessionless SYSTEM Tickets count in the same 256 budget without silent clipping
+  ---
+  duration_ms: 1352.935333
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2179.244333

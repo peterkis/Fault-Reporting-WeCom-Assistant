@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "metrics": {
+    "reads": [
+      {
+        "at": 1598.8999998569489,
+        "failed": true
+      },
+      {
+        "at": 2600.5,
+        "failed": false
+      }
+    ],
+    "screenshot": {
+      "file": "search-backoff-refresh-required.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "c0282888889d575427ef57ba8f0ebf0e0591a262ff964e93bdd2781e5ca4bcab"
+    },
+    "cpuRate": 4
+  },
+  "error": null
+}

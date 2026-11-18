@@ -58,4 +58,6 @@ CONNECTING保留同一原生源及Last-Event-ID；CLOSED/retention gap后先fres
 
 两条路径复用同一个timer、当前读AbortController和pending位，不新增轮询器。5秒长读取截止、并发上限、身份清理、当前READ与UNKNOWN合同不变；SSE单独不可用不撤销仍获权的人工REST操作。只用GET返回事实，事件仍是提示，不自动POST。预算内浏览器自己的握手间隔不通过另造cursor或Header改写；只有真实读取失败预算用尽才关闭源并等待人工刷新。手动模式没有SSE或周期轮询，只在离线/恢复事件后使用有限读取预算。
 
+读取退避期间，仍立即交付通过原解码校验的具名事件提示及原`message`提示；合法`workbench.activity.changed`也继续通知原在场状态存储。只阻止事件额外发起业务`refresh()`，不重置或延长1s/3s/8s期限。搜索沿原`onHint`取消在途读取、清除旧快照并进入`SEARCH_REFRESH_REQUIRED`，不自动重新搜索；完整读取恢复成功后该提示仍保留，直到用户重新提交搜索或点击刷新。立即作废可避免在预算耗尽、无法恢复时继续展示已知过期的搜索结果。无效具名事件不交付提示；未配置有限预算及退避外的行为保持原样。
+
 1s/3s/8s、60s与2s的呈现时间仅在PC `tokens.css`定义，经共享入口读取；正常5秒恢复继续来自原capability的`polling_interval_ms`。规格与就近原则见[设计系统状态章](../../ui/design-system.md#状态v228--卡35a)。

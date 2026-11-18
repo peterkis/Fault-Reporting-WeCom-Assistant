@@ -1,0 +1,27 @@
+TAP version 13
+# WEB01_BROWSER {"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"7ac2567aaa9f150a3feb1b0aa73f7eb01950f50205bf9d398e4d945ffc5f2553"}]}
+# WEB01_BROWSER {"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"2856e8901b67b031849077aae24376cb616740fde1a7b49195df78fa43f3bcd4"}]}
+# WEB01_BROWSER {"screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"5ef09be6ef4fe97da14d65c45fb28a7cc98ca5a3968ca6ed9ee5826e68cc786e"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T41 production search keeps URL, board/list identity, independent input and explicit empty/offline states without a business write
+ok 1 - T41 production search keeps URL, board/list identity, independent input and explicit empty/offline states without a business write
+  ---
+  duration_ms: 1845.676417
+  type: 'test'
+  ...
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: HeroUI search selectors keep multiple filters and a chosen or typed source group without posting business commands
+ok 2 - HeroUI search selectors keep multiple filters and a chosen or typed source group without posting business commands
+  ---
+  duration_ms: 2262.31675
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4308.574708

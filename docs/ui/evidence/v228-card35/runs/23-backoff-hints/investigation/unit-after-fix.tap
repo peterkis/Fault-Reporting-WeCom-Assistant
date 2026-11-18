@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: ticket.updated keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+ok 1 - ticket.updated keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 2.122667
+  type: 'test'
+  ...
+# Subtest: message keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+ok 2 - message keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 0.620458
+  type: 'test'
+  ...
+# Subtest: workbench.activity.changed keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+ok 3 - workbench.activity.changed keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 0.555709
+  type: 'test'
+  ...
+# Subtest: invalid decoded and activity events during read backoff deliver no invalidation and preserve the admitted retry
+ok 4 - invalid decoded and activity events during read backoff deliver no invalidation and preserve the admitted retry
+  ---
+  duration_ms: 0.504542
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 42.743834

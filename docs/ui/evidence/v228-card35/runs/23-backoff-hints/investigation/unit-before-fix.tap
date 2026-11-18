@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: ticket.updated keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+not ok 1 - ticket.updated keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 1.867833
+  type: 'test'
+  location: '<owned-temp>'
+  failureType: 'testCodeFailure'
+  error: |-
+    deliver invalidation immediately, even while reads fail
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<owned-temp>
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: message keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+not ok 2 - message keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 0.548667
+  type: 'test'
+  location: '<owned-temp>'
+  failureType: 'testCodeFailure'
+  error: |-
+    deliver invalidation immediately, even while reads fail
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<owned-temp>
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: workbench.activity.changed keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+not ok 3 - workbench.activity.changed keeps its invalidation during read backoff without changing the 1s/3s/8s deadlines
+  ---
+  duration_ms: 0.456917
+  type: 'test'
+  location: '<owned-temp>'
+  failureType: 'testCodeFailure'
+  error: |-
+    deliver invalidation immediately, even while reads fail
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<owned-temp>
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: invalid decoded and activity events during read backoff deliver no invalidation and preserve the admitted retry
+ok 4 - invalid decoded and activity events during read backoff deliver no invalidation and preserve the admitted retry
+  ---
+  duration_ms: 0.658917
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41.663542

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: Card 34C PC workbench copy has no banned technical words or English words
+ok 1 - Card 34C PC workbench copy has no banned technical words or English words
+  ---
+  duration_ms: 19.92375
+  type: 'test'
+  ...
+# Subtest: Card 34C follow-up time example is accepted by followUpInput
+ok 2 - Card 34C follow-up time example is accepted by followUpInput
+  ---
+  duration_ms: 29.45775
+  type: 'test'
+  ...
+# Subtest: Card 34C operation hint follows what is known
+ok 3 - Card 34C operation hint follows what is known
+  ---
+  duration_ms: 7.284666
+  type: 'test'
+  ...
+# Subtest: Card 34C short codes are the id's own suffix and never collide
+ok 4 - Card 34C short codes are the id's own suffix and never collide
+  ---
+  duration_ms: 3.147125
+  type: 'test'
+  ...
+# Subtest: Card 34C channel labels are renamed by exact match only
+ok 5 - Card 34C channel labels are renamed by exact match only
+  ---
+  duration_ms: 1.624417
+  type: 'test'
+  ...
+# Subtest: Card 34C incident status values all have Chinese labels
+ok 6 - Card 34C incident status values all have Chinese labels
+  ---
+  duration_ms: 2.913916
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 222.17375

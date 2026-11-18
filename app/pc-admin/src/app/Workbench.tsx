@@ -9,7 +9,7 @@ import type { MouseEvent,ReactNode } from 'react';
 import { Fragment,useEffect,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams,useSearchParams } from 'react-router';
 import type { WorkbenchSearchCriteria } from '../../../../contracts/workbench_search_contracts';
-import { SEARCH_KEYS,searchCriteriaKey,searchParameters } from '../../../../shared/workbench-search-contracts.mjs';
+import { SEARCH_KEYS,hasSearchCriteria,searchCriteriaKey,searchParameters } from '../../../../shared/workbench-search-contracts.mjs';
 import type { BoardColumn,BoardCompletionRange,Principal,WorkbenchCard } from '../api/client';
 import { api,ApiError,errorMessage } from '../api/client';
 import type { BoardSort,BoardSummaryFilter } from '../design/board-presentation';
@@ -50,7 +50,7 @@ import { IncidentResultPage } from '../features/incident-candidates/IncidentResu
 import { ManualReportEntry,ManualReportForm } from '../features/manual-report/ManualReportForm';
 import { NotificationExceptions } from '../features/notification-exceptions/NotificationExceptions';
 import { WorkbenchReminders } from '../features/reminders/WorkbenchReminders';
-import { criteriaFromUrl,SearchControls,useWorkbenchSearch } from '../features/search/WorkbenchSearch';
+import { criteriaFromUrl,SearchControls,searchEmptyMessage,useWorkbenchSearch } from '../features/search/WorkbenchSearch';
 import { SourceGroupDirectory } from '../features/source-groups/SourceGroupDirectory';
 import type { RealtimeView } from '../realtime/useRealtime';
 import { realtimeLabels } from '../realtime/useRealtime';
@@ -65,6 +65,7 @@ import {PENDING_GROUPS,PROCESSED_GROUPS,boardGroupProps,itemsInGroup} from '../d
 import type {ProcessedColumnGroup} from '../design/components/BoardColumn/column-groups';
 import {EmptyState} from '../design/components/EmptyState/EmptyState';
 import {ErrorState,StaleRetry} from '../design/components/ErrorState/ErrorState';
+import {InlineAlert} from '../design/components/InlineAlert/InlineAlert';
 import {ConnectionBar} from '../design/components/ConnectionBar/ConnectionBar';
 import {useDelayedLoading} from '../design/hooks/useDelayedLoading';
 
@@ -322,7 +323,12 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching,orderingScope,arrivals.arrivalKeys);
   const filtered=Boolean(searchMode||summaryFilter||categoryFilter!=='all'||handlerFilter!=='all');
   const filteredEmpty=filtered&&queries.every(query=>!query.isPending&&!query.isError&&!query.isFetching&&!query.hasNextPage)&&visibleItems(unique).length===0&&!parsed.error;
-  const clearFilters=()=>{if(navigationBlocked||searchConditionsBusy)return;setSummarySelection({scope:summaryScope,filter:null});setBoardFilters({scope:filterScope,category:'all',handler:'all'});if(searchMode)leaveSearch();};
+  const clearFilters=()=>{
+    if(navigationBlocked||searchConditionsBusy)return;
+    setSummarySelection({scope:summaryScope,filter:null});setBoardFilters({scope:filterScope,category:'all',handler:'all'});
+    if(searchMode){const next=new URLSearchParams(params);for(const key of [...SEARCH_KEYS,'search','cursor','limit'])next.delete(key);next.set('range','all');next.set('scope','team');commitConditions(next);}
+  };
+  const searchHasCriteria=Boolean(searchMode&&parsed.criteria&&hasSearchCriteria(parsed.criteria));
   const filterSummary=[searchMode?(parsed.criteria?.q?'搜索「'+parsed.criteria.q+'」':'当前搜索条件'):null,summaryFilter?'已选工作概况':null,categoryFilter!=='all'?'类别「'+(catalog.data?.categories.find(item=>item.category===categoryFilter)?.category_name_zh??'未分类')+'」':null,handlerFilter!=='all'?'处理人「'+(handlerFilter==='unassigned'?'未领取':handlerFilter.replace('name:',''))+'」':null].filter(Boolean).join(' · ');
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ClosureActionsProvider principal={principal} otherBlocked={detailNavigationBlocked||claimNavigationBlocked} onBlockedChange={setClosureBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <Toolbar className={'ds-board-toolbar'+(view==='list'?' ds-list-toolbar':'')}>
@@ -343,10 +349,13 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
         <BoardDatePresets range={range} dates={handledDates} now={now} blocked={navigationBlocked||searchConditionsBusy} onApply={applyClosedRange}/>
       </div>
     </Toolbar>
+    {searchMode&&searched.isError?<InlineAlert tone="danger" data-search-state="error">查询未完成，请重新读取。搜索输入仍保留。</InlineAlert>:null}
+    {searchMode&&filteredEmpty?<EmptyState title={searchEmptyMessage(parsed.criteria)} {...(searchHasCriteria?{variant:'filtered',summary:filterSummary,onClear:clearFilters}:{})} data-search-state="empty"/>:null}
     {locationMode?<section ref={locatedSection} className="reminder-location" aria-label="已定位事项"><div className="column-heading"><h2>已定位事项</h2><Link to={returnBoard}>返回当前工作台</Link></div>
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在加载…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
-    {searchMode&&parsed.error?<Message text={parsed.error}/>:filteredEmpty?<EmptyState variant="filtered" title="没有符合条件的工单" summary={filterSummary} onClear={clearFilters} data-search-state={searchMode?'empty':undefined}/>:view==='board'?<div className="board" data-search-state={searchMode&&searched.isError?'error':undefined}>{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={filtered} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
+    {searchMode&&searched.error instanceof ApiError&&searched.error.code==='SEARCH_REFRESH_REQUIRED'?<InlineAlert tone="warning" data-search-refresh-required>{errorMessage(searched.error)}</InlineAlert>:null}
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:filteredEmpty&&!searchMode?<EmptyState variant="filtered" title="没有符合条件的工单" summary={filterSummary} onClear={clearFilters}/>:view==='board'?<div className="board" data-search-state={searchMode&&searched.isError?'error':undefined}>{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={filtered} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
       <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind} searchError={searchMode&&searched.isError} refreshing={queries.some(query=>Boolean(query.data)&&query.isFetching&&!query.isFetchingNextPage)} stale={queries.some(query=>Boolean(query.data)&&query.isError)} headerFeedback={queries.some(query=>Boolean(query.data)&&query.isError)?<StaleRetry onRetry={refresh}/>:null}
         renderLink={(item,content)=><BoardActionCard item={item}><Link draggable={false} className="row-link card-open" to={itemLink(item,location.search)} state={{fromBoard:true}} title={item.title}>{content}</Link></BoardActionCard>}
         renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={relativeTime}

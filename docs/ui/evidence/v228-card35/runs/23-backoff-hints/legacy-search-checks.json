@@ -1,0 +1,22 @@
+{
+  "head": "c63b71dd1d71ef9fd0f665f4f9466dd97c6bff53",
+  "platform": "darwin",
+  "unchanged_tests": [
+    {
+      "path": "tests/t41-search-production.browser.test.mts",
+      "head_sha256": "ddc4b65fb2260489d9dcfd1ed8ff139c0925d5315e7db50d14874bee853880cb",
+      "worktree_sha256": "ddc4b65fb2260489d9dcfd1ed8ff139c0925d5315e7db50d14874bee853880cb",
+      "unchanged": true
+    },
+    {
+      "path": "tests/t41-search-pending-hint.browser.test.mts",
+      "head_sha256": "0e2f015664092f1c83ab36671bc361a89031e7de9fea5e04c745713faa368b60",
+      "worktree_sha256": "0e2f015664092f1c83ab36671bc361a89031e7de9fea5e04c745713faa368b60",
+      "unchanged": true
+    }
+  ],
+  "head_has_current_empty_title": true,
+  "legacy_test_waits_for_old_title": true,
+  "pending_test_has_unconditional_windows_temp_guard": true,
+  "classification": "Both stale-copy and D-drive preflight failures exist in committed HEAD; assertions were preserved, not weakened."
+}

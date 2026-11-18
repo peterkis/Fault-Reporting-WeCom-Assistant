@@ -1,0 +1,18 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"toast-feedback","screenshots":[{"file":"<owned-temp>","width":1280,"height":900,"sha256":"2f3111d44181e53046a9171d548788cae6e3a3ed8e2246e0695750dd948625d2"},{"file":"<owned-temp>","width":600,"height":844,"sha256":"02dd857bbec31abdb77fdf3c20dc43814a0bd78f25fe352ad6bb0d0f700e0fe4"},{"file":"<owned-temp>","width":1280,"height":900,"sha256":"8ef89c9e5c64e134496ba9cb00e408cdcf1de8768f242baaf1e348461c5f3983"}]}
+# WORKBENCH_TOAST {"actualConflict":true,"modalGeometry":true,"modalTopLayer":true,"narrowViewport":true,"explicitCurrentVersionRetry":true,"unknownOriginalUuid":true,"closeDoesNotSettle":true,"currentReadRevocationClears":true,"cspBaseline":["style-src-elem"],"newCspViolations":0,"screenshots":[{"file":"<owned-temp>","width":1280,"height":900,"sha256":"2f3111d44181e53046a9171d548788cae6e3a3ed8e2246e0695750dd948625d2"},{"file":"<owned-temp>","width":600,"height":844,"sha256":"02dd857bbec31abdb77fdf3c20dc43814a0bd78f25fe352ad6bb0d0f700e0fe4"},{"file":"<owned-temp>","width":1280,"height":900,"sha256":"8ef89c9e5c64e134496ba9cb00e408cdcf1de8768f242baaf1e348461c5f3983"}]}
+# Subtest: production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+ok 1 - production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+  ---
+  duration_ms: 14331.3845
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14509.856167

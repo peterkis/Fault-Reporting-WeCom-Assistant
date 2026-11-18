@@ -1,0 +1,28 @@
+TAP version 13
+# CARD35A_CPU {"rate":1}
+# Subtest: Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart
+not ok 1 - Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart
+  ---
+  duration_ms: 31411.517916
+  type: 'test'
+  location: '<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:736:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file://<worktree>/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withWeb01Fixture.precisionV212 (file://<worktree>/.build/runtime/tests/pc-admin-card35a-states.browser.test.mjs:767:9)
+    async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31536.677583

@@ -158,7 +158,7 @@ test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, r
   })()`);assert.ok(Number(capturedCount)>4,'timed reads use fixture responses captured before the measured navigation');
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:fakeEndpoint});
   const navigate=async(config:Record<string,unknown>,path='/workbench/app/?range=all')=>{const nonce=randomUUID();await b.evaluate(`sessionStorage.setItem('card35a',${JSON.stringify(JSON.stringify({...config,nonce}))})`);await b.command('Page.navigate',{url:f.origin+path});await b.waitFor('window.__card35a?.nonce==='+JSON.stringify(nonce));};
-  const loaded="document.querySelectorAll('.board .ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')";
+  const loaded="document.querySelectorAll('.board .column-cards').length===3&&document.querySelectorAll('.board .ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')";
   // Mount the code/layout first, then request a genuinely uncached query key. Cold module work is not response time.
   await navigate({});await b.waitFor(loaded);await waitForAnimationsSettled(b);
   await b.evaluate("window.__card35a.boardDelay={pending:80,active:80,handled:80};window.__controlledReads=[];window.__stateTimes=[];window.__busyNodes=[];window.__busySeen=false");
@@ -218,7 +218,9 @@ test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, r
   const visible=text(await b.evaluate('document.body.innerText'));assert.ok(!visible.includes('card35a-request-synthetic')&&!visible.includes('CARD35A_SYNTHETIC_READ_FAILED')&&!visible.includes(JSON.parse(copied).time),'diagnostics are never visible');
   await b.evaluate("window.__card35a.bootstrapFail=false");await clickWorkbenchControl(b,'.ds-error-actions button:first-child');await b.waitFor(loaded);
   await navigate({},'/workbench/app/?view=list&range=all');await b.waitFor("document.querySelectorAll('.ds-work-row[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");await b.evaluate("window.__card35a.boardDelay={active:1000}");await clickWorkbenchControl(b,'.ds-board-page-header button[aria-label="刷新"]');await b.waitFor("Boolean(document.querySelector('.ds-state-region[data-refreshing]'))");assert.equal(await b.evaluate("Boolean(document.querySelector('.ds-work-table [data-skeleton]'))"),false,'list refresh has no skeleton');await b.waitFor("!document.querySelector('[data-refreshing]')");
+  const activityHeader=await box(b,'.ds-work-table thead th:last-child');assert.ok(Math.abs(activityHeader.width-92)<=1,'the activity column retains the main 92px width');
   await b.evaluate("window.__card35a.boardDelay={};window.__card35a.failColumn='active'");await clickWorkbenchControl(b,'.ds-board-page-header button[aria-label="刷新"]');await b.waitFor("Boolean(document.querySelector('.ds-work-table .ds-stale-retry'))");
+  sameBox(activityHeader,await box(b,'.ds-work-table thead th:last-child'),'activity header does not grow for the retry marker');
   assert.equal(await b.evaluate("document.querySelector('.ds-work-table').innerText.includes('读取未完成')"),false,'the table header owns its refresh error');
   const retryRect=await box(b,'.ds-work-table .ds-stale-retry button'),tableRect=await box(b,'.ds-work-table-wrap');assert.ok(retryRect.x>=tableRect.x&&retryRect.x+retryRect.width<=tableRect.x+tableRect.width,'table header retry stays inside its scroller');assert.equal(await b.evaluate("(()=>{const button=document.querySelector('.ds-work-table .ds-stale-retry button'),r=button.getBoundingClientRect();return button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()"),true,'the table retry is not clipped or overlapped');await b.evaluate('window.__card35a.failColumn=null');await clickWorkbenchControl(b,'.ds-work-table .ds-stale-retry button');await b.waitFor("!document.querySelector('.ds-work-table .ds-stale-retry')");
   await navigate({detailDelay:9000},'/workbench/app/items/ticket/'+own.ticket.id+'?detail=page&range=all');await b.waitFor("Boolean(document.querySelector('.detail-page .ds-detail-skeleton'))");const pageToolbar=await box(b,'.detail-page .detail-navigation'),pageBody=await box(b,'.detail-page .ds-detail-skeleton');await b.waitFor("Boolean(document.querySelector('.detail-page .ds-detail-view'))&&!document.querySelector('[data-skeleton]')");sameBox(pageToolbar,await box(b,'.detail-page .detail-navigation'),'full-page toolbar');const readBody=await box(b,'.detail-page .ds-detail-view>.detail-body');assert.ok(Math.abs(pageBody.x-readBody.x)<=1&&Math.abs(pageBody.width-readBody.width)<=1&&Math.abs(pageBody.y-readBody.y)<=1,'full-page skeleton uses the real reading column');
@@ -379,6 +381,58 @@ test('Card 35A option A: unavailable live stream keeps healthy reads on the 5s c
   await b.evaluate('window.__liveOnlyUnavailable=false');await b.waitFor("document.querySelector('.app')?.dataset.realtimeStatus==='live'",{timeoutMs:12000});assert.equal(await b.evaluate('window.__sourceAttempts'),1,'a fresh read admits the existing live transport when it becomes available');assert.equal(await b.evaluate('window.__connectionNoticeSeen'),false,'returning to live after healthy polling is not network recovery');metrics.browser=await b.command('Browser.getVersion');
  }catch(caught){error=caught;if(browser)metrics.failure=await browser.evaluate('({text:document.body.innerText,times:window.__bootstrapTimes,reads:window.__healthyBoardReads,notice:window.__connectionNoticeSeen})').catch(()=>null);}finally{await writeFile(join(directory,'receipt-35a-healthy-polling.json'),JSON.stringify({status:error?'FAIL':'PASS',metrics,error:error instanceof Error?error.message:null},null,2));await close(browser,error);}
 },{precisionV212:true,syntheticServiceCodes:true,workbenchFollowEnabled:true,workbenchRealtimeEnabled:true}));
+
+test('Card 35A backoff hints invalidate an open search through recovery without an extra read or automatic search restart',{timeout:60000},()=>withWeb01Fixture(async(f:Fixture)=>{
+ const directory=await evidence(),metrics:Record<string,unknown>={};let browser:Browser|undefined,error:unknown;
+ try{
+  const cookie=f.browserCookies[0],ticket=f.tickets[0];assert.ok(cookie&&ticket);
+  browser=await launchStateBrowser({url:f.origin+'/health',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{
+   const Native=EventSource,real=fetch.bind(window);window.__backoffStreams=[];window.__failCore=false;window.__coreReads=[];window.__searchReads=0;window.__businessPosts=0;window.__emptySearch=false;
+   window.EventSource=class extends Native{constructor(...args){super(...args);window.__backoffStreams.push(this);}};
+   window.fetch=async(input,init)=>{const url=new URL(input instanceof Request?input.url:String(input),location.href);
+    if(url.pathname==='/api/workbench/search')window.__searchReads++;
+    if(init?.method==='POST'&&url.pathname.startsWith('/api/tickets/'))window.__businessPosts++;
+    if(url.pathname==='/api/lifecycle/bootstrap'){window.__coreReads.push({at:performance.now(),failed:window.__failCore});if(window.__failCore)throw new TypeError('35A synthetic read failure');}
+    const response=await real(input,init);if(window.__emptySearch&&url.pathname==='/api/workbench/search'&&response.ok){const body=await response.json();return Response.json({...body,items:[],next_cursor:null});}return response;
+   };
+  })()`});
+  await b.command('Page.navigate',{url:f.origin+'/workbench/app/?range=all'});
+  await b.waitFor("document.querySelector('.app')?.dataset.realtimeStatus==='live'&&document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
+  await b.evaluate("document.querySelector('form[aria-label=\"搜索全部获权事项\"]').requestSubmit()");
+  await b.waitFor("new URLSearchParams(location.search).get('search')==='1'&&window.__searchReads===1&&Boolean(document.querySelector('.workbench-search [data-action=leave-workbench-search]'))&&document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
+  const searchReads=await b.evaluate('window.__searchReads');assert.equal(searchReads,1);
+  await b.evaluate("window.__coreReads=[];window.__failCore=true;window.__backoffStreams.at(-1).dispatchEvent(new Event('error'))");
+  await b.waitFor("window.__coreReads.length===1&&document.querySelector('.app')?.dataset.realtimeStatus==='offline'");
+  assert.equal(await b.evaluate('window.__backoffStreams.at(-1).readyState'),1,'REST failed while the existing native stream remains connected');
+  const data=JSON.stringify({event_id:'9007199254740993',event_type:'ticket.updated',aggregate_type:'TICKET',aggregate_id:ticket.ticket.id,aggregate_version:'3',visibility_scope:'WORKBENCH',payload:{note:'35A 退避提示（合成）'},occurred_at:'2026-11-18 12:00:00',created_at:'2026-11-18 12:00:00'});
+  await b.evaluate(`window.__backoffStreams.at(-1).dispatchEvent(new MessageEvent('ticket.updated',{data:${JSON.stringify(data)}}))`);
+  const notice="document.querySelector('[data-search-refresh-required]')?.textContent.includes('事项资料已变化，请重新提交搜索或点击刷新。')";
+  await b.waitFor(notice);assert.equal(await b.evaluate('window.__coreReads.length'),1,'the backoff hint does not trigger an immediate business read');
+  assert.equal(await b.evaluate("document.querySelector('[data-search-state=error]')?.getAttribute('role')"),'alert');
+  assert.equal(await b.evaluate("document.querySelector('[data-search-state=error]')?.textContent"),'查询未完成，请重新读取。搜索输入仍保留。','the main search error copy and alert semantics are preserved');
+  assert.equal(await b.evaluate("document.querySelectorAll('.ticket-card[data-item-id]').length"),0,'an invalidated search cannot retain pre-event cards');
+  await b.evaluate('window.__failCore=false');await b.waitFor("document.querySelector('.app')?.dataset.realtimeStatus==='live'");
+  const reads=await b.evaluate('window.__coreReads') as {at:number;failed:boolean}[];assert.equal(reads.length,2);assert.equal(reads[0]?.failed,true);assert.equal(reads[1]?.failed,false);assert.ok((reads[1]?.at??0)-(reads[0]?.at??0)>=1000,'recovery waits for the admitted one-second retry');metrics.reads=reads;
+  assert.equal(await b.evaluate(notice),true,'the refresh-required notice survives successful recovery');assert.equal(await b.evaluate('window.__searchReads'),searchReads,'recovery must not silently restart a search');
+  metrics.screenshot=await shot(b,directory,'search-backoff-refresh-required.png');metrics.cpuRate=cpuRate;
+  await clickWorkbenchControl(b,'.ds-board-page-header button[aria-label=刷新]');
+  await b.waitFor("!document.querySelector('[data-search-state=error]')&&document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
+  assert.equal(await b.evaluate('window.__searchReads'),Number(searchReads)+1,'only the explicit user refresh restarts search');assert.equal(await b.evaluate('window.__businessPosts'),0);assert.equal(await b.evaluate('window.__backoffStreams.length'),1);
+  await b.evaluate("window.__emptySearch=true;history.pushState(history.state,'','?search=1&view=list&range=custom&scope=related&handled_from=2026-11-18&handled_to=2026-11-18&q='+encodeURIComponent('35A 空态（合成）'));dispatchEvent(new PopStateEvent('popstate',{state:history.state}))");
+  const emptyReady="Boolean(document.querySelector('[data-search-state=empty]'))&&document.querySelectorAll('.ds-work-table thead').length===1&&[...document.querySelectorAll('.ds-list-empty')].filter(n=>n.checkVisibility()).length===3&&!document.querySelector('[data-skeleton]')";
+  await b.waitFor(emptyReady);assert.equal(await b.evaluate("document.querySelector('[data-search-state=empty] h2')?.textContent"),'当前没有符合这些条件的可见事项。');
+  assert.equal(await b.evaluate("document.querySelector('[data-search-state=empty]')?.getAttribute('role')"),'status');assert.equal(await b.evaluate("document.querySelector('[data-search-state=empty]')?.dataset.size"),'page');
+  metrics.filteredEmpty=await shot(b,directory,'search-empty-filtered.png');
+  await b.evaluate('window.__emptySearch=false');await clickWorkbenchControl(b,'[data-search-state=empty] button');
+  await b.waitFor("!new URLSearchParams(location.search).has('search')&&document.querySelectorAll('.ds-work-row[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
+  assert.deepEqual(await b.evaluate("[...new URLSearchParams(location.search)].sort()"),[['range','all'],['scope','team'],['view','list']],'clear search removes criteria and custom dates, resets range/scope, and retains only the chosen view');
+  await b.evaluate("window.__emptySearch=true;history.pushState(history.state,'','?search=1&view=list&range=all&scope=team');dispatchEvent(new PopStateEvent('popstate',{state:history.state}))");
+  await b.waitFor(emptyReady);assert.equal(await b.evaluate("document.querySelector('[data-search-state=empty] h2')?.textContent"),'当前没有可见的事项。');assert.equal(await b.evaluate("document.querySelectorAll('[data-search-state=empty] button').length"),0,'unfiltered search keeps main behaviour without a misleading clear action');
+  metrics.unfilteredEmpty=await shot(b,directory,'search-empty-unfiltered.png');assert.equal(await b.evaluate('window.__businessPosts'),0);
+ }catch(caught){error=caught;if(browser)metrics.failure=await browser.evaluate('({text:document.body.innerText,reads:window.__coreReads,searchReads:window.__searchReads,status:document.querySelector(".app")?.dataset.realtimeStatus})').catch(()=>null);}
+ finally{await writeFile(join(directory,'receipt-35a-backoff-search.json'),JSON.stringify({status:error?'FAIL':'PASS',metrics,error:error instanceof Error?error.message:null},null,2));await close(browser,error);}
+},{precisionV212:true,syntheticServiceCodes:true,workbenchFollowEnabled:true,workbenchRealtimeEnabled:true,workbenchSearchEnabled:true,manualProjection:true}));
 
 test('Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal',async()=>{
  const {createWorkbenchRealtimeClient}=await import('../app/pc-admin/src/realtime/workbench-realtime-client.mjs');
