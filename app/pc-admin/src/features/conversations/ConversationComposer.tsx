@@ -57,7 +57,9 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   const [value,setValue]=useState(''),[pending,setPending]=useState<SavedCommand|null>(null),[outcome,setOutcome,outcomeRevision]=useFeedbackState(''),[busy,setBusy]=useState(false);
   const composing=useRef(false),request=useRef<AbortController|null>(null),epoch=useRef(0),latest=useRef(value),alive=useRef(true);latest.current=value;
   const draftAuthority=useRef<AuthorityAttempt|null>(null);
-  const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome('');};
+  // Codex review: the reply-permission notice outlives the draft hook's own clean-up of the purged reply, so the page still says why it was cleared.
+  const revokedNotice=useRef<string|null>(null);
+  const sensitiveClear=()=>{epoch.current++;request.current?.abort();request.current=null;latest.current='';setValue('');setPending(null);setBusy(false);setOutcome(revokedNotice.current??'');};
   const isCurrent=(attempt:AuthorityAttempt)=>!attempt.signal.aborted&&epoch.current===attempt.token&&client.getQueryData<Principal>(['session'])?.principal_id===principal.principal_id;
   const authorityFailure=(error:unknown,attempt:AuthorityAttempt)=>{
     if(!isCurrent(attempt)||!(error instanceof ApiError))return false;
@@ -65,7 +67,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
     if([403,404].includes(error.status)){
       if(followUpTarget){
         // A lost REPLY or exact target read clears only this original reply purpose.
-        void purgeDrafts({principal:principal.principal_id,kind:'ticket',id:followUpTarget.ticket_id,purpose:draftPurpose,reason:'revoked'},{preserveOperations:true}).then(()=>{if(!alive.current||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;sensitiveClear();setOutcome('当前会话回复或原补充材料权限已失效，敏感回复已清理；已有原操作只能只读核对。');}).catch(()=>{if(!alive.current)return;sensitiveClear();setOutcome('当前回复权限已失效；恢复清理尚未确认，不能发送新操作。');});
+        void purgeDrafts({principal:principal.principal_id,kind:'ticket',id:followUpTarget.ticket_id,purpose:draftPurpose,reason:'revoked'},{preserveOperations:true}).then(()=>{if(!alive.current||client.getQueryData<Principal>(['session'])?.principal_id!==principal.principal_id)return;revokedNotice.current='当前会话回复或原补充材料权限已失效，敏感回复已清理；已有原操作只能只读核对。';sensitiveClear();}).catch(()=>{if(!alive.current)return;revokedNotice.current='当前回复权限已失效；恢复清理尚未确认，不能发送新操作。';sensitiveClear();});
       }else void clearItemAuthorization(client,principal.principal_id,'conversation',session,error);return true;
     }
     return false;
@@ -81,7 +83,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
       try{const fresh=await freshBootstrap(attempt);if(!fresh.conversation_workspace_enabled||!fresh.conversation_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');attempt.stage='conversation';const current=await conversations.detail(session,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');if(followUpTarget){if(!fresh.supplement_follow_up_enabled||!fresh.supplement_follow_up_draft_recovery_enabled)throw new DraftError('DRAFT_DISABLED');await api.supplementFollowUpMaterial(followUpTarget.ticket_id,followUpTarget,signal);if(!isCurrent(attempt))throw new DraftError('DRAFT_IDENTITY_CHANGED');}return current.capabilities.includes(action);}
       catch(error){attempt.failure=error;throw error;}
     },onAuthorityFailure:error=>{const attempt=draftAuthority.current;if(attempt&&attempt.failure===error)authorityFailure(error,attempt);},
-    onRestore:v=>{setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:(_id,preserveInput)=>{if(preserveInput){epoch.current++;request.current?.abort();request.current=null;setPending(null);setBusy(false);}setOutcome(preserveInput?'另一个页面的操作尚待核对；本页输入未保存。':'结果未知：敏感内容不可用，只能只读核对原操作。');},onOperationCleared:conflict=>{epoch.current++;request.current?.abort();request.current=null;setPending(null);setBoundOperationId(null);setBusy(false);setOutcome(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:sensitiveClear});
+    onRestore:v=>{revokedNotice.current=null;setValue(v.value);setPending(v.pending);setOutcome(v.pending?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'');},onOperation:(_id,preserveInput)=>{if(preserveInput){epoch.current++;request.current?.abort();request.current=null;setPending(null);setBusy(false);}setOutcome(preserveInput?'另一个页面的操作尚待核对；本页输入未保存。':'结果未知：敏感内容不可用，只能只读核对原操作。');},onOperationCleared:conflict=>{epoch.current++;request.current?.abort();request.current=null;setPending(null);setBoundOperationId(null);setBusy(false);setOutcome(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:sensitiveClear});
   const unknown=Boolean(pending||draft.operationId||boundOperationId),recovering=draft.enabled&&draft.status==='loading',allowed=entry.capabilities.includes(action),blocked=(busy||unknown||recovering||(Boolean(value)&&draft.enabled))&&!draft.safeToLeave;
   useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;epoch.current++;request.current?.abort();};},[]);
@@ -95,7 +97,7 @@ function Composer({entry,principal,purpose,onBlockedChange,onCommitted,followUpT
   }
   async function send(saved?:SavedCommand){
     if(!saved&&!workbenchTransportWritable()){setOutcome('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
-    if(request.current)return;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
+    if(request.current)return;revokedNotice.current=null;const controller=new AbortController(),token=epoch.current;request.current=controller;setBusy(true);
     const attempt:AuthorityAttempt={stage:'session',signal:controller.signal,token},current=()=>request.current===controller&&isCurrent(attempt);
     let command=saved,dispatched=false,preparation:ReturnType<typeof draft.prepareSend>=null;
     try{
