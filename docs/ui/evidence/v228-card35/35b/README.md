@@ -1,5 +1,7 @@
 # Card 35B — owner decision applied (2026-11-18)
 
+[PR #191 CI and review rework](ci-fixes.md) records the later fixture/receipt/writer fixes and the full local PR selection: **74/74 entries, 548/548 tests; seven selected tool files, 138/138 tests**. [Per-entry receipts](ci-selection-results.json), [current baseline/image integrity](ci-integrity.json), [updated PR description](pr-description.md). The owner-policy validation below is preserved with its original capture and build identities; it is not the current CI receipt.
+
 **All requested checks and both source-level reverse validations pass. The 18 owner-approved PNGs are preserved byte-for-byte; no current recapture and no approve execution.** The product owner then ran `visual:approve -- --all` in their own terminal; the committed baseline matches the approved SHA-256 set byte-for-byte and `visual:compare` exits 0 with no changes.
 
 [Owner decisions](product-owner-decisions-20261118.md), [18 SHA-256 values](approved-screenshots-20261118.md), [final integrity check](approved-integrity-20261118.json), [machine verification](verification.json).
@@ -23,7 +25,7 @@ Capture and compare accept --current-dir only inside .build/visual; approve does
 | B2 / B3 approved captures | PASS / PRESERVED | The approved 18 PNGs and capture metadata are unchanged; no masks or viewport/fixture changes. |
 | B2 stability evidence | PASS / preserved prior result | Existing capture input 39f4e20b... has five runs, 180 raw zero-pixel comparisons. Not recaptured or rebound to the later comparison-tool input. |
 | B4.1 / 3 / 4 evidence and conventions | PASS | Guide, owner decision record, hashes, updated report and PR description. Existing UI task-card template retains compare-summary convention. |
-| B4.2 first baseline approval | IMAGE APPROVAL PASS; COPY PENDING REVIEWER | Owner approved 18 current PNGs on 2026-11-18. No agent approve; formal directory only README. |
+| B4.2 first baseline approval | PASS by owner | Owner approved 18 current PNGs and personally copied them with approve on 2026-11-18. The committed 18 PNGs plus meta.json are unchanged by the CI rework; no agent approve. |
 | B4.5 radius | PASS | radius: compare exit 1; drawer-processing: 10 px (0.000694%); drawer-dismissed: 10 px (0.000694%); drawer-completed: 10 px (0.000694%); drawer-banner-editing: 10 px (0.000694%); close-dialog-out-of-scope: 28 px (0.001944%); close-dialog-duplicate: 26 px (0.001806%); restore-dialog: 2 px (0.000139%); toast-drawer-stack: 10 px (0.000694%) |
 | B4.5 label | PASS | label: compare exit 1; close-dialog-out-of-scope: 95 px (0.006597%); close-dialog-duplicate: 95 px (0.006597%) |
 | B5 | PASS | No CI capture, cross-browser matrix, H5, 35A/35C, permanent product edit, assertion replacement, commit or push. |
@@ -43,13 +45,13 @@ Capture and compare accept --current-dir only inside .build/visual; approve does
 | `node .build/tools/verify-artifact.mjs` | PASS | `logs/owner-any-pixel-artifact.log` |
 | `node .build/runtime/tools/visual-regression/reverse-validation.mjs` | PASS; both comparisons exit 1, source restored/rebuilt, approved current unchanged | `source-reverse.json` |
 | `npm run visual:compare -- --baseline-dir .build/visual/source-reverse-any-pixel/baseline --report-dir .build/visual/clean-report` | PASS; exit 0, all 18 diff counts = 0 | `local .build/visual/clean-report` |
-| `npm run visual:compare` | EXPECTED exit 1; formal baseline not yet copied, 18 missing baselines | `local .build/visual/report` |
+| `npm run visual:compare` | Historical result before owner copied baseline: expected exit 1, 18 missing. Current PR #191 rework: PASS, exit 0, all 18 zero pixels | [Current result](ci-fixes.md) |
 
-Logs remain local (ignored *.log). The exact Git-diff plan is not generated while all changes are uncommitted. Browser lifecycle/Card 34C tests were not repeated for this policy/path-only update; their prior results remain in the superseded delivery record. Full/certify and a new five-run capture were not run: the approved capture algorithm and content did not change, and the owner requested preservation of the current set.
+These owner-policy logs remain local (ignored *.log). At that earlier delivery the changes were uncommitted, so no exact Git-diff plan was generated. The later PR #191 rework generates the committed-head plan and runs every selected database/browser entry; see the current receipt above. Full/certify and a new five-run capture were not run: the approved capture algorithm and content did not change, and the owner requested preservation of the current set.
 
 ## Screenshots and reports
 
-Approved current: `.build/visual/current/darwin-chrome/` — all 18 original PNGs plus unchanged meta.json. Formal review HTML: `.build/visual/report/index.html`; it reports 18 missing formal baselines, as approve has not run. Clean temporary-baseline HTML: `.build/visual/clean-report/index.html`, exit 0, 18 zero-pixel comparisons.
+Approved current: `.build/visual/current/darwin-chrome/` — all 18 original PNGs plus unchanged meta.json. The owner has copied the approved baseline. Current formal review HTML: `.build/visual/report/index.html`, exit 0, 18 zero-pixel comparisons. The earlier clean temporary-baseline report remains at `.build/visual/clean-report/index.html`.
 
 | PNG | Viewport | Mask |
 | --- | --- | --- |

@@ -8,8 +8,7 @@ import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {createYxxProfile} from '../app/server/src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../app/server/src/p2-g2-wecom-web-oauth.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import {migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
-import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
+import {withSS009Database,closeSS009Resources,migrateSS009RuntimeDatabase} from './helpers/yxx-ss-009-resources.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
 import {g2DatabaseIdentity,minimalG2Environment} from '../app/server/src/p2-g2-validation-config.mjs';
 import {g2CandidateInventory} from '../app/server/src/p2-g2-candidate.mjs';
@@ -30,7 +29,7 @@ async function drain(pool){
 async function capacity(profile,t){
   const fingerprint=g2CandidateInventory().fingerprint,receipts=[];
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2ss009cap',max:1,run:async({pool:control,databaseUrl,observeResource})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});
+    await migrateSS009RuntimeDatabase({databaseUrl});
     const pool=createPostgresPool({connectionString:databaseUrl,max:4,application_name:'ss009_capacity_app'});
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss009-admin',displayName:'Synthetic capacity',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const identityMapping=await mapping(),options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret};
@@ -63,7 +62,16 @@ async function capacity(profile,t){
       const initial=(await control.query('SELECT display_status,count(*)::int FROM (SELECT CASE WHEN i.pilot_ticket_id IS NOT NULL THEN \'TICKET\' ELSE i.status END AS display_status FROM intake.service_intake i) x GROUP BY display_status')).rows;
       assert.equal((await control.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0].n,250,JSON.stringify(initial));
       const reviews=(await control.query("SELECT r.id::text,r.row_version::text FROM intake.manual_review_item r JOIN intake.service_intake i ON i.id=r.service_intake_id WHERE r.status='PENDING' ORDER BY i.pilot_ticket_id NULLS FIRST,r.id")).rows;assert.equal(reviews.length,100,JSON.stringify(initial));
-      for(let i=0;i<reviews.length;i++)await send('/api/manual-reviews/'+reviews[i].id+'/resolve',{client_command_id:randomUUID(),expected_row_version:reviews[i].row_version,resolution_code:i<50?'CONFIRM_TICKET_ELIGIBLE':'MARK_OUT_OF_SCOPE',resolution_reason_code:'SS009_SYNTHETIC'},staff,staffCsrf);
+      for(let i=0;i<reviews.length;i++){
+        // Current out-of-scope review resolution uses the same closure reason pair
+        // as the workbench. Keep the original 50/50 capacity scenario and assertions.
+        const closure=i<50?{}:{reason_code:'NOT_IT_SCOPE',secondary_reason_code:'OUT_OF_SCOPE_CONFIRMED'};
+        await send('/api/manual-reviews/'+reviews[i].id+'/resolve',{
+          client_command_id:randomUUID(),expected_row_version:reviews[i].row_version,
+          resolution_code:i<50?'CONFIRM_TICKET_ELIGIBLE':'MARK_OUT_OF_SCOPE',
+          resolution_reason_code:i<50?'SS009_SYNTHETIC':'OUT_OF_SCOPE_CONFIRMED',...closure
+        },staff,staffCsrf);
+      }
       for(let revision=1;revision<=10;revision++)for(const ref of refs.slice(0,200))await send('/api/yixiaoxiu/requests/'+ref+'/supplements',{schema_version:1,client_command_id:randomUUID(),expected_input_revision:String(revision),text:'补充说明：仍然只有这一台受影响'});
       const same=input('处方提交不了');const duplicate=await Promise.all(Array.from({length:12},()=>send('/api/yixiaoxiu/requests',same)));
       assert.equal(new Set(duplicate.map(x=>x.receipt.request_ref)).size,1);assert.equal(duplicate.filter(x=>!x.replayed).length,1);

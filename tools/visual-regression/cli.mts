@@ -58,9 +58,8 @@ async function main(): Promise<void> {
     const { capture } = await import('./capture.mjs');
     await capture(root, platform, currentDir, names, runId);
   } else if (command === 'compare') {
-    if (names.length) throw Error('Compare evaluates the whole manifest');
     const { compare } = await import('./compare.mjs');
-    process.exitCode = await compare({ platform, currentDir, baselineDir, reportDir });
+    process.exitCode = await compare({ platform, currentDir, baselineDir, reportDir, names });
   } else if (command === 'approve') {
     const { approve } = await import('./approve.mjs');
     await approve(names, currentDir, baselineDir, platform);

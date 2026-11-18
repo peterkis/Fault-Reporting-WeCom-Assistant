@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { manifest } from '../../tests/visual/manifest.mjs';
 import { comparePixels } from './compare.mjs';
 import type { CaptureMeta } from './model.mjs';
+import { prepareVisualEvidence } from './evidence.mjs';
 export async function stability(
   root: string,
   platform: string,
@@ -67,8 +68,7 @@ export async function stability(
       }),
     });
   }
-  const dir = path.join(root, 'docs/ui/evidence/v228-card35/35b');
-  await mkdir(dir, { recursive: true });
+  const { directory: dir } = await prepareVisualEvidence(root);
   const result = {
     passed: rows.every((r) => r.pairwise_max === 0),
     platform,

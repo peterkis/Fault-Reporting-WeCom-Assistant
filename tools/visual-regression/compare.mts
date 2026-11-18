@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { manifest } from '../../tests/visual/manifest.mjs';
@@ -12,6 +13,8 @@ export interface Comparison {
     | 'changed'
     | 'missing-baseline'
     | 'missing-current'
+    | 'unrecorded'
+    | 'stale'
     | 'size-mismatch'
     | 'invalid-image';
   diff_pixels: number | null;
@@ -88,8 +91,19 @@ export async function compare(options: {
   currentDir: string;
   baselineDir: string;
   reportDir: string;
+  names?: readonly string[];
 }): Promise<number> {
   const { platform, currentDir, baselineDir, reportDir } = options;
+  const names = options.names ?? [];
+  if (
+    new Set(names).size !== names.length ||
+    names.some((name) => !manifest.some((screen) => screen.name === name))
+  ) {
+    throw Error('Compare requires known, unique screen names');
+  }
+  const selected = names.length
+    ? manifest.filter((screen) => names.includes(screen.name))
+    : manifest;
   await mkdir(path.join(reportDir, 'images'), { recursive: true });
   await copyFile(
     new URL('../../../../app/pc-admin/src/design/tokens.css', import.meta.url),
@@ -98,6 +112,7 @@ export async function compare(options: {
   const currentMeta = await optionalBytes(path.join(currentDir, 'meta.json')),
     baseMeta = await optionalBytes(path.join(baselineDir, 'meta.json'));
   const metadataErrors: string[] = [];
+  let currentScreens: Record<string, string> | undefined;
   for (const [kind, bytes] of [
     ['current', currentMeta],
     ['baseline', baseMeta],
@@ -107,25 +122,40 @@ export async function compare(options: {
       continue;
     }
     try {
-      const meta = JSON.parse(bytes.toString()) as CaptureMeta;
+      const meta = JSON.parse(bytes.toString()) as CaptureMeta & { incomplete?: boolean };
       if (
+        meta.schema_version !== 1 ||
         meta.platform !== platform ||
         typeof meta.os_version !== 'string' ||
         !meta.os_version ||
         typeof meta.browser_version !== 'string' ||
         !meta.browser_version ||
         meta.dpr !== 1
-      )
+      ) {
         metadataErrors.push(kind + ' metadata is invalid or belongs to another platform');
+      } else if (kind === 'current') {
+        if (!meta.screens || typeof meta.screens !== 'object' || Array.isArray(meta.screens)) {
+          metadataErrors.push('current capture receipt has no valid screens map');
+        } else {
+          currentScreens = meta.screens;
+        }
+        if (meta.incomplete)
+          metadataErrors.push('current capture is incomplete; finish capture before comparing');
+      }
     } catch {
       metadataErrors.push(kind + ' meta.json is invalid');
     }
   }
   const results: Comparison[] = [];
-  for (const s of manifest) {
+  for (const s of selected) {
     const file = s.name + '.png',
       a = await optionalBytes(path.join(baselineDir, file)),
       b = await optionalBytes(path.join(currentDir, file));
+    const recorded = currentScreens !== undefined && Object.hasOwn(currentScreens, s.name);
+    const verified =
+      b !== null &&
+      recorded &&
+      createHash('sha256').update(b).digest('hex') === currentScreens?.[s.name];
     const row: Comparison = {
       name: s.name,
       status: 'unchanged',
@@ -145,7 +175,7 @@ export async function compare(options: {
       ['baseline', a],
       ['current', b],
     ] as const)
-      if (bytes) {
+      if (bytes && (key === 'baseline' || verified)) {
         const target = 'images/' + s.name + '-' + key + '.png';
         await writeFile(path.join(reportDir, target), bytes);
         row[key] = target;
@@ -153,6 +183,14 @@ export async function compare(options: {
     if (!b) {
       row.status = 'missing-current';
       row.message = 'Current screenshot is missing. Run visual:capture.';
+    } else if (!recorded) {
+      row.status = 'unrecorded';
+      row.message =
+        'PNG is not recorded in current meta.json.screens and was not compared. Run a full capture or explicitly compare a recorded named subset.';
+    } else if (!verified) {
+      row.status = 'stale';
+      row.message =
+        'PNG SHA-256 does not match the current capture receipt. The stale file was not compared; capture it again.';
     } else if (!a) {
       row.status = 'missing-baseline';
       row.message = 'Baseline is missing. Product owner must review and approve manually.';
@@ -187,9 +225,16 @@ export async function compare(options: {
       platform,
       baseline_dir: baselineDir,
       current_dir: currentDir,
+      scope: names.length ? 'named-subset' : 'full-manifest',
+      selected_screens: selected.map((screen) => screen.name),
+      not_compared: manifest
+        .filter((screen) => !selected.includes(screen))
+        .map((screen) => screen.name),
       metadata_errors: metadataErrors,
       changed: results.filter((r) => r.over_threshold).map((r) => r.name),
       missing_baselines: results.filter((r) => r.status === 'missing-baseline').map((r) => r.name),
+      unrecorded: results.filter((row) => row.status === 'unrecorded').map((row) => row.name),
+      stale: results.filter((row) => row.status === 'stale').map((row) => row.name),
       failed,
       results,
     };
@@ -244,9 +289,11 @@ export async function compare(options: {
   a { color: inherit; }
 </style>
 <h1>Visual comparison · ${escape(platform)}</h1>
+<p>Scope: ${summary.scope}; ${selected.length}/${manifest.length} manifest screens selected.</p>
 <p>
   ${summary.changed.length} changed screens; ${summary.missing_baselines.length} missing baselines.
-  ${failed ? 'Review required.' : 'All screens within configured limits.'}
+  ${summary.unrecorded.length} unrecorded current files; ${summary.stale.length} stale current files.
+  ${failed ? 'Review required.' : 'All selected screens within configured limits.'}
 </p>
 <p>
   Pixelmatch ${DEFAULT_THRESHOLD.pixelmatch}; default: any changed pixel (diff count &gt; 0; ratio &gt; 0).
@@ -263,8 +310,11 @@ ${sections.join('')}
   console.log(
     JSON.stringify({
       platform,
+      scope: summary.scope,
       changed: summary.changed,
       missing_baselines: summary.missing_baselines,
+      unrecorded: summary.unrecorded,
+      stale: summary.stale,
       metadata_errors: metadataErrors,
       report: path.join(reportDir, 'index.html'),
     }),

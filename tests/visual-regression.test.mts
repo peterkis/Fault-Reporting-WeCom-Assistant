@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PNG } from 'pngjs';
+import { createHash } from 'node:crypto';
 import {
   platformName,
   browserName,
@@ -13,7 +14,8 @@ import {
 import { comparePixels, compare } from '../tools/visual-regression/compare.mjs';
 import { manifest } from './visual/manifest.mjs';
 import { replaceSourceOnce } from '../tools/visual-regression/reverse-validation.mjs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { prepareVisualEvidence } from '../tools/visual-regression/evidence.mjs';
+import { mkdtemp, readFile, rm, mkdir, writeFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 test('visual threshold: any changed pixel by default; explicit ratio overrides retain strict boundaries', () => {
@@ -141,16 +143,18 @@ test('visual report flags the changed screen and clearly reports a missing basel
       os_version: 'synthetic',
       browser_version: 'Chrome/synthetic',
       dpr: 1,
+      screens: {} as Record<string, string>,
     };
-    for (const folder of [current, baseline])
-      await writeFile(path.join(folder, 'meta.json'), JSON.stringify(meta));
     for (const screen of manifest) {
       const png = new PNG({ width: screen.viewport.width, height: screen.viewport.height });
       png.data.fill(255);
       const bytes = PNG.sync.write(png);
+      meta.screens[screen.name] = createHash('sha256').update(bytes).digest('hex');
       await writeFile(path.join(current, screen.name + '.png'), bytes);
       await writeFile(path.join(baseline, screen.name + '.png'), bytes);
     }
+    for (const folder of [current, baseline])
+      await writeFile(path.join(folder, 'meta.json'), JSON.stringify(meta));
     const options = {
       platform: 'darwin-chrome',
       currentDir: current,
@@ -163,7 +167,10 @@ test('visual report flags the changed screen and clearly reports a missing basel
     const png = PNG.sync.read(await readFile(path.join(current, first.name + '.png')));
     // One changed pixel in the whole viewport must fail the default comparison.
     png.data[0] = 0;
-    await writeFile(path.join(current, first.name + '.png'), PNG.sync.write(png));
+    const changed = PNG.sync.write(png);
+    await writeFile(path.join(current, first.name + '.png'), changed);
+    meta.screens[first.name] = createHash('sha256').update(changed).digest('hex');
+    await writeFile(path.join(current, 'meta.json'), JSON.stringify(meta));
     assert.equal(await compare(options), 1);
     let report = JSON.parse(
       await readFile(path.join(options.reportDir, 'report.json'), 'utf8'),
@@ -286,4 +293,131 @@ test('visual clock freezes Date.now and new Date, preserving explicit constructo
     946684800000,
     new Date(2026, 10, 13, 10).getTime(),
   ]);
+});
+
+async function withReceiptFixture(
+  run: (fixture: {
+    options: { platform: string; currentDir: string; baselineDir: string; reportDir: string };
+    meta: {
+      schema_version: number;
+      platform: string;
+      os_version: string;
+      browser_version: string;
+      dpr: number;
+      screens: Record<string, string>;
+    };
+  }) => Promise<void>,
+): Promise<void> {
+  const directory = await mkdtemp(path.join(tmpdir(), 'visual-receipt-'));
+  const options = {
+    platform: 'darwin-chrome',
+    currentDir: path.join(directory, 'current'),
+    baselineDir: path.join(directory, 'baseline'),
+    reportDir: path.join(directory, 'report'),
+  };
+  try {
+    const png = new PNG({ width: 100, height: 100 });
+    png.data.fill(255);
+    const bytes = PNG.sync.write(png);
+    const sha = createHash('sha256').update(bytes).digest('hex');
+    const meta = {
+      schema_version: 1,
+      platform: options.platform,
+      os_version: 'synthetic',
+      browser_version: 'Chrome/synthetic',
+      dpr: 1,
+      screens: Object.fromEntries(manifest.map((screen) => [screen.name, sha])),
+    };
+    for (const folder of [options.currentDir, options.baselineDir]) {
+      await mkdir(folder);
+      for (const screen of manifest)
+        await writeFile(path.join(folder, screen.name + '.png'), bytes);
+      await writeFile(path.join(folder, 'meta.json'), JSON.stringify(meta));
+    }
+    await run({ options, meta });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+test('visual partial capture cannot silently reuse 17 old PNGs; named subset is explicit', async () => {
+  await withReceiptFixture(async ({ options, meta }) => {
+    assert.equal(await compare(options), 0);
+    const first = manifest[0];
+    assert.ok(first);
+    const partial = { ...meta, screens: { [first.name]: meta.screens[first.name] } };
+    await writeFile(path.join(options.currentDir, 'meta.json'), JSON.stringify(partial));
+    assert.equal(await compare(options), 1);
+    const report = JSON.parse(
+      await readFile(path.join(options.reportDir, 'report.json'), 'utf8'),
+    ) as {
+      unrecorded: string[];
+      results: { status: string; current: string | null }[];
+    };
+    assert.equal(report.unrecorded.length, 17);
+    assert.ok(
+      report.results
+        .filter((row) => row.status === 'unrecorded')
+        .every((row) => row.current === null),
+    );
+    const subset = { ...options, names: [first.name] };
+    assert.equal(await compare(subset), 0);
+    const selected = JSON.parse(
+      await readFile(path.join(options.reportDir, 'report.json'), 'utf8'),
+    ) as {
+      scope: string;
+      selected_screens: string[];
+      not_compared: string[];
+    };
+    assert.equal(selected.scope, 'named-subset');
+    assert.deepEqual(selected.selected_screens, [first.name]);
+    assert.equal(selected.not_compared.length, 17);
+    await assert.rejects(compare({ ...options, names: ['unknown-screen'] }));
+  });
+});
+
+test('visual current PNG hash must match the receipt; incomplete capture also fails closed', async () => {
+  await withReceiptFixture(async ({ options, meta }) => {
+    const first = manifest[0];
+    assert.ok(first);
+    const file = path.join(options.currentDir, first.name + '.png');
+    const png = PNG.sync.read(await readFile(file));
+    png.data[0] = 0;
+    await writeFile(file, PNG.sync.write(png));
+    assert.equal(await compare(options), 1);
+    const report = JSON.parse(
+      await readFile(path.join(options.reportDir, 'report.json'), 'utf8'),
+    ) as {
+      stale: string[];
+      results: { status: string; current: string | null; diff: string | null }[];
+    };
+    assert.deepEqual(report.stale, [first.name]);
+    assert.equal(report.results[0]?.status, 'stale');
+    assert.equal(report.results[0]?.current, null);
+    assert.equal(report.results[0]?.diff, null);
+    await writeFile(file, await readFile(path.join(options.baselineDir, first.name + '.png')));
+    await writeFile(
+      path.join(options.currentDir, 'meta.json'),
+      JSON.stringify({ ...meta, incomplete: true }),
+    );
+    assert.equal(await compare({ ...options, names: [first.name] }), 1);
+  });
+});
+
+test('visual evidence writers prepare fresh nested logs before ordinary and restore-path writes', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'visual-evidence-'));
+  try {
+    const first = await prepareVisualEvidence(root);
+    assert.equal((await stat(first.logs)).isDirectory(), true);
+    await writeFile(path.join(first.logs, 'experiment.log'), 'synthetic experiment');
+    await writeFile(path.join(first.logs, 'restored-build.log'), 'synthetic restore');
+    await writeFile(path.join(first.directory, 'stability.json'), '{}');
+    assert.deepEqual(await prepareVisualEvidence(root), first);
+    assert.equal(
+      await readFile(path.join(first.logs, 'restored-build.log'), 'utf8'),
+      'synthetic restore',
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

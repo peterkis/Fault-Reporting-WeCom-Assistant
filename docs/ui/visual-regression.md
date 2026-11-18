@@ -22,7 +22,15 @@ npm run visual:capture -- drawer-processing
 npm run visual:capture -- --run-id stability-1
 ```
 
-部分捕获只出具所选屏幕的元数据，不代表完整 18 屏。`--run-id` 另存 `.build/visual/runs/<run-id>/<platform>/`。
+部分捕获会替换 `meta.json`，只出具本次所选屏幕的回执，不合并上次捕获的记录。磁盘上留下的其他 PNG 不代表本次完整 18 屏。默认 compare 逐屏核对 `meta.json.screens` 和 PNG 的 SHA-256；回执未收录的文件报告为 `unrecorded`，哈希不符报告为 `stale`，均退出非零且不作为 current 参与像素比较。未完成的捕获也会失败。
+
+调试时可明确指定仅比较已记录的屏幕；报告会标明 `named-subset`、选中数量和未比较画面，不代表完整回归通过：
+
+```sh
+npm run visual:compare -- drawer-processing
+```
+
+完整回归须重新完整 capture。`--run-id` 另存 `.build/visual/runs/<run-id>/<platform>/`。
 
 需要保留已批准的 current 时，为 capture 和 compare 指定独立的 `--current-dir`。该参数指向平台目录的父目录，只允许 `.build/visual/` 内的临时目录；approve 不接受它，不能用它写入正式基线：
 

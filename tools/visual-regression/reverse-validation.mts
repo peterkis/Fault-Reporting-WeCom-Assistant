@@ -10,6 +10,7 @@ import { findSystemBrowser } from '../../tests/helpers/p2-006-browser-harness.mj
 import { browserName, DEFAULT_THRESHOLD, platformName } from './model.mjs';
 import type { CaptureMeta } from './model.mjs';
 import { comparePixels } from './compare.mjs';
+import { prepareVisualEvidence } from './evidence.mjs';
 const execute = promisify(execFile);
 const digest = (bytes: string | Buffer): string => createHash('sha256').update(bytes).digest('hex');
 export function replaceSourceOnce(source: string, before: string, after: string): string {
@@ -43,7 +44,7 @@ export async function reverseValidation(root: string): Promise<void> {
   const temporary = path.join(root, '.build/visual/source-reverse-any-pixel');
   const baselineRoot = path.join(temporary, 'baseline');
   const current = path.join(root, '.build/visual/current', platform);
-  const evidence = path.join(root, 'docs/ui/evidence/v228-card35/35b');
+  const { directory: evidence, logs } = await prepareVisualEvidence(root);
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const sources = [
     {
@@ -101,7 +102,7 @@ export async function reverseValidation(root: string): Promise<void> {
       };
       output = (result.stdout ?? '') + (result.stderr ?? '');
     }
-    await writeFile(path.join(evidence, 'logs', log), output);
+    await writeFile(path.join(logs, log), output);
     if (!allowed.includes(code)) throw new Error(args.join(' ') + ' failed; see ' + log);
     return code;
   }
