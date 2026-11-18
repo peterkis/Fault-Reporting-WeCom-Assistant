@@ -1,0 +1,12 @@
+{
+  "snapshot": "Incoming r1 production CSS inspected before r2 typecheck",
+  "raw_copy_files": [],
+  "raw_copy_note": "Typecheck removed staging before a later copy attempt; these excerpts record the earlier CSS inspection, not a saved stylesheet.",
+  "r1_manifest_sha256": "f94e9837aba16fb5983afd63e85277d8703183616e999b7467242a0e8c7d849e",
+  "observed_rules": [
+    ".disclosure__indicator[data-expanded=true]{rotate:-180deg}",
+    "html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator]{transition:transform var(--dur-base) var(--ease-standard);transform:rotate(0)}",
+    "html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator][data-expanded=true]{transform:rotate(-180deg)}"
+  ],
+  "finding": "The source rotate:none reset was folded away; independent vendor rotate and transform then stacked."
+}

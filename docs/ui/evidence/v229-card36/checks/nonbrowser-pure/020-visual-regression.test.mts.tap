@@ -1,0 +1,103 @@
+TAP version 13
+# Subtest: visual threshold: any changed pixel by default; explicit ratio overrides retain strict boundaries
+ok 1 - visual threshold: any changed pixel by default; explicit ratio overrides retain strict boundaries
+  ---
+  duration_ms: 0.745416
+  type: 'test'
+  ...
+# Subtest: visual platform/browser mapping and unsupported values
+ok 2 - visual platform/browser mapping and unsupported values
+  ---
+  duration_ms: 0.072208
+  type: 'test'
+  ...
+# Subtest: visual alternate current outputs cannot target official baselines or escape temporary artifacts
+ok 3 - visual alternate current outputs cannot target official baselines or escape temporary artifacts
+  ---
+  duration_ms: 0.131791
+  type: 'test'
+  ...
+# Subtest: visual manifest: exact 18 names, viewport and mandatory override/mask reasons
+ok 4 - visual manifest: exact 18 names, viewport and mandatory override/mask reasons
+  ---
+  duration_ms: 0.2055
+  type: 'test'
+  ...
+# Subtest: visual approval refuses non-TTY and agents, including empty marker values
+ok 5 - visual approval refuses non-TTY and agents, including empty marker values
+  ---
+  duration_ms: 0.195583
+  type: 'test'
+  ...
+# Subtest: visual images: equality, raw stability, pixel difference and dimension failure
+ok 6 - visual images: equality, raw stability, pixel difference and dimension failure
+  ---
+  duration_ms: 23.294625
+  type: 'test'
+  ...
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":["current meta.json is missing","baseline meta.json is missing"],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-tool-Gh9Ti1/report/index.html"}
+# Subtest: visual missing baseline/current produces a complete readable report and failure
+ok 7 - visual missing baseline/current produces a complete readable report and failure
+  ---
+  duration_ms: 6.125708
+  type: 'test'
+  ...
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-report-Xzvswr/report/index.html"}
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":["board-default"],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-report-Xzvswr/report/index.html"}
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":["board-default"],"unrecorded":[],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-report-Xzvswr/report/index.html"}
+# Subtest: visual report flags the changed screen and clearly reports a missing baseline
+ok 8 - visual report flags the changed screen and clearly reports a missing baseline
+  ---
+  duration_ms: 36929.72925
+  type: 'test'
+  ...
+# Subtest: visual realtime fixtures stay fixed while business reads still use the real transport
+ok 9 - visual realtime fixtures stay fixed while business reads still use the real transport
+  ---
+  duration_ms: 9.585417
+  type: 'test'
+  ...
+# Subtest: visual source experiment rejects ambiguous edits and changes exactly one real fragment
+ok 10 - visual source experiment rejects ambiguous edits and changes exactly one real fragment
+  ---
+  duration_ms: 0.082958
+  type: 'test'
+  ...
+# Subtest: visual clock freezes Date.now and new Date, preserving explicit constructors and Date.UTC
+ok 11 - visual clock freezes Date.now and new Date, preserving explicit constructors and Date.UTC
+  ---
+  duration_ms: 1.315042
+  type: 'test'
+  ...
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-receipt-7a7kKI/report/index.html"}
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":[],"unrecorded":["board-presence","board-filtered-empty","list-default","list-closed-groups","drawer-processing","drawer-dismissed","drawer-completed","drawer-banner-editing","detail-fullpage-1280","close-dialog-out-of-scope","close-dialog-duplicate","restore-dialog","toast-tones","toast-drawer-stack","sidebar-online-popover","conversation-default","notifications-default"],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-receipt-7a7kKI/report/index.html"}
+# {"platform":"darwin-chrome","scope":"named-subset","changed":[],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-receipt-7a7kKI/report/index.html"}
+# Subtest: visual partial capture cannot silently reuse 17 old PNGs; named subset is explicit
+ok 12 - visual partial capture cannot silently reuse 17 old PNGs; named subset is explicit
+  ---
+  duration_ms: 112.381833
+  type: 'test'
+  ...
+# {"platform":"darwin-chrome","scope":"full-manifest","changed":[],"missing_baselines":[],"unrecorded":[],"stale":["board-default"],"metadata_errors":[],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-receipt-SGBtsX/report/index.html"}
+# {"platform":"darwin-chrome","scope":"named-subset","changed":[],"missing_baselines":[],"unrecorded":[],"stale":[],"metadata_errors":["current capture is incomplete; finish capture before comparing"],"report":"/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/visual-receipt-SGBtsX/report/index.html"}
+# Subtest: visual current PNG hash must match the receipt; incomplete capture also fails closed
+ok 13 - visual current PNG hash must match the receipt; incomplete capture also fails closed
+  ---
+  duration_ms: 98.366291
+  type: 'test'
+  ...
+# Subtest: visual evidence writers prepare fresh nested logs before ordinary and restore-path writes
+ok 14 - visual evidence writers prepare fresh nested logs before ordinary and restore-path writes
+  ---
+  duration_ms: 2.188
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 37259.551708

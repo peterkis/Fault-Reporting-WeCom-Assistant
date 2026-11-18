@@ -1,0 +1,3 @@
+.ds-number-roll {display:inline-grid;position:relative;overflow:hidden;vertical-align:bottom;font-variant-numeric:tabular-nums;line-height:inherit;}
+.ds-number-roll-old,.ds-number-roll-next {grid-area:1/1;}
+.ds-number-roll-old {opacity:0;}

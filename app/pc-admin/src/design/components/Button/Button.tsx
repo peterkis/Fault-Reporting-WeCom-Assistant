@@ -3,6 +3,7 @@ import {DisabledReasonContext} from '../ReadOnlyBar/read-only-context';
 import {Button as HeroButton} from '@heroui/react';
 import type {ButtonHTMLAttributes,ComponentProps} from 'react';
 import './button.css';
+import {TooltipAnchor} from '../Tooltip/Tooltip';
 
 type HeroProps=ComponentProps<typeof HeroButton>;
 export type ButtonProps=Omit<HeroProps,'variant'|'className'> & Pick<ButtonHTMLAttributes<HTMLButtonElement>,'title'|'role'|'tabIndex'> & {
@@ -19,5 +20,5 @@ export function Button({tone='secondary',size='md',title,role,tabIndex,className
     render={buttonProps=><button {...buttonProps} title={title??(props.isIconOnly?props['aria-label']:undefined)} role={role} tabIndex={tabIndex??buttonProps.tabIndex}/>}>
     {state=><><span className="ds-button-label">{typeof children==='function'?children(state):children}</span>{state.isPending?<span className="ds-button-spinner" aria-hidden="true"/>:null}</>}
   </HeroButton>;
-  return reason?<span className="ds-read-only-control" data-readonly-disabled onClickCapture={event=>{event.preventDefault();event.stopPropagation();}} onKeyDownCapture={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();}}}>{content}<span id={tooltip} className="ds-read-only-tooltip" role="tooltip">{reason}</span></span>:content;
+  return reason?<TooltipAnchor className="ds-read-only-control" data-readonly-disabled onClickCapture={event=>{event.preventDefault();event.stopPropagation();}} onKeyDownCapture={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();}}}>{content}<span id={tooltip} className="ds-read-only-tooltip" role="tooltip">{reason}</span></TooltipAnchor>:content;
 }

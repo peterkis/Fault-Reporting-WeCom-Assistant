@@ -1,0 +1,12 @@
+/* Native details retain their original summary/selectors and command owners.
+   content-visibility switches discretely at exit end; only transform/opacity interpolate. */
+html body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {
+  opacity:0;transform:scale(var(--scale-popover));transform-origin:top right;content-visibility:hidden;
+  transition:opacity var(--dur-instant) var(--ease-exit),transform var(--dur-instant) var(--ease-exit),content-visibility var(--dur-instant) var(--ease-exit) allow-discrete;
+}
+html body :is(.ds-drawer-more,.ds-toolbar-filters)[open]::details-content {
+  opacity:1;transform:none;content-visibility:visible;
+  transition-duration:var(--dur-fast);transition-timing-function:var(--ease-standard);
+}
+@media(prefers-reduced-motion:reduce){html body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition-property:opacity,content-visibility;}}
+html[data-motion-reduced] body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition-property:opacity,content-visibility;}

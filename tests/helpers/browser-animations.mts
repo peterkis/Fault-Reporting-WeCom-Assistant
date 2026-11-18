@@ -15,13 +15,23 @@ export async function waitForAnimationsSettled(browser:Evaluating,selector?:stri
   const deadline=performance.now()+${Math.max(100,Math.floor(timeoutMs))};
   const finite=a=>(a.playState==='running'||a.pending)&&a.effect?.getComputedTiming().iterations!==Infinity;
   const active=()=>{const node=${root};return node?(node===document?document.getAnimations():node.getAnimations({subtree:true})).filter(finite):[];};
-  for(let list=active();list.length;list=active()){
+  const entering=()=>{const node=${root};return Boolean(node?.matches?.('[data-entering]')||node?.querySelector?.('[data-entering]'));};
+  const state=()=>{const pending=active().map(a=>({name:a.animationName??a.transitionProperty??a.id??'animation',state:a.playState,pending:a.pending,time:a.currentTime})).concat(entering()?[{name:'data-entering',state:'entering'}]:[]);return {settled:pending.length===0,pending};};
+  // Preserve the original final-paint grace, including when the animation deadline just elapsed.
+  const frames=()=>new Promise(resolve=>{const timer=setTimeout(()=>resolve(false),Math.max(0,deadline-performance.now())+500);requestAnimationFrame(()=>requestAnimationFrame(()=>{clearTimeout(timer);resolve(true);}));});
+  for(;;){
+   // An empty list before the entering style is removed is not a settled panel.
+   // React commits and CSS transition creation can each take another frame.
+   if(!await frames())return state();
+   let list=active();
+   if(!list.length&&!entering()){
+    if(!await frames())return state();
+    list=active();if(!list.length&&!entering())return {settled:true};
+   }
    const left=deadline-performance.now();
-   if(left<=0)return {settled:false,pending:list.map(a=>({name:a.animationName??a.transitionProperty??a.id??'animation',state:a.playState,pending:a.pending,time:a.currentTime}))};
-   await Promise.race([Promise.all(list.map(a=>a.finished.catch(()=>null))),new Promise(resolve=>setTimeout(resolve,left))]);
+   if(left<=0)return state();
+   if(list.length)await new Promise(resolve=>{const timer=setTimeout(resolve,left);Promise.all(list.map(a=>a.finished.catch(()=>null))).then(()=>{clearTimeout(timer);resolve();});});
   }
-  const frames=await Promise.race([new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true)))),new Promise(resolve=>setTimeout(()=>resolve(false),Math.max(0,deadline-performance.now())+500))]);
-  return frames?{settled:true}:{settled:false,pending:[{name:'requestAnimationFrame',state:'not-rendering'}]};
  })()`) as {settled:boolean;pending?:unknown[]};
  if(!result?.settled)throw new Error('ANIMATIONS_NOT_SETTLED '+JSON.stringify(result?.pending??null));
 }

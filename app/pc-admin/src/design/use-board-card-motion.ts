@@ -1,4 +1,5 @@
 import {useEffect,useLayoutEffect,useRef} from 'react';
+import {motionToken,prefersReducedMotion} from './motion/tokens';
 
 function positions(){
   const result=new Map<string,{x:number;y:number;column:string}>();
@@ -26,21 +27,20 @@ export function useBoardCardMotion(sequence:string,refreshing:boolean,scope:stri
   useLayoutEffect(()=>{
     if(owner.current!==scope){owner.current=scope;previous.current.clear();for(const animation of animations.current.values())animation.cancel();animations.current.clear();for(const animation of arrivalAnimations.current)animation.cancel();arrivalAnimations.current.clear();arrivals.current.clear();}
     const next=positions();
-    const token=getComputedStyle(document.documentElement).getPropertyValue('--dur-base').trim();
-    const duration=token.endsWith('ms')?parseFloat(token):token.endsWith('s')?parseFloat(token)*1000:NaN;
-    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,newArrivals=new Set(arrivalKeys);
+    const duration=motionToken('--dur-base');
+    const reduced=prefersReducedMotion()||document.hidden,newArrivals=new Set(arrivalKeys);
     const styles=getComputedStyle(document.documentElement),highlight=styles.getPropertyValue('--stage-intake-bg').trim(),canvas=styles.getPropertyValue('--bg-canvas').trim();
     for(const card of document.querySelectorAll<HTMLElement>('.board .ticket-card')){
       const key=card.dataset.kind+':'+card.dataset.itemId,old=previous.current.get(key),current=next.get(key);
       if(!reduced&&old&&current&&old.column!==current.column&&Number.isFinite(duration)&&duration>0){
         animations.current.get(key)?.cancel();
-        const animation=card.animate([{transform:`translate(${old.x-current.x}px,${old.y-current.y}px)`},{transform:'translate(0,0)'}],{duration,easing:'ease-out'});
+        const animation=card.animate([{transform:`translate(${old.x-current.x}px,${old.y-current.y}px)`},{transform:'translate(0,0)'}],{duration,easing:motionToken('--ease-standard')});
         animations.current.set(key,animation);
         const release=()=>{if(animations.current.get(key)===animation)animations.current.delete(key);};
         void animation.finished.then(release,release);
       }
       if(newArrivals.has(key)&&!arrivals.current.has(key)&&!reduced){
-        const animation=card.animate([{transform:'translateY(calc(-1 * var(--space-4)))',opacity:0,backgroundColor:highlight},{transform:'translateY(0)',opacity:1,backgroundColor:highlight,offset:0.09},{transform:'translateY(0)',opacity:1,backgroundColor:canvas}],{duration:2000,easing:'ease-out'});
+        const animation=card.animate([{transform:'translateY(calc(-1 * var(--space-4)))',opacity:0,backgroundColor:highlight},{transform:'translateY(0)',opacity:1,backgroundColor:highlight,offset:0.09},{transform:'translateY(0)',opacity:1,backgroundColor:canvas}],{duration:motionToken('--dur-highlight'),easing:motionToken('--ease-standard')});
         arrivalAnimations.current.add(animation);const release=()=>arrivalAnimations.current.delete(animation);void animation.finished.then(release,release);
       }
     }

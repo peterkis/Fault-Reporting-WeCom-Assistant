@@ -1,0 +1,19 @@
+{
+  "selector": ".ds-segmented",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 3,
+  "clip": {
+    "left": 134,
+    "top": 30,
+    "right": 272,
+    "bottom": 94
+  },
+  "width": 690,
+  "height": 64
+}

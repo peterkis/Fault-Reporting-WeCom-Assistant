@@ -24,6 +24,7 @@ test('CSS gate accepts semantic tokens and rejects forbidden visual values',()=>
   try{
     mkdirSync(path.join(project,'src'),{recursive:true});
     copyFileSync(path.join(original,'app/pc-admin/.stylelintrc.json'),path.join(project,'.stylelintrc.json'));
+    copyFileSync(path.join(original,'app/pc-admin/motion-token-rule.mts'),path.join(project,'motion-token-rule.mts'));
     symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
     const file=path.join(project,'src/probe.css');
     writeFileSync(file,'.probe {color:var(--text-primary);font-size:var(--fs-md);border-radius:var(--radius-sm);box-shadow:var(--shadow-1);z-index:var(--z-modal)}');

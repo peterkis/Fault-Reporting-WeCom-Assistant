@@ -1,3 +1,4 @@
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
@@ -38,10 +39,15 @@ test('Card 29 list, search, board and drawer closure presentation use real HTTP/
   // L4: 「收起」 shares the 「显示剩余」 style and carries a 14px ChevronUp.
   const more=await b.evaluate("[...document.querySelectorAll('.ds-list-more [data-action=expand-column][aria-expanded=false]')].map(n=>'#'+n.closest('tr').id+' button')") as string[];
   if(more[0]){await clickWorkbenchControl(b,more[0]);await b.waitFor(`document.querySelector(${JSON.stringify(more[0])})?.getAttribute('aria-expanded')==='true'`);
+   await waitForAnimationsSettled(b);
    metrics.collapse=object(await b.evaluate(`(()=>{const n=document.querySelector(${JSON.stringify(more[0])}),i=n.querySelector('svg');return {text:n.textContent,icon:i?.getBoundingClientRect().width??0,size:getComputedStyle(n).fontSize};})()`));
    assert.deepEqual(metrics.collapse,{text:'收起',icon:14,size:'12px'});}
   await clickWorkbenchControl(b,'.ds-list-subgroup[data-board-group="已关闭"] button');await b.waitFor("document.querySelector('.ds-list-subgroup[data-board-group=已关闭] button').getAttribute('aria-expanded')==='true'");
-  for(const selector of await b.evaluate("[...document.querySelectorAll('.ds-list-more [data-action=expand-column][aria-expanded=false]')].map(n=>'#'+n.closest('tr').id+' button')") as string[])await clickWorkbenchControl(b,selector);
+  await waitForAnimationsSettled(b);
+  for(const selector of await b.evaluate("[...document.querySelectorAll('.ds-list-more [data-action=expand-column][aria-expanded=false]')].map(n=>'#'+n.closest('tr').id+' button')") as string[]){
+   await clickWorkbenchControl(b,selector);await waitForAnimationsSettled(b);
+   assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-list-collapse-row .ds-collapse-inner')].every(n=>n.scrollTop===0&&n.scrollLeft===0)"),true,'grid clipping layers cannot capture scrollIntoView offsets');
+  }
   // L5/B1: the original is the external IT- number, inside the single reason tag.
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(row(ids.duplicateWith)+' [data-closure-reason]')}).textContent`),'重复 · '+ids.duplicateOfRef);assert.match(ids.duplicateOfRef,/^IT-/u);
   await capture('list-1440-closed');
@@ -69,6 +75,7 @@ test('Card 29 list, search, board and drawer closure presentation use real HTTP/
   // K6: the ⋯ menu is a 220px menu with a separated danger 「关闭事项…」.
   await go('/workbench/app/items/ticket/'+ids.longOwner,"document.querySelector('[data-action=cancel]')!==null");
   await clickWorkbenchControl(b,'[data-action=open-detail-actions]');await b.waitFor("document.querySelector('.ds-drawer-more[open]')!==null");
+  await waitForAnimationsSettled(b,'.ds-drawer-more');
   metrics.menu=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-drawer-more[open]>.ds-drawer-more-panel'),c=p.querySelector('.cancel-ticket-trigger'),s=getComputedStyle(p);return {width:p.getBoundingClientRect().width,radius:s.borderRadius,padding:s.paddingTop,item:c.getBoundingClientRect().height,label:c.textContent,icon:c.querySelector('svg')?.getBoundingClientRect().width??0,danger:getComputedStyle(c).color===getComputedStyle(document.documentElement).getPropertyValue('--tone-danger-fg').trim()||getComputedStyle(c).color!==getComputedStyle(p).color};})()"));
   assert.deepEqual(metrics.menu,{width:220,radius:'10px',padding:'4px',item:32,label:'关闭事项…',icon:14,danger:true});
   await capture('drawer-1440-menu');

@@ -6,16 +6,16 @@
 /* Card 33 review: a scrolling stack is clipped (paint and hit testing) to its content box above and below, so a scrolled notice stays within the top-bar and bottom-area limits; scroll-padding brings focused notices into that box. */
 .workbench-toast-viewport[data-toast-overflow=true] {clip-path:inset(var(--toast-gutter-top) 0 var(--toast-gutter-bottom) 0)}
 /* Card 33: colour block | title and description | close button. data-tone drives the colours. A notice never shrinks below its content in a height-limited stack; the stack scrolls instead. */
-.workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;display:flex;flex:none;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) ease-out}
+.workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;display:flex;flex:none;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) var(--ease-toast)}
 .workbench-toast[data-tone=success] {--toast-tone-bg:var(--tone-success-bg);--toast-tone-fg:var(--tone-success-fg)}
 .workbench-toast[data-tone=warning] {--toast-tone-bg:var(--tone-warning-bg);--toast-tone-fg:var(--tone-warning-fg)}
 .workbench-toast[data-tone=danger] {--toast-tone-bg:var(--tone-danger-bg);--toast-tone-fg:var(--tone-danger-fg)}
 .workbench-toast[data-tone=loading] {--toast-tone-bg:var(--tone-neutral-bg);--toast-tone-fg:var(--tone-neutral-fg)}
-.workbench-toast[data-visible=false] {opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease-out}
+.workbench-toast[data-visible=false] {opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) var(--ease-toast)}
 .workbench-toast-tone {display:grid;place-items:center;flex:none;align-self:stretch;width:var(--toast-tone-width);background:var(--toast-tone-bg);color:var(--toast-tone-fg)}
 .workbench-toast-icon {display:grid;place-items:center}
 .workbench-toast-icon svg {width:20px;height:20px}
-.workbench-toast[data-tone=loading] .workbench-toast-icon svg {animation:detail-loader-spin var(--dur-slow) linear infinite}
+.workbench-toast[data-tone=loading] .workbench-toast-icon svg {animation:detail-loader-spin var(--dur-slow) var(--ease-linear) infinite}
 .workbench-toast .workbench-toast-content {display:flex;flex:1;flex-direction:column;justify-content:center;gap:var(--space-0-5);min-width:0;max-width:none;margin:0;padding:var(--space-3) var(--space-1) var(--space-3) 14px;color:var(--text-secondary);text-align:left;font-size:var(--fs-sm);font-weight:var(--fw-regular);line-height:var(--lh-sm);overflow-wrap:anywhere}
 .workbench-toast-purpose {font-size:var(--fs-md);font-weight:var(--fw-semibold);line-height:var(--lh-sm);color:var(--text-primary)}
 .workbench-toast .workbench-toast-content.is-single .workbench-toast-purpose {font-weight:var(--fw-regular)}

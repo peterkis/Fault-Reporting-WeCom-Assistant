@@ -1,0 +1,19 @@
+{
+  "selector": ".motion-menu",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 158,
+    "top": 407,
+    "right": 383,
+    "bottom": 515
+  },
+  "width": 1125,
+  "height": 108
+}

@@ -1,0 +1,126 @@
+TAP version 13
+# Subtest: real PG media reservations, atomic Web binding, own/staff reads and conversion failure retain source facts
+not ok 1 - real PG media reservations, atomic Web binding, own/staff reads and conversion failure retain source facts
+  ---
+  duration_ms: 404.098292
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:78:1'
+  failureType: 'testCodeFailure'
+  error: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  code: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  name: 'H5MediaError'
+  stack: |-
+    mediaFail (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-format.mjs:13:55)
+    safeRoot (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:16:13)
+    async Object.write (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:47:17)
+    async persist (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:162:13)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:333:20
+    async operation (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:118:16)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:85:22
+    async run (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:38:21)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async fixture (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:28:9)
+  ...
+# Subtest: real PG claims enforce per-report limits and foreign ownership in the same acceptance transaction
+not ok 2 - real PG claims enforce per-report limits and foreign ownership in the same acceptance transaction
+  ---
+  duration_ms: 335.351291
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:141:1'
+  failureType: 'testCodeFailure'
+  error: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  code: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  name: 'H5MediaError'
+  stack: |-
+    mediaFail (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-format.mjs:13:55)
+    safeRoot (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:16:13)
+    async Object.write (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:47:17)
+    async persist (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:162:13)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:333:20
+    async operation (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:118:16)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:143:5
+    async run (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:38:21)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async fixture (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:28:9)
+  ...
+# Subtest: real PG private previews preserve original bytes, closed legacy metadata, authenticated ranges and queued READ rechecks
+not ok 3 - real PG private previews preserve original bytes, closed legacy metadata, authenticated ranges and queued READ rechecks
+  ---
+  duration_ms: 334.644166
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:163:1'
+  failureType: 'testCodeFailure'
+  error: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  code: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  name: 'H5MediaError'
+  stack: |-
+    mediaFail (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-format.mjs:13:55)
+    safeRoot (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:16:13)
+    async Object.write (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:47:17)
+    async persist (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:162:13)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:333:20
+    async operation (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:118:16)
+    async fixture.performanceEnabled (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:165:5)
+    async run (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:38:21)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async fixture (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:28:9)
+  ...
+# Subtest: real PG media checks current READ before each 64 KiB block and retains originals when thumbnail conversion fails
+not ok 4 - real PG media checks current READ before each 64 KiB block and retains originals when thumbnail conversion fails
+  ---
+  duration_ms: 337.28325
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:211:1'
+  failureType: 'testCodeFailure'
+  error: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  code: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  name: 'H5MediaError'
+  stack: |-
+    mediaFail (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-format.mjs:13:55)
+    safeRoot (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:16:13)
+    async Object.write (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:47:17)
+    async persist (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:162:13)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:333:20
+    async operation (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:118:16)
+    async fixture.performanceEnabled (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:219:5)
+    async run (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:38:21)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async fixture (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:28:9)
+  ...
+# Subtest: real PG metadata rechecks binding after the final member verification and exposes no revoked length
+not ok 5 - real PG metadata rechecks binding after the final member verification and exposes no revoked length
+  ---
+  duration_ms: 335.600875
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:239:1'
+  failureType: 'testCodeFailure'
+  error: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  code: 'YXX_MEDIA_STORAGE_UNAVAILABLE'
+  name: 'H5MediaError'
+  stack: |-
+    mediaFail (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-format.mjs:13:55)
+    safeRoot (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:16:13)
+    async Object.write (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media-store.mjs:47:17)
+    async persist (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:162:13)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:333:20
+    async operation (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/app/server/src/yxx-h5-media.mjs:118:16)
+    async file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:242:9
+    async run (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:38:21)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async fixture (file:///Users/petervans/Projects/ticket/.claude/worktrees/v229-card36a-ddc815/.build/runtime/tests/yxx-h5-media.integration.test.mjs:28:9)
+  ...
+# Subtest: real PG reservation samples one physical epoch across a millisecond boundary and preserves the 24-hour limit on replay
+ok 6 - real PG reservation samples one physical epoch across a millisecond boundary and preserves the 24-hour limit on replay
+  ---
+  duration_ms: 337.1085
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2164.052916

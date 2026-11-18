@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: synthetic UNKNOWN freezes automatic re-send of the same staff intent and requires an explicit authorized reconciliation Port
+ok 1 - synthetic UNKNOWN freezes automatic re-send of the same staff intent and requires an explicit authorized reconciliation Port
+  ---
+  duration_ms: 798.963458
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 981.792625

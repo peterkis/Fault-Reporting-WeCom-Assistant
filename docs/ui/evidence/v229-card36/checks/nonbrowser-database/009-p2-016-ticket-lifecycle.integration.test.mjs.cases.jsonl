@@ -1,0 +1,1 @@
+{"event_time":"2026-11-18 23:48:56","event_epoch_ms":"1795016936378","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility","file":"tests/p2-016-ticket-lifecycle.integration.test.mjs","line":45,"nesting":0,"skip":false,"todo":false}

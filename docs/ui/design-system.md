@@ -1,5 +1,84 @@
 # 医小修 PC 管理端 · 统一设计系统规范 v2.0
 
+## 动效
+
+v2.2.9 / 卡36A。
+
+依据原型「08 动效系统 v2.2.9」A、B、E、F 与卡36。本章是工作台动效的唯一规格入口；旧章节的时长、提示延迟与技术描述以前向规则为准。36A 交付工具与控件，数据、详情和在场的业务接线分别留给36B、36C。
+
+### 令牌
+
+| Token | 值 | 用途 |
+| --- | --- | --- |
+| `--dur-instant` | 80ms | 按压、tooltip、菜单退出 |
+| `--dur-fast` | 120ms | 悬停、菜单进入、回弹、一般退出 |
+| `--dur-base` | 180ms | 折叠、滑块、数字、内容替换 |
+| `--dur-slow` | 240ms | 弹窗、抽屉进入 |
+| `--dur-move` | 320ms | 跨列位移 |
+| `--dur-highlight` | 1200ms | 新动态高亮 |
+| `--dur-return` | 600ms | 关闭详情后的来源提示（36C接线） |
+| `--ease-standard` | cubic-bezier(.2, 0, 0, 1) | 默认 |
+| `--ease-soft` | cubic-bezier(.16, 1, .3, 1) | 长位移、弹窗进入 |
+| `--ease-exit` | cubic-bezier(.4, 0, 1, 1) | 退出 |
+| `--shift-xs / sm / md / lg` | 2 / 4 / 8 / 24px | 位移 |
+| `--press-scale` | .98 | 按压、弹窗 |
+| `--scale-popover` | .97 | 菜单、气泡；added beyond A1, owner to confirm |
+| `--hover-lift` | -1px | 保留E6既有悬停上浮；added beyond A1, owner to confirm |
+| `--delay-tooltip` | 400ms | E7首次等待、相邻共享热身；added beyond A1, owner to confirm |
+| `--ease-ambient` | ease-in-out | 保留35A/语音循环节奏；added beyond A1, owner to confirm |
+| `--ease-linear` | linear | 保留旋转指示器匀速；added beyond A1, owner to confirm |
+| `--ease-toast` | ease-out | 保留卡33 Toast曲线；added beyond A1, owner to confirm |
+
+35A的 `--load-*`、`--connection-*` 是状态时序，值保持。循环指示器保留原有线性/往返节奏，由 `--ease-linear`、`--ease-ambient` 表达；Toast保留卡33的轨迹，用 `--ease-toast` 保持原 ease-out 曲线。它们不是新的交互动效。
+
+### 六条原则
+
+1. **有因才动**：只有数据变化、层级切换和操作反馈触发动效。首次加载、换视图、改筛选时内容直接到位。
+2. **自己的操作不等动画**：界面立即响应；下一次操作从当前视觉状态接续，不排队。
+3. **别人的变化要看得见**：他人或系统触发的移动/新增追加1.2秒阶段浅色高亮；自己操作只位移。该业务判定由36B接线。
+4. **时长按距离分档**：原地≤180ms、浮层≤240ms、跨列320ms；退出更快。高亮和来源提示使用各自专用时长。
+5. **只动合成属性**：公共WAAPI工具只允许transform、opacity、background-color。E2用transform改变滑块的视觉宽度；E3唯一布局例外为grid的0fr→1fr，内层overflow:hidden，绝不插值height/top/left。E2文字颜色、E6既有阴影属于卡片明确指定的CSS例外。原生details用content-visibility离散切换维持退出期间的可见性，该属性不做插值。
+6. **减少动态效果**：取消位移与缩放，保留≤120ms淡入淡出；折叠直接展开，数字直接替换；高亮保留1.2秒后直接移除。
+
+### 规格、减少动态效果与打断
+
+| 动效 | 常规规格 | 减少动态效果 | 打断 |
+| --- | --- | --- | --- |
+| E1 按压 | scale(`--press-scale`)，按下instant、回弹fast，standard；保留背景反馈 | 无缩放、无过渡 | 即时反向 |
+| E2 分段滑块 | 独立背景，translateX与视觉宽度变化，base / standard，文字颜色同步；首次静止 | 直接到位 | 从当前位置接续 |
+| E3 折叠 | grid 0fr↔1fr，base / standard，内层overflow:hidden，箭头同步；剩余行随整块展开 | 直接展开/收起 | 即时反向 |
+| E4 菜单/气泡/下拉 | scale(`--scale-popover`) + opacity，进fast / standard，出instant / exit；原点靠近触发器 | 仅opacity，时长不变 | Esc从当前状态退出；结束卸载并归还焦点 |
+| E5 弹窗 | 面板translateY(md) + scale(press) + opacity，进slow / soft；出仅scale(press) + opacity，fast / exit；遮罩同步opacity | 仅opacity，fast / standard或exit | Esc从当前状态退出，结束卸载并归还焦点 |
+| E6 卡片悬停 | 既有上浮1px与阴影一档，fast / standard | 无位移与过渡 | 即时反向 |
+| E7 tooltip | 首次悬停delay-tooltip，opacity instant / standard；相邻提示不再等待 | 仅opacity | 离开即取消等待，进入相邻提示复用热身状态 |
+| Toast | 卡33原轨迹，base进入、fast退出，ease-toast | 原卡33静态表现 | 原卡33行为 |
+| FLIP工具（36B接线） | transform；传入duration/easing Token；最多同时6个，可静态抬高阴影与层级 | 已完成占位，无位移 | 同元素从当前视觉位置继续 |
+| highlight工具（36B/36C接线） | intake/active/done/brand浅色→原背景，highlight / standard | 底色保持highlight后移除 | 重复调用重新计时 |
+| NumberRoll工具（36B接线） | 增加向上、减少向下，整值滚动一行高，base / standard，等宽数字、预留较宽值 | 直接替换 | 只取最新值；`animate={false}`禁止滚动 |
+| useExitPresence工具（36C接线） | 消失后按传入duration Token保留，再卸载 | 保留时间0 | 再次出现取消卸载；页面隐藏直接结束 |
+
+公共工具在页面隐藏时直接到终态；系统偏好变化会清缓存并结束在途动画。`NumberRoll`首渲染静止，`aria-live="off"`，动画层aria-hidden，视觉隐藏文本只暴露最终值。
+
+E3的表格裁剪层使用`overflow:clip`（其他折叠仍为`overflow:hidden`），避免`scrollIntoView`/焦点滚动把嵌套裁剪层变成滚动所有者；唯一滚动区仍是原表格外层。待受理的相邻分组在grid item上补偿原block布局向下一组折叠的末卡间距；末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
+
+下表记录画板C/D与F的后续规范，**实现及业务接线待36B/36C**，不把36A的本地检查当作这些动效已交付。
+
+| 后续动效 | 规格 | 减少动态效果 | 打断 |
+| --- | --- | --- | --- |
+| C1 跨列与让位 | 服务端确认后，移动卡move / soft；让位base / standard；最多6张 | 不位移；他人触发保留高亮 | 新位置从当前视觉位置继续 |
+| C2 到达、高亮与胶囊 | md上移 + opacity，base / standard；阶段浅色highlight；胶囊sm + opacity，fast | 不滑入；底色保留highlight后直接移除，滚动用auto | 同卡更新重计时；连续到达合并计数 |
+| C3 行与数字 | 行直接到位并brand高亮；数字整值增加向上、减少向下，base / standard，预留较宽值 | 行保留静态高亮，数字直接替换 | 只取最新值，首次/筛选/切视图不滚动 |
+| D1 抽屉与返回提示 | 进入lg + opacity，slow / soft；退出16px（既有space-4）+ opacity，base / exit；遮罩同步；返回brand浅色return | 仅opacity，≤fast；返回色保留后直接移除 | 打开途中Esc从当前状态退出 |
+| D2 上一张/下一张 | 正文md，出fast / exit、进base / standard；工具栏不动，方向相反 | 直接替换 | 连续按键只播最后一次 |
+| D3 时间线新条目 | 他人条目同C2：md + base + highlight；阅读不在顶部时只出胶囊 | 不滑入，底色静态保留highlight | 同条目更新重计时，不改变阅读位置 |
+| D4 在场名牌 | 进xs + scale(.9)，fast；出opacity fast，离开后保留fast；模式颜色base | 仅opacity | 同人300ms内重复进出不重播 |
+
+### 技术与检查
+
+工作台只用CSS transitions/keyframes和WAAPI；保留`motion`依赖，仅允许`login/**`导入。运行时Token读取统一在`design/motion/tokens.ts`。Stylelint检查所有transition/animation的时长、延迟和曲线；登录页装饰动画单独豁免。ESLint与源码检查禁止工作台从动画库导入、禁止绕过工具写WAAPI时长/曲线字面量。工具API与生命周期见[公共工具说明](../../app/pc-admin/src/design/motion/README.md)。
+
+开发构建支持`?motion=slow`或localStorage的`motion-debug=slow`，所有dur Token乘5；`?motion=off`等价减少动态效果。生产制品测试检查调试代码完全移除。验收、曲线实测、白名单理由和逐帧图见[36A证据](evidence/v229-card36/README.md)。
+
 ## 状态（v2.2.8 / 卡35A）
 
 依据原型「07 状态：加载 / 空 / 错误 / 只读 v2.2.8」。本章前向替代各组件中零散的加载、空、错误和只读外观描述；不改变当前 READ、写入权限、原操作核对或业务状态。
@@ -29,7 +108,7 @@
 
 - **数据口径**：只显示他人，不显示自己；只显示双方都有权限看到的事项；「正在查看」「正在编辑」都显示，编辑者在前。来源为现有 workbench activity（租约 15 秒、心跳 5 秒；查看空闲 60 秒、编辑空闲 10 秒）。离线、实时连接断开、工作台不可见或 `activity_enabled` 为假时全部隐藏。
 - **`PresenceTags` 名牌**（`design/components/PresenceTags`）：高 18、左右内边距 6、圆角 4 4 4 0（`--radius-xs`，左下直角）、11px（`--fs-2xs`）/ 600 白字、阴影 `--shadow-presence-tag`。查看为 `--brand`；编辑为 `--presence-editing`（= `--tone-attention-solid`，#9A4A0A，白字对比度 6.25:1；原型 #D9730D 白字仅 3.28:1，低于 WCAG AA 4.5:1，故保留深色；卡32 A6：名牌、卡片外圈、抽屉胶囊三处共用此令牌）并在姓名前加 10px 白色铅笔。1–2 人每人一个名牌，姓名超过 4 字显示前 3 字 +「…」；3 人及以上只显示第一位 + 深色「+N」（`--text-primary`）。名牌间距 4。`role="img"`，`aria-label` 为完整描述（如「周宁正在编辑内部备注、沈然正在查看」）。
-- **提示**：悬停名牌 300ms 后出现深色提示，每人一行「头像 18 + **全名** + 正在查看 / 正在编辑{内部备注 / 处理记录 / 完成记录 / 人工复核}」，最多 8 行，超出「另有 N 人」。用纯 CSS 延时实现，不新增计时器。出现淡入 150ms。
+- **提示**：延迟、淡入与相邻提示规则见[动效 E7](#动效)。深色提示每人一行「头像 18 + **全名** + 正在查看 / 正在编辑{内部备注 / 处理记录 / 完成记录 / 人工复核}」，最多 8 行，超出「另有 N 人」。所有提示共用热身状态。
 - **看板卡片**：名牌贴在卡片上边缘右侧（`top:-9px; right:12px`），不占卡片内部空间、不改变卡片高度。有人在场时卡片外圈改为同色 1.5px（取第一位：编辑橙、查看蓝），**替代**超时 / 关注 / 复核色环；超时仍由热度标签表达。外圈用阴影令牌 `--shadow-presence-viewing / -editing`（含悬停变体）实现，因 `outline` 在 DPR 1 会取整为 1px。自己选中的卡片选中样式优先，名牌照常显示。已关闭卡片不显示在场。看板分组主体（HeroUI 折叠容器为 `overflow: clip`）顶部留 10px，使首张卡的名牌不被裁切。
 - **未领取提示**：未领取且有人在场的卡片，悬停卡片或聚焦「领取」时在卡片下沿显示蓝色提示「{姓名}正在查看这张工单，领取前可先确认」（编辑时为「{姓名}正在处理这张工单」），12px、`--brand-subtle` 底、`--brand` 字、眼睛图标；不阻止领取，不改变布局。提示位于卡片内部底行（与「领取」同一行、在其左侧，高 26），悬停 / 聚焦时与「领取」一样暂时占用负责人与时间所在行，不伸出卡片，不遮挡下一张卡片或列底部「显示剩余」（卡32 A4）。
 - **列表行**：名牌放在「问题」单元格最右侧（`margin-left:auto; flex:none`），标题仍优先省略；列表行不加外圈。
@@ -392,8 +471,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 ### 4.4 层级与动效
 
 - z-index：sticky 10 → dropdown 40 → drawer 50 → modal 60 → toast 70 → tooltip 80，禁止其它数字。
-- 时长：fast 120ms（悬停、按下）、base 180ms（展开、弹层）、slow 240ms（抽屉、弹窗）。缓动 `cubic-bezier(.2,0,0,1)`，退出 `cubic-bezier(.4,0,1,1)`。
-- 抽屉从右侧 16px 位移 + 淡入；弹窗 0.98→1 缩放 + 淡入；卡片悬停只变阴影不位移。尊重 `prefers-reduced-motion`。
+- 时长、曲线、位移、减少动态效果与打断规则统一见[动效](#动效)。36B/36C的业务接线按子卡边界推进。
 
 ### 4.5 焦点规则（修订 10-29 版本）
 

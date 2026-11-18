@@ -1,0 +1,41 @@
+TAP version 13
+# MOTION_SWEEP {"files":261,"cssBareTiming":0,"inlineOrWaapiViolations":0,"whitelist":"login/** only; --load-pulse ambient duration preserved"}
+# Subtest: Card36A motion source sweep: no bare CSS/inline/WAAPI timing or animation-library imports
+ok 1 - Card36A motion source sweep: no bare CSS/inline/WAAPI timing or animation-library imports
+  ---
+  duration_ms: 638.129291
+  type: 'test'
+  ...
+# Subtest: Card36A policy rejects indirect literals, missing curves, inline timing and library aliases
+ok 2 - Card36A policy rejects indirect literals, missing curves, inline timing and library aliases
+  ---
+  duration_ms: 0.615125
+  type: 'test'
+  ...
+# Subtest: Card36A Stylelint rejects bare shorthand and longhand; permits zero and state timing tokens
+ok 3 - Card36A Stylelint rejects bare shorthand and longhand; permits zero and state timing tokens
+  ---
+  duration_ms: 8.172333
+  type: 'test'
+  ...
+# Subtest: Card36A ESLint restricts package imports outside login and rejects literal WAAPI timing
+ok 4 - Card36A ESLint restricts package imports outside login and rejects literal WAAPI timing
+  ---
+  duration_ms: 957.974959
+  type: 'test'
+  ...
+# Subtest: Card36A production assets contain no development motion switch
+ok 5 - Card36A production assets contain no development motion switch
+  ---
+  duration_ms: 6.391166
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1829.070666

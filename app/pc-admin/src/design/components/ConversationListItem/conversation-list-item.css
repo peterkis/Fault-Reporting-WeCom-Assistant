@@ -1,4 +1,4 @@
-.ds-split :is(.inbox-contact-rows,.conversation-list) .ds-conversation-list-item {position:relative;min-height:64px;padding:var(--space-3);border:0;border-radius:var(--radius-md);background:transparent;transition:background var(--dur-fast);}
+.ds-split :is(.inbox-contact-rows,.conversation-list) .ds-conversation-list-item {position:relative;min-height:64px;padding:var(--space-3);border:0;border-radius:var(--radius-md);background:transparent;transition:background var(--dur-fast) var(--ease-standard);}
 .ds-conversation-list-item>.ds-avatar {position:absolute;left:var(--space-3);top:var(--space-3);}
 .ds-split .ds-conversation-list-item>a {display:block;padding-left:calc(var(--avatar-lg) + var(--space-3));min-width:0;border-radius:var(--radius-xs);}
 .ds-split :is(.inbox-contact-rows,.conversation-list) .ds-conversation-list-item:hover {background:var(--bg-hover);}

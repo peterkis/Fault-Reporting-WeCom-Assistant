@@ -1,0 +1,60 @@
+/* E4/E5 replace HeroUI keyframes. CSS transitions retain their current value when reversed. */
+html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results) {
+  --trigger-anchor-point:top left;animation:none;opacity:1;transform:none;transform-origin:var(--trigger-anchor-point);
+  transition:transform var(--dur-fast) var(--ease-standard),opacity var(--dur-fast) var(--ease-standard);
+}
+html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover)[data-placement=top],html body .ds-online-panel {--trigger-anchor-point:bottom left;}
+html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover)[data-placement=left] {--trigger-anchor-point:top right;}
+html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results)[data-entering] {opacity:0;transform:scale(var(--scale-popover));}
+html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results)[data-exiting] {opacity:0;transform:scale(var(--scale-popover));pointer-events:none;transition-duration:var(--dur-instant);transition-timing-function:var(--ease-exit);}
+html body .ds-modal-container,html body .ds-modal-backdrop {animation:none;opacity:1;transform:none;transition:opacity var(--dur-slow) var(--ease-soft);}
+html body .ds-modal-container {transition:transform var(--dur-slow) var(--ease-soft),opacity var(--dur-slow) var(--ease-soft);}
+html body .ds-modal-container[data-entering] {opacity:0;transform:translateY(var(--shift-md)) scale(var(--press-scale));}
+html body .ds-modal-container[data-exiting] {opacity:0;transform:scale(var(--press-scale));transition-duration:var(--dur-fast);transition-timing-function:var(--ease-exit);pointer-events:none;}
+html body .ds-modal-backdrop[data-entering],html body .ds-modal-backdrop[data-exiting] {opacity:0;}
+html body .ds-modal-backdrop[data-exiting] {transition-duration:var(--dur-fast);transition-timing-function:var(--ease-exit);}
+html body .ds-modal {animation:none;transition:none;}
+
+/* E3: HeroUI's panel-height transition is superseded by a single grid track. */
+html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content {
+  display:grid;height:auto;grid-template-rows:0fr;opacity:1;overflow:clip;will-change:auto;
+  transition:grid-template-rows var(--dur-base) var(--ease-standard);
+}
+html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[data-expanded=true] {grid-template-rows:1fr;}
+html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content>.disclosure__body {min-height:0;overflow:hidden;}
+html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[aria-hidden=true] {pointer-events:none;}
+/* Keep the independent-rotate reset in a different selector/rule. Combining it with transform
+   lets CSS optimisation fold it away, leaving HeroUI's expanded rotate stacked with ours. */
+html body :is(.ds-board-group,.workbench-disclosure) .disclosure__indicator {rotate:none;}
+html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator] {transform:rotate(0deg);transition:transform var(--dur-base) var(--ease-standard);}
+html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator][data-expanded=true] {transform:rotate(-180deg);}
+
+/* E7 never translates/scales a tooltip, including HeroUI's portal content. */
+html body .tooltip {animation:none;transform:none;opacity:1;transition:opacity var(--dur-instant) var(--ease-standard);}
+html body .tooltip:is([data-entering],[data-exiting]) {opacity:0;transform:none;}
+
+/* Native media query works before JS starts; the attribute also supports a dev-only preference override. */
+html[data-motion-reduced] body #root *,html[data-motion-reduced] body #root *::before,html[data-motion-reduced] body #root *::after,
+html[data-motion-reduced] body .workbench-modal-backdrop *,html[data-motion-reduced] body .workbench-drawer-backdrop *,
+html[data-motion-reduced] body .ds-modal-backdrop *,html[data-motion-reduced] body .ds-modal-backdrop *::before,html[data-motion-reduced] body .ds-modal-backdrop *::after {animation:none;transition:none;scroll-behavior:auto;}
+/* Portalled vendor descendants also obey the shared preference, including the dev override. */
+html[data-motion-reduced] body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.tooltip) * {animation:none;transition:none;scroll-behavior:auto;}
+/* Mirror existing ambient reductions outside #root; Toast's opacity exit remains unchanged. */
+html[data-motion-reduced] body :is(.ds-skeleton,.ds-button-spinner,.workbench-toast,.detail-loading svg,.voice-play svg,.detail-voice.is-playing .voice-caption svg,.workbench-toast[data-tone=loading] .workbench-toast-icon svg),html[data-motion-reduced] body .ds-state-region[data-refreshing]::before {animation:none;}
+@media(prefers-reduced-motion:reduce) {
+  html body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results) {transform:none;transition-property:opacity;}
+  html body .ds-modal-container {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+  html body .ds-modal-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
+  html body .ds-modal-container[data-exiting],html body .ds-modal-backdrop[data-exiting] {transition-timing-function:var(--ease-exit);}
+  html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content,html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator] {transition:none;}
+}
+html[data-motion-reduced] body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results) {transform:none;transition-property:opacity;}
+html[data-motion-reduced] body .ds-modal-container {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body .ds-modal-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body .ds-modal-container[data-exiting],html[data-motion-reduced] body .ds-modal-backdrop[data-exiting] {transition-timing-function:var(--ease-exit);}
+html[data-motion-reduced] body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content,html[data-motion-reduced] body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator] {transition:none;}
+html[data-motion-reduced] body .ds-button.button[data-tone],html[data-motion-reduced] body .ds-ticket-card.ticket-card {transform:none;transition:none;}
+html[data-motion-reduced] body .ds-button.button[data-tone]:is(:active,[data-pressed=true]):not(:disabled):not([aria-disabled=true]) {transform:none;transition:none;}
+html[data-motion-reduced] body .ds-segmented-slider,html[data-motion-reduced] body .ds-collapse {transition:none;}
+html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results)[data-exiting] {transition-duration:var(--dur-instant);transition-timing-function:var(--ease-exit);}

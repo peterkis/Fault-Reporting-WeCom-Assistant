@@ -1,3 +1,4 @@
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -70,7 +71,7 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   // Tooltip after hover: full names and actions, editor first.
   const tags=card(editTarget)+' .ds-presence-tags';await b.evaluate(`document.querySelector(${JSON.stringify(tags)}).scrollIntoView({block:'center'})`);
   const point=object(await b.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(tags)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
-  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(point.x),y:Number(point.y)});await delay(500);
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(point.x),y:Number(point.y)});await b.waitFor(`document.querySelector(${JSON.stringify(tags)})?.dataset.tooltipOpen==='true'`);await waitForAnimationsSettled(b,tags);
   metrics.tooltip=object(await b.evaluate(`(()=>{const t=document.querySelector(${JSON.stringify(card(editTarget)+' .ds-presence-tooltip')});return {opacity:getComputedStyle(t).opacity,rows:[...t.querySelectorAll('.ds-presence-tooltip-row')].map(r=>r.querySelector('strong').textContent+' '+r.querySelector('strong+span').textContent),avatars:t.querySelectorAll('.ds-avatar').length};})()`));
   assert.equal(object(metrics.tooltip).opacity,'1');assert.deepEqual(object(metrics.tooltip).rows,['陈悦 正在编辑内部备注','周宁 正在查看']);assert.equal(object(metrics.tooltip).avatars,2);
   await capture('board-1440-tooltip');

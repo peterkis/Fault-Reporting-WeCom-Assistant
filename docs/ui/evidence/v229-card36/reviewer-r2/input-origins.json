@@ -1,0 +1,8 @@
+{
+  "reviewer_read_only_scratch": "/private/tmp/claude-501/-Users-petervans-Projects-ticket--claude-worktrees-v229-card36a-ddc815/0ae1fa4f-63d6-4d73-b41e-59d7bec8c839/scratchpad",
+  "main_capture": "/private/tmp/claude-501/-Users-petervans-Projects-ticket--claude-worktrees-v229-card36a-ddc815/0ae1fa4f-63d6-4d73-b41e-59d7bec8c839/scratchpad/main-vis/.build/visual/current/darwin-chrome",
+  "incoming_r1_capture": ".build/visual/current/darwin-chrome",
+  "board_crop": "left = main; right = incoming r1",
+  "logs": "r2/",
+  "source_head": "30eb2fc80353d1ab834c5da4bcc183c6415311c6"
+}

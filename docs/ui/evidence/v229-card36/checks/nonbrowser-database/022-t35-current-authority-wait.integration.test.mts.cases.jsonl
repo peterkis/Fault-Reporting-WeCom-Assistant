@@ -1,0 +1,1 @@
+{"event_time":"2026-11-18 23:49:15","event_epoch_ms":"1795016955718","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"T35 a public replay waiting on its real receipt rechecks current authority before returning committed data","file":"tests/t35-current-authority-wait.integration.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

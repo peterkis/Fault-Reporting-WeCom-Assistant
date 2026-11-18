@@ -60,7 +60,8 @@
       "font-family": [
         "/^var\\(--font-[a-z-]+\\)$/"
       ]
-    }
+    },
+    "design/motion-tokens": true
   },
   "overrides": [
     {
@@ -95,8 +96,12 @@
           "font-family": [
             "/^var\\(--font-[a-z-]+\\)$/"
           ]
-        }
+        },
+        "design/motion-tokens": null
       }
     }
+  ],
+  "plugins": [
+    "./motion-token-rule.mts"
   ]
 }

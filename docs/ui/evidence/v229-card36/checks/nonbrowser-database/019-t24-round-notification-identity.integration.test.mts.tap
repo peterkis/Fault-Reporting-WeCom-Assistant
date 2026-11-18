@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: same-round handoffs, command replay and a fresh consumer with a new template preserve both original personal Delivery identities
+ok 1 - same-round handoffs, command replay and a fresh consumer with a new template preserve both original personal Delivery identities
+  ---
+  duration_ms: 687.43925
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 869.058833

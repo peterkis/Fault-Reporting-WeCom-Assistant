@@ -1,0 +1,82 @@
+{
+  "status": "PASS",
+  "source": "app/pc-admin/src/design/tokens.css",
+  "count": 15,
+  "entries": [
+    {
+      "name": "--dur-instant",
+      "expected": "80ms",
+      "actual": "80ms"
+    },
+    {
+      "name": "--dur-fast",
+      "expected": "120ms",
+      "actual": "120ms"
+    },
+    {
+      "name": "--dur-base",
+      "expected": "180ms",
+      "actual": "180ms"
+    },
+    {
+      "name": "--dur-slow",
+      "expected": "240ms",
+      "actual": "240ms"
+    },
+    {
+      "name": "--dur-move",
+      "expected": "320ms",
+      "actual": "320ms"
+    },
+    {
+      "name": "--dur-highlight",
+      "expected": "1200ms",
+      "actual": "1200ms"
+    },
+    {
+      "name": "--dur-return",
+      "expected": "600ms",
+      "actual": "600ms"
+    },
+    {
+      "name": "--ease-standard",
+      "expected": "cubic-bezier(.2,0,0,1)",
+      "actual": "cubic-bezier(.2, 0, 0, 1)"
+    },
+    {
+      "name": "--ease-soft",
+      "expected": "cubic-bezier(.16,1,.3,1)",
+      "actual": "cubic-bezier(.16, 1, .3, 1)"
+    },
+    {
+      "name": "--ease-exit",
+      "expected": "cubic-bezier(.4,0,1,1)",
+      "actual": "cubic-bezier(.4, 0, 1, 1)"
+    },
+    {
+      "name": "--shift-xs",
+      "expected": "2px",
+      "actual": "2px"
+    },
+    {
+      "name": "--shift-sm",
+      "expected": "4px",
+      "actual": "4px"
+    },
+    {
+      "name": "--shift-md",
+      "expected": "8px",
+      "actual": "8px"
+    },
+    {
+      "name": "--shift-lg",
+      "expected": "24px",
+      "actual": "24px"
+    },
+    {
+      "name": "--press-scale",
+      "expected": ".98",
+      "actual": ".98"
+    }
+  ]
+}

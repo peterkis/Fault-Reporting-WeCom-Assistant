@@ -1,0 +1,19 @@
+{
+  "selector": "#press",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 8,
+    "top": 30,
+    "right": 150,
+    "bottom": 94
+  },
+  "width": 710,
+  "height": 64
+}

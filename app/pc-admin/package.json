@@ -7,7 +7,7 @@
     "typecheck": "node ../../node_modules/typescript-web/bin/tsc --noEmit",
     "build": "vite build",
     "lint:css": "stylelint \"src/**/*.css\"",
-    "lint:features": "eslint \"src/features/**/*.{ts,tsx}\""
+    "lint:features": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@wecom/jssdk": "2.4.4",

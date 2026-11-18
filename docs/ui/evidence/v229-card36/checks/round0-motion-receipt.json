@@ -1,0 +1,334 @@
+{
+  "status": "FAIL",
+  "os": {
+    "platform": "darwin",
+    "release": "25.6.0"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/157.0.8103.79",
+    "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+    "jsVersion": "15.7.112.43"
+  },
+  "measurements": {
+    "E1": [
+      {
+        "duration": 80,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "background-color"
+      },
+      {
+        "duration": 80,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E1Return": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "background-color"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E2": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "E3": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "gridTemplateRows"
+        ],
+        "name": "grid-template-rows"
+      }
+    ],
+    "E3Arrow": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E4": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E4Exit": [
+      {
+        "duration": 80,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 80,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E5": [
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E5Backdrop": [
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      }
+    ],
+    "E5Exit": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E5BackdropExit": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      }
+    ],
+    "E6": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "boxShadow"
+        ],
+        "name": "box-shadow"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "E7": [
+      {
+        "duration": 80,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      }
+    ],
+    "collapseExpand": [
+      126,
+      126,
+      143.953125,
+      189.765625,
+      216.34375,
+      232.75,
+      243.78125,
+      251.40625,
+      256.734375,
+      260.328125,
+      262.578125
+    ],
+    "collapseClose": [
+      264,
+      264,
+      246,
+      200.40625,
+      173.625,
+      157.21875,
+      146.265625,
+      138.578125,
+      133.25,
+      129.65625,
+      127.40625
+    ],
+    ".motion-menuInterrupt": {
+      "before": {
+        "x": 0,
+        "y": 0,
+        "scale": 0.996335
+      },
+      "after": {
+        "x": 0,
+        "y": 0,
+        "scale": 0.9963350296020508,
+        "exiting": true,
+        "animations": 2
+      }
+    },
+    ".ds-modal-containerInterrupt": {
+      "before": {
+        "x": 0,
+        "y": 0.225767,
+        "scale": 0.999436
+      },
+      "after": {
+        "x": 0,
+        "y": 0.22576700150966644,
+        "scale": 0.9994360208511353,
+        "exiting": true,
+        "animations": 2
+      }
+    },
+    "numberRoll": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      },
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "highlight-intake": [
+      {
+        "duration": 1200,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "highlight-active": [
+      {
+        "duration": 1200,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "highlight-done": [
+      {
+        "duration": 1200,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "highlight-brand": [
+      {
+        "duration": 1200,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "flip": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "WAAPI"
+      }
+    ]
+  },
+  "filmstrips": [],
+  "resources": {
+    "processes": 0,
+    "profiles": 0,
+    "commandTimers": 0,
+    "sockets": 0
+  },
+  "error": "filmstrip must pause real animations: e1-press"
+}

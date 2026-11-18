@@ -1,4 +1,5 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
+import {motionToken} from '../../design/motion/tokens';
 import type {ReactNode} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {CircleX,Undo2,X} from 'lucide-react';
@@ -59,7 +60,7 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
  const returnFocus=useRef<HTMLElement|null>(null);
  const [target,setTarget]=useState<Target|null>(null),[blocked,setBlocked]=useState(false),[highlighted,setHighlighted]=useState<string|null>(null),[success,setSuccess]=useState<{action:Action;revision:number;column:string}|null>(null);
  const report=useCallback((value:boolean)=>{setBlocked(value);onBlockedChange(value);},[onBlockedChange]);
- useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),1200);return()=>clearTimeout(timer);},[highlighted]);
+ useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));return()=>clearTimeout(timer);},[highlighted]);
  const sameClosedTarget=(item:WorkbenchCard,action:Action)=>Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id);
  const canOpen=(item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||sameClosedTarget(item,action));
  return <ClosureScope.Provider value={{request:(item,action,initial=emptyClosureForm)=>{if(canOpen(item,action)){returnFocus.current=collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}},canOpen,highlighted,blocked:blocked||otherBlocked}}>

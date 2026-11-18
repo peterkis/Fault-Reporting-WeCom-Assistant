@@ -1,3 +1,4 @@
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -95,7 +96,7 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   assert.equal(subgroup.background,subgroup.group);assert.equal(subgroup.background,'rgb(251, 251, 250)');assert.notEqual(subgroup.background,subgroup.hover);assert.equal(subgroup.hairlines,2);assert.equal(subgroup.header,'rgb(255, 255, 255)');
   await b.evaluate(`${sub}.scrollIntoView({block:'center'})`);
   await capture('list-1440-subgroup');
-  const row="(()=>{const g=document.querySelector('.ds-list-subgroup');let n=g.nextElementSibling;while(n&&!(n.classList.contains('ds-work-row')&&!n.hidden))n=n.nextElementSibling;return n;})()";
+  const row="(()=>{const g=document.querySelector('.ds-list-subgroup');let n=g.nextElementSibling;while(n&&!(n.classList.contains('ds-work-row')&&!n.hidden)){const inner=n.querySelector('.ds-work-row:not([hidden])');if(inner)return inner;n=n.nextElementSibling;}return n;})()";
   const rowPoint=object(await b.evaluate(`(()=>{const r=${row}.querySelector('.ds-list-reporter').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
   await move(Number(rowPoint.x),Number(rowPoint.y));await b.waitFor(`getComputedStyle(${row}).backgroundColor==='rgb(247, 247, 245)'`);
   metrics.subgroupHover={row:await b.evaluate(`getComputedStyle(${row}).backgroundColor`),subgroup:await b.evaluate(`getComputedStyle(${sub}).backgroundColor`)};
@@ -106,10 +107,12 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   const more="document.querySelector('.ds-list-more:not([hidden]) [data-action=expand-column]')";
   await b.waitFor(`${more}!==null`);await b.evaluate(`${more}.scrollIntoView({block:'center'})`);
   const readMore=`(()=>{const m=${more},svg=m.querySelector('svg'),label=m.querySelector('.ds-button-label')??m,s=getComputedStyle(m);return {text:m.textContent,icon:svg?[...svg.classList].find(c=>c.startsWith('lucide-chevron')):null,size:svg?Math.round(svg.getBoundingClientRect().width):0,gap:getComputedStyle(label).columnGap,color:s.color,secondary:(()=>{const p=document.createElement('span');p.style.color='var(--text-secondary)';document.body.append(p);const c=getComputedStyle(p).color;p.remove();return c;})()};})()`;
+  await waitForAnimationsSettled(b);
   const before=object(await b.evaluate(readMore));
   assert.match(String(before.text),/^显示剩余 \d+ 项$/u);assert.equal(before.icon,'lucide-chevron-down');assert.equal(before.size,14);assert.equal(before.gap,'4px');assert.equal(before.color,before.secondary);
   await capture('list-1440-more');
   await b.evaluate(`${more}.click()`);await b.waitFor(`${more}.textContent==='收起'`);
+  await waitForAnimationsSettled(b);
   const after=object(await b.evaluate(readMore));assert.equal(after.icon,'lucide-chevron-up');assert.equal(after.size,14);
   metrics.more={before,after};
   await capture('list-1440-more-expanded');
@@ -147,6 +150,8 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   assert.deepEqual(metrics.onlineRow,[20,20,20]);
   await capture('sidebar-online');
   await b.evaluate("document.querySelector('[data-online-colleagues] button').click()");await b.waitFor("document.querySelector('.ds-online-panel')!==null");
+  await b.waitFor("document.querySelector('.ds-online-panel')?.hasAttribute('data-entering')===false");
+  await waitForAnimationsSettled(b,'.ds-online-panel');
   metrics.onlinePopover=await b.evaluate("[...document.querySelectorAll('.ds-online-panel .ds-online-avatar')].map(n=>[n.getBoundingClientRect().width,n.getBoundingClientRect().height])");
   assert.deepEqual(metrics.onlinePopover,[[24,24],[24,24],[24,24]]);
   await capture('sidebar-online-popover');

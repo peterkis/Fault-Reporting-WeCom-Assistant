@@ -1,0 +1,1 @@
+{"event_time":"2026-11-18 23:49:13","event_epoch_ms":"1795016953546","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"synthetic UNKNOWN freezes automatic re-send of the same staff intent and requires an explicit authorized reconciliation Port","file":"tests/t24-synthetic-sender-unknown.integration.test.mjs","line":32,"nesting":0,"skip":false,"todo":false}

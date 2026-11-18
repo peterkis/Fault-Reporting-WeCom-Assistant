@@ -1,0 +1,119 @@
+{
+  "status": "HISTORICAL_INCOMING_R1_COMPARISON_NOT_R2_ACCEPTANCE",
+  "threshold": 0.1,
+  "main_input_hash": "3dba6720d8b540b3faceb0bd67bb63e03145149f6a54fca14571ca01ee3788fa",
+  "incoming_r1_input_hash": "c9e602f21a13e9af28fe8bd60ea7fd45d43fb1a228eabcd3bbbde9dd2b7bc204",
+  "main_source_head": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "changed": 12,
+  "unchanged": 6,
+  "rows": [
+    {
+      "name": "board-default",
+      "main_sha256": "162523a58962baa4f483e1d99568d1cf357f762760ceb57abb3bf0e71aa6cc3f",
+      "incoming_r1_sha256": "4476500a3666848d67be27620c2753f2acee38d0e256fdeec0e370ef9ce17a29",
+      "diff_pixels": 48064
+    },
+    {
+      "name": "board-presence",
+      "main_sha256": "f6567828f2dc8481e4298573711c0fe5c8a0fd204cdb397ac9e6305a7aeedc75",
+      "incoming_r1_sha256": "20732f98df5d5d8d45a5a2b969114e584e7d4bf07ff243d7775d507acc2bc5c2",
+      "diff_pixels": 48064
+    },
+    {
+      "name": "board-filtered-empty",
+      "main_sha256": "57831f450240b2bc7ca40c00924a7861929950e9c53bdaac6f1f7d14d2d1a10a",
+      "incoming_r1_sha256": "88683ceb886f03ee5683fac4039b5b6a5d3370eba1900c9204d9ab77203d0a2d",
+      "diff_pixels": 48
+    },
+    {
+      "name": "list-default",
+      "main_sha256": "e4ee1365c8539664ea27d7d8d7fd6c0271e1378c0a592ae90e6e8f343db7e41b",
+      "incoming_r1_sha256": "3112a7927d26b740d7d98a57acccab5a84532397c9785c8ac691694da41bf65d",
+      "diff_pixels": 0
+    },
+    {
+      "name": "list-closed-groups",
+      "main_sha256": "ef4ea10156fa4e0a51d76279a6772dcb2d2009e143a0c8c150cd8081580bca19",
+      "incoming_r1_sha256": "7c448138bd82c38b2f9aec87aaaf21b17514178ab698434501a32befba798050",
+      "diff_pixels": 0
+    },
+    {
+      "name": "drawer-processing",
+      "main_sha256": "48fb8f913c2588b0580a9571224fbf80205c161fb695c30f89086a05e6fdc01e",
+      "incoming_r1_sha256": "c2a467ac939c3bf842fd4b98dc0dcd22d9b010c8a08f2065b1f533e770e8f676",
+      "diff_pixels": 15123
+    },
+    {
+      "name": "drawer-dismissed",
+      "main_sha256": "ba5d7c509e0cfb4aa941c1f13b9f87b46fa31353199fd14baa25f2be0802053a",
+      "incoming_r1_sha256": "db990b92c69488b075735dff23beaab327c5db73f2861653f686445701a448a9",
+      "diff_pixels": 15007
+    },
+    {
+      "name": "drawer-completed",
+      "main_sha256": "0e05d750f68201498b415be398ecad4991aa3d4fc923034a2373c1a97ea4e87f",
+      "incoming_r1_sha256": "31c38317c51cc69d2b3fdf6497e92b84149468a2fa41d73f89572042e27844e0",
+      "diff_pixels": 14972
+    },
+    {
+      "name": "drawer-banner-editing",
+      "main_sha256": "bc063884eb5de3fa7d57e5cc76d7a33a2b9f5a349c61686249e8ac829292e2b8",
+      "incoming_r1_sha256": "2583f7b82182efc2c42a0aa10b8ea6615877bcded439ce1300871abd946015f8",
+      "diff_pixels": 21068
+    },
+    {
+      "name": "detail-fullpage-1280",
+      "main_sha256": "4593aecdbb7379b67892c94979cf8cabd86823a741ce4531453045931ffea974",
+      "incoming_r1_sha256": "4593aecdbb7379b67892c94979cf8cabd86823a741ce4531453045931ffea974",
+      "diff_pixels": 0
+    },
+    {
+      "name": "close-dialog-out-of-scope",
+      "main_sha256": "161b4b43ed80949be304ce62bd47b7da833b2f8adb89a63c916bea40d13385b3",
+      "incoming_r1_sha256": "25924d734cbaaf885534f9e9d57526acf1b50aed7d117af6d9523fede2cd27d5",
+      "diff_pixels": 8182
+    },
+    {
+      "name": "close-dialog-duplicate",
+      "main_sha256": "6104e113584d97d0a409ddb13efc87ac6900d1a0ad741c874dc70fd064bbe5e4",
+      "incoming_r1_sha256": "2bb5dd49683929bd86b178a0969988c7ad15d78893c2eaacc3ca0a5a6b99c4d4",
+      "diff_pixels": 8182
+    },
+    {
+      "name": "restore-dialog",
+      "main_sha256": "c86c527d2fb89e2ba2833b03ec0e620441a8b57e340405edce5c139aacb89f18",
+      "incoming_r1_sha256": "09a7f69a6e0cea6ef9e38ac55f902ab1b37568d7b178cd63218a3eb827e018ff",
+      "diff_pixels": 9591
+    },
+    {
+      "name": "toast-tones",
+      "main_sha256": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258",
+      "incoming_r1_sha256": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258",
+      "diff_pixels": 0
+    },
+    {
+      "name": "toast-drawer-stack",
+      "main_sha256": "d2315ab0220f56fb70b78ec15a5cff5c83bfd3aaf265996c5162ae7183213642",
+      "incoming_r1_sha256": "1a362cb1f3d0545cd48531905d7a63876ba489a8181d9d6a50b546ac2826f657",
+      "diff_pixels": 15123
+    },
+    {
+      "name": "sidebar-online-popover",
+      "main_sha256": "a70c22c6f8f7b768878f44ac534f2cd1b127645aaa5b6722bf3ebdc35ad78866",
+      "incoming_r1_sha256": "6716c9e8393c9b9d169ca7392cfafe3851e0312d8e364b3e2ffa3d749bbf3893",
+      "diff_pixels": 48048
+    },
+    {
+      "name": "conversation-default",
+      "main_sha256": "311cdb9a8d1b99d93100311e0b0d56b9dcf6b926f52377ae98dacd712590e069",
+      "incoming_r1_sha256": "f93fc40520ba5c0e1de096866ba635d614e12f31f898f96b9cc4f714e15204a1",
+      "diff_pixels": 0
+    },
+    {
+      "name": "notifications-default",
+      "main_sha256": "49699a2fb4bf4bd217823f555fa46b1f29d9610370ddaaf20acb3b4a8f37e5cb",
+      "incoming_r1_sha256": "49699a2fb4bf4bd217823f555fa46b1f29d9610370ddaaf20acb3b4a8f37e5cb",
+      "diff_pixels": 0
+    }
+  ]
+}

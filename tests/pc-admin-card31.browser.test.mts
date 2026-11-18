@@ -1,3 +1,4 @@
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID,createHash} from 'node:crypto';
@@ -64,6 +65,8 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   await b.evaluate("document.querySelector('[data-online-colleagues] button').focus()");
   for(const type of ['keyDown','keyUp'] as const)await b.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',...(type==='keyDown'?{text:'\r'}:{})});
   await b.waitFor("document.querySelector('.ds-online-panel')!==null");
+  await b.waitFor("document.querySelector('.ds-online-panel')?.hasAttribute('data-entering')===false");
+  await waitForAnimationsSettled(b,'.ds-online-panel');
   metrics.panel=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-online-panel'),s=getComputedStyle(p);return {width:p.getBoundingClientRect().width,radius:s.borderRadius,padding:s.paddingTop,title:p.querySelector('.ds-online-panel-title').textContent,rows:[...p.querySelectorAll('.ds-online-person')].map(n=>({name:n.querySelector('.ds-online-name').textContent,status:n.querySelector('.ds-online-status').textContent,height:n.getBoundingClientRect().height})),note:p.querySelector('.ds-online-note').textContent,above:p.getBoundingClientRect().bottom<=document.querySelector('[data-online-colleagues] button').getBoundingClientRect().top};})()"));
   assert.deepEqual(metrics.panel,{width:260,radius:'10px',padding:'6px',title:'在线同事 · 3',rows:[{name:'陈悦',status:'正在编辑',height:36},{name:'周宁',status:'正在查看工单',height:36},{name:'沈然',status:'在线',height:36}],note:'只显示同团队、当前打开工作台的同事',above:true});
   assert.ok(!(await b.evaluate("document.querySelector('.ds-online-panel').textContent")as string).includes('IT-'),'never names a ticket');
@@ -111,6 +114,8 @@ test('Card 31 sidebar online colleagues: SSE-based online set, status priority, 
   await b.evaluate('window.__onlineMany=true');await chen.hold(editTarget,'EDITING');
   await b.waitFor("document.querySelector('[data-online-colleagues] .ds-online-count')?.textContent==='55'");
   await clickWorkbenchControl(b,'[data-online-colleagues] button');await b.waitFor("document.querySelector('.ds-online-panel')!==null");
+  await b.waitFor("document.querySelector('.ds-online-panel')?.hasAttribute('data-entering')===false");
+  await waitForAnimationsSettled(b,'.ds-online-panel');
   metrics.many=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-online-panel'),l=p.querySelector('.ds-online-list');return {more:document.querySelector('.ds-presence-stack-more')?.textContent,top:Math.round(p.getBoundingClientRect().top),scrolls:l.scrollHeight>l.clientHeight,listed:l.children.length,extra:p.querySelector('.ds-online-more')?.textContent,firstStatus:p.querySelector('.ds-online-status').textContent,duplicates:[...l.querySelectorAll('.ds-online-name')].filter(n=>n.textContent==='同事10（合成）').length};})()"));
   const many=object(metrics.many);assert.deepEqual({...many,top:Number(many.top)>=0},{more:'+52',top:true,scrolls:true,listed:50,extra:'另有 5 人在线',firstStatus:'正在编辑',duplicates:2});
   await capture('sidebar-popover-55-synthetic');

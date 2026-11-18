@@ -1,5 +1,4 @@
 .ds-page .ds-split .inbox-composer .ds-segmented[role=tablist] {padding:var(--space-0-5);background:var(--bg-muted);}
-.ds-page .ds-split .inbox-composer .ds-segmented [role=tab][aria-selected=true] {background:var(--bg-canvas);box-shadow:var(--shadow-2);}
 
 /* v2.1.2 C1–C10 / S10; shared component sizes stay owned by design Tokens. */
 .workspace.ds-page:is(.conversation-inbox-workspace,.conversation-workspace)>.ds-page-header {min-height:0;padding-bottom:0;margin-bottom:var(--space-3);}

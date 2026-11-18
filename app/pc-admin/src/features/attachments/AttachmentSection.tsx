@@ -1,5 +1,6 @@
 import {Button as HButton} from '../../design/components/Button/Button';
-import {Slider,Tooltip} from '@heroui/react';
+import {Slider} from '@heroui/react';
+import {Tooltip} from '../../design/components/Tooltip/Tooltip';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {DialogAlert,useDialogToast} from '../../app/DialogFeedback';
 import {useEffect,useRef,useState} from 'react';
@@ -136,7 +137,7 @@ export function AttachmentSection({principal,kind,id,requested,readReady,reporte
   const emptySettled=!materials.length&&!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)&&!legacyFailure&&(!principal.web_reports_enabled||!web.error);
   const storageUnavailable=emptySettled&&!legacy.data?.available&&!web.data?.applicable;
   const conversionErrors=materials.filter(item=>item.web?.conversion_error||item.web?.playback_status==='UNAVAILABLE');
-  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<Tooltip delay={150}><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}{item.web?.conversion_error?' · '+item.web.conversion_error.code+' · '+item.web.conversion_error.at:''}</div>)}</Tooltip.Content></Tooltip>:null}</h4>
+  return <section ref={root} className="attachment-section detail-attachments" aria-label="报修附件"><h4>附件 {!legacy.isPending&&(!principal.web_reports_enabled||!web.isPending)?<span>{materials.length}</span>:null}{storageUnavailable?<Tooltip><Tooltip.Trigger className="attachment-unavailable-hint" aria-label="附件暂不可用"><CloudOff size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right">附件存储暂不可用，当前无法读取原始文件。</Tooltip.Content></Tooltip>:null}{conversionErrors.length?<Tooltip><Tooltip.Trigger className="attachment-unavailable-hint conversion-warning" aria-label="附件转换异常"><TriangleAlert size={15}/></Tooltip.Trigger><Tooltip.Content className="attachment-status-tooltip" placement="right"><div>附件转换异常，原始文件已保存，可继续查看或下载。</div>{conversionErrors.map(item=><div key={item.key}>{item.name}{item.web?.conversion_error?' · '+item.web.conversion_error.code+' · '+item.web.conversion_error.at:''}</div>)}</Tooltip.Content></Tooltip>:null}</h4>
     {initialLoading&&!materials.length?<DetailLoading label="正在加载报修资料…"/>:null}
     {legacyFailure?<p role="status">{errorMessage(legacyFailure)}</p>:null}
     {emptySettled&&!storageUnavailable?<p className="media-empty">当前事项没有可读取的已保存附件。</p>:null}

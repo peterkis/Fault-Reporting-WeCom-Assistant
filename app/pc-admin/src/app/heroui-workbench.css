@@ -79,8 +79,7 @@ html body .date-input-group:focus-within {background:var(--bg-canvas);border-col
 
 @media(prefers-reduced-motion:reduce){
   html body #root *,html body #root *::before,html body #root *::after,
-  html body .workbench-modal-backdrop *,html body .workbench-drawer-backdrop *,
-  html body .workbench-select-popover *,html body .processed-date-popover * {animation:none;transition:none;scroll-behavior:auto}
+  html body .workbench-modal-backdrop *,html body .workbench-drawer-backdrop * {animation:none;transition:none;scroll-behavior:auto}
 }
 /* Codex review (card 34C): full numbers shown on request beside a short code (「显示完整编号」). */
 .full-number {color:var(--text-tertiary);font-size:var(--fs-xs);overflow-wrap:anywhere}

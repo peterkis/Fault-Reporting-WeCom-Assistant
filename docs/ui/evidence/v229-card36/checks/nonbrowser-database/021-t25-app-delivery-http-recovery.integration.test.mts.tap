@@ -1,0 +1,17 @@
+TAP version 13
+# T25_HTTP_RECOVERY_TRACE {"app_deliveries":2,"sends":2,"conversions":2,"original_first":"01a1ef59-125e-7f4b-aa02-6a4b3919158e","original_completion":"01a1ef59-12aa-7ee5-930d-be9e6baa087d","retry_uuid":"53d11903-0292-43fb-a280-c5fd43d294f8","reconcile_uuid":"f6908b94-68ff-45c9-b431-8fdb1262ba2a","taskIds":["delivery_01a1ef59125e7f4baa026a4b3919158e","delivery_01a1ef5912aa7ee5930dbe9e6baa087d"]}
+# Subtest: actual App failures and UNKNOWN require explicit authorized HTTP recovery of the same Delivery and command intent without repeating a successful node
+ok 1 - actual App failures and UNKNOWN require explicit authorized HTTP recovery of the same Delivery and command intent without repeating a successful node
+  ---
+  duration_ms: 848.418709
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1064.173667

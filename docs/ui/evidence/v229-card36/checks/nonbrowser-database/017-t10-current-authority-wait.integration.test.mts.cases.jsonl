@@ -1,0 +1,1 @@
+{"event_time":"2026-11-18 23:49:04","event_epoch_ms":"1795016944935","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"a real waiting command rechecks current handler membership after waiting for the authoritative Ticket lock","file":"tests/t10-current-authority-wait.integration.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

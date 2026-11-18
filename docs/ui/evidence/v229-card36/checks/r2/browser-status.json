@@ -1,0 +1,20 @@
+{
+  "status": "PENDING_REVIEWER_RERUN",
+  "incoming_related_cases": {
+    "pass": 40,
+    "total": 41,
+    "remaining_failure": "Card35A A4.6-8: old helper frame deadline"
+  },
+  "incoming_motion_subtests": {
+    "pass": 5,
+    "total": 6,
+    "remaining_failure": "e1-press filmstrip"
+  },
+  "incoming_main_comparison": {
+    "changed": 12,
+    "unchanged": 6
+  },
+  "current_browser_execution": "NOT_RUN_BY_INSTRUCTION",
+  "reference": "captured current main 30eb2fc8",
+  "baseline_modified": false
+}
