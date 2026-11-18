@@ -1,0 +1,486 @@
+{
+  "passed": false,
+  "platform": "darwin-chrome",
+  "os_version": "macOS 26.6.2 / Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050 / 25.6.0",
+  "browser_version": "Chrome/157.0.8103.79",
+  "source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "input_hash": "116f87a18553929f43b2d2cc6b20f0ec835e5378dd18aff9b7a8472edaae0a36",
+  "comparisons": 180,
+  "runs": [
+    "stability-1",
+    "stability-2",
+    "stability-3",
+    "stability-4",
+    "stability-5"
+  ],
+  "rows": [
+    {
+      "name": "board-default",
+      "pairwise_max": 178389,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 178389
+        }
+      ]
+    },
+    {
+      "name": "board-presence",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "board-filtered-empty",
+      "pairwise_max": 55947,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 55947
+        }
+      ]
+    },
+    {
+      "name": "list-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "list-closed-groups",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-processing",
+      "pairwise_max": 3436,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 3436
+        }
+      ]
+    },
+    {
+      "name": "drawer-dismissed",
+      "pairwise_max": 3443,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 3443
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 3443
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-completed",
+      "pairwise_max": 3443,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 3443
+        }
+      ]
+    },
+    {
+      "name": "drawer-banner-editing",
+      "pairwise_max": 3436,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 3436
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 3436
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 3436
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 3436
+        }
+      ]
+    },
+    {
+      "name": "detail-fullpage-1280",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "close-dialog-out-of-scope",
+      "pairwise_max": 3568,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 3568
+        }
+      ]
+    },
+    {
+      "name": "close-dialog-duplicate",
+      "pairwise_max": 14,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 14
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 14
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 14
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 14
+        }
+      ]
+    },
+    {
+      "name": "restore-dialog",
+      "pairwise_max": 3722,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 3722
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "toast-tones",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "toast-drawer-stack",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "sidebar-online-popover",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "conversation-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "notifications-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "stability-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "stability-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    }
+  ]
+}

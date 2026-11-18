@@ -56,7 +56,7 @@ export function assertProductionSources(root: string): void {
     const logical=logicalSource(file);
     if (retired.has(logical)) throw new Error('MIGRATION_RETIRED_LEGACY: ' + file);
     if (file.endsWith('.mts') || /\.d\.ts$/u.test(file)) {
-      if (tooling && !file.startsWith('tools/ts-migration/')) throw new Error('MIGRATION_UNREGISTERED_TYPED_TOOL: ' + file);
+      if (tooling && !file.startsWith('tools/ts-migration/') && !file.startsWith('tools/visual-regression/')) throw new Error('MIGRATION_UNREGISTERED_TYPED_TOOL: ' + file);
       continue;
     }
     if (!file.endsWith('.mjs') || !(tooling ? historicalTools : legacy).has(logical)) throw new Error(tooling ? 'MIGRATION_NEW_UNTYPED_TOOL: ' + file : 'MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
@@ -72,7 +72,7 @@ function unwrapAssertionOperand(node: ts.Expression): ts.Expression {
 const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAssertion => ts.isAsExpression(node) || ts.isTypeAssertionExpression(node);
 
 export function codeFiles(root: string): string[] {
-  return workspaceFiles(root).filter(p => (isProductionSource(p)||/^(src|scripts|tests)\//u.test(p)) && /\.(mjs|mts)$/u.test(p) && !p.startsWith('tests/types/') && !p.endsWith('.d.mts'));
+  return workspaceFiles(root).filter(p => (isProductionSource(p)||/^(src|scripts|tests|tools\/visual-regression)\//u.test(p)) && /\.(mjs|mts)$/u.test(p) && !p.startsWith('tests/types/') && !p.endsWith('.d.mts'));
 }
 export function resources(root: string): string[] {
   const manifest = record(readJson(safeFile(root, 'tools/ts-migration/resources.json')));
@@ -218,7 +218,7 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
 }
 export function inputs(root: string): FileDigest[] {
   const files = workspaceFiles(root).filter(p => isProductionSource(p) || /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|app\/pc-admin)\//u.test(p)
-    || isH5ProductionInput(p) || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
+    || p.startsWith('tools/visual-regression/') || isH5ProductionInput(p) || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
     || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/') || p.startsWith('.github/actions/') || p === 'plans/testing-policy.json'
     || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-current-readiness-scope.v2.json', 'plans/yxx-current-readiness-acceptance.v2.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
       '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs',
@@ -252,7 +252,7 @@ export function program(root: string, name: string): ts.Program {
   const p = parsedConfig(root, name); const result = ts.createProgram(p.fileNames, p.options);
   const typed = workspaceFiles(root).filter(f => name === 'tsconfig.tools.json' ? /^tools\/ts-migration\/.+\.mts$/u.test(f)
     : name === 'tsconfig.type-tests.json' ? /^tests\/types\/.+\.mts$/u.test(f)
-    : (isProductionSource(f)||/^(src|scripts|tests)\//u.test(f)) && f.endsWith('.mts') && !f.startsWith('tests/types/'));
+    : (isProductionSource(f)||/^(src|scripts|tests|tools\/visual-regression)\//u.test(f)) && f.endsWith('.mts') && !f.startsWith('tests/types/'));
   if (!typed.length) throw new Error('MIGRATION_EMPTY_PROGRAM: ' + name);
   for (const f of typed) {
     if (!result.getSourceFile(slash(path.join(root, f))) || !p.fileNames.some(input => slash(input) === slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);

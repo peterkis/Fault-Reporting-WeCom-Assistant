@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {withSS009Database} from './helpers/yxx-ss-009-resources.mjs';
+import {withSS009Database,migrateSS009RuntimeDatabase} from './helpers/yxx-ss-009-resources.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
-import {migrateCurrentBaseline,migrateCurrentBaselineWithYxx} from '../app/server/scripts/migrate-current-baseline.mjs';
+import {migrateCurrentBaseline} from '../app/server/scripts/migrate-current-baseline.mjs';
 import {migrateYxxSelfService} from '../app/server/scripts/yxx-self-service-migrate.mjs';
+import {migrateServiceClosure} from '../app/server/scripts/service-closure-migrate.mjs';
 import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {createRuleFirstOrchestrator} from '../app/server/src/p2-015-rule-first-orchestrator.mjs';
 import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
@@ -24,6 +25,9 @@ const receipt=(t,value)=>t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2Evid
 test('SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034',async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009botup',run:async({pool,databaseUrl})=>{
     await migrateCurrentBaseline({databaseUrl});
+    // Populate through the current Ticket Core, which reads closure records.
+    // Remove this empty successor again before checking the frozen 032 -> 034 catalog.
+    await migrateServiceClosure({databaseUrl,mode:'apply'});
     const decisionStore=createDecisionStore(),manualReviewStore=createManualReviewStore();
     const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),
       ticketCommandPort:createExistingTicketCommandPort({ticketCore:createPilotTicketCore({pool})}),
@@ -38,11 +42,15 @@ test('SS-009 populated 032 Bot graph remains readable linked and replayable afte
     const columns={};for(const table of tables){const [schema,name]=table.split('.');columns[table]=(await pool.query('SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 ORDER BY ordinal_position',[schema,name])).rows.map(r=>r.column_name);assert.ok(columns[table].length);assert.ok(columns[table].every(c=>/^[a-z_]+$/u.test(c)));}
     async function snapshot(){const rows={};for(const table of tables)rows[table]=(await pool.query('SELECT to_jsonb(t) AS row FROM (SELECT '+columns[table].join(',')+' FROM '+table+') t ORDER BY to_jsonb(t)::text')).rows.map(r=>r.row);return rows;}
     const before=await snapshot();for(const table of tables)assert.ok(before[table].length>0,'must exercise populated '+table);
+    await migrateServiceClosure({databaseUrl,mode:'rollback'});
     assert.equal((await migrateYxxSelfService({databaseUrl,mode:'check'})).status,'CHECK_ROLLBACK_SUCCEEDED');assert.deepEqual(await snapshot(),before);
     assert.equal((await migrateYxxSelfService({databaseUrl})).status,'APPLIED');
     // The before/after assertion must detect loss of an existing relationship.
     assert.deepEqual(await snapshot(),before);
     assert.equal((await migrateYxxSelfService({databaseUrl})).status,'NOOP_ALREADY_APPLIED');assert.deepEqual(await snapshot(),before);
+    // Replay needs 071's read tables, while later migrations remove columns in
+    // this historical snapshot. Keep the complete original snapshot assertions.
+    await migrateServiceClosure({databaseUrl,mode:'apply'});
     const links=(await pool.query(`SELECT i.id::text,i.primary_message_id::text,j.id::text AS journey_id,l.id::text AS leg_id,d.id::text AS decision_id
       FROM intake.service_intake i JOIN channel.message_inbox m ON m.id=i.primary_message_id
       JOIN intake.service_intake_message im ON im.intake_id=i.id AND im.channel_message_id=m.id
@@ -59,7 +67,7 @@ test('SS-009 populated 032 Bot graph remains readable linked and replayable afte
 
 test('SS-009 rule savepoint removes a real partial write while committing manual fallback',async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009svpt',run:async({pool,databaseUrl})=>{
-    await migrateCurrentBaselineWithYxx({databaseUrl});
+    await migrateSS009RuntimeDatabase({databaseUrl});
     const store=createYxxSelfServiceStore({pool,scopeSecret:'ss009-synthetic-savepoint-secret-32-characters'});
     const scope={scopeHash:'c'.repeat(64),sourceCorpScope:'synthetic-corp',sourceAppScope:'synthetic-app',proofRef:'tests/ss009-savepoint'};
     const body=input('无法安全判断'),accepted=await store.accept({scope,input:body});

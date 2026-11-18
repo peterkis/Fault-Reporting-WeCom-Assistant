@@ -7,6 +7,7 @@
     "checkJs": false
   },
   "include": [
+    "tools/visual-regression/**/*.mts",
     "app/server/src/**/*.mts",
     "app/server/scripts/**/*.mts",
     "shared/**/*.mts",

@@ -5,7 +5,25 @@ import {g2EvidenceTime} from '../../app/server/src/p2-g2-evidence-time.mjs';
 import {g2CandidateInventory} from '../../app/server/src/p2-g2-candidate.mjs';
 import {currentRuntimeFingerprint} from '../../app/server/src/yxx-current-evidence.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {migrateCurrentBaselineWithYxx} from '../../app/server/scripts/migrate-current-baseline.mjs';
+import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
+import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
+import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
+import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
 export const closeSS009Resources=closeBrowserTestResources;
+
+// Current runtime queries require these successors even when the tested flow is
+// an older SS-009 scenario. Catalog-only tests keep their explicit historical chain.
+export async function migrateSS009RuntimeSuccessors({databaseUrl}){
+  for(const migrate of [migrateServiceClosure,migrateCompletionDismissal,migrateNotificationVocabulary,migrateSystemClosureRestore]){
+    await migrate({databaseUrl,mode:'apply'});
+  }
+}
+
+export async function migrateSS009RuntimeDatabase({databaseUrl}){
+  await migrateCurrentBaselineWithYxx({databaseUrl});
+  await migrateSS009RuntimeSuccessors({databaseUrl});
+}
 
 export async function withSS009Database({testContext,databaseUrl,run,candidateRoot,candidateRepresentation='SOURCE',...options}){
   assert.ok(['SOURCE','STAGED_RUNTIME'].includes(candidateRepresentation));

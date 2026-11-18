@@ -1,0 +1,13 @@
+diff --git a/app/pc-admin/src/design/components/TicketCard/ClosureDialog.tsx b/app/pc-admin/src/design/components/TicketCard/ClosureDialog.tsx
+index 4eeab618..e87205dd 100644
+--- a/app/pc-admin/src/design/components/TicketCard/ClosureDialog.tsx
++++ b/app/pc-admin/src/design/components/TicketCard/ClosureDialog.tsx
+@@ -65,7 +65,7 @@ export function ClosureDialog({open,number,title,value,onChange,busy,locked,canS
+     {inProgress?<p className="ds-closure-termination" data-closure-termination><TriangleAlert aria-hidden="true"/>进行中的跟进与提醒将一并终止</p>:null}
+     {feedback}{recovery}
+     <footer data-toast-avoid="bottom"><div className="ds-closure-draft">{draft}{onDiscard?<>{draft?<span aria-hidden="true" className="ds-closure-draft-separator">·</span>:null}<Button tone="ghost" data-action="discard-cancel-draft" className="ds-closure-discard" onPress={onDiscard}>清空</Button></>:null}</div>
+-     <div className="ds-closure-actions"><Button type="button" tone="secondary" isDisabled={locked} onPress={onClose}>取消</Button><Button type="submit" tone="primary" isDisabled={!canSubmit||disabled}>确认关闭</Button></div></footer>
++     <div className="ds-closure-actions"><Button type="button" tone="secondary" isDisabled={locked} onPress={onClose}>取消</Button><Button type="submit" tone="primary" isDisabled={!canSubmit||disabled}>确认关单</Button></div></footer>
+    </form>
+   </Modal.Dialog></Modal.Container>
+  </Modal.Backdrop>;

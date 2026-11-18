@@ -178,7 +178,10 @@
     "desktop:dev": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Dev",
     "desktop:package": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Package",
     "desktop:test": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Test",
-    "desktop:integration": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Integration"
+    "desktop:integration": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Integration",
+    "visual:capture": "node .build/runtime/tools/visual-regression/cli.mjs capture",
+    "visual:compare": "node .build/runtime/tools/visual-regression/cli.mjs compare",
+    "visual:approve": "node .build/runtime/tools/visual-regression/cli.mjs approve"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",
@@ -223,6 +226,8 @@
     "morphicons": "1.7.1",
     "motion": "13.4.1",
     "parse5": "8.0.1",
+    "pixelmatch": "8.0.0",
+    "pngjs": "7.0.0",
     "react": "19.3.0",
     "react-aria-components": "1.21.1",
     "react-dom": "19.3.0",

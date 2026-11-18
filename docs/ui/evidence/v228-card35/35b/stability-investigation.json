@@ -1,0 +1,439 @@
+{
+  "probes": [
+    {
+      "screen": "board-default",
+      "mode": "control",
+      "raw_diff_pixels_vs_first": [
+        0,
+        291,
+        291,
+        0,
+        0,
+        291,
+        291,
+        0
+      ]
+    },
+    {
+      "screen": "board-default",
+      "mode": "identity-transform",
+      "raw_diff_pixels_vs_first": [
+        0,
+        51,
+        51,
+        51,
+        51,
+        51,
+        51,
+        51
+      ]
+    },
+    {
+      "screen": "board-default",
+      "mode": "render-speed",
+      "raw_diff_pixels_vs_first": [
+        0,
+        291,
+        0,
+        291,
+        0,
+        291,
+        291,
+        291
+      ]
+    },
+    {
+      "screen": "board-default",
+      "mode": "inline-effects",
+      "raw_diff_pixels_vs_first": [
+        0,
+        0,
+        0,
+        51,
+        0,
+        51,
+        0,
+        51
+      ]
+    },
+    {
+      "screen": "board-default",
+      "mode": "sort-identity",
+      "raw_diff_pixels_vs_first": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "screen": "drawer-banner-editing",
+      "mode": "control",
+      "raw_diff_pixels_vs_first": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "screen": "drawer-banner-editing",
+      "mode": "drawer-will-change",
+      "raw_diff_pixels_vs_first": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "sort_rects": [
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "x": 533.328125,
+      "y": 225,
+      "width": 92,
+      "height": 26
+    }
+  ],
+  "platform_fonts": [
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Thin_Medium",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    }
+  ],
+  "control_animations": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+  ],
+  "control_scroll": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1432
+    }
+  ],
+  "product_source_changes": 0,
+  "probe_source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "probe_input_hash": "2eb703555cfc82a68709923badce7dfe2d8683e5ace420726dc48cb180b15ba2",
+  "probe_masks": "Removed in memory for diagnosis; no approved baseline was written",
+  "drawer_observation": {
+    "animations": [],
+    "images": [
+      {
+        "complete": true,
+        "naturalWidth": 1024
+      }
+    ],
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "client": 1440
+    },
+    "retained_hints": [
+      {
+        "name": "DIV",
+        "cls": "disclosure__content",
+        "rect": {
+          "x": 280,
+          "y": 290,
+          "width": 352,
+          "height": 266
+        },
+        "transform": "none",
+        "translate": "none",
+        "filter": "none",
+        "backdrop": "none",
+        "willChange": "height, opacity"
+      },
+      {
+        "name": "DIV",
+        "cls": "disclosure__content",
+        "rect": {
+          "x": 280,
+          "y": 601,
+          "width": 352,
+          "height": 134
+        },
+        "transform": "none",
+        "translate": "none",
+        "filter": "none",
+        "backdrop": "none",
+        "willChange": "height, opacity"
+      },
+      {
+        "name": "DIV",
+        "cls": "disclosure__content",
+        "rect": {
+          "x": 1048,
+          "y": 290,
+          "width": 352,
+          "height": 448
+        },
+        "transform": "none",
+        "translate": "none",
+        "filter": "none",
+        "backdrop": "none",
+        "willChange": "height, opacity"
+      },
+      {
+        "name": "DIV",
+        "cls": "disclosure__content",
+        "rect": {
+          "x": 1048,
+          "y": 771,
+          "width": 352,
+          "height": 370
+        },
+        "transform": "none",
+        "translate": "none",
+        "filter": "none",
+        "backdrop": "none",
+        "willChange": "height, opacity"
+      },
+      {
+        "name": "SECTION",
+        "cls": "drawer__dialog drawer__dialog--right detail-dialog ds-detail ds-drawer",
+        "rect": {
+          "x": 712,
+          "y": 8,
+          "width": 720,
+          "height": 984
+        },
+        "transform": "none",
+        "translate": "none",
+        "filter": "none",
+        "backdrop": "none",
+        "willChange": "translate"
+      }
+    ]
+  },
+  "partial_raster_probe": {
+    "flag": "--disable-partial-raster",
+    "drawer_dismissed": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "close_dialog_duplicate": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "source": "https://chromium.googlesource.com/chromium/src/+/HEAD/third_party/blink/common/switches.cc"
+  },
+  "remaining_before_full_raster": {
+    "input_hash": "3aa8a678070ed2730f277e5aecddf1319894300cb2c23de55b9fd01bf75002c4",
+    "differences": [
+      {
+        "name": "drawer-dismissed",
+        "raw": 49
+      },
+      {
+        "name": "close-dialog-duplicate",
+        "raw": 6
+      }
+    ]
+  }
+}

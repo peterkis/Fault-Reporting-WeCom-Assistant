@@ -129,9 +129,25 @@
       "build": true,
       "pyyaml": false,
       "windows": false
+    },
+    "visual": {
+      "selections": [
+        "visual-regression"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
     }
   },
   "rules": [
+    {
+      "pattern": "^tools/visual-regression/|^tests/(?:visual/|visual-regression\\.test\\.mts$|helpers/visual-stable\\.mts$)",
+      "profiles": [
+        "visual"
+      ],
+      "reason": "Local visual tooling pure-function tests; captures remain local and are not routed into CI browser runs"
+    },
     {
       "pattern": "^tools/ts-migration/(?:pr-plan|check-agent-docs|t02-expiry)(?:\\.test)?\\.mts$",
       "profiles": [

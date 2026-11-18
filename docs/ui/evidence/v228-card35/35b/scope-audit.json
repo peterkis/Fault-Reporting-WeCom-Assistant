@@ -1,0 +1,26 @@
+{
+  "head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "branch": "codex/v228-card35b",
+  "capture_input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3",
+  "tooling_input_hash": "7fba3fb3fea627618b93e9df473fdae7f15f48df01677d74e6e5c323192927ef",
+  "approved_png_hashes_unchanged": 18,
+  "current_recaptures": 0,
+  "threshold": {
+    "pixelmatch": 0.1,
+    "ratio": 0
+  },
+  "overrides": 0,
+  "product_source_diff": [],
+  "official_baselines": 0,
+  "owner_image_approval": true,
+  "approve_executions": 0,
+  "commits": 0,
+  "pushes": 0,
+  "prs_opened": 0,
+  "new_dev_dependencies": [
+    "pixelmatch",
+    "pngjs"
+  ],
+  "changed_markdown": 22,
+  "documentation_issues": []
+}

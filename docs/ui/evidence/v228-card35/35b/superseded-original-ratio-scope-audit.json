@@ -1,0 +1,20 @@
+{
+  "head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "branch": "codex/v228-card35b",
+  "input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3",
+  "product_and_workflow_diff": [],
+  "official_baseline_files": [
+    "README.md"
+  ],
+  "current_pngs": 18,
+  "current_matches_final_fifth_raw": true,
+  "geometry_guard": "Controls, drawer and toast rectangles unchanged before/after normalization on all captures",
+  "masked_screens": 0,
+  "threshold_overrides": 0,
+  "approve_executions": 0,
+  "commits": 0,
+  "pushes": 0,
+  "prs_opened": 0,
+  "changed_markdown": 17,
+  "documentation_issues": []
+}
