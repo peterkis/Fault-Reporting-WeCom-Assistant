@@ -1,56 +1,62 @@
 TAP version 13
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted
 ok 1 - Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted
   ---
-  duration_ms: 3565.554833
+  duration_ms: 4374.678458
   type: 'test'
   ...
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A PR192: empty handled column retains the completed drop zone and opens the existing form without a POST
 ok 2 - Card 35A PR192: empty handled column retains the completed drop zone and opens the existing form without a POST
   ---
-  duration_ms: 1921.407167
+  duration_ms: 2631.399833
   type: 'test'
   ...
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics
 ok 3 - Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics
   ---
-  duration_ms: 63029.175792
+  duration_ms: 66489.450542
   type: 'test'
   ...
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery
 ok 4 - Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery
   ---
-  duration_ms: 85791.341458
+  duration_ms: 95814.739541
   type: 'test'
   ...
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content
 ok 5 - Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content
   ---
-  duration_ms: 1396.499584
+  duration_ms: 2425.381375
   type: 'test'
   ...
+# CARD35A_CPU {"rate":1}
 # Subtest: Card 35A option A: unavailable live stream keeps healthy reads on the 5s cadence beyond 12s without a connection bar
 ok 6 - Card 35A option A: unavailable live stream keeps healthy reads on the 5s cadence beyond 12s without a connection bar
   ---
-  duration_ms: 21543.468833
+  duration_ms: 22914.112166
   type: 'test'
   ...
 # Subtest: Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal
 ok 7 - Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal
   ---
-  duration_ms: 1.197417
+  duration_ms: 2.091708
   type: 'test'
   ...
 # Subtest: Card 35A native reconnect events cannot reset or bypass the bounded read budget
 ok 8 - Card 35A native reconnect events cannot reset or bypass the bounded read budget
   ---
-  duration_ms: 0.58325
+  duration_ms: 1.093125
   type: 'test'
   ...
 # Subtest: Card 35A option A: one scheduler polls successful reads for 65s under unavailable or CLOSED live transport, and clears a previous read failure
 ok 9 - Card 35A option A: one scheduler polls successful reads for 65s under unavailable or CLOSED live transport, and clears a previous read failure
   ---
-  duration_ms: 2.644
+  duration_ms: 4.384375
   type: 'test'
   ...
 1..9
@@ -61,4 +67,4 @@ ok 9 - Card 35A option A: one scheduler polls successful reads for 65s under una
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 177444.330792
+# duration_ms 194883.876333

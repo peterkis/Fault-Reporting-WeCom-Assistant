@@ -1,0 +1,426 @@
+{
+  "head": "b4fa7fb831d2a76bcf94f50455e6428d46291671",
+  "dirty": true,
+  "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+  "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+  "series_run_concurrently": true,
+  "each_series_is_serial": true,
+  "full_file_runs": 10,
+  "cases": 90,
+  "pass": 90,
+  "fail": 0,
+  "skipped": 0,
+  "cancelled": 0,
+  "runs": [
+    {
+      "run": 1,
+      "rate": 4,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 206755,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "cpu4",
+      "tap": "cpu4-1.tap",
+      "metrics": "cpu4-1-metrics.json",
+      "cases": "cpu4-1-cases.json",
+      "published_tap_sha256": "e393912af813a8d157a13158a1008460d813041330bf833a3705e89ae0e8174c"
+    },
+    {
+      "run": 2,
+      "rate": 4,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 207418,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "cpu4",
+      "tap": "cpu4-2.tap",
+      "metrics": "cpu4-2-metrics.json",
+      "cases": "cpu4-2-cases.json",
+      "published_tap_sha256": "8c355a39f363ef24dc9ba41aa1a1b4899b2606a2349d4067f4c2e072943f330c"
+    },
+    {
+      "run": 3,
+      "rate": 4,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 210736,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "cpu4",
+      "tap": "cpu4-3.tap",
+      "metrics": "cpu4-3-metrics.json",
+      "cases": "cpu4-3-cases.json",
+      "published_tap_sha256": "c8532579ff2d79e4da27ce0b94f29826a4511e33db1cdfe81484088daa05b477"
+    },
+    {
+      "run": 4,
+      "rate": 4,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 214137,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "cpu4",
+      "tap": "cpu4-4.tap",
+      "metrics": "cpu4-4-metrics.json",
+      "cases": "cpu4-4-cases.json",
+      "published_tap_sha256": "5174b253ff4b4b718679d759625f0b8e816c0e977e815f42b776c4c2b0e04711"
+    },
+    {
+      "run": 5,
+      "rate": 4,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        },
+        {
+          "rate": 4
+        }
+      ],
+      "elapsed_ms": 226046,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "cpu4",
+      "tap": "cpu4-5.tap",
+      "metrics": "cpu4-5-metrics.json",
+      "cases": "cpu4-5-cases.json",
+      "published_tap_sha256": "324d6b910e303596994544fa5b00fec0ecb8b724dcde153bfd7ff61632b67f16"
+    },
+    {
+      "run": 1,
+      "rate": 1,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 174545,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "normal",
+      "tap": "normal-1.tap",
+      "metrics": "normal-1-metrics.json",
+      "cases": "normal-1-cases.json",
+      "published_tap_sha256": "f271efeb08eba575c7a7559f760cf49de16a0295745d9cf95ecf655ddb83a046"
+    },
+    {
+      "run": 2,
+      "rate": 1,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 174853,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "normal",
+      "tap": "normal-2.tap",
+      "metrics": "normal-2-metrics.json",
+      "cases": "normal-2-cases.json",
+      "published_tap_sha256": "e3c701d82d1134ec938dfb340f2bac200b24c3bc2cbd9019811ceada936092a5"
+    },
+    {
+      "run": 3,
+      "rate": 1,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 184469,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "normal",
+      "tap": "normal-3.tap",
+      "metrics": "normal-3-metrics.json",
+      "cases": "normal-3-cases.json",
+      "published_tap_sha256": "c88ede18d226a9119c995a690ca7b36b6c7bd06f547134bcb68dfe45289ccaaa"
+    },
+    {
+      "run": 4,
+      "rate": 1,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 180996,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "normal",
+      "tap": "normal-4.tap",
+      "metrics": "normal-4-metrics.json",
+      "cases": "normal-4-cases.json",
+      "published_tap_sha256": "6e7801a337c48ec78547d72ccaa27a330926994daccd3e8e78361e0acbbfbcd7"
+    },
+    {
+      "run": 5,
+      "rate": 1,
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "browser_configurations": [
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        },
+        {
+          "rate": 1
+        }
+      ],
+      "elapsed_ms": 194932,
+      "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+      "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+      "mode": "normal",
+      "tap": "normal-5.tap",
+      "metrics": "normal-5-metrics.json",
+      "cases": "normal-5-cases.json",
+      "published_tap_sha256": "1822e93137c48f12734135ecb4d781d9813211bf70db3952a172e97843cb8c7f"
+    }
+  ]
+}

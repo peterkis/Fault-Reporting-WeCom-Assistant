@@ -1,189 +1,124 @@
 {
+  "scope": "PR192 Linux timing and refresh correction",
+  "baseline_head": "b4fa7fb831d2a76bcf94f50455e6428d46291671",
+  "dirty": true,
+  "recorded_at": "2026-11-18T09:07:34.655780+00:00",
+  "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+  "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
+  "classification": {
+    "80ms_ci_failure": "TEST: real read latency and separate response callbacks were outside fixture control",
+    "sse_refresh_ci_failure": "TEST: unfinished first attachment read; body identity retained and DetailSkeleton absent",
+    "additional_scrollbar_width_shift": "PRODUCT CSS: page and table scrollbar appearance changed the table width by 16px; fixed in list scope"
+  },
+  "matrix": {
+    "normal": {
+      "files": 5,
+      "tests": 45,
+      "pass": 45
+    },
+    "cpu4": {
+      "files": 5,
+      "tests": 45,
+      "pass": 45
+    }
+  },
+  "regressions": [
+    {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-01-pc-admin-copy-terms.test.mts.tap"
+    },
+    {
+      "path": "tests/workbench-toast-feedback.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-02-workbench-toast-feedback.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-03-workbench-detail-restructure.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/wbint-t38-protocol.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-04-wbint-t38-protocol.browser.test.mts.tap"
+    },
+    {
+      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-05-yxx-ss-009-http-recovery.integration.test.mjs.tap"
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 75,
+        "pass": 75,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "tap": "linux-regression-06-pc-admin-design-foundation.test.mts.tap"
+    }
+  ],
+  "screenshots": {
+    "application": 21,
+    "reference": 5,
+    "width": 1440
+  },
   "acceptance": {
     "A4.1": "PASS",
-    "A4.2": "FAIL",
+    "A4.2": "FAIL: unknown empty-first-group membership remains; scrollbar shift fixed",
     "A4.3": "PASS",
     "A4.4": "PASS",
     "A4.5": "PASS",
     "A4.6": "PASS",
-    "A4.7": "FAIL",
+    "A4.7": "FAIL: no independent UNKNOWN note confirmation action",
     "A4.8": "PASS",
     "A4.9": "PASS",
     "A4.10": "PASS"
   },
-  "scope": "PR 192 link, filtered-pagination and empty completion drop corrections",
-  "baseline_head": "6e4a59b1f304eb159e00ff8c093c83581b606fdc",
-  "pr_base": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
-  "dirty": true,
-  "source_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a",
-  "artifact_proof": {
-    "manifest_sha256": "35173266a62b1981efa311577434ec87186b3550dc5b037e94e4d545d134d9de",
-    "source_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a"
-  },
-  "recorded_at": "2026-11-18T06:34:11.485561+00:00",
-  "new_state_tests": {
-    "tests": 9,
-    "pass": 9,
-    "fail": 0,
-    "skipped": 0,
-    "cancelled": 0
-  },
-  "screenshots": {
-    "application": 21,
-    "required_application": 16,
-    "reference": 5,
-    "width": 1440
-  },
-  "ci_selection": {
-    "ci": {
-      "entries": 77,
-      "pass_entries": 76,
-      "fail_entries": 1,
-      "tests": 548,
-      "pass": 546,
-      "fail": 2,
-      "cancelled": 0,
-      "skipped": 0,
-      "todo": 0
-    },
-    "tools": {
-      "entries": 7,
-      "pass_entries": 7,
-      "fail_entries": 0,
-      "tests": 138,
-      "pass": 138,
-      "fail": 0,
-      "cancelled": 0,
-      "skipped": 0,
-      "todo": 0
-    },
-    "extra": {
-      "entries": 13,
-      "pass_entries": 13,
-      "fail_entries": 0,
-      "tests": 26,
-      "pass": 26,
-      "fail": 0,
-      "cancelled": 0,
-      "skipped": 0,
-      "todo": 0
-    }
-  },
-  "per_entry_report": "checks/pr192-ci-results.md",
-  "total_tests": 712,
-  "ci_failures": [
-    {
-      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
-      "classification": "PRE_EXISTING: missing service-closure migration in SS009 fixture; user assigned its fix to PR 191"
-    }
-  ],
-  "pr192_review": {
-    "1_document_links": "PASS: all local targets exist, anchors resolve and git check-ignore prints nothing",
-    "2_filtered_pagination": "PASS: board and list with a next page and with all queries exhausted",
-    "3_empty_handled_drop": "PASS: pointer drag opens existing completion form; zero POST; unchanged version",
-    "4_full_ci_selection": "EXECUTED: results include the pre-existing SS009 failure",
-    "5_required_checks": "PASS"
-  },
-  "checks": {
-    "typecheck": "PASS",
-    "build": "PASS",
-    "stylelint": "PASS",
-    "eslint": "PASS",
-    "copy_terms": "PASS 6/6",
-    "states": "PASS 9/9",
-    "protocol": "PASS 2/2",
-    "toast_feedback": "PASS 1/1",
-    "detail_restructure": "PASS 2/2",
-    "full_ci": "FAIL: only the user-identified pre-existing SS009 entry remains",
-    "artifact": "PASS",
-    "document_links": "PASS",
-    "diff_check": "PASS"
-  },
-  "subgroup_geometry": [
-    {
-      "view": "board",
-      "column": "pending",
-      "before": 300,
-      "after": 300,
-      "delta": 0
-    },
-    {
-      "view": "board",
-      "column": "handled",
-      "before": 300,
-      "after": 300,
-      "delta": 0
-    },
-    {
-      "view": "list",
-      "column": "pending",
-      "before": 335,
-      "after": 335,
-      "delta": 0
-    },
-    {
-      "view": "list",
-      "column": "handled",
-      "before": 899,
-      "after": 899,
-      "delta": 0
-    }
-  ],
-  "closed_subgroup_geometry": {
-    "board": {
-      "before": 340,
-      "after": 340,
-      "delta": 0
-    },
-    "list": {
-      "before": 693,
-      "after": 693,
-      "delta": 0
-    }
-  },
-  "follow_up_borders": {
-    "innerTop": "0px",
-    "innerBottom": "0px",
-    "outerBottom": "1px",
-    "emptyDividers": 0
-  },
-  "remaining_open_questions": [
-    "Unknown empty-first-group membership needs pre-response group metadata or a revised empty-group/drop-target layout contract. Identical request/prefs produce first-card differences of 55px (pending) and 43px (handled).",
-    "The existing valid internal-note UNKNOWN action is same-operation replay; no independent read-only confirmation is invented. Original READ revocation and navigation guards remain."
-  ],
-  "frozen_inputs": {
-    "status": "PASS",
-    "comparison": "committed 6e4a59b1",
-    "frozen_files": {
-      ".gitignore": {
-        "head_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d",
-        "working_tree_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d"
-      },
-      "app/pc-admin/src/realtime/useRealtime.ts": {
-        "head_sha256": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52",
-        "working_tree_sha256": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52"
-      },
-      "app/pc-admin/src/realtime/workbench-realtime-client.mts": {
-        "head_sha256": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73",
-        "working_tree_sha256": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73"
-      },
-      "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": {
-        "head_sha256": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9",
-        "working_tree_sha256": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
-      }
-    },
-    "restricted_paths_unchanged": [
-      ".gitignore",
-      "app/pc-admin/src/features",
-      "app/pc-admin/src/realtime",
-      "tools/visual-regression",
-      "tests/visual",
-      "docs/ui/visual-baseline",
-      "docs/ui/evidence/v228-card35/35b",
-      "package.json",
-      "package-lock.json"
-    ],
-    "original_state_assertion_lines_retained_in_order": 97,
-    "no_commit_push_or_branch_change": true
-  }
+  "actual_linux_execution": "NOT_RUN: these are local macOS Chrome runs with CDP 4x; CI awaits reviewer commit",
+  "no_commit_push": true
 }

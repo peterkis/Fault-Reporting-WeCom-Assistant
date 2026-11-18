@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: H5 admin closed view preserves authorized identity and pending original recording without a fabricated playable URL
+ok 1 - H5 admin closed view preserves authorized identity and pending original recording without a fabricated playable URL
+  ---
+  duration_ms: 0.912125
+  type: 'test'
+  ...
+# Subtest: H5 admin media rejects executable MIME, cross-kind playback, oversized and coercible metadata
+ok 2 - H5 admin media rejects executable MIME, cross-kind playback, oversized and coercible metadata
+  ---
+  duration_ms: 0.204625
+  type: 'test'
+  ...
+# Subtest: H5 admin current-round urgency fails closed for zero-count active or arbitrary calendar facts
+ok 3 - H5 admin current-round urgency fails closed for zero-count active or arbitrary calendar facts
+  ---
+  duration_ms: 0.387875
+  type: 'test'
+  ...
+# Subtest: H5 admin public progress validates Shanghai local and physical timestamps together
+ok 4 - H5 admin public progress validates Shanghai local and physical timestamps together
+  ---
+  duration_ms: 0.102834
+  type: 'test'
+  ...
+# Subtest: H5 admin exact result and read-only receipt bind the original command and submitted version
+ok 5 - H5 admin exact result and read-only receipt bind the original command and submitted version
+  ---
+  duration_ms: 0.181667
+  type: 'test'
+  ...
+# Subtest: H5 admin public progress input remains a narrow separate summary and explicit nullable ETA
+ok 6 - H5 admin public progress input remains a narrow separate summary and explicit nullable ETA
+  ---
+  duration_ms: 0.385917
+  type: 'test'
+  ...
+# Subtest: H5 staff urge reminder is ticket-only and contains no report body or material identifiers
+ok 7 - H5 staff urge reminder is ticket-only and contains no report body or material identifiers
+  ---
+  duration_ms: 0.260208
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 88.435792

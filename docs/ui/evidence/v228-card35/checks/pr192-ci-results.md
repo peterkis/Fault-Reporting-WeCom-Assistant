@@ -1,4 +1,4 @@
-# PR 192 per-entry results
+# PR 192 per-entry results (historical candidate)
 
 Committed selection: 77 application entries and 7 tools. Supplement: 13 related entries. All application results use manifest `35173266a62b1981efa311577434ec87186b3550dc5b037e94e4d545d134d9de` and source input `f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a`.
 
@@ -126,4 +126,4 @@ Committed selection: 77 application entries and 7 tools. Supplement: 13 related 
 
 The original clean-HEAD CLI run guard cannot accept authorized uncommitted fixes. Each selected entry ran through its existing runSelection API, compiled host, flags and ownership checks. Database fixtures own their UUID databases; no baseline migration or global cleanup was run against shared postgres. The entire selected set was attempted, continuing after failures.
 
-[Machine-readable results](regressions.json)
+[Machine-readable historical results](../runs/21-before-linux-timing/checks/regressions.json)

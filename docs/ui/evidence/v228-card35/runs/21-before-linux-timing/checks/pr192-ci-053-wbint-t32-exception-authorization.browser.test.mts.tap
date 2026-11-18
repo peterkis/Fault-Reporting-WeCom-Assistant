@@ -1,0 +1,18 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"t32-late-and-object-loss","screenshots":[{"file":"<owned-temp>","width":900,"height":1080,"sha256":"76e0dc984338536a9ba674f2d57ecc261f1515f7485eb2cdb7e5a2f235cbce7a"},{"file":"<owned-temp>","width":900,"height":1080,"sha256":"6f45ddb7e531b96e480951346736d3a004ccf51de37c2fd8cb755d69469cbbd9"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T32 production bundle discards a delayed item response and clears only the lost object scope
+ok 1 - T32 production bundle discards a delayed item response and clears only the lost object scope
+  ---
+  duration_ms: 1652.184916
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1841.054667

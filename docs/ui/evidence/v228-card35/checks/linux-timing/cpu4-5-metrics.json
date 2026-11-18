@@ -1,0 +1,78 @@
+{
+  "fast_reads": [
+    {
+      "key": "board:pending:recent",
+      "target": 80,
+      "elapsed": 82
+    },
+    {
+      "key": "board:active:recent",
+      "target": 80,
+      "elapsed": 81.5
+    },
+    {
+      "key": "board:handled:recent",
+      "target": 80,
+      "elapsed": 81.39999985694885
+    }
+  ],
+  "minimum_visible_durations_ms": [
+    469.19999980926514
+  ],
+  "medium_reads": [
+    {
+      "key": "board:active:all",
+      "target": 400,
+      "elapsed": 494.60000014305115
+    }
+  ],
+  "initial_list_header": {
+    "before": {
+      "x": 272,
+      "y": 213,
+      "width": 1120,
+      "height": 36
+    },
+    "after": {
+      "x": 272,
+      "y": 213,
+      "width": 1120,
+      "height": 36
+    }
+  },
+  "sse_refresh": {
+    "samples": 229,
+    "elapsed": 1000.2999999523163,
+    "violations": []
+  },
+  "subgroup_geometry": [
+    {
+      "view": "board",
+      "column": "pending",
+      "before": 300,
+      "after": 300,
+      "delta": 0
+    },
+    {
+      "view": "board",
+      "column": "handled",
+      "before": 300,
+      "after": 300,
+      "delta": 0
+    },
+    {
+      "view": "list",
+      "column": "pending",
+      "before": 335,
+      "after": 335,
+      "delta": 0
+    },
+    {
+      "view": "list",
+      "column": "handled",
+      "before": 899,
+      "after": 899,
+      "delta": 0
+    }
+  ]
+}

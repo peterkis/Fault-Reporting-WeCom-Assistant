@@ -1,10 +1,22 @@
 {
   "status": "PASS",
-  "comparison": "committed 6e4a59b1",
+  "comparison": "b4fa7fb831d2a76bcf94f50455e6428d46291671",
+  "original_assert_calls": 174,
+  "current_assert_calls": 181,
+  "original_assert_calls_retained": 174,
+  "missing": [],
   "frozen_files": {
     ".gitignore": {
       "head_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d",
       "working_tree_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d"
+    },
+    "app/pc-admin/src/app/Workbench.tsx": {
+      "head_sha256": "844dc5cda5cc8055067e1be78d5c303185be613895b3754fc2daed653f4f203d",
+      "working_tree_sha256": "844dc5cda5cc8055067e1be78d5c303185be613895b3754fc2daed653f4f203d"
+    },
+    "app/pc-admin/src/app/WorkbenchDetail.tsx": {
+      "head_sha256": "f307d283c87531bab2a4fad1ff0d1162387d91e18f08156256613b02eb4524d7",
+      "working_tree_sha256": "f307d283c87531bab2a4fad1ff0d1162387d91e18f08156256613b02eb4524d7"
     },
     "app/pc-admin/src/realtime/useRealtime.ts": {
       "head_sha256": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52",
@@ -30,6 +42,7 @@
     "package.json",
     "package-lock.json"
   ],
-  "original_state_assertion_lines_retained_in_order": 97,
+  "application_javascript_unchanged": true,
+  "intentional_product_change": "WorkTable CSS reserves page and inner-table scrollbar space",
   "no_commit_push_or_branch_change": true
 }

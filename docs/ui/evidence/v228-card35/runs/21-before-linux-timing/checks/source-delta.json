@@ -1,0 +1,13 @@
+{
+  "previous_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
+  "final_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a",
+  "manifest_sha256": "35173266a62b1981efa311577434ec87186b3550dc5b037e94e4d545d134d9de",
+  "changed_application_paths": [
+    "app/pc-admin/src/app/Workbench.tsx"
+  ],
+  "changed_test_paths": [
+    "tests/pc-admin-card35a-states.browser.test.mts"
+  ],
+  "all_application_reports_share_manifest": true,
+  "application_permissions_API_fields_and_realtime_unchanged": true
+}

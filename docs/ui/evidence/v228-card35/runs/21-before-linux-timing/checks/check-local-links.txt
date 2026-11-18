@@ -1,0 +1,24 @@
+import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
+import {execFileSync,spawnSync} from 'node:child_process';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+const root=process.cwd(),require=createRequire(root+'/package.json');
+const {Marked}=require('marked'),{parseFragment}=require('parse5');
+const evidence='docs/ui/evidence/v228-card35',files=new Set();
+function walk(dir){for(const x of readdirSync(root+'/'+dir,{withFileTypes:true})){const file=dir+'/'+x.name;if(file.startsWith(evidence+'/35b/'))continue;if(x.isDirectory())walk(file);else if(file.endsWith('.md'))files.add(file);}}
+walk(evidence);
+const {createPlan}=await import(root+'/.build/tools/pr-plan.mjs');
+const plan=await createPlan(root,execFileSync('git',['merge-base','origin/main','HEAD'],{cwd:root,encoding:'utf8'}).trim(),'HEAD');
+for(const p of plan.changes.flatMap(c=>c.paths))if(p.endsWith('.md')&&existsSync(root+'/'+p)&&!p.startsWith(evidence+'/35b/'))files.add(p);
+for(const p of execFileSync('git',['diff','--name-only','HEAD'],{cwd:root,encoding:'utf8'}).trim().split('\n'))if(p.endsWith('.md')&&existsSync(root+'/'+p))files.add(p);
+const md=new Marked({gfm:true,async:false}),links=[],issues=[];
+for(const file of files){const visit=n=>{if(n.attrs){const a=n.attrs.find(a=>a.name===(n.tagName==='a'?'href':n.tagName==='img'?'src':''));if(a){const raw=a.value;if(!raw.startsWith('//')&&!/^[a-z][a-z0-9+.-]*:/i.test(raw)){const resource=decodeURIComponent(raw.split('#')[0].split('?')[0]);const target=path.relative(root,resource?path.resolve(root,path.dirname(file),resource):path.resolve(root,file));links.push({file,raw,target});if(!existsSync(root+'/'+target))issues.push({file,raw,target,code:'MISSING'});}}}for(const child of n.childNodes??[])visit(child);};visit(parseFragment(md.parse(readFileSync(root+'/'+file,'utf8'))));}
+const targets=[...new Set(links.map(l=>l.target))];
+const ignored=spawnSync('git',['check-ignore','--stdin','-z'],{cwd:root,input:targets.join('\0')+'\0',encoding:'utf8'});
+if(ignored.status!==0&&ignored.status!==1)throw Error(ignored.stderr);
+for(const p of ignored.stdout.split('\0').filter(Boolean))issues.push({target:p,code:'GITIGNORED'});
+const {checkAgentDocs}=await import(root+'/.build/tools/check-agent-docs.mjs');
+issues.push(...checkAgentDocs(root,[...files]));
+const result={documents:files.size,local_links:links.length,unique_targets:targets.length,git_check_ignore_stdout:ignored.stdout,issues};
+
+console.log(JSON.stringify(result));process.exitCode=issues.length?1:0;

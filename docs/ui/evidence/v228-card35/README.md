@@ -1,68 +1,100 @@
-# Card 35A / PR 192 修复证据
+# Card 35A / PR 192 — Linux timing correction
 
-本轮修复基于已提交的 `6e4a59b1f304eb159e00ff8c093c83581b606fdc`；PR merge-base 为 `f76fffef7c693ddcee0139b4f6f03bf59376e358`。修复保留在未提交工作区，没有 commit、push 或 PR 操作。当前制品源输入为 `f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a`。类型检查后重新构建，再对同一制品执行选中的测试。
+本轮基于审查者已提交的 `b4fa7fb831d2a76bcf94f50455e6428d46291671`。修复留在未提交工作区，没有 commit、push 或 PR 写操作。源输入 `a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5`，制品清单 `ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea`；先 typecheck，再 build，随后所有最终压力测试和应用回归使用同一制品。
 
-不改 `.gitignore`、35B 目录/脚本/基线、`features/**` 或实时恢复实现；产品方案A继续适用。用户原型保留原件：[v2.2.7 原型（含 v2.2.8 画板07）](../../prototype/医小修%20PC%20管理端%20v2.2.7%20设计原型.html)。
+环境：macOS 26.6.2 / Darwin 25.6.0、Chrome 157.0.8103.79、Node.js 24.18.0；应用截图1440×1000、DPR 1。**本轮没有 Linux 执行结果**；本机以 CDP 6x 复现原失败，以4x执行要求的完整压力序列。Linux CI 需审查者后续提交后运行。本轮未重新执行完整79入口选集，只审计其时间假设并执行下列指定检查。
 
-环境：macOS 26.6.2 / Darwin 25.6.0、Chrome 157.0.8103.79、Node.js 24.18.0；应用截图1440×1000、DPR 1。数据来自现有合成 fixtures，数据库/服务器/浏览器由各 fixture 创建并清理。共享 Postgres 与其他任务资源保持原状。
+不改 `.gitignore`、35B路径/视觉清单、`features/**`、查询键、权限、接口或实时调度实现。原型保留：[v2.2.7 原型（含画板07）](../../prototype/医小修%20PC%20管理端%20v2.2.7%20设计原型.html)。
 
-## 本轮问题与修复
+## 两个 CI 失败的根因
 
-| 审查项 | 修复与验证 |
-| --- | --- |
-| CI 链接 | 48份被忽略的 `.log` 原件改名为 `.txt`，字节保持不变；根报告与归档报告改用新路径。两个移动后的归档 README 的原型/设计系统路径修正。未改忽略规则。工作区脚本检查目标存在、锚点及 gitignore，另执行现有文档/计划检查。 |
-| 本地筛选分页 | 整区 filtered 空态只在所有相关查询均无下一页时显示。还有页时看板/列表保留 compact 空提示及原下一页控件；可加载后续匹配项。新增用例分别覆盖两个视图的有下一页和已耗尽情况，清除筛选仍恢复内容。 |
-| 空已处理列 | 不再以 loaded.length 跳过原 processedGroups。保留原 BoardDropColumn、`.ds-completed-drop-zone` 和组选择器；空提示置于完成拖放区，已关闭仍在外部。真实指针拖入后打开原完成表单，POST为0，事项版本不变。 |
-| 完整 CI | 从已提交 HEAD 计算原计划：77个应用入口、7个工具入口，数据库 lane，要求 Chrome/PyYAML/ffmpeg。通过既有 runSelection API 执行工作区制品，保留逐入口结果，避免 clean-HEAD CLI 拒绝未提交修复。未调整选择策略或断言。 |
-
-初始链接检查同时发现21个被忽略目标和4处缺失导航；两个浏览器回归均先在旧应用上失败，再在修复后通过。最初分页测试夹具缺少报修表，改用现有 follow-enabled fixture profile 后明确复现分页问题。失败原件与前后验证记录保留在[本轮复现记录](runs/20-pr192-reproduction/README.md)。
-
-## 改动与删除
-
-- 本轮应用改动只有 Workbench.tsx 的空态/分组呈现；复用既有查询、分页、拖拽和完成表单，没有更改业务规则、权限或接口字段。
-- 35A新增两个浏览器回归，沿现有测试注册，无删除选择器或放宽几何/业务断言。设计系统[状态章](../../design-system.md#状态v228--卡35a)补充分页与空完成靶区规则。
-- 本轮删除的是吞掉下一页入口的空态条件、跳过空完成靶区的条件，以及被忽略的日志路径写法；日志内容保留为txt。
-- 原35A删除清单继续保留：静态启动占位、BoardColumnLoading/DelayedWorkbenchLoading、旧 startup-column/line/short/card/heading-p 样式、旧详情 Message/confirmed-facts 占位、区块转圈、散装 `.empty`、More.error/读取未完成span/title/空More footer、闲置 `.ds-list-feedback .state-message` 和重复内边框。仍在用的选择器及行内转圈保留。
-
-## A1–A4 逐条复核
-
-交付前再次逐条核对A1–A4。A1组件/延迟/刷新/空/错误/连接/只读、A2接入和A3状态规范均已实现；A1.1未知空首组和A1.7原合同差异没有被本轮修复掩盖，列入下表及Open questions。
-
-| 验收项 | 结果 | 证据范围 |
+| 失败 | 分类与证据 | 修复 |
 | --- | --- | --- |
-| A4.1 时间 | PASS | 80ms无骨架/busy；400ms呈现至少300ms；9s慢读/重试。 |
-| A4.2 零位移 | FAIL（未知空首组） | 六个默认/已知折叠分组位置0px，列头/表头/工具栏及详情原≤1px断言保留。未知成员分布仍有55px/43px反例，见Q1。 |
-| A4.3 刷新 | PASS | 看板、列表、抽屉保留旧内容及data-refreshing，不闪骨架。 |
-| A4.4 空 | PASS | 三尺寸、清除筛选、抽屉无空区块；新增分页可达性及耗尽后空态断言。 |
-| A4.5 错误 | PASS | 有/无旧内容、重试、复制诊断及页面无诊断文本；无散装读取未完成。 |
-| A4.6 连接 | PASS | 离线/读取失败1s/3s/8s→停止→陈旧→刷新；恢复2s收起；主区32px占位。仅流不可用且读取成功持续5秒恢复、无断开/陈旧条，容量协议原断言保留。 |
-| A4.7 只读 | FAIL（原合同偏差） | 五原因场景、唯一条、原动作、可聚焦tooltip、仍可用操作及实时收起通过；内部备注UNKNOWN无独立安全核对入口，见Q3。 |
-| A4.8 无障碍 | PASS | status/busy/aria-disabled、焦点/tooltip及减少动效。 |
-| A4.9 截图 | PASS | 16张必需应用图、健康重读图、4张本轮回归图、画板07及四段裁片；[尺寸/哈希](screenshots.json)。 |
-| A4.10 检查 | PASS（本卡要求） | 类型/样式/构建/文案/35A及工作台抽屉回归均通过。完整CI另保留SS009已知失败，不标为全绿。 |
+| 80ms no busy / no skeleton | **测试问题**。旧包装先等待真实GET/DB，再补足目标时间；总耗时是至少80ms，不能保证小于150ms。6x加220ms读取延迟复现同一断言失败。最初只缓存仍有响应计时器被首个结果的渲染拖到161.6ms的问题。 | 在计时前预取获权合成fixture响应正文；计时段不访问服务端。并发响应在一个任务中一起释放，避免首个结果渲染阻塞其他计时器。预热布局后通过浏览器导航到新查询键（无旧数据），每次读取实测必须80≤耗时<150ms；保留原全局无busy/无骨架、显示后≥300ms与9s断言。 |
+| SSE refresh retains drawer body | **测试问题**。6x失败时正文是同一节点、没有DetailSkeleton；残余两块骨架属于上一张/下一张导航后尚未完成的初次附件读取。旧人工延迟匹配所有items子路径，连附件也一起延后。 | 用显式门闩复现初次附件加载并确认它局部呈现；完成后才触发SSE。人工慢读只匹配详情GET。整个≥1s刷新期间以MutationObserver和逐帧采样断言正文/视图同一节点、无任何抽屉骨架、data-refreshing时60%透明；保留原瞬时断言及SSE驱动收起。 |
 
-## 检查命令与结果
+原失败输出、DOM定位、探索期失败及排除的中间候选保留在[复现历史](runs/22-linux-reproduction/README.md)。产品检查确认 `WorkbenchDetail` 的查询键稳定，延迟加载条件为 `isPending && !data`；本轮没有修改产品JavaScript或添加placeholderData。恢复成功GET与原生live是两个时点，原顶栏live断言现等待live后检查，原恢复条2秒断言保留。
 
-完整选集与补充入口结果：[逐入口报告](checks/pr192-ci-results.md)、[机器回执](checks/regressions.json)。应用选集76/77入口通过（546/548例）；工具7/7入口、138/138例；补充回归13/13入口、26/26例。合计97入口中96通过，712例中710通过、2例失败，0跳过/取消。唯一最终失败入口为用户事先指出的SS009，实际失败没有隐藏。所有应用入口与重跑均核对为同一制品。
+## 压力测试额外发现的产品缺陷
 
-| 命令/检查 | 当前结果 | 记录 |
+原≤1px断言又捕获表头宽度1136→1120（**16px**）。列表由5行骨架变为更高的实际内容时，页面及表格各出现8px滚动条；不是计时阈值问题。
+
+仅在 `:root:has(.ds-list-toolbar)` 固定页面滚动条占位，在 `.ds-work-table-wrap` 使用稳定内滚动条空间。独立重现验证表头x/y/width/height完全一致（272/213/1120/36，**0px**），并新增全表加载→实际内容的几何断言。没有放宽原阈值。[修复前/中间/修复后的测量](runs/22-linux-reproduction/README.md#product-scrollbar-regression)。[状态规范](../../design-system.md#状态v228--卡35a)补充列表滚动条规则。
+
+## 最终完整文件压力序列
+
+[逐轮TAP、逐例状态、实测时间与几何](checks/linux-timing/README.md)，[统一候选身份](checks/linux-timing/matrix.json)。两条序列同时运行，各自连续执行5次完整9例文件，均未跳过/取消；每轮6个浏览器实例都记录了实际CDP配置。
+
+| 次数 | 正常1x | CPU 4x |
+| --- | --- | --- |
+| 1 | PASS 9/9 | PASS 9/9 |
+| 2 | PASS 9/9 | PASS 9/9 |
+| 3 | PASS 9/9 | PASS 9/9 |
+| 4 | PASS 9/9 | PASS 9/9 |
+| 5 | PASS 9/9 | PASS 9/9 |
+
+十轮[汇总实测](checks/linux-timing/aggregate-metrics.json)：快速读取80.3–82.2ms；400ms用例骨架最短可见302.8ms；慢速SSE读取1000.1–1001.2ms，每轮74–323次DOM/逐帧采样，违反次数为0。
+
+合计**10个完整文件、90/90例通过**。所有快速读取实际完成时间<150ms；400ms用例的骨架可见时间≥300ms；每轮慢速SSE刷新无正文替换、无骨架、透明度断言无违反。中间探索失败没有计入这10次，也没有删除其证据。
+
+复跑入口（先在repo根按上表构建；设置本机fixture数据库与隔离参数）：
+
+```sh
+cd .build/runtime
+CARD35A_CPU_RATE=4 CARD35A_EVIDENCE_DIR=<owned-evidence-directory> node --test --test-concurrency=1 tests/pc-admin-card35a-states.browser.test.mjs
+# 正常速度使用 CARD35A_CPU_RATE=1；各自连续执行5次。
+```
+
+执行环境设置 `PILOT_DATABASE_URL` 为用户指定的本地Postgres、`TS_MIGRATION_TEST_DB_ISOLATED=1`、`TS_MIGRATION_REQUIRE_BROWSER=1`，并使用真实路径TMPDIR避免媒体端口的符号链接守卫。每个fixture创建/清理自有UUID数据库、Chrome profile和loopback服务；共享postgres及其他任务资源未改动。
+
+## 检查命令与逐入口结果
+
+[当前机器回执](checks/regressions.json)；下列6个相关入口合计**88/88例通过**，与压力矩阵同一构建。
+
+| 命令 / 入口 | 结果 | 输出 |
 | --- | --- | --- |
 | `npm run migration:typecheck` | PASS | [typecheck](checks/typecheck.txt) |
-| `npm run migration:build` | PASS；staged未启用 | [build](checks/build.txt) |
+| `npm run migration:build` | PASS，未激活部署 | [build](checks/build.txt) |
 | `npm --prefix app/pc-admin run lint:css` | PASS | [Stylelint](checks/stylelint.txt) |
 | `npm --prefix app/pc-admin run lint:features` | PASS | [ESLint](checks/eslint.txt) |
-| `pr-plan --base <merge-base> --head HEAD --check-docs` | PASS，原计划77应用+7工具 | [原计划](checks/pr192-plan.json) |
-| `node --input-type=module < docs/ui/evidence/v228-card35/checks/check-local-links.txt` | PASS；目标存在且git check-ignore无输出 | [可重运行脚本](checks/check-local-links.txt)、[检查回执](checks/local-links.json) |
-| 原选集：copy-terms、35A、protocol、toast-feedback、detail-restructure | PASS：6/6、9/9、2/2、1/1、2/2 | [逐入口报告](checks/pr192-ci-results.md)、[35A TAP](checks/states-browser.txt) |
-| 完整CI原选集 | 应用76/77、工具7/7入口通过；SS009两例已知失败 | [逐入口报告](checks/pr192-ci-results.md) |
-| 补充card32/34、t38工作台相关入口 | PASS，13入口/26例 | [逐入口报告](checks/pr192-ci-results.md) |
-| 现有文档检查、工具测试、制品校验、git diff --check | PASS；工具138/138，包含文档20/20 | [文档检查](checks/agent-docs.txt)、[文档测试](checks/agent-docs-tests.txt)、[制品](checks/artifact-proof.json) |
+| `tests/pc-admin-copy-terms.test.mts` | PASS 6/6 | [TAP](checks/linux-regression-01-pc-admin-copy-terms.test.mts.tap) |
+| `tests/workbench-toast-feedback.browser.test.mts` | PASS 1/1 | [TAP](checks/linux-regression-02-workbench-toast-feedback.browser.test.mts.tap) |
+| `tests/workbench-detail-restructure.browser.test.mts` | PASS 2/2 | [TAP](checks/linux-regression-03-workbench-detail-restructure.browser.test.mts.tap) |
+| `tests/wbint-t38-protocol.browser.test.mts` | PASS 2/2 | [TAP](checks/linux-regression-04-wbint-t38-protocol.browser.test.mts.tap) |
+| `tests/yxx-ss-009-http-recovery.integration.test.mjs` | PASS 2/2，审查者的HEAD修复已验证 | [TAP](checks/linux-regression-05-yxx-ss-009-http-recovery.integration.test.mjs.tap) |
+| `tests/pc-admin-design-foundation.test.mts` | PASS 75/75 | [TAP](checks/linux-regression-06-pc-admin-design-foundation.test.mts.tap) |
+| `node .build/tools/check-agent-docs.mjs` | PASS | [文档](checks/agent-docs.txt) |
+| `node --test .build/tools/check-agent-docs.test.mjs` | PASS 20/20 | [工具测试](checks/agent-docs-tests.txt) |
+| `node .build/tools/verify-artifact.mjs` | PASS | [制品身份](checks/artifact-proof.json) |
+| `pr-plan --base <merge-base> --head HEAD --check-docs` | PASS，当前HEAD选79应用+7工具；未重跑全选集 | [当前计划](checks/linux-plan.json) |
+| 全部本地Markdown链接与gitignore | PASS，所有目标存在且git check-ignore无输出 | [检查回执](checks/local-links.json)、[可复跑脚本](checks/check-local-links.txt) |
+| `git diff --check` | PASS | [范围/原断言保护](checks/frozen-inputs.json) |
 
-两项初始媒体失败已修复环境：Homebrew命令路径是符号链接，现有端口拒绝这类路径；改用解析后的真实ffmpeg/ffprobe可执行文件，仅重跑失败入口，H5 flow 1/1、H5 media 14/14通过。不改校验、测试断言或应用代码。初始失败TAP保留在[复现记录](runs/20-pr192-reproduction/README.md)。
+时间假设审计：对当前HEAD计划的79应用+7工具入口以及tests/helpers执行80/150模式搜索。除本文件外，仅有字符串截断、PNG字节和一个等待自有数据库连接结束的150ms清理测试；没有第二处“真实读取必须80ms内完成”的加载假设。[逐命中分类](checks/timing-audit.json)。此结论针对所要求模式及现有helpers，不等于已经重新运行全部入口。
 
-产品方案A：真实离线/获权业务读取失败才使用有限预算；仅实时流不可用且完整GET成功，原单调度器持续5秒重读，预算清零、不显示断开/陈旧条。有空位后回到live。没有新增轮询器，人工REST、READ/UNKNOWN终检不变。
+## A1–A4 逐条复核与删除清单
+
+交付前重新逐行核对A1–A4；A1组件/延迟/刷新/空/错误/连接/只读、A2接入和A3状态规范实现保持。原业务合同偏差如实保留，未因本次CI修复改成PASS。
+
+| 验收项 | 结果 | 本轮证据 |
+| --- | --- | --- |
+| A4.1 时间 | PASS | 10轮完整文件，实测80ms读取<150ms且全程无骨架/busy，400ms至少300ms，9s慢读。 |
+| A4.2 零位移 | FAIL（原未知空首组偏差保留） | 已知分组/列头/表头/工具栏原≤1px断言全保留；本轮额外修复滚动条16px偏移，独立与全表测量0px；未知成员55px/43px仍见Q1。 |
+| A4.3 刷新 | PASS | 原看板/列表断言；新增≥1s抽屉SSE全程节点身份/无骨架/60%监测。 |
+| A4.4 空 | PASS | 三尺寸、清除筛选、无空抽屉区块、分页有/无下一页，全部10轮通过。 |
+| A4.5 错误 | PASS | 有/无旧内容、重试、剪贴板诊断且正文不可见；10轮通过。 |
+| A4.6 连接 | PASS | 真实断网/失败读有限预算、2s恢复、32px占位；流不可用健康读取原5s方案与t38协议通过。 |
+| A4.7 只读 | FAIL（原UNKNOWN合同偏差保留） | 原五原因/唯一条/禁用tooltip/仍可用操作与SSE收起10轮通过；独立只读核对入口仍缺，见Q3。 |
+| A4.8 无障碍 | PASS | 原status/busy/aria-disabled/reduced-motion断言全部保留并通过。 |
+| A4.9 截图 | PASS | 最后一次正常速度完整文件重新生成21张应用图+5张参考图，[尺寸/哈希](screenshots.json)，下表并排。 |
+| A4.10 检查 | PASS（本轮指定范围） | 类型/构建/样式/35A十轮及6个相关入口全部通过；Linux本机执行与完整79入口重跑为NOT_RUN。 |
+
+本轮删除旧的“计时段等待真实服务器后补延迟”测试实现及过宽附件延迟匹配；未删除选择器、断言或业务流程。[AST核对](checks/frozen-inputs.json)：原174个assert调用全部保留，现181个。应用JavaScript与实时实现保持原字节，本轮产品改动仅WorkTable CSS。
+
+原35A删除清单仍适用：静态启动占位、BoardColumnLoading/DelayedWorkbenchLoading、旧 startup-column/line/short/card/heading-p 样式、旧详情 Message/confirmed-facts 占位、区块转圈、散装 `.empty`、More.error/读取未完成span/title/空More footer、闲置 `.ds-list-feedback .state-message` 和重复内边框；仍用选择器及行内转圈保留。PR192原日志改名与两项业务修复已在HEAD，不被本轮重新计作新改动。
 
 ## 与画板07并排
+
 
 [完整画板07](artboard-07.png)。原型裁片由浏览器导出；参考图中文字体使用系统回退，不作为像素级字体基线，原件没有修改。
 
@@ -80,12 +112,9 @@
 3. **UNKNOWN**：有效内部备注只有同操作“重新提交”，无独立只读“重新确认”。保留原重放和导航栅栏；不将写入包装成核对。仍获准的备注/协作/关注能力不因展示条撤销。
 4. **诊断与圆角**：服务端无请求编号时，本地引用明确标记来源；不复制正文/凭据/查询串。原sm=6px，骨架沿xs=4px，不改全站圆角。
 5. **35B/35C**：不改35B目录、视觉清单或基线。visual:compare及状态manifest追加仍等35B合并；其余feature状态统一属于35C。
-6. **完整CI的已知失败**：`tests/yxx-ss-009-http-recovery.integration.test.mjs` 0/2，表现为等待工单超时，以及预期404实际503。与该文件相同的初始化器在独立自有库中确实没有 `pilot_ticket.closure_record`，查询错误为42P01；[观察回执](runs/20-pr192-reproduction/ss009-schema-probe.txt)。符合用户事先说明的main既有问题，由PR191修复，本轮未改测试、初始化器或迁移。其他已执行入口最终通过；card12-review本轮7/7通过。
 
 ## 历史与资源
 
-[上轮方案A完整证据](runs/19-before-pr192/README.md)保留原候选身份和结果；更早记录仍在runs目录。两份移动的历史README仅修复导航及日志扩展名，未把旧结果绑定到本轮候选。全部日志字节的改名映射随本轮记录保存。
+[本轮开始前的完整快照](runs/21-before-linux-timing/README.md)保存旧报告、图片和原77入口选集结果；[原完整CI逐入口表](checks/pr192-ci-results.md)明确是旧候选，不能归给本轮。旧SS009失败已由审查者在当前HEAD修好，本轮2/2通过；历史失败未删。更早方案A、PR192复现及15/17归档均保留原身份。
 
-[保护路径及断言核对](checks/frozen-inputs.json)确认原型、实时实现、`.gitignore`、35B和其他feature路径保持不变，35A原断言行全部保留。新的txt证据文件均未被忽略，应与源码修复一同纳入审查者的后续提交。
-
-本轮测试只创建/清理自有UUID数据库、loopback服务、Chrome profile和连接。没有对共享postgres执行基线迁移或清理其他数据库。未提交的源码可按差异回退；用户原型与历史失败原件保留。
+[本次复现与中间失败](runs/22-linux-reproduction/README.md)与[最终十轮矩阵](checks/linux-timing/README.md)分开记录。证据仅使用不被忽略的txt/tap/json，所有MD本地链接检查覆盖归档；35B路径保持未改。没有提交、推送、部署、清理他人资源或迁移共享postgres。

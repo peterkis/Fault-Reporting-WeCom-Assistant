@@ -1,0 +1,140 @@
+TAP version 13
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 18 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/index.html                          0.30 kB │ gzip:  0.22 kB
+# .build/emit/h5/.vite/manifest.json                 0.41 kB │ gzip:  0.21 kB
+# .build/emit/h5/assets/index-BbRmaI7S.css           4.26 kB │ gzip:  1.44 kB
+# .build/emit/h5/assets/bridge.native-ryokJVMg.js    0.08 kB │ gzip:  0.09 kB
+# .build/emit/h5/assets/index-C7yTsEs4.js          220.96 kB │ gzip: 69.15 kB
+# ✓ built in 59ms
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 18 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/index.html                          0.30 kB │ gzip:  0.22 kB
+# .build/emit/h5/.vite/manifest.json                 0.41 kB │ gzip:  0.21 kB
+# .build/emit/h5/assets/index-BbRmaI7S.css           4.26 kB │ gzip:  1.44 kB
+# .build/emit/h5/assets/bridge.native-ryokJVMg.js    0.08 kB │ gzip:  0.09 kB
+# .build/emit/h5/assets/index-C7yTsEs4.js          220.96 kB │ gzip: 69.15 kB
+# ✓ built in 54ms
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 19 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/assets/logo-D8tK5WRJ.svg            0.09 kB │ gzip:  0.10 kB
+# .build/emit/h5/index.html                          0.30 kB │ gzip:  0.22 kB
+# .build/emit/h5/.vite/manifest.json                 0.56 kB │ gzip:  0.24 kB
+# .build/emit/h5/assets/index-Di020akx.css           0.03 kB │ gzip:  0.05 kB
+# .build/emit/h5/assets/bridge.native-ryokJVMg.js    0.08 kB │ gzip:  0.09 kB
+# .build/emit/h5/assets/index-3gQTocEU.js          221.03 kB │ gzip: 69.19 kB
+# ✓ built in 54ms
+# app/h5/src/screen.tsx(1,32): error TS2322: 
+# Type 'string' is not assignable to type 'number'.
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 24 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# .build/emit/h5/index.html                             0.37 kB │ gzip:  0.24 kB
+# .build/emit/h5/.vite/manifest.json                    0.48 kB │ gzip:  0.23 kB
+# .build/emit/h5/assets/prepaint-88e07a0272a4d194.js    0.67 kB
+# .build/emit/h5/assets/index-Di020akx.css              0.03 kB │ gzip:  0.05 kB
+# .build/emit/h5/assets/bridge.native-ryokJVMg.js       0.08 kB │ gzip:  0.09 kB
+# .build/emit/h5/assets/index-CHbe0a3s.js             240.44 kB │ gzip: 76.52 kB
+# ✓ built in 102ms
+# Subtest: media test tools are explicit, absolute and forwarded only to registered consumers
+ok 1 - media test tools are explicit, absolute and forwarded only to registered consumers
+  ---
+  duration_ms: 0.542833
+  type: 'test'
+  ...
+# Subtest: H5 Tailwind scanning uses production sources and ignores design and DEV changes
+ok 2 - H5 Tailwind scanning uses production sources and ignores design and DEV changes
+  ---
+  duration_ms: 2010.867792
+  type: 'test'
+  ...
+# Subtest: H5 release inputs, strict React sources, and controlled Vite assets share the formal artifact
+    # Subtest: source identity includes production TSX/styles/assets/config/dependencies and excludes design/preview originals
+    ok 1 - source identity includes production TSX/styles/assets/config/dependencies and excludes design/preview originals
+      ---
+      duration_ms: 93.1315
+      type: 'test'
+      ...
+    # Subtest: a real production Vite build stages hashed scripts/styles and same-origin image assets without preview code
+    ok 2 - a real production Vite build stages hashed scripts/styles and same-origin image assets without preview code
+      ---
+      duration_ms: 1859.647709
+      type: 'test'
+      ...
+    # Subtest: source or staged H5 asset drift is rejected by the existing artifact verifier
+    ok 3 - source or staged H5 asset drift is rejected by the existing artifact verifier
+      ---
+      duration_ms: 714.815917
+      type: 'test'
+      ...
+    # Subtest: out-of-scope production TSX fails even when the narrowed program compiles
+    ok 4 - out-of-scope production TSX fails even when the narrowed program compiles
+      ---
+      duration_ms: 118.152584
+      type: 'test'
+      ...
+    # Subtest: TSX type errors, disabled strictness, and dependency drift fail before release emission
+    ok 5 - TSX type errors, disabled strictness, and dependency drift fail before release emission
+      ---
+      duration_ms: 55.967125
+      type: 'test'
+      ...
+    # Subtest: manifest path traversal, hidden documents, development chunks, and orphan scripts cannot enter runtime mappings
+    ok 6 - manifest path traversal, hidden documents, development chunks, and orphan scripts cannot enter runtime mappings
+      ---
+      duration_ms: 1036.908625
+      type: 'test'
+      ...
+    # Subtest: public files are limited to declared image/font assets with original bytes
+    ok 7 - public files are limited to declared image/font assets with original bytes
+      ---
+      duration_ms: 3.63075
+      type: 'test'
+      ...
+    # Subtest: compressed sidecars and startup dependency costs remain verified artifact outputs
+    ok 8 - compressed sidecars and startup dependency costs remain verified artifact outputs
+      ---
+      duration_ms: 948.328
+      type: 'test'
+      ...
+    1..8
+ok 3 - H5 release inputs, strict React sources, and controlled Vite assets share the formal artifact
+  ---
+  duration_ms: 4858.933417
+  type: 'test'
+  ...
+# Subtest: startup metrics count all initial and route imports once, including the standalone theme script
+ok 4 - startup metrics count all initial and route imports once, including the standalone theme script
+  ---
+  duration_ms: 3.396833
+  type: 'test'
+  ...
+# Subtest: actual theme build emits one small synchronous hashed script and a deferred application module
+ok 5 - actual theme build emits one small synchronous hashed script and a deferred application module
+  ---
+  duration_ms: 1243.551292
+  type: 'test'
+  ...
+1..5
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8246.911041

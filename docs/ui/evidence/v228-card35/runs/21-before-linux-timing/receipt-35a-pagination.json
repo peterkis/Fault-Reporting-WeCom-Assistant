@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "metrics": [
+    {
+      "view": "board",
+      "exhausted": false,
+      "nextPageReachable": true
+    },
+    {
+      "view": "board",
+      "exhausted": true,
+      "nextPageReachable": false
+    },
+    {
+      "view": "list",
+      "exhausted": false,
+      "nextPageReachable": true
+    },
+    {
+      "view": "list",
+      "exhausted": true,
+      "nextPageReachable": false
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,23 @@
+{
+  "before": {
+    "x": 272,
+    "y": 213,
+    "width": 1136,
+    "height": 36,
+    "viewport": 1440,
+    "client": 1440,
+    "bodyHeight": 1000,
+    "gutter": "auto"
+  },
+  "after": {
+    "x": 272,
+    "y": 213,
+    "width": 1120,
+    "height": 36,
+    "viewport": 1440,
+    "client": 1432,
+    "bodyHeight": 1021,
+    "gutter": "auto"
+  },
+  "widthDelta": -16
+}

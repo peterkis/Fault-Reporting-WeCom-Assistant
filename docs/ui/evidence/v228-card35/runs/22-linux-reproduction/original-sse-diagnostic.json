@@ -1,0 +1,21 @@
+{
+  "status": "FAIL",
+  "cpu_rate": 6,
+  "metrics": {
+    "bodySame": true,
+    "skeletons": [
+      {
+        "parent": "ds-block-skeleton",
+        "region": "<div role=\"status\" aria-busy=\"true\" aria-label=\"正在加载报修资料…\" class=\"ds-loading-status \" data-loading-status=\"true\"><span class=\"sr-only\">正在加载报修资料…</span><div class=\"ds-block-skeleton\"><span aria-hidden=\"true\" data-skeleton=\"true\" class=\"ds-skeleton \" style=\"--skeleton-w: 65%; --skeleton-h: var(--lh-xs); --radius-skeleton-block: var(--radius-skeleton);\"></span><span aria-hidden=\"true\" data-skeleton=\"true\" class=\"ds-skeleton \" style=\"--skeleton-w: 85%; --skeleton-h: var(--lh-xs); --radius-skeleton-block: var(--radius-skeleton);\"></span></div></div>",
+        "section": "attachment-section detail-attachments"
+      },
+      {
+        "parent": "ds-block-skeleton",
+        "region": "<div role=\"status\" aria-busy=\"true\" aria-label=\"正在加载报修资料…\" class=\"ds-loading-status \" data-loading-status=\"true\"><span class=\"sr-only\">正在加载报修资料…</span><div class=\"ds-block-skeleton\"><span aria-hidden=\"true\" data-skeleton=\"true\" class=\"ds-skeleton \" style=\"--skeleton-w: 65%; --skeleton-h: var(--lh-xs); --radius-skeleton-block: var(--radius-skeleton);\"></span><span aria-hidden=\"true\" data-skeleton=\"true\" class=\"ds-skeleton \" style=\"--skeleton-w: 85%; --skeleton-h: var(--lh-xs); --radius-skeleton-block: var(--radius-skeleton);\"></span></div></div>",
+        "section": "attachment-section detail-attachments"
+      }
+    ],
+    "fullSkeleton": false
+  },
+  "error": "SSE refresh retains the drawer body\n\ntrue !== false\n"
+}

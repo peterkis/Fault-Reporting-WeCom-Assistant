@@ -1,0 +1,39 @@
+TAP version 13
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T19 legal non-default groups require actual current membership even for an administrator, and replay cannot change a group or cross the ordinary admission action
+ok 1 - T19 legal non-default groups require actual current membership even for an administrator, and replay cannot change a group or cross the ordinary admission action
+  ---
+  duration_ms: 659.595458
+  type: 'test'
+  ...
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T19 a start failure rolls back the whole admission and responsibility while an explicit ordinary report may still enter Review
+ok 2 - T19 a start failure rolls back the whole admission and responsibility while an explicit ordinary report may still enter Review
+  ---
+  duration_ms: 672.444084
+  type: 'test'
+  ...
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T19 concurrent original POSTs return one admission, and unknown receipt lookup never writes or changes an ordinary report
+ok 3 - T19 concurrent original POSTs return one admission, and unknown receipt lookup never writes or changes an ordinary report
+  ---
+  duration_ms: 639.240417
+  type: 'test'
+  ...
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":15,"inserted":15,"replayed":0,"channel_failures":0,"other_stream_failures":3}
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":2,"inserted":2,"replayed":0,"channel_failures":0,"other_stream_failures":0}
+# Subtest: T19 both original feature dependencies and schema 039 must be ready before context or compound admission
+ok 4 - T19 both original feature dependencies and schema 039 must be ready before context or compound admission
+  ---
+  duration_ms: 1668.052542
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3818.234667

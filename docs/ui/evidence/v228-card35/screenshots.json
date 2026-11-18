@@ -6,8 +6,8 @@
   "dpr": 1,
   "os": "macOS 26.6.2 / Darwin 25.6.0",
   "browser": "Chrome/157.0.8103.79",
-  "manifest_sha256": "35173266a62b1981efa311577434ec87186b3550dc5b037e94e4d545d134d9de",
-  "source_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a",
+  "manifest_sha256": "ed280a9f00577b0aa35887b9ec13a4fcf6e4c15cef6258c14298a9947d6abcea",
+  "source_input_hash": "a2f1f1fca266d8af3d1a857669a99dfc7b1bec0e8cc0d65687c8752b56cdcca5",
   "screenshots": [
     {
       "file": "artboard-07-empty.png",
@@ -55,61 +55,61 @@
       "file": "board-refreshing.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "afa512890cea6c777309d8115d385ff76fe4ae4fda70ed258b3ee36786c115cc"
+      "sha256": "d693e147e418d6fcdc4bf6b8a062403b2e0e08ccac2995182b34bc58ed22803b"
     },
     {
       "file": "board-stale-retry.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "56add4a3c9256551ba50a1c7ae5a6695b0649b260596cb9fae3a1205b1cc851a"
+      "sha256": "e6eec0a87d8f5abfc67bc7cdfab6e085cb2aa53e3887e43de601fda3995ebfe1"
     },
     {
       "file": "connection-offline.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "999e58b47da80bd15ff483158426d3260f9dcf39980aa2d2e3c26cf9cafdca45"
+      "sha256": "1a5473b2c186b8f317dcca92fe46f328a06f058b340c0921d64a9674ff6a0cfa"
     },
     {
       "file": "connection-polling-healthy.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "e1e6c667e3b016f5533a075e50bf021a44f7fccd4a2f0c01fa3facd882967698"
+      "sha256": "8dc701659dfd6d9354895fb296e0a5fe50ba174359f90648f23985c9473850ea"
     },
     {
       "file": "connection-stale.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "ce978cbf67cfb091d92e8b4505e22091420a44a25f7f951026a06fb022b9ad38"
+      "sha256": "6df95dcf88e3930c8213f6537cc9e876e934e658f1f2f2c49ef3a04a747b3cf0"
     },
     {
       "file": "drawer-loading.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "30b2e6e68563cbad1ddc569ca63bf55ba3943e5dcd055120219a8907c432116c"
+      "sha256": "31bb9ddddba90fc19781bccdb164f8a04be42eda1295f1bc088697912f35f3ac"
     },
     {
       "file": "drawer-readonly-assigned.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "39dc971ad98979293c28c07246b7dee203c0a2fce4622f7a414b48678e7854e9"
+      "sha256": "14148443cdb56a59d6beb286bbdab0a6dbe8ead8dda2645c19b1b66f4d286c5c"
     },
     {
       "file": "drawer-readonly-completed.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "74cbad7c79731dac86dfc396239d99da9a5093eafebf4d09c044a4ccf2961b07"
+      "sha256": "3f922ccbadfc0f6c18f24d071bed079b38bfd846adf2f1640ffda667d9b5c844"
     },
     {
       "file": "drawer-readonly-dismissed.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "77ec76de209d3e73a348ad3006fe0bd9df3b501b1b51e4db861fcc5815b582e4"
+      "sha256": "1d4735a1cf644ee389569c7699218c02c81aa7f22955272bf65cb6e7ed5929d9"
     },
     {
       "file": "drawer-readonly-pending.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "d2b8c2d714e9222fa90f04c05a2c5f0536e8416570c828f84efaccbe7c79885a"
+      "sha256": "a2eee664373f12b64725361cb520905adb0c00dcf47e91b4a144075979b0ea31"
     },
     {
       "file": "drawer-readonly-permission.png",
@@ -121,7 +121,7 @@
       "file": "empty-handled-completion-form.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "1d05d7c8e25bda965f89c91b2b522f6e916186898aa518419560f46a95913dd2"
+      "sha256": "65539c581b436eda31fc7ba4cd30a5a50fc142e40ed289cedd3e4521304c8342"
     },
     {
       "file": "empty-handled-drop-target.png",
@@ -139,7 +139,7 @@
       "file": "filtered-pagination-list.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "827ae37f2e2f0d3d254c4bdea861c0e462fe73b63274a7a5f76964ea59f47337"
+      "sha256": "5ffeb3f4ee94001a6ef3d804c40703ff0d7f41f1e545485391ab7dbc80fa3501"
     },
     {
       "file": "intake-cleared.png",
@@ -151,13 +151,13 @@
       "file": "list-loading.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "ff126d2f720ecdc80e68c489ad6680704fd2c542bdd4f24700a236d6883d2012"
+      "sha256": "5b37f154f79d1c8cbc0b13f16a9227c8e3846abbb8e6775c0db53104aa2cc8a4"
     },
     {
       "file": "readonly-disabled-tooltip.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "511fab40ff3d5480b0ba8dbfa38e7aa7a388ac4393e198c02ad7962eae338641"
+      "sha256": "c82171356021e825bbaa5d824d5dd35acc7b3e5932089db46ee1f0e8afc1f8b3"
     },
     {
       "file": "workbench-error-page.png",

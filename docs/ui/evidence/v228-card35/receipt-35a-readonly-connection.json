@@ -21,17 +21,23 @@
       "outerBottom": "1px",
       "emptyDividers": 0
     },
+    "sseRefresh": {
+      "samples": 323,
+      "elapsed": 1001.2000000476837,
+      "violations": []
+    },
+    "cpuRate": 1,
     "retries": {
-      "initialFailedRead": 14797.399999856949,
+      "initialFailedRead": 16194.700000047684,
       "retryReads": [
-        15814.799999952316,
-        18816.200000047684,
-        26818.299999952316
+        17204.400000095367,
+        20205.5,
+        28207.400000095367
       ],
       "intervals": [
-        1017.4000000953674,
-        3001.4000000953674,
-        8002.099999904633
+        1009.7000000476837,
+        3001.0999999046326,
+        8001.900000095367
       ]
     },
     "browser": {
@@ -48,43 +54,43 @@
       "file": "drawer-readonly-assigned.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "39dc971ad98979293c28c07246b7dee203c0a2fce4622f7a414b48678e7854e9"
+      "sha256": "14148443cdb56a59d6beb286bbdab0a6dbe8ead8dda2645c19b1b66f4d286c5c"
     },
     {
       "file": "readonly-disabled-tooltip.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "511fab40ff3d5480b0ba8dbfa38e7aa7a388ac4393e198c02ad7962eae338641"
+      "sha256": "c82171356021e825bbaa5d824d5dd35acc7b3e5932089db46ee1f0e8afc1f8b3"
     },
     {
       "file": "connection-offline.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "999e58b47da80bd15ff483158426d3260f9dcf39980aa2d2e3c26cf9cafdca45"
+      "sha256": "1a5473b2c186b8f317dcca92fe46f328a06f058b340c0921d64a9674ff6a0cfa"
     },
     {
       "file": "connection-stale.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "ce978cbf67cfb091d92e8b4505e22091420a44a25f7f951026a06fb022b9ad38"
+      "sha256": "6df95dcf88e3930c8213f6537cc9e876e934e658f1f2f2c49ef3a04a747b3cf0"
     },
     {
       "file": "drawer-readonly-completed.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "74cbad7c79731dac86dfc396239d99da9a5093eafebf4d09c044a4ccf2961b07"
+      "sha256": "3f922ccbadfc0f6c18f24d071bed079b38bfd846adf2f1640ffda667d9b5c844"
     },
     {
       "file": "drawer-readonly-dismissed.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "77ec76de209d3e73a348ad3006fe0bd9df3b501b1b51e4db861fcc5815b582e4"
+      "sha256": "1d4735a1cf644ee389569c7699218c02c81aa7f22955272bf65cb6e7ed5929d9"
     },
     {
       "file": "drawer-readonly-pending.png",
       "width": 1440,
       "height": 1000,
-      "sha256": "d2b8c2d714e9222fa90f04c05a2c5f0536e8416570c828f84efaccbe7c79885a"
+      "sha256": "a2eee664373f12b64725361cb520905adb0c00dcf47e91b4a144075979b0ea31"
     },
     {
       "file": "artboard-07.png",

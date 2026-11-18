@@ -1,0 +1,19 @@
+{"before":{"x":272,"y":213,"width":1136,"height":36,"viewport":1440,"client":1440,"bodyHeight":1000,"gutter":"auto"},"after":{"x":272,"y":213,"width":1120,"height":36,"viewport":1440,"client":1432,"bodyHeight":1021,"gutter":"auto"},"widthDelta":-16}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: list header must keep its width when the content starts scrolling
+    at withWeb01Fixture.precisionV212 (file://<owned-temp>
+    at async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    at async file://<owned-temp> {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.18.0

@@ -19,16 +19,26 @@ import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 // one connection scheduler, and the existing permission / UNKNOWN owners. No real external sends.
 const fakeEndpoint=`(()=>{
  const config=JSON.parse(sessionStorage.getItem('card35a')||'{}');window.__card35a=config;
- const real=window.fetch.bind(window);window.__stateTimes=[];window.__busySeen=false;window.__busyNodes=[];let start=null;
+ const real=window.fetch.bind(window),captured=JSON.parse(sessionStorage.getItem('card35aResponses')||'{}'),batches=new Map();window.__stateTimes=[];window.__controlledReads=[];window.__busySeen=false;window.__busyNodes=[];let start=null;
  const observe=()=>{const busy=Boolean(document.querySelector('[aria-busy="true"]'));window.__busySeen||=busy;if(busy)window.__busyNodes.push([...document.querySelectorAll('[aria-busy=\"true\"]')].map(node=>node.className));const has=Boolean(document.querySelector('[data-skeleton]'));if(has&&start===null)start=performance.now();if(!has&&start!==null){window.__stateTimes.push(performance.now()-start);start=null;}};
  new MutationObserver(observe).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-busy']});
  window.fetch=async(input,init)=>{
   const path=String(input),cfg=window.__card35a,began=performance.now();
   const column=path.startsWith('/api/workbench/board?')?new URL(path,location.origin).searchParams.get('column'):null;
   const detail=/^\\/api\\/workbench\\/items\\/(ticket|review|intake)\\/[^/?]+\\?/.test(path),boot=path==='/api/lifecycle/bootstrap';
-  const response=await real(input,init);
   const delay=boot?cfg.bootstrapDelay:column?cfg.boardDelay?.[column]:detail?cfg.detailDelay:0;
-  if(delay)await new Promise((resolve,reject)=>{const timer=setTimeout(resolve,Math.max(0,delay-(performance.now()-began)));init?.signal?.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('aborted','AbortError'));},{once:true});});
+  let response;
+  if(delay){
+   const key=boot?'bootstrap':column?'board:'+column+':'+new URL(path,location.origin).searchParams.get('range'):new URL(path,location.origin).pathname,stored=captured[key];if(!stored)throw Error('CARD35A_CAPTURE_REQUIRED '+key);
+   // Release a concurrent batch in one task, before rendering the first result can delay another timer.
+   await new Promise((resolve,reject)=>{
+    const signal=init?.signal;if(signal?.aborted){reject(new DOMException('aborted','AbortError'));return;}
+    let batch=batches.get(delay);if(!batch){batch={entries:new Set(),timer:null};batches.set(delay,batch);}
+    const entry={finish:()=>{signal?.removeEventListener('abort',abort);resolve();}},abort=()=>{batch.entries.delete(entry);signal?.removeEventListener('abort',abort);if(!batch.entries.size){clearTimeout(batch.timer);batches.delete(delay);}reject(new DOMException('aborted','AbortError'));};
+    batch.entries.add(entry);signal?.addEventListener('abort',abort,{once:true});clearTimeout(batch.timer);batch.timer=setTimeout(()=>{batches.delete(delay);for(const item of batch.entries)item.finish();},delay);
+   });
+   response=new Response(stored.body,{status:stored.status,headers:{'content-type':'application/json'}});window.__controlledReads.push({key,target:delay,elapsed:performance.now()-began});
+  }else response=await real(input,init);
   if(boot&&cfg.hideNotes){const body=await response.clone().json();body.internal_notes_enabled=false;return new Response(JSON.stringify(body),{status:200,headers:response.headers});}
   if(detail&&cfg.detailForbidden)return new Response('{"error":{"code":"AUTHORIZATION_REJECTED"}}',{status:403,headers:{'content-type':'application/json'}});
   if(boot&&cfg.bootstrapFail||column&&cfg.failColumn===column||detail&&cfg.detailFail)return new Response(JSON.stringify({error:{code:'CARD35A_SYNTHETIC_READ_FAILED',retryable:true}}),{status:503,headers:{'content-type':'application/json','x-request-id':'card35a-request-synthetic'}});
@@ -45,11 +55,25 @@ function sameBox(a:Box,b:Box,label:string){for(const key of ['x','y','width','he
 async function evidence(){const directory=process.env.CARD35A_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card35a-'));await mkdir(directory,{recursive:true});return directory;}
 async function shot(b:Browser,directory:string,name:string){await b.evaluate('document.fonts.ready');await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');assert.equal(bytes.readUInt32BE(16),1440);await writeFile(join(directory,name),bytes);return {file:name,width:1440,height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')};}
 
+// Each matrix run applies the requested CDP rate before the document used by any assertions.
+const cpuRate=Number(process.env.CARD35A_CPU_RATE??'1');
+async function launchStateBrowser(options:Parameters<typeof launchSystemBrowser>[0]){
+ assert.ok(Number.isFinite(cpuRate)&&cpuRate>=1);
+ const browser=await launchSystemBrowser(options);if(!browser)return browser;
+ try{
+  await browser.command('Emulation.setCPUThrottlingRate',{rate:cpuRate});
+  console.log('CARD35A_CPU '+JSON.stringify({rate:cpuRate}));
+  const origin=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');
+  await browser.waitFor(`performance.timeOrigin!==${origin}&&document.readyState==='complete'`);
+  return browser;
+ }catch(error){await browser.close();throw error;}
+}
+
 test('Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted',{timeout:60000},()=>withWeb01Fixture(async(f:Fixture)=>{
  const directory=await evidence(),metrics:unknown[]=[];let browser:Browser|undefined,error:unknown;
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
   await b.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{
    const real=fetch;window.__paginationReads=[];const config=JSON.parse(sessionStorage.getItem('card35a-pagination')||'{}');window.__paginationConfig=config;
@@ -97,7 +121,7 @@ test('Card 35A PR192: empty handled column retains the completed drop zone and o
  const posts:string[]=[],observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(request.url??'');};f.runtime.server.on('request',observe);
  let browser:Browser|undefined,error:unknown;
  try{
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
   await b.waitFor("document.querySelectorAll('.column-cards').length===3&&!document.querySelector('[data-skeleton]')");
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const real=fetch;window.fetch=async(input,init)=>{const response=await real(input,init);if(String(input).startsWith('/api/workbench/board?')&&new URL(String(input),location.origin).searchParams.get('column')==='handled'&&response.ok){const body=await response.json();body.items=[];body.next_cursor=null;body.group_counts={completed:0,dismissed:0};return new Response(JSON.stringify(body),{status:200,headers:response.headers});}return response;};})();`});
   const time=await b.evaluate('performance.timeOrigin');await b.command('Page.reload');await b.waitFor(`performance.timeOrigin!==${time}&&document.querySelectorAll('.column-cards').length===3&&!document.querySelector('[data-skeleton]')`);
@@ -122,19 +146,31 @@ test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, r
  const directory=await evidence(),screenshots:unknown[]=[],metrics:Record<string,unknown>={};let browser:Browser|undefined,error:unknown;
  try{
   const cookie=f.browserCookies[0],own=f.tickets[1];assert.ok(cookie&&own);
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
   await b.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
   assert.equal(await b.evaluate("document.querySelector('.topbar [data-realtime-status=disabled]')?.checkVisibility()"),true,'normal manual-refresh indicator stays visible');
+  const capturedCount=await b.evaluate(`(async()=>{
+   const captured={},save=async(key,path)=>{const response=await fetch(path);if(!response.ok)throw Error('CARD35A_CAPTURE_FAILED');const body=await response.text();captured[key]={status:response.status,body};return JSON.parse(body);};
+   await save('bootstrap','/api/lifecycle/bootstrap');const items=[];
+   for(const column of ['pending','active','handled'])for(const range of ['all','recent']){const page=await save('board:'+column+':'+range,'/api/workbench/board?'+new URLSearchParams({column,range,limit:'50'}));if(range==='all')items.push(...page.items);}
+   for(const item of items){const path='/api/workbench/items/'+item.kind+'/'+item.id;await save(path,path+'?limit=50');}
+   sessionStorage.setItem('card35aResponses',JSON.stringify(captured));return Object.keys(captured).length;
+  })()`);assert.ok(Number(capturedCount)>4,'timed reads use fixture responses captured before the measured navigation');
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:fakeEndpoint});
   const navigate=async(config:Record<string,unknown>,path='/workbench/app/?range=all')=>{const nonce=randomUUID();await b.evaluate(`sessionStorage.setItem('card35a',${JSON.stringify(JSON.stringify({...config,nonce}))})`);await b.command('Page.navigate',{url:f.origin+path});await b.waitFor('window.__card35a?.nonce==='+JSON.stringify(nonce));};
   const loaded="document.querySelectorAll('.board .ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')";
-  await navigate({bootstrapDelay:80,boardDelay:{pending:80,active:80,handled:80}});await b.waitFor(loaded);
+  // Mount the code/layout first, then request a genuinely uncached query key. Cold module work is not response time.
+  await navigate({});await b.waitFor(loaded);await waitForAnimationsSettled(b);
+  await b.evaluate("window.__card35a.boardDelay={pending:80,active:80,handled:80};window.__controlledReads=[];window.__stateTimes=[];window.__busyNodes=[];window.__busySeen=false");
+  // Browser navigation changes the query key without a filter form's independent submission-busy state.
+  await b.evaluate("history.pushState(history.state,'','?range=recent');dispatchEvent(new PopStateEvent('popstate',{state:history.state}))");await b.waitFor("new URLSearchParams(location.search).get('range')==='recent'&&window.__controlledReads.length===3&&"+loaded);
+  const fastReads=await b.evaluate('window.__controlledReads') as {target:number;elapsed:number}[];assert.equal(fastReads.length,3);assert.ok(fastReads.every(read=>read.target===80&&read.elapsed>=80&&read.elapsed<150),'the complete synthetic reads finish before the loading threshold '+JSON.stringify(fastReads));metrics.fastReads=fastReads;metrics.cpuRate=cpuRate;
   assert.equal(await b.evaluate('window.__busySeen'),false,'80ms never sets busy or renders a skeleton');assert.deepEqual(await b.evaluate('window.__stateTimes'),[]);
   await navigate({bootstrapDelay:400});await b.waitFor("Boolean(document.querySelector('[data-startup] [data-skeleton]'))");await b.waitFor(loaded);
   await navigate({boardDelay:{active:400}});await b.waitFor("Boolean(document.querySelector('.board .active [data-skeleton]'))");
   const heading=await box(b,'.board .board-column.active>.column-heading'),first=await box(b,'.board .active .ds-ticket-skeleton');
   await b.waitFor(loaded);sameBox(heading,await box(b,'.board .board-column.active>.column-heading'),'board heading');assert.ok(Math.abs(first.y-(await box(b,'.board .active .ticket-card')).y)<=1,'first card top');
-  const durations=await b.evaluate('window.__stateTimes') as number[];assert.ok(durations.length&&durations.every(ms=>ms>=300),'shown skeleton lasts at least 300ms '+JSON.stringify(durations));metrics.timing=durations;
+  const durations=await b.evaluate('window.__stateTimes') as number[];assert.ok(durations.length&&durations.every(ms=>ms>=300),'shown skeleton lasts at least 300ms '+JSON.stringify(durations));metrics.timing=durations;metrics.mediumReads=await b.evaluate('window.__controlledReads');
   const subgroupGeometry:Record<string,unknown>[]=[];
   for(const column of ['pending','handled']){
    await navigate({boardDelay:{[column]:1400}});await b.waitFor("Boolean(document.querySelector('.board ."+column+" [data-skeleton]'))");
@@ -149,8 +185,8 @@ test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, r
   assert.equal(await b.evaluate("getComputedStyle(document.querySelector('[data-skeleton]')).animationName"),'none','reduced motion is static');
   await b.waitFor("document.body.innerText.includes('比平时慢，仍在读取…')");assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-loading-slow button')].some(button=>button.textContent==='重试')"),true);
   await b.waitFor(loaded);
-  await navigate({boardDelay:{pending:1000,active:1000,handled:1000}},'/workbench/app/?view=list&range=all');await b.waitFor("document.querySelectorAll('.ds-work-skeleton-row').length===5");assert.equal(await b.evaluate("document.querySelectorAll('.ds-work-skeleton-row').length"),5,'the entire grouped table shares exactly five skeleton rows');screenshots.push(await shot(b,directory,'list-loading.png'));await b.waitFor("document.querySelectorAll('.ds-work-row[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
-  await navigate({boardDelay:{active:9000}},'/workbench/app/?view=list&range=all');await b.waitFor("Boolean(document.querySelector('#list-active [data-skeleton]'))");
+  await navigate({boardDelay:{pending:1000,active:1000,handled:1000}},'/workbench/app/?view=list&range=all');await b.waitFor("document.querySelectorAll('.ds-work-skeleton-row').length===5");assert.equal(await b.evaluate("document.querySelectorAll('.ds-work-skeleton-row').length"),5,'the entire grouped table shares exactly five skeleton rows');const allLoadingHead=await box(b,'.work-table thead');screenshots.push(await shot(b,directory,'list-loading.png'));await b.waitFor("document.querySelectorAll('.ds-work-row[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");const allLoadedHead=await box(b,'.work-table thead');metrics.initialListHeader={before:allLoadingHead,after:allLoadedHead};sameBox(allLoadingHead,allLoadedHead,'all-loading table head including scrollbar space');
+  await navigate({boardDelay:{active:9000}},'/workbench/app/?view=list&range=all');await b.waitFor("Boolean(document.querySelector('#list-active [data-skeleton]'))&&['pending','handled'].every(column=>document.querySelectorAll('#list-'+column+' .ds-work-row[data-item-id]').length>0)");
   const tableHead=await box(b,'.work-table thead'),row=await box(b,'#list-active .ds-work-skeleton-row');
   await b.waitFor("document.querySelectorAll('.ds-work-row[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");sameBox(tableHead,await box(b,'.work-table thead'),'table head');assert.ok(Math.abs(row.y-(await box(b,'.ds-work-row[data-column=active]')).y)<=1,'first list row top');
   for(const column of ['pending','handled']){
@@ -196,10 +232,13 @@ test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, r
 
 const realtimeSeam=`(()=>{
  const Original=EventSource;window.__streams=[];window.EventSource=class extends Original{constructor(...args){super(...args);window.__streams.push(this);}};
- const real=fetch.bind(window);window.__failReads=false;window.__deniedContext=false;window.__dropNote=false;window.__retryReads=[];window.__failBoards=false;window.__columnDelays=JSON.parse(sessionStorage.getItem('card35aReviewDelays')||'{}');
+ const real=fetch.bind(window);window.__failReads=false;window.__deniedContext=false;window.__dropNote=false;window.__retryReads=[];window.__failBoards=false;window.__attachmentReleases=new Set();window.__columnDelays=JSON.parse(sessionStorage.getItem('card35aReviewDelays')||'{}');
  window.fetch=async(input,init)=>{const path=String(input),column=path.startsWith('/api/workbench/board?')?new URL(path,location.origin).searchParams.get('column'):null;if(window.__failBoards&&column)return new Response('{"error":{"code":"CARD35A_SYNTHETIC_READ_FAILED"}}',{status:503,headers:{'content-type':'application/json'}});if(window.__failReads&&path==='/api/lifecycle/bootstrap'){window.__retryReads.push(performance.now());throw new TypeError('synthetic disconnected read');}
  if(window.__deniedContext&&(/^\\/api\\/tickets\\/[0-9a-f-]+$/.test(path)||/^\\/api\\/workbench\\/items\\/ticket\\/[0-9a-f-]+(?:[?]|$)/.test(path)))return new Response('{"error":{"code":"AUTHORIZATION_REJECTED"}}',{status:403,headers:{'content-type':'application/json'}});
- const response=await real(input,init);if(column&&window.__columnDelays[column])await new Promise(resolve=>setTimeout(resolve,window.__columnDelays[column]));if(window.__detailDelay&&path.startsWith('/api/workbench/items/'))await new Promise(resolve=>setTimeout(resolve,window.__detailDelay));if(window.__dropNote&&init?.method==='POST'&&path.endsWith('/internal-notes'))throw new TypeError('synthetic unconfirmed response');return response;};
+ const response=await real(input,init);if(column&&window.__columnDelays[column])await new Promise(resolve=>setTimeout(resolve,window.__columnDelays[column]));
+ if(window.__holdAttachments&&path.endsWith('/attachments'))await new Promise((resolve,reject)=>{const signal=init?.signal,release=()=>{signal?.removeEventListener('abort',abort);window.__attachmentReleases.delete(release);resolve();},abort=()=>{window.__attachmentReleases.delete(release);reject(new DOMException('aborted','AbortError'));};if(signal?.aborted){abort();return;}window.__attachmentReleases.add(release);signal?.addEventListener('abort',abort,{once:true});});
+ if(window.__detailDelay&&/^\\/api\\/workbench\\/items\\/(ticket|review|intake)\\/[^/?]+[?]/.test(path)){const began=performance.now();await new Promise(resolve=>setTimeout(resolve,window.__detailDelay));window.__detailRefreshElapsed=performance.now()-began;}
+ if(window.__dropNote&&init?.method==='POST'&&path.endsWith('/internal-notes'))throw new TypeError('synthetic unconfirmed response');return response;};
 })();`;
 
 test('Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery',{timeout:240000},()=>withT43Fixture(async f=>{
@@ -210,7 +249,7 @@ test('Card 35A A4.6-8: five original read-only scenarios, focusable disabled too
  const dismissed=await start(f,await f.manualReport('35A 已关闭（合成）'));
  await post(admin,'/api/tickets/'+text(dismissed.id)+'/dismiss',{client_command_id:randomUUID(),expected_version:version(dismissed.version),reason_code:'FALSE_REPORT_OR_TEST',note:'35A 确认测试报修（合成）'});await f.project();
  try{
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[handlerCookie],certificateSpki:f.certificateSpki});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[handlerCookie],certificateSpki:f.certificateSpki});assert.ok(browser);const b=browser;
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:realtimeSeam});
   const completedPreference='pc-admin:processed-group:'+target+':completed',dismissedPreference='pc-admin:processed-group:'+target+':dismissed';
   await b.evaluate(`sessionStorage.setItem(${JSON.stringify(completedPreference)},'false');sessionStorage.setItem(${JSON.stringify(dismissedPreference)},'true');sessionStorage.setItem('card35aReviewDelays',JSON.stringify({handled:1400}))`);await b.command('Page.reload');
@@ -234,11 +273,22 @@ test('Card 35A A4.6-8: five original read-only scenarios, focusable disabled too
   await b.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await b.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});assert.equal(await b.evaluate("Boolean(document.querySelector('[data-readonly-reason=assigned]'))"),true,'disabled activation submits nothing');
   await b.command('Browser.grantPermissions',{origin:f.origin,permissions:['clipboardReadWrite','clipboardSanitizedWrite']});await clickWorkbenchControl(b,'button[aria-label=复制编号]');assert.equal(await b.evaluate('navigator.clipboard.readText()'),assigned.ticket_no);
   await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await clickWorkbenchControl(b,'[data-action=toggle-item-follow]');await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.getAttribute('aria-pressed')==='true'");
-  const canNext=await b.evaluate("document.querySelector('.detail-next')?.disabled===false");assert.equal(canNext,true,'next remains usable');await clickWorkbenchControl(b,'.detail-next');await b.waitFor("!document.querySelector('.detail-breadcrumb')?.textContent.includes("+JSON.stringify(text(assigned.ticket_no))+")&&Boolean(document.querySelector('.ds-detail-view'))&&!document.querySelector('.ds-detail [data-skeleton]')&&document.querySelector('.detail-previous')?.disabled===false");await clickWorkbenchControl(b,'.detail-previous');await b.waitFor("Boolean(document.querySelector('[data-readonly-reason=assigned]'))");
-  await b.evaluate("window.__documentToken='same-document-35a';window.__detailDelay=1000");
+  const canNext=await b.evaluate("document.querySelector('.detail-next')?.disabled===false");assert.equal(canNext,true,'next remains usable');await clickWorkbenchControl(b,'.detail-next');await b.waitFor("!document.querySelector('.detail-breadcrumb')?.textContent.includes("+JSON.stringify(text(assigned.ticket_no))+")&&Boolean(document.querySelector('.ds-detail-view'))&&!document.querySelector('.ds-detail [data-skeleton]')&&document.querySelector('.detail-previous')?.disabled===false");
+  await b.evaluate('window.__holdAttachments=true');await clickWorkbenchControl(b,'.detail-previous');await b.waitFor("Boolean(document.querySelector('[data-readonly-reason=assigned]'))&&window.__attachmentReleases.size>0&&Boolean(document.querySelector('.attachment-section [data-skeleton]'))");
+  assert.equal(await b.evaluate("Boolean(document.querySelector('.detail-body'))&&!document.querySelector('.ds-detail-skeleton')"),true,'a deliberately slow initial attachment read is local, while the loaded drawer body stays mounted');
+  await b.evaluate('window.__holdAttachments=false;[...window.__attachmentReleases].forEach(release=>release())');
+  await b.waitFor("Boolean(document.querySelector('[data-readonly-reason=assigned]'))&&window.__attachmentReleases.size===0&&!document.querySelector('.ds-detail [data-skeleton]')");await waitForAnimationsSettled(b);
+  await b.evaluate(`(()=>{
+   window.__documentToken='same-document-35a';window.__detailDelay=1000;window.__detailRefreshElapsed=0;
+   const body=document.querySelector('.detail-body'),view=document.querySelector('.ds-detail-view');window.__refreshViolations=[];window.__refreshSamples=0;window.__watchRefresh=true;
+   const sample=()=>{if(!window.__watchRefresh)return;window.__refreshSamples++;if(!body.isConnected||document.querySelector('.detail-body')!==body||document.querySelector('.ds-detail-view')!==view)window.__refreshViolations.push('body replaced');if(document.querySelector('.ds-detail [data-skeleton]'))window.__refreshViolations.push('skeleton appeared');if(body.dataset.refreshing&&Number(getComputedStyle(body.querySelector('.ds-state-content')).opacity)!==0.6)window.__refreshViolations.push('refresh opacity');};
+   const observer=new MutationObserver(sample);observer.observe(document.querySelector('.ds-detail'),{childList:true,subtree:true,attributes:true,attributeFilter:['data-refreshing']});const frame=()=>{sample();if(window.__watchRefresh)requestAnimationFrame(frame);};requestAnimationFrame(frame);window.__stopRefreshWatch=()=>{sample();window.__watchRefresh=false;observer.disconnect();};
+  })()`);
   await post(admin,'/api/tickets/'+text(assigned.id)+'/transfer-assignment',{client_command_id:randomUUID(),expected_version:version((await get(admin,'/api/tickets/'+text(assigned.id))).version),reason_code:'CARD35A_SYNTHETIC',target_principal_id:target,resolver_team_id:'PILOT_IT',communication_choice:'RETAIN_CURRENT',sessions:[]});await f.project();
-  await b.waitFor("Boolean(document.querySelector('.detail-body[data-refreshing]'))");assert.equal(await b.evaluate("Boolean(document.querySelector('.ds-detail [data-skeleton]'))"),false,'SSE refresh retains the drawer body');await b.evaluate('window.__detailDelay=0');
-  await b.waitFor("!document.querySelector('.ds-read-only-bar')&&Boolean(document.querySelector('.detail-heading'))");assert.equal(await b.evaluate('window.__documentToken'),'same-document-35a','SSE-driven re-read collapses the reason without navigation');
+  await b.waitFor("Boolean(document.querySelector('.detail-body[data-refreshing]'))");assert.equal(await b.evaluate("Boolean(document.querySelector('.ds-detail [data-skeleton]'))"),false,'SSE refresh retains the drawer body');
+  await b.waitFor("!document.querySelector('.ds-read-only-bar')&&Boolean(document.querySelector('.detail-heading'))&&!document.querySelector('.detail-body[data-refreshing]')&&window.__detailRefreshElapsed>=1000");assert.equal(await b.evaluate('window.__documentToken'),'same-document-35a','SSE-driven re-read collapses the reason without navigation');
+  await b.evaluate('window.__stopRefreshWatch();window.__detailDelay=0');metrics.sseRefresh=await b.evaluate('({samples:window.__refreshSamples,elapsed:window.__detailRefreshElapsed,violations:window.__refreshViolations})');metrics.cpuRate=cpuRate;
+  assert.deepEqual(await b.evaluate('window.__refreshViolations'),[],'the same drawer body stays mounted at 60% opacity without any skeleton throughout the slow SSE refresh');assert.ok(Number(await b.evaluate('window.__refreshSamples'))>1);
   await clickWorkbenchControl(b,'button[aria-label=关闭详情]');await b.waitFor("!document.querySelector('.detail-navigation')");
   await b.waitFor("document.querySelector('.app')?.dataset.realtimeStatus==='live'");const mainBefore=await box(b,'.workspace'),top=await box(b,'.topbar');
   assert.equal(await b.evaluate("document.querySelector('.topbar [data-realtime-status=live]')?.checkVisibility()"),true,'normal live indicator stays visible');
@@ -246,7 +296,8 @@ test('Card 35A A4.6-8: five original read-only scenarios, focusable disabled too
   await b.evaluate("window.__online=false;Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>window.__online});dispatchEvent(new Event('offline'))");await b.waitFor("Boolean(document.querySelector('[data-connection=offline]'))");
   assert.equal(await b.evaluate("document.querySelectorAll('.topbar [data-realtime-status]').length"),1,'existing realtime selectors remain mounted');assert.equal(await b.evaluate("document.querySelector('.topbar [data-realtime-status]')?.checkVisibility()"),false,'the connection bar is the sole persistent offline message');assert.equal(await b.evaluate("document.querySelector('.board').innerText.includes('读取未完成')"),false,'no scattered refresh-failure line remains under the cards');
   const mainDown=await box(b,'.workspace'),bar=await box(b,'.ds-connection-bar');assert.equal(mainDown.y-mainBefore.y,32);assert.equal(bar.height,32);assert.ok(bar.y>=top.y+top.height-1&&bar.y+bar.height<=mainDown.y,'connection strip occupies space below topbar');screenshots.push(await shot(b,directory,'connection-offline.png'));
-  await b.evaluate("window.__failBoards=false;window.__online=true;dispatchEvent(new Event('online'))");await b.waitFor("Boolean(document.querySelector('[data-connection=recovered]'))");assert.equal(await b.evaluate("document.querySelector('.topbar [data-realtime-status=live]')?.checkVisibility()"),true,'normal live label returns with recovery');const recovery=Date.now();await b.waitFor("!document.querySelector('.ds-connection-slot[data-open]')");assert.ok(Date.now()-recovery>=1800,'recovered remains for two seconds');sameBox(mainBefore,await box(b,'.workspace'),'connection collapse');
+  await b.evaluate("window.__failBoards=false;window.__online=true;dispatchEvent(new Event('online'))");await b.waitFor("Boolean(document.querySelector('[data-connection=recovered]'))");const recovery=Date.now();await b.waitFor("!document.querySelector('.ds-connection-slot[data-open]')");assert.ok(Date.now()-recovery>=1800,'recovered remains for two seconds');sameBox(mainBefore,await box(b,'.workspace'),'connection collapse');
+  await b.waitFor("document.querySelector('.app')?.dataset.realtimeStatus==='live'");assert.equal(await b.evaluate("document.querySelector('.topbar [data-realtime-status=live]')?.checkVisibility()"),true,'normal live label returns with recovery');
   // The original SSE error first checks GET; that failed read starts three retries at 1s/3s/8s.
   await b.evaluate("window.__failReads=true;window.__retryReads=[];window.__streams.at(-1).dispatchEvent(new Event('error'))");await b.waitFor('window.__retryReads.length===4',{timeoutMs:20000});
   const attempts=await b.evaluate('window.__retryReads') as number[];assert.ok((attempts[1]??0)-(attempts[0]??0)>=900);assert.ok((attempts[2]??0)-(attempts[1]??0)>=2900);assert.ok((attempts[3]??0)-(attempts[2]??0)>=7900);metrics.retries={initialFailedRead:attempts[0],retryReads:attempts.slice(1),intervals:attempts.slice(1).map((value,index)=>value-(attempts[index]??0))};
@@ -294,7 +345,7 @@ test('Card 35A A4.7: an initial explicit read denial shows the unique permission
  const directory=await evidence();let browser:Browser|undefined,error:unknown;
  try{
   const cookie=f.browserCookies[0],item=f.tickets[0];assert.ok(cookie&&item);
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
   await b.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:fakeEndpoint});await b.evaluate("sessionStorage.setItem('card35a',JSON.stringify({detailForbidden:true}))");
   await b.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+item.ticket.id});
@@ -310,7 +361,7 @@ test('Card 35A option A: unavailable live stream keeps healthy reads on the 5s c
  const directory=await evidence();let browser:Browser|undefined,error:unknown;const metrics:Record<string,unknown>={};
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);
-  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  browser=await launchStateBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
   await b.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{
    window.__liveOnlyUnavailable=true;window.__bootstrapTimes=[];window.__healthyBoardReads=[];window.__connectionNoticeSeen=false;window.__sourceAttempts=0;
