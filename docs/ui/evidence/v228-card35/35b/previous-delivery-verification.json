@@ -1,0 +1,441 @@
+{
+  "status": "PASS_LOCAL_35B_WITH_HUMAN_BASELINE_APPROVAL_PENDING",
+  "head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "input_hash": "2eb703555cfc82a68709923badce7dfe2d8683e5ace420726dc48cb180b15ba2",
+  "environment": {
+    "platform": "darwin",
+    "node": "v24.18.0",
+    "postgres": "18.6 (Homebrew)",
+    "os": "26.6.2",
+    "head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+    "input_hash": "2eb703555cfc82a68709923badce7dfe2d8683e5ace420726dc48cb180b15ba2",
+    "manifest_sha256": "9c411e6206ee91ca07039afe06bd4c30fd946eb804da07bb08a6b794e0b4b648",
+    "browser": "Chrome/157.0.8103.79"
+  },
+  "screens": [
+    {
+      "name": "board-default",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": "[data-visual-sort-label]",
+          "reason": "本机看板排序文字存在间歇性字形绘制差异；该文字不参与像素比较，排序按钮轮廓、箭头及全部在场名牌仍保留。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.02,
+        "ratio": 0.00001,
+        "reason": "Low-contrast board corners occupy few pixels; detect a 2px radius change without losing the whole-screen context."
+      },
+      "sha256": "001ea46cbcc91aa11520bdc76f76d15e8545e22e64a6dcce8b82d9bda5903fd2"
+    },
+    {
+      "name": "board-presence",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": "[data-visual-sort-label]",
+          "reason": "本机看板排序文字存在间歇性字形绘制差异；该文字不参与像素比较，排序按钮轮廓、箭头及全部在场名牌仍保留。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "e9e722f018385f2a1f0386427d80017b4637ae920904f03b01389de5a2a3c432"
+    },
+    {
+      "name": "board-filtered-empty",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "b0db15502776116e78b39ac88b0efd37f9debc95cffef6105ed86ab2bf3a3c40"
+    },
+    {
+      "name": "list-default",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "e4ee1365c8539664ea27d7d8d7fd6c0271e1378c0a592ae90e6e8f343db7e41b"
+    },
+    {
+      "name": "list-closed-groups",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "ef4ea10156fa4e0a51d76279a6772dcb2d2009e143a0c8c150cd8081580bca19"
+    },
+    {
+      "name": "drawer-processing",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "bc950e2bbd218493e4e3c2734992e92b0e7ac4b6a24cf8735f0a96919a3f008b"
+    },
+    {
+      "name": "drawer-dismissed",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "7dfd6bd62780a99a8bc8ac19a7eca2030a95ad237e2798f869552b767fc3e03e"
+    },
+    {
+      "name": "drawer-completed",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "3f0d83022a0f4388ea8c3efaac92702f445bcebd98d4016359b13f6570e4d3a7"
+    },
+    {
+      "name": "drawer-banner-editing",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "18f330f2ae22fc184055fa5f16e9b4539d8a1a4f131728f16a497add1d878b0e"
+    },
+    {
+      "name": "detail-fullpage-1280",
+      "viewport": {
+        "width": 1280,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "b0415a7eeb64649dcf92a408aea7dde85f8f4e9949bd77354002f845365fa5b9"
+    },
+    {
+      "name": "close-dialog-out-of-scope",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.00002,
+        "reason": "Small confirmation dialog: detect a one-character change in its safety-critical submit label."
+      },
+      "sha256": "534a7491c38b0d918767cdf643d83be2bfa2c664894b449e380f0c24481bbf1f"
+    },
+    {
+      "name": "close-dialog-duplicate",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "d2f9c2bb7a4b357e729e68c344f1b89d00e875b7a9e1c552603ea3e7178c9545"
+    },
+    {
+      "name": "restore-dialog",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "9920833b64f042cb645218ca44f502f5d6ff25ae2fad99bceeaea9fbc4eaf20e"
+    },
+    {
+      "name": "toast-tones",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.0001,
+        "reason": "Compact notices occupy a small fraction of the viewport; retain sensitivity to corner and typography changes."
+      },
+      "sha256": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258"
+    },
+    {
+      "name": "toast-drawer-stack",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": ".app",
+          "scope": "inert-background",
+          "reason": "本机浏览器对被遮挡工作台存在偶发边缘重绘；仅遮住不可交互背景，看板与列表在独立画面中完整比较。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "83d2193ab12f2ce6546bc071d67744641095dcb38c46b7a2be87fcc1ceb4bc04"
+    },
+    {
+      "name": "sidebar-online-popover",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [
+        {
+          "selector": "[data-visual-sort-label]",
+          "reason": "本机看板排序文字存在间歇性字形绘制差异；该文字不参与像素比较，排序按钮轮廓、箭头及全部在场名牌仍保留。"
+        }
+      ],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "28c0a4667b552a73750edd05f37d466805a0e03eac8677638c6a772e70ced98b"
+    },
+    {
+      "name": "conversation-default",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "311cdb9a8d1b99d93100311e0b0d56b9dcf6b926f52377ae98dacd712590e069"
+    },
+    {
+      "name": "notifications-default",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1
+      },
+      "masks": [],
+      "threshold": {
+        "pixelmatch": 0.1,
+        "ratio": 0.001
+      },
+      "sha256": "5659f453dab160e7093dee4075942f81326fa5be649314e839d335aaec95804c"
+    }
+  ],
+  "stability": {
+    "runs": [
+      "delivery-1",
+      "delivery-2",
+      "delivery-3",
+      "delivery-4",
+      "delivery-5"
+    ],
+    "pairwise": 180,
+    "max_raw_diff_pixels": 0
+  },
+  "reverse": [
+    {
+      "experiment": "radius",
+      "exit_code": 1,
+      "changed": [
+        "board-default",
+        "close-dialog-out-of-scope"
+      ]
+    },
+    {
+      "experiment": "label",
+      "exit_code": 1,
+      "changed": [
+        "close-dialog-out-of-scope"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm run migration:typecheck",
+      "result": "PASS",
+      "evidence": "logs/typecheck-final.log"
+    },
+    {
+      "command": "npm --prefix app/pc-admin run lint:features",
+      "result": "PASS",
+      "evidence": "logs/eslint.log"
+    },
+    {
+      "command": "npm --prefix app/pc-admin run lint:css",
+      "result": "PASS",
+      "evidence": "logs/stylelint.log"
+    },
+    {
+      "command": "npm run migration:build",
+      "result": "PASS; 968 typed modules / 3,042 outputs",
+      "evidence": "logs/build-final.log"
+    },
+    {
+      "command": "node .build/tools/verify-artifact.mjs",
+      "result": "PASS",
+      "evidence": "logs/artifact-final.log"
+    },
+    {
+      "command": "node --test .build/runtime/tests/visual-regression.test.mjs .build/runtime/tests/pc-admin-copy-terms.test.mjs",
+      "result": "PASS; 14/14 (8 tool + 6 copy)",
+      "evidence": "logs/unit-final.log"
+    },
+    {
+      "command": "node --test .build/runtime/tests/pc-admin-card34c-copy.browser.test.mjs",
+      "result": "PASS; 1/1 real HTTP/PG/Chrome",
+      "evidence": "logs/browser-card34c-final.log"
+    },
+    {
+      "command": "node --test .build/tools/pr-plan.test.mjs",
+      "result": "PASS; 22/22, isolated Python/PyYAML environment",
+      "evidence": "logs/routing-tests-with-python.log"
+    },
+    {
+      "command": "npm run docs:agents:check + changed Markdown checks",
+      "result": "PASS",
+      "evidence": "logs/docs-final.log"
+    },
+    {
+      "command": "node --test .build/tools/check-agent-docs.test.mjs",
+      "result": "PASS; 20/20",
+      "evidence": "logs/docs-tests-final.log"
+    },
+    {
+      "command": "5 x npm run visual:capture -- --run-id delivery-N",
+      "result": "PASS; 90 images, 180 raw pairwise comparisons, all zero",
+      "evidence": "stability.json"
+    },
+    {
+      "command": "node .build/runtime/tools/visual-regression/reverse-validation.mjs",
+      "result": "PASS; both compare calls returned 1 and flagged the intended screen",
+      "evidence": "reverse-validation.json"
+    },
+    {
+      "command": "npm run visual:compare -- --baseline-dir .build/visual/reverse/baseline --report-dir .build/visual/clean-report",
+      "result": "PASS; exit 0, 18/18 unchanged",
+      "evidence": "local .build report"
+    },
+    {
+      "command": "npm run visual:compare",
+      "result": "EXPECTED exit 1; 18 missing baselines, no crash",
+      "evidence": "local .build/visual/report"
+    }
+  ],
+  "product_source_changes": 0,
+  "commits": 0,
+  "pushes": 0,
+  "prs_opened": 0,
+  "approve_executions": 0,
+  "official_baselines": 0
+}

@@ -1,0 +1,13 @@
+diff --git a/app/pc-admin/src/design/tokens.css b/app/pc-admin/src/design/tokens.css
+index 4a98c26b..adc5fdac 100644
+--- a/app/pc-admin/src/design/tokens.css
++++ b/app/pc-admin/src/design/tokens.css
+@@ -173,7 +173,7 @@
+   --radius-xs: 4px;    /* 标签、徽标、小芯片 */
+   --radius-sm: 6px;    /* 按钮、输入、导航项、表格行、分段控件 */
+   --radius-md: 8px;    /* 卡片、媒体缩略图、提示条 */
+-  --radius-lg: 12px;   /* 看板列、下拉/日期弹层、浮动抽屉 */
++  --radius-lg: 14px;   /* 看板列、下拉/日期弹层、浮动抽屉 */
+   --radius-xl: 16px;   /* 居中弹窗 */
+   --radius-full: 9999px;
+ 

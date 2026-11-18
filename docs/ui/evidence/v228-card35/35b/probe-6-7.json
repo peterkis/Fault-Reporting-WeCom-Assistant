@@ -1,0 +1,74 @@
+[
+  {
+    "name": "board-default",
+    "pixels": 0
+  },
+  {
+    "name": "board-presence",
+    "pixels": 0
+  },
+  {
+    "name": "board-filtered-empty",
+    "pixels": 0
+  },
+  {
+    "name": "list-default",
+    "pixels": 0
+  },
+  {
+    "name": "list-closed-groups",
+    "pixels": 0
+  },
+  {
+    "name": "drawer-processing",
+    "pixels": 0
+  },
+  {
+    "name": "drawer-dismissed",
+    "pixels": 3510
+  },
+  {
+    "name": "drawer-completed",
+    "pixels": 0
+  },
+  {
+    "name": "drawer-banner-editing",
+    "pixels": 0
+  },
+  {
+    "name": "detail-fullpage-1280",
+    "pixels": 0
+  },
+  {
+    "name": "close-dialog-out-of-scope",
+    "pixels": 0
+  },
+  {
+    "name": "close-dialog-duplicate",
+    "pixels": 20
+  },
+  {
+    "name": "restore-dialog",
+    "pixels": 3780
+  },
+  {
+    "name": "toast-tones",
+    "pixels": 0
+  },
+  {
+    "name": "toast-drawer-stack",
+    "pixels": 0
+  },
+  {
+    "name": "sidebar-online-popover",
+    "pixels": 0
+  },
+  {
+    "name": "conversation-default",
+    "pixels": 0
+  },
+  {
+    "name": "notifications-default",
+    "pixels": 0
+  }
+]

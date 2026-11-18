@@ -1,0 +1,12 @@
+{
+  "os": "macOS 26.6.2 / Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050 / 25.6.0",
+  "browser": "Chrome/157.0.8103.79",
+  "dpr": 1,
+  "renderer_flags": [
+    "--disable-partial-raster"
+  ],
+  "node": "v24.18.0",
+  "postgres": "18.6 (Homebrew)",
+  "head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3"
+}

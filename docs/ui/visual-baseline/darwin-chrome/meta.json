@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "platform": "darwin-chrome",
+  "os_version": "macOS 26.6.2 / Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050 / 25.6.0",
+  "browser_version": "Chrome/157.0.8103.79",
+  "dpr": 1,
+  "viewports": {
+    "board-default": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "board-presence": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "board-filtered-empty": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "list-default": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "list-closed-groups": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "drawer-processing": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "drawer-dismissed": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "drawer-completed": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "drawer-banner-editing": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "detail-fullpage-1280": {
+      "width": 1280,
+      "height": 1000,
+      "dpr": 1
+    },
+    "close-dialog-out-of-scope": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "close-dialog-duplicate": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "restore-dialog": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "toast-tones": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "toast-drawer-stack": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "sidebar-online-popover": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "conversation-default": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "notifications-default": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    }
+  },
+  "source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3",
+  "captured_at": "2026-11-18T04:03:00.633Z",
+  "screens": {
+    "board-default": "b1795c66b61601072a38845fb29167e43077b9ee6bdd398468aaefc54483f0eb",
+    "board-presence": "9e02525e407d4d02231dcc082fe68ca109b705348ae04e92e295d0a19e845d88",
+    "board-filtered-empty": "28918fb63db1c73d586ce8525ceb4c18fcea051c3606b38fef7f907ce493b75b",
+    "list-default": "e4ee1365c8539664ea27d7d8d7fd6c0271e1378c0a592ae90e6e8f343db7e41b",
+    "list-closed-groups": "ef4ea10156fa4e0a51d76279a6772dcb2d2009e143a0c8c150cd8081580bca19",
+    "drawer-processing": "adf4c7953d4bdd4971b9e73b60129daf485fe800061f5e3541d1e27770be7145",
+    "drawer-dismissed": "54a17226fd6af8bcb8c63df29b03b34e351aa48b8ec0f59dc0a8f6c2174b0c3e",
+    "drawer-completed": "4898eb844184e917a82a066c0c58ddf837224bada53b7b06507cdc404c141d13",
+    "drawer-banner-editing": "d6654c5eec698d42c8991e4bad79baebf023d28f09840bc585ece6b50a06bfc3",
+    "detail-fullpage-1280": "b0415a7eeb64649dcf92a408aea7dde85f8f4e9949bd77354002f845365fa5b9",
+    "close-dialog-out-of-scope": "17fd9156c9eb704f2abbcf2fe46980b9255d8620a8422ea39e0252dcfd33a036",
+    "close-dialog-duplicate": "d335aab41593963e03ee03f939109a20daad4b3844d214d49f65480833373f52",
+    "restore-dialog": "11aa475aa3676476c3edd3f509419d52e8b8fdaddc44a5d2dfc9b3595da23c24",
+    "toast-tones": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258",
+    "toast-drawer-stack": "ee2e3ca6ff6edd469e5aa9900eb7de1708811beed98defc2da91231fa7cb6248",
+    "sidebar-online-popover": "5779643f20d496662a3fa972e280bb72361763b9bd4b643cf8e283867b39a7ef",
+    "conversation-default": "311cdb9a8d1b99d93100311e0b0d56b9dcf6b926f52377ae98dacd712590e069",
+    "notifications-default": "5659f453dab160e7093dee4075942f81326fa5be649314e839d335aaec95804c"
+  }
+}

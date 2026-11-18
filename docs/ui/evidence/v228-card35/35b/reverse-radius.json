@@ -1,0 +1,213 @@
+{
+  "experiment": "radius",
+  "mutations": [
+    {
+      "screen": "board-default",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "board-presence",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "board-filtered-empty",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "list-default",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "list-closed-groups",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "drawer-processing",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "drawer-dismissed",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "drawer-completed",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "drawer-banner-editing",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "detail-fullpage-1280",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "close-dialog-out-of-scope",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "close-dialog-duplicate",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "restore-dialog",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "toast-tones",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "toast-drawer-stack",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "sidebar-online-popover",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "conversation-default",
+      "before": "12px",
+      "after": "14px"
+    },
+    {
+      "screen": "notifications-default",
+      "before": "12px",
+      "after": "14px"
+    }
+  ],
+  "exit_code": 1,
+  "changed": [
+    "board-default",
+    "close-dialog-out-of-scope"
+  ],
+  "results": [
+    {
+      "name": "board-default",
+      "diff_pixels": 83,
+      "diff_ratio": 0.000057638888888888886,
+      "over_threshold": true
+    },
+    {
+      "name": "board-presence",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "board-filtered-empty",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "list-default",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "list-closed-groups",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "drawer-processing",
+      "diff_pixels": 24,
+      "diff_ratio": 0.000016666666666666667,
+      "over_threshold": false
+    },
+    {
+      "name": "drawer-dismissed",
+      "diff_pixels": 18,
+      "diff_ratio": 0.0000125,
+      "over_threshold": false
+    },
+    {
+      "name": "drawer-completed",
+      "diff_pixels": 24,
+      "diff_ratio": 0.000016666666666666667,
+      "over_threshold": false
+    },
+    {
+      "name": "drawer-banner-editing",
+      "diff_pixels": 24,
+      "diff_ratio": 0.000016666666666666667,
+      "over_threshold": false
+    },
+    {
+      "name": "detail-fullpage-1280",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "close-dialog-out-of-scope",
+      "diff_pixels": 35,
+      "diff_ratio": 0.000024305555555555554,
+      "over_threshold": true
+    },
+    {
+      "name": "close-dialog-duplicate",
+      "diff_pixels": 33,
+      "diff_ratio": 0.000022916666666666667,
+      "over_threshold": false
+    },
+    {
+      "name": "restore-dialog",
+      "diff_pixels": 7,
+      "diff_ratio": 0.000004861111111111111,
+      "over_threshold": false
+    },
+    {
+      "name": "toast-tones",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "toast-drawer-stack",
+      "diff_pixels": 24,
+      "diff_ratio": 0.000016666666666666667,
+      "over_threshold": false
+    },
+    {
+      "name": "sidebar-online-popover",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "conversation-default",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    },
+    {
+      "name": "notifications-default",
+      "diff_pixels": 0,
+      "diff_ratio": 0,
+      "over_threshold": false
+    }
+  ],
+  "report": ".build/visual/reverse/radius/report",
+  "baseline": ".build/visual/reverse/baseline",
+  "product_source_edits": 0
+}

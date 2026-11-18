@@ -1,0 +1,28 @@
+{
+  "decision_date": "2026-11-18",
+  "decision": "Product owner approved these 18 current PNGs as the first baseline; reviewer will run approve",
+  "platform": "darwin-chrome",
+  "capture_input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3",
+  "capture_source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "captured_at": "2026-11-18T04:03:00.633Z",
+  "sha256": {
+    "board-default.png": "b1795c66b61601072a38845fb29167e43077b9ee6bdd398468aaefc54483f0eb",
+    "board-filtered-empty.png": "28918fb63db1c73d586ce8525ceb4c18fcea051c3606b38fef7f907ce493b75b",
+    "board-presence.png": "9e02525e407d4d02231dcc082fe68ca109b705348ae04e92e295d0a19e845d88",
+    "close-dialog-duplicate.png": "d335aab41593963e03ee03f939109a20daad4b3844d214d49f65480833373f52",
+    "close-dialog-out-of-scope.png": "17fd9156c9eb704f2abbcf2fe46980b9255d8620a8422ea39e0252dcfd33a036",
+    "conversation-default.png": "311cdb9a8d1b99d93100311e0b0d56b9dcf6b926f52377ae98dacd712590e069",
+    "detail-fullpage-1280.png": "b0415a7eeb64649dcf92a408aea7dde85f8f4e9949bd77354002f845365fa5b9",
+    "drawer-banner-editing.png": "d6654c5eec698d42c8991e4bad79baebf023d28f09840bc585ece6b50a06bfc3",
+    "drawer-completed.png": "4898eb844184e917a82a066c0c58ddf837224bada53b7b06507cdc404c141d13",
+    "drawer-dismissed.png": "54a17226fd6af8bcb8c63df29b03b34e351aa48b8ec0f59dc0a8f6c2174b0c3e",
+    "drawer-processing.png": "adf4c7953d4bdd4971b9e73b60129daf485fe800061f5e3541d1e27770be7145",
+    "list-closed-groups.png": "ef4ea10156fa4e0a51d76279a6772dcb2d2009e143a0c8c150cd8081580bca19",
+    "list-default.png": "e4ee1365c8539664ea27d7d8d7fd6c0271e1378c0a592ae90e6e8f343db7e41b",
+    "notifications-default.png": "5659f453dab160e7093dee4075942f81326fa5be649314e839d335aaec95804c",
+    "restore-dialog.png": "11aa475aa3676476c3edd3f509419d52e8b8fdaddc44a5d2dfc9b3595da23c24",
+    "sidebar-online-popover.png": "5779643f20d496662a3fa972e280bb72361763b9bd4b643cf8e283867b39a7ef",
+    "toast-drawer-stack.png": "ee2e3ca6ff6edd469e5aa9900eb7de1708811beed98defc2da91231fa7cb6248",
+    "toast-tones.png": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258"
+  }
+}

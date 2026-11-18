@@ -1,0 +1,486 @@
+{
+  "passed": true,
+  "platform": "darwin-chrome",
+  "os_version": "macOS 26.6.2 / Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050 / 25.6.0",
+  "browser_version": "Chrome/157.0.8103.79",
+  "source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "input_hash": "2b43b2e6c96ada9ea026df50bfb88848f31ad2acc68d7e4578dcfa05a3f220f1",
+  "comparisons": 180,
+  "runs": [
+    "rework-1",
+    "rework-2",
+    "rework-3",
+    "rework-4",
+    "rework-5"
+  ],
+  "rows": [
+    {
+      "name": "board-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "board-presence",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "board-filtered-empty",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "list-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "list-closed-groups",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-processing",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-dismissed",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-completed",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "drawer-banner-editing",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "detail-fullpage-1280",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "close-dialog-out-of-scope",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "close-dialog-duplicate",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "restore-dialog",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "toast-tones",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "toast-drawer-stack",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "sidebar-online-popover",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "conversation-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    },
+    {
+      "name": "notifications-default",
+      "pairwise_max": 0,
+      "runs": [
+        {
+          "run": "rework-1",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-2",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-3",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-4",
+          "raw_diff_pixels": 0
+        },
+        {
+          "run": "rework-5",
+          "raw_diff_pixels": 0
+        }
+      ]
+    }
+  ]
+}

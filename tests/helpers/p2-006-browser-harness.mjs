@@ -67,8 +67,8 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
-/** @param {{url:string,width:number,height:number,graphics?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
-export async function launchSystemBrowser({url,width,height,graphics=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
+/** @param {{url:string,width:number,height:number,graphics?:boolean,fullRaster?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
+export async function launchSystemBrowser({url,width,height,graphics=false,fullRaster=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
   signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
@@ -77,6 +77,8 @@ export async function launchSystemBrowser({url,width,height,graphics=false,cooki
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
+    // Screenshot-only opt-in: avoid reusing partially rasterized text/overlay tiles.
+    ...(fullRaster?['--disable-partial-raster']:[]),
     // Hosted Windows uses WARP for WebGL and SwiftShader for WebGPU.
     ...(windowsSoftwareGraphics?[
       '--use-gl=angle','--use-angle=d3d11-warp','--use-webgpu-adapter=swiftshader','--disable-gpu-compositing',

@@ -1,0 +1,76 @@
+{
+  "before": [
+    0,
+    0,
+    15548,
+    18758,
+    3244,
+    15548,
+    3244,
+    3244
+  ],
+  "fixed_stream": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3244
+  ],
+  "fixed_stream_and_will_change": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "screen": "drawer-banner-editing",
+  "comparison": "raw RGBA changed pixels vs first image; 8 fresh contexts each",
+  "product_changes": 0,
+  "board_presence": {
+    "after_startup_preferences": [
+      0,
+      0,
+      0,
+      291,
+      291,
+      291,
+      291,
+      0
+    ],
+    "remaining_region": "Sort label only: x555-602, y231-242; group geometry stable",
+    "with_explicit_sort_label_mask": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "reason": "Intermittent local glyph rasterization; unmasked board-default covers the same control; presence tags remain compared"
+  },
+  "final_unmasked_sort_label_attempt": {
+    "board-default": [
+      0,
+      0,
+      291,
+      291,
+      0
+    ],
+    "sidebar-online-popover": [
+      0,
+      291,
+      291,
+      0,
+      291
+    ],
+    "receipt": "stability-failed-sort-label.json"
+  }
+}
