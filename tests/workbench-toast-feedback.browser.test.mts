@@ -32,6 +32,9 @@ test('production toast feedback preserves modal geometry, current commands, UNKN
     assert.ok(actionGeometry.length>=1,'geometry check includes visible command buttons');
     await click('[data-action=open-assignment]');await choose(group,'PILOT_IT');await choose(person,target.id);await click(dialog+' input[value=RETAIN_CURRENT]');
     await browser.waitFor("document.querySelector('[data-action=assign]')?.disabled===false");
+    // Autosave adds the saved-draft affordance independently of command feedback.
+    // Compare the same settled workflow on both sides of the conflict toast.
+    await browser.waitFor("document.querySelector('[data-assignment-draft-status]')?.getAttribute('aria-label')?.startsWith('草稿已保存')&&Boolean(document.querySelector('.detail-assignment-dialog [data-action=toggle-draft-limit]'))");
     await browser.evaluate('document.fonts.ready');await waitForAnimationsSettled(browser);
     const geometry=await browser.evaluate(`(()=>{const r=document.querySelector('${dialog}').getBoundingClientRect();return {width:r.width,height:r.height};})()`);
     const before=await http.detail(first.ticket.id),conflict=await http.post(first.ticket.id,'internal-notes',{client_command_id:randomUUID(),expected_version:before.version,reason_code:'TOAST_REAL_CONFLICT',note:'Synthetic concurrency note for toast layout.',external_visible:false});assert.equal(conflict.status,200);

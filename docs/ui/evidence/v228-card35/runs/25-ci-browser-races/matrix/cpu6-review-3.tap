@@ -1,0 +1,66 @@
+TAP version 13
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-a6cc1986-1a85-4e2b-a43b-a7a376572394/new-detail-1920.png","width":1920,"height":1080,"sha256":"7fbc19203b3a1819abd8f2c50df01c063b0c79ef89f050cce06ccafebdf520eb"}]}
+# Subtest: Card 12 UNKNOWN survives board-flag for the same authorized principal
+ok 1 - Card 12 UNKNOWN survives board-flag for the same authorized principal
+  ---
+  duration_ms: 4743.623333
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-9828088e-e148-4dea-b5cc-eb512bd320fe/new-detail-1920.png","width":1920,"height":1080,"sha256":"9b264a65f0a48b7b7bc40247a640ecacb126c9381fe60930c2b45a870cb33a25"}]}
+# Subtest: Card 12 UNKNOWN survives revision for the same authorized principal
+ok 2 - Card 12 UNKNOWN survives revision for the same authorized principal
+  ---
+  duration_ms: 4886.728875
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-3a7734ac-de53-420f-96d6-555b9fd4a948/new-detail-1920.png","width":1920,"height":1080,"sha256":"deb03783a11273ac450d5f4a4c1e9fe5687c2f66f82c9e8c53ccc90e425bca2c"}]}
+# Subtest: Card 12 absent or null active-state start never borrows old creation time
+ok 3 - Card 12 absent or null active-state start never borrows old creation time
+  ---
+  duration_ms: 3146.833
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-ed3fdcc3-467d-49a0-ab74-902ed4609ab8/new-detail-1920.png","width":1920,"height":1080,"sha256":"52cf5186e54f927f9685913012df5f6a73f363478a537f70ea74196ca40214d9"}]}
+# Subtest: Card 12 credible Ticket READ 403 clears the pending card controller without replay
+ok 4 - Card 12 credible Ticket READ 403 clears the pending card controller without replay
+  ---
+  duration_ms: 4277.732583
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-e04db18f-4aac-4eaa-98db-53d3ade37b58/new-detail-1920.png","width":1920,"height":1080,"sha256":"2b557c44fa777048c4f3934602d436a50d23069a071d3637033da94dd2c1d875"}]}
+# Subtest: Card 12 credible Ticket READ 404 clears the pending card controller without replay
+ok 5 - Card 12 credible Ticket READ 404 clears the pending card controller without replay
+  ---
+  duration_ms: 4216.689208
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-d676acc1-fc65-4c53-ad16-8a9128902306/new-detail-1920.png","width":1920,"height":1080,"sha256":"3d6043fe0db9c07a946612309071d5e3bef84184dd96c9c39dbbfe0b3fe9c38b"}]}
+# Subtest: Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+ok 6 - Card 12 related profile READ 403 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 4204.95825
+  type: 'test'
+  ...
+# RACE_CPU {"rate":6}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-b222ad6c-5fb7-44e6-8082-d04be21ed963/new-detail-1920.png","width":1920,"height":1080,"sha256":"1fed357e1c82adcb13fdce818b343a9c38d746810c8a55211f3c73615ec240e3"}]}
+# Subtest: Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+ok 7 - Card 12 related profile READ 404 clears UNKNOWN with realtime disabled
+  ---
+  duration_ms: 4564.532333
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30166.705333

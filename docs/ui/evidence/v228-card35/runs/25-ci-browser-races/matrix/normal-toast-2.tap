@@ -1,0 +1,19 @@
+TAP version 13
+# RACE_CPU {"rate":1}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"toast-feedback","screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-1280.png","width":1280,"height":900,"sha256":"237246b6b724dfc9379012be7a64772497101ee5dbff547de8b773c3157008d4"},{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-600.png","width":600,"height":844,"sha256":"3dd8f787efda9c071ed97c29a05f93dc785950803af8dee5415b7d8c2d96bfba"},{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-page-1280.png","width":1280,"height":900,"sha256":"d65615e0db253d584ffe45719f91bfeff3c21c6aa4a2b3cb653a593ade6b7739"}]}
+# WORKBENCH_TOAST {"actualConflict":true,"modalGeometry":true,"modalTopLayer":true,"narrowViewport":true,"explicitCurrentVersionRetry":true,"unknownOriginalUuid":true,"closeDoesNotSettle":true,"currentReadRevocationClears":true,"cspBaseline":["style-src-elem"],"newCspViolations":0,"screenshots":[{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-1280.png","width":1280,"height":900,"sha256":"237246b6b724dfc9379012be7a64772497101ee5dbff547de8b773c3157008d4"},{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-600.png","width":600,"height":844,"sha256":"3dd8f787efda9c071ed97c29a05f93dc785950803af8dee5415b7d8c2d96bfba"},{"file":"/private/tmp/card35a-ci-races-6ug2iwfj/test-temp/web01-ui-21cfef6a-e99c-488c-ac18-201ccade2c35/new-detail-page-1280.png","width":1280,"height":900,"sha256":"d65615e0db253d584ffe45719f91bfeff3c21c6aa4a2b3cb653a593ade6b7739"}]}
+# Subtest: production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+ok 1 - production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+  ---
+  duration_ms: 14470.05575
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14599.174459

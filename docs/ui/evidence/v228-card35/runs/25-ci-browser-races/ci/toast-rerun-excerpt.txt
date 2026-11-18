@@ -1,0 +1,47 @@
+2026-11-18T13:32:36.1147203Z # skipped 0
+2026-11-18T13:32:36.1147387Z # todo 0
+2026-11-18T13:32:36.1147591Z # duration_ms 19147.31431
+2026-11-18T13:32:42.4849218Z TAP version 13
+2026-11-18T13:32:42.4850105Z # Subtest: production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+2026-11-18T13:32:42.4851871Z not ok 1 - production toast feedback preserves modal geometry, current commands, UNKNOWN recovery and read boundaries
+2026-11-18T13:32:42.4852847Z   ---
+2026-11-18T13:32:42.4853231Z   duration_ms: 5784.511683
+2026-11-18T13:32:42.4853639Z   type: 'test'
+2026-11-18T13:32:42.4855039Z   location: '/home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/workbench-toast-feedback.browser.test.mjs:13:1'
+2026-11-18T13:32:42.4856685Z   failureType: 'testCodeFailure'
+2026-11-18T13:32:42.4857118Z   error: |-
+2026-11-18T13:32:42.4857545Z     toast does not reflow the inline workflow
+2026-11-18T13:32:42.4858041Z     + actual - expected
+2026-11-18T13:32:42.4858401Z     
+2026-11-18T13:32:42.4858696Z       {
+2026-11-18T13:32:42.4859011Z     +   height: 382.4375,
+2026-11-18T13:32:42.4859396Z     -   height: 379.4375,
+2026-11-18T13:32:42.4859768Z         width: 656
+2026-11-18T13:32:42.4860099Z       }
+2026-11-18T13:32:42.4860382Z     
+2026-11-18T13:32:42.4860687Z   code: 'ERR_ASSERTION'
+2026-11-18T13:32:42.4861077Z   name: 'AssertionError'
+2026-11-18T13:32:42.4861448Z   expected:
+2026-11-18T13:32:42.4861761Z     width: 656
+2026-11-18T13:32:42.4862400Z     height: 379.4375
+2026-11-18T13:32:42.4862985Z   actual:
+2026-11-18T13:32:42.4863294Z     width: 656
+2026-11-18T13:32:42.4863625Z     height: 382.4375
+2026-11-18T13:32:42.4864006Z   operator: 'deepStrictEqual'
+2026-11-18T13:32:42.4864418Z   stack: |-
+2026-11-18T13:32:42.4865900Z     file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/workbench-toast-feedback.browser.test.mjs:52:16
+2026-11-18T13:32:42.4868536Z     async withT24Fixture.ticketAssignmentEnabled (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/detail-restructure-fixture.mjs:47:13)
+2026-11-18T13:32:42.4871529Z     async withWeb01Fixture.ticketSelfHandlingEnabled (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/t24-round-notification-fixture.mjs:34:13)
+2026-11-18T13:32:42.4874213Z     async run (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+2026-11-18T13:32:42.4876876Z     async withP2015IsolatedDatabase (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+2026-11-18T13:32:42.4879504Z     async withT24Fixture (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/t24-round-notification-fixture.mjs:15:5)
+2026-11-18T13:32:42.4882220Z     async withDetailRestructureFixture (file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/runtime/tests/helpers/detail-restructure-fixture.mjs:19:5)
+2026-11-18T13:32:42.4883907Z     async Test.run (node:internal/test_runner/test:1409:7)
+2026-11-18T13:32:42.4884813Z     async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+2026-11-18T13:32:42.4885659Z   ...
+2026-11-18T13:32:42.4885945Z 1..1
+2026-11-18T13:32:42.4886241Z # tests 1
+2026-11-18T13:32:42.4886538Z # suites 0
+2026-11-18T13:32:42.4886835Z # pass 0
+2026-11-18T13:32:42.4887158Z # fail 1
+2026-11-18T13:32:42.4887455Z # cancelled 0

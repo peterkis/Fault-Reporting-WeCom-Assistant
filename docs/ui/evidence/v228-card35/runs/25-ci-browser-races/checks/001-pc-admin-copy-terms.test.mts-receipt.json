@@ -1,0 +1,47 @@
+{
+  "path": "tests/pc-admin-copy-terms.test.mts",
+  "runtime_path": "tests/pc-admin-copy-terms.test.mjs",
+  "executed_path": ".build/runtime/tests/pc-admin-copy-terms.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "executable": "/Users/petervans/.local/share/fnm/node-versions/v24.18.0/installation/bin/node",
+  "argv": [
+    "--test-concurrency=1",
+    "--test",
+    "--test-reporter=tap",
+    "--test-reporter-destination=stdout",
+    "--test-reporter=file:///Users/petervans/Projects/ticket-wt-35a/.build/runtime/app/server/scripts/p2-g2-case-reporter.mjs",
+    "--test-reporter-destination=/private/tmp/card35a-ci-races-6ug2iwfj/regressions/5/001-pc-admin-copy-terms.test.mts.cases.jsonl",
+    "/Users/petervans/Projects/ticket-wt-35a/.build/runtime/tests/pc-admin-copy-terms.test.mjs"
+  ],
+  "source_sha256": "4ef98ca847366ea43aebdc1d37971d6a03c1ac53e198519cb6ad301e2f858195",
+  "executed_sha256": "965cf4661a9be75cd292e8b3a476d40fa73786378841614c8fab2b37170fd65c",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-pc-admin-copy-terms.test.mts.tap",
+  "tap_sha256": "15fbb83beb67841ab1e18e62d7c546e273f6da9ce8e6a7f1f3e061a31356e4cc",
+  "tap_bytes": 1248,
+  "stderr_path": "001-pc-admin-copy-terms.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "001-pc-admin-copy-terms.test.mts.cases.jsonl",
+  "case_trace_sha256": "e01701a86b079743acd629adfc087c5ae6dba552b09bba9cae5f3a14c9ecd5f8",
+  "case_trace_bytes": 1720,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

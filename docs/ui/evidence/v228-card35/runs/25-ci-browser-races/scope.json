@@ -1,0 +1,19 @@
+{
+  "head": "c21d00c7ef295670f124c368b1eca8b807ec0a4a",
+  "main": "67999466deedacea714812f7cc23884c2a5b7db1",
+  "manifest_sha256": "7191d3d5d796956991694966353614ef388612df969ba3f2671ab4ec3355d7e5",
+  "source_input_hash": "6d780c3492f29412596d921a578e158d4053e1e46a4d04792ab2ca40c149954f",
+  "source_changes_at_test_time": [
+    "tests/workbench-toast-feedback.browser.test.mts"
+  ],
+  "strict_geometry_assertion_unchanged": true,
+  "card12_review_source_unchanged_vs_head": true,
+  "production_changes_this_round": [],
+  "tracked_harness_changes": false,
+  "realtime_changes_this_round": false,
+  "temporary_loader_sha256": "02cec0a33011611683bd3f0b17d0fe1ff8280c968fbe751a885dee3b2d808e8e",
+  "temporary_loader_method": "Node registerHooks adds CDP Emulation.setCPUThrottlingRate before first Page.navigate; final matrix CARD35A_TRACE=0 only sets CPU and logs acknowledgment. No runtime file or test-body transformation in final matrix. Diagnostic TRACE=1 snapshots and logs are separate from the final matrix.",
+  "matrix_cases": 80,
+  "matrix_file_runs": 20,
+  "guard": "No original assertion, selector or production source changed. New test wait and evidence only. No commit or push."
+}

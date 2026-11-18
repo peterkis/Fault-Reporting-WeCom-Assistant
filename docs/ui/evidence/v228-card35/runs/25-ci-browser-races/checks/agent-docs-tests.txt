@@ -1,0 +1,28 @@
+✔ agent navigation resolves Chinese, duplicate, explicit and setext anchors with encoded local paths (13.524042ms)
+✔ a missing local document is reported at its referring file (5.300292ms)
+✔ an existing document with a stale fragment fails while its valid link remains accepted (1.256625ms)
+✔ only actual HTML id attributes create explicit anchors (1.564ms)
+✔ HTML comments hide links, explicit anchors and headings while inline code remains literal (1.782833ms)
+✔ balanced, escaped and angle-wrapped destinations retain complete paths and fragments (1.576792ms)
+✔ nested and escaped link labels still validate their destinations (1.100458ms)
+✔ Markdown punctuation escapes are decoded before checking local paths (1.242417ms)
+✔ rendered references, images and HTML links decode entities and ignore unused definitions (1.835666ms)
+✔ heading slugs use rendered text, decoded entities and duplicate numbering (2.213541ms)
+✔ indented code cannot create links or explicit anchors (1.157625ms)
+✔ the root budget counts UTF-8 bytes rather than visible characters (2.849375ms)
+✔ external links and fenced or inline link examples do not require local targets (0.7715ms)
+✔ local links cannot leave the repository through traversal, encoding or a directory junction (1.076125ms)
+✔ an in-repository linked documentation directory is scanned (1.50925ms)
+✔ an external linked documentation directory is rejected without an incoming link (1.230875ms)
+✔ directory aliases validate links relative to each logical parent (1.825208ms)
+✔ cyclic directory links terminate while distinct aliases are scanned (1.459583ms)
+✔ unrelated Markdown and source-index JSON contents are outside the link scan (0.883ms)
+✔ changed documents outside the fixed navigation surface are checked once and cannot escape (0.890125ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95.046375

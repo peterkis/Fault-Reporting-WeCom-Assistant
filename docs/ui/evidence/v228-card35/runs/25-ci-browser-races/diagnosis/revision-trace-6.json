@@ -1,0 +1,176 @@
+{
+  "elapsed": 885.5,
+  "trace": {
+    "layout": [],
+    "reads": [
+      {
+        "path": "/api/lifecycle/bootstrap",
+        "method": "GET",
+        "started": 253.19999980926514,
+        "status": 200,
+        "done": 277.39999985694885,
+        "aborted": false,
+        "revision": "7cc9b21c471cfe1c44e1f0cb4dadd025ba6fa20f0ada78af4618f7c6d6014040"
+      },
+      {
+        "path": "/api/workbench/service-catalog",
+        "method": "GET",
+        "started": 521.6999998092651,
+        "status": 200,
+        "done": 643,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 524.5,
+        "status": 200,
+        "done": 643.6999998092651,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 525.8999998569489,
+        "status": 200,
+        "done": 643.6999998092651,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 526,
+        "status": 200,
+        "done": 643.6999998092651,
+        "aborted": false
+      },
+      {
+        "path": "/api/lifecycle/bootstrap",
+        "method": "GET",
+        "started": 746.6999998092651,
+        "status": 200,
+        "done": 926.8999998569489,
+        "aborted": false,
+        "revision": "7cc9b21c471cfe1c44e1f0cb4dadd025ba6fa20f0ada78af4618f7c6d6014040"
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 989.6999998092651,
+        "status": 200,
+        "done": 1063,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 990.5,
+        "status": 200,
+        "done": 1063.5,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 990.5,
+        "status": 200,
+        "done": 1062,
+        "aborted": false
+      },
+      {
+        "path": "/api/lifecycle/bootstrap",
+        "method": "GET",
+        "started": 1074.1999998092651,
+        "status": 200,
+        "done": 1143.5,
+        "aborted": false,
+        "revision": "7cc9b21c471cfe1c44e1f0cb4dadd025ba6fa20f0ada78af4618f7c6d6014040"
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 1150.2999999523163,
+        "status": 200,
+        "done": 1223.8999998569489,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 1152.0999999046326,
+        "status": 200,
+        "done": 1223.7999999523163,
+        "aborted": false
+      },
+      {
+        "path": "/api/workbench/board",
+        "method": "GET",
+        "started": 1152.0999999046326,
+        "status": 200,
+        "done": 1223.8999998569489,
+        "aborted": false
+      },
+      {
+        "path": "/api/tickets/01a1eee8-d277-7990-9034-4a49fc788858",
+        "method": "GET",
+        "started": 1557.2999999523163,
+        "status": 200,
+        "done": 1591.5999999046326,
+        "aborted": false
+      },
+      {
+        "path": "/api/tickets/01a1eee8-d277-7990-9034-4a49fc788858/take-and-start",
+        "method": "POST",
+        "started": 1851.1999998092651,
+        "status": null,
+        "done": 1924.0999999046326,
+        "aborted": false,
+        "error": "TypeError"
+      },
+      {
+        "path": "/api/lifecycle/bootstrap",
+        "method": "GET",
+        "started": 2724.199999809265,
+        "status": 200,
+        "done": 2784.2999999523163,
+        "aborted": false,
+        "revision": "1789914797ec6a263901adc35274da2287f1d3e6b1afaf75acd5a361420a4f97"
+      },
+      {
+        "path": "/api/workbench/service-catalog",
+        "method": "GET",
+        "started": 2829.199999809265,
+        "status": 200,
+        "done": 2867.399999856949,
+        "aborted": false
+      }
+    ],
+    "sources": [
+      {
+        "kind": "open",
+        "state": 1,
+        "at": 745.0999999046326
+      },
+      {
+        "kind": "ticket.command.committed",
+        "state": 1,
+        "at": 2725.399999856949
+      },
+      {
+        "kind": "ticket.command.committed",
+        "state": 1,
+        "at": 2725.5
+      }
+    ],
+    "visibility": []
+  },
+  "seen": {
+    "principal": "01a1eee8-d26a-7467-8c2a-f3ccfcae3021",
+    "revision": "1789914797ec6a263901adc35274da2287f1d3e6b1afaf75acd5a361420a4f97",
+    "board": true,
+    "self": true
+  },
+  "status": "connecting",
+  "visibility": "visible",
+  "online": true
+}

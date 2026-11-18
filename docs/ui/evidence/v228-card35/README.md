@@ -1,4 +1,14 @@
-# Card 35A / PR 192 — search compatibility restored
+# Card 35A / PR 192 — CI browser race investigation
+
+Baseline `c21d00c7ef295670f124c368b1eca8b807ec0a4a`. [Current root-cause report, main comparison, CI artifacts and per-run results](runs/25-ci-browser-races/README.md).
+
+The toast failure was reproduced exactly at CPU 6x: the existing saved-draft affordance grows the inline controls by 3px before the conflict. The test now waits for that pre-existing async state before measuring; its exact size equality is unchanged. Production and realtime code are unchanged. Card12-review was not reproduced: the first CI attempt's screenshot shows the existing authorization-denial fence, while the same HEAD's rerun passes. The exact CI-only denial source remains unconfirmed and is not relabelled as a proven test bug.
+
+Both complete files pass **5/5 normal + 5/5 CPU 6x** (toast 10/10 cases, card12-review 70/70). Requested regressions pass: 35A **10/10**, t38 protocol **2/2**, realtime unit **11/11**, detail restructure **2/2**, copy terms **6/6**. Typecheck/build/Stylelint/ESLint, docs (20/20), artifact and all 648 local-link checks pass. No commit/push or 35B changes. Prior reports below retain their own source identities and original failures.
+
+---
+
+# Historical search compatibility restoration
 
 The prior “legacy search-production failure” classification was wrong: 35A replaced main’s search copy. This product regression is now corrected against `origin/main` (`67999466deedacea714812f7cc23884c2a5b7db1`), without editing search-production or card12 assertions.
 

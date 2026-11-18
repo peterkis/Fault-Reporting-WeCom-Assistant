@@ -1,0 +1,20 @@
+{
+  "head": "c21d00c7ef295670f124c368b1eca8b807ec0a4a",
+  "run_id": 44309530491,
+  "latest_job_id": 134829935580,
+  "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/44309530491",
+  "downloaded_archive_digests_verified": true,
+  "artifacts": [
+    {
+      "id": 14431011903,
+      "bytes": 2019778,
+      "sha256": "e82b933c937a35b7ac7d7a40a9dfde7d964cd106b96b5fc903a860560aac6683"
+    },
+    {
+      "id": 14432470775,
+      "bytes": 4363299,
+      "sha256": "de7ef44212e187a63fe1452a2d49aea7fe0e15e8a25b7d30647923c806ccf0b5"
+    }
+  ],
+  "note": "Only selected TAP, failure screenshot and the toast failure excerpt retained. Full logs, signed download URLs and ZIPs are not published."
+}
