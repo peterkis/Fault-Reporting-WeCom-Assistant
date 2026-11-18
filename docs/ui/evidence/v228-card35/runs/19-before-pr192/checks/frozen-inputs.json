@@ -1,0 +1,29 @@
+{
+  "comparison": "start of product option A, not git HEAD",
+  "status": "PASS",
+  "frozen_files": {
+    "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": {
+      "before": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9",
+      "after": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
+    }
+  },
+  "authorized_changes": {
+    "app/pc-admin/src/realtime/useRealtime.ts": {
+      "before": "5fe25d8631ea992ed73e95e0c828676c4137dc203a0960eb138fe5ff10d6d478",
+      "after": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52"
+    },
+    "app/pc-admin/src/realtime/workbench-realtime-client.mts": {
+      "before": "ce1b60b15b948d77ee6c157af405bc25e8c6fad8e782bd7ce5d2ab7c49c429b8",
+      "after": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73"
+    },
+    "tests/wbint-t38-protocol.browser.test.mts": {
+      "before": "8507d651392f04634493a26051333a00aee876da8b3b00c97f4a5439d48f01a1",
+      "after": "a91d35a11f5d611f529a12780b46a89e6c68fb5f84de45afece6f2c98a8eb136"
+    },
+    "app/pc-admin/src/design/components/ConnectionBar/ConnectionBar.tsx": {
+      "before": "8fd342f94f7d4e578e2148df93990844ce473ca6f6378643042b15f253516584",
+      "after": "febdf73ed05773fc33b038c3b05ed697ba0ba944791282dea2afc59e27ca7380"
+    }
+  },
+  "authorization": "The product owner explicitly requested option A changes to the realtime adapter, hook and capacity test; the preceding freeze applies only to the archived previous review."
+}

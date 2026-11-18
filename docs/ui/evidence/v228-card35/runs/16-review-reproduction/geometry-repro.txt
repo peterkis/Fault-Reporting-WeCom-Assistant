@@ -1,0 +1,19 @@
+{"before":{"pending":257,"handled":257},"after":{"pending":300,"handled":300},"delta":{"pending":43,"handled":43}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: pending/handled first cards must replace the first skeleton block within 1px
+    at withWeb01Fixture.precisionV212 (file://<owned-temp>
+    at async run (file://<worktree>/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    at async withP2015IsolatedDatabase (file://<worktree>/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    at async file://<owned-temp> {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.18.0

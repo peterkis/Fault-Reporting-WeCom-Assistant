@@ -1,0 +1,17 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","unknown_preserved":true,"explicit_same_command_replay":true,"committed_note_count":1,"automatic_posts":0,"screenshots":[]}
+# Subtest: temporary GET unavailability preserves UNKNOWN and permits explicit original-command reconciliation without a new intent
+ok 1 - temporary GET unavailability preserves UNKNOWN and permits explicit original-command reconciliation without a new intent
+  ---
+  duration_ms: 1866.494042
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2045.763792

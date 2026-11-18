@@ -1,0 +1,24 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"T10_FAILED_PEER","screenshots":[]}
+# Subtest: T10 blank observer preserves a peer failed waiting draft
+ok 1 - T10 blank observer preserves a peer failed waiting draft
+  ---
+  duration_ms: 2255.749
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","purpose":"T10_ORIGINAL_UNKNOWN_EXPLICIT_ACK","screenshots":[{"file":"<owned-temp>","width":1920,"height":1080,"sha256":"c9d436d74bbd28ea16c365cb6f0fec7e6e43da04257c2511bc71457faa836b67"}]}
+# Subtest: production UNKNOWN keeps the original waiting UUID and uses only explicit safe GET after the action disappears and reloads
+ok 2 - production UNKNOWN keeps the original waiting UUID and uses only explicit safe GET after the action disappears and reloads
+  ---
+  duration_ms: 1731.607542
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4165.009208

@@ -1,0 +1,13 @@
+✔ Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics (56875.995959ms)
+✔ Card 35A A4.6-8: five original read-only scenarios, focusable disabled tooltip, SSE collapse and bounded connection recovery (94437.906667ms)
+✔ Card 35A A4.7: an initial explicit read denial shows the unique permission bar without retaining content (1336.049041ms)
+✔ Card 35A connection scheduler uses one timer, exactly three retries, manual restart and denial disposal (1.229291ms)
+✔ Card 35A native reconnect events cannot reset or bypass the bounded read budget (0.563167ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 152765.711209

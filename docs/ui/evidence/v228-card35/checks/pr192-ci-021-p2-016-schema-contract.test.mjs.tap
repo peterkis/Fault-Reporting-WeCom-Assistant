@@ -1,0 +1,69 @@
+TAP version 13
+# Cloning into '<owned-temp>'...
+# Updating files:  81% (9512/11612)
+# Updating files:  82% (9522/11612)
+# Updating files:  83% (9638/11612)
+# Updating files:  84% (9755/11612)
+# Updating files:  85% (9871/11612)
+# Updating files:  86% (9987/11612)
+# Updating files:  87% (10103/11612)
+# Updating files:  88% (10219/11612)
+# Updating files:  89% (10335/11612)
+# Updating files:  90% (10451/11612)
+# Updating files:  91% (10567/11612)
+# Updating files:  92% (10684/11612)
+# Updating files:  93% (10800/11612)
+# Updating files:  94% (10916/11612)
+# Updating files:  95% (11032/11612)
+# Updating files:  96% (11148/11612)
+# Updating files:  97% (11264/11612)
+# Updating files:  98% (11380/11612)
+# Updating files:  99% (11496/11612)
+# Updating files: 100% (11612/11612)
+# Updating files: 100% (11612/11612), done.
+# HEAD is now at 8c332710 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+ok 1 - P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+  ---
+  duration_ms: 7365.083709
+  type: 'test'
+  ...
+# Subtest: P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+ok 2 - P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+  ---
+  duration_ms: 24.375291
+  type: 'test'
+  ...
+# Subtest: P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+ok 3 - P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+  ---
+  duration_ms: 5.331333
+  type: 'test'
+  ...
+# Subtest: JSON contract rejects extra keys, noncanonical types and offset time
+ok 4 - JSON contract rejects extra keys, noncanonical types and offset time
+  ---
+  duration_ms: 0.872875
+  type: 'test'
+  ...
+# Subtest: P2-016 closeout freezes every business input and the exact file set
+ok 5 - P2-016 closeout freezes every business input and the exact file set
+  ---
+  duration_ms: 0.134708
+  type: 'test'
+  ...
+# Subtest: P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+ok 6 - P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+  ---
+  duration_ms: 0.234041
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8526.400542

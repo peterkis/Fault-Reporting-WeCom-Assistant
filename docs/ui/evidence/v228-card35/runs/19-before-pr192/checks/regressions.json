@@ -1,0 +1,545 @@
+{
+  "files": 31,
+  "pass": 31,
+  "fail": 0,
+  "counts": {
+    "tests": 161,
+    "pass": 161,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+  "source_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
+  "results": [
+    {
+      "path": "tests/pc-admin-card32a.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "cbd73cb638f1cdd228ade5e2e4e65af453d917e5a20af1d512b9f53ebde91338",
+      "executed_sha256": "76c405ad573622ac3cc414a94a12c16dae171597ba56bc68cbd03542834c7291",
+      "tap": "01-pc-admin-card32a.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card32b.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "591ee2a322943b49539d3048c1353a28d7b94c23b167310ee0fe62f103a51cbc",
+      "executed_sha256": "514cf56d69396c78480b26e746496fc24126bcae7781ee807af2d0b733ff36df",
+      "tap": "02-pc-admin-card32b.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card32c-d.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "eca595ad54acf8c03cfa168f7b2b1807d8ee7e7355ab9d83a745946ffed83a71",
+      "executed_sha256": "3335eaa7d07ec98c99500b53d332fd3360c17ffc85f509307c8b308e7eb34561",
+      "tap": "03-pc-admin-card32c-d.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card32d-toast.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "6f68a41dc3d46deaa59c7d70115bf28348502a7fa53a173aa745b638311560de",
+      "executed_sha256": "1fc89f719d31fd6f4fe250a68af99337c9bf7d8061246dc9fed92965767cce98",
+      "tap": "04-pc-admin-card32d-toast.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card34a-toast-modal.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "9c7744097aec2e6561bb3d33965fb3bb6be0543162d66076448d0fe6359b1a7a",
+      "executed_sha256": "c0a097f42ac7eecc557263f62e21f9ec79a7c111f49d3fc958d0ba0469ecc38c",
+      "tap": "05-pc-admin-card34a-toast-modal.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card34b-detail.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "0e1f56d5a06aaf6666133ec0f7b25c6b795b71f4d2fd74b6fdf4f08fa2140c22",
+      "executed_sha256": "222069a4fdf4befd285c34772b71dbd7d88f3cfc15ea4834115487f9ce881483",
+      "tap": "06-pc-admin-card34b-detail.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card34c-copy.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "e0e74eeb7ac8227cea3c17807636f86970b571fd28876f6967bd56d0de4f074e",
+      "executed_sha256": "7c2935b39e35f36a9a8aa0b3fe1ddb8b3e5cde8bbd0b17cc288d3b7fc41848a2",
+      "tap": "07-pc-admin-card34c-copy.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/workbench-detail-restructure.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "7902958f30a28a95048b39a64407edf0fa93dbeefe34200f25955cf9359d3102",
+      "executed_sha256": "1d1a1768ef2be81a8b01aaa8f255646793afa126af9c19897a82c348fd1667b9",
+      "tap": "08-workbench-detail-restructure.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/workbench-toast-feedback.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "6829f3a5f37ea1391da5fbc2a214459d636a6f9dc445507ea63cce83aeefde4c",
+      "executed_sha256": "5a3988951534a8bca6c187ce1f346d16998f13c6b200f99608937b6149ed036e",
+      "tap": "09-workbench-toast-feedback.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-realtime.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "0cde0fa52ee6397c2394a4bdd1f9d1a7e715be057d077d872fda57c7d5e8384e",
+      "executed_sha256": "c804d4d50e74baabff32163c2d8a0b7283bae4fd2d9ce0f7710c45533d3ffd5f",
+      "tap": "10-wbint-t38-realtime.test.mts.tap",
+      "batch": "initial-database-free"
+    },
+    {
+      "path": "tests/wbint-t38-realtime.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "53e74c510d8cdd5666a0c3e9a62af2e9fa94ea643c76fc7cc8983d307699080a",
+      "executed_sha256": "7acba7e58bb2eefd0a21cd1ded370c57f6435fa2316260a4ff2d833d73af791c",
+      "tap": "11-wbint-t38-realtime.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-offline.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "e91a0707e4ec2dba3cdef41783b27edbb500655dc5e48c97351aa78af8520ed8",
+      "executed_sha256": "faf32ab73c5542e4f33f8afac21bf13d0d5710133645dda96158483769023ee3",
+      "tap": "12-wbint-t38-offline.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-unknown.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "5d28f1348fd683bb139ba393c7de82353ecb8e11a9d63c05ab5307ca7e941404",
+      "executed_sha256": "0707878ddd2ede19f32aca291804eb8ac24e0c5ac8c4abb559e568ffe585d21b",
+      "tap": "13-wbint-t38-unknown.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-gap.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "7324eaacb46fa6443ec3759b58785b58620516ff57e8ab9c9941579c765b1e70",
+      "executed_sha256": "5a8178e7775d28fb6f93bcea8f15fffec8f0f86ed634f37c1ec7029e24da9b28",
+      "tap": "14-wbint-t38-gap.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-authority.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "910c5e0b504600a7f21246a19cc3f20d001fb9b57555301dc72550421bd9988c",
+      "executed_sha256": "ed8e523879f91cc0a917e9ef3a7613ee6f9dd03f48c95efbc0e6244798cd8519",
+      "tap": "15-wbint-t38-authority.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t38-protocol.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "a91d35a11f5d611f529a12780b46a89e6c68fb5f84de45afece6f2c98a8eb136",
+      "executed_sha256": "ee2e09e60b1ab735affbd23f945d81247fa8e814fd564c5d4a2d2208d85f43fb",
+      "tap": "16-wbint-t38-protocol.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-design-foundation.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 75,
+        "pass": 75,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "2b42df1ed130ab6c9826f4947048863fb6ef45bcba3f1e8c1aba1f76220da360",
+      "executed_sha256": "58f7c920dbb277ebf4607620278059a17c3fb3b11515ecfb12c94187f90bd12b",
+      "tap": "17-pc-admin-design-foundation.test.mts.tap",
+      "batch": "initial-database-free"
+    },
+    {
+      "path": "tests/pc-admin-copy-terms.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "4ef98ca847366ea43aebdc1d37971d6a03c1ac53e198519cb6ad301e2f858195",
+      "executed_sha256": "965cf4661a9be75cd292e8b3a476d40fa73786378841614c8fab2b37170fd65c",
+      "tap": "18-pc-admin-copy-terms.test.mts.tap",
+      "batch": "initial-database-free"
+    },
+    {
+      "path": "tests/pc-admin-card12-review.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "e783e4e89e4f84c34c591f82437a38172cbd53e5c1b3720df3c23116d5ef55dd",
+      "executed_sha256": "a7994b8efeca3f2dd48b7a394b31db9ba3d394bdf6590cff10dd6e3cfad8c3e3",
+      "tap": "19-pc-admin-card12-review.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-card16.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "e9589553b25e47dd406c61528164cc9a7f6903eca5eef29c2780b7e0e224a85f",
+      "executed_sha256": "36b1dd735736e075bfce5bf0dd376a6c269dc02edfd1c43a5e44ae464787fb58",
+      "tap": "20-pc-admin-card16.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/web01-workbench.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "582777459c75215ec980cff46cee077f2c5787f63e6318427500c22a798a91b9",
+      "executed_sha256": "ff7d62af4ab4da3d5f15091920ea9274229519f7739a1f9e84eba012de3e005b",
+      "tap": "21-web01-workbench.test.mts.tap",
+      "batch": "initial-database-free"
+    },
+    {
+      "path": "tests/web01-workbench.integration.test.mjs",
+      "status": "PASS",
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "db5e2d34f8150df66780ab904c15fb61e2f9af152a662888a4b7582b2688c9ad",
+      "executed_sha256": "db5e2d34f8150df66780ab904c15fb61e2f9af152a662888a4b7582b2688c9ad",
+      "tap": "22-web01-workbench.integration.test.mjs.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-contracts.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "d0008c57a51d22b9cf9d1ef1c0d7d069b5a7f953d3ff49fadebd5d8a1758e96d",
+      "executed_sha256": "fe1f17aabef7ca42b1cfecd788ddb0512343319385c0b02965286b4c56b2fbfb",
+      "tap": "23-wbint-t19-manual-self-handling-contracts.test.mts.tap",
+      "batch": "initial-database-free"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-authority.integration.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "230e7d3ffd6366c73e7ab6ee7dfa95fb0189eb887206cbab6b8d054e8689847b",
+      "executed_sha256": "13cf2f9e1f835272f6cae2c2bb03c5bada4134168fefec894cf9578889e2c7d0",
+      "tap": "24-wbint-t19-manual-self-handling-authority.integration.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "ea8ed49b1d5d2a8074ec3af3cec720e000624b8fee9229263cedbefbcba9f764",
+      "executed_sha256": "b2c9e1fe54804b94e602e5bc11212a94a10d0363298667bc6c753babf2cf22d2",
+      "tap": "25-wbint-t19-manual-self-handling-unknown.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "82c4812ea8830f357c2b5ee8ad6c77fef3d7af3b87ae37b77196e3f05239ab4f",
+      "executed_sha256": "8a9d8c18f8db52ee1de44211b61b2144524476c524f0e7ee461d6373bdd5e285",
+      "tap": "26-wbint-t32-exception-authorization.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/wbint-t22-realtime-tracer.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "25b5d8da68f3cd7ccf06b226d04239eb0c282736f7245f174d7906998e55b082",
+      "executed_sha256": "a7a179be2b875ba78ce8f8f5a5ec34ccdb1c8d72e3ee0342ffbeac11ad110b9a",
+      "tap": "27-wbint-t22-realtime-tracer.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/pc-admin-legacy-retirement.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "031d43e795192b467adc97c75cc89b4a87b0972bff5c9d3f582cdd8c852fcabf",
+      "executed_sha256": "5e9e6e877f9651734ce10fbe4c6a0e30f8e66fbbbb652965804794daed376f6b",
+      "tap": "28-pc-admin-legacy-retirement.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/t35-account-switch.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "3d688aa256a2d07fd086a62190de1c9232a932fa0e05171bf8511bd9a06577fe",
+      "executed_sha256": "e796b4ac91dd9d14a9f74f57ed4725628951a4ad9ee5e52d3fe9ea89d9cf4619",
+      "tap": "29-t35-account-switch.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/t35-current-authority-wait.integration.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "173fa17ebd5fdde4c104731543c6992fd945de23035459f2717d38f2e2a4ed3d",
+      "executed_sha256": "0037ccaebf6bfae4bf9833e42ef67c493c96d3492779707e27ce829b3d1d9c6e",
+      "tap": "30-t35-current-authority-wait.integration.test.mts.tap",
+      "batch": "corrected-isolation"
+    },
+    {
+      "path": "tests/t35-unknown-read.browser.test.mts",
+      "status": "PASS",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
+      "source_sha256": "a9a86726fed7d0e0c86dfdd9d26b4fb2d2326c09e18ca498aca9e98409eb4a22",
+      "executed_sha256": "7085099db4ce0c4838d4fff2f44aafb8887ca4c21fe881e7be2041e7b1668d16",
+      "tap": "31-t35-unknown-read.browser.test.mts.tap",
+      "batch": "corrected-isolation"
+    }
+  ],
+  "initial_invocation": "26 database entries refused before execution because the isolated-DB marker was missing; those entries passed after the environment was corrected. Five successful database-free entries were retained on the identical artifact."
+}

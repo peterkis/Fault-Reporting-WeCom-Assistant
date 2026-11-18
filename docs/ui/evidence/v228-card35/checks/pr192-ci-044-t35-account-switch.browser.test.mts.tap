@@ -1,0 +1,19 @@
+TAP version 13
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":15,"inserted":15,"replayed":0,"channel_failures":0,"other_stream_failures":3}
+# T35_ACCOUNT_REJECTED {"responses":[{"status":403,"body":{"error":{"code":"WORKBENCH_CSRF_INVALID","retryable":false}}}],"A":"0","B":"0","old_identity_visible":false}
+# T35_ACCOUNT_SWITCH {"directory":"<owned-temp>","held_identity_delivery":true,"rejected_responses":1}
+# Subtest: T35 an old visible scope cannot write for a switched account while fresh identity delivery is delayed
+ok 1 - T35 an old visible scope cannot write for a switched account while fresh identity delivery is delayed
+  ---
+  duration_ms: 1392.257208
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1565.409459

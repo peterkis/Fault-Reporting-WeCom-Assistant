@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: documentation never prepares application resources or application build
+ok 1 - documentation never prepares application resources or application build
+  ---
+  duration_ms: 9.947083
+  type: 'test'
+  ...
+# Subtest: PC covers current commands, authorization and UNKNOWN without unrelated H5 or Incident
+ok 2 - PC covers current commands, authorization and UNKNOWN without unrelated H5 or Incident
+  ---
+  duration_ms: 19.496292
+  type: 'test'
+  ...
+# Subtest: H5 flow requests its media dependency and never native desktop
+ok 3 - H5 flow requests its media dependency and never native desktop
+  ---
+  duration_ms: 7.311666
+  type: 'test'
+  ...
+# Subtest: identity and transaction expand to real service/PG and browser checks
+ok 4 - identity and transaction expand to real service/PG and browser checks
+  ---
+  duration_ms: 15.071958
+  type: 'test'
+  ...
+# Subtest: SQL, shared assembly, lock and compiler changes reach the MVP union
+ok 5 - SQL, shared assembly, lock and compiler changes reach the MVP union
+  ---
+  duration_ms: 52.456042
+  type: 'test'
+  ...
+# Subtest: notification risks include UNKNOWN, recipient authority and privacy admission
+ok 6 - notification risks include UNKNOWN, recipient authority and privacy admission
+  ---
+  duration_ms: 7.1645
+  type: 'test'
+  ...
+# Subtest: a new unrecognized production module gets a nonempty broader MVP fallback
+ok 7 - a new unrecognized production module gets a nonempty broader MVP fallback
+  ---
+  duration_ms: 33.647667
+  type: 'test'
+  ...
+# Subtest: multiple modules union entries once and keep original host/flags requirements
+ok 8 - multiple modules union entries once and keep original host/flags requirements
+  ---
+  duration_ms: 28.858833
+  type: 'test'
+  ...
+# Subtest: real Git NUL differences preserve rename origins, deletes, additions and Chinese paths
+ok 9 - real Git NUL differences preserve rename origins, deletes, additions and Chinese paths
+  ---
+  duration_ms: 122.057666
+  type: 'test'
+  ...
+# Subtest: invalid profiles, missing entries and empty business execution fail before running
+ok 10 - invalid profiles, missing entries and empty business execution fail before running
+  ---
+  duration_ms: 161.9205
+  type: 'test'
+  ...
+# Subtest: historical-only checks cannot silently enter defaults, but a direct edit of a still-applicable one selects it explicitly
+ok 11 - historical-only checks cannot silently enter defaults, but a direct edit of a still-applicable one selects it explicitly
+  ---
+  duration_ms: 29.943209
+  type: 'test'
+  ...
+# Subtest: a legacy test edited only for copy is reported, not executed, and never silently dropped
+ok 12 - a legacy test edited only for copy is reported, not executed, and never silently dropped
+  ---
+  duration_ms: 124.222417
+  type: 'test'
+  ...
+# Subtest: an unrelated PC change keeps Incident, enhanced and old-candidate tests out of the default selection
+ok 13 - an unrelated PC change keeps Incident, enhanced and old-candidate tests out of the default selection
+  ---
+  duration_ms: 14.613334
+  type: 'test'
+  ...
+# Subtest: earlier T-numbered and conversation workbench tests stay in the PC profile instead of the wide MVP fallback
+ok 14 - earlier T-numbered and conversation workbench tests stay in the PC profile instead of the wide MVP fallback
+  ---
+  duration_ms: 41.165833
+  type: 'test'
+  ...
+# Subtest: the still-mounted V1 self-service API keeps its current tests; only SS009 evidence tooling is historical
+ok 15 - the still-mounted V1 self-service API keeps its current tests; only SS009 evidence tooling is historical
+  ---
+  duration_ms: 30.334375
+  type: 'test'
+  ...
+# Subtest: contract-only changes reach their classified tests despite underscore contract filenames
+ok 16 - contract-only changes reach their classified tests despite underscore contract filenames
+  ---
+  duration_ms: 80.967625
+  type: 'test'
+  ...
+# Subtest: every P2-007/015/016 path the retired directory workflow watched still runs its current regression
+ok 17 - every P2-007/015/016 path the retired directory workflow watched still runs its current regression
+  ---
+  duration_ms: 114.231583
+  type: 'test'
+  ...
+# Subtest: legacy classification requires a reason, a class and its own risk-area triggers
+ok 18 - legacy classification requires a reason, a class and its own risk-area triggers
+  ---
+  duration_ms: 2.771541
+  type: 'test'
+  ...
+# Subtest: MVP bottom lines stay required and cannot be classified away or dropped from the default union
+ok 19 - MVP bottom lines stay required and cannot be classified away or dropped from the default union
+  ---
+  duration_ms: 17.600666
+  type: 'test'
+  ...
+# Subtest: a legacy test deleted without removing its classification fails instead of disappearing
+ok 20 - a legacy test deleted without removing its classification fails instead of disappearing
+  ---
+  duration_ms: 7.19675
+  type: 'test'
+  ...
+# Subtest: the actual workflow summary rejects failure, cancellation, skip and missing planned jobs
+ok 21 - the actual workflow summary rejects failure, cancellation, skip and missing planned jobs
+  ---
+  duration_ms: 704.516625
+  type: 'test'
+  ...
+# Subtest: resource preparation and builds stay on mutually exclusive actual workflow paths
+ok 22 - resource preparation and builds stay on mutually exclusive actual workflow paths
+  ---
+  duration_ms: 89.841916
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1968.989792

@@ -1,0 +1,34 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:typecheck
+> npm run migration:tools && node .build/tools/gate.mjs types
+
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:tools
+> node --experimental-strip-types tools/ts-migration/bootstrap.mts
+
+{"event":"MIGRATION_GATE_PHASE","phase":"css","status":"PASS","elapsed_ms":206,"rss_before":128548864,"rss_after":128630784,"heap_used_after":16302976}
+{"event":"DESIGN_VARIABLES","files":59,"undefined":0,"primitive_leaks":0}
+{"event":"MIGRATION_GATE_PHASE","phase":"design-variables","status":"PASS","elapsed_ms":90,"rss_before":128745472,"rss_after":147668992,"heap_used_after":23025184}
+{"event":"MIGRATION_GATE_PHASE","phase":"feature-syntax","status":"PASS","elapsed_ms":883,"rss_before":147668992,"rss_after":147685376,"heap_used_after":23173592}
+MIGRATION_EMIT_CHILD {"pid":10316,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<worktree>","--types"],"root":"<worktree>"}
+MIGRATION_EMIT_COMPLETED {"pid":10316,"status":"COMPLETE_STRICT_TYPES_SUCCEEDED"}
+app/pc-admin/src/app/Workbench.tsx(195,413): error TS1361: 'Fragment' cannot be used as a value because it was imported using 'import type'.
+app/pc-admin/src/app/Workbench.tsx(195,452): error TS1361: 'Fragment' cannot be used as a value because it was imported using 'import type'.
+{"event":"MIGRATION_GATE_PHASE","phase":"strict","status":"FAIL","elapsed_ms":12610,"rss_before":128532480,"rss_after":148045824,"heap_used_after":24483744}
+file://<worktree>/.build/tools/common.mjs:411
+        throw new Error('MIGRATION_COMMAND_FAILED: ' + String(r.status));
+              ^
+
+Error: MIGRATION_COMMAND_FAILED: 1
+    at runNode (file://<worktree>/.build/tools/common.mjs:411:15)
+    at typecheckProject (file://<worktree>/.build/tools/web.mjs:29:5)
+    at typecheckWeb (file://<worktree>/.build/tools/web.mjs:55:38)
+    at typeGate (file://<worktree>/.build/tools/gate.mjs:33:5)
+    at file://<worktree>/.build/tools/gate.mjs:105:34
+    at measured (file://<worktree>/.build/tools/gate.mjs:18:24)
+    at file://<worktree>/.build/tools/gate.mjs:105:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.18.0

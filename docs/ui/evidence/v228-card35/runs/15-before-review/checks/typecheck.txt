@@ -1,0 +1,17 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:typecheck
+> npm run migration:tools && node .build/tools/gate.mjs types
+
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:tools
+> node --experimental-strip-types tools/ts-migration/bootstrap.mts
+
+{"event":"MIGRATION_GATE_PHASE","phase":"css","status":"PASS","elapsed_ms":182,"rss_before":128335872,"rss_after":128483328,"heap_used_after":16148904}
+{"event":"DESIGN_VARIABLES","files":59,"undefined":0,"primitive_leaks":0}
+{"event":"MIGRATION_GATE_PHASE","phase":"design-variables","status":"PASS","elapsed_ms":43,"rss_before":128565248,"rss_after":147767296,"heap_used_after":22967784}
+{"event":"MIGRATION_GATE_PHASE","phase":"feature-syntax","status":"PASS","elapsed_ms":764,"rss_before":147767296,"rss_after":147783680,"heap_used_after":23114824}
+MIGRATION_EMIT_CHILD {"pid":85755,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<worktree>","--types"],"root":"<worktree>"}
+MIGRATION_EMIT_COMPLETED {"pid":85755,"status":"COMPLETE_STRICT_TYPES_SUCCEEDED"}
+{"event":"MIGRATION_GATE_PHASE","phase":"strict","status":"PASS","elapsed_ms":12541,"rss_before":128335872,"rss_after":154779648,"heap_used_after":28319784}
+{"event":"MIGRATION_GATE_PHASE","phase":"negative-types","status":"PASS","elapsed_ms":621,"rss_before":154796032,"rss_after":500400128,"heap_used_after":237305232}
+{"status":"MIGRATION_GATE_PASS","scope":"types","compiler":"5.9.3","production_ready":false}

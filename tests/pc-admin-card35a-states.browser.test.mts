@@ -11,7 +11,8 @@ import {withT43Fixture,text,version} from './helpers/t43-full-service-fixture.mj
 import {start,complete,get,post,close} from './helpers/t43-service-actions.mjs';
 import type {Browser} from './helpers/t43-service-actions.mjs';
 import {launchSystemBrowser} from './helpers/p2-006-browser-harness.mjs';
-import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {clickWorkbenchControl,chooseWorkbenchSelect} from './helpers/heroui-workbench-controls.mjs';
+import {withT11Fixture,t11Http} from './helpers/t11-completion-fixture.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 
 // Direct risks: delayed first paint, layout replacement, retained authorized data, diagnostics privacy,
@@ -43,6 +44,79 @@ async function box(b:Browser,selector:string):Promise<Box>{await waitForAnimatio
 function sameBox(a:Box,b:Box,label:string){for(const key of ['x','y','width','height'] as const)assert.ok(Math.abs(a[key]-b[key])<=1,label+' '+key+' '+JSON.stringify({a,b}));}
 async function evidence(){const directory=process.env.CARD35A_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card35a-'));await mkdir(directory,{recursive:true});return directory;}
 async function shot(b:Browser,directory:string,name:string){await b.evaluate('document.fonts.ready');await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');assert.equal(bytes.readUInt32BE(16),1440);await writeFile(join(directory,name),bytes);return {file:name,width:1440,height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')};}
+
+test('Card 35A PR192: locally filtered board and list keep next-page controls until every query is exhausted',{timeout:60000},()=>withWeb01Fixture(async(f:Fixture)=>{
+ const directory=await evidence(),metrics:unknown[]=[];let browser:Browser|undefined,error:unknown;
+ try{
+  const cookie=f.browserCookies[0];assert.ok(cookie);
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[cookie]});assert.ok(browser);const b=browser;
+  await b.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length>3&&!document.querySelector('[data-skeleton]')");
+  await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{
+   const real=fetch;window.__paginationReads=[];const config=JSON.parse(sessionStorage.getItem('card35a-pagination')||'{}');window.__paginationConfig=config;
+   window.fetch=async(input,init)=>{
+    const url=new URL(String(input),location.origin),board=url.pathname==='/api/workbench/board';
+    const next=board&&url.searchParams.get('cursor')==='card35a-synthetic-page-2';if(next)url.searchParams.delete('cursor');
+    const response=await real(next?url.pathname+url.search:input,init);if(!board||!response.ok)return response;
+    const body=await response.json(),column=url.searchParams.get('column');window.__paginationReads.push({column,next});
+    if(column==='active'){
+     const first=body.items.find(item=>item.service),second=body.items.find(item=>item.id!==first?.id);if(!first||!second)throw Error('SYNTHETIC_ACTIVE_FIXTURE_REQUIRED');
+     body.items=next?[{...second,service:null}]:[first];body.next_cursor=!next&&!config.exhausted?'card35a-synthetic-page-2':null;
+    }else {body.items=[];body.next_cursor=null;if(body.group_counts)body.group_counts={completed:0,dismissed:0};}
+    return new Response(JSON.stringify(body),{status:response.status,headers:response.headers});
+   };
+  })();`});
+  for(const view of ['board','list'])for(const exhausted of [false,true]){
+   const nonce=randomUUID();await b.evaluate(`sessionStorage.setItem('card35a-pagination',${JSON.stringify(JSON.stringify({nonce,exhausted}))})`);
+   await b.command('Page.navigate',{url:f.origin+'/workbench/app/?range=all&view='+view});
+   const card=view==='board'?'.board-column.active .ticket-card[data-item-id]':'#list-active .ds-work-row[data-item-id]';
+   await b.waitFor('window.__paginationConfig?.nonce==='+JSON.stringify(nonce)+`&&Boolean(document.querySelector(${JSON.stringify(card)}))&&!document.querySelector('[data-skeleton]')`);
+   await chooseWorkbenchSelect(b,'[data-field-label="类别"]','unclassified');
+   await b.waitFor("document.querySelector('[data-field-label=类别]')?.closest('.ds-filter-chip')?.dataset.filterActive==='true'");
+   const empty="document.querySelector('.ds-empty-state[data-empty-variant=filtered]')";
+   if(exhausted){
+    await b.waitFor('Boolean('+empty+')');assert.equal(await b.evaluate("Boolean(document.querySelector('.load-more'))"),false);
+    await clickWorkbenchControl(b,'.ds-empty-state button');await b.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)}))`);
+   }else {
+    assert.equal(await b.evaluate('Boolean('+empty+')'),false,view+': an unloaded next page must not be hidden by the board-wide filtered empty state');
+    const more=view==='board'?'.board-column.active .load-more':'#list-active .load-more';
+    assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(more)})?.checkVisibility()`),true,view+': next-page control remains usable when no loaded item matches');
+    assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(view==='board'?'.board-column.active .ds-empty-state':'#list-active .ds-empty-state')})?.dataset.size`),'compact');
+    await shot(b,directory,'filtered-pagination-'+view+'.png');
+    await clickWorkbenchControl(b,more);await b.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)}))&&!document.querySelector(${JSON.stringify(more)})`);
+    assert.equal(await b.evaluate('window.__paginationReads.filter(row=>row.next).length'),1,'the next page is fetched only once');
+   }
+   metrics.push({view,exhausted,nextPageReachable:!exhausted});
+  }
+ }catch(caught){error=caught;throw caught;}finally{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});await writeFile(join(directory,'receipt-35a-pagination.json'),JSON.stringify({status:error?'FAIL':'PASS',metrics,error:error instanceof Error?error.message:null},null,2));}
+},{precisionV212:true,syntheticServiceCodes:true,workbenchFollowEnabled:true}));
+
+test('Card 35A PR192: empty handled column retains the completed drop zone and opens the existing form without a POST',{timeout:60000},()=>withT11Fixture(async f=>{
+ const directory=await evidence(),target=f.tickets[0],cookie=f.browserCookies[0];assert.ok(target&&cookie);
+ await f.pool.query("UPDATE pilot_ticket.ticket SET title=title||'（合成）'");
+ const http=await t11Http(f);await http.start(target.ticket.id);const before=await http.detail(target.ticket.id);
+ const posts:string[]=[],observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(request.url??'');};f.runtime.server.on('request',observe);
+ let browser:Browser|undefined,error:unknown;
+ try{
+  browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?range=all',width:1440,height:1000,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
+  await b.waitFor("document.querySelectorAll('.column-cards').length===3&&!document.querySelector('[data-skeleton]')");
+  await b.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const real=fetch;window.fetch=async(input,init)=>{const response=await real(input,init);if(String(input).startsWith('/api/workbench/board?')&&new URL(String(input),location.origin).searchParams.get('column')==='handled'&&response.ok){const body=await response.json();body.items=[];body.next_cursor=null;body.group_counts={completed:0,dismissed:0};return new Response(JSON.stringify(body),{status:200,headers:response.headers});}return response;};})();`});
+  const time=await b.evaluate('performance.timeOrigin');await b.command('Page.reload');await b.waitFor(`performance.timeOrigin!==${time}&&document.querySelectorAll('.column-cards').length===3&&!document.querySelector('[data-skeleton]')`);
+  const card='.board-column.active .ticket-card[data-item-id="'+target.ticket.id+'"]';
+  if(!await b.evaluate(`Boolean(document.querySelector(${JSON.stringify(card)}))`))await clickWorkbenchControl(b,'.board-column.active [data-action=expand-column]');
+  const handle=card+' [data-action=board-drag-handle]',zone='.board-column.handled [data-board-drop-column=handled] .ds-completed-drop-zone';
+  await b.waitFor(`Boolean(document.querySelector(${JSON.stringify(handle)}))`);
+  assert.equal(await b.evaluate(`Boolean(document.querySelector(${JSON.stringify(zone)}))`),true,'empty handled column retains the original completed drop target');
+  assert.equal(await b.evaluate("Boolean(document.querySelector('[data-board-group=已关闭]')?.closest('[data-board-drop-column=handled]'))"),false,'dismissed group stays outside the completion target');
+  const a=await box(b,handle),z=await box(b,zone),x=a.x+a.width/2,y=a.y+a.height/2,toX=z.x+z.width/2,toY=z.y+z.height/2;
+  await shot(b,directory,'empty-handled-drop-target.png');
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x,y});await b.command('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+8,y,button:'left',buttons:1});await b.waitFor(`Boolean(document.querySelector(${JSON.stringify(card+' .board-action-card.is-dragging')}))`);
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:toX,y:toY,button:'left',buttons:1});await b.waitFor("Boolean(document.querySelector('[data-board-drop-column=handled].is-drop-target'))");
+  await b.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:toX,y:toY,button:'left',clickCount:1});await b.waitFor("document.querySelector('.ticket-completion')?.checkVisibility()===true");
+  assert.deepEqual(posts,[],'opening the completion form must not issue a business POST');assert.equal((await http.detail(target.ticket.id)).version,before.version);
+  await shot(b,directory,'empty-handled-completion-form.png');
+ }catch(caught){error=caught;throw caught;}finally{f.runtime.server.off('request',observe);await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});await writeFile(join(directory,'receipt-35a-empty-handled-drop.json'),JSON.stringify({status:error?'FAIL':'PASS',posts,error:error instanceof Error?error.message:null},null,2));}
+},{boardActionsEnabled:true}));
 
 test('Card 35A A4.1-5,8: controllable 80/400/9000ms reads, zero-shift headers, refresh, empty sizes and private diagnostics',{timeout:240000},()=>withWeb01Fixture(async(f:Fixture)=>{
  const directory=await evidence(),screenshots:unknown[]=[],metrics:Record<string,unknown>={};let browser:Browser|undefined,error:unknown;

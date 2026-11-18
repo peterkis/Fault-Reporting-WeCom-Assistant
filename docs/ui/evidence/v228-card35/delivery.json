@@ -1,37 +1,4 @@
 {
-  "scope": "Card 35A review rework and product option A",
-  "baseline_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
-  "dirty": true,
-  "source_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3",
-  "artifact_proof": {
-    "manifest_sha256": "9376b7fae89038e9da43230956e841b27508f5ede8a27eca728ccfa84c2ba14b",
-    "source_input_hash": "d3d29a969395b788bc3909fb5debdc2d6b26d53b4a5faba4943aaa015c0f64f3"
-  },
-  "recorded_at": "2026-11-18T05:04:38.687680+00:00",
-  "review_requests": {
-    "1_dynamic_subgroups": "PARTIAL: six default/known-fold positions are zero shift; unknown empty-first-group ambiguity remains",
-    "2_duplicate_connection": "PASS",
-    "3_scattered_error_footer": "PASS",
-    "4_empty_drawer_band": "PASS: duplicate nested borders removed; DOM assertions passed",
-    "5_realtime_frozen": "SUPERSEDED: the product owner explicitly authorized option A; the prototype alone remains frozen",
-    "6_checks_and_evidence": "PASS"
-  },
-  "new_state_tests": {
-    "tests": 7,
-    "pass": 7,
-    "fail": 0,
-    "skipped": 0,
-    "cancelled": 0
-  },
-  "existing_registered_entries": 31,
-  "existing_tests": 161,
-  "total_tests": 168,
-  "screenshots": {
-    "application": 17,
-    "required_application": 16,
-    "reference": 5,
-    "width": 1440
-  },
   "acceptance": {
     "A4.1": "PASS",
     "A4.2": "FAIL",
@@ -43,6 +10,94 @@
     "A4.8": "PASS",
     "A4.9": "PASS",
     "A4.10": "PASS"
+  },
+  "scope": "PR 192 link, filtered-pagination and empty completion drop corrections",
+  "baseline_head": "6e4a59b1f304eb159e00ff8c093c83581b606fdc",
+  "pr_base": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "dirty": true,
+  "source_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a",
+  "artifact_proof": {
+    "manifest_sha256": "35173266a62b1981efa311577434ec87186b3550dc5b037e94e4d545d134d9de",
+    "source_input_hash": "f7340751b16afa7acd7089a6da975da02413612d5e308f6fb3ff2e558648f05a"
+  },
+  "recorded_at": "2026-11-18T06:34:11.485561+00:00",
+  "new_state_tests": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "screenshots": {
+    "application": 21,
+    "required_application": 16,
+    "reference": 5,
+    "width": 1440
+  },
+  "ci_selection": {
+    "ci": {
+      "entries": 77,
+      "pass_entries": 76,
+      "fail_entries": 1,
+      "tests": 548,
+      "pass": 546,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tools": {
+      "entries": 7,
+      "pass_entries": 7,
+      "fail_entries": 0,
+      "tests": 138,
+      "pass": 138,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "extra": {
+      "entries": 13,
+      "pass_entries": 13,
+      "fail_entries": 0,
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "per_entry_report": "checks/pr192-ci-results.md",
+  "total_tests": 712,
+  "ci_failures": [
+    {
+      "path": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+      "classification": "PRE_EXISTING: missing service-closure migration in SS009 fixture; user assigned its fix to PR 191"
+    }
+  ],
+  "pr192_review": {
+    "1_document_links": "PASS: all local targets exist, anchors resolve and git check-ignore prints nothing",
+    "2_filtered_pagination": "PASS: board and list with a next page and with all queries exhausted",
+    "3_empty_handled_drop": "PASS: pointer drag opens existing completion form; zero POST; unchanged version",
+    "4_full_ci_selection": "EXECUTED: results include the pre-existing SS009 failure",
+    "5_required_checks": "PASS"
+  },
+  "checks": {
+    "typecheck": "PASS",
+    "build": "PASS",
+    "stylelint": "PASS",
+    "eslint": "PASS",
+    "copy_terms": "PASS 6/6",
+    "states": "PASS 9/9",
+    "protocol": "PASS 2/2",
+    "toast_feedback": "PASS 1/1",
+    "detail_restructure": "PASS 2/2",
+    "full_ci": "FAIL: only the user-identified pre-existing SS009 entry remains",
+    "artifact": "PASS",
+    "document_links": "PASS",
+    "diff_check": "PASS"
   },
   "subgroup_geometry": [
     {
@@ -92,114 +147,43 @@
     "outerBottom": "1px",
     "emptyDividers": 0
   },
-  "frozen_inputs": {
-    "comparison": "start of product option A, not git HEAD",
-    "status": "PASS",
-    "frozen_files": {
-      "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": {
-        "before": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9",
-        "after": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
-      }
-    },
-    "authorized_changes": {
-      "app/pc-admin/src/realtime/useRealtime.ts": {
-        "before": "5fe25d8631ea992ed73e95e0c828676c4137dc203a0960eb138fe5ff10d6d478",
-        "after": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52"
-      },
-      "app/pc-admin/src/realtime/workbench-realtime-client.mts": {
-        "before": "ce1b60b15b948d77ee6c157af405bc25e8c6fad8e782bd7ce5d2ab7c49c429b8",
-        "after": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73"
-      },
-      "tests/wbint-t38-protocol.browser.test.mts": {
-        "before": "8507d651392f04634493a26051333a00aee876da8b3b00c97f4a5439d48f01a1",
-        "after": "a91d35a11f5d611f529a12780b46a89e6c68fb5f84de45afece6f2c98a8eb136"
-      },
-      "app/pc-admin/src/design/components/ConnectionBar/ConnectionBar.tsx": {
-        "before": "8fd342f94f7d4e578e2148df93990844ce473ca6f6378643042b15f253516584",
-        "after": "febdf73ed05773fc33b038c3b05ed697ba0ba944791282dea2afc59e27ca7380"
-      }
-    },
-    "authorization": "The product owner explicitly requested option A changes to the realtime adapter, hook and capacity test; the preceding freeze applies only to the archived previous review."
-  },
-  "not_run": [
-    "pr-plan: uncommitted changes are not part of HEAD",
-    "visual:compare and manifest append: Card 35B not merged",
-    "full/certify: outside requested local scope"
-  ],
   "remaining_open_questions": [
     "Unknown empty-first-group membership needs pre-response group metadata or a revised empty-group/drop-target layout contract. Identical request/prefs produce first-card differences of 55px (pending) and 43px (handled).",
     "The existing valid internal-note UNKNOWN action is same-operation replay; no independent read-only confirmation is invented. Original READ revocation and navigation guards remain."
   ],
-  "source_scope_verified": {
-    "features_unchanged": true,
-    "card35b_paths_unchanged": true,
-    "prototype_preserved": true,
-    "no_git_commit_push_or_pr": true
-  },
-  "resource_cleanup": "Fixtures close only their owned services, isolated UUID databases, browser processes/profiles/timers/sockets. Private failure artifacts retained. Shared Postgres service is retained.",
-  "product_option_a": {
-    "1_existing_scheduler_split": "PASS",
-    "2_main_protocol_assertions_restored": "PASS: all 21 original assertion lines retained in order; only additive continuation/no-bar checks",
-    "3_real_failure_and_healthy_live_unavailable_tests": "PASS: full 35A 7/7; protocol 2/2",
-    "4_contract_ADR_design_docs": "PASS",
-    "5_requested_checks_and_evidence": "PASS",
-    "healthy_polling_intervals_ms": [
-      5004.5,
-      5084.800000190735,
-      5056.199999809265
-    ],
-    "failed_read_retry_intervals_ms": [
-      1008.2000000476837,
-      3001.399999856949,
-      8001.600000143051
-    ],
-    "virtual_scheduler_cases": [
-      {
-        "scenario": "server-unavailable",
-        "elapsed": 65000,
-        "reads": 13,
-        "nextDelay": 5000,
-        "retryCount": 0,
-        "disconnectedAt": null
+  "frozen_inputs": {
+    "status": "PASS",
+    "comparison": "committed 6e4a59b1",
+    "frozen_files": {
+      ".gitignore": {
+        "head_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d",
+        "working_tree_sha256": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d"
       },
-      {
-        "scenario": "terminal-closed",
-        "elapsed": 65000,
-        "reads": 27,
-        "nextDelay": 5000,
-        "retryCount": 0,
-        "disconnectedAt": null
+      "app/pc-admin/src/realtime/useRealtime.ts": {
+        "head_sha256": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52",
+        "working_tree_sha256": "b72d0c3ff3ea2b8ee2a2c644d129d7f1421b8d4a541e750e93f4db2222f37f52"
       },
-      {
-        "scenario": "read-recovered",
-        "elapsed": 66000,
-        "reads": 15,
-        "nextDelay": 5000,
-        "retryCount": 0,
-        "disconnectedAt": null
+      "app/pc-admin/src/realtime/workbench-realtime-client.mts": {
+        "head_sha256": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73",
+        "working_tree_sha256": "f931c5e6d73a8df29fde0f82c5c852110e809391b90c27c04e5f66f39981de73"
       },
-      {
-        "scenario": "read-timeout-recovered",
-        "elapsed": 71000,
-        "reads": 15,
-        "nextDelay": 5000,
-        "retryCount": 0,
-        "disconnectedAt": null
+      "docs/ui/prototype/医小修 PC 管理端 v2.2.7 设计原型.html": {
+        "head_sha256": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9",
+        "working_tree_sha256": "356fb108ffc4964e02b733b9c3e50c6aa532c28fe2c0e815bc04762af0b090e9"
       }
-    ]
-  },
-  "checks": {
-    "typecheck": "PASS after fixing an added-test number annotation",
-    "build": "PASS",
-    "stylelint": "PASS",
-    "eslint": "PASS",
-    "copy_terms": "PASS 6/6",
-    "states_browser": "PASS 7/7",
-    "protocol_browser": "PASS 2/2",
-    "toast_feedback": "PASS 1/1",
-    "detail_restructure": "PASS 2/2",
-    "registered_regressions": "PASS 31 entries / 161 cases",
-    "agent_docs": "PASS 20/20",
-    "diff_check": "PASS"
+    },
+    "restricted_paths_unchanged": [
+      ".gitignore",
+      "app/pc-admin/src/features",
+      "app/pc-admin/src/realtime",
+      "tools/visual-regression",
+      "tests/visual",
+      "docs/ui/visual-baseline",
+      "docs/ui/evidence/v228-card35/35b",
+      "package.json",
+      "package-lock.json"
+    ],
+    "original_state_assertion_lines_retained_in_order": 97,
+    "no_commit_push_or_branch_change": true
   }
 }

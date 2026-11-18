@@ -2,7 +2,7 @@
 
 已在交付前逐行重读A1–A4；下表逐条记录满足范围与偏差。
 
-本目录对应未提交工作区，基线 `f76fffef7c693ddcee0139b4f6f03bf59376e358`。本次只实现35A；没有改动35B目录、视觉脚本或任何 `features/**` 文件。用户原型原件保留在 [v2.2.7 原型（含 v2.2.8 画板07）](../../prototype/医小修%20PC%20管理端%20v2.2.7%20设计原型.html)。没有 commit、push、PR、部署、真实发送或现场业务写入。
+本目录对应未提交工作区，基线 `f76fffef7c693ddcee0139b4f6f03bf59376e358`。本次只实现35A；没有改动35B目录、视觉脚本或任何 `features/**` 文件。用户原型原件保留在 [v2.2.7 原型（含 v2.2.8 画板07）](../../../../prototype/医小修%20PC%20管理端%20v2.2.7%20设计原型.html)。没有 commit、push、PR、部署、真实发送或现场业务写入。
 
 环境：macOS 26.6.2 / Darwin 25.6.0，系统 Chrome 157.0.8103.79，Node.js 24.18.0；应用截图1440×1000、DPR 1。全部业务数据由已有 Web01 / T43 fixtures 创建，名称带「（合成）」，使用本任务独立随机数据库。原型参考图由浏览器直接导出1440宽整图及四段裁片，嵌入原件已保存的Inter字体；不可用的外部Google中文字体改为系统回退，仅影响参考导出，不修改原件，不作为像素基线。
 
@@ -28,7 +28,7 @@
 | A1.7 固定中性只读条/徽标、优先级、原动作、禁用可聚焦/tooltip、备注框、可用动作、实时收起 | 已实现可复用的呈现与五原因场景；接管/重开复用原入口，关闭的恢复只留下一步。权限撤销清理/缺少可信他人身份/未知备注无独立核对入口/原导航栅栏见Q2、Q3。 |
 | A2 首次工作台、列、列表、待受理、详情、连接条接入 | 已实现；启动错误标题「工作台没有打开」；详情错误保留「关闭详情」；DetailLoading非行内默认区块骨架。无35C文件改动。 |
 | A2 删除旧样式与转圈用途限制 | 已执行，删除清单见上；共享组件自然影响调用者，未重写features的生命周期。 |
-| A3 状态章与旧描述跳转 | [设计系统](../../design-system.md#状态v228--卡35a) 包含尺寸、令牌、规则、只读优先级及就近原则；6.11及旧空列说明转到该章。 |
+| A3 状态章与旧描述跳转 | [设计系统](../../../../design-system.md#状态v228--卡35a) 包含尺寸、令牌、规则、只读优先级及就近原则；6.11及旧空列说明转到该章。 |
 
 ## A4 验收
 
@@ -64,15 +64,15 @@
 
 | 命令 / 检查 | 结果 | 原始记录 |
 | --- | --- | --- |
-| `npm run migration:typecheck` | PASS，strict及negative types | [typecheck](checks/typecheck.log) |
-| `npm --prefix app/pc-admin run lint:css` | PASS | [Stylelint](checks/stylelint.log) |
-| `npm --prefix app/pc-admin run lint:features` | PASS | [ESLint](checks/eslint.log) |
-| `npm run migration:build` | PASS；957 typed、329 legacy、3020 outputs；staged未启用 | [build](checks/build.log) |
+| `npm run migration:typecheck` | PASS，strict及negative types | [typecheck](checks/typecheck.txt) |
+| `npm --prefix app/pc-admin run lint:css` | PASS | [Stylelint](checks/stylelint.txt) |
+| `npm --prefix app/pc-admin run lint:features` | PASS | [ESLint](checks/eslint.txt) |
+| `npm run migration:build` | PASS；957 typed、329 legacy、3020 outputs；staged未启用 | [build](checks/build.txt) |
 | `node .build/tools/verify-artifact.mjs` | PASS；最终源输入 `1a6bb3846ca31b2a82732f85d9ccbf166ecbe5142b70f7c9df8dbccdd1ebf4e2` | [制品证明](checks/artifact-proof.json) |
 | `tests/pc-admin-copy-terms.test.mts`，由现有runSelection/STAGED_RUNTIME执行 | PASS，6/6 | [TAP](checks/18-pc-admin-copy-terms.test.mts.tap) |
-| `node --test --test-concurrency=1 tests/pc-admin-card35a-states.browser.test.mjs`（编译运行目录，注入fixture环境和证据路径） | PASS，5/5；0失败/取消/跳过 | [S1回执](receipt-35a-states.json)、[S2回执](receipt-35a-readonly-connection.json)、[S3回执](receipt-35a-permission.json)、[完整日志](checks/states-browser.log) |
+| `node --test --test-concurrency=1 tests/pc-admin-card35a-states.browser.test.mjs`（编译运行目录，注入fixture环境和证据路径） | PASS，5/5；0失败/取消/跳过 | [S1回执](receipt-35a-states.json)、[S2回执](receipt-35a-readonly-connection.json)、[S3回执](receipt-35a-permission.json)、[完整日志](checks/states-browser.txt) |
 | 既有runSelection：`pr-pc` + `pr-read-safety` + card32/34、工作台/抽屉、t38相关注册入口 | PASS，31入口 / 161用例；无跳过 | [逐入口JSON](checks/regressions.json)，逐项TAP见下 |
-| `node .build/tools/check-agent-docs.mjs`；`node --test .build/tools/check-agent-docs.test.mjs` | PASS；20/20 | [文档](checks/agent-docs.log)、[测试](checks/agent-docs-tests.log) |
+| `node .build/tools/check-agent-docs.mjs`；`node --test .build/tools/check-agent-docs.test.mjs` | PASS；20/20 | [文档](checks/agent-docs.txt)、[测试](checks/agent-docs-tests.txt) |
 | `git diff --check` | PASS | [交付JSON](delivery.json) |
 
 最终类型检查/构建完成后未再修改应用或测试源码；以上均为本地验证，不是部署或现场Gate批准。

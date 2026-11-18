@@ -1,0 +1,46 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:typecheck
+> npm run migration:tools && node .build/tools/gate.mjs types
+
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:tools
+> node --experimental-strip-types tools/ts-migration/bootstrap.mts
+
+{"event":"MIGRATION_GATE_PHASE","phase":"css","status":"PASS","elapsed_ms":272,"rss_before":128466944,"rss_after":128565248,"heap_used_after":16155840}
+{"event":"DESIGN_VARIABLES","files":59,"undefined":0,"primitive_leaks":0}
+{"event":"MIGRATION_GATE_PHASE","phase":"design-variables","status":"PASS","elapsed_ms":175,"rss_before":128663552,"rss_after":147783680,"heap_used_after":22811632}
+{"event":"MIGRATION_GATE_PHASE","phase":"feature-syntax","status":"PASS","elapsed_ms":928,"rss_before":147783680,"rss_after":147800064,"heap_used_after":22960272}
+MIGRATION_EMIT_CHILD {"pid":65715,"executable":"<user-directory>/.local/share/fnm/node-versions/v24.18.0/installation/bin/node","argv":["<worktree>/.build/tools/emit.mjs","--root","<worktree>","--types"],"root":"<worktree>"}
+file://<worktree>/.build/tools/common.mjs:395
+        throw new Error(ts.formatDiagnosticsWithColorAndContext(errors, diagnosticHost(root)));
+              ^
+
+Error: [96mtests/pc-admin-card35a-states.browser.test.mts[0m:[93m280[0m:[93m111[0m - [91merror[0m[90m TS7022: [0m'previousReads' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+
+[7m280[0m    const [id,timer]=[...timers][0]??[];assert.ok(id!==undefined&&timer);assert.equal(timer.delay,delay);const previousReads=reads;
+[7m   [0m [91m                                                                                                              ~~~~~~~~~~~~~[0m
+
+    at program (file://<worktree>/.build/tools/common.mjs:395:15)
+    at checkMigrationTypes (file://<worktree>/.build/tools/emit.mjs:12:5)
+    at file://<worktree>/.build/tools/emit.mjs:22:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.18.0
+{"event":"MIGRATION_GATE_PHASE","phase":"strict","status":"FAIL","elapsed_ms":10058,"rss_before":128466944,"rss_after":147832832,"heap_used_after":23061768}
+file://<worktree>/.build/tools/common.mjs:411
+        throw new Error('MIGRATION_COMMAND_FAILED: ' + String(r.status));
+              ^
+
+Error: MIGRATION_COMMAND_FAILED: 1
+    at runNode (file://<worktree>/.build/tools/common.mjs:411:15)
+    at typeGate (file://<worktree>/.build/tools/gate.mjs:32:5)
+    at file://<worktree>/.build/tools/gate.mjs:105:34
+    at measured (file://<worktree>/.build/tools/gate.mjs:18:24)
+    at file://<worktree>/.build/tools/gate.mjs:105:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.18.0
