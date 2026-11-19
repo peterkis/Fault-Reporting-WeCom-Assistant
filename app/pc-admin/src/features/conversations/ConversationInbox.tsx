@@ -89,15 +89,15 @@ function ChatConversation({principal,id,now,onBlockedChange,onContactChange}:{pr
   useEffect(()=>{if(result.error instanceof ApiError&&[403,404].includes(result.error.status))void clearItemAuthorization(client,principal.principal_id,'conversation',id,result.error);},[client,id,principal.principal_id,result.error]);
   const signature=result.data?.items.map(item=>item.item_id+':'+item.text).join('|')??'';
   const deliverySignature=result.data?.deliveries.map(item=>[item.delivery_id,item.status,item.side_effect_state,item.last_error_code].join(':')).join('|')??'';
+  const loading=useDelayedLoading(result.isPending&&!result.data);
   useLayoutEffect(()=>{
     const node=scroller.current;if(!node||!signature)return;
     if(initial.current||atBottom.current){node.scrollTop=node.scrollHeight;initial.current=false;setNewMessages(false);}
     else if(anchor.current){const saved=anchor.current,item=node.querySelector<HTMLElement>('[data-conversation-item="'+saved.id+'"]');if(item)node.scrollTop+=item.getBoundingClientRect().top-node.getBoundingClientRect().top-saved.offset;
       const next=result.data?.items.at(-1)?.sequence_no;if(next&&latestSequence.current&&BigInt(next)>BigInt(latestSequence.current))setNewMessages(true);}
     latestSequence.current=result.data?.items.at(-1)?.sequence_no??null;
-  },[signature,deliverySignature]);
+  },[signature,deliverySignature,loading.visible]);
   function rememberScroll(){const node=scroller.current;if(!node)return;atBottom.current=node.scrollHeight-node.scrollTop-node.clientHeight<48;if(atBottom.current){anchor.current=null;setNewMessages(false);return;}const top=node.getBoundingClientRect().top,first=[...node.querySelectorAll<HTMLElement>('[data-conversation-item]')].find(item=>item.getBoundingClientRect().bottom>top);if(first)anchor.current={id:first.dataset.conversationItem??'',offset:first.getBoundingClientRect().top-top};}
-  const loading=useDelayedLoading(result.isPending&&!result.data);
   if(loading.visible||!result.data||result.error instanceof ApiError&&[403,404].includes(result.error.status))return <section className="inbox-empty">{loading.visible?<BlockSkeleton label="正在加载会话…" slow={loading.slow} onRetry={()=>{void result.refetch();}}/>:result.isError?result.error instanceof ApiError&&[401,403,404].includes(result.error.status)?<EmptyState size="page" title="无法查看这段会话" description="选择其他会话继续处理。"/>:<ErrorState title="会话没有打开" onRetry={()=>{void result.refetch();}}/>:null}</section>;
   const {entry,items,deliveries,hasMore}=result.data;
   const firstDayIndex=new Map<string,number>(),channelChanges=new Map<number,string>();let previousChannel:string|null=null;

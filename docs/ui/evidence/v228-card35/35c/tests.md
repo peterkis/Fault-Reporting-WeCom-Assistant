@@ -1,6 +1,6 @@
 # Card 35C 逐文件验证
 
-2026-11-19 的 [PR #194 修复与新候选验证](#pr-194-ci-fix)追加于文末；以下原轮次的计数及 FAIL/NOT_RUN 保持历史归属。
+2026-11-19 的 [PR #194 修复与新候选验证](#pr-194-ci-fix)及[骨架后挂载修复](#pr-194-mount-fix)追加于文末；以下原轮次的计数及 FAIL/NOT_RUN 保持历史归属。
 
 最终构建输入为 `7c82d44b7b09021079e71dfec7c547e748fe62c8e989b3880c7356451118bbe3`；制品身份（原件已移出仓库；本地归档 T01）。最终 CI 与最终相关回归共同覆盖当前所有选择，后者去掉已在最终 CI 的重复入口。额外定向和重复矩阵另列，不用重复次数增加唯一文件计数。
 
@@ -692,3 +692,114 @@ H5 夹具修复后的构建输入为 `732af97b758ef74fdfe483ede2cc7b6dd977e949eb
 收尾检查：5 份文档的 1658 个本地链接全部解析，目标均未被 Git 忽略；`git diff --check` 通过。证据目录共164个文件，`du -sh` 为4.7M（低于8MB）。受保护基线无差异，工作树 HEAD 保持 `fab99f0597114244d2be05535763f349406ecc1a`。
 
 原始图像归档边界：495 份本轮临时 PNG 在校验 SHA-256 后移入本地归档；另有 74 条 TAP 临时图路径在归档前已不存在，没有补造，原路径保留于 `screenshot-archive.json`。这些缺失临时图不作为本次独立截图证据；代码结论依据真实 HTTP、DOM/状态断言及逐文件结果。仓库内31张1440区域图和42张三联图完整保留，均仍属于原验收输入。
+
+
+<a id="pr-194-mount-fix"></a>
+
+## PR #194：骨架结束后的实际节点挂载（2026-11-19）
+
+本轮基于已推送 `07aaeb6ac30f89c70366277805a8d1b66b02e4f1` 的未提交修复。此前 CI 结果和上方所有失败/未运行记录仍属于原对象。本轮不提交、不推送、不改变视觉基线；不改业务、权限、接口、命令、确认条件、文案或 CSS。
+
+### 根因与修复
+
+| 位置 | 修复前的实际问题 | 本轮修复 |
+| --- | --- | --- |
+| [ConversationInbox / ChatConversation](../../../../../app/pc-admin/src/features/conversations/ConversationInbox.tsx) | 数据到达时骨架还显示，布局效果读取空的 scroller ref 后退出；骨架结束后 signature 没有变化，首屏未滚到底部，也未记录 latestSequence。 | loading 提前声明，布局效果加入 loading.visible 依赖；原 initial / atBottom / anchor 分支及 sequence 更新原样保留。真实消息区挂载后执行原逻辑。 |
+| [CandidateDetail](../../../../../app/pc-admin/src/features/incident-candidates/CandidateDetail.tsx) | 标题位于骨架替换区内，原聚焦效果只依赖 Boolean(detail)，数据到达时标题尚未挂载。 | 聚焦效果依赖 loading.visible，并在骨架结束且有 detail 时聚焦；普通数据刷新不新增聚焦。 |
+| [AttachmentSection](../../../../../app/pc-admin/src/features/attachments/AttachmentSection.tsx) | 35C 的成功空态返回 null，移除根节点；后续读取错误重建节点时，原只在组件首次挂载执行的 IntersectionObserver 仍观察旧节点，隐藏区域的懒读取可能失去触发。 | 用稳定回调 ref 记录实际根节点，观察器随节点绑定/断开。alive、generation、读取取消及 URL 清理仍只沿原组件生命周期执行，不因空态节点切换而清理业务读取。 |
+
+没有新增视觉模式。首屏滚动用例同时检查：初次挂载不出现“查看最新消息”；浏览历史时下一条真实 SSE 消息保持锚点且出现该按钮；点击按钮回到底部。最后一项也验证 skeleton 清除后 latestSequence 已正确初始化。
+
+### 同类审计
+
+范围为本地 `origin/main...HEAD` 的 35C 改动（共同基线 `30eb2fc80353d1ab834c5da4bcc183c6415311c6`），逐项核对 useDelayedLoading、骨架早退、!loading.visible 门控，以及效果、DOM ref、聚焦、滚动恢复和测量。审计结果如下；“未发现同类问题”只指这一类挂载时序缺口。
+
+| 已检查位置 | 结论与依据 |
+| --- | --- |
+| ConversationInbox 的 ChatConversation；CandidateDetail；AttachmentSection | 上述三处已复现并修复。附件子组件 MediaAudio/MediaVideo 的媒体 ref 效果随自身挂载执行，保持不变。 |
+| ConversationInbox 联系人列表 | 未发现同类问题。分钟计时、筛选/游标重置、blocked/contact 回调只管理数据；导航/接待 portal 目标由回调 ref 在挂载时设置，没有等数据到达才读取列表节点的效果。 |
+| [Conversations](../../../../../app/pc-admin/src/features/conversations/Conversations.tsx) 的 ItemConversations / SelectedConversation / SessionConversations；[ConversationAssociatedItem](../../../../../app/pc-admin/src/features/conversations/ConversationAssociatedItem.tsx) | 未发现同类问题。计数、互斥、失权清除是状态效果；对话框和编辑区的焦点由实际挂载的子组件处理，没有父级 DOM ref 等待数据的缺口。 |
+| [IncidentCandidates](../../../../../app/pc-admin/src/features/incident-candidates/IncidentCandidates.tsx)、[IncidentResult](../../../../../app/pc-admin/src/features/incident-candidates/IncidentResult.tsx)、[IncidentFollowup](../../../../../app/pc-admin/src/features/incident-candidates/IncidentFollowup.tsx)、[IncidentInternalNotes](../../../../../app/pc-admin/src/features/incident-candidates/IncidentInternalNotes.tsx)、[IncidentPublicProgress](../../../../../app/pc-admin/src/features/incident-candidates/IncidentPublicProgress.tsx) | 未发现同类问题。列表/结果无 DOM 效果；其余为草稿、权限、互斥或选择状态效果，不读取骨架门控内的节点。 |
+| [NotificationExceptions](../../../../../app/pc-admin/src/features/notification-exceptions/NotificationExceptions.tsx) | 未发现同类问题。detailRef 所在 section 位于明细内容骨架门控之外，选中条目时已挂载，聚焦/滚入视口效果可用；返回焦点来自操作事件保存的 opener。 |
+| [SourceGroupDirectory](../../../../../app/pc-admin/src/features/source-groups/SourceGroupDirectory.tsx) | 未发现同类问题。只有筛选、选择、游标及互斥状态效果，无 DOM ref、测量或滚动效果。 |
+| [ReviewWorkspace](../../../../../app/pc-admin/src/features/manual-review/ReviewWorkspace.tsx)、[SupplementFollowUp](../../../../../app/pc-admin/src/features/supplement-follow-up/SupplementFollowUp.tsx)、[TicketRoundNotifications](../../../../../app/pc-admin/src/features/ticket-round-notifications/TicketRoundNotifications.tsx)、[ClosureHistory](../../../../../app/pc-admin/src/features/ticket-waiting/ClosureHistory.tsx) | 未发现同类问题。效果管理草稿/权限/请求清理/状态回报，ref 保存请求或状态，不指向骨架门控内的 DOM。 |
+| [ConversationLoading](../../../../../app/pc-admin/src/features/conversations/ConversationLoading.tsx)、[read-states/ReadTableSkeleton](../../../../../app/pc-admin/src/features/read-states/ReadTableSkeleton.tsx) | 纯展示组件，没有效果、ref 或测量。 |
+| [App](../../../../../app/pc-admin/src/app/App.tsx)、[DetailLoading](../../../../../app/pc-admin/src/app/DetailLoading.tsx) | App 的延迟 hook 来自 35A，35C 没有增加依赖内容节点的效果。DetailLoading 内部延迟只控制自身展示，父表单读完即移除该子组件，不阻止父表单真实内容挂载。 |
+| 其余行内加载替换：BoardConflictIntent、ConversationComposer、SharedFollowUp、CandidateDecisionForm、IncidentOwnerTransfer、ManualReportForm、ManualSelfHandlingForm、ReviewStartControls、TicketAssignment、TicketCompletion、TicketConversationHandling、TicketSelfHandling、TicketNotes、TicketReopen、TicketTakeoverCompletion、ClosureActions | 未发现同类问题。这些替换没有新增“骨架最短展示时长”父级门控；ClosureActions 的焦点恢复来自原操作/关闭事件，未移入数据到达效果。Modal、StepWorkflow、DataTable 自身的挂载测量/焦点机制未改。 |
+
+### 先红后绿
+
+新增用例在 [pc-admin-card35c-states.browser.test.mts](../../../../../tests/pc-admin-card35c-states.browser.test.mts)，旧两条用例及其断言保留。GET 时序控制新增的 passthroughAfterRelease 仅对新用例启用；其他用例配置缺省时维持原行为。真实隔离 HTTP/PG 提供 DTO，写命令没有被拦截。
+
+| 修复前记录 | 结果 |
+| --- | --- |
+| [会话首次 RED](mount-fix-20261119/red-inbox.tap) | 产品源码仍是 07aaeb6a，仅新增测试。50 条已加载消息溢出时间线，读取持续超过 150ms 延迟与 300ms 最短展示；骨架结束后 top=0、height=2577、client=590、距底部1987px，断言失败。构建输入 5d980245860521cb615999f0818cf7d5cc8d471727b21f9dc3a7d845bba94da4。 |
+| [扩展审计 RED](mount-fix-20261119/red-audit.tap) | 会话同样失败，候选标题焦点断言 false。该轮附件用例在夹具准备中失败（H5 intake 还没有 ticket），不作为附件产品 RED。构建输入 9bec8ad3362c06a08d0bc55290d6a847b2d89db0571ac7db008b217fcd1c5cb7。 |
+| [附件独立 RED](mount-fix-20261119/red-attachment.tap) | 换用既有 DetailRestructureFixture 的真实空媒体工单；产品源码仍是 07aaeb6a。空态根节点消失后，原表单读取失败触发既有重读并重建节点，观察器未绑定新节点，断言 false。构建输入 86b9cca4d685417db0a3e3a8f95b95be71f22297da1dae7829878b41e5989835。 |
+
+附件夹具调整过程中一轮构建因 cookie.url 可选类型失败；补上 fixture origin 后重建通过。该构建失败与最初的夹具失败都保留本地原记录，没有归类为产品回归，也没有修改检查规则。
+
+修复后的三个新用例均常速 3 次及 4× CPU 3 次通过（18/18）。真实 CDP 设置已收到回执；每轮 3 个浏览器均关闭自有资源。全部六轮会话均 top=1987、距底部0px、后续历史锚点偏移0px，初次无新消息按钮，下一条消息到达时才出现。
+
+| 速度 | 第1次 | 第2次 | 第3次 |
+| --- | --- | --- | --- |
+| 常速 | [3/3](mount-fix-20261119/regressions-1-1.tap) | [3/3](mount-fix-20261119/regressions-1-2.tap) | [3/3](mount-fix-20261119/regressions-1-3.tap) |
+| CDP CPU 4× | [3/3](mount-fix-20261119/regressions-4-1.tap) | [3/3](mount-fix-20261119/regressions-4-2.tap) | [3/3](mount-fix-20261119/regressions-4-3.tap) |
+
+
+### 本轮执行与逐文件结果
+
+最终构建输入 `ef7511698e36341c3beaa49ebbfb50d6318b0e5e13caecd77dd0f1035b276ce1`，制品 manifest SHA-256 `19f4d3eb8385a3031f5c210d04610c3415abb36ed8af8dd9ea9d591f93a5351f`，source HEAD 为上述 07aaeb6a，dirty=true；下表不是已推送新提交或新 CI 的结果。
+
+使用 `TS_MIGRATION_TEST_SOURCE_ROOT=/Users/petervans/Projects/ticket-wt-35c`、`PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres`、`TS_MIGRATION_TEST_DB_ISOLATED=1`，TMPDIR 解析为真实路径。Node 24.18.0，macOS 系统 Chrome，浏览器/数据库测试从 `.build/runtime/tests` 执行。路径策略按 07aaeb6a 到本轮工作树差异直接调用 planChanges 计算，不建立临时提交：pc profile 的 pr-pc / pr-read-safety 共17入口，runSelection 全部通过（151/151例）；另加指定的四份浏览器文件（30/30例），合计21个唯一入口、181/181例，0 FAIL/SKIP/NOT_RUN。Card23 的三组 inbox presentation 用例包含在 T22 完整文件中，没有缩小该文件的执行范围。额外 smoke 3/3 和上方18次矩阵运行不增加唯一入口计数。
+
+| 文件 | 范围 | PASS / FAIL / SKIP | 证据 |
+| --- | --- | --- | --- |
+| [pc-admin-card12-review.browser.test.mts](../../../../../tests/pc-admin-card12-review.browser.test.mts) | 路径策略 | 7/0/0 | 原件已移出仓库（本地归档 sha256 `0bc63b2fbc1d8ac8455be6d1a21750f399deb3414ee3e46e54aee4198a2c4f0b`） |
+| [pc-admin-card16.browser.test.mts](../../../../../tests/pc-admin-card16.browser.test.mts) | 路径策略 | 3/0/0 | 原件已移出仓库（本地归档 sha256 `be20823b61fd7e6b4a0c2b11593dd24467609e6bc6befeb5cd9f79cfec003439`） |
+| [pc-admin-card35c-states.browser.test.mts](../../../../../tests/pc-admin-card35c-states.browser.test.mts) | 路径策略 | 5/0/0 | [最终完整 TAP](mount-fix-20261119/states-35c-final.tap) |
+| [pc-admin-copy-terms.test.mts](../../../../../tests/pc-admin-copy-terms.test.mts) | 路径策略 | 8/0/0 | 原件已移出仓库（本地归档 sha256 `78ea67084fd2adeb9ba5b01b47ae0703199ac0fedcb113295c756e18e286efbc`） |
+| [pc-admin-design-foundation.test.mts](../../../../../tests/pc-admin-design-foundation.test.mts) | 路径策略 | 75/0/0 | 原件已移出仓库（本地归档 sha256 `d5c23d197303c58f90fe442e43376684f60c49f54036430b05245f90961c4bfc`） |
+| [pc-admin-legacy-retirement.browser.test.mts](../../../../../tests/pc-admin-legacy-retirement.browser.test.mts) | 路径策略 | 2/0/0 | 原件已移出仓库（本地归档 sha256 `da8928ab3de1b18a9a259a253cd00cb60979e9ed81297efe533b10e46547b64d`） |
+| [t35-account-switch.browser.test.mts](../../../../../tests/t35-account-switch.browser.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `234467c0bfc5913e67188f753a7d65e144efabcdd9fad4b06de35fc614a2e4d7`） |
+| [t35-current-authority-wait.integration.test.mts](../../../../../tests/t35-current-authority-wait.integration.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `cf808b1a404eb4775be98a11139b879ad11972a1709e77e98a51b4df87fcebd3`） |
+| [t35-unknown-read.browser.test.mts](../../../../../tests/t35-unknown-read.browser.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `6eca753e9bf13c1b5d8e35425003ccf8ff84d948101345e8bb0ee5197c23da6f`） |
+| [visual-regression.test.mts](../../../../../tests/visual-regression.test.mts) | 路径策略 | 14/0/0 | 原件已移出仓库（本地归档 sha256 `db4b580682374c4f41a861ad8684041f28aa8cdd692c6fdba7dd17a6552d6dc5`） |
+| [wbint-t19-manual-self-handling-authority.integration.test.mts](../../../../../tests/wbint-t19-manual-self-handling-authority.integration.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `c0723af1fe96972923bb421ed0d4b63c183906cf9c591ccf933b6709a2c157a4`） |
+| [wbint-t19-manual-self-handling-contracts.test.mts](../../../../../tests/wbint-t19-manual-self-handling-contracts.test.mts) | 路径策略 | 4/0/0 | 原件已移出仓库（本地归档 sha256 `fe2dba37f7b5b9d136db74f1bb32cf62fcd649c36e9c5f990af0bc3637202e15`） |
+| [wbint-t19-manual-self-handling-unknown.browser.test.mts](../../../../../tests/wbint-t19-manual-self-handling-unknown.browser.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `cea1a26edbeb5275e3166d8cee7c060364200abdaeb42a2855eab90300c24c53`） |
+| [wbint-t22-realtime-tracer.browser.test.mts](../../../../../tests/wbint-t22-realtime-tracer.browser.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `c20a0413993e3f809123eb1bb83bb8cdd1318ccbabefafd963251c0169f5047e`） |
+| [wbint-t32-exception-authorization.browser.test.mts](../../../../../tests/wbint-t32-exception-authorization.browser.test.mts) | 路径策略 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `5e42f9c3710766ec1ca4f13762e7818cbacc03a74d30f2b61d6dd5eebb1a5748`） |
+| [web01-workbench.integration.test.mjs](../../../../../tests/web01-workbench.integration.test.mjs) | 路径策略 | 17/0/0 | 原件已移出仓库（本地归档 sha256 `b33ddf1c0d901e3f336084dbf8a6b7f5d6132670bc1b038b785c7833b671505e`） |
+| [web01-workbench.test.mts](../../../../../tests/web01-workbench.test.mts) | 路径策略 | 9/0/0 | 原件已移出仓库（本地归档 sha256 `a091458eeacd91c9d0b9f1022797ebb74147cbd01fb6e5e5279e3a05855f5826`） |
+| [conversation-inbox.browser.test.mts](../../../../../tests/conversation-inbox.browser.test.mts) | 直接风险/指定回归 | 12/0/0 | 原件已移出仓库（本地归档 sha256 `0e3310e28b34e0744042cfcf6af5c08498e12f710aaa04d491807690eb0dc0d2`） |
+| [wbint-t22-conversations.browser.test.mts](../../../../../tests/wbint-t22-conversations.browser.test.mts) | 直接风险/指定回归 | 7/0/0 | 原件已移出仓库（本地归档 sha256 `b17f07db5e63a3fd51e88bfe5b20e65d8ae8bcdf27aef0069a4769fa05d295b6`） |
+| [workbench-detail-media.browser.test.mts](../../../../../tests/workbench-detail-media.browser.test.mts) | 直接风险/指定回归 | 1/0/0 | 原件已移出仓库（本地归档 sha256 `1827ec9a6cef15b9bcc0281d0ecd52c8c59973509f8afd233d464183f3e965b1`） |
+| [pc-admin-card35a-states.browser.test.mts](../../../../../tests/pc-admin-card35a-states.browser.test.mts) | 直接风险/指定回归 | 10/0/0 | 原件已移出仓库（本地归档 sha256 `ae81d80397a412c86bbe42bd18c3073a3776c4b588e1a3738b7fba785d537e29`） |
+
+类型检查、统一构建、stylelint（lint:css）、eslint（lint:features）、copy-terms（含逐段纯文本状态白名单）、文档指令检查及其20例工具测试全部通过。编译制品在执行前后校验一致；V8 模块来源与 case trace 指向该编译树，没有退回源码。未修改旧测试的断言、跳过项、超时或路由规则。本地复验不代替下一次提交后的 Linux CI。
+
+### 原始记录存储
+
+仓库内本轮仅新增10份小型 TAP：三份修复前失败原件、六份最终重复运行及一份35C最终完整文件。本轮驱动目录内的其余成功 TAP、构建/检查记录、CPU回执、V8来源、截图、驱动与中间报告存于本地归档 `35c-evidence-archive/mount-fix-20261119/`，不新增仓库链接。原件路径与 SHA-256 由该目录 MANIFEST.txt 及上级 MANIFEST.txt 保全；本节之前的历史归档不移动、不改写。归档绝对根为 `/private/tmp/claude-501/-Users-petervans-Projects-ticket/172774c8-e578-406d-b0a5-c4c9c8c86f82/scratchpad/35c-evidence-archive/`。
+
+| 本轮原件（相对归档子目录） | SHA-256 |
+| --- | --- |
+| `impact-plan.json` | `17a877555fe6f73e53e79b182828cd5483ea2492aca1ce62b5873bb8eae8f5f4` |
+| `policy-results.json` | `936353447aba1b6d71f25335c9c96b79e3acd9854570bf83c8606ef7d020da2f` |
+| `results-matrix.json` | `60fb12c25fe6d8ea5f593d3cfb45788067358c25b18d3f2ab3f5ce62a467f6cd` |
+| `results-requested.json` | `dde6bc8bc7b4b74a1f8203592038ef3f53b9476fa4c99423b13f41c84fd926c5` |
+| `source-hashes.json` | `686866ddbb37974a84d06dec2adff3d13060b507649d2093e2bcf229396f49a0` |
+| `verification-snapshot.json` | `0773fb605895f01176ba50355578312741e6638ba42442257a7df24d8e8ebdaa` |
+| `audit-hooks.json` | `b6dd5807656ca28ea4c9755d3e6d771495687072d5b8e590920dc152e89a5c45` |
+| `audit-summary.jsonl` | `f3ff9bb4510bd295a9f67a94d7ef326ca84927a9421310567105536f446a14b3` |
+| `attachment-red-build.txt` | `1a5443f2c2732ab426a52497ac68e4e69ee9a39885c65cebeb5bdaaa9270783b` |
+| `audit-red.tap` | `de8b3b9199b544919414567d70d048687de1b17e90ef39829b18e35e12ddd033` |
+| `build.txt` | `974760b7e3650ef53cadc15d80a6833390fa82751cf9c0473a710f12aae4d0c0` |
+| `typecheck.txt` | `44dca1fa0b91d2f6038480570d491893b0b6fa5e20871abe7240cb916dc9e861` |
+| `stylelint.txt` | `f63c7c64a77f209d9abab662928ed53b471657ac17b8f63dacfb9185d03d7f06` |
+| `eslint.txt` | `613e3c6a507c793d26dbb0d62938f43f973f483fa2bcde310559e88724ca930f` |
+| `docs-tool.tap` | `875954fc950c76e89e80f322fbd319bedd98e865673e0b80d5dbbb7890e28281` |
+| `docs-agents.txt` | `2ef943b93726f27ea5887366033c0d1391a820e550534dc48aa94653614939f6` |
+
+本轮收尾：5份文档的1712个本地链接全部解析，目标均未被Git忽略；docs:agents:check、git diff --check 与最终制品校验通过。仓库证据174个文件，du -sh 为4.8M（低于8MB）；本轮新增10份TAP共16886字节。HEAD 保持07aaeb6a，受保护视觉基线无差异。

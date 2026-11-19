@@ -1,0 +1,39 @@
+TAP version 13
+# Subtest: Card 35C attachment visibility observation follows an empty-state root remount
+not ok 1 - Card 35C attachment visibility observation follows an empty-state root remount
+  ---
+  duration_ms: 2568.641708
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:284:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a remounted attachment root must have its own real visibility observer
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:316:20
+    async withT24Fixture.ticketAssignmentEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/detail-restructure-fixture.mjs:47:13)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t24-round-notification-fixture.mjs:34:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT24Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t24-round-notification-fixture.mjs:15:5)
+    async withDetailRestructureFixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/detail-restructure-fixture.mjs:19:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:285:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2683.547167

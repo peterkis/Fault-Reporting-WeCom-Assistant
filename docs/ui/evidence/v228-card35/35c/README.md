@@ -2,6 +2,8 @@
 
 实施与验收跨至 2026-11-19；产品确认日期 2026-11-18 保留。
 
+2026-11-19 reviewer P2 追加：[骨架后挂载修复与同类审计](tests.md#pr-194-mount-fix)。基于 `07aaeb6a` 修复会话首屏滚动、候选标题聚焦和附件观察器重新绑定；三个新用例均先红后绿，常速各3次及4× CPU各3次通过；本轮21个测试文件共181/181例通过。原视觉证据与历史验证结果保持原归属。
+
 2026-11-19 追加：[PR #194 CI 修复与新候选验证](tests.md#pr-194-ci-fix)。本次恢复 35A 规范要求的列底，修复 Web01 等待、T15 故障注入及 H5 工具自测夹具；以下原实施计数、原构建与失败记录保留，不重绑为新结果。旧 visual 对比中的看板灰底现已确认属于 35A 回归；本次未替换旧截图或更改基线。 最终构建同组选测 79/79（575/575 例）、7 项工具及 1 项调度全部通过；两份故障浏览器文件各 5 次常速 + 5 次 4× CPU 通过，T15 case 4 两种速度各 10/10。
 
 本轮可执行范围已接入；13项按API停止线暂停，负责人 2026-11-19 决定保持现状、上线后登记。只实施[已确认清单](../../../../../plans/pc-admin-design-v21/card-35c-inventory.md)的上线前项。基线 `30eb2fc80353d1ab834c5da4bcc183c6415311c6`；未提交。35A/35B 已合并，A01–A08 不重复接入；登录 O67–O72 不纳入。
@@ -313,7 +315,7 @@ CI选择、显式CPU参数矩阵、复核和归档的实际临时驱动见脚本
 
 ## 仓库内保留文件
 
-共164个文件：3份Markdown、item-results.json、31张1440区域截图、42张变化屏三联图、3份视觉报告文件及84份最终/失败TAP。原始大文件与中间成功记录继续保留在仓库外；当前保留集合如下。
+共174个文件：3份Markdown、item-results.json、31张1440区域截图、42张变化屏三联图、3份视觉报告文件及94份最终/失败TAP。原始大文件与中间成功记录继续保留在仓库外；当前保留集合如下。
 
 <details>
 <summary>展开完整保留文件清单</summary>
@@ -382,6 +384,16 @@ comparison/report.json
 comparison/tokens.css
 item-results.json
 items.md
+mount-fix-20261119/red-attachment.tap
+mount-fix-20261119/red-audit.tap
+mount-fix-20261119/red-inbox.tap
+mount-fix-20261119/regressions-1-1.tap
+mount-fix-20261119/regressions-1-2.tap
+mount-fix-20261119/regressions-1-3.tap
+mount-fix-20261119/regressions-4-1.tap
+mount-fix-20261119/regressions-4-2.tap
+mount-fix-20261119/regressions-4-3.tap
+mount-fix-20261119/states-35c-final.tap
 states-7c82d44b/attachments-error-1440.webp
 states-7c82d44b/attachments-loading-1440.webp
 states-7c82d44b/attachments-ready-1440.webp

@@ -6,7 +6,11 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {start} from './helpers/t43-service-actions.mjs';
 import {withT43Fixture} from './helpers/t43-full-service-fixture.mjs';
-import {withT22Fixture} from './helpers/wbint-t22-fixture.mjs';
+import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
+import {t11Http} from './helpers/t11-completion-fixture.mjs';
+import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
+import {conversationPost,freshCommand} from './helpers/conversation-inbox-fixture.mjs';
+import type {ConversationChatEntry} from '../contracts/workbench_conversation_inbox_contracts.js';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
@@ -25,7 +29,7 @@ const controlled=String.raw`(()=>{
  globalThis.fetch=async(input,init={})=>{
   const url=new URL(typeof input==='string'?input:input.url,location.href),method=init.method||'GET';
   if(method==='POST')__card35c.posts.push(url.pathname);
-  if(!cfg||method!=='GET'||url.pathname!==cfg.path)return real(input,init);
+  if(!cfg||method!=='GET'||url.pathname!==cfg.path||cfg.passthroughAfterRelease&&__card35c.released)return real(input,init);
   const began=performance.now();__card35c.reads.push({path:url.pathname,began});
   await new Promise((resolve,reject)=>{
    const signal=init.signal;let timer;
@@ -161,5 +165,99 @@ test('Card 35C inbox: contacts skeleton, error, fast read and slow request notic
   await writeFile(join(dir,'inbox-shots.json'),JSON.stringify({cpu,shots},null,2));
   await closeBrowserTestResources([async()=>{await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
  },{inbox:true});
+});
+
+test('Card 35C delayed inbox timeline mounts at the latest message and keeps the history reader anchor',{timeout:120000},async()=>{
+ await withT22Fixture(async f=>{
+  const session=f.sessions[0];assert.ok(session);
+  for(let index=0;index<64;index++)await appendT22LiveItem(f.pool,session.id,'合成滚动消息 '+String(index+1).padStart(2,'0'));
+  assert.equal((await conversationPost(f.origin,f.cookie,session.id,'takeover',freshCommand())).status,200);
+  await f.runtime.coordinator.runOnce();
+  const browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1000,cookies:[{...f.browserCookie,url:f.origin}]});assert.ok(browser);let failure:unknown;
+  try{
+   await browser.waitFor('document.querySelector(".page-title h1")?.textContent==="团队工作台"');await prepare(browser);
+   const read='/api/workbench/conversations/'+session.id+'?view=chat&include_waiting_since=true';
+   const stored=await browser.evaluate('fetch('+q(read)+').then(async r=>({status:r.status,body:await r.text()}))');
+   assert.ok(stored&&typeof stored==='object'&&'status' in stored&&stored.status===200);
+   await browser.evaluate('sessionStorage.setItem("card35c-config",'+q(JSON.stringify({path:read.split('?')[0],delay:null,fail:false,label:'正在加载会话…',token:'chat-initial-scroll',passthroughAfterRelease:true}))+');sessionStorage.setItem("card35c-response",'+q(JSON.stringify(stored))+')');
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/conversations/'+session.id});
+   await browser.waitFor('globalThis.__card35c?.token==="chat-initial-scroll"&&__card35c.visibleAt!==null');
+   assert.equal(await browser.evaluate('Boolean(document.querySelector(".inbox-timeline"))'),false,'the timeline stays unmounted while the skeleton is shown');
+   // Hold the real detail response beyond both the delay and the skeleton's minimum exposure.
+   await browser.waitFor('performance.now()-__card35c.visibleAt>=350');await browser.evaluate('document.fonts.ready');
+   await browser.evaluate('__card35cRelease()');
+   await browser.waitFor('Boolean(document.querySelector(".inbox-timeline"))&&!document.querySelector(\'[data-loading-status][aria-label="正在加载会话…"]\')');
+   await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+   const initial=await browser.evaluate('(()=>{const n=document.querySelector(".inbox-timeline");return {top:n.scrollTop,height:n.scrollHeight,client:n.clientHeight,count:n.querySelectorAll("[data-conversation-item]").length,distance:n.scrollHeight-n.scrollTop-n.clientHeight};})()') as {top:number;height:number;client:number;count:number;distance:number};
+   assert.equal(initial.count,50);assert.ok(initial.height-initial.client>200,'real loaded messages must overflow the timeline');
+   assert.ok(initial.distance<48,'a delayed conversation must initially show the latest message: '+JSON.stringify(initial));
+   assert.equal(await browser.evaluate('Boolean(document.querySelector(".inbox-new-messages"))'),false,'initial mounting must not report new messages');
+   await browser.waitFor('document.querySelector("[data-realtime-status]")?.dataset.realtimeStatus==="live"');
+   const anchor=await browser.evaluate('(()=>{const n=document.querySelector(".inbox-timeline");n.scrollTop=Math.min(300,(n.scrollHeight-n.clientHeight)/2);n.dispatchEvent(new Event("scroll"));const item=[...n.querySelectorAll("[data-conversation-item]")].find(i=>i.getBoundingClientRect().bottom>n.getBoundingClientRect().top);return {id:item.dataset.conversationItem,offset:item.getBoundingClientRect().top-n.getBoundingClientRect().top};})()') as {id:string;offset:number};
+   const response=await fetch(f.origin+read,{headers:{cookie:f.cookie}});assert.equal(response.status,200);const current=await response.json() as ConversationChatEntry;
+   const text='合成骨架结束后的实时消息';
+   assert.equal((await conversationPost(f.origin,f.cookie,session.id,'internal-notes',{...freshCommand(current.session.row_version),text})).status,201);await f.runtime.coordinator.runOnce();
+   await browser.waitFor('document.querySelector(".inbox-timeline")?.textContent.includes('+q(text)+')');
+   const offset=await browser.evaluate('(()=>{const n=document.querySelector(".inbox-timeline"),item=document.querySelector(\'[data-conversation-item="'+anchor.id+'"]\');return item.getBoundingClientRect().top-n.getBoundingClientRect().top;})()') as number;
+   assert.ok(Math.abs(offset-anchor.offset)<3,'a subsequent item preserves the history reader anchor');
+   assert.equal(await browser.evaluate('Boolean(document.querySelector(".inbox-new-messages"))'),true,'the sequence at initial mount must be retained for the next item');
+   await clickWorkbenchControl(browser,'.inbox-new-messages');
+   await browser.waitFor('(()=>{const n=document.querySelector(".inbox-timeline");return n.scrollHeight-n.scrollTop-n.clientHeight<48&&!document.querySelector(".inbox-new-messages");})()');
+   console.log('CARD35C_INITIAL_SCROLL '+JSON.stringify({cpu,initial,anchorOffsetDelta:offset-anchor.offset}));
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ },{inbox:true,realtime:true,recovery:false});
+});
+
+test('Card 35C delayed candidate detail focuses its real heading after the skeleton',{timeout:120000},async()=>{
+ await withT43Fixture(async f=>{
+  for(const reporter of ['synthetic-A','synthetic-B','synthetic-C'])await f.inbound('group','测试诊室断网。',reporter);
+  const id=await f.correlate(),read='/api/incident-candidates/'+id;
+  const browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1000,cookies:f.browserCookies.slice(0,1),certificateSpki:f.certificateSpki});assert.ok(browser);let failure:unknown;
+  try{
+   await browser.waitFor('document.querySelector(".page-title h1")?.textContent==="团队工作台"');await prepare(browser);
+   const stored=await browser.evaluate('fetch('+q(read)+').then(async r=>({status:r.status,body:await r.text()}))');assert.ok(stored&&typeof stored==='object'&&'status' in stored&&stored.status===200);
+   await browser.evaluate('sessionStorage.setItem("card35c-config",'+q(JSON.stringify({path:read,delay:null,fail:false,label:'正在加载候选详情…',token:'candidate-focus',passthroughAfterRelease:true}))+');sessionStorage.setItem("card35c-response",'+q(JSON.stringify(stored))+')');
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/incidents/candidates/'+id});
+   await browser.waitFor('globalThis.__card35c?.token==="candidate-focus"&&__card35c.visibleAt!==null&&performance.now()-__card35c.visibleAt>=350');
+   await browser.evaluate('__card35cRelease()');await browser.waitFor('Boolean(document.getElementById('+q('candidate-heading-'+id)+'))');
+   await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+   assert.equal(await browser.evaluate('document.activeElement===document.getElementById('+q('candidate-heading-'+id)+')'),true,'a delayed candidate must focus the mounted heading');
+   console.log('CARD35C_CANDIDATE_FOCUS '+JSON.stringify({cpu,focused:true}));
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
+});
+
+test('Card 35C attachment visibility observation follows an empty-state root remount',{timeout:120000},async()=>{
+ await withDetailRestructureFixture(async f=>{
+  const item=f.tickets[0],cookie=f.browserCookies[0];assert.ok(item&&cookie);const http=await t11Http(f);await http.start(item.ticket.id);
+  const id=item.ticket.id,read='/api/workbench/items/ticket/'+id+'/web-report';
+  const browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1000,cookies:[{...cookie,url:f.origin}]});assert.ok(browser);let failure:unknown;
+  try{
+   await browser.waitFor('document.querySelector(".page-title h1")?.textContent==="团队工作台"');await prepare(browser);
+   await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const Native=IntersectionObserver;globalThis.__card35cAttachmentRoots=[];globalThis.IntersectionObserver=class extends Native{observe(node){super.observe(node);if(node.matches('.attachment-section.detail-attachments'))__card35cAttachmentRoots.push(node);}};})()`});
+   const stored=await browser.evaluate('fetch('+q(read)+').then(async r=>({status:r.status,body:await r.text()}))');assert.ok(stored&&typeof stored==='object'&&'status' in stored&&stored.status===200);
+   await browser.evaluate('sessionStorage.setItem("card35c-config",'+q(JSON.stringify({path:read,delay:null,fail:false,label:'正在加载报修附件…',token:'attachment-root',passthroughAfterRelease:true}))+');sessionStorage.setItem("card35c-response",'+q(JSON.stringify(stored))+')');
+   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page'});
+   await browser.waitFor('globalThis.__card35c?.token==="attachment-root"&&__card35c.visibleAt!==null&&performance.now()-__card35c.visibleAt>=350');
+   assert.ok(Number(await browser.evaluate('__card35cAttachmentRoots.length'))>0,'the initial hidden root is observed');
+   await browser.evaluate('__card35cRelease()');
+   await browser.waitFor('!document.querySelector(".attachment-section.detail-attachments")&&!document.querySelector(\'[data-loading-status][aria-label="正在加载报修附件…"]\')');
+   await clickWorkbenchControl(browser,'[data-action=open-public-progress]');
+   await browser.waitFor('Boolean(document.querySelector(".detail-progress-dialog"))');
+   await browser.evaluate(`(()=>{const input=document.querySelector('.detail-progress-dialog textarea[aria-label="公开进度"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'合成附件可见性重读。');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+   await clickWorkbenchControl(browser,'[aria-label="确认公开进度内容"]');
+   await browser.evaluate(`(()=>{const real=fetch;globalThis.__card35cAttachmentFailures=0;globalThis.fetch=(input,init={})=>{const url=new URL(typeof input==='string'?input:input.url,location.href);if((init.method||'GET')==='GET'&&url.pathname===${q(read)}){__card35cAttachmentFailures++;return Promise.resolve(new Response('{"error":{"code":"CARD35C_READ_FAILED","retryable":true}}',{status:503,headers:{'content-type':'application/json'}}));}return real(input,init);};})()`);
+   // Failed preflight uses the form's existing reread and retains this component instance.
+   // No command is intercepted or submitted after the failed authorization read.
+   await clickWorkbenchControl(browser,'.detail-progress-dialog button[type=submit]');
+   await browser.waitFor('__card35cAttachmentFailures>0&&Boolean(document.querySelector(".attachment-section.detail-attachments"))');
+   await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+   assert.equal(await browser.evaluate('__card35cAttachmentRoots.includes(document.querySelector(".attachment-section.detail-attachments"))'),true,'a remounted attachment root must have its own real visibility observer');
+   console.log('CARD35C_ATTACHMENT_ROOT '+JSON.stringify({cpu,observed:true}));
+  }catch(error){failure=error;}
+  await closeBrowserTestResources([async()=>{await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+ });
 });
 
