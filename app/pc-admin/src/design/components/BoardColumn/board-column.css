@@ -19,7 +19,8 @@
 .ds-board-column.handled .ds-completed-drop-zone {min-height:var(--space-10);}
 .ds-board-group [data-slot=disclosure-body] {padding: 0;}
 .ds-board-column .column-cards {min-width: 0;}
-.ds-column-arrivals.ds-button.button[data-tone] {padding:var(--space-1);height:var(--control-h-sm);min-height:var(--control-h-sm);font-size:var(--fs-xs);color:var(--column-fg);white-space:nowrap;}
+/* Same 26px as the sort trigger: the heading row is sized by it, so a taller capsule would push every card down on arrival. */
+.ds-column-arrivals.ds-button.button[data-tone] {padding:var(--space-1);height:calc(var(--space-6) + var(--space-0-5));min-height:calc(var(--space-6) + var(--space-0-5));font-size:var(--fs-xs);color:var(--column-fg);white-space:nowrap;}
 .ds-column-arrivals svg {width:var(--icon-sm);height:var(--icon-sm);}
 .ds-board-column[data-has-arrivals=true] .ds-column-sort>span {display:block;max-width:0;overflow:hidden;white-space:nowrap;}
 
