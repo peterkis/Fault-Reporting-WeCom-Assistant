@@ -7,6 +7,7 @@ import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs'
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {captureMotionReadingPosition,scrollPastMotionItem,seedMotionTicket} from './helpers/motion-board-fixture.mjs';
+import {boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
 
 for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as const)test('Card 16 '+mode+' keeps official new-card reads, bounded motion and reading position',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,_card,get)=>{
   const cpuRate=process.env.CARD16_CPU_RATE;
@@ -18,7 +19,7 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
   await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:mode==='reduced'?'reduce':'no-preference'}]});
   // Wait for the initial confirmed three-column batch before creating a new source fact.
-  await browser.waitFor("[...document.querySelectorAll('.ds-stage-count')].every(n=>n.textContent!=='—')&&document.querySelectorAll('.ticket-card').length>3");
+  await browser.waitFor(boardColumnsReady+"&&[...document.querySelectorAll('.ds-stage-count')].every(n=>n.textContent!=='—')&&document.querySelectorAll('.ticket-card[data-item-id]').length>3");
   if(mode==='arrival'||mode==='collapsed'){
     const expanded=mode==='arrival';
     await browser.evaluate(`(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')!==${JSON.stringify(String(expanded))})button.click();})()`);
