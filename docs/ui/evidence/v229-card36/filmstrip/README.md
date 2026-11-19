@@ -14,8 +14,8 @@ Expected after reviewer rerun: `e1-press.png`, `e2-segment.png`, `e3-collapse.pn
 
 ## 36B data motion
 
-The reviewer’s round 1 run on macOS 26.6.2 / Darwin 25.6.0 with Chrome 157.0.8103.79 captured `board-move`, `board-arrival`, `list-row-highlight` and `count-roll`. `board-chip` failed with zero observable chip animations. The diagnostics are in [board-chip-failure.json](board-chip-failure.json).
+The reviewer’s final run on macOS / Darwin 25.6.0 with Chrome 158.0.8127.37 (headless; see [board-chip-environment.json](board-chip-environment.json)) captured all five 36B filmstrips: `board-move`, `board-arrival`, `board-chip`, `list-row-highlight`, and `count-roll` (`.png`, `.json`, and `-environment.json` each, all present in this folder).
 
-Post-rework capture is **NOT RUN**. The local Chrome probe timed out before DevTools became available.
+The earlier round-1 `board-chip` zero-animation failure was fixed (chip enter now uses WAAPI), so no failure JSON is kept.
 
 The compiled `pc-admin-card36b-motion.browser.test.mjs` entry captures `board-move`, `board-arrival`, `board-chip`, `list-row-highlight` and `count-roll` as PNG + JSON, with a separate environment JSON recording the running OS and Chrome version. `CARD36B_EVIDENCE_DIR` can redirect both filmstrips and measurement receipts. Run outside the restricted sandbox with the synthetic loopback PostgreSQL fixture.
