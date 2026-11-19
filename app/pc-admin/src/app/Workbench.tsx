@@ -19,6 +19,7 @@ import { BoardColumn as BoardColumnView,boardEmptyMessage,BoardGroup } from '../
 import { BoardSummary,BoardDatePresets } from '../design/components/BoardSummary/BoardSummary';
 import { Button,Button as HButton } from '../design/components/Button/Button';
 import { PageHeader } from '../design/components/PageHeader/PageHeader';
+import {Collapse,CollapseChevron} from '../design/components/Collapse/Collapse';
 import { SegmentedControl } from '../design/components/SegmentedControl/SegmentedControl';
 import { SourceLabel } from '../design/components/SourceLabel/SourceLabel';
 import {FilterChip} from '../design/components/FilterChip/FilterChip';
@@ -128,7 +129,7 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
 }
 function More({expanded,count,onClick,controls}:{expanded:boolean;count:number;onClick:()=>void;controls:string}){
   if(count<=3)return null;
-  return <div className="ds-column-footer" title={'已加载 '+count+' 项'}>{count>3?<HButton className="column-more" data-action="expand-column" aria-expanded={expanded} aria-controls={controls} onClick={onClick} tone="ghost">{expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}<span>{expanded?'收起':('显示剩余 '+(count-3)+' 项')}</span><span className="sr-only">（当前已加载范围）</span></HButton>:null}</div>;
+  return <div className="ds-column-footer" title={'已加载 '+count+' 项'}>{count>3?<HButton className="column-more" data-action="expand-column" aria-expanded={expanded} aria-controls={controls} onClick={onClick} tone="ghost"><CollapseChevron expanded={expanded}/><span>{expanded?'收起':('显示剩余 '+(count-3)+' 项')}</span><span className="sr-only">（当前已加载范围）</span></HButton>:null}</div>;
 }
 function Shell({principal,children,navigationBlocked=false,realtime}:{principal:Principal;children:ReactNode;navigationBlocked?:boolean;realtime:RealtimeView}){
   const desktopEpoch=useDesktopSession(principal,realtime,navigationBlocked);
@@ -187,9 +188,10 @@ function BoardSection({principal,query,column,label,search,selected,now,loaded,e
   const intakes=loaded.filter(item=>item.kind!=='ticket'),tickets=loaded.filter(item=>item.kind==='ticket');
   const grouped=loaded;
   // Keep the three-card contract while giving both nonempty groups a visible item.
-  const visible=expanded?grouped:column==='pending'&&intakes.length&&tickets.length
+  const visible=column==='pending'&&intakes.length&&tickets.length
     ?[...intakes.slice(0,2),...tickets.slice(0,3-Math.min(intakes.length,2))]:grouped.slice(0,3);
   const renderCard=(item:WorkbenchCard)=><Card key={item.kind+item.id} item={item} principal={principal} search={search} selected={item.id===selected} now={now}/>;
+  const cards=(items:WorkbenchCard[])=>{const shown=new Set(visible.map(item=>item.kind+':'+item.id));return <>{items.filter(item=>shown.has(item.kind+':'+item.id)).map(renderCard)}<Collapse expanded={expanded} className="ds-column-remainder">{items.filter(item=>!shown.has(item.kind+':'+item.id)).map(renderCard)}</Collapse></>;};
   const completed=loaded.filter(item=>item.closure?.kind==='COMPLETED'),dismissed=loaded.filter(item=>item.closure?.kind==='DISMISSED');
   const counts=!filtered?query.data?.pages[0]?.group_counts:undefined;
   const groupCounts=counts??{completed:completed.length,dismissed:dismissed.length};
@@ -197,7 +199,7 @@ function BoardSection({principal,query,column,label,search,selected,now,loaded,e
   const processedGroups=PROCESSED_GROUPS.map(definition=>{const group=<ProcessedGroup definition={definition} items={itemsInGroup(definition,loaded)} count={groupCounts[definition.key]} principalId={principal.principal_id} renderCard={renderCard}/>;return definition.key==='completed'?<BoardDropColumn key={definition.key} column={column}><div className="ds-completed-drop-zone">{group}{empty}</div></BoardDropColumn>:<Fragment key={definition.key}>{group}</Fragment>;});
   const content=<BoardColumnView column={column} label={label} count={loading.visible||query.isPending?'…':query.isError&&!query.data?'—':column==='handled'?groupCounts.completed+groupCounts.dismissed:loaded.length} countTitle={column==='handled'&&counts?'当前日期范围内的事项总数':'当前筛选后已加载的事项'} sort={sort} onSort={onSort} blocked={blocked||preserveOrder} newCount={newCount} onReveal={onReveal} feedback={query.isError&&query.data?<StaleRetry onRetry={retry}/>:null}>
     <div className="ds-state-region" data-refreshing={query.data&&query.isFetching&&!query.isFetchingNextPage?'true':undefined} data-stale={query.data&&query.isError?'true':undefined}>
-    {loading.visible?<BoardColumnSkeleton column={column} label={label} principalId={principal.principal_id} bodyOnly slow={loading.slow} onRetry={retry}/>:query.isPending?null:query.isError&&!query.data?<ErrorState title={label+'没有读出来'} onRetry={retry}/>:<div className="ds-state-content"><div className="column-cards" id={'cards-'+column}>{column==='handled'?processedGroups:column==='pending'&&loaded.length?PENDING_GROUPS.map(definition=><BoardGroup key={definition.key} {...boardGroupProps(definition,principal.principal_id)} count={itemsInGroup(definition,loaded).length}>{itemsInGroup(definition,visible).map(renderCard)}</BoardGroup>):visible.map(renderCard)}{column!=='handled'?empty:null}</div>{column!=='handled'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)}/>:null}</div>}
+    {loading.visible?<BoardColumnSkeleton column={column} label={label} principalId={principal.principal_id} bodyOnly slow={loading.slow} onRetry={retry}/>:query.isPending?null:query.isError&&!query.data?<ErrorState title={label+'没有读出来'} onRetry={retry}/>:<div className="ds-state-content"><div className="column-cards" id={'cards-'+column}>{column==='handled'?processedGroups:column==='pending'&&loaded.length?PENDING_GROUPS.map(definition=><BoardGroup key={definition.key} {...boardGroupProps(definition,principal.principal_id)} count={itemsInGroup(definition,loaded).length}>{cards(itemsInGroup(definition,loaded))}</BoardGroup>):cards(loaded)}{column!=='handled'?empty:null}</div>{column!=='handled'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)}/>:null}</div>}
     </div>
     {!query.isError&&!query.isPending&&!loading.visible&&query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}
   </BoardColumnView>;
@@ -207,7 +209,7 @@ function ProcessedGroup({definition,items,count,principalId,renderCard}:{definit
   const kind=definition.key;
   const [expanded,setExpanded]=useState(false),id='cards-handled-'+kind;
   return <BoardGroup {...boardGroupProps(definition,principalId)} count={count}>
-    <div id={id}>{(expanded?items:items.slice(0,3)).map(renderCard)}</div>
+    <div id={id}>{items.slice(0,3).map(renderCard)}<Collapse expanded={expanded} className="ds-column-remainder">{items.slice(3).map(renderCard)}</Collapse></div>
     <More expanded={expanded} count={items.length} controls={id} onClick={()=>setExpanded(value=>!value)}/>
   </BoardGroup>;
 

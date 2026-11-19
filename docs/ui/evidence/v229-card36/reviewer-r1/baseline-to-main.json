@@ -1,0 +1,32 @@
+{
+  "baseline_metadata_source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
+  "current_main_head": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "facts": {
+    "notifications": "Baseline danger icon was TriangleAlert; main uses CircleX.",
+    "drawer": "Main already renders ReadOnlyBar/ReadOnlyBadge and unavailable-note UI, absent from the baseline.",
+    "filtered_empty": "Main already uses the page EmptyState with filter summary/clear control and places handled emptiness inside its completed drop area.",
+    "save_glyph": "Save-glyph pixels are not explained as a segmented-slider exception; reviewer recapture is required."
+  },
+  "source_files": [
+    {
+      "path": "app/pc-admin/src/design/components/InlineAlert/InlineAlert.tsx",
+      "baseline_sha256": "b0966cedec5728dd1172abcfcbf4b87c12e7ef38b502f47748f70168c449b687",
+      "main_sha256": "400b0286ac6f4272b412fb7be17a9b024a83612d36cabcff0e54624a4884f1e4"
+    },
+    {
+      "path": "app/pc-admin/src/app/WorkbenchDetail.tsx",
+      "baseline_sha256": "4fef5a6dedee999e7e1bedd817f4a3f8de48cc1ebdc1f0cc473b3137392bd9ef",
+      "main_sha256": "f307d283c87531bab2a4fad1ff0d1162387d91e18f08156256613b02eb4524d7"
+    },
+    {
+      "path": "app/pc-admin/src/app/Workbench.tsx",
+      "baseline_sha256": "87f87f51c370fc307f6571671199d4b0e38d0bb8a503aab0ccbee0bc4c984ec0",
+      "main_sha256": "ca8b41f047d79df9f8bd42c7ab43a2c3728a714642296e6e1e95dde3406589f9"
+    },
+    {
+      "path": "app/pc-admin/src/design/components/Button/Button.tsx",
+      "baseline_sha256": "6842f9c2907dff9d4d429e44bb3ae2599b383de415d08932bb74fcddf87f2542",
+      "main_sha256": "b1f7e4222aca58cfceb558dfb84d0258a014754a7dd8b516d29c1c6d4eb6a9ef"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 
 type Browser=Parameters<Parameters<typeof withT42BoardBrowser>[0]>[1];
 async function key(browser:Browser,key:string,code:string,virtual:number,modifiers=0){
@@ -13,14 +14,47 @@ async function input(browser:Browser,value:string){
 }
 
 test('Card 16 board keys follow visible cards and pause in inputs, IME and detail overlays',{timeout:240000},()=>withT42BoardBrowser(async(_f,browser,card)=>{
+  const cpuRate=process.env.CARD16_CPU_RATE;
+  if(cpuRate!==undefined){
+    const rate=Number(cpuRate);
+    assert.ok(Number.isFinite(rate)&&rate>=1,'CARD16_CPU_RATE must be a finite number at least 1');
+    await browser.command('Emulation.setCPUThrottlingRate',{rate});
+  }
   await browser.command('Page.bringToFront');
+  const activeLinks='.board-column.active a.card-open[href]';
+  await browser.waitFor(`(()=>{
+    const columns=[...document.querySelectorAll('.board .board-column')];
+    return columns.length===3
+      &&columns.every(column=>/^[0-9]+$/.test(column.querySelector('.ds-stage-count')?.textContent?.trim()??''))
+      &&[...document.querySelectorAll(${JSON.stringify(activeLinks)})].some(link=>link.checkVisibility());
+  })()`);
+  await waitForAnimationsSettled(browser,'.board');
   await browser.evaluate("[...document.querySelectorAll('.board-column.pending .card-open')].find(n=>n.checkVisibility()).focus()");
   const positions=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .card-open')].filter(n=>n.checkVisibility()).map(n=>n.closest('.ticket-card').dataset.itemId)");assert.ok(Array.isArray(positions));
   const before=String(await browser.evaluate("document.activeElement.closest('.ticket-card').dataset.itemId")),index=positions.indexOf(before);
   await key(browser,'j','KeyJ',74);
   assert.equal(await browser.evaluate("document.activeElement.closest('.ticket-card').dataset.itemId"),positions[Math.min(index+1,positions.length-1)]);
   await key(browser,'k','KeyK',75);assert.equal(await browser.evaluate("document.activeElement.closest('.ticket-card').dataset.itemId"),before);
-  await key(browser,'l','KeyL',76);assert.equal(await browser.evaluate("document.activeElement.closest('.board-column').classList.contains('active')"),true);
+  const firstActive=await browser.evaluate(`([...document.querySelectorAll(${JSON.stringify(activeLinks)})].find(link=>link.checkVisibility()))?.href`);
+  assert.ok(typeof firstActive==='string');
+  // Keep the loaded links in place while exercising each invalid target ahead of them.
+  const probe='[data-card16-shortcut-probe]';
+  await browser.evaluate(`(()=>{
+    const element=document.createElement('div');
+    element.setAttribute('data-card16-shortcut-probe','');
+    element.innerHTML='<div aria-hidden="true"><div class="card-open">Loading</div></div>'
+      +'<div inert><a class="card-open" href="#retained">Retained</a></div>'
+      +'<div class="ds-collapse"><div class="ds-collapse-inner"><a class="card-open" href="#clipped">Clipped</a></div></div>';
+    document.querySelector('.board-column.active .column-cards').prepend(element);
+  })()`);
+  try{
+    assert.equal(await browser.evaluate(`[...document.querySelectorAll(${JSON.stringify(probe+' .card-open')})].filter(link=>link.checkVisibility()).length`),3,
+      'the old visibility filter would admit all three probes');
+    await key(browser,'l','KeyL',76);assert.equal(await browser.evaluate("document.activeElement.closest('.board-column').classList.contains('active')"),true);
+    assert.equal(await browser.evaluate('document.activeElement.href'),firstActive,'l skips non-links, inert links and fully clipped links');
+  }finally{
+    await browser.evaluate(`document.querySelector(${JSON.stringify(probe)})?.remove()`);
+  }
   await key(browser,'h','KeyH',72);assert.equal(await browser.evaluate("document.activeElement.closest('.board-column').classList.contains('pending')"),true);
   const focus=await browser.evaluate('document.activeElement.href');
   await key(browser,'J','KeyJ',74,8);assert.equal(await browser.evaluate('document.activeElement.href'),focus);

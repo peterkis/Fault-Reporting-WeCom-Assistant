@@ -26,3 +26,6 @@
 
 /* Card 30B B2: presence tags sit 9px above a card; the group body clips (HeroUI disclosure), so its first card gets 10px of room. */
 .ds-board-group .disclosure__body-inner {padding-top: calc(var(--space-2) + var(--space-0-5));}
+/* Only adjacent groups collapse the preceding card's 8px margin into the next group's 12px margin.
+   The final group keeps its 8px gap before the existing remainder control, as on current main. */
+.ds-board-group:has(+.ds-board-group):has(.disclosure__body-inner>.ticket-card)>.disclosure__content>.disclosure__body {margin-bottom:calc(-1 * var(--space-2));}

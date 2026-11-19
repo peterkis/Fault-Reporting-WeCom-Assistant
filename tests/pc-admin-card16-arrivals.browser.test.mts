@@ -5,8 +5,15 @@ import {seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.m
 import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 
 for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as const)test('Card 16 '+mode+' keeps official new-card reads, bounded motion and reading position',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,_card,get)=>{
+  const cpuRate=process.env.CARD16_CPU_RATE;
+  if(mode==='arrival'&&cpuRate!==undefined){
+    const rate=Number(cpuRate);
+    assert.ok(Number.isFinite(rate)&&rate>=1,'CARD16_CPU_RATE must be a finite number at least 1');
+    await browser.command('Emulation.setCPUThrottlingRate',{rate});
+  }
   await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:mode==='reduced'?'reduce':'no-preference'}]});
   // Wait for the initial confirmed three-column batch before creating a new source fact.
@@ -16,6 +23,7 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
     await browser.evaluate(`(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')!==${JSON.stringify(String(expanded))})button.click();})()`);
     await browser.waitFor("document.querySelector('.board-column.pending [data-action=expand-column]')?.getAttribute('aria-expanded')==="+JSON.stringify(String(expanded)));
   }
+  await waitForAnimationsSettled(browser);
   const priorTicket=await browser.evaluate("document.querySelector('.board-column.pending [data-board-group=待接单] .ticket-card')?.dataset.itemId");
   await browser.evaluate("(()=>{globalThis.__card16Motion=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.matches('.ticket-card'))globalThis.__card16Motion.push({id:this.dataset.itemId,frames,duration:options.duration});return animate.call(this,frames,options);};})()");
   if(mode==='filtered'){
@@ -24,6 +32,8 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
   }
   if(mode==='scrolling'){
     await browser.evaluate("(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')==='false')button.click();})()");
+    await browser.waitFor("document.querySelector('.board-column.pending [data-action=expand-column]')?.getAttribute('aria-expanded')==='true'");
+    await waitForAnimationsSettled(browser);
     await browser.evaluate('window.scrollTo(0,200)');
     await browser.waitFor('scrollY>0');
   }
@@ -51,15 +61,28 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column.pending [data-board-group=待接单] .ticket-card')][0]?.dataset.itemId"),ticket.id);
   const motions:unknown=await browser.evaluate('globalThis.__card16Motion');assert.ok(Array.isArray(motions));
-  assert.equal(motions.some(value=>object(value).id===ticket.id&&object(value).duration===2000),mode!=='reduced');
+  const highlightDuration=await browser.evaluate("(()=>{const value=getComputedStyle(document.documentElement).getPropertyValue('--dur-highlight').trim();return Number.parseFloat(value)*(value.endsWith('ms')?1:1000);})()");
+  assert.equal(highlightDuration,1200,'the computed --dur-highlight token must remain exactly 1200ms');
+  assert.equal(motions.some(value=>object(value).id===ticket.id&&object(value).duration===highlightDuration),mode!=='reduced');
   if(mode==='arrival'||mode==='collapsed'){
     await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     await browser.waitFor(`document.querySelector(${JSON.stringify(selector)}).getAnimations().length===0`);
     const presented=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.ok(Array.isArray(presented));
     const next=priorTicket;assert.ok(typeof next==='string','the preceding read exposes the original next Ticket even when folded');
-    await clickWorkbenchControl(browser,selector+' .card-open');await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    const waitForLoadedDrawer=async(id:string)=>{
+      // The route commits before the detail read. Loaded actions can shift the toolbar after the URL changes.
+      await browser.waitFor(`(()=>{
+        const title=document.querySelector('.detail-dialog #detail-title');
+        return location.pathname.split('/').at(-1)===${JSON.stringify(id)}
+          &&document.querySelectorAll('.detail-dialog').length===1
+          &&Boolean(title?.closest('.ds-detail-view'))&&title.checkVisibility();
+      })()`);
+      await waitForAnimationsSettled(browser,'.workbench-drawer-content');
+    };
+    await clickWorkbenchControl(browser,selector+' .card-open');await waitForLoadedDrawer(ticket.id);
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)"),presented,'detail freeze inherits the displayed promotion, not the old sort');
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');await browser.waitFor('location.pathname.split("/").at(-1)==='+JSON.stringify(next));
+    await waitForLoadedDrawer(next);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');await browser.waitFor('location.pathname.split("/").at(-1)==='+JSON.stringify(ticket.id));
   }
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);

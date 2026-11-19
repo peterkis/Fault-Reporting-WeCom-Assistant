@@ -1,0 +1,9 @@
+{
+  "head": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "branch": "claude/v229-card36a-ddc815",
+  "changes": "UNCOMMITTED",
+  "prototype_sha256": "4969364d58faf313f79959eab0b25620639f2d37b4ad7a79d172f6f74326f728",
+  "prototype_status": "UNCHANGED",
+  "new_browser_or_database_resources": 0,
+  "pixel_acceptance": "PENDING_REVIEWER_RERUN"
+}

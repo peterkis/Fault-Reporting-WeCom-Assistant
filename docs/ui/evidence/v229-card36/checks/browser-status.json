@@ -1,0 +1,27 @@
+{
+  "status": "FAIL",
+  "attempted_launch_failed": [
+    "tests/pc-admin-card29.browser.test.mts",
+    "tests/pc-admin-card36a-motion.browser.test.mts"
+  ],
+  "ui_assertions_executed": 0,
+  "not_run": [
+    "tests/pc-admin-card12-review.browser.test.mts",
+    "tests/pc-admin-card16.browser.test.mts",
+    "tests/pc-admin-card30b.browser.test.mts",
+    "tests/pc-admin-card31.browser.test.mts",
+    "tests/pc-admin-card32a.browser.test.mts",
+    "tests/pc-admin-card35a-states.browser.test.mts",
+    "tests/pc-admin-legacy-retirement.browser.test.mts",
+    "tests/t10-unknown-recovery.browser.test.mts",
+    "tests/t35-account-switch.browser.test.mts",
+    "tests/t35-unknown-read.browser.test.mts",
+    "tests/wbint-t19-manual-self-handling-unknown.browser.test.mts",
+    "tests/wbint-t22-realtime-tracer.browser.test.mts",
+    "tests/wbint-t32-exception-authorization.browser.test.mts",
+    "tests/yxx-h5-flow.integration.test.mts",
+    "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+    "tests/yxx-ss-010-runtime.integration.test.mjs"
+  ],
+  "reason": "P2_006_BROWSER_WAIT_TIMEOUT; system Chrome exits before a DevTools port is available"
+}

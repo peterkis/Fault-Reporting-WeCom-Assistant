@@ -1,0 +1,19 @@
+{
+  "selector": ".ds-modal-container,.ds-modal-backdrop",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 3,
+  "clip": {
+    "left": 254,
+    "top": 361,
+    "right": 846,
+    "bottom": 546
+  },
+  "width": 2960,
+  "height": 185
+}

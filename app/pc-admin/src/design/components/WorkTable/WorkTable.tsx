@@ -1,7 +1,7 @@
 import {RestoreClosedItem,useClosureHighlight} from '../../../features/ticket-waiting/ClosureActions';
 import {useCallback,useLayoutEffect,useState} from 'react';
 import type {ReactNode} from 'react';
-import {Bell,Bot,Check,ChevronDown,ChevronRight,ChevronUp,CircleX,Pause,User} from 'lucide-react';
+import {Bell,Bot,Check,CircleX,Pause,User} from 'lucide-react';
 import type {BoardColumn,WorkbenchCard} from '../../../api/client';
 import {cardHeat,cardHeatStart} from '../../heat';
 import {formatListTime,formatWaitingTime} from '../../format-time';
@@ -19,6 +19,7 @@ import {EmptyState} from '../EmptyState/EmptyState';
 import {useDelayedLoading} from '../../hooks/useDelayedLoading';
 import {PENDING_GROUPS,PROCESSED_GROUPS,groupPreferenceKey,itemsInGroup,loadingSlots,readGroupExpanded} from '../BoardColumn/column-groups';
 import './work-table.css';
+import {CollapseChevron} from '../Collapse/Collapse';
 
 export interface WorkTableGroup {
   column:BoardColumn;label:string;items:WorkbenchCard[];count:number|string;
@@ -75,15 +76,16 @@ function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTim
     <td><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time></td>
   </tr>;
 }
+/** Owner-confirmed E3 exception: native table rows change visibility instantly; only arrows animate. */
 function ListRows({items,expanded,id,...props}:Omit<Props,'groups'|'principalId'|'closureKind'>&{items:WorkbenchCard[];expanded:boolean;id:string}){
   const [all,setAll]=useState(false),visible=all?items:items.slice(0,3);
-  return <><tr hidden={!expanded||items.length>0} id={id+'-empty'} className="ds-list-empty"><td colSpan={7}><EmptyState size="compact" title="这里暂时没有工单"/></td></tr>{visible.map(item=><WorkRow key={item.kind+':'+item.id} {...props} item={item} hidden={!expanded}/>)}{items.length>3?<tr hidden={!expanded} id={id+'-more'} className="ds-list-more"><td colSpan={7}><Button tone="ghost" data-action="expand-column" aria-expanded={all} aria-controls={items.map(item=>'list-item-'+item.kind+'-'+item.id).join(' ')} onPress={()=>setAll(value=>!value)}>{all?<><ChevronUp aria-hidden="true"/>收起</>:<><ChevronDown aria-hidden="true"/>{'显示剩余 '+(items.length-3)+' 项'}</>}</Button></td></tr>:null}</>;
+  return <><tr hidden={!expanded||items.length>0} id={id+'-empty'} className="ds-list-empty"><td colSpan={7}><EmptyState size="compact" title="这里暂时没有工单"/></td></tr>{visible.map(item=><WorkRow key={item.kind+':'+item.id} {...props} item={item} hidden={!expanded}/>)}{items.length>3?<tr hidden={!expanded} id={id+'-more'} className="ds-list-more"><td colSpan={7}><Button tone="ghost" data-action="expand-column" aria-expanded={all} aria-controls={items.map(item=>'list-item-'+item.kind+'-'+item.id).join(' ')} onPress={()=>setAll(value=>!value)}><CollapseChevron expanded={all}/>{all?'收起':('显示剩余 '+(items.length-3)+' 项')}</Button></td></tr>:null}</>;
 }
 type SubgroupLoading={rows:number;slow:boolean;onRetry?:()=>void};
 function Subgroup({label,items,preferenceKey,defaultExpanded=true,forced=false,note,loading,...props}:Omit<Props,'groups'|'principalId'|'closureKind'>&{label:string;items:WorkbenchCard[];preferenceKey:string;defaultExpanded?:boolean;forced?:boolean;note?:string;loading?:SubgroupLoading}){
   const [expanded,toggle]=useFold(preferenceKey,forced||defaultExpanded,forced),id='list-subgroup-'+preferenceKey.split(':').at(-1);
   const controls=loading?id+'-loading':items.length?items.slice(0,3).map(item=>'list-item-'+item.kind+'-'+item.id).join(' '):id+'-empty';
-  return <><tr className="ds-list-subgroup" data-board-group={label}><th colSpan={7} scope="rowgroup"><Button className="ds-board-group-trigger" tone="ghost" aria-expanded={expanded} aria-controls={controls} isDisabled={Boolean(loading)} onPress={toggle}>{expanded?<ChevronDown aria-hidden="true"/>:<ChevronRight aria-hidden="true"/>}<span>{label}</span><span className="ds-board-group-count">{loading?'…':items.length}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></th></tr>{loading?expanded?<WorkTableSkeletonRows rows={loading.rows} slow={loading.slow} {...(loading.onRetry?{onRetry:loading.onRetry}:{})} statusId={id+'-loading'}/>:null:<ListRows {...props} items={items} expanded={expanded} id={id}/>}</>;
+  return <><tr className="ds-list-subgroup" data-board-group={label}><th colSpan={7} scope="rowgroup"><Button className="ds-board-group-trigger" tone="ghost" aria-expanded={expanded} aria-controls={controls} isDisabled={Boolean(loading)} onPress={toggle}><CollapseChevron expanded={expanded} from="right"/><span>{label}</span><span className="ds-board-group-count">{loading?'…':items.length}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></th></tr>{loading?expanded?<WorkTableSkeletonRows rows={loading.rows} slow={loading.slow} {...(loading.onRetry?{onRetry:loading.onRetry}:{})} statusId={id+'-loading'}/>:null:<ListRows {...props} items={items} expanded={expanded} id={id}/>}</>;
 }
 function Stage({group,principalId,closureKind,skeletonRows,onLoadingChange,...props}:Omit<Props,'groups'>&{group:WorkTableGroup;skeletonRows:number;onLoadingChange:(column:BoardColumn,visible:boolean)=>void}){
   const loading=useDelayedLoading(group.loading===true);
@@ -95,7 +97,7 @@ function Stage({group,principalId,closureKind,skeletonRows,onLoadingChange,...pr
   const subgroups=(pending:boolean)=>definitions.map(definition=><Subgroup key={definition.key} {...props} label={definition.label} preferenceKey={groupPreferenceKey(definition,principalId,'list')} items={pending?[]:itemsInGroup(definition,items)} defaultExpanded={definition.defaultExpanded} forced={forced(definition.key)} {...(definition.note?{note:definition.note}:{})} {...(pending?{loading:{rows:loadingSlots(skeletonRows,loadingGroups.indexOf(definition),loadingGroups.length),slow:loading.slow,...(group.onRetry?{onRetry:group.onRetry}:{})}}:{})}/>);
 
   return <tbody className="list-group" aria-label={label} id={id}>
-    <tr className="ds-list-stage" aria-label={label+'事项列表'}><th colSpan={7} scope="rowgroup"><div className="column-heading"><Button className="ds-list-stage-toggle" tone="ghost" isIconOnly aria-label={(expanded?'折叠':'展开')+label} aria-expanded={expanded} aria-controls={id} onPress={toggle}>{expanded?<ChevronDown aria-hidden="true"/>:<ChevronRight aria-hidden="true"/>}</Button><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-list-stage-count" title="当前筛选后已加载的事项">{count}</span></div></th></tr>
+    <tr className="ds-list-stage" aria-label={label+'事项列表'}><th colSpan={7} scope="rowgroup"><div className="column-heading"><Button className="ds-list-stage-toggle" tone="ghost" isIconOnly aria-label={(expanded?'折叠':'展开')+label} aria-expanded={expanded} aria-controls={id} onPress={toggle}><CollapseChevron expanded={expanded} from="right"/></Button><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-list-stage-count" title="当前筛选后已加载的事项">{count}</span></div></th></tr>
     {expanded&&loading.visible?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{definitions.length?subgroups(true):<WorkTableSkeletonRows rows={skeletonRows} slow={loading.slow} onRetry={group.onRetry}/>}</>:expanded&&!group.loading?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{feedback?<tr className="ds-list-feedback"><td colSpan={7}>{feedback}</td></tr>:null}{feedback&&!items.length?null:definitions.length&&items.length?subgroups(false):<ListRows {...props} items={items} expanded id={id}/>} {nextPage?<tr className="ds-list-more"><td colSpan={7}>{nextPage}</td></tr>:null}</>:null}
   </tbody>;
 }

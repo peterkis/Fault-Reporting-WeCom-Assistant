@@ -5,6 +5,7 @@ import {Avatar} from '../Avatar/Avatar';
 import {PresenceStack} from '../PresenceStack/PresenceStack';
 import {withPresentationKeys} from '../../presentation-keys';
 import './online-colleagues.css';
+import {usePopoverPresence} from '../Popover/usePopoverPresence';
 
 const statusLabels:Readonly<Record<WorkbenchOnlineStatus,string>>={EDITING:'正在编辑',VIEWING:'正在查看工单',ONLINE:'在线'};
 
@@ -12,6 +13,7 @@ const statusLabels:Readonly<Record<WorkbenchOnlineStatus,string>>={EDITING:'正�
 export function OnlineColleaguesView({view,collapsed}:{view:WorkbenchOnlineView;collapsed:boolean}){
   const [open,setOpen]=useState(false),trigger=useRef<HTMLButtonElement>(null),root=useRef<HTMLDivElement>(null),panelId=useId();
   const total=view.total;
+  const panel=usePopoverPresence(open);
   useEffect(()=>{
     if(!open)return;
     const away=(event:PointerEvent)=>{if(event.target instanceof Node&&!root.current?.contains(event.target))setOpen(false);};
@@ -27,7 +29,7 @@ export function OnlineColleaguesView({view,collapsed}:{view:WorkbenchOnlineView;
     <button ref={trigger} type="button" className="ds-online-row" aria-label={label} aria-expanded={open} aria-controls={panelId} data-action="open-online-colleagues" onClick={()=>setOpen(value=>!value)}>
       <span className="ds-online-title">在线同事</span><PresenceStack names={view.people.map(person=>person.display_name)} max={3} total={total}/><span className="ds-online-count">{total}</span>
     </button>
-    {open?<div className="ds-online-panel" id={panelId} role="dialog" aria-label={'在线同事 · '+total}>
+    {panel.present?<div {...panel.attributes} className="ds-online-panel" id={panelId} role="dialog" aria-label={'在线同事 · '+total}>
       <p className="ds-online-panel-title">在线同事 · {total}</p>
       <ul className="ds-online-list">{withPresentationKeys(view.people).map(({key,item:person})=><li key={key} className="ds-online-person"><Avatar name={person.display_name} size={24} className="ds-online-avatar" aria-hidden="true"/><span className="ds-online-name">{person.display_name}</span><span className="ds-online-status" data-status={person.status}>{statusLabels[person.status]}</span></li>)}</ul>
       {total>view.people.length?<p className="ds-online-more">另有 {total-view.people.length} 人在线</p>:null}

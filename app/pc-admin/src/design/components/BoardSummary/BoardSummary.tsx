@@ -1,3 +1,4 @@
+import {useDetailsDismiss} from '../Popover/useDetailsDismiss';
 import {CalendarDays,ChevronDown,Shapes,UserRound} from 'lucide-react';
 import {useRef,useState} from 'react';
 import type {ReactNode} from 'react';
@@ -45,6 +46,7 @@ type Preset=keyof typeof dateLabels;
 const dateKey=(range:BoardCompletionRange,dates?:{from:string;to:string})=>[range,dates?.from??'',dates?.to??''].join(':');
 export function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardCompletionRange;dates?:{from:string;to:string}|undefined;now:number;blocked:boolean;onApply:(range:BoardCompletionRange,dates?:{from:string;to:string})=>void}){
   const panel=useRef<HTMLDetailsElement>(null),day=new Date(now+8*3_600_000).toISOString().slice(0,10);
+  useDetailsDismiss(panel);
   const [choice,setChoice]=useState<{key:string;preset:Preset|'custom'}|null>(null);
   const key=dateKey(range,dates);
   const week=new Date(Date.parse(day+'T00:00:00Z')-6*86_400_000).toISOString().slice(0,10),month=day.slice(0,8)+'01';

@@ -6,4 +6,5 @@ function Container({size='md',className='',...props}:Omit<ComponentProps<typeof 
  return <HeroModal.Container {...props} size={size} data-size={size} className={'workbench-modal-container ds-modal-container '+className}/>;
 }
 function Dialog({className='',...props}:ComponentProps<typeof HeroModal.Dialog>){return <HeroModal.Dialog {...props} className={'ds-modal '+className}/>;}
-export const Modal={Backdrop:HeroModal.Backdrop,Container,Dialog,Heading:HeroModal.Heading};
+function Backdrop({className='',...props}:ComponentProps<typeof HeroModal.Backdrop>){return <HeroModal.Backdrop {...props} className={'ds-modal-backdrop '+className}/>;}
+export const Modal={Backdrop,Container,Dialog,Heading:HeroModal.Heading};

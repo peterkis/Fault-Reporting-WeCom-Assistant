@@ -1,0 +1,7 @@
+{
+  "source": "r2 final production CSS",
+  "rules": [
+    "html body :is(.ds-board-group,.workbench-disclosure) .disclosure__indicator{rotate:none}",
+    "html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator][data-expanded=true]{transform:rotate(-180deg)}"
+  ]
+}

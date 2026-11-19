@@ -1,0 +1,41 @@
+{
+  "round": 3,
+  "base_head": "bfeb7251e05c301a33ec389fdcde6c36bda7234c",
+  "status": "LOCAL_CHECKS_PASS",
+  "source_input_hash": "d282f9e7528d725acd00a01fb31a413b12c131cfab4438f4fa891bcd5aa1ca6f",
+  "manifest_sha256": "ffc2c53816a01b7e77b1224201bacb4088d9d21a19a508f6cad781a0fa12f4b6",
+  "commands": {
+    "npm run migration:typecheck": "PASS",
+    "npm run migration:build": "PASS: 975 typed, 329 unchecked legacy, 3056 outputs, syntax 975/975",
+    "npm run lint:css --prefix app/pc-admin": "PASS",
+    "npm run lint:features --prefix app/pc-admin": "PASS",
+    "node --experimental-strip-types tests/pc-admin-copy-terms.test.mts": "PASS 6/6",
+    "compiled motion-policy + motion-tools + copy-terms + design-foundation": "PASS 97/97",
+    "node .build/tools/verify-artifact.mjs": "PASS: ARTIFACT_VERIFIED_NOT_ACTIVATED",
+    "npm run docs:agents:check": "PASS",
+    "node .build/tools/pr-plan.mjs --base 30eb2fc80353d1ab834c5da4bcc183c6415311c6 --head HEAD --check-docs --out /private/tmp/card36a-r3-pr-plan.json": "PASS",
+    "git diff --check": "PASS"
+  },
+  "confirmed_by_owner": "2026-11-19",
+  "token_values_unchanged": {
+    "--ease-ambient": "ease-in-out",
+    "--ease-linear": "linear",
+    "--ease-toast": "ease-out",
+    "--scale-popover": ".97",
+    "--hover-lift": "-1px",
+    "--delay-tooltip": "400ms"
+  },
+  "unchanged_file_hashes": {
+    ".gitignore": "785400a7e1cbbe3edb7e73cd37adbfc2c1e551683695725acebce0bbe663567d",
+    "app/pc-admin/src/design/motion/controls.css": "a1b9f96dbb3f4e276eb21efd52017ad7919269999dbab3e06add6927fc06603f",
+    "app/pc-admin/src/design/components/Collapse/collapse.css": "7ca590acfcd9ecfc165fab7f10f32fec28f21dc30af65c506999d06f31019bec",
+    "tests/pc-admin-card36a-motion.browser.test.mts": "e8fb1ab9e13f58a7a58c52f9471736d03dafec066b467578d1d1ade81a9f3337",
+    "tests/helpers/motion-assert.mts": "2e7cddcdd4b4e1346be9aed16522a1a4cdf325b3af60bfcb776fa82142dabf72"
+  },
+  "table_semantics_assertions": "ADDED: initial and expanded native table checks; PENDING_REVIEWER_RERUN",
+  "browser": "PENDING_REVIEWER_RERUN",
+  "pixel_reference": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "list_default_and_closed_groups_pixel_target": 0,
+  "new_browser_or_database_resources": 0,
+  "raw_logs": "Local-only /private/tmp/card36a-r3-*.log; no Markdown hyperlinks to ignored logs"
+}

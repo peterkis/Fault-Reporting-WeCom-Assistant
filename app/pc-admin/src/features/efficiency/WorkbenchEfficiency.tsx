@@ -17,6 +17,24 @@ const EfficiencyContext=createContext<{open:()=>void;blocked:boolean}|null>(null
 const editable='input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox],[role=combobox],[role=spinbutton]';
 const overlays='[role=dialog],[role=alertdialog],[role=menu],[role=listbox],.detail-dialog,.detail-page';
 const shortcuts=[['J / K','下一张 / 上一张'],['H / L','左列 / 右列'],['Enter','打开工单'],['E','领取当前工单'],['N','新报修'],['/','聚焦搜索'],['Ctrl + K','搜索与快捷操作'],['?','查看快捷键']];
+const boardClips='.ds-collapse-inner,.ds-board-group > .disclosure__content > .disclosure__body';
+
+function isVisibleBoardLink(link:HTMLAnchorElement){
+  if(link.closest('[inert],[aria-hidden=true]')||!link.checkVisibility({visibilityProperty:true,opacityProperty:true}))return false;
+  let clip=link.closest(boardClips);
+  if(!clip)return true;
+
+  // Grid folds can clip a rendered link before checkVisibility detects any change.
+  let {top,bottom}=link.getBoundingClientRect();
+  while(clip){
+    const bounds=clip.getBoundingClientRect();
+    top=Math.max(top,bounds.top);
+    bottom=Math.min(bottom,bounds.bottom);
+    if(top>=bottom)return false;
+    clip=clip.parentElement?.closest(boardClips)??null;
+  }
+  return true;
+}
 
 /** Both entry points share one panel and one window listener. */
 export function EfficiencyEntry({compact=false}:{compact?:boolean}){
@@ -49,7 +67,8 @@ export function WorkbenchEfficiency({principal,blocked,children}:{principal:Prin
         if(input){event.preventDefault();const disclosure=input.closest('details');if(disclosure)disclosure.open=true;input.focus();}return;
       }
       if(!['j','k','h','l'].includes(key))return;
-      const columns=[...board.querySelectorAll<HTMLElement>('.board-column')].map(column=>[...column.querySelectorAll<HTMLAnchorElement>('.card-open')].filter(link=>link.checkVisibility()));
+      const columns=[...board.querySelectorAll<HTMLElement>('.board-column')].map(column=>
+        [...column.querySelectorAll<HTMLAnchorElement>('a.card-open[href]')].filter(isVisibleBoardLink));
       const focus=document.activeElement instanceof HTMLAnchorElement?document.activeElement:null;let column=columns.findIndex(cards=>focus!==null&&cards.includes(focus));
       let row=column<0||!focus?-1:columns[column]?.indexOf(focus)??-1;
       if(column<0){column=columns.findIndex(cards=>cards.length>0);row=key==='k'?(columns[column]?.length??1)-1:0;}

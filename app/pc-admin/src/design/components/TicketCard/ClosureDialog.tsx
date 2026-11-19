@@ -12,12 +12,14 @@ import {closureReasons,closureSecondaryReasons,closureNotification} from './clos
 import type {ClosureFormValue} from './closure-presentation';
 import type {ClosureReasonCode,ClosureSecondaryReasonCode} from '../../../../../../contracts/unified_closure_contracts';
 import './ticket-card.css';
+import {usePopoverPresence} from '../Popover/usePopoverPresence';
 
 export interface ClosureSearchItem {id:string;number:string;title:string;service:WorkbenchCard['service'];column:WorkbenchCard['column']}
 /** Card 29 K3: one combobox. Typing searches; the chosen original stays inside the field with a clear button. */
 export function ClosureSearchField({query,selected,items,busy,disabled,message,onQuery,onSelect}:{query:string;selected:{number:string;title:string|null}|null;items:readonly ClosureSearchItem[];busy:boolean;disabled:boolean;message:string;onQuery:(query:string)=>void;onSelect:(item:ClosureSearchItem|null)=>void}){
  const listId=useId(),labelId=useId(),[active,setActive]=useState(-1),[dismissed,setDismissed]=useState(false);
  const open=!selected&&!dismissed&&Boolean(query.trim())&&(items.length>0||Boolean(message)&&!busy);
+ const panel=usePopoverPresence(open);
  const current=active>=0&&active<items.length?active:-1;
  const keyDown=(event:KeyboardEvent<HTMLInputElement>)=>{
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();setDismissed(false);if(!items.length)return;setActive(index=>event.key==='ArrowDown'?(index+1)%items.length:(index<=0?items.length:index)-1);}
@@ -35,7 +37,7 @@ export function ClosureSearchField({query,selected,items,busy,disabled,message,o
    <input role="combobox" aria-label="关联原单（选填）" aria-labelledby={labelId} aria-autocomplete="list" aria-expanded={open} aria-controls={listId} aria-activedescendant={open&&current>=0?listId+'-'+current:undefined} aria-busy={busy}
     value={query} disabled={disabled} maxLength={128} placeholder="输入工单编号搜索" autoComplete="off" onKeyDown={keyDown} onChange={event=>{setActive(-1);setDismissed(false);onQuery(event.target.value);}}/>
   </div>}
-  {open?<ul className="ds-closure-search-results" id={listId} role="listbox" aria-label="可见原单搜索结果">
+  {panel.present?<ul {...panel.attributes} className="ds-closure-search-results" id={listId} role="listbox" aria-label="可见原单搜索结果">
    {items.length?items.map((item,index)=>{const stage=stagePresentation[item.column];return <li key={item.id} id={listId+'-'+index} role="option" aria-selected={index===current} data-active={index===current||undefined} className="ds-closure-search-option" onMouseDown={event=>event.preventDefault()} onMouseEnter={()=>setActive(index)} onClick={()=>{if(!disabled)onSelect(item);}}>
     <TicketCategoryTile service={item.service}/><span className="ds-closure-number">{item.number}</span><span className="ds-closure-option-title" title={item.title}>{item.title}</span><Tag tone={stage.tone} className="ds-closure-option-stage">{stage.label}</Tag>
    </li>;}):<li className="ds-closure-search-empty" role="presentation">{message}</li>}

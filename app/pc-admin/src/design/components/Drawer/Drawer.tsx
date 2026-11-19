@@ -4,6 +4,7 @@ import type {HTMLAttributes,ReactNode} from 'react';
 import {MoreHorizontal} from 'lucide-react';
 import './drawer.css';
 import './drawer-v21.css';
+import '../Popover/details-popover.css';
 
 export function Drawer({children,dismissBlocked,onClose}:{children:ReactNode;dismissBlocked:boolean;onClose:()=>void}){
   return <HeroDrawer.Backdrop className="workbench-drawer-backdrop ds-drawer-backdrop" isOpen isDismissable={!dismissBlocked} isKeyboardDismissDisabled={dismissBlocked} onOpenChange={open=>{if(!open)onClose();}}>

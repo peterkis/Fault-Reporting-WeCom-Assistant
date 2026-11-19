@@ -1,0 +1,11 @@
+{
+  "status": "PASS_CSS_RULE_PARITY_NOT_PIXEL_ACCEPTANCE",
+  "main_source_head": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "rule_count": 4,
+  "rules": [
+    ".ds-board-column.board-column{background:var(--column-lane);padding:var(--space-2);border-radius:var(--radius-lg);box-shadow:var(--shadow-lane);outline:0}",
+    ".ds-ticket-body h3{-webkit-line-clamp:2;min-height:var(--lh-md);max-height:calc(var(--lh-md) * 2);font-size:var(--fs-md);font-weight:var(--fw-semibold);line-height:var(--lh-md);-webkit-box-orient:vertical;margin:0;display:-webkit-box;overflow:hidden}",
+    ".board-column.active,.board-column.handled{background:var(--bg-subtle)}",
+    ".card-open h3{font-size:var(--fs-md);font-weight:var(--fw-semibold);margin:var(--space-1) 0;-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;line-height:1.4;display:-webkit-box;overflow:hidden}"
+  ]
+}

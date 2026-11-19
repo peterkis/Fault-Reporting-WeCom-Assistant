@@ -1,0 +1,19 @@
+{
+  "selector": "#collapse,#collapse-trigger svg",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 8,
+    "top": 83,
+    "right": 892,
+    "bottom": 280
+  },
+  "width": 4420,
+  "height": 197
+}

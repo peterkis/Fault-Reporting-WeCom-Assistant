@@ -138,9 +138,26 @@
       "build": true,
       "pyyaml": false,
       "windows": false
+    },
+    "motion": {
+      "selections": [
+        "pc-admin-motion"
+      ],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
     }
   },
   "rules": [
+    {
+      "pattern": "^app/pc-admin/(?:(?:motion-token-rule\\.mts|eslint\\.config\\.mjs|\\.stylelintrc\\.json)$|src/(?:features/ticket-waiting/ClosureActions\\.tsx$|main\\.tsx$|design/(?:tokens\\.css$|use-board-card-motion\\.ts$|motion/|components/(?:Button|SegmentedControl|Modal|Collapse|Popover|Tooltip|Section|BoardColumn|WorkTable|PresenceTags|OnlineColleagues)/)))|^tests/(?:pc-admin-(?:motion-|card36a-)|helpers/motion-|fixtures/motion-app\\.)",
+      "profiles": [
+        "pc",
+        "motion"
+      ],
+      "reason": "Card36A: token/WAAPI provenance, production debug exclusion and isolated E1–E7/browser API behaviour; business regression stays in the PC profile."
+    },
     {
       "pattern": "^tools/visual-regression/|^tests/(?:visual/|visual-regression\\.test\\.mts$|helpers/visual-stable\\.mts$)",
       "profiles": [

@@ -1,11 +1,11 @@
 /* Card 30B B1: corner name tags (prototype 01f V3). */
-.ds-presence-tags {--radius-presence: var(--radius-xs) var(--radius-xs) var(--radius-xs) 0; position: relative; display: inline-flex; align-items: center; gap: var(--space-1); flex: none; animation: presence-fade 150ms ease-out;}
+.ds-presence-tags {--radius-presence: var(--radius-xs) var(--radius-xs) var(--radius-xs) 0; position: relative; display: inline-flex; align-items: center; gap: var(--space-1); flex: none; animation: presence-fade var(--dur-fast) var(--ease-standard);}
 .ds-presence-tag {display: inline-flex; align-items: center; gap: var(--space-0-5); height: calc(var(--space-4) + var(--space-0-5)); padding: 0 var(--space-1-5); border-radius: var(--radius-presence); background: var(--brand); color: var(--on-brand); box-shadow: var(--shadow-presence-tag); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); line-height: 1; white-space: nowrap;}
 .ds-presence-tag[data-mode=editing] {background: var(--presence-editing);}
 .ds-presence-tag[data-mode=more] {background: var(--text-primary);}
 .ds-presence-tag>svg {width: calc(var(--space-2) + var(--space-0-5)); height: calc(var(--space-2) + var(--space-0-5)); flex: none; stroke-width: 2.25;}
-.ds-presence-tooltip {position: absolute; top: calc(100% + var(--space-1-5)); right: 0; z-index: var(--z-tooltip); display: grid; gap: var(--space-1-5); min-width: calc(var(--space-16) * 3); padding: var(--space-2); border-radius: var(--radius-md); background: var(--text-primary); color: var(--text-inverse); box-shadow: var(--shadow-3); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 150ms ease-out 0s, visibility 0s linear 150ms;}
-.ds-presence-tags:hover .ds-presence-tooltip {opacity: 1; visibility: visible; transition: opacity 150ms ease-out .3s, visibility 0s linear .3s;}
+.ds-presence-tooltip {position: absolute; top: calc(100% + var(--space-1-5)); right: 0; z-index: var(--z-tooltip); display: grid; gap: var(--space-1-5); min-width: calc(var(--space-16) * 3); padding: var(--space-2); border-radius: var(--radius-md); background: var(--text-primary); color: var(--text-inverse); box-shadow: var(--shadow-3); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-instant) var(--ease-standard);}
+.ds-presence-tags[data-tooltip-open=true] .ds-presence-tooltip {opacity: 1; visibility: visible;}
 .ds-presence-tooltip-row {display: flex; align-items: center; gap: var(--space-1-5);}
 .ds-presence-tooltip-row strong {font-weight: var(--fw-semibold);}
 .ds-presence-tooltip-more {color: var(--text-tertiary);}

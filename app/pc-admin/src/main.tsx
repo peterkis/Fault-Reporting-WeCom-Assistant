@@ -14,6 +14,11 @@ import {App} from './app/App';
 import {WorkbenchToasts} from './app/ToastFeedback';
 import './style.css';
 import './app/heroui-workbench.css';
+import {initMotionPreferences} from './design/motion/tokens';
+import './design/motion/controls.css';
+import './design/components/Popover/details-popover.css';
+initMotionPreferences();
+if(import.meta.env.DEV)void import('./design/motion/debug').then(module=>module.installMotionDebug());
 let client:QueryClient;
 const sessionPrincipal=()=>client.getQueryData<Principal>(['session'])?.principal_id;
 client=new QueryClient({queryCache:new QueryCache({onError(error,query){

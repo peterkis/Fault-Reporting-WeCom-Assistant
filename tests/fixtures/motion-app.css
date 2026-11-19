@@ -1,0 +1,16 @@
+body {margin:0;background:var(--bg-canvas);}
+.motion-fixture {padding:24px;max-width:900px;}
+.motion-fixture h1 {font-size:var(--fs-xl);}
+#control-examples {display:flex;flex-wrap:wrap;align-items:center;gap:16px;}
+#collapse,#below-collapse,.motion-fixture .ds-section {flex-basis:100%;margin:0;}
+.motion-rows {padding:12px;background:var(--bg-subtle);}
+.motion-rows p {margin:0;padding:8px;}
+#hover-card {width:240px;padding:16px;}
+.motion-tooltips {display:flex;gap:8px;}
+#tool-examples {display:flex;align-items:center;gap:12px;margin-top:32px;}
+#highlight,.flip-target {background:var(--bg-canvas);padding:8px;}
+.flip-target {width:40px;}
+.motion-fixture .ds-online-colleagues {margin-top:240px;min-width:200px;}
+.motion-fixture .ds-closure-search {width:240px;}
+
+.collapse-example {flex-basis:100%;}

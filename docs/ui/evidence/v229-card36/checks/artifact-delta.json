@@ -1,0 +1,19 @@
+{
+  "previous_input_hash": "7c031552760f388e5bdd49298a3f333c66175a23d8b470a95cf4381258b19f15",
+  "current_input_hash": "fd968bc876d896197ffeed599e617cf822de345c77d3b8ca817ca2808bd1b489",
+  "current_manifest_sha256": "7924aa7952b329463e5d08ce600fa811ee30e8b92b4a61dea033129358a39100",
+  "changed_outputs": [
+    "tests/pc-admin-card36a-motion.browser.test.mjs",
+    "tests/pc-admin-card36a-motion.browser.test.mjs.map",
+    "web/admin-workbench/.vite/manifest.json",
+    "web/admin-workbench/asset-inventory.json",
+    "web/admin-workbench/assets/workbench-B_GcdQin.js",
+    "web/admin-workbench/assets/workbench-jGBi-xG8.css",
+    "web/admin-workbench/index.html"
+  ],
+  "removed_outputs": [
+    "web/admin-workbench/assets/workbench-DEEJfukh.css",
+    "web/admin-workbench/assets/workbench-Dvs-ByQL.js"
+  ],
+  "backend_runtime_unchanged": true
+}
