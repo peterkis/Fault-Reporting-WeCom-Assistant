@@ -1,4 +1,50 @@
-# Card 36A — rework round 5
+# Card 36A — rework round 6
+
+PR #193 head `e49412a7a8ce4a0bd03a9b5bc588931f8a4d9069`. In Actions run `44441567491`, `pr-database` passed Card16 arrivals 5/5 after the round 5 fix. The separate Card16 board keyboard case failed after 1.97s when `l` did not move focus into Processing. Its `j` and `k` assertions and the two other cases in that file passed.
+
+### Keyboard targets and initial load
+
+The fixture releases the test as soon as a real Pending card exists. The three board reads settle independently, and Card35A can retain a painted skeleton for its 300ms minimum. `WorkbenchEfficiency` previously selected every `.card-open` whose `checkVisibility()` returned true. A skeleton uses a visible `<div class="card-open">` with no link or focus target. `l` can pick that placeholder as the next column's first item and leave focus in Pending. During a pending read before the skeleton appears, the handler can also pass over the still-empty column. Both timing windows exist on main. A run that reaches `l` after Processing has rendered real cards can pass. The failing log reports the focus assertion, so it does not identify whether a skeleton or an empty column was present in that run.
+
+The E3 remainder starts folded and its retained content is inert on exit. HeroUI's group panel exposes `aria-hidden` on collapse before applying `hidden`. During expansion, a link can have a box yet be entirely outside the clipped grid track. Processing renders its first three real cards outside the remainder and has no subgroup. The initial `l` failure therefore does not require E3. E1 affects buttons, and E6's hover lift and the card-motion hook do not add links or insert loading placeholders.
+
+The handler now considers real card anchors with an `href`. It excludes inert and hidden content and checks that the link intersects each enclosing E3 clip on the vertical axis. It can still scroll to cards outside the viewport and preserves the existing row index and next-column order. The test waits for numeric counts in all three columns, a visible real Processing link, and the board animation settle point before issuing any shortcut. It then puts three temporary probes ahead of the first real Processing link and verifies that `l` lands on that real link. The probes cover the skeleton selector, an inert anchor, and an anchor clipped by a 0fr grid. The original focus, overlay and business assertions remain in the test.
+
+### Round 6 verification
+
+| Check | Round 6 status |
+| --- | --- |
+| `npm run migration:typecheck` → `npm run migration:build` | PASS. Strict and negative types, 975/975 compiled syntax checks |
+| `node .build/tools/verify-artifact.mjs` | PASS. Artifact verified |
+| `npm run lint:css --prefix app/pc-admin` and `npm run lint:features --prefix app/pc-admin` | PASS |
+| `node --experimental-strip-types tests/pc-admin-copy-terms.test.mts` | PASS 6/6 |
+| Compiled `pc-admin-motion-policy` and `pc-admin-motion-tools` | PASS 16/16 |
+| Board link eligibility probe with mocked DOM rectangles | PASS 6/6 |
+| `npm run docs:agents:check` and `node --test .build/tools/check-agent-docs.test.mjs` | PASS. Docs tool tests 20/20 |
+| pr-plan `--check-docs` against `fd301d66` and `git diff --check` | PASS. Card16 board keyboard suite is selected in the database lane |
+| Card16 board keys at 4× and full Card16 browser suites | pending reviewer rerun |
+| Related browser checks and visual evidence | pending reviewer rerun |
+
+Build source input hash `164d7f35583f3542630092b9a7440c57c5b390ef4e731f6e4dc7407603fb2d10`. Verified manifest SHA-256 `386be99b0d00e0b0df10271064bfa129cb71278a86860a9453a577277b53fd66`.
+
+Use the existing `CARD16_CPU_RATE` opt-in to run just the keyboard case at 4×. From the worktree root after `npm run migration:build`:
+
+```sh
+(
+  export TS_MIGRATION_TEST_SOURCE_ROOT="$PWD"
+  cd .build/runtime || exit
+  TS_MIGRATION_TEST_RUNTIME_ROOT="$PWD" \
+  PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres \
+  CARD16_CPU_RATE=4 \
+  node --test --test-name-pattern='^Card 16 board keys follow visible cards' tests/pc-admin-card16.browser.test.mjs
+)
+```
+
+Local command logs are under `/private/tmp/card36a-r6-*.log`.
+
+---
+
+## Round 5 record (preserved)
 
 PR #193 head `cfd67f27a5434e27e29b56163b630c3ea03d823c` includes main `fd301d669311c9b45569a8231155845322147943` and PR #195's capsule fix. The round 5 changes are uncommitted.
 
