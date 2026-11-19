@@ -1,4 +1,51 @@
-# Card 36A — rework round 4
+# Card 36A — rework round 5
+
+PR #193 head `cfd67f27a5434e27e29b56163b630c3ea03d823c` includes main `fd301d669311c9b45569a8231155845322147943` and PR #195's capsule fix. The round 5 changes are uncommitted.
+
+### Card16 drawer navigation in CI
+
+In Actions run `44438688437`, Ubuntu `pr-database` reported `MIGRATION_TEST_NOT_PASS` for Card16 arrivals. Arrival mode timed out after 34.9s waiting for the URL to return to the new ticket after clicking 「上一项」. Collapsed, scrolling, reduced and filtered passed. The reviewer reported two 5/5 runs on macOS before this change.
+
+The test waited only for the URL after 「下一项」. The route replaces the drawer's keyed content and starts the detail query. The previous button is already enabled from the loaded board order, while the drawer can still lack its detail-dependent actions. When the response supplies the close action, the More control becomes visible and shifts the right-aligned toolbar. `clickWorkbenchControl` checks stability across two frames, then samples the center and dispatches the pointer in separate CDP calls. A detail commit during that sequence can move the target. Main has the same sequence and can pass when the read finishes before the click is measured or after the click is delivered. The expanded board renders more card content, which can affect scheduling. The CI log records the missing navigation, so the exact pointer target remains unverified.
+
+The Drawer keeps a single overlay across item navigation and keys the content by item. Reduced motion is active before either arrow click, and the arrival animation's cleanup releases its handles independently of the frozen order. The E3 remainder belongs to the board and is already settled before the details open. The test now checks the expected route and one drawer with a visible title inside the loaded detail body before each arrow click, then settles the drawer subtree. The existing pointer helper, exact URL checks and business and geometry assertions are retained.
+
+### P2 review reply
+
+Verified that `028a6c5b` is an ancestor of `cfd67f27` and that WorkTable and the Card29/Card32A guards match the fix commit. The owner-approved E3 exception remains in the design system. [Reply draft for thread `PRRT_kwDOT_VkOc65PsP-`](checks/r5/p2-reply.md).
+
+### Round 5 verification
+
+| Check | Round 5 status |
+| --- | --- |
+| `npm run migration:typecheck` → `npm run migration:build` | PASS. Strict and negative types, 975/975 compiled syntax checks |
+| `node .build/tools/verify-artifact.mjs` | PASS. Artifact verified |
+| `npm run lint:css --prefix app/pc-admin` and `npm run lint:features --prefix app/pc-admin` | PASS |
+| `node --experimental-strip-types tests/pc-admin-copy-terms.test.mts` | PASS 6/6 |
+| Compiled `pc-admin-motion-policy` and `pc-admin-motion-tools` | PASS 16/16 |
+| `npm run docs:agents:check` and `node --test .build/tools/check-agent-docs.test.mjs` | PASS. Docs tool tests 20/20 |
+| pr-plan `--check-docs` against `fd301d66` and `git diff --check` | PASS. Card16 arrivals remains selected in the database lane |
+| Card16 arrival at 4× CPU throttling and the full five-mode suite | pending reviewer rerun |
+| Related browser checks and visual evidence | pending reviewer rerun |
+
+The staged build at `cfd67f27` includes the local test edit. Source input hash `7ca42e271bfd20839ec8cd1c7bf886921d367a50b21445bd2eac3d91a12abcfb`. Verified manifest SHA-256 `406d88fea0af728c2f109145b70853dd04b738fdf62c226b87e38a1599eebed5`.
+
+After `npm run migration:build`, run the opt-in check below from the worktree root with the reviewer's isolated fixture Postgres available. The fixture owns its browser and test database. `CARD16_CPU_RATE` applies CDP CPU throttling only to arrival mode, so regular test runs keep their normal speed. Local command logs are under `/private/tmp/card36a-r5-*.log`.
+
+```sh
+(
+  export TS_MIGRATION_TEST_SOURCE_ROOT="$PWD"
+  cd .build/runtime || exit
+  TS_MIGRATION_TEST_RUNTIME_ROOT="$PWD" \
+  PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres \
+  CARD16_CPU_RATE=4 \
+  node --test --test-name-pattern='^Card 16 arrival keeps' tests/pc-admin-card16-arrivals.browser.test.mjs
+)
+```
+
+---
+
+## Round 4 record (preserved)
 
 Round 3 is preserved below, including the native single-table exception and confirmed tokens. This round changes only the Card16 arrivals test and documentation; no production motion, selectors, scroll amount or reading-position assertion changes. Base remains `bfeb7251e05c301a33ec389fdcde6c36bda7234c`, with all changes uncommitted.
 
