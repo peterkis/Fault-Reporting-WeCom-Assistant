@@ -32,6 +32,10 @@ function fixture():string {
   // Share the complete immutable object history, but do not copy or build the
   // application's backend. Production/history guards run without exceptions.
   execFileSync('git',['clone','--quiet','--shared','--no-checkout',original,root],{windowsHide:true,stdio:'pipe'});
+  // Materialize only dependency inputs. An empty index otherwise reports the
+  // entire repository as deleted, overflowing status as evidence history grows.
+  execFileSync('git',['read-tree','HEAD'],{cwd:root,windowsHide:true,stdio:'pipe'});
+  execFileSync('git',['sparse-checkout','set','--no-cone','/package.json','/package-lock.json'],{cwd:root,windowsHide:true,stdio:'pipe'});
   symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
   put(root,'.gitignore','node_modules/\n.build/\n');
   for(const file of ['package.json','package-lock.json']) copyFileSync(path.join(original,file),path.join(root,file));
@@ -102,7 +106,8 @@ test('H5 release inputs, strict React sources, and controlled Vite assets share 
       for(const file of ['app/h5/src/main.tsx','app/h5/src/screen.tsx','app/h5/src/style.css','app/h5/src/logo.svg','app/h5/public/assets/icon.png','app/h5/index.html','app/h5/package.json','app/h5/tsconfig.json','app/h5/vite.config.ts','package-lock.json'])assert.ok(files.includes(file),file);
       for(const file of ['app/h5/docs/prototype/private.html','app/h5/design-baseline/original.html','app/h5/src/dev/preview.ts','app/h5/.env.local','app/h5/node_modules/.cache/private.ts'])assert.ok(!files.includes(file),file);
       assert.ok(!files.some(file=>file.startsWith('h5/')),'runtime h5 output paths cannot become an alternative source root');
-      const before=identity(root).input_hash;
+      const initial=identity(root);assert.equal(initial.dirty,true,'synthetic production edits remain visible to Git');
+      const before=initial.input_hash;
       alter(root,'app/h5/src/style.css','main{color:red}',()=>assert.notEqual(identity(root).input_hash,before));
       alter(root,'app/h5/docs/prototype/private.html','SYNTHETIC_DESIGN_CHANGED',()=>assert.equal(identity(root).input_hash,before));
     });

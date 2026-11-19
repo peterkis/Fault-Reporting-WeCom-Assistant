@@ -196,10 +196,14 @@ async function runBoundary(mode:Boundary){
         }else{
           await browser.waitFor("Boolean(document.querySelector('[data-action=check-review-start-receipt]'))&&!document.querySelector('[data-action=replay-review-start]')");
           assert.deepEqual(object(await browser.evaluate(snapshot(reviewId))).operations,[commandId]);
-          await browser.evaluate(`(()=>{const original=IDBDatabase.prototype.transaction;globalThis.__t15ArmCleanup=true;globalThis.__t15CleanupFaults=0;IDBDatabase.prototype.transaction=function(names,mode,...rest){if(globalThis.__t15FailCleanup&&mode==='readwrite'&&Array.from(typeof names==='string'?[names]:names).includes('operations')){globalThis.__t15FailCleanup=false;globalThis.__t15CleanupFaults++;throw new DOMException('T15_TEST_ONE_SETTLEMENT_FAILURE','UnknownError');}return original.call(this,names,mode,...rest);};globalThis.__t15RestoreStorage=()=>{IDBDatabase.prototype.transaction=original;globalThis.__t15ArmCleanup=false;};})()`);
+          // Draft reads also use readwrite transactions over operations. Fail this purpose's
+          // actual removal, so an unrelated draft restore cannot consume the cleanup fault.
+          const operationScope=JSON.stringify([actor.id,'review',reviewId,'review-resolve-start']);
+          await browser.evaluate(`(()=>{const original=IDBObjectStore.prototype.delete;globalThis.__t15ArmCleanup=true;globalThis.__t15CleanupFaults=0;IDBObjectStore.prototype.delete=function(key,...rest){if(globalThis.__t15FailCleanup&&this.name==='operations'&&key===${JSON.stringify(operationScope)}){globalThis.__t15FailCleanup=false;globalThis.__t15CleanupFaults++;this.transaction.abort();throw new DOMException('T15_TEST_ONE_SETTLEMENT_FAILURE','UnknownError');}return original.call(this,key,...rest);};globalThis.__t15RestoreStorage=()=>{IDBObjectStore.prototype.delete=original;globalThis.__t15ArmCleanup=false;};})()`);
           await browser.evaluate("document.querySelector('[data-action=check-review-start-receipt]').click()");
-          await browser.waitFor('globalThis.__t15CleanupFaults===1');await delay(100);await browser.evaluate('globalThis.__t15RestoreStorage()');
+          await browser.waitFor("globalThis.__t15CleanupFaults===1&&document.querySelector('[data-action=check-review-start-receipt]')?.disabled===false");await browser.evaluate('globalThis.__t15RestoreStorage()');
           assert.equal(object(await browser.evaluate('globalThis.__t15CheckedReceipt')).state,'FAILED');
+          assert.deepEqual(object(await browser.evaluate(snapshot(reviewId))).operations,[commandId],'the aborted cleanup must retain the same original UUID');
           assert.equal(await browser.evaluate("document.querySelector('[data-action=check-review-start-receipt]')?.disabled"),false,'known FAILED cleanup failure must retain a usable original UUID read-only retry');
           await browser.evaluate("document.querySelector('[data-action=check-review-start-receipt]').click()");
           await browser.waitFor("document.querySelector('[data-review-start-result]')?.textContent.includes('已只读确认原操作失败')");

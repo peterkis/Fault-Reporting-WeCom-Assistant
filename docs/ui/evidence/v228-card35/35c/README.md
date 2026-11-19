@@ -2,6 +2,8 @@
 
 实施与验收跨至 2026-11-19；产品确认日期 2026-11-18 保留。
 
+2026-11-19 追加：[PR #194 CI 修复与新候选验证](tests.md#pr-194-ci-fix)。本次恢复 35A 规范要求的列底，修复 Web01 等待、T15 故障注入及 H5 工具自测夹具；以下原实施计数、原构建与失败记录保留，不重绑为新结果。旧 visual 对比中的看板灰底现已确认属于 35A 回归；本次未替换旧截图或更改基线。 最终构建同组选测 79/79（575/575 例）、7 项工具及 1 项调度全部通过；两份故障浏览器文件各 5 次常速 + 5 次 4× CPU 通过，T15 case 4 两种速度各 10/10。
+
 本轮可执行范围已接入；13项按API停止线暂停，负责人 2026-11-19 决定保持现状、上线后登记。只实施[已确认清单](../../../../../plans/pc-admin-design-v21/card-35c-inventory.md)的上线前项。基线 `30eb2fc80353d1ab834c5da4bcc183c6415311c6`；未提交。35A/35B 已合并，A01–A08 不重复接入；登录 O67–O72 不纳入。
 
 原始确认稿保留在历史原文（原件已移出仓库；本地归档 R01），原行号到合并基线的 318 个锚点见重新定位记录（原件已移出仓库；本地归档 R02）。实施产物记录在最终构建日志（原件已移出仓库；本地归档 R03）；源码输入哈希 `7c82d44b7b09021079e71dfec7c547e748fe62c8e989b3880c7356451118bbe3`。所有状态沿合并后的设计组件及 `useDelayedLoading` 接入，小表单使用现有 `DetailLoading inline`。未改业务、权限、接口、命令、确认或重提条件。
@@ -63,7 +65,7 @@ Q1–Q14 不是待重问的问题；本节只登记实施时的 API/原因边界
 
 ## 验证结果
 
-CI 路由选测（79 个测试入口及 8 项工具/调度）有 **2 FAIL**：`wbint-t15-review-start-restoration-boundaries.browser.test.mts`、`web01-workbench.browser.test.mjs`。两者也在纯 `30eb2fc8` 的本地 macOS 运行中失败；对照评审反馈中 main 的 Linux CI 为绿，优先怀疑本地 macOS harness 差异，根因尚未确认。下表及历史 FAIL/NOT_RUN 保留原结果，不改写为 PASS。
+原构建的 CI 路由选测（79 个测试入口及 8 项工具/调度）有 **2 FAIL**：`wbint-t15-review-start-restoration-boundaries.browser.test.mts`、`web01-workbench.browser.test.mjs`。两者也在纯 `30eb2fc8` 的本地 macOS 运行中失败。此前据 main Linux CI 为绿而优先怀疑 macOS harness 的推断已撤回：PR #192 未选择 Web01；[本次定位与结果](tests.md#pr-194-ci-fix)另列。下表及历史 FAIL/NOT_RUN 保留原结果，不改写为 PASS。
 
 <!-- validation:begin -->
 本地验收未全绿。最终230个唯一入口中198 PASS、32 FAIL：浏览器/单元/集成及source-host共222个（190 PASS、32 FAIL），工具/调度8个全部PASS。主CI的87个入口为85 PASS、2 FAIL；额外143个入口为113 PASS、30 FAIL。驱动程序正常结束表示记录完整，不代表门禁通过。
@@ -311,13 +313,28 @@ CI选择、显式CPU参数矩阵、复核和归档的实际临时驱动见脚本
 
 ## 仓库内保留文件
 
-共149个文件：3份Markdown、item-results.json、31张1440区域截图、42张变化屏三联图、3份视觉报告文件及69份最终/失败TAP。减量前的完整改动路径清单属于历史原件，已移出；当前保留集合如下。
+共164个文件：3份Markdown、item-results.json、31张1440区域截图、42张变化屏三联图、3份视觉报告文件及84份最终/失败TAP。原始大文件与中间成功记录继续保留在仓库外；当前保留集合如下。
 
 <details>
 <summary>展开完整保留文件清单</summary>
 
 ```text
 README.md
+ci-fix-20261119/35c-states.final.tap
+ci-fix-20261119/base30-case13.tap
+ci-fix-20261119/base6e4a-case13.tap
+ci-fix-20261119/ci-tool-h5.test.tap
+ci-fix-20261119/h5-fixture-recheck-1.tap
+ci-fix-20261119/root-case13-probe.tap
+ci-fix-20261119/root-case13-red.tap
+ci-fix-20261119/root-case34-cpu6-probe.tap
+ci-fix-20261119/root-case34-cpu6.tap
+ci-fix-20261119/settled-nav-cpu4.tap
+ci-fix-20261119/settled-nav-cpu6.tap
+ci-fix-20261119/smoke-web-cpu4.tap
+ci-fix-20261119/t15-cause2-root-3.tap
+ci-fix-20261119/t15-probe-1-1.tap
+ci-fix-20261119/web-fixed-cpu6-first.tap
 comparison/images/board-default-baseline.webp
 comparison/images/board-default-current.webp
 comparison/images/board-default-diff.webp

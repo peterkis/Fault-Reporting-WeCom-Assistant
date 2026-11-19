@@ -1,12 +1,14 @@
 # Card 35C 逐文件验证
 
+2026-11-19 的 [PR #194 修复与新候选验证](#pr-194-ci-fix)追加于文末；以下原轮次的计数及 FAIL/NOT_RUN 保持历史归属。
+
 最终构建输入为 `7c82d44b7b09021079e71dfec7c547e748fe62c8e989b3880c7356451118bbe3`；制品身份（原件已移出仓库；本地归档 T01）。最终 CI 与最终相关回归共同覆盖当前所有选择，后者去掉已在最终 CI 的重复入口。额外定向和重复矩阵另列，不用重复次数增加唯一文件计数。
 
 所有浏览器/数据库文件均沿现有 runSelection 与路由执行：保留宿主、编译制品、V8 来源、case trace 和自有资源检查。失败后的文件继续单独执行。原件保留 FAIL/NOT_RUN，未把补跑通过写回旧记录。首轮通过 TAP 位于 first-pass-taps.tar.gz（原件已移出仓库；本地归档 T02）；更完整的早期报告见归档（原件已移出仓库；本地归档 T03）/索引（原件已移出仓库；本地归档 T04）。最终通过报告、case trace、原 TAP 见最终原件索引（原件已移出仓库；本地归档 T05）；失败 TAP 另展开。
 
 ## 汇总
 
-CI 路由选测（79 个测试入口及 8 项工具/调度）有 **2 FAIL**：`wbint-t15-review-start-restoration-boundaries.browser.test.mts`、`web01-workbench.browser.test.mjs`。两者也在纯 `30eb2fc8` 的本地 macOS 运行中失败；对照评审反馈中 main 的 Linux CI 为绿，优先怀疑本地 macOS harness 差异，根因尚未确认。下表及历史 FAIL/NOT_RUN 保留原结果，不改写为 PASS。
+原构建的 CI 路由选测（79 个测试入口及 8 项工具/调度）有 **2 FAIL**：`wbint-t15-review-start-restoration-boundaries.browser.test.mts`、`web01-workbench.browser.test.mjs`。两者也在纯 `30eb2fc8` 的本地 macOS 运行中失败。此前据 main Linux CI 为绿而优先怀疑 macOS harness 的推断已撤回：PR #192 未选择 Web01；[本次定位与结果](#pr-194-ci-fix)另列。下表及历史 FAIL/NOT_RUN 保留原结果，不改写为 PASS。
 
 | 范围 | 唯一文件数 | PASS | FAIL / 其他 |
 | --- | ---: | ---: | ---: |
@@ -472,3 +474,221 @@ arch-006 的 CURRENT_SCOPE_INVALID 是冻结 scope 中 .env.example 摘要与 HE
 | T157 | `card31-recheck/current-1.tap` | `42226723c1e308385f9fc97942b0757ec22fd32e69321289392da016320be01a` |
 | T158 | `t15-baseline-proof.json` | `b3df3602fc156613f43ef85673c89eea5ad519cb343bd035b65a3a20e92d3d59` |
 | T159 | `t15-baseline-cleanup.json` | `2d29db42c9da8ea823c9f192912f55bf01a1dde19e0b852c8d6cdef9625f1b0c` |
+
+
+<a id="pr-194-ci-fix"></a>
+
+## PR #194 CI 修复（2026-11-19）
+
+本节是新一轮验证，不改写上文 `7c82d44b` 的 FAIL/NOT_RUN。GitHub PR API 与本地 HEAD 同为 `fab99f0597114244d2be05535763f349406ecc1a`；PR base 为 `30eb2fc80353d1ab834c5da4bcc183c6415311c6`。应用修复首轮候选是该 HEAD 加工作区修复，构建输入 `935b50a9d96fccae693c961d88fd27a51d3a7ef2d67888443d7451566ba49ebd`；该输入绑定下文重复矩阵和第一轮路由选测。没有创建提交或修改远端。
+
+更正归因：此前“main Linux CI 为绿，所以优先怀疑 macOS harness”的推断撤回。PR #192 没有选择 Web01，绿灯不证明它通过。两次实际 Linux 失败分别见 [job 135207458705](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/44419030508/job/135207458705) 与 [job 135231267813](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/44419030508/job/135231267813)；原始日志已保存在仓库外。这里只报告本机 darwin/Chrome 的实际结果，不将其写成修复后的 Linux CI 结果。
+
+### Case 13：35A 引入的产品回归
+
+全部历史运行位于仓库外的干净 detached worktree，用各自锁文件安装、独立构建、对应源码根和 `.build/runtime/tests`，只选择完整名称 `WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state`，没有改历史源码或断言。不是用静态 grep 代替浏览器运行。
+
+| 对象 | case 13 | 待受理 / 处理中 / 已处理的实测 RGB |
+| --- | --- | --- |
+| `f76fffef`（35A 的直接父提交） | PASS | `252,250,244` / `246,249,254` / `245,250,246` |
+| `67999466`（35B 合并） | PASS | 同上 |
+| `6e4a59b1`（35A 首个实现提交） | FAIL | `252,250,244` / `247,247,245` / `247,247,245` |
+| `30eb2fc8`（主干合并 PR #192） | FAIL | 同上 |
+| `fab99f05`（本次 PR 原 HEAD） | FAIL | 同上 |
+
+首个实现回归为 [6e4a59b1f304eb159e00ff8c093c83581b606fdc](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/commit/6e4a59b1f304eb159e00ff8c093c83581b606fdc)，进入主干的提交为 `30eb2fc8`。35A 把 `BoardColumn` 的组件样式经 Skeleton 提前带入首屏 CSS；原本较早加载的两条 `.board-column.active` / `.board-column.handled` 灰底规则随后加载，以相同优先级覆盖组件的 `--column-lane`。阶段图标和 `.stage-pill` 透明背景均正常，失败的是三种列底应不同。
+
+[设计系统](../../../design-system.md) §5.1 Board 明确使用 `--lane-intake/active/done`，§6.6 的 2026-11-04 前向规则仍保留阶段图形；未有 35A/35B/34C 合同取消三色泳道。因此修产品：删除 [workbench-board.css](../../../../../app/pc-admin/src/design/components/BoardColumn/workbench-board.css) 的上述两条旧规则，让组件的既有 Token 生效。颜色、图形、透明标题底和三列数量的原断言完整保留，没有改成“同色也算通过”。这也更正旧 visual attribution 中把该灰底变化当作预期的解释；旧图及比率仍只属于原构建，未重绑为本次截图。
+
+### Cases 3/4：把骨架当成数据、把 URL 提交当成详情就绪
+
+原 HEAD 在 CDP 6× CPU 下复现两例同一超时。计数响应已显示“已加载 15 项”，但 35A 的至少 300ms 展示期仍保留 9 张 `.ticket-card` 骨架；它们没有 `data-item-id`，CDP 将数组里的 `undefined` 序列化为 `null`。测试实际等待的是 `[data-item-id="null"] .card-open`。失败在共享辅助的可见性等待，尚未到 `elementFromPoint` 命中检查。没有证据显示刷新进度条、稳定滚动条或状态层截获点击。
+
+修复 [Web01](../../../../../tests/web01-workbench.browser.test.mjs) 的就绪条件：初始等待必须看到 9 张带真实事项 ID 的卡片；详情导航同时等待目标 URL、与目标卡片一致的真实 `.ds-detail-hero` 标题，以及操作读取 `ready`。已知标题也会出现在 DetailSkeleton；Router 还可能先提交 URL、后更新正文，因此只等“有标题”或“URL 已变”都不足。4×/6× 定向观测暴露的旧正文竞态同样保留在失败记录中。原“下一项标题变化”条件转为显式 `assert.notEqual`，排序冻结、渲染顺序、前后项 ID 与 SSE 行为断言均保留。[共享真实点击辅助](../../../../../tests/helpers/heroui-workbench-controls.mts) 未改，几何稳定、遮挡和真实鼠标事件检查未放宽，也未增加固定等待或超时。
+
+这项测试前提自 35A `6e4a59b1` 的新骨架起不再成立，属于测试等待竞态，不是改变产品加载时长来迎合测试。
+
+### T15 case 4：既有故障注入没有锁定清理操作
+
+[原测试](../../../../../tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts) 的全库事务注入来自 [a2d4ab3815f0fb99eb923a5d3ae478fb7c42637d](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/commit/a2d4ab3815f0fb99eb923a5d3ae478fb7c42637d)。原注入的定位循环：常速 10 次为 9 PASS / 1 FAIL，4× CPU 10 次全部 PASS；另一轮捕获到相同按钮消失。失败时调用栈落在 `useAuthorizedDraft` 初始化的 `authorize → openDraft`，而非 `knownFailure` 的清理。`encrypted-drafts.state()` 的读取也使用包含 `operations` 的 readwrite 事务，另一个用途的恢复读取可先消耗全局“一次故障”；真正的原操作清理随后成功，按钮正常消失。同期可见普通复核草稿恢复错误，未见 ErrorState 或加载占位。
+
+[ReviewStartControls](../../../../../app/pc-admin/src/features/manual-review/ReviewStartControls.tsx) 的 `context.isPending` / `context.isError` 早返回条件与纯 `30eb2fc8` 相同，35C 只换了返回的展示组件；有旧查询数据的普通 refetch 不会变成 pending。所注入的是本地存储错误，没有把这条 HTTP 查询改成 error。本次不改它的业务、权限或清除行为。先前纯 `30eb2fc8` 的 FAIL/PASS/PASS 历史继续保留；本轮额外 15 次纯基线定向运行全部 PASS，不将自然通过写成根因已由平台差异解释。
+
+改为在真实 `IDBObjectStore.delete` 上，精确匹配当前 principal / review / `review-resolve-start` 的操作键，撤销该清理事务并抛出一次错误。这样其它用途的读取不能消耗故障，事务中已做的更改也会回滚。移除固定 100ms，等待一次故障后原核对按钮恢复可用；原可用性、FAILED 真实收据、最终清空和禁止自动 POST 断言保留，并新增“失败后仍持有同一原 UUID”的断言。是修复注入和等待，不是取消重试要求。
+
+### 本次变更与原预期的调整
+
+- 删除两条过时列底 CSS 规则；没有删除整文件，没有改 Token、API、权限、命令、确认或草稿实现。
+- Web01 仅加强就绪边界和同步已合并的两处状态预期：离线从“连接失败”改为可见 ConnectionBar 的“连接已断开，正在重新连接…”；空列表从“暂无事项”改为“这里暂时没有工单”，零事项行断言保留。依据为[状态规范](../../../design-system.md#状态v228--卡35a)的连接/空态规则和 `6e4a59b1` 已合并的 WorkTable 空态替换。case 13 的三色/图形断言未变。
+- T15 只改一次故障的作用点和收尾等待，新增原 UUID 留存断言。源码 `ReviewStartControls.tsx`、`use-review-start-draft.ts`、`use-note-draft.ts` 不改。
+
+### 验证方法与边界
+
+执行顺序为 typecheck → build → staged runtime；loopback PG18、隔离模式和当前 worktree 的 `TS_MIGRATION_TEST_SOURCE_ROOT` 沿本次要求设置。CI 选择直接调用既有 `parseDiff / parsePolicy / planChanges`，差异为真实 `30eb2fc8` 到工作区，不创建临时提交；79 个入口及 7 项工具加 1 项调度检查，与 database lane 相同。PyYAML 只装在仓库外的任务自有环境。
+
+重复矩阵沿既有 routing 的环境白名单、node flags、执行目录、case reporter、V8 来源与制品前后核验；额外只通过 CDP 在 `Page.navigate` 前设置 CPU rate 1/4（定向另测 6），逐浏览器确认 `Emulation.setCPUThrottlingRate` 成功回执。压力驱动在仓库外，不改浏览器辅助或运行树文件，不以记录变量代替实际节流。所有正式通过要求零 FAIL / SKIP / TODO / CANCELLED。
+
+保留前置失败：初版 6× 全 Web01 仍有导航/旧离线文案失败；同步 35A 文案后的 4× smoke 仍有返回导航竞态；仅等待真实标题但未匹配目标正文时，4×/6× 各有 2 例 FAIL。这些都是不同中间候选的结果，未计入最终矩阵。另有一次定位循环启动与 runtime 重建相遇，入口未启动（NOT_RUN），不当成产品 FAIL 或通过。失败 TAP 在本节末列出，完整定位材料留在仓库外。
+
+本次没有触碰 `docs/ui/visual-baseline/**`，没有运行 `visual:approve`，没有重写旧 visual report、triptych、FAIL 或 NOT_RUN。4 个干净的任务自有历史 worktree 已移除，测试自有浏览器/数据库清理断言保留。Linux CI 仍需在用户提交并推送修复后重新运行；本地通过不能代替该结果。上文更广回归的其余历史失败未因本次选测通过而改写。
+
+### 重复矩阵（最终候选）
+
+| 文件 / 用例 | 常速 | CDP 4× CPU | 结果 |
+| --- | --- | --- | --- |
+| Web01 完整 14 例 | 5 次，70 PASS | 5 次，70 PASS | 全部通过 |
+| T15 完整 6 例 | 5 次，30 PASS | 5 次，30 PASS | 全部通过 |
+| T15 case 4（含完整文件中的 5 次及额外定向 5 次） | 10/10 PASS | 10/10 PASS | 同一原 UUID 断言保留并加强 |
+
+矩阵共 30 次入口执行、210 个实际用例结果，零 FAIL / SKIP / TODO / CANCELLED；只涉及两个唯一文件。另以最终候选在 4×、6× CPU 各运行 Web01 的 SSE 到达与两种 SSE 导航，共 6 个定向结果，全部通过。
+
+### 本轮保留的前置 FAIL TAP
+
+| 记录（均为修复前或中间候选） | FAIL 数 | TAP | SHA-256 |
+| --- | ---: | --- | --- |
+| `base30-case13.tap` | 1 | [原始 TAP](ci-fix-20261119/base30-case13.tap) | `27f1c85edc132252f07323fae6b498b7299e9bc7b74427b60ffb978a5780e89c` |
+| `base6e4a-case13.tap` | 1 | [原始 TAP](ci-fix-20261119/base6e4a-case13.tap) | `70816547430c15f14aa399ca02a29b131297998626378a497b5906556e1e7963` |
+| `root-case13-probe.tap` | 1 | [原始 TAP](ci-fix-20261119/root-case13-probe.tap) | `f88936fe4766846ea4e8e041a73d50895757aa9806f1806c3d80e6f60c61cfb7` |
+| `root-case13-red.tap` | 1 | [原始 TAP](ci-fix-20261119/root-case13-red.tap) | `249595700e475a19cfe36758f59b7ec92d2edf77bc7a81eb73fc1f41dac3c9ff` |
+| `root-case34-cpu6-probe.tap` | 2 | [原始 TAP](ci-fix-20261119/root-case34-cpu6-probe.tap) | `4812993d1622b88e601bce254b70cf1bf6d33c6d005f9323d9b2170188ca3c34` |
+| `root-case34-cpu6.tap` | 2 | [原始 TAP](ci-fix-20261119/root-case34-cpu6.tap) | `f59b6a618712889f6ef33d13b0c14ce30fddd28156b699d3309feb78757896ce` |
+| `settled-nav-cpu4.tap` | 2 | [原始 TAP](ci-fix-20261119/settled-nav-cpu4.tap) | `4266d975141e7a68fefa7f12344944461d79481053d45ec4ca4e92e47a022def` |
+| `settled-nav-cpu6.tap` | 2 | [原始 TAP](ci-fix-20261119/settled-nav-cpu6.tap) | `2f5a034f437b28c7aed9d051807487b57957a33a5967c32481ee78a75812c598` |
+| `smoke-web-cpu4.tap` | 1 | [原始 TAP](ci-fix-20261119/smoke-web-cpu4.tap) | `c22fe9f78546071e38a96f0d9f97b4319b8c8840429df637466bcc830bf0fcd7` |
+| `t15-cause2-root-3.tap` | 1 | [原始 TAP](ci-fix-20261119/t15-cause2-root-3.tap) | `f8687e2adc8cdbee8bc46658e233a36f482feaf6899b8145559dc4096f5d6734` |
+| `t15-probe-1-1.tap` | 1 | [原始 TAP](ci-fix-20261119/t15-probe-1-1.tap) | `b04bda4522ebebc96e8b4512b3b8f0c844df485f71a3a8d684a1bb1ab2de1030` |
+| `web-fixed-cpu6-first.tap` | 2 | [原始 TAP](ci-fix-20261119/web-fixed-cpu6-first.tap) | `796b7f2d8c399d4009cecd8ba6d6e48d8f2fcade9dabfab0a24a62c468e8c60e` |
+
+### 额外工具失败及修复：H5 制品自测夹具
+
+第一轮完整选择的 79 个测试入口全部通过（575/575），8 项工具/调度为 7 PASS / 1 FAIL；失败是 `tools/ts-migration/h5.test.mts`。它不是 Web01/T15 再次失败。
+
+夹具原先 `git clone --shared --no-checkout` 后直接构造小型 H5 项目，空索引使整仓跟踪路径都显示为删除。实测 `git status --porcelain`：纯 `30eb2fc8` 为 1,040,909 字节，已提交的 `fab99f05` 为 1,053,296 字节，超过 Node 默认 1,048,576 字节缓冲；同一既有 `common.git()` 在前者成功、后者抛 `ENOBUFS`。这是 PR 原提交文件数量增长暴露的夹具问题，不据主干 CI 颜色推断平台差异。夹具只克隆提交，故本次未提交 UI 改动和后来添加的 TAP 没有进入其索引。
+
+修 [h5.test.mts](../../../../../tools/ts-migration/h5.test.mts)：克隆后 `read-tree HEAD` 初始化索引，再稀疏检出两个依赖输入，随后仍构造同一 H5 项目。完整 Git 对象历史、原源码/资源库存、源代码漂移、产物篡改、隐藏/预览文件和压缩侧车断言保留；新增 `identity(root).dirty===true`，确认合成生产改动仍反映为脏状态。构建守卫、缓冲配置和应用代码不改。
+
+规范化 TMPDIR 的完整 H5 工具自测连续 5 次通过，每次 13/13；该工具不启动浏览器，CDP CPU 节流不适用。一轮定位调用遗漏了 TMPDIR 规范化，产生路径检查 FAIL；原 TAP 保留，未计入这 5 次通过。
+
+| 前置记录 | 原始 TAP | SHA-256 |
+| --- | --- | --- |
+| `ci-tool-h5.test.tap` | [TAP](ci-fix-20261119/ci-tool-h5.test.tap) | `2b44ad030456ad7ba95e29c02ca56db0397542c7ceacac256d3b1cfe2ce478a8` |
+| `h5-fixture-recheck-1.tap` | [TAP](ci-fix-20261119/h5-fixture-recheck-1.tap) | `3e7fe29faae145a6139f6f9a775a094c7565c6c1fa408fd9099a434d342966ba` |
+
+### 最终构建与运行树身份
+
+H5 夹具修复后的构建输入为 `732af97b758ef74fdfe483ede2cc7b6dd977e949ebded49b12e4c1c82001aba3`，manifest SHA-256 为 `9339381a7a05c1893f17bb781685eae28d8301122720882e7f5404c30818ad0c`。重新执行 typecheck/build 后，与重复矩阵所用 `935b50a9` 的 3050 份清单运行文件逐项比较：路径、数量与每份 SHA-256 全部相同，差异为 0；build-manifest 自身按新输入更新。旧矩阵和旧 FAIL 仍保留原输入身份。完整 CI 路由选择在这个最终构建上重新执行，结果另列于下。
+
+### 最终检查结果（732af97b）
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run migration:typecheck` | PASS，strict 与负向类型检查通过 |
+| `npm run migration:build` | PASS，972 个严格模块、3050 个运行文件 |
+| `npm --prefix app/pc-admin run lint:css` | PASS |
+| `npm --prefix app/pc-admin run lint:features` | PASS |
+| copy-terms（含散装加载/错误白名单检查） | 8/8 PASS；最终 CI 再次通过 |
+| 35C states | 2/2 PASS；[最终 TAP](ci-fix-20261119/35c-states.final.tap) |
+| 35A states | 10/10 PASS；对应运行文件与最终构建全等 |
+| H5 工具自测 | 5 次各 13/13 PASS；最终 CI 工具检查再次通过 |
+| CI database 同组选测 | 79/79 文件 PASS，575/575 用例，零跳过/取消 |
+| 工具与调度 | 7 项工具 + 1 项调度全部 PASS |
+
+最终完整选择共 **87/87 入口通过**；保留第一轮 86 PASS / 1 H5 FAIL，及更早 7c82d44b 的 FAIL/NOT_RUN。Windows native 不在本次计划内；Linux CI 尚未对未提交修复运行。
+
+完整运行原件已移出仓库，位于本地归档 `/private/tmp/claude-501/-Users-petervans-Projects-ticket/172774c8-e578-406d-b0a5-c4c9c8c86f82/scratchpad/35c-evidence-archive/ci-fix-20261119/`；`MANIFEST.txt` 记录 SHA-256。除保留的 FAIL 与 35C 最终 TAP，成功原件不再复制入仓库。下表的 SHA-256 对应各入口实际 TAP。
+
+### 最终逐文件结果（732af97b）
+
+| 入口 | PASS / FAIL / SKIP | 结果 | TAP SHA-256 |
+| --- | ---: | --- | --- |
+| [tests/migration-canary.test.mts](../../../../../tests/migration-canary.test.mts) | 1/0/0 | PASS | `ba915d79182be5f3ad5337c232592d14441dbc09220446732db4ef190adac0e2` |
+| [tests/mvp-application-members.integration.test.mts](../../../../../tests/mvp-application-members.integration.test.mts) | 1/0/0 | PASS | `75d9a156d23ef2d5e6c2819a9b6d7a023668fe158298aaf62ee399c3d31c8854` |
+| [tests/mvp-group-replies.integration.test.mts](../../../../../tests/mvp-group-replies.integration.test.mts) | 4/0/0 | PASS | `7c5eb6820ba9a00ae4c2f969fb6fc1f1fa26fe284b3fe19d5efa8acc50708226` |
+| [tests/mvp-notification-policy.integration.test.mts](../../../../../tests/mvp-notification-policy.integration.test.mts) | 8/0/0 | PASS | `6acd067625581a33d2354b685fdb939f07c7e83740f2f1251c253ae83d92a54d` |
+| [tests/p2-003-realtime-event-log.integration.test.mjs](../../../../../tests/p2-003-realtime-event-log.integration.test.mjs) | 11/0/0 | PASS | `9ae09d8fc406b94b667cd8163a4ae27f87d8d21f83a0153f615869cf876464d8` |
+| [tests/p2-007-staff-directory-process-options.test.mjs](../../../../../tests/p2-007-staff-directory-process-options.test.mjs) | 4/0/0 | PASS | `7f3bbbdc068f6c43f1ee439508c8a754dead9b879cc829a7daf1f9bbf2f0e94a` |
+| [tests/p2-007-staff-directory-process-role.test.mjs](../../../../../tests/p2-007-staff-directory-process-role.test.mjs) | 1/0/0 | PASS | `7e694f10e743affe7d304d6a5a34a71a702d4ea0bdc3a37f752041e068b0bba6` |
+| [tests/p2-007-staff-directory-sync.test.mjs](../../../../../tests/p2-007-staff-directory-sync.test.mjs) | 3/0/0 | PASS | `c71ad80813473999a3e3893cf3033b832230e470d675b9e2409576d86d8db633` |
+| [tests/p2-007-staff-directory-worker.test.mjs](../../../../../tests/p2-007-staff-directory-worker.test.mjs) | 1/0/0 | PASS | `97e319146a31840f70b31d26b33cb38b6df18343254fada3bedbcc5f7faf88c3` |
+| [tests/p2-007-third-party-current-profile-query.test.mjs](../../../../../tests/p2-007-third-party-current-profile-query.test.mjs) | 3/0/0 | PASS | `bcc32e2f0d1ff53f0157afa1c8d8cc1e0aa3ff6bc70615881b927e927d7f9147` |
+| [tests/p2-007-third-party-reporter-directory.test.mjs](../../../../../tests/p2-007-third-party-reporter-directory.test.mjs) | 17/0/0 | PASS | `325bf8c2acbf78316fc37f76756ca401f1693403ce32805993da1ef91301959b` |
+| [tests/p2-007-third-party-staff-directory.integration.test.mjs](../../../../../tests/p2-007-third-party-staff-directory.integration.test.mjs) | 6/0/0 | PASS | `80fe1b2c29394be3f2cb844ecdffa036fbb964930b4977a23f2fa56c5a4f31ed` |
+| [tests/p2-007-third-party-staff-directory.test.mjs](../../../../../tests/p2-007-third-party-staff-directory.test.mjs) | 30/0/0 | PASS | `9bd08fab8dc75057a9aa90eee4902c74c4a5d53b50ea60de3d0a66e0b7a88c6d` |
+| [tests/p2-015-contact-journey.test.mjs](../../../../../tests/p2-015-contact-journey.test.mjs) | 2/0/0 | PASS | `670f42128f95fc6fb7cd9347673d1a3791fd4e0c4698d5ea0eecb3249c1d9726` |
+| [tests/p2-015-manual-review.test.mjs](../../../../../tests/p2-015-manual-review.test.mjs) | 1/0/0 | PASS | `df41f61aea623ffaf8f1f12e87be2a440f9262073cb7d217df4045fd7adeb38d` |
+| [tests/p2-015-rule-first-orchestration.integration.test.mjs](../../../../../tests/p2-015-rule-first-orchestration.integration.test.mjs) | 5/0/0 | PASS | `5c6f2af8ce7f3a1e43fb1c444b9fd5d4ae629cb353d9f51856e4b8a518cb04d3` |
+| [tests/p2-015-rule-first-orchestration.test.mjs](../../../../../tests/p2-015-rule-first-orchestration.test.mjs) | 7/0/0 | PASS | `01cbf81c6c9b785afede39f21302d1e81e2a0783cf93541cb632d73dd0fd98eb` |
+| [tests/p2-015-worker-restart.integration.test.mjs](../../../../../tests/p2-015-worker-restart.integration.test.mjs) | 2/0/0 | PASS | `4faf33e4b585744a4f87c13dd7ab2258a29ad9120670ab5a7bb2d20936b5a212` |
+| [tests/p2-015-worker.test.mjs](../../../../../tests/p2-015-worker.test.mjs) | 7/0/0 | PASS | `6cda78aad362dcbb0823ba13ffe107379286b2ca452ad12f1dcb8757c4cf19ba` |
+| [tests/p2-016-live-cluster.integration.test.mjs](../../../../../tests/p2-016-live-cluster.integration.test.mjs) | 1/0/0 | PASS | `5393411e937e8062e7bec6146384c52b0ea2dda6b0f06ad4528ec67c4d9727ef` |
+| [tests/p2-016-schema-contract.test.mjs](../../../../../tests/p2-016-schema-contract.test.mjs) | 6/0/0 | PASS | `ea478129b12b673d4b1bb65dec38e006c6ee8199c0a0e396d5e8465999a528dc` |
+| [tests/p2-016-ticket-lifecycle.integration.test.mjs](../../../../../tests/p2-016-ticket-lifecycle.integration.test.mjs) | 1/0/0 | PASS | `147e0dff47835039627bd88e647e8ec8e38e75b4d2b17e5dbb38c58f699fef3d` |
+| [tests/p2-016-workbench-auth.integration.test.mjs](../../../../../tests/p2-016-workbench-auth.integration.test.mjs) | 6/0/0 | PASS | `12792131f0d0543cd15ff2b65cdd704b2d84ba01fbcdb3673fcbcd8d7f8660c8` |
+| [tests/p2-016-workbench-http.integration.test.mjs](../../../../../tests/p2-016-workbench-http.integration.test.mjs) | 2/0/0 | PASS | `cf71a0f692746c4b9ddfffbc718038a085bd678ed75011020dafc9f711d080af` |
+| [tests/p2-016-workbench-wecom-auth.test.mjs](../../../../../tests/p2-016-workbench-wecom-auth.test.mjs) | 5/0/0 | PASS | `b84a38401c1d3ec4aaf5337864b8266d8256d23b335b68fb35607e04fec85bfa` |
+| [tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs](../../../../../tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs) | 1/0/0 | PASS | `85d42753f48f834282b016af22d4f8ff78119e0d8e90f951930ee56e0c2c0a15` |
+| [tests/pc-admin-card12-review.browser.test.mts](../../../../../tests/pc-admin-card12-review.browser.test.mts) | 7/0/0 | PASS | `ca37177dab4bdc63af32d60ab5076087cb8997a1ffb0481c9feca65d24e4fb8c` |
+| [tests/pc-admin-card16.browser.test.mts](../../../../../tests/pc-admin-card16.browser.test.mts) | 3/0/0 | PASS | `dd3a84e76adb182c0e2eff768cf95f49056fe045abf3e127f497be69ea512e36` |
+| [tests/pc-admin-card35c-states.browser.test.mts](../../../../../tests/pc-admin-card35c-states.browser.test.mts) | 2/0/0 | PASS | `2d02484bc21450fbc0b72c3d653b1c5d54fba48659cce96763dbe19125064260` |
+| [tests/pc-admin-copy-terms.test.mts](../../../../../tests/pc-admin-copy-terms.test.mts) | 8/0/0 | PASS | `2a533f44cdb96bf37b1f714cc27faf5bb6f11de87e92968c7b8b971f9d5c7ec5` |
+| [tests/pc-admin-design-foundation.test.mts](../../../../../tests/pc-admin-design-foundation.test.mts) | 75/0/0 | PASS | `6bfd87e61780ffb8fe7887d4552c74f23e2552015666807833a4ddb30407c65e` |
+| [tests/pc-admin-legacy-retirement.browser.test.mts](../../../../../tests/pc-admin-legacy-retirement.browser.test.mts) | 2/0/0 | PASS | `9bb1b11c9c7e5b5f6557c4111d18bef3add3916936b2126e31194f48e40283bc` |
+| [tests/platform-boundary-contracts.test.mts](../../../../../tests/platform-boundary-contracts.test.mts) | 6/0/0 | PASS | `5257955bd981bd3e5083b73d252a16bef7ca0db0c413770f98d43a473d5eac88` |
+| [tests/platform-postgres-callback.integration.test.mts](../../../../../tests/platform-postgres-callback.integration.test.mts) | 4/0/0 | PASS | `a0a36e12c5b397539a3e93772e42b27fcfc3014b382b23ad72b1b42d39810d19` |
+| [tests/platform-postgres-time.integration.test.mjs](../../../../../tests/platform-postgres-time.integration.test.mjs) | 2/0/0 | PASS | `1aeb4fda842f71517d789b6fbba6bc47e820f4d50d3958f501b4a298ebb797bc` |
+| [tests/platform-time-contract.test.mjs](../../../../../tests/platform-time-contract.test.mjs) | 4/0/0 | PASS | `2607a78f21e934ad8eb33bb1f0b320efe60521c5da4f0b8b94acd4fe33ee2695` |
+| [tests/t10-atomic-rollback.integration.test.mts](../../../../../tests/t10-atomic-rollback.integration.test.mts) | 4/0/0 | PASS | `6bb6355dd55f3620de90ba1702554bba4ad1f171f6c6f9f0b425243387e3b067` |
+| [tests/t10-current-authority-wait.integration.test.mts](../../../../../tests/t10-current-authority-wait.integration.test.mts) | 1/0/0 | PASS | `8e7ff2f9c0f113f7e64ea5be252854bad61848b1766827763cb513a1f1bf34bf` |
+| [tests/t10-unknown-recovery.browser.test.mts](../../../../../tests/t10-unknown-recovery.browser.test.mts) | 2/0/0 | PASS | `abb545c1c3bf6286066bec011d247e714baf61f7ac2c04c7cf8522d89b5b46ba` |
+| [tests/t11-completion.integration.test.mts](../../../../../tests/t11-completion.integration.test.mts) | 8/0/0 | PASS | `3e4a2402cbd3f2d040e5c6b488ef757371c5a48f9b37d564b30bc98a57be4ffa` |
+| [tests/t24-round-notification-identity.integration.test.mts](../../../../../tests/t24-round-notification-identity.integration.test.mts) | 1/0/0 | PASS | `69a8ca03288c3890251df2906b686c051a46c49c4360172e30f397dd5b12ba23` |
+| [tests/t24-synthetic-sender-unknown.integration.test.mts](../../../../../tests/t24-synthetic-sender-unknown.integration.test.mts) | 1/0/0 | PASS | `2cef0baddaf5aeb1545dbf3a271cfbb8caf15266ca904df544c371d4858d0dec` |
+| [tests/t25-app-delivery-http-recovery.integration.test.mts](../../../../../tests/t25-app-delivery-http-recovery.integration.test.mts) | 1/0/0 | PASS | `b0f4a7223cd631738314b94569df69cec898b388dc08ad956c772f575cfdfebf` |
+| [tests/t35-account-switch.browser.test.mts](../../../../../tests/t35-account-switch.browser.test.mts) | 1/0/0 | PASS | `7001621058984d77c1775cf222419e5a539b5fe08de9503a6d186e274fa8a10b` |
+| [tests/t35-current-authority-wait.integration.test.mts](../../../../../tests/t35-current-authority-wait.integration.test.mts) | 1/0/0 | PASS | `1af37592a5882284730bba7dbf8a0f94194f851a11a7b5f518c5c8227caeaa65` |
+| [tests/t35-unknown-read.browser.test.mts](../../../../../tests/t35-unknown-read.browser.test.mts) | 1/0/0 | PASS | `2f31d8039a6056ec0bac7e0c7766b436463c917839536b81dff7c75257201bed` |
+| [tests/visual-regression.test.mts](../../../../../tests/visual-regression.test.mts) | 14/0/0 | PASS | `690861f459d1e4bfcc10afd1c6d9b8b0c83c9bbc5f85040a23006b06a354cb77` |
+| [tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts](../../../../../tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts) | 6/0/0 | PASS | `16dc0ba651f4ead17101cdc674872cf305e1b4d71fb58d08878587422e43e4b9` |
+| [tests/wbint-t17-manual-receipts.integration.test.mts](../../../../../tests/wbint-t17-manual-receipts.integration.test.mts) | 1/0/0 | PASS | `5cdeeed7901eed34e277f3984e54f35042dfcb42beb71b04177b0caa106f3434` |
+| [tests/wbint-t19-manual-self-handling-authority.integration.test.mts](../../../../../tests/wbint-t19-manual-self-handling-authority.integration.test.mts) | 1/0/0 | PASS | `4ec4cf1c346b65e1e5959484bc399b98c30955704c1a40c36ced0b5806e0cb8b` |
+| [tests/wbint-t19-manual-self-handling-contracts.test.mts](../../../../../tests/wbint-t19-manual-self-handling-contracts.test.mts) | 4/0/0 | PASS | `04e65320960d5dcf8a8ea5c67ec0e2ba4246f54c3bb9a9d3f89b58e75fa8abb1` |
+| [tests/wbint-t19-manual-self-handling-risks.integration.test.mts](../../../../../tests/wbint-t19-manual-self-handling-risks.integration.test.mts) | 4/0/0 | PASS | `e9e289bfbe66dbc3b2e244295980f9bd9a2a703c9a1b640c0e66a0eb8b0e80fb` |
+| [tests/wbint-t19-manual-self-handling-unknown.browser.test.mts](../../../../../tests/wbint-t19-manual-self-handling-unknown.browser.test.mts) | 1/0/0 | PASS | `ba52dc6246d80568b349dcd731c0d642bbe36d1bc89b195d5376143726c7682b` |
+| [tests/wbint-t22-realtime-tracer.browser.test.mts](../../../../../tests/wbint-t22-realtime-tracer.browser.test.mts) | 1/0/0 | PASS | `68bcda1f9d34a988c12b2b476f260132e5be24b8d8a5b14f761b5edc7e57c4ef` |
+| [tests/wbint-t32-exception-authorization.browser.test.mts](../../../../../tests/wbint-t32-exception-authorization.browser.test.mts) | 1/0/0 | PASS | `99702991cb662fa34a019e3df4807bd87ccf6e09c781be779a89a0ca3a066eb7` |
+| [tests/wbint-t32-exception-compatibility.integration.test.mts](../../../../../tests/wbint-t32-exception-compatibility.integration.test.mts) | 4/0/0 | PASS | `9a71a12213b3ae50ef70012b50e45d893e74c30a05042228753a74e42f5b356e` |
+| [tests/wbint-t32-exception-contract.test.mts](../../../../../tests/wbint-t32-exception-contract.test.mts) | 3/0/0 | PASS | `64e1ee9a4c7e7008e8b8c324b1ebcbc072504bacb2218c4437da99752cd1546e` |
+| [tests/wbint-t32-notification-exceptions.integration.test.mts](../../../../../tests/wbint-t32-notification-exceptions.integration.test.mts) | 1/0/0 | PASS | `00f88d3be2ed03ecc5aab37b11cba2a87ac8275277c0f59e7e8bf925653b592c` |
+| [tests/wbint-t32-session-exceptions.integration.test.mts](../../../../../tests/wbint-t32-session-exceptions.integration.test.mts) | 4/0/0 | PASS | `ec23c9f7f5a92470590fa34c4d1c8507083c95b8ae1fbe157fbc0049122a0bed` |
+| [tests/web01-workbench.browser.test.mjs](../../../../../tests/web01-workbench.browser.test.mjs) | 14/0/0 | PASS | `9143c39507596b7a80e341a8c85fd084451bdb4d64bbec5231f7ecb2715f85de` |
+| [tests/web01-workbench.integration.test.mjs](../../../../../tests/web01-workbench.integration.test.mjs) | 17/0/0 | PASS | `4ef0b6e4cf9e086f61b6cc6516c63cffad2dac78d649bff0ef4c436ecaf37496` |
+| [tests/web01-workbench.test.mts](../../../../../tests/web01-workbench.test.mts) | 9/0/0 | PASS | `c7512d5a94087fee69d88901fda0e975be72053878bbb1ea5ad5829ebf889033` |
+| [tests/workbench-detail-media.browser.test.mts](../../../../../tests/workbench-detail-media.browser.test.mts) | 1/0/0 | PASS | `2b299f87bcbc12491d74a35107abe56c98746078a0db70476ce593abc7238ad9` |
+| [tests/workbench-detail-restructure.browser.test.mts](../../../../../tests/workbench-detail-restructure.browser.test.mts) | 2/0/0 | PASS | `6df45a71b5b2ebb3874717c12cc35fa785d9c03ff86ecb9ae82ba854f948d60f` |
+| [tests/yxx-h5-admin-contracts.test.mts](../../../../../tests/yxx-h5-admin-contracts.test.mts) | 7/0/0 | PASS | `a9f1a4b6ef6709862f2bf41129353073c9420e82f93ab47f91935347f33f48f1` |
+| [tests/yxx-h5-application-auth.test.mts](../../../../../tests/yxx-h5-application-auth.test.mts) | 8/0/0 | PASS | `91d8f62f9ee0ebccbc24e5b85b53894df0dab45cffccdc0a5e6ebcb6ce8df64d` |
+| [tests/yxx-h5-flow.integration.test.mts](../../../../../tests/yxx-h5-flow.integration.test.mts) | 1/0/0 | PASS | `0873878ffd82f5d2be6451ca0f353316067b249cb1758e14b5bb6e4f05e66535` |
+| [tests/yxx-h5-frontend.test.mts](../../../../../tests/yxx-h5-frontend.test.mts) | 81/0/0 | PASS | `aebc452472272399fd59034456d19793efa79dd51f03881fae8ec757226ce3b6` |
+| [tests/yxx-h5-http.test.mts](../../../../../tests/yxx-h5-http.test.mts) | 22/0/0 | PASS | `5c19495dfdb74487a779c36be9c025687cf6ab562bce1e83f94de2fd4bbd3a43` |
+| [tests/yxx-h5-media.integration.test.mts](../../../../../tests/yxx-h5-media.integration.test.mts) | 6/0/0 | PASS | `a6a7a32a6ae67acc6bd6727f83a60704e84efbd02534272695c8b14dac482642` |
+| [tests/yxx-h5-media.test.mts](../../../../../tests/yxx-h5-media.test.mts) | 14/0/0 | PASS | `86cd22dd904cc03fcc0156e5794b4e91e24e033663062bb7e16f0e62aff2e934` |
+| [tests/yxx-h5-migrate.integration.test.mts](../../../../../tests/yxx-h5-migrate.integration.test.mts) | 11/0/0 | PASS | `2d57d021eefabb2573557ff92cdbfe0904d312a1750cf65fb028a53d49286a2d` |
+| [tests/yxx-h5-runtime.test.mts](../../../../../tests/yxx-h5-runtime.test.mts) | 19/0/0 | PASS | `072a3b4c279170792204d539d8fa19a6f0ff9ac2cfa91516c3ab24d551e66b25` |
+| [tests/yxx-h5-static.test.mts](../../../../../tests/yxx-h5-static.test.mts) | 14/0/0 | PASS | `3fdd697005133fdedeb29ed28171574df1304ba5ecf9fb33c6d2ada690421f83` |
+| [tests/yxx-h5-v2-contract.test.mts](../../../../../tests/yxx-h5-v2-contract.test.mts) | 8/0/0 | PASS | `5a7c5514d04c1ca17ae82d98635cdb91755a2732720e98e9c0e8cf250a1cf468` |
+| [tests/yxx-h5-v2.integration.test.mts](../../../../../tests/yxx-h5-v2.integration.test.mts) | 3/0/0 | PASS | `72eac34cfec9ecfab15767f204b1a71a4bd1fcb9dfadc424135f8cbb8cc43587` |
+| [tests/yxx-ss-007-native-http-errors.test.mjs](../../../../../tests/yxx-ss-007-native-http-errors.test.mjs) | 15/0/0 | PASS | `d427bd731b0812f943b4f469f0ce398aa96cdc2019171cd7022c4dfdb7b39cbe` |
+| [tests/yxx-ss-009-http-recovery.integration.test.mjs](../../../../../tests/yxx-ss-009-http-recovery.integration.test.mjs) | 2/0/0 | PASS | `111435e075245a7b90a371b891a51c387af00304d3a4ae89cf795ed1a50e3b93` |
+| [tests/yxx-ss-010-runtime.integration.test.mjs](../../../../../tests/yxx-ss-010-runtime.integration.test.mjs) | 6/0/0 | PASS | `56004c5cddb2354cbbe6c7c8e089817d346dc5f0ac1b413c7c660955a7d42983` |
+| [tools/ts-migration/backend-layout.test.mts](../../../../../tools/ts-migration/backend-layout.test.mts) | 13/0/0 | PASS | `37ebcfc620a342678ad773d615dd59953542670477821832b0e86d53bce9ad02` |
+| [tools/ts-migration/check-agent-docs.test.mts](../../../../../tools/ts-migration/check-agent-docs.test.mts) | 20/0/0 | PASS | `b4b2f744ded8438b83acb253ff7123611360f7f446b916bd001e2cbb461a2650` |
+| [tools/ts-migration/design-system.test.mts](../../../../../tools/ts-migration/design-system.test.mts) | 2/0/0 | PASS | `aa77cd906148a30a4c946004b2c3b994ab7a0d086c11485342c4ece61699ae7e` |
+| [tools/ts-migration/h5.test.mts](../../../../../tools/ts-migration/h5.test.mts) | 13/0/0 | PASS | `1683ed5be9f9cb1c20ab2d20f005047613f547064da2ab9b5904abe05cc004c7` |
+| [tools/ts-migration/hosts.test.mts](../../../../../tools/ts-migration/hosts.test.mts) | 29/0/0 | PASS | `fff2d15aa91350541ee6d7bb60726a11107bacea4bcae67f34894b866d2aad73` |
+| [tools/ts-migration/pr-plan.test.mts](../../../../../tools/ts-migration/pr-plan.test.mts) | 22/0/0 | PASS | `22bf63b7ba9b795f4da87af089256c92b16957729672b9c72f1256b99b850eb9` |
+| [tools/ts-migration/tooling.test.mts](../../../../../tools/ts-migration/tooling.test.mts) | 39/0/0 | PASS | `6c28d29567b2e0a230b4d053acc79eb7c3d3f55691bc2681c25b80dd593d4617` |
+| [tools/ts-migration/t02-expiry.test.mts](../../../../../tools/ts-migration/t02-expiry.test.mts) | 1/0/0 | PASS | `ff4af6f0d9cd5194e3a3b2fc6271894751cf9cf10f1f6d73092344b98748eea6` |
+
+收尾检查：5 份文档的 1658 个本地链接全部解析，目标均未被 Git 忽略；`git diff --check` 通过。证据目录共164个文件，`du -sh` 为4.7M（低于8MB）。受保护基线无差异，工作树 HEAD 保持 `fab99f0597114244d2be05535763f349406ecc1a`。
+
+原始图像归档边界：495 份本轮临时 PNG 在校验 SHA-256 后移入本地归档；另有 74 条 TAP 临时图路径在归档前已不存在，没有补造，原路径保留于 `screenshot-archive.json`。这些缺失临时图不作为本次独立截图证据；代码结论依据真实 HTTP、DOM/状态断言及逐文件结果。仓库内31张1440区域图和42张三联图完整保留，均仍属于原验收输入。
