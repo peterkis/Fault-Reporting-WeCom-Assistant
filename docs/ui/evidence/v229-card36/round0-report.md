@@ -98,7 +98,7 @@ standard=`cubic-bezier(.2,0,0,1)`; soft=`cubic-bezier(.16,1,.3,1)`; exit=`cubic-
 
 ## Commands and results
 
-All ran in this worktree. [Raw logs](checks/) preserve initial failures and final results.
+All ran in this worktree. The retained [check records](checks/) cover Card36A acceptance.
 
 | Command / entry | Result |
 | --- | --- |
@@ -109,7 +109,7 @@ All ran in this worktree. [Raw logs](checks/) preserve initial failures and fina
 | `node .build/tools/verify-artifact.mjs` | PASS `ARTIFACT_VERIFIED_NOT_ACTIVATED` |
 | `node --experimental-strip-types tests/pc-admin-copy-terms.test.mts` | PASS6/6 |
 | Final compiled frontend command below | PASS92/92: policy5, tools6, copy6, foundation75 |
-| Routed `runSelection` batches: pure / DB / remaining / canonical retry | Final unique64 entries, **531/531 PASS**; initial8 media failures preserved. [Summary](checks/nonbrowser-summary.json), [plan](checks/routed-plan.json) |
+| Routed non-browser regression | Final 64 entries, **531/531 PASS**. The initial run recorded 8 media failures. |
 | Seven compiled tool groups below | **138/138 PASS**; initial missing-python and Stylelint fixture RED preserved |
 | Compiled `pc-admin-card36a-motion.browser.test.mjs` | FAIL Chrome launch, 0 UI assertions |
 | Compiled `pc-admin-card29.browser.test.mjs` | FAIL same Chrome launch, 0 UI assertions |

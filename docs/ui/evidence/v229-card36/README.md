@@ -1,4 +1,52 @@
-# Card 36A — rework round 6
+# Card 36A — rework round 7
+
+PR #193 head `7ee8af73dfa581d4304decefc61a5ebd331992b0` against main `fd301d669311c9b45569a8231155845322147943`. The round 7 changes are uncommitted.
+
+### CI toolchain buffer failure
+
+Actions run `44444434321` passed the Card16 cases and then failed four H5 artifact subtests in `pr-database`. The H5 fixture clones with `--no-checkout`, so Git reports every tracked path as deleted. On this head, `identity()` calls `git status --porcelain` and exceeds Node's default 1 MiB output buffer (`spawnSync git ENOBUFS`). Earlier runs stopped in Card16 before reaching these H5 subtests.
+
+The migration toolchain now uses a shared 64 MiB `GIT_MAX_BUFFER` for status, file listings and diffs that scale with repository size. This includes `git()` and `workspaceFiles()`, PR planning, the ARCH-006 baseline fingerprints, pinned T02 classification and the clone tests' status calls. The change is outside Card36A's motion scope. The focused regression in the existing tooling suite builds a large Git index with a real file sorted past 1 MiB. Both helper subtests failed with `ENOBUFS` under the old defaults.
+
+### Evidence cleanup and Git measurements
+
+Removed 202 files from the four round-0 `checks/nonbrowser-*` directories. The round-0 report retains the final 64-entry result of 531/531 passing and records the 8 initial media failures. Reports, summaries outside those directories, and Card36A acceptance evidence are retained.
+
+| `git status --porcelain` from a clone with no checkout | Paths | Bytes |
+| --- | ---: | ---: |
+| Main `fd301d66` | 12,391 | 1,040,909 |
+| PR head `7ee8af73` | 12,663 | 1,066,740 |
+| Projected after the 202 worktree deletions are committed | 12,461 | 1,044,873 |
+
+The projection subtracts the 21,867 bytes for the deleted paths from the measured head output. The current Git `HEAD` still contains those paths. The H5 suite therefore exercises the original large tree. The working tree's porcelain output is 22,192 bytes, including the unstaged deletions and edits.
+
+### Round 7 verification
+
+| Check | Round 7 status |
+| --- | --- |
+| `npm run migration:typecheck` → `npm run migration:build` | PASS. Strict and negative types, 975/975 compiled syntax checks |
+| `node .build/tools/verify-artifact.mjs` | PASS. Artifact verified |
+| `npm run lint:css --prefix app/pc-admin` and `npm run lint:features --prefix app/pc-admin` | PASS |
+| Copy terms and compiled Node motion | PASS 6/6 and 16/16 |
+| Focused Git regression | RED before the buffer change. Both subtests reported `spawnSync git ENOBUFS`. GREEN after the change, 3/3 including the parent |
+| `TMPDIR=/private/tmp node .build/tools/h5.test.mjs` | PASS 13/13 on the unchanged committed head's large tree |
+| `TMPDIR=/private/tmp node --test .build/tools/tooling.test.mjs` | PASS 42/42, including ARCH-006 and the buffer regression |
+| Compiled `pr-plan.test.mjs` with CI's PyYAML 6.0.2 | PASS 22/22 |
+| Compiled `batches.test.mjs` | 11/17 in the full run. Batch CLI and source rename passed. The historical count and npm launcher failures reproduced on clean `7ee8af73` |
+| Compiled `t02-expiry.test.mjs` | 1/2. The frozen historical fixture also reported `T02_EXPIRY_NOT_PROVEN` on clean `7ee8af73` |
+| Link audit, `npm run docs:agents:check` and pr-plan `--check-docs` | PASS. Seven PR and Card36A Markdown files and the agent docs surface checked |
+| Compiled `check-agent-docs.test.mjs` | PASS 20/20 |
+| Browser and CI rerun on the round 7 tree | pending reviewer rerun |
+
+Run the RED/GREEN regression with `node --test --test-name-pattern='Git helpers read repository listings larger than 1 MiB' .build/tools/tooling.test.mjs`. The test stays in the existing toolchain profile. The first H5 run with macOS's default `/var/...` temp path got past Git and failed asset validation (`H5_BUILD_OUTPUT_INVALID`, 5/13 passed). The canonical `/private/tmp` reruns resolved the temp-path failures in H5 and `tooling.test.mjs`.
+
+An isolated checkout of the incoming head reproduced the remaining failures. Batch selections T04-04 and T04-03 resolve to 129 and 95 entries, against existing assertions of 131 and 96. The launcher tests reach `p1:preflight` and receive `P1_CONFIG_INVALID` in both trees. T02 returns the same historical proof rejection in both trees. `batches.test.mjs` and `t02-expiry.test.mjs` are outside the PR's toolchain profile. Their assertions and the historical inputs are retained.
+
+Build source input hash `6a7d43a3f09699b9131f64e6231d8444afcbeab10c1c31c2417ac99e93fa0a3c`. Verified manifest SHA-256 `570b5d8d8a68b6124cbbc579972babe5dd8522df1610dc4f38fa5def16f8f73b`. Local command logs are under `/private/tmp/card36a-r7-*.log`.
+
+---
+
+## Round 6 record (preserved)
 
 PR #193 head `e49412a7a8ce4a0bd03a9b5bc588931f8a4d9069`. In Actions run `44441567491`, `pr-database` passed Card16 arrivals 5/5 after the round 5 fix. The separate Card16 board keyboard case failed after 1.97s when `l` did not move focus into Processing. Its `j` and `k` assertions and the two other cases in that file passed.
 

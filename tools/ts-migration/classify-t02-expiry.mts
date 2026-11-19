@@ -3,7 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hash, record, safeFile, strings } from './common.mjs';
+import { GIT_MAX_BUFFER, hash, record, safeFile, strings } from './common.mjs';
 import { counts } from './run-tests.mjs';
 
 const HEAD='7eefaa99591bfaa2e787701efd315ff701c51f35';
@@ -15,7 +15,7 @@ const SCENARIOS=['orchestrator persists three entries, keeps threads separate an
 const DEADLINE=1791000000000;
 function pinned(root:string):void {
   const env={...process.env};for(const key of Object.keys(env))if(key.startsWith('GIT_'))delete env[key];
-  const git=(args:string[])=>execFileSync('git',['--no-replace-objects',...args],{cwd:root,env,encoding:'utf8',windowsHide:true}).trim();
+  const git=(args:string[])=>execFileSync('git',['--no-replace-objects',...args],{cwd:root,env,encoding:'utf8',windowsHide:true,maxBuffer:GIT_MAX_BUFFER}).trim();
   assert.equal(git(['rev-parse','HEAD']),HEAD);assert.equal(git(['rev-parse','HEAD^{tree}']),TREE);
   assert.equal(git(['rev-parse','--is-shallow-repository']),'false');assert.equal(git(['status','--porcelain']),'');
   assert.equal(git(['for-each-ref','--format=%(refname)','refs/replace']),'');

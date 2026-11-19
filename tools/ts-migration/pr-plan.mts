@@ -3,6 +3,7 @@ import {appendFileSync,readFileSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import type {Entry,Routes,Selection} from './routing.mjs';
+import {GIT_MAX_BUFFER} from './common.mjs';
 
 type Requirements={database:boolean;browser:boolean;pyyaml:boolean;ffmpeg:boolean;windows:boolean};
 type Profile={selections:string[];tools:string[];build:boolean;pyyaml:boolean;windows:boolean};
@@ -57,7 +58,7 @@ export function parseDiff(raw:string):Change[]{
   return changes;
 }
 export function diff(root:string,base:string,head='HEAD'):{base:string;head:string;changes:Change[]}{
-  const git=(args:string[])=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']});
+  const git=(args:string[])=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],maxBuffer:GIT_MAX_BUFFER});
   const resolve=(ref:string)=>{if(!ref||ref.startsWith('-')||/[\x00-\x20\x7f]/u.test(ref))throw Error('PR_BASE_HEAD_REQUIRED');try{return git(['rev-parse','--verify',ref+'^{commit}']).trim();}catch{throw Error('PR_BASE_HEAD_INVALID: '+ref);}};
   const b=resolve(base),h=resolve(head);
   return {base:b,head:h,changes:parseDiff(git(['diff','--name-status','--find-renames','-z',b,h,'--']))};
@@ -131,7 +132,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const args=process.argv.slice(2),options=new Map<string,string>();let execute=false,docs=false;
   while(args.length){const key=args.shift();if(key==='--run'){if(execute)throw Error('PR_ARGUMENTS');execute=true;continue;}if(key==='--check-docs'){if(docs)throw Error('PR_ARGUMENTS');docs=true;continue;}if(!key||!['--base','--head','--out','--report-dir'].includes(key)||options.has(key))throw Error('PR_ARGUMENTS');const value=args.shift();if(!value||value.startsWith('--'))throw Error('PR_ARGUMENTS');options.set(key,value);}
   const base=options.get('--base');if(!base)throw Error('PR_BASE_REQUIRED');
-  if(execute&&execFileSync('git',['status','--porcelain','-z'],{cwd:process.cwd(),encoding:'utf8',windowsHide:true}).length)throw Error('PR_EXECUTION_REQUIRES_CLEAN_HEAD');
+  if(execute&&execFileSync('git',['status','--porcelain','-z'],{cwd:process.cwd(),encoding:'utf8',windowsHide:true,maxBuffer:GIT_MAX_BUFFER}).length)throw Error('PR_EXECUTION_REQUIRES_CLEAN_HEAD');
   const plan=await createPlan(process.cwd(),base,options.get('--head'));
   if(docs){const {checkAgentDocs}=await import('./check-agent-docs.mjs');const issues=checkAgentDocs(process.cwd(),plan.changes.flatMap(c=>c.paths));if(issues.length)throw Error('PR_DOCUMENT_LINKS: '+JSON.stringify(issues));}
   const json=JSON.stringify(plan,null,2)+'\n';const out=options.get('--out');if(out)writeFileSync(out,json);else process.stdout.write(json);

@@ -7,7 +7,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadRoutes, testEnvironment } from './routing.mjs';
 import { batchSelection } from './batches.mjs';
-import { record, sourceRoot, workspaceFiles } from './common.mjs';
+import { GIT_MAX_BUFFER, record, sourceRoot, workspaceFiles } from './common.mjs';
 import { findNpmLauncher, runNpm } from './npm-launcher.mjs';
 import {ownedSpawnSync} from './owned-process.mjs';
 
@@ -117,7 +117,7 @@ function createBatchFixture(){
   execFileSync(process.execPath, ['--experimental-strip-types', 'tools/ts-migration/bootstrap.mts'], { cwd: root, windowsHide: true, stdio: 'pipe' });
   // Finish the copied clone's index refresh before timing each real gate.
   // Every gate still rechecks the complete current source identity.
-  execFileSync('git', ['status', '--porcelain'], { cwd: root, windowsHide: true, stdio: 'pipe' });
+  execFileSync('git', ['status', '--porcelain'], { cwd: root, windowsHide: true, stdio: 'pipe', maxBuffer: GIT_MAX_BUFFER });
   const file = 'tests/platform-time-contract.test.mjs';
   const registry = path.join(root, 'plans/typescript-migration/batches.json');
   const doc = record(JSON.parse(readFileSync(registry, 'utf8')) as unknown);

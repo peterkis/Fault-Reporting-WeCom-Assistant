@@ -9,6 +9,7 @@ import {assertBackendLayout,assertSharedBoundary,BACKEND_LAYOUT_BASE,isProductio
 export { sourceRoot, noLinks, cleanGenerated, controlledBuildRoot } from './bootstrap.mjs';
 
 export const CONFIGS = ['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json'] as const;
+export const GIT_MAX_BUFFER = 64 * 1024 * 1024;
 export type FileDigest = { path: string; sha256: string };
 export type OutputFile = FileDigest & { source: string; kind: 'COMPILED' | 'LEGACY' | 'RESOURCE' | 'WEB' };
 export type SourceIdentity = { head: string; tree: string; dirty: boolean; input_hash: string; inputs: FileDigest[] };
@@ -34,9 +35,11 @@ export function strings(value: unknown): string[] {
   if (!Array.isArray(value) || !value.every((v: unknown) => typeof v === 'string') || new Set(value).size !== value.length) throw new Error('MIGRATION_STRING_ARRAY_REQUIRED');
   return value;
 }
-export function git(root: string, args: string[]): string { return execFileSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, stdio: ['ignore','pipe','pipe'] }).trim(); }
+export function git(root: string, args: string[]): string {
+  return execFileSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, stdio: ['ignore','pipe','pipe'], maxBuffer: GIT_MAX_BUFFER }).trim();
+}
 export function workspaceFiles(root: string): string[] {
-  const raw = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8', windowsHide: true });
+  const raw = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: GIT_MAX_BUFFER });
   return [...new Set(raw.split('\0').filter(Boolean))].filter(p => existsSync(path.join(root, p))).sort();
 }
 // T00 was independently reviewed and merged; current policy edits cannot silently

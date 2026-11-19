@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hash, sourceRoot } from './common.mjs';
+import { GIT_MAX_BUFFER, hash, sourceRoot } from './common.mjs';
 
 // Independently reviewed PR #37 / T04-05 at 1911d364e48530683032f8856c41678c80f69dc9.
 // The fingerprint includes every path, old/new mode, full blob ID and change type.
@@ -18,9 +18,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const base = process.env.EXPECTED_BASE;
   assert.equal(base, REVIEWED_BASE, 'ARCH006_REVIEWED_BASE_REQUIRED');
   const root = sourceRoot();
-  const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...RUNTIME_SCOPE], { cwd: root, encoding: 'utf8', windowsHide: true });
+  const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...RUNTIME_SCOPE], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: GIT_MAX_BUFFER });
   assert.equal(dirty, '', 'ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT');
-  const delta = execFileSync('git', ['diff', '--raw', '--full-index', '--no-abbrev', '--no-renames', '-z', base, 'HEAD', '--', ...RUNTIME_SCOPE], { cwd: root, windowsHide: true });
+  const delta = execFileSync('git', ['diff', '--raw', '--full-index', '--no-abbrev', '--no-renames', '-z', base, 'HEAD', '--', ...RUNTIME_SCOPE], { cwd: root, windowsHide: true, maxBuffer: GIT_MAX_BUFFER });
   assert.equal(hash(delta), REVIEWED_RUNTIME_DELTA, 'ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT');
   const reference = readFileSync(path.join(reportDir, 'base-arch006.txt'), 'utf8');
   const current = readFileSync(path.join(reportDir, 'current-arch006.txt'), 'utf8');

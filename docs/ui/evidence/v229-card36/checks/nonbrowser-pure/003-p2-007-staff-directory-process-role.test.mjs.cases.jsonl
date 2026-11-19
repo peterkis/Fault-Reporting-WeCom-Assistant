@@ -1,1 +1,0 @@
-{"event_time":"2026-11-18 23:47:27","event_epoch_ms":"1795016847685","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"both deployed launchers forward enabled directory options only to the owning roles","file":"tests/p2-007-staff-directory-process-role.test.mjs","line":40,"nesting":0,"skip":false,"todo":false}

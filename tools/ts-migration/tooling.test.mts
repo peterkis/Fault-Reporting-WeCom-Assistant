@@ -10,13 +10,42 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import { build,buildSyntaxEvidence } from './build.mjs';
 import { verifyArtifact,runtimeOutputInventory } from './verify-artifact.mjs';
-import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles,runNode,git as runGit,hash,record } from './common.mjs';
+import { GIT_MAX_BUFFER, cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles,runNode,git as runGit,hash,record } from './common.mjs';
 import {checkCompiledSyntax} from './syntax-check.mjs';
 import {typecheckWeb,finalizeDesktopLogin} from './web.mjs';
 import {ownedSpawnSync,launchOwnedProcess} from './owned-process.mjs';
 import {cssGate} from './gate.mjs';
 
 const original = sourceRoot();
+
+test('Git helpers read repository listings larger than 1 MiB', async t => {
+  const root = mkdtempSync(path.join(tmpdir(), 'migration-git-buffer-'));
+  try {
+    const gitOptions = { cwd: root, encoding: 'utf8' as const, windowsHide: true };
+    execFileSync('git', ['init', '--quiet'], gitOptions);
+    const blob = execFileSync('git', ['hash-object', '-w', '--stdin'], { ...gitOptions, input: '' }).trim();
+    const missing = Array.from({length: 5000}, (_, index) => String(index).padStart(4, '0') + '-' + 'x'.repeat(210));
+    const present = 'present.txt';
+    const entries = [...missing, present].map(file => `100644 ${blob}\t${file}\0`).join('');
+    // An index-only inventory exercises the real Git output without creating thousands of files.
+    execFileSync('git', ['update-index', '-z', '--index-info'], { ...gitOptions, input: entries });
+    writeFileSync(path.join(root, present), '');
+
+    await t.test('git returns the complete porcelain status', () => {
+      const status = runGit(root, ['status', '--porcelain']);
+      assert.ok(Buffer.byteLength(status) > 1024 * 1024);
+      const lines = status.split('\n');
+      assert.equal(lines.length, missing.length + 1);
+      assert.equal(lines.at(-1), 'A  ' + present);
+    });
+    await t.test('workspaceFiles finds the tracked file beyond the old limit', () => {
+      assert.ok(Buffer.byteLength(missing.join('\0')) > 1024 * 1024);
+      assert.deepEqual(workspaceFiles(root), [present]);
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('CSS gate accepts semantic tokens and rejects forbidden visual values',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'migration-css-gate-'));
@@ -401,7 +430,7 @@ test('ARCH-006 CLI rejects content changes within an already reviewed path', () 
     if (process.platform !== 'win32') chmodSync(file, 0o755);
     execFileSync('git', ['update-index', '--chmod=+x', 'src/p1-001-pilot-foundation.mts'], { cwd: root, windowsHide: true });
     execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic runtime mode regression'], { cwd: root, windowsHide: true });
-    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim(), '', 'the mode regression must be a clean committed object');
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: GIT_MAX_BUFFER }).trim(), '', 'the mode regression must be a clean committed object');
     assert.match(run().stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
     execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
     for (const relative of ['database/migrations/999_synthetic.sql', 'evidence/synthetic-rewrite.json']) {

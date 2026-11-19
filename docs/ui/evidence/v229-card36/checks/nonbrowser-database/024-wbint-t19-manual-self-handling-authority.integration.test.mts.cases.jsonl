@@ -1,1 +1,0 @@
-{"event_time":"2026-11-18 23:49:17","event_epoch_ms":"1795016957648","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"T19 replay rechecks current selected-group authority after an actual original receipt row-lock wait","file":"tests/wbint-t19-manual-self-handling-authority.integration.test.mjs","line":6,"nesting":0,"skip":false,"todo":false}
