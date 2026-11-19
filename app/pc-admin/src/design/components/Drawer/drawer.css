@@ -2,13 +2,13 @@
 .ds-drawer-backdrop.workbench-drawer-backdrop {padding: var(--space-2); background: var(--bg-overlay); z-index: var(--z-drawer);}
 .ds-drawer-content.workbench-drawer-content {inset: var(--space-2); width: auto; max-width: none; height: calc(100dvh - var(--space-4)); margin: 0; padding: 0; background: transparent; border-radius: var(--radius-lg);}
 .ds-drawer-content>.ds-drawer.detail-dialog {position: relative; inset: auto; width: min(var(--drawer-w),calc(100vw - var(--space-4))); max-width: 100%; height: calc(100dvh - var(--space-4)); max-height: calc(100dvh - var(--space-4)); padding: 0; border: 0; border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-4); overflow: auto; overscroll-behavior: contain;}
-.ds-drawer-content[data-entering] {animation: ds-drawer-enter var(--dur-slow) var(--ease-standard);}
-.ds-drawer-content[data-exiting] {animation: ds-drawer-enter var(--dur-slow) var(--ease-exit) reverse;}
 .ds-drawer-content>.ds-drawer {translate: none; transition: none;}
 .ds-drawer-content>.ds-detail.ds-drawer[role=dialog]:focus-visible {outline: none;}
 .ds-drawer-content[data-entering]>.ds-drawer,.ds-drawer-content[data-exiting]>.ds-drawer {translate: none;}
-.ds-drawer-backdrop {transition: opacity var(--dur-slow) var(--ease-standard);}
-@keyframes ds-drawer-enter {from {opacity: 0; transform: translateX(var(--space-4));} to {opacity: 1; transform: translateX(0);}}
+.ds-detail-toolbar-slot {display: contents;}
+.ds-detail-body-stage {position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;}
+.ds-detail-body-live {display: flex; flex-direction: column; flex: 1; min-height: 0;}
+.ds-detail-body-exit {position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; overflow: hidden; pointer-events: none;}
 .ds-detail .detail-navigation {min-width: 0; padding: var(--space-1-5) var(--space-4); gap: var(--space-2);}
 .ds-detail .detail-breadcrumb {min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
 .ds-detail .detail-toolbar-actions {margin-left: auto; flex: none; gap: var(--space-1);}
@@ -45,7 +45,7 @@
 .ds-detail .report-materials.ds-section .detail-attachments {padding: 0;}
 .ds-detail .detail-voice {padding: var(--space-2) var(--space-3); background: var(--bg-subtle); border-radius: var(--radius-md);}
 @media(max-width:640px) {.ds-detail .detail-body {padding: var(--space-4);} .ds-detail .ds-drawer-actions {flex-wrap: wrap;} .ds-drawer-command-buttons {margin-left: auto; flex-wrap: wrap;} .ds-detail .detail-breadcrumb {flex: 1;} }
-@media(prefers-reduced-motion:reduce) {.ds-drawer-content[data-entering],.ds-drawer-content[data-exiting] {animation: none;} .ds-drawer-more>summary,.ds-drawer-backdrop {transition: none;}}
+@media(prefers-reduced-motion:reduce) {.ds-drawer-more>summary {transition: none;}}
 
 /* Card 29 K6: the ⋯ disclosure reads as a standard menu; closing is a separated danger item. */
 .ds-drawer-more>.ds-drawer-more-panel {--radius-menu:calc(var(--radius-md) + var(--space-0-5));width:calc(var(--space-5) * 11);min-width:0;padding:var(--space-1);border-radius:var(--radius-menu);}

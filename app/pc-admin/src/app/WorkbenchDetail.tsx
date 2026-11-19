@@ -3,8 +3,14 @@ import {ClosureHistory} from '../features/ticket-waiting/ClosureHistory';
 import type {StepReadState} from '../design/components/Drawer/NextStep';
 import { useInfiniteQuery,useQuery } from '@tanstack/react-query';
 import { ArrowLeft,ArrowUpRight,Building2,Check,ChevronDown,ChevronUp,CircleX,Clock3,Copy,Headset,MapPin,Pause,Phone,Radio,Ticket,TriangleAlert,UserRound,X } from 'lucide-react';
-import { useCallback,useEffect,useLayoutEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'react';
+import type { RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation,useNavigate,useParams } from 'react-router';
+import { scrollIntoViewAndReturnCue } from '../design/motion/return-cue';
+import type { ReturnCueHandle } from '../design/motion/return-cue';
+import { startDetailBodyEnter,startDetailBodyExit,startFullPageDetailEnter } from '../design/motion/detail-switch';
+import type { DetailSwitchDirection } from '../design/motion/detail-switch';
 import type { Principal,WorkbenchCard,WorkbenchDetail } from '../api/client';
 import { api,ApiError,errorMessage,statusLabels } from '../api/client';
 import { Button,Button as HButton } from '../design/components/Button/Button';
@@ -78,20 +84,155 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
     {missing.length?<div className="property-field property-wide ds-detail-missing"><dt className="sr-only">缺失资料</dt><dd><TriangleAlert size={15}/><span>未提供：{missing.join('、')}</span></dd></div>:null}
   </PropertyList>;
 }
-type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void};
+type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open?:boolean;itemKind?:string;itemId?:string;onNavigationBlocked:(blocked:boolean)=>void};
+type HeaderMeta={targetKey:string;kind?:string;number?:string;title?:string;denied:boolean};
+type SwitchState={seq:number;targetKey:string;direction:DetailSwitchDirection;byButton:boolean};
+
+function escapeAttr(value:string):string{
+  return typeof CSS!=='undefined'&&typeof CSS.escape==='function'?CSS.escape(value):value.replace(/["\\]/gu,'\\$&');
+}
 
 export function WorkbenchDetailDrawer(props:DetailProps){
-  const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation();
+  return <ReadOnlyOperationProvider><WorkbenchDetailSurface {...props}/></ReadOnlyOperationProvider>;
+}
+
+function WorkbenchDetailSurface(props:DetailProps){
+  const params=useParams(),navigate=useNavigate(),location=useLocation();
+  const pendingOperation=useReadOnlyOperation();
+  const rawKind=props.itemKind!==undefined?props.itemKind:(params.kind??'');
+  const rawId=props.itemId!==undefined?props.itemId:(params.id??'');
+  const isOpen=props.open!==undefined?props.open:Boolean(rawKind&&rawId);
+  const activeTarget=isOpen&&rawKind&&rawId?{kind:rawKind,id:rawId}:null;
+  const [retained,setRetained]=useState<{kind:string;id:string}|null>(props.fullPage?null:activeTarget);
+  if(props.fullPage){if(retained!==null)setRetained(null);}
+  else if(activeTarget&&(retained?.kind!==activeTarget.kind||retained?.id!==activeTarget.id))setRetained(activeTarget);
+  const target=props.fullPage?activeTarget:(activeTarget??retained);
+  const targetKey=target?target.kind+':'+target.id:'';
+  const lastViewedRef=useRef<{kind:string;id:string}|null>(activeTarget);
+  if(activeTarget)lastViewedRef.current=activeTarget;
+  const fullPageRef=useRef(props.fullPage);fullPageRef.current=props.fullPage;
   const [dismissBlocked,setDismissBlocked]=useState(false),blocked=useRef(false);
   const onNavigationBlocked=props.onNavigationBlocked;
   const reportBlocked=useCallback((value:boolean)=>{blocked.current=value;setDismissBlocked(value);onNavigationBlocked(value);},[onNavigationBlocked]);
-  const close=()=>{if(blocked.current)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
-  // Keep the overlay's focus/restore scope while each requested item owns fresh controllers.
-  const content=<WorkbenchDetailContent key={props.principal.principal_id+':'+kind+':'+id} {...props} onNavigationBlocked={reportBlocked} onClose={close}/>;
-  return <ReadOnlyOperationProvider>{props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-label="事项详情" aria-labelledby="detail-title">{content}</article>:<Drawer dismissBlocked={dismissBlocked} onClose={close}>{content}</Drawer>}</ReadOnlyOperationProvider>;
+  const [breadcrumbSlot,setBreadcrumbSlot]=useState<HTMLSpanElement|null>(null);
+  const [presenceTarget,setPresenceTarget]=useState<HTMLSpanElement|null>(null);
+  const [toolbarActionsSlot,setToolbarActionsSlot]=useState<HTMLSpanElement|null>(null);
+  const [headerMeta,setHeaderMeta]=useState<HeaderMeta|null>(null);
+  const [switchState,setSwitchState]=useState<SwitchState|null>(null);
+  const switchSeqRef=useRef(0),prevTargetKeyRef=useRef(targetKey);
+  const requestedTargetRef=useRef<{kind:string;id:string}|null>(activeTarget);
+  const inFlightKeysRef=useRef<Set<string>>(new Set());
+  if(!isOpen||props.fullPage){
+    requestedTargetRef.current=activeTarget;
+    inFlightKeysRef.current.clear();
+  }else if(inFlightKeysRef.current.size===0){
+    requestedTargetRef.current=activeTarget;
+  }
+  const navRef=useRef<HTMLDivElement|null>(null),stageRef=useRef<HTMLDivElement|null>(null),liveRef=useRef<HTMLDivElement|null>(null);
+  const activeExitRef=useRef<(()=>void)|null>(null),activeEnterRef=useRef<(()=>void)|null>(null);
+  const returnCueRef=useRef<ReturnCueHandle|null>(null);
+  useEffect(()=>{if(isOpen){returnCueRef.current?.cancel();returnCueRef.current=null;}},[isOpen]);
+  useEffect(()=>()=>{
+    returnCueRef.current?.cancel();returnCueRef.current=null;
+    activeExitRef.current?.();activeExitRef.current=null;
+    activeEnterRef.current?.();activeEnterRef.current=null;
+  },[]);
+  useLayoutEffect(()=>{
+    const previousKey=prevTargetKeyRef.current;prevTargetKeyRef.current=targetKey;
+    if(!isOpen){
+      inFlightKeysRef.current.clear();
+      requestedTargetRef.current=null;
+      if(switchState!==null)setSwitchState(null);
+      return;
+    }
+    if(!targetKey)return;
+    const requested=requestedTargetRef.current,requestedKey=requested?requested.kind+':'+requested.id:'';
+    if(inFlightKeysRef.current.has(targetKey)){
+      if(targetKey===requestedKey)inFlightKeysRef.current.clear();
+      return;
+    }
+    if(previousKey&&previousKey!==targetKey){
+      inFlightKeysRef.current.clear();
+      requestedTargetRef.current=activeTarget;
+      activeExitRef.current?.();activeExitRef.current=null;
+      activeEnterRef.current?.();activeEnterRef.current=null;
+      if(switchState!==null)setSwitchState(null);
+    }
+  },[targetKey,isOpen,switchState]);
+  const registerEnterCancel=useCallback((cancel:()=>void)=>{
+    activeEnterRef.current?.();
+    activeEnterRef.current=cancel;
+  },[]);
+  const handleDrawerExited=useCallback(()=>{
+    activeExitRef.current?.();activeExitRef.current=null;
+    activeEnterRef.current?.();activeEnterRef.current=null;
+    inFlightKeysRef.current.clear();
+    requestedTargetRef.current=null;
+    setSwitchState(null);
+    setRetained(null);
+    if(fullPageRef.current)return;
+    const viewed=lastViewedRef.current;if(!viewed)return;
+    const selector=`.ticket-card[data-kind="${escapeAttr(viewed.kind)}"][data-item-id="${escapeAttr(viewed.id)}"], .ds-work-row[data-kind="${escapeAttr(viewed.kind)}"][data-item-id="${escapeAttr(viewed.id)}"]`;
+    const candidate=[...document.querySelectorAll<HTMLElement>(selector)].find(node=>
+      node.getClientRects().length>0&&!node.closest('[hidden], .disclosure__content:not([data-expanded=true]), .ds-collapse:not([data-expanded=true])'),
+    );
+    if(!candidate)return;
+    returnCueRef.current?.cancel();
+    returnCueRef.current=scrollIntoViewAndReturnCue(candidate);
+  },[]);
+  const close=()=>{if(blocked.current||!isOpen)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:''),{replace:true});};
+  const index=target?props.items.findIndex(item=>item.kind===target.kind&&item.id===target.id):-1;
+  const previous=index>0?props.items[index-1]:undefined,next=index>=0?props.items[index+1]:undefined;
+  const move=(direction:DetailSwitchDirection)=>{
+    if(!isOpen||blocked.current)return;
+    const cursor=requestedTargetRef.current??target;
+    if(!cursor)return;
+    const cursorIndex=props.items.findIndex(entry=>entry.kind===cursor.kind&&entry.id===cursor.id);
+    if(cursorIndex<0)return;
+    const nextIndex=direction==='next'?cursorIndex+1:cursorIndex-1;
+    const item=nextIndex>=0&&nextIndex<props.items.length?props.items[nextIndex]:undefined;
+    if(!item)return;
+    const nextKey=item.kind+':'+item.id;
+    requestedTargetRef.current={kind:item.kind,id:item.id};
+    inFlightKeysRef.current.add(nextKey);
+    activeExitRef.current?.();activeExitRef.current=null;
+    activeEnterRef.current?.();activeEnterRef.current=null;
+    if(!props.fullPage&&stageRef.current&&liveRef.current)activeExitRef.current=startDetailBodyExit(stageRef.current,liveRef.current,direction);
+    const seq=++switchSeqRef.current;
+    setSwitchState({seq,targetKey:nextKey,direction,byButton:true});
+    void navigate(itemLink(item,location.search),{replace:true,state:location.state});
+  };
+  if(!target)return null;
+  const matchedHeader=headerMeta&&headerMeta.targetKey===targetKey?headerMeta:null;
+  const denied=matchedHeader?.denied===true;
+  const openedItem=denied?undefined:props.items.find(item=>item.kind===target.kind&&item.id===target.id);
+  const displayKind=matchedHeader?.kind??openedItem?.kind??target.kind;
+  const displayNumber=matchedHeader?.number??openedItem?.number;
+  const displayTitle=matchedHeader?.title??openedItem?.title;
+  const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
+  const activeSwitch=switchState&&switchState.targetKey===targetKey?switchState:null;
+  const switchPending=Boolean(switchState&&switchState.targetKey!==targetKey);
+  // Keep the overlay & toolbar persistent across prev/next while each requested item owns fresh controllers.
+  const surface=<DisabledReasonContext.Provider value={pendingOperation?readOnlyCopy('pending').reason:null}>
+    <div className="detail-navigation" data-toast-avoid="top" ref={navRef}>
+      <div className="detail-breadcrumb" title={displayTitle}><Ticket size={17}/><span>{displayKind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{displayNumber??'读取中'}</span><span className="ds-detail-toolbar-slot" ref={setBreadcrumbSlot}/></div>
+      <div className="detail-toolbar-actions">
+        <span className="ds-presence-capsule-slot" ref={setPresenceTarget}/>
+        {!props.fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||dismissBlocked} onClick={()=>move('prev')} tone="ghost"><ChevronUp size={17}/></HButton><span className="ds-detail-position" aria-label="已加载范围中的位置">{index>=0?index+1:'—'} / {props.items.length}</span><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||dismissBlocked} onClick={()=>move('next')} tone="ghost"><ChevronDown size={17}/></HButton><span className="ds-detail-toolbar-divider" aria-hidden="true"/><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(dismissBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
+        <span className="ds-detail-toolbar-slot" ref={setToolbarActionsSlot}/>
+        <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={dismissBlocked} onClick={close} tone="ghost">{props.fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
+      </div>
+    </div>
+    <div className="ds-detail-body-stage" ref={stageRef}>
+      <div className="ds-detail-body-live" ref={liveRef}>
+        <WorkbenchDetailContent key={props.principal.principal_id+':'+target.kind+':'+target.id} principal={props.principal} items={props.items} now={props.now} fullPage={props.fullPage} open={isOpen} kind={target.kind} id={target.id} onNavigationBlocked={reportBlocked} onHeaderMeta={setHeaderMeta} breadcrumbSlot={breadcrumbSlot} presenceTarget={presenceTarget} toolbarActionsSlot={toolbarActionsSlot} activeSwitch={activeSwitch} switchPending={switchPending} navRef={navRef} liveRef={liveRef} registerEnterCancel={registerEnterCancel}/>
+      </div>
+    </div>
+  </DisabledReasonContext.Provider>;
+  return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-label="事项详情" aria-labelledby="detail-title">{surface}</article>:<Drawer isOpen={isOpen} dismissBlocked={dismissBlocked} onClose={close} onExited={handleDrawerExited}>{surface}</Drawer>;
 }
 
-function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocked,onClose}:DetailProps&{onClose:()=>void}){
+function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNavigationBlocked,onHeaderMeta,breadcrumbSlot,presenceTarget,toolbarActionsSlot,activeSwitch,switchPending,navRef,liveRef,registerEnterCancel}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open:boolean;kind:string;id:string;onNavigationBlocked:(blocked:boolean)=>void;onHeaderMeta:(meta:HeaderMeta)=>void;breadcrumbSlot:HTMLElement|null;presenceTarget:HTMLElement|null;toolbarActionsSlot:HTMLElement|null;activeSwitch:SwitchState|null;switchPending:boolean;navRef:RefObject<HTMLDivElement|null>;liveRef:RefObject<HTMLDivElement|null>;registerEnterCancel:(cancel:()=>void)=>void}){
   const pendingOperation=useReadOnlyOperation();
   const [readOnlyActionTarget,setReadOnlyActionTarget]=useState<HTMLDivElement|null>(null);
   const [tab,setTab]=useState('activity'),[copied,setCopied]=useState(false),[attachmentCount,setAttachmentCount]=useState<number|null>(null),[conversationCount,setConversationCount]=useState<number|null>(null),[reviewReadState,setReviewReadState]=useState<StepReadState>('pending');
@@ -99,13 +240,12 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const [reopenBlocked,setReopenBlocked]=useState(false),[followUpBlocked,setFollowUpBlocked]=useState(false),[itemFollowBlocked,setItemFollowBlocked]=useState(false),[supplementBlocked,setSupplementBlocked]=useState(false);
   const [urgencyTarget,setUrgencyTarget]=useState<HTMLDivElement|null>(null);
   const [noteActionsTarget,setNoteActionsTarget]=useState<HTMLDivElement|null>(null),[menuActionsTarget,setMenuActionsTarget]=useState<HTMLDivElement|null>(null);
-  const [presenceTarget,setPresenceTarget]=useState<HTMLSpanElement|null>(null);
   const [webReportBlocked,setWebReportBlocked]=useState(false),[completionOpen,setCompletionOpen]=useState(false),[mediaOpen,setMediaOpen]=useState(false);
   const blockers={note:internalNoteBlocked,group:groupBlocked,handling:handlingBlocked,review:reviewBlocked,completion:completionBlocked,assignment:assignmentBlocked,takeover:takeoverBlocked,takeoverCompletion:takeoverCompletionBlocked,unassign:unassignBlocked,returnToDispatch:returnBlocked,waiting:waitingBlocked,reopen:reopenBlocked,followUp:followUpBlocked,follow:itemFollowBlocked,supplement:supplementBlocked,webReport:webReportBlocked};
   const blockedByOther=(purpose:keyof typeof blockers)=>Object.entries(blockers).some(([name,value])=>name!==purpose&&value);
   const otherCommandsBlocked=blockedByOther('webReport'),commandsBlocked=Object.values(blockers).some(Boolean);
   useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
-  const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),pageHeading=useRef<HTMLHeadingElement>(null);
+  const location=useLocation(),pageHeading=useRef<HTMLHeadingElement>(null);
   const routeState:unknown=location.state;
   const route=routeState&&typeof routeState==='object'?routeState as Record<string,unknown>:null;
   const parsedBoardIntent=readBoardIntent(route?.boardActionIntent);
@@ -118,9 +258,11 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
     queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
   const loading=useDelayedLoading(result.isPending&&!result.data);
-  const close=()=>{if(!commandsBlocked)onClose();};
+  const sawSkeletonRef=useRef(false),consumedSwitchSeqRef=useRef(-1);
+  if(loading.visible)sawSkeletonRef.current=true;
   const activityRoot=useRef<HTMLDivElement>(null);
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
+  const firstPageRecordIds=useMemo(()=>detail?new Set(detail.records.map(record=>record.id)):undefined,[detail]);
   // Card 34B: the take-over and hand-over facts enrich the matching timeline events instead of a card of their own.
   // It reads only while the detail itself is readable, as the former card did by being mounted inside it.
   const assignments=useAssignmentHistory(detail?.item.id??id,principal,detail?.item.kind==='ticket'&&Boolean(principal.assignment_history_enabled)&&result.isSuccess&&!result.isError);
@@ -132,18 +274,59 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
   if(detail?.item.kind==='ticket'&&principal.follow_up_schedules_enabled)states.push(scheduleRead.isPending?'pending':scheduleRead.isError?'unknown':'ready');
   if(principal.manual_review_enabled&&(kind==='review'||Boolean(detail?.review_refs?.length)))states.push(reviewReadState);
   const stepReadState:StepReadState=states.includes('pending')?'pending':states.includes('unknown')?'unknown':'ready';
+  const denied=result.error instanceof ApiError&&result.error.status===403;
+  const openedItem=denied?undefined:items.find(item=>item.kind===kind&&item.id===id);
+  const targetKey=kind+':'+id;
+  useLayoutEffect(()=>{
+    onHeaderMeta({targetKey,denied,...(detail?{kind:detail.item.kind,number:detail.item.number,title:detail.item.title}:{})});
+  },[onHeaderMeta,targetKey,denied,detail?.item.kind,detail?.item.number,detail?.item.title]);
   // Re-reading an open item must not take focus from an editor or move its target.
-  const detailPresent=Boolean(detail);
-  useLayoutEffect(()=>{if(!fullPage&&detailPresent)pageHeading.current?.focus({preventScroll:true});},[fullPage,detailPresent,kind,id]);
-  useEffect(()=>{if(fullPage&&detailPresent)pageHeading.current?.focus();},[fullPage,detailPresent,kind,id]);
-  const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
-  const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
-  const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
+  // Button-driven prev/next keeps focus on the pressed navigation button only while it stays the active,
+  // connected, enabled element inside the drawer; otherwise fall back to focusing the new item's heading.
+  const detailPresent=Boolean(detail),activeSwitchRef=useRef(activeSwitch),switchPendingRef=useRef(switchPending);
+  activeSwitchRef.current=activeSwitch;switchPendingRef.current=switchPending;
+  useLayoutEffect(()=>{
+    if(fullPage||!open||!detailPresent||loading.visible||switchPendingRef.current)return;
+    const switched=activeSwitchRef.current;
+    const navButton=switched?.byButton?navRef.current?.querySelector<HTMLButtonElement>(switched.direction==='prev'?'.detail-previous':'.detail-next')??null:null;
+    const keepNavFocus=Boolean(
+      navButton&&
+      navButton.isConnected&&
+      !navButton.disabled&&
+      !navButton.matches(':disabled')&&
+      navButton.getAttribute('aria-disabled')!=='true'&&
+      document.activeElement===navButton&&
+      navButton.closest('.detail-dialog')?.contains(document.activeElement),
+    );
+    if(!keepNavFocus)pageHeading.current?.focus({preventScroll:true});
+  },[fullPage,open,detailPresent,loading.visible,navRef,kind,id]);
+  useEffect(()=>{if(fullPage&&detailPresent&&!loading.visible)pageHeading.current?.focus();},[fullPage,detailPresent,loading.visible,kind,id]);
+  // C1 full-page detail fade via WAAPI so effect.getTiming() carries --dur-fast and --ease-standard.
+  useLayoutEffect(()=>{
+    if(!fullPage||!open||!detailPresent||loading.visible)return;
+    const view=activityRoot.current;if(!view)return;
+    return startFullPageDetailEnter(view);
+  },[fullPage,open,detailPresent,loading.visible,kind,id]);
+  // Reset scroll to top once per item and play the C2 body enter transition once content is ready for a switched item.
+  const switchSeq=activeSwitch?.seq??-1,switchDir=activeSwitch?.direction;
+  const errorWithoutDetail=Boolean(result.isError&&!detail),scrolledTopRef=useRef(false);
+  useLayoutEffect(()=>{
+    if(!open||fullPage||loading.visible)return;
+    if(!scrolledTopRef.current){
+      const body=activityRoot.current?.querySelector<HTMLElement>('.detail-body');
+      if(body){body.scrollTop=0;scrolledTopRef.current=true;}
+    }
+    const ready=detailPresent||errorWithoutDetail;
+    if(!ready||!switchDir||switchSeq<0||consumedSwitchSeqRef.current===switchSeq)return;
+    const live=liveRef.current;if(!live)return;
+    const mode=sawSkeletonRef.current?'fade':switchDir;
+    const cancel=startDetailBodyEnter(live,mode,()=>{consumedSwitchSeqRef.current=switchSeq;});
+    registerEnterCancel(cancel);
+    return cancel;
+  },[open,fullPage,loading.visible,detailPresent,errorWithoutDetail,switchSeq,switchDir,liveRef,registerEnterCancel]);
   const heat=detail?cardHeat(detail.item,now):null;
   // Card 29 D1/D2: a dismissed item is gray 「已关闭」, not the completed stage, and its next step is the neutral restore card.
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
-  const denied=result.error instanceof ApiError&&result.error.status===403;
-  const openedItem=denied?undefined:items.find(item=>item.kind===kind&&item.id===id);
   const actions=commandRead.data?.allowed_actions??[];
   // These are the existing caller-only HANDLING fact and original action admission, never a display-name identity comparison.
   const assignedName=detail?.item.column==='active'&&detail.item.attention&&!detail.item.attention.related_reasons.includes('HANDLING')&&commandRead.isSuccess&&!actions.includes('complete')?detail.item.assignee_name??undefined:undefined;
@@ -158,22 +341,15 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
     update();const observer=new MutationObserver(update);observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','disabled','aria-disabled']});return()=>observer.disconnect();
   },[pendingOperation]);
   const confirmOriginal=()=>confirmation?.click();
-  const content=<DisabledReasonContext.Provider value={pendingOperation?readOnlyCopy('pending').reason:null}><DetailDialogProvider>
-    <div className="detail-navigation" data-toast-avoid="top">
-      <div className="detail-breadcrumb" title={detail?.item.title??openedItem?.title}><Ticket size={17}/><span>{(detail?.item??openedItem)?.kind==='ticket'?'工单':'事项'}</span><span className="breadcrumb-slash">/</span><span>{detail?.item.number??openedItem?.number??'读取中'}</span>{readonly?<ReadOnlyBadge/>:null}<HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void navigator.clipboard.writeText(number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></div>
-      <div className="detail-toolbar-actions">
-        <span className="ds-presence-capsule-slot" ref={setPresenceTarget}/>
-        {!fullPage?<><HButton className="icon-button detail-previous" aria-label="上一项" title="上一项（已加载范围）" isDisabled={!previous||commandsBlocked} onClick={()=>move(previous)} tone="ghost"><ChevronUp size={17}/></HButton><span className="ds-detail-position" aria-label="已加载范围中的位置">{index>=0?index+1:'—'} / {items.length}</span><HButton className="icon-button detail-next" aria-label="下一项" title="下一项（已加载范围）" isDisabled={!next||commandsBlocked} onClick={()=>move(next)} tone="ghost"><ChevronDown size={17}/></HButton><span className="ds-detail-toolbar-divider" aria-hidden="true"/><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} state={location.state} replace><ArrowUpRight size={18}/></Link></>:null}
-        {detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}
-        <DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>
-        {result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}
-        <HButton className="icon-button" aria-label="关闭详情" title="返回工作台" isDisabled={commandsBlocked} onClick={close} tone="ghost">{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</HButton>
-      </div>
-    </div>
+  const breadcrumbExtras=<>{readonly?<ReadOnlyBadge/>:null}<HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void navigator.clipboard.writeText(number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></>;
+  const toolbarExtras=<>{detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={open&&result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}<DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>{result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}</>;
+  const content=<DetailDialogProvider>
+    {breadcrumbSlot?createPortal(breadcrumbExtras,breadcrumbSlot):null}
+    {toolbarActionsSlot?createPortal(toolbarExtras,toolbarActionsSlot):null}
     {readonly?<ReadOnlyBar reason={readonly} name={assignedName} action={readonly==='completed'||readonly==='assigned'?<div ref={setReadOnlyActionTarget}/>:readonly==='pending'&&confirmation?<Button size="sm" onPress={confirmOriginal}>重新确认</Button>:undefined}/>:null}
     {loading.visible?<DetailSkeleton {...(openedItem?{title:openedItem.title}:{})} slow={loading.slow} onRetry={()=>{void result.refetch();}}/>:result.isPending?null:result.isError&&!detail?<ErrorState size="page" titleId="detail-title" heading={fullPage?'h1':'h2'} title="详情没有打开" description={readFailure(result.error)} onRetry={()=>{void result.refetch();}} diagnostics={readDiagnostics(result.error,result.errorUpdatedAt)}/>:detail?<div className="ds-detail-view" ref={activityRoot}><div className="detail-body ds-state-region" data-refreshing={result.isFetching&&!result.isFetchingNextPage?'true':undefined} data-stale={result.isError?'true':undefined}><div className="ds-state-content">
       <header className="detail-heading ds-detail-hero"><TicketCategoryTile service={detail.item.service}/><div><h2 id="detail-title" ref={pageHeading} tabIndex={-1}>{detail.item.title}</h2><div className="ds-detail-state">{dismissed?<span className="ds-status-badge ds-stage-pill ds-dismissed-pill" data-tone="neutral" data-closure-state="dismissed"><CircleX aria-hidden="true"/><span className="ds-status-text">已关闭</span></span>:<DrawerStageGlyph stage={detail.item.column}/>}<span className="ds-drawer-status" data-waiting={detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'} hidden={Boolean(dismissed)||statusLabels[detail.item.status]===stagePresentation[detail.item.column].label}>{detail.item.status==='WAITING_VENDOR'||detail.item.status==='WAITING_REQUESTER'?<Pause className="ds-drawer-pause-glyph" aria-hidden="true"/>:null}<Status item={detail.item}/></span>{heat?<Tag className="ds-ticket-heat" tone={heat.tone}><Clock3 size={14}/>{heat.label}</Tag>:null}<div className="ds-drawer-urgency" ref={setUrgencyTarget}/><span>报修于 {detail.reported_at?<BeijingTime value={detail.reported_at} now={now}/>: '时间未记录'} · {detail.item.source_label}</span></div></div></header>
-      <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={result.isSuccess&&!result.isError} capsuleTarget={presenceTarget}/>
+      <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={open&&result.isSuccess&&!result.isError} capsuleTarget={presenceTarget}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
       <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} dismissed={Boolean(dismissed)} summary={dismissed?<><span className="ds-next-step-kicker">已关闭 · 不计入完成数</span><span className="ds-next-step-message" data-closure-summary>{closureReasonText(dismissed)+(dismissedOriginal?' · '+dismissedOriginal:'')}</span></>:<><span className="ds-next-step-message">{nextSummary(detail.item,heat?.label,detail.item.attention?.related_reasons.includes('HANDLING')===true,commandRead.data?.allowed_actions)}</span>{detail.item.follow_up_schedule?<span className="ds-next-step-follow-up"><span className="ds-next-step-separator"> · </span>下次跟进 <BeijingTime value={detail.item.follow_up_schedule.due_at} now={now}/></span>:null}</>} readState={stepReadState} reopenTarget={readonly==='completed'?readOnlyActionTarget:null} takeoverTarget={readonly==='assigned'?readOnlyActionTarget:null} unavailableAction={readonly==='assigned'&&!actions.includes('complete')?<ReadOnlyButton tone="primary" reason={(assignedName??'处理人')+'已接手，只有处理人可以登记完工'}>登记完工</ReadOnlyButton>:undefined}>
       {dismissed?<StepEntry action="restore" label="恢复">{()=> <RestoreClosedItem item={detail.item} principal={principal} inline/>}</StepEntry>:null}
@@ -189,7 +365,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
       <div role="tabpanel" id="detail-tab-activity" aria-labelledby="detail-tab-trigger-activity" hidden={tab!=='activity'}>
 
 
-      {detail.description||records.length||assignments.failed||result.hasNextPage?<ActivityTimeline description={detail.description} key={principal.principal_id+':activity:'+detail.item.kind+':'+detail.item.id} records={records} principal={principal} item={detail.item} active={tab==='activity'&&!completionOpen&&!mediaOpen} now={now} assignments={assignments.byEvent}>
+      {detail.description||records.length||assignments.failed||result.hasNextPage?<ActivityTimeline description={detail.description} key={principal.principal_id+':activity:'+detail.item.kind+':'+detail.item.id} records={records} firstPageRecordIds={firstPageRecordIds} principal={principal} item={detail.item} active={tab==='activity'&&!completionOpen&&!mediaOpen} now={now} assignments={assignments.byEvent}>
         {assignments.failed?<ErrorState title="接单与转交记录没有读出来" onRetry={assignments.retry}/>:null}
         {result.hasNextPage?<Button tone="secondary" data-action="view-earlier-records" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>显示更早的记录</Button>:null}
       </ActivityTimeline>:null}
@@ -199,6 +375,6 @@ function WorkbenchDetailContent({principal,items,now,fullPage,onNavigationBlocke
       <div className="workflow-support" role="tabpanel" id="detail-tab-conversations" aria-labelledby="detail-tab-trigger-conversations" hidden={tab!=='conversations'}><ItemConversations principal={principal} kind={detail.item.kind} id={detail.item.id} onCountChange={setConversationCount}/></div>
       </div></div><div className="ds-detail-footer" data-toast-avoid="bottom">{detail.item.kind==='ticket'&&principal.internal_notes_enabled?<>{noteUnavailable?<ReadOnlyNote reason={readonlyText||'当前没有内部备注写入权限'}/>:null}<div hidden={noteUnavailable}><TicketNotes actionsTarget={noteActionsTarget} key={principal.principal_id+':internal-note:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/></div></>:null}</div>
     </div>:null}
-  </DetailDialogProvider></DisabledReasonContext.Provider>;
+  </DetailDialogProvider>;
   return content;
 }

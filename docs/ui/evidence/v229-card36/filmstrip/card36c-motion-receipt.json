@@ -1,0 +1,305 @@
+{
+  "os": {
+    "platform": "darwin",
+    "release": "25.6.0"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/158.0.8127.37",
+    "revision": "@b8c2be851f62f6a394ec57955d7f31335d7cb6d4",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+    "jsVersion": "15.8.62.31"
+  },
+  "measurements": {
+    "drawer-enter": [
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "backdrop-enter": [
+      {
+        "duration": 240,
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      }
+    ],
+    "drawer-exit": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "backdrop-exit": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      }
+    ],
+    "full-page": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "body-exit": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "body-enter": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "return-cue": [
+      {
+        "duration": 600,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "presence-enter": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "presence-outline-enter": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "boxShadow"
+        ],
+        "name": "box-shadow"
+      }
+    ],
+    "presence-exit": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.4, 0, 1, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "presence-reenter": [
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "opacity"
+      },
+      {
+        "duration": 120,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform"
+        ],
+        "name": "transform"
+      }
+    ],
+    "presence-edit-colour": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "background-color"
+      }
+    ],
+    "presence-edit-outline": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "boxShadow"
+        ],
+        "name": "box-shadow"
+      }
+    ],
+    "presence-pencil": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "presence-view-colour": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "background-color"
+      }
+    ],
+    "presence-view-outline": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "boxShadow"
+        ],
+        "name": "box-shadow"
+      }
+    ],
+    "presence-number-roll": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      },
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "timeline-entry": [
+      {
+        "duration": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "name": "WAAPI"
+      }
+    ],
+    "timeline-highlight": [
+      {
+        "duration": 1200,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "properties": [
+          "backgroundColor"
+        ],
+        "name": "WAAPI"
+      }
+    ]
+  },
+  "filmstrips": [
+    "drawer-enter",
+    "drawer-exit",
+    "drawer-return-cue",
+    "detail-next",
+    "timeline-arrival",
+    "presence-enter",
+    "presence-exit"
+  ],
+  "results": {
+    "C5.1 drawer and backdrop enter/exit token timing, selected source and full-page fade": "PASS",
+    "C5.1 body next exit/enter token timing and stable toolbar": "PASS",
+    "C5.2 last-viewed card alone receives the cue after scrolling into view": "PASS",
+    "C5.3 slow Esc reverses from the current drawer pose and restores source focus": "PASS",
+    "C5.4 five next presses in 200ms show item six, cap body animations and preserve focus": "PASS",
+    "C5.1/C5.5 presence enter/exit timing and 200ms/500ms same-person reappearance": "PASS",
+    "C5.1/C5.6 view↔edit animates colour only on the same tag and +N rolls": "PASS",
+    "C5.7 timeline initial, older page and item switch have no arrival motion": "PASS",
+    "C5.1/C5.7 colleague arrival enters then highlights intake; own note is static": "PASS",
+    "C5.7 offscreen arrival preserves the reading position and both reveal paths highlight it": "PASS",
+    "C5.8 CDP reduce drawer opacity, static body, opacity name tags and held cue": "PASS",
+    "C5.8 ?motion=off drawer opacity, static body, opacity name tags and held cue": "PASS",
+    "C5.9 drawer-enter filmstrip": "PASS",
+    "C5.9 drawer-exit filmstrip": "PASS",
+    "C5.9 drawer-return-cue filmstrip": "PASS",
+    "C5.9 detail-next filmstrip": "PASS",
+    "C5.9 timeline-arrival filmstrip": "PASS",
+    "C5.9 presence-enter filmstrip": "PASS",
+    "C5.9 presence-exit filmstrip": "PASS"
+  },
+  "resources": {
+    "processes": 0,
+    "profiles": 0,
+    "commandTimers": 0,
+    "sockets": 0
+  },
+  "startupError": null
+}

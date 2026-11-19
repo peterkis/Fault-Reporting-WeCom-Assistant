@@ -28,6 +28,7 @@ import { StatusBadge } from '../design/components/StatusBadge/StatusBadge';
 import { TicketCard,TicketCardBody,TicketCategoryTile,DismissedTicketCardBody } from '../design/components/TicketCard/TicketCard';
 import { TicketPresence } from '../design/components/TicketCard/TicketPresence';
 import { presenceTone } from '../design/components/PresenceTags/PresenceTags';
+import { useDebouncedPresence,usePresenceModeTransition } from '../design/components/PresenceTags/use-debounced-presence';
 import { usePresence } from '../features/activity/presence-store';
 import { OnlineColleagues } from '../features/activity/OnlineColleagues';
 import { Toolbar } from '../design/components/Toolbar/Toolbar';
@@ -113,10 +114,11 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const start=cardHeatStart(item);
   const heat=cardHeat(item,now);
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
-  // Card 30B: presence subscribes only to this card's key; a closed (dismissed) card shows none.
-  const presence=usePresence({kind:item.kind,id:item.id},item.closure?.kind!=='DISMISSED'),presenceMode=presenceTone(presence);
-  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
-    <TicketPresence people={presence} unclaimed={item.column==='pending'&&!item.assignee_name}/>
+  // Card 30B / D4: presence subscribes only to this card's key; debounce in the display layer so outline and tags stay in sync.
+  const presence=usePresence({kind:item.kind,id:item.id},item.closure?.kind!=='DISMISSED');
+  const debouncedPresence=useDebouncedPresence(presence),presenceMode=presenceTone(debouncedPresence),presenceTransition=usePresenceModeTransition(presenceMode);
+  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-presence-transition={presenceTransition} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
+    <TicketPresence people={presence} debounced={debouncedPresence} unclaimed={item.column==='pending'&&!item.assignee_name}/>
     {item.closure?.kind==='DISMISSED'?<><div className="ds-dismissed-card-content"><DismissedTicketCardBody item={item} now={now} metadata={metadata} titleLink={<Link draggable={false} className="card-open ds-dismissed-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>{item.title}<span className="sr-only">查看详情</span></Link>}/></div><RestoreClosedItem item={item} principal={principal}/></>:<BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>
       <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='handled'?item.completed_at:null}
         metadata={metadata} tags={tags}
@@ -367,7 +369,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
 
     <div className="range-bar sr-only" data-loaded-count><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
-    {selected.id&&!locationMode?<Detail key={principal.principal_id} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='handled'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
+    <Detail key={principal.principal_id} open={Boolean(selected.id&&!locationMode)} itemKind={selected.kind??''} itemId={selected.id??''} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='handled'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>
   </BoardActions></ClosureActionsProvider></Shell>;
 }
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){

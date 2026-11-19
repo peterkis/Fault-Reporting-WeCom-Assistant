@@ -6,9 +6,16 @@ import './drawer.css';
 import './drawer-v21.css';
 import '../Popover/details-popover.css';
 
-export function Drawer({children,dismissBlocked,onClose}:{children:ReactNode;dismissBlocked:boolean;onClose:()=>void}){
-  return <HeroDrawer.Backdrop className="workbench-drawer-backdrop ds-drawer-backdrop" isOpen isDismissable={!dismissBlocked} isKeyboardDismissDisabled={dismissBlocked} onOpenChange={open=>{if(!open)onClose();}}>
-    <HeroDrawer.Content placement="right" className="workbench-drawer-content ds-drawer-content"><HeroDrawer.Dialog data-workbench-overlay data-toast-host data-dismiss-blocked={dismissBlocked?'true':'false'} className="detail-dialog ds-detail ds-drawer" style={{borderRadius:'calc(var(--radius-lg) + var(--space-0-5))'}} aria-label="事项详情">{children}</HeroDrawer.Dialog></HeroDrawer.Content>
+function DrawerExitSignal({isOpen,onExited}:{isOpen:boolean;onExited?:()=>void}){
+  const openRef=useRef(isOpen),callback=useRef(onExited);
+  openRef.current=isOpen;callback.current=onExited;
+  useEffect(()=>()=>{if(!openRef.current)callback.current?.();},[]);
+  return null;
+}
+
+export function Drawer({children,isOpen=true,dismissBlocked,onClose,onExited}:{children:ReactNode;isOpen?:boolean;dismissBlocked:boolean;onClose:()=>void;onExited?:()=>void}){
+  return <HeroDrawer.Backdrop className="workbench-drawer-backdrop ds-drawer-backdrop" isOpen={isOpen} isDismissable={!dismissBlocked} isKeyboardDismissDisabled={dismissBlocked} onOpenChange={open=>{if(!open)onClose();}}>
+    <HeroDrawer.Content placement="right" className="workbench-drawer-content ds-drawer-content"><HeroDrawer.Dialog data-workbench-overlay data-toast-host data-dismiss-blocked={dismissBlocked?'true':'false'} className="detail-dialog ds-detail ds-drawer" style={{borderRadius:'calc(var(--radius-lg) + var(--space-0-5))'}} aria-label="事项详情">{children}<DrawerExitSignal isOpen={isOpen} {...(onExited?{onExited}:{})}/></HeroDrawer.Dialog></HeroDrawer.Content>
   </HeroDrawer.Backdrop>;
 }
 

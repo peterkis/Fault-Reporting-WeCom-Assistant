@@ -1,0 +1,19 @@
+{
+  "selector": "[data-timeline-entry-enter=true]",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 1,
+  "clip": {
+    "left": 724,
+    "top": 162,
+    "right": 1412,
+    "bottom": 288
+  },
+  "width": 3440,
+  "height": 126
+}
