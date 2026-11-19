@@ -1,3 +1,4 @@
-.ds-number-roll {display:inline-grid;position:relative;overflow:hidden;vertical-align:bottom;font-variant-numeric:tabular-nums;line-height:inherit;}
+.ds-number-roll {display:inline-grid;position:relative;overflow:clip;vertical-align:top;font-variant-numeric:var(--font-numeric-variant);line-height:inherit;}
 .ds-number-roll-old,.ds-number-roll-next {grid-area:1/1;}
+.ds-number-roll-old[data-value]::before,.ds-number-roll-next[data-value]::before {content:attr(data-value);}
 .ds-number-roll-old {opacity:0;}

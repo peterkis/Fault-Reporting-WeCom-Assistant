@@ -5,13 +5,14 @@ import type {ReactNode} from 'react';
 import type {BoardCompletionRange,WorkbenchCard} from '../../../api/client';
 import {ProcessedDatePicker} from '../../../app/ProcessedDatePicker';
 import {matchesBoardSummary,type BoardSummaryFilter} from '../../board-presentation';
+import {NumberRoll} from '../../motion/number-roll';
 import {Button} from '../Button/Button';
 import './board-summary.css';
 
-export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,partial,blocked,scope,relatedAvailable,onScope}:{
+export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,partial,blocked,scope,relatedAvailable,onScope,animateCount=false}:{
   items:readonly WorkbenchCard[];now:number;selected:BoardSummaryFilter|null;
   onSelect:(value:BoardSummaryFilter|null)=>void;mineAvailable:boolean;loading:boolean;partial:boolean;blocked:boolean;
-  scope:'team'|'related';relatedAvailable:boolean;onScope:(value:'team'|'related')=>void;
+  scope:'team'|'related';relatedAvailable:boolean;onScope:(value:'team'|'related')=>void;animateCount?:boolean;
 }){
   const tabs=[
     {key:'all',label:'全部',tone:'neutral',note:'计数基于已加载数据。'},
@@ -30,7 +31,7 @@ export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,
         {...(key==='related'?{'data-action':'related-scope'}:{})} data-overdue={key==='overdue'&&count!==null&&count>0?'true':undefined}
         aria-label={label+(count===null?'':' '+count)} aria-pressed={active} aria-disabled={blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable} title={description}
         onPress={()=>{if(blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable)return;if(metric)onSelect(selected===metric?null:metric);else{onSelect(null);onScope(key==='related'?'related':'team');}}}>
-        <span className="ds-summary-label">{label}</span>{count===null?null:<strong className="ds-summary-value">{count}</strong>}
+        <span className="ds-summary-label">{label}</span>{count===null?null:<strong className="ds-summary-value"><NumberRoll value={count} animate={animateCount}/></strong>}
       </Button>;
     })}
   </div>;

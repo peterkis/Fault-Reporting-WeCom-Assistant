@@ -21,6 +21,7 @@ import type {ManualReportSelfHandlingCommand,ManualReportSelfHandlingResult} fro
 import {hasExistingDraft} from '../drafts/encrypted-drafts';
 import {ConfirmedManualSelfHandlingFailure,manualSelfHandlingApi} from './self-handling-client';
 import {manualSelfHandlingContextKey,useManualSelfHandlingDraft} from './use-manual-self-handling-draft';
+import {markSelfWrite} from '../../design/motion/self-write';
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'denied';
 export function ManualSelfHandlingForm({principal,initialValue,onOrdinary,onBlockedChange}:{principal:Principal;initialValue:ManualReportInput;onOrdinary:(value:ManualReportInput)=>void;onBlockedChange:(blocked:boolean)=>void}){
   const client=useQueryClient(),[value,setValue]=useState(initialValue),[team,setTeam]=useState(''),[contextTeam,setContextTeam]=useState(''),[pending,setPending]=useState<ManualReportSelfHandlingCommand|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[result,setResult]=useState<ManualReportSelfHandlingResult|null>(null);
@@ -37,6 +38,7 @@ export function ManualSelfHandlingForm({principal,initialValue,onOrdinary,onBloc
   }
   useEffect(()=>{if(context.error instanceof ApiError&&[401,403,404].includes(context.error.status))void refuse(context.error);},[context.error]);
   async function accepted(id:string,result:ManualReportSelfHandlingResult,token:number){
+    markSelfWrite(principal.principal_id,{kind:'ticket',id:result.ticket.id,intakeId:result.intake_id});
     const cleaned=await draft.success(id);if(!mounted.current||token!==epoch.current)return;setPending(null);setValue(emptyManualReportInput());setTeam('');setResult(result);setState('succeeded');setMessage('已受理并开始处理。这是当时结果，当前进度请打开工单查看。'+(cleaned?'':' 提交结果尚待核对，请先核对上次操作。'));void client.invalidateQueries({queryKey:['board',principal.principal_id]});
   }
   async function submit(){

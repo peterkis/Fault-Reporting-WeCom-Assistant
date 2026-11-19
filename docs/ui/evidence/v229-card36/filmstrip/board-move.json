@@ -1,0 +1,19 @@
+{
+  "selector": "[data-kind=\"ticket\"][data-item-id=\"01a1f365-40d6-7f9a-8636-494d64490d61\"]",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 264,
+    "top": 241,
+    "right": 1192,
+    "bottom": 769
+  },
+  "width": 4640,
+  "height": 528
+}

@@ -1,0 +1,19 @@
+{
+  "selector": ".board-column.pending .ds-stage-count",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 351,
+    "top": 211,
+    "right": 392,
+    "bottom": 265
+  },
+  "width": 205,
+  "height": 54
+}

@@ -2,7 +2,7 @@ import {useSyncExternalStore} from 'react';
 
 export type DurationToken='--dur-instant'|'--dur-fast'|'--dur-base'|'--dur-slow'|'--dur-move'|'--dur-highlight'|'--dur-return';
 export type EasingToken='--ease-standard'|'--ease-soft'|'--ease-exit';
-type NumericToken=DurationToken|'--delay-tooltip'|'--press-scale'|'--scale-popover'|'--shift-xs'|'--shift-sm'|'--shift-md'|'--shift-lg';
+type NumericToken=DurationToken|'--delay-tooltip'|'--press-scale'|'--scale-popover'|'--shift-xs'|'--shift-sm'|'--shift-md'|'--shift-lg'|'--space-12';
 const cache=new Map<string,string>();
 const listeners=new Set<()=>void>();
 let media:MediaQueryList|undefined,override=false,revision=0;
@@ -36,3 +36,10 @@ export function prefersReducedMotion(){initMotionPreferences();return override||
 export function subscribeMotion(listener:()=>void){initMotionPreferences();listeners.add(listener);return()=>{listeners.delete(listener);};}
 export function useMotionRevision(){return useSyncExternalStore(subscribeMotion,()=>revision,()=>0);}
 export function useReducedMotion(){useMotionRevision();return prefersReducedMotion();}
+export function highlightToneColor(tone:'intake'|'active'|'done'|'brand'):string{
+  initMotionPreferences();
+  const name=tone==='brand'?'--brand-subtle':`--stage-${tone}-bg`;
+  let value=cache.get(name);
+  if(value===undefined){value=getComputedStyle(document.documentElement).getPropertyValue(name).trim();cache.set(name,value);}
+  return value;
+}

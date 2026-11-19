@@ -10,6 +10,14 @@ export const manifest: readonly Screen[] = [
     threshold: { ...DEFAULT_THRESHOLD },
   },
   {
+    name: 'board-new-chip',
+    route: '/workbench/app/?range=all',
+    prepare: ['seed-board', 'board-new-chip'],
+    viewport: { width: 1440, height: 1000, dpr: 1 },
+    mask: [],
+    threshold: { ...DEFAULT_THRESHOLD },
+  },
+  {
     name: 'board-presence',
     route: '/workbench/app/?range=all',
     prepare: ['seed-board', 'fixed-presence', 'expand-board-groups'],

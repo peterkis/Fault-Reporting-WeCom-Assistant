@@ -4,6 +4,7 @@ import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 import {closeDesktopSession,desktopHost} from '../desktop/host';
 import {clearWorkbenchToasts} from './ToastFeedback';
+import {clearSelfWrites} from '../design/motion/self-write';
 
 let expiredDesktopCleanup:Promise<void>|undefined;
 
@@ -68,6 +69,7 @@ export async function clearReviewAuthorization(client:QueryClient,principal:stri
 }
 export function clearTicketAuthorization(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemAuthorization(client,principal,'ticket',ticketId,error);}
 export function clearSessionView(client:QueryClient,status:401|403|undefined,notice?:string){
+  clearSelfWrites();
   clearWorkbenchToasts();
   closeDesktopSession();
   advanceWorkbenchAuthorizationEpoch();

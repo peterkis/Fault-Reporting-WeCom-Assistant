@@ -1,4 +1,4 @@
-import type {HTMLAttributes,ReactNode} from 'react';
+import type {ComponentPropsWithRef,ReactNode} from 'react';
 import {Fragment,useId} from 'react';
 import {Bell,Bot,Check,CircleX,Clock3,Undo2} from 'lucide-react';
 import {categoryOf} from '../../category-map';
@@ -14,7 +14,7 @@ import {ClosureOriginalLink} from '../../../features/ticket-waiting/ClosureLinks
 import {closureReasonText,externalTicketNumber} from './closure-presentation';
 import './ticket-card.css';
 
-export function TicketCard({className='',...props}:HTMLAttributes<HTMLElement>){
+export function TicketCard({className='',...props}:ComponentPropsWithRef<'article'>){
   return <article {...props} className={'ticket-card ds-ticket-card '+className}/>;
 }
 export function TicketCategoryTile({service}:{service:WorkbenchCard['service']}){

@@ -32,6 +32,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card36b-motion.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card35a-states.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9163,7 +9172,8 @@
     "pc-admin-motion": [
       "tests/pc-admin-motion-policy.test.mts",
       "tests/pc-admin-motion-tools.test.mts",
-      "tests/pc-admin-card36a-motion.browser.test.mts"
+      "tests/pc-admin-card36a-motion.browser.test.mts",
+      "tests/pc-admin-card36b-motion.browser.test.mts"
     ]
   },
   "subprocess_entries": {

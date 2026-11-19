@@ -509,7 +509,7 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   const original=await get('/api/tickets/'+first.ticket.id);
   await browser.command('Page.bringToFront');
   if(trigger==='pointer')await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card12ActiveHeld=false;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/board?column=active')&&globalThis.__t42Writes.length){globalThis.__card12ActiveHeld=true;await new Promise(resolve=>{globalThis.__card12ReleaseActive=resolve;});}return response;};})()`);
-  await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.matches('.ticket-card'))globalThis.__card12Motions.push({id:this.dataset.itemId,duration:options.duration,frames});return animate.call(this,frames,options);};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
+  await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){const animation=animate.call(this,frames,options);if(this.matches('.ticket-card')){const {duration,easing}=animation.effect.getTiming();globalThis.__card12Motions.push({id:this.dataset.itemId,duration,easing,frames});}return animation;};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')}).dataset.tone`),'secondary');
   if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'e',code:'KeyE',windowsVirtualKeyCode:69});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'e',code:'KeyE',windowsVirtualKeyCode:69});}
@@ -526,7 +526,14 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   assert.deepEqual(body,{client_command_id:body.client_command_id,expected_version:original.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:original.resolver_team_id});
   const result=await get('/api/tickets/'+first.ticket.id);assert.equal(result.status,'IN_PROGRESS');assert.equal(result.assignee_id,actor.id);
   const motions:unknown=await browser.evaluate('globalThis.__card12Motions');assert.ok(Array.isArray(motions));
-  assert.ok(motions.some(motion=>object(motion).id===first.ticket.id&&object(motion).duration===180));
+  const timing=object(await browser.evaluate(`(()=>{
+    const styles=getComputedStyle(document.documentElement),raw=styles.getPropertyValue('--dur-move').trim();
+    const duration=Number.parseFloat(raw)*(raw.endsWith('ms')?1:1000);
+    const easing=new KeyframeEffect(null,[],{easing:styles.getPropertyValue('--ease-soft').trim()}).getTiming().easing;
+    return {duration,easing};
+  })()`));
+  assert.ok(motions.some(motion=>{const {id,duration,easing}=object(motion);return id===first.ticket.id&&duration===timing.duration&&easing===timing.easing;}),
+    'the confirmed claim uses --dur-move and --ease-soft');
   assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),false,'the plain action needs no detail detour');
 },{realtime:false}));
 

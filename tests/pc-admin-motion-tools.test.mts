@@ -142,7 +142,7 @@ test('Card36A tools enforce cached CSS timing, reduced/hidden end states, contin
     });
     await t.test('NumberRoll exposes only final accessible text and reserves the numeric presentation',async()=>{
       const {NumberRoll}:{NumberRoll:(props:{value:number;animate?:boolean})=>ReturnType<typeof createElement>}=await import(await motionModule('number-roll.tsx'));
-      const markup=renderToStaticMarkup(createElement(NumberRoll,{value:123,animate:false}));assert.match(markup,/aria-live="off"/);assert.match(markup,/class="sr-only">123/);assert.match(markup,/aria-hidden="true">123/);
+      const markup=renderToStaticMarkup(createElement(NumberRoll,{value:123,animate:false}));assert.match(markup,/aria-live="off"/);assert.match(markup,/class="sr-only">123/);assert.match(markup,/<span(?=[^>]*\baria-hidden="true")(?=[^>]*\bdata-value="123")[^>]*>/);
     });
     await t.test('empty segmented controls keep an empty DOM so the original :empty rule still applies',async()=>{
       const {SegmentedControl}:{SegmentedControl:(props:{children?:null})=>ReturnType<typeof createElement>}=await import(await motionModule(resolve(root,'app/pc-admin/src/design/components/SegmentedControl/SegmentedControl.tsx')));

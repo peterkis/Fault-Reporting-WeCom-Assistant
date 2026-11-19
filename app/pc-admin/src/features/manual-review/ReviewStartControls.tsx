@@ -14,6 +14,7 @@ import {reviewStartApi} from './start-client';
 import type {ReviewResolveAndStartCommand,ReviewResolveAndStartResult} from './start-client';
 import type {ReviewInput} from './use-review-draft';
 import {useReviewStartDraft} from './use-review-start-draft';
+import {markSelfWrite} from '../../design/motion/self-write';
 
 type Capture={ticket:ReviewResolveAndStartCommand['expected_ticket'];team:string};
 export function ReviewStartControls({principal,reviewId,value,available,request,onBlockedChange,onBusyChange,onStarted,onRefresh,onRestoreReview,readCurrentReview}:{principal:Principal;reviewId:string;value:ReviewInput;available:boolean;request:{current:AbortController|null};onBlockedChange:(value:boolean)=>void;onBusyChange:(value:boolean)=>void;onStarted:()=>void;onRefresh:()=>void;onRestoreReview:(value:ReviewInput)=>void;readCurrentReview:(signal:AbortSignal)=>Promise<ReviewInput>}){
@@ -62,6 +63,8 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
       if(!fresh.manual_review_resolve_and_start_enabled)throw new ApiError(403,'PURPOSE_DISABLED');
       submitted=true;const committed=await reviewStartApi.perform(reviewId,command,fresh.csrf_token,controller.signal);current();
       if(!mounted.current||generation.current!==token)return;
+      markSelfWrite(principal.principal_id,{kind:'review',id:reviewId});
+      markSelfWrite(principal.principal_id,{kind:'ticket',id:committed.ticket_id});
       setResult(committed);await finish(command.client_command_id,current,token);
     }catch(error){
       if(!mounted.current||generation.current!==token)return;
@@ -78,7 +81,7 @@ export function ReviewStartControls({principal,reviewId,value,available,request,
     if(request.current||!originalId)return;const controller=new AbortController(),token=generation.current,current=captureWorkbenchRead(controller.signal);request.current=controller;setState('checking');
     try{const receipt=await reviewStartApi.receipt(reviewId,originalId,controller.signal);current();if(!mounted.current||generation.current!==token)return;
       if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知；无终态回执不代表没有提交。不会自动发送。');return;}
-      if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');await finish(originalId,current,token);return;}
+      if(receipt.state==='COMMITTED'){if(pending?.expected_ticket&&receipt.ticket_id!==pending.expected_ticket.ticket_id)throw new ApiError(502,'INVALID_RESPONSE');markSelfWrite(principal.principal_id,{kind:'review',id:reviewId});markSelfWrite(principal.principal_id,{kind:'ticket',id:receipt.ticket_id});await finish(originalId,current,token);return;}
       // Codex review: a confirmed failure stays confirmed when only the local write fails; the cleanup is reported apart.
       if(pending){try{await draft.knownFailure(originalId);}catch{current();if(!mounted.current||generation.current!==token)return;setCleanupBlocked(true);setState('failed');setMessage('已确认原操作没有成功；本机草稿暂时无法更新，原填写内容保留。检查浏览器存储后点击「核对结果」再次更新。');onRefresh();return;}}else{settling.current=true;try{if(!await draft.knownFailure(originalId,true,{notifyLocal:false})){setCleanupBlocked(true);setState('unknown');setMessage('上次操作没有成功；草稿未能清空：为避免重复提交，暂时只能查看。点击「核对结果」再次清除。');return;}}finally{settling.current=false;}}
       current();if(!mounted.current||generation.current!==token)return;setOpaque(null);setCleanupBlocked(false);setState('failed');setMessage('已只读确认原操作失败；原完整意图保留，新的意图须明确采用工单信息。');onRefresh();

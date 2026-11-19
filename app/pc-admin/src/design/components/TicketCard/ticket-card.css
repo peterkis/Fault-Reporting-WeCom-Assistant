@@ -87,9 +87,6 @@
 .ds-ticket-card .ds-closure-restore.button[data-tone] {position: absolute; right: var(--space-2); bottom: var(--space-2); opacity: 0;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-closure-restore.button[data-tone] {opacity: 1;}
 .ds-ticket-card:has(.ds-closure-restore):hover .ds-ticket-closer,.ds-ticket-card:has(.ds-closure-restore):focus-within .ds-ticket-closer {visibility: hidden;}
-.ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: closure-restored var(--dur-highlight) var(--ease-standard);}
-@keyframes closure-restored {from {background-color: var(--brand-subtle);} to {background-color: var(--bg-canvas);}}
-@media (prefers-reduced-motion: reduce) {.ds-ticket-card[data-closure-highlight=true],.ds-work-row[data-closure-highlight=true] {animation: none; background: var(--brand-subtle);}}
 @media (hover: none) {.ds-ticket-card .ds-closure-restore.button[data-tone],.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;} .ds-ticket-card:has(.ds-closure-restore) .ds-ticket-closer,.ds-work-row:has(.ds-closure-restore) .ds-list-owner {visibility: hidden;}}
 
 /* Card 29 · close and restore dialogs share one spec: 440 / 400 wide, radius 14, padding 20, title 16 / 600. */

@@ -21,6 +21,7 @@ import {EMPTY_RETURN,createReturnCommand,hasReturnInput,isReturnChoiceRevocation
 import type {ReturnCopy,ReturnFence,ReturnInput} from './use-return-draft';
 import {shortCodes} from '../../app/short-code';
 import {useFullNumbers} from '../../app/FullNumbers';
+import {markSelfWrite} from '../../design/motion/self-write';
 
 type State='idle'|'preparing'|'submitting'|'checking'|'unknown'|'conflict'|'failed'|'denied'|'committed';
 interface Job extends ReturnFence {controller:AbortController;generation:number;mode:'command'|'ack'|'review'|'privacy'}
@@ -151,7 +152,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const command=useMutation({mutationKey:['ticket-return-to-dispatch',principal.principal_id,ticketId],gcTime:0,
     mutationFn:async(variables:CommandVariables)=>{variables.job.requireCurrent();const result=await api.returnTicket(ticketId,variables.command,variables.csrfToken,variables.job.signal);variables.job.requireCurrent();return result;},
     onSuccess:async(_result,variables)=>{
-      if(!current(variables.job))return;knownTerminal.current={commandId:variables.command.client_command_id,state:'COMMITTED'};
+      if(!current(variables.job))return;markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});knownTerminal.current={commandId:variables.command.client_command_id,state:'COMMITTED'};
       try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.command.client_command_id,variables.job);variables.job.requireCurrent();applyKnown(variables.command.client_command_id,'COMMITTED',variables.snapshot,cleaned,variables.job);}
       catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.command.client_command_id);setState('committed');setMessage('原操作返回已提交，但恢复清理尚未确认；禁止新提交，请继续只读核对。');refresh();}}
     },
@@ -174,6 +175,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     onSuccess:async(result,variables)=>{
       if(!current(variables.job))return;
       if(result.state==='UNKNOWN'){variables.job.requireCurrent();setState('unknown');setMessage('结果仍未确认：暂时查不到结果，不代表没有提交。稍后再点击「核对结果」。');return;}
+      if(result.state==='COMMITTED')markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});
       knownTerminal.current={commandId:variables.commandId,state:result.state};
       try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.commandId,variables.job,result.state==='FAILED');variables.job.requireCurrent();applyKnown(variables.commandId,result.state,variables.snapshot,cleaned,variables.job);}
       catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.commandId);setState(result.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');refresh();}}

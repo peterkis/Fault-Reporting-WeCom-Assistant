@@ -1,14 +1,15 @@
-import {motionToken,prefersReducedMotion,subscribeMotion} from './tokens';
+import {highlightToneColor,motionToken,prefersReducedMotion,subscribeMotion} from './tokens';
 
 export type HighlightTone='intake'|'active'|'done'|'brand';
+export interface HighlightOptions {tone:HighlightTone;background?:string}
 export interface HighlightHandle {cancel:()=>void;finished:Promise<void>}
 const running=new WeakMap<HTMLElement,()=>void>();
 /** Repeat calls restart the full hold/fade. Cancelling or finishing restores the original inline background. */
-export function highlight(el:HTMLElement,{tone}:{tone:HighlightTone}):HighlightHandle{
+export function highlight(el:HTMLElement,{tone,background:precomputedBackground}:HighlightOptions):HighlightHandle{
   running.get(el)?.();
   if(document.hidden)return {cancel:()=>{},finished:Promise.resolve()};
-  const original=el.style.backgroundColor,background=getComputedStyle(el).backgroundColor;
-  const color=getComputedStyle(document.documentElement).getPropertyValue(tone==='brand'?'--brand-subtle':`--stage-${tone}-bg`).trim();
+  const original=el.style.backgroundColor,background=precomputedBackground&&!original?precomputedBackground:getComputedStyle(el).backgroundColor;
+  const color=highlightToneColor(tone);
   const duration=motionToken('--dur-highlight');
   let timer:ReturnType<typeof setTimeout>|undefined,released=false,holding=false;
   const reduced=prefersReducedMotion();

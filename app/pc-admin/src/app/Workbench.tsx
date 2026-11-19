@@ -34,7 +34,7 @@ import { Toolbar } from '../design/components/Toolbar/Toolbar';
 import { WorkTable,orderWorkTableItems } from '../design/components/WorkTable/WorkTable';
 import { cardHeat,cardHeatStart } from '../design/heat';
 import { cardTags,stagePresentation } from '../design/status-map';
-import { useBoardCardMotion } from '../design/use-board-card-motion';
+import { columnHighlightTone,useBoardCardMotion,useClosureElementHighlight,useMotionScopeReady } from '../design/motion/board-motion';
 import { WorkbenchEfficiency,EfficiencyEntry } from '../features/efficiency/WorkbenchEfficiency';
 import { useBoardArrivals } from '../features/efficiency/use-board-arrivals';
 import { useDesktopSession } from '../desktop/host';
@@ -104,7 +104,8 @@ function SharedFollowUpSummary({value,compact=false}:{value:WorkbenchCard['follo
   </p>;
 }
 function Card({item,principal,search,selected,now,located=false}:{item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;located?:boolean}){
-  const highlighted=useClosureHighlight(item);
+  const highlighted=useClosureHighlight(item),cardRef=useRef<HTMLElement>(null);
+  useClosureElementHighlight(cardRef,highlighted,columnHighlightTone(item.column));
   const profile=useReporterProfile(item,principal),name=item.reporter_name??profile.data?.name,department=item.reporter_department??profile.data?.department;
   const fields=[item.location,department,name].filter(value=>Boolean(value?.trim())),source=(item.source_group?.display_name?item.source_label:item.source_label.split('·')[0])?.trim();
   const sourceLabel=source&&(item.source_group?.display_name||!/未提供|未登记|不可用/u.test(source))?source:null;
@@ -115,7 +116,7 @@ function Card({item,principal,search,selected,now,located=false}:{item:Workbench
   const ring=heat?.ring??(tags.some(tag=>tag.key==='urge')?'attention':tags.some(tag=>tag.key==='review')?'review':undefined);
   // Card 30B: presence subscribes only to this card's key; a closed (dismissed) card shows none.
   const presence=usePresence({kind:item.kind,id:item.id},item.closure?.kind!=='DISMISSED'),presenceMode=presenceTone(presence);
-  return <TicketCard className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
+  return <TicketCard ref={cardRef} className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined}>
     <TicketPresence people={presence} unclaimed={item.column==='pending'&&!item.assignee_name}/>
     {item.closure?.kind==='DISMISSED'?<><div className="ds-dismissed-card-content"><DismissedTicketCardBody item={item} now={now} metadata={metadata} titleLink={<Link draggable={false} className="card-open ds-dismissed-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>{item.title}<span className="sr-only">查看详情</span></Link>}/></div><RestoreClosedItem item={item} principal={principal}/></>:<BoardActionCard item={item}><Link draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={{fromBoard:true}}>
       <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='handled'?item.completed_at:null}
@@ -181,7 +182,7 @@ interface ColumnQuery {
  data:{pages:{items:WorkbenchCard[];range:{mode:BoardCompletionRange;from:string;until:string;timezone:'Asia/Shanghai'};group_counts?:{completed:number;dismissed:number}}[]}|undefined;
  refetch:()=>Promise<unknown>;fetchNextPage:()=>Promise<unknown>;
 }
-function BoardSection({principal,query,column,label,search,selected,now,loaded,earlierAction,filtered,blocked,preserveOrder,sort,onSort,newCount,onReveal}:{principal:Principal;query:ColumnQuery;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[];earlierAction:ReactNode;filtered:boolean;blocked:boolean;preserveOrder:boolean;sort:BoardSort;onSort:(value:BoardSort)=>void;newCount:number;onReveal:()=>void}){
+function BoardSection({principal,query,column,label,search,selected,now,loaded,earlierAction,filtered,blocked,preserveOrder,sort,onSort,newCount,newDirection,onReveal,animateCount}:{principal:Principal;query:ColumnQuery;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number;loaded:WorkbenchCard[];earlierAction:ReactNode;filtered:boolean;blocked:boolean;preserveOrder:boolean;sort:BoardSort;onSort:(value:BoardSort)=>void;newCount:number;newDirection:'up'|'down';onReveal:()=>void;animateCount:boolean}){
   const [expanded,setExpanded]=useState(false);
   const loading=useDelayedLoading(query.isPending&&!query.data);
   const retry=()=>{void query.refetch();};
@@ -196,19 +197,19 @@ function BoardSection({principal,query,column,label,search,selected,now,loaded,e
   const counts=!filtered?query.data?.pages[0]?.group_counts:undefined;
   const groupCounts=counts??{completed:completed.length,dismissed:dismissed.length};
   const empty=!loaded.length?<><EmptyState size={column==='pending'&&!filtered?'page':'compact'} tone={column==='pending'&&!filtered?'success':'neutral'} title={column==='pending'&&!filtered?'待受理已清空':boardEmptyMessage(column,query.data?.pages[0]?.range)} {...(column==='pending'&&!filtered?{description:'新报修进来会出现在这里'}:{})}/>{query.isError||filtered?null:earlierAction}</>:null;
-  const processedGroups=PROCESSED_GROUPS.map(definition=>{const group=<ProcessedGroup definition={definition} items={itemsInGroup(definition,loaded)} count={groupCounts[definition.key]} principalId={principal.principal_id} renderCard={renderCard}/>;return definition.key==='completed'?<BoardDropColumn key={definition.key} column={column}><div className="ds-completed-drop-zone">{group}{empty}</div></BoardDropColumn>:<Fragment key={definition.key}>{group}</Fragment>;});
-  const content=<BoardColumnView column={column} label={label} count={loading.visible||query.isPending?'…':query.isError&&!query.data?'—':column==='handled'?groupCounts.completed+groupCounts.dismissed:loaded.length} countTitle={column==='handled'&&counts?'当前日期范围内的事项总数':'当前筛选后已加载的事项'} sort={sort} onSort={onSort} blocked={blocked||preserveOrder} newCount={newCount} onReveal={onReveal} feedback={query.isError&&query.data?<StaleRetry onRetry={retry}/>:null}>
+  const processedGroups=PROCESSED_GROUPS.map(definition=>{const group=<ProcessedGroup definition={definition} items={itemsInGroup(definition,loaded)} count={groupCounts[definition.key]} principalId={principal.principal_id} renderCard={renderCard} animateCount={animateCount}/>;return definition.key==='completed'?<BoardDropColumn key={definition.key} column={column}><div className="ds-completed-drop-zone">{group}{empty}</div></BoardDropColumn>:<Fragment key={definition.key}>{group}</Fragment>;});
+  const content=<BoardColumnView column={column} label={label} count={loading.visible||query.isPending?'…':query.isError&&!query.data?'—':column==='handled'?groupCounts.completed+groupCounts.dismissed:loaded.length} countTitle={column==='handled'&&counts?'当前日期范围内的事项总数':'当前筛选后已加载的事项'} sort={sort} onSort={onSort} blocked={blocked||preserveOrder} newCount={newCount} newDirection={newDirection} onReveal={onReveal} animateCount={animateCount} feedback={query.isError&&query.data?<StaleRetry onRetry={retry}/>:null}>
     <div className="ds-state-region" data-refreshing={query.data&&query.isFetching&&!query.isFetchingNextPage?'true':undefined} data-stale={query.data&&query.isError?'true':undefined}>
-    {loading.visible?<BoardColumnSkeleton column={column} label={label} principalId={principal.principal_id} bodyOnly slow={loading.slow} onRetry={retry}/>:query.isPending?null:query.isError&&!query.data?<ErrorState title={label+'没有读出来'} onRetry={retry}/>:<div className="ds-state-content"><div className="column-cards" id={'cards-'+column}>{column==='handled'?processedGroups:column==='pending'&&loaded.length?PENDING_GROUPS.map(definition=><BoardGroup key={definition.key} {...boardGroupProps(definition,principal.principal_id)} count={itemsInGroup(definition,loaded).length}>{cards(itemsInGroup(definition,loaded))}</BoardGroup>):cards(loaded)}{column!=='handled'?empty:null}</div>{column!=='handled'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)}/>:null}</div>}
+    {loading.visible?<BoardColumnSkeleton column={column} label={label} principalId={principal.principal_id} bodyOnly slow={loading.slow} onRetry={retry}/>:query.isPending?null:query.isError&&!query.data?<ErrorState title={label+'没有读出来'} onRetry={retry}/>:<div className="ds-state-content"><div className="column-cards" id={'cards-'+column}>{column==='handled'?processedGroups:column==='pending'&&loaded.length?PENDING_GROUPS.map(definition=><BoardGroup key={definition.key} {...boardGroupProps(definition,principal.principal_id)} count={itemsInGroup(definition,loaded).length} animateCount={animateCount}>{cards(itemsInGroup(definition,loaded))}</BoardGroup>):cards(loaded)}{column!=='handled'?empty:null}</div>{column!=='handled'?<More expanded={expanded} count={loaded.length} controls={'cards-'+column} onClick={()=>setExpanded(value=>!value)}/>:null}</div>}
     </div>
     {!query.isError&&!query.isPending&&!loading.visible&&query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}
   </BoardColumnView>;
   return column==='handled'?content:<BoardDropColumn column={column}>{content}</BoardDropColumn>;
 }
-function ProcessedGroup({definition,items,count,principalId,renderCard}:{definition:ProcessedColumnGroup;items:WorkbenchCard[];count:number;principalId:string;renderCard:(item:WorkbenchCard)=>ReactNode}){
+function ProcessedGroup({definition,items,count,principalId,renderCard,animateCount}:{definition:ProcessedColumnGroup;items:WorkbenchCard[];count:number;principalId:string;renderCard:(item:WorkbenchCard)=>ReactNode;animateCount:boolean}){
   const kind=definition.key;
   const [expanded,setExpanded]=useState(false),id='cards-handled-'+kind;
-  return <BoardGroup {...boardGroupProps(definition,principalId)} count={count}>
+  return <BoardGroup {...boardGroupProps(definition,principalId)} count={count} animateCount={animateCount}>
     <div id={id}>{items.slice(0,3).map(renderCard)}<Collapse expanded={expanded} className="ds-column-remainder">{items.slice(3).map(renderCard)}</Collapse></div>
     <More expanded={expanded} count={items.length} controls={id} onClick={()=>setExpanded(value=>!value)}/>
   </BoardGroup>;
@@ -289,7 +290,11 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       return view==='board'&&column==='pending'?[...stage.filter(item=>item.kind!=='ticket'),...stage.filter(item=>item.kind==='ticket')]:view==='board'&&column==='handled'?[...stage.filter(item=>item.closure?.kind==='COMPLETED'),...stage.filter(item=>item.closure?.kind==='DISMISSED')]:stage;
     });
   }
-  const arrivals=useBoardArrivals(unique,orderingScope+':'+queries.map(query=>query.data?.pages.length??0).join(','),queries.every(query=>!query.isPending&&!query.isError)&&!(searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching),principal.realtime_sse_enabled===true&&view==='board'&&!searchMode&&!fullPage&&!locationMode&&!holdOrder);
+  const pageLengths=queries.map(query=>query.data?.pages.length??0).join(',');
+  const motionScope=orderingScope+':'+pageLengths;
+  const allReady=queries.every(query=>!query.isPending&&!query.isError);
+  const anyFetching=searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching;
+  const arrivals=useBoardArrivals(unique,motionScope,allReady&&!anyFetching,!searchMode&&!fullPage&&!locationMode,view==='board'&&!holdOrder);
   unique=arrivals.items;
   // The detail freeze must inherit the sequence actually presented after arrivals.
   if(!holdOrder)order.current={scope:orderingScope,keys:unique.map(item=>item.kind+':'+item.id)};
@@ -322,9 +327,22 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const visibleItems=(loaded:WorkbenchCard[])=>loaded.filter(item=>(!locatedItem||item.kind!==locatedItem.kind||item.id!==locatedItem.id)&&(!summaryFilter||matchesBoardSummary(item,summaryFilter,now))&&(categoryFilter==='all'||(categoryFilter==='unclassified'?!item.service:item.service?.category===categoryFilter))&&(handlerFilter==='all'||(handlerFilter==='unassigned'?!item.assignee_name:handlerFilter==='name:'+item.assignee_name)));
   const returnParameters=new URLSearchParams(params);returnParameters.delete('locate');returnParameters.delete('detail');
   const returnBoard='/'+(returnParameters.size?'?'+returnParameters:'');
-  useBoardCardMotion(view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+unique.map(item=>item.kind+':'+item.id+':'+item.column).join('|'),searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching,orderingScope,arrivals.arrivalKeys);
+  const visibleUnique=visibleItems(unique);
+  const motion=useBoardCardMotion({
+    view,
+    principalId:principal.principal_id,
+    items:visibleUnique.map(item=>({kind:item.kind,id:item.id,intake_id:item.intake_id,column:item.column,closure_kind:item.closure?.kind??null})),
+    sequence:view+':'+categoryFilter+':'+handlerFilter+':'+summaryFilter+':'+visibleUnique.map(item=>item.kind+':'+item.id+':'+item.column+':'+(item.closure?.kind??'')).join('|'),
+    refreshing:anyFetching,
+    ready:allReady,
+    scope:motionScope,
+    arrivalKeys:arrivals.arrivalKeys,
+  });
+  const animateCounts=useMotionScopeReady(motionScope,queries.every(query=>!query.isPending),anyFetching);
+  const summaryMotionScope=JSON.stringify([principal.principal_id,principal.authorization_revision,rangeKey,view,scope,searchMode?searchKey:null,pageLengths]);
+  const animateSummaryCounts=useMotionScopeReady(summaryMotionScope,queries.every(query=>!query.isPending),anyFetching);
   const filtered=Boolean(searchMode||summaryFilter||categoryFilter!=='all'||handlerFilter!=='all');
-  const filteredEmpty=filtered&&queries.every(query=>!query.isPending&&!query.isError&&!query.isFetching&&!query.hasNextPage)&&visibleItems(unique).length===0&&!parsed.error;
+  const filteredEmpty=filtered&&queries.every(query=>!query.isPending&&!query.isError&&!query.isFetching&&!query.hasNextPage)&&visibleUnique.length===0&&!parsed.error;
   const clearFilters=()=>{
     if(navigationBlocked||searchConditionsBusy)return;
     setSummarySelection({scope:summaryScope,filter:null});setBoardFilters({scope:filterScope,category:'all',handler:'all'});
@@ -335,7 +353,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ClosureActionsProvider principal={principal} otherBlocked={detailNavigationBlocked||claimNavigationBlocked} onBlockedChange={setClosureBlocked}><BoardActions principal={principal} blocked={navigationBlocked} onClaimBlocked={setClaimNavigationBlocked} selectionKey={location.pathname+location.search} onOpen={({intent,selector})=>{if(!navigationBlocked)void navigate(itemLink(intent,location.search),{state:{fromBoard:true,boardActionIntent:intent,boardActionSelector:selector}});}}>{!fullPage?<div className="workspace ds-page"><PageHeader className="ds-board-page-header" title="团队工作台" icon={<LayoutGrid/>} actions={<><Button tone="ghost" isIconOnly aria-label="刷新" title="刷新" isDisabled={searchConditionsBusy} onPress={refresh}><RefreshCw/><span className="sr-only">刷新</span></Button><ManualReportEntry principal={principal} blocked={navigationBlocked}/></>}/>
     <Toolbar className={'ds-board-toolbar'+(view==='list'?' ds-list-toolbar':'')}>
       <div className="ds-board-toolbar-top">
-        <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked||searchConditionsBusy} scope={scope??'team'} relatedAvailable={principal.workbench_follow_enabled===true} onScope={value=>{if(principal.workbench_follow_enabled)update('scope',value);}}/>
+        <BoardSummary items={fresh} now={now} selected={summaryFilter} onSelect={filter=>setSummarySelection({scope:summaryScope,filter})} mineAvailable={mineAvailable} loading={queries.some(query=>query.isPending)} partial={queries.some(query=>query.isError)} blocked={navigationBlocked||searchConditionsBusy} scope={scope??'team'} relatedAvailable={principal.workbench_follow_enabled===true} onScope={value=>{if(principal.workbench_follow_enabled)update('scope',value);}} animateCount={animateSummaryCounts}/>
         <SegmentedControl className="view-tabs" aria-label="展示方式"><HButton aria-pressed={view==='board'} onClick={()=>update('view','board')} tone="ghost"><LayoutGrid size={16}/>看板</HButton><HButton aria-pressed={view==='list'} onClick={()=>update('view','list')} tone="ghost"><List size={16}/>列表</HButton></SegmentedControl>
       </div>
       <div className="ds-board-toolbar-bottom">
@@ -357,8 +375,8 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       {!validLocation?<Message text="当前提醒定位不可用，请重新选择有效事项。"/>:located.isPending?<Message text="正在加载…"/>:located.isError?<Message text={located.error instanceof ApiError&&[403,404].includes(located.error.status)?'该事项当前不可读取，旧定位资料已清除。':'本次定位未完成，原定位目标已保留。'} {...(located.error instanceof ApiError&&[401,403,404].includes(located.error.status)?{}:{retry:()=>{void located.refetch();}})}/>:locatedItem?<Card item={locatedItem} principal={principal} search={location.search} selected={true} now={now} located={true}/>:null}
     </section>:null}
     {searchMode&&searched.error instanceof ApiError&&searched.error.code==='SEARCH_REFRESH_REQUIRED'?<InlineAlert tone="warning" data-search-refresh-required>{errorMessage(searched.error)}</InlineAlert>:null}
-    {searchMode&&parsed.error?<Message text={parsed.error}/>:filteredEmpty&&!searchMode?<EmptyState variant="filtered" title="没有符合条件的工单" summary={filterSummary} onClear={clearFilters}/>:view==='board'?<div className="board" data-search-state={searchMode&&searched.isError?'error':undefined}>{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={filtered} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={column==='pending'?arrivals.count(visibleItems(fresh)):0} onReveal={arrivals.reveal} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
-      <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind} searchError={searchMode&&searched.isError} refreshing={queries.some(query=>Boolean(query.data)&&query.isFetching&&!query.isFetchingNextPage)} stale={queries.some(query=>Boolean(query.data)&&query.isError)} headerFeedback={queries.some(query=>Boolean(query.data)&&query.isError)?<StaleRetry onRetry={refresh}/>:null}
+    {searchMode&&parsed.error?<Message text={parsed.error}/>:filteredEmpty&&!searchMode?<EmptyState variant="filtered" title="没有符合条件的工单" summary={filterSummary} onClear={clearFilters}/>:view==='board'?<div className="board" data-search-state={searchMode&&searched.isError?'error':undefined}>{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+rangeKey+':'+scope+':'+(searchMode?searchKey:'board')} principal={principal} query={query} loaded={visibleItems(unique.filter(item=>item.column===column))} column={column} label={label(column)} earlierAction={column==='handled'&&!searchMode&&(range==='recent'||range==='custom')?<Button tone="ghost" data-action="view-earlier" isDisabled={navigationBlocked} onPress={()=>applyClosedRange('all')}>查看更早</Button>:null} search={location.search} selected={selected.id} now={now} filtered={filtered} blocked={navigationBlocked} preserveOrder={Boolean(holdOrder)} newCount={motion.boardChips[column].count} newDirection={motion.boardChips[column].direction} onReveal={motion.boardChips[column].activate} animateCount={animateCounts} sort={sorts[column]} onSort={value=>setSorts(current=>({...current,[column]:value}))}/>:null;})}</div>:<>
+      <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind} animateCount={animateCounts} newChip={{count:motion.listChip.count,direction:motion.listChip.direction,onActivate:motion.listChip.activate}} searchError={searchMode&&searched.isError} refreshing={queries.some(query=>Boolean(query.data)&&query.isFetching&&!query.isFetchingNextPage)} stale={queries.some(query=>Boolean(query.data)&&query.isError)} headerFeedback={queries.some(query=>Boolean(query.data)&&query.isError)?<StaleRetry onRetry={refresh}/>:null}
         renderLink={(item,content)=><BoardActionCard item={item}><Link draggable={false} className="row-link card-open" to={itemLink(item,location.search)} state={{fromBoard:true}} title={item.title}>{content}</Link></BoardActionCard>}
         renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={relativeTime}
         groups={columns.flatMap((column,index)=>{const query=queries[index];if(!query||closureKind!=='all'&&column!=='handled')return [];const loaded=visibleItems(unique.filter(item=>item.column===column));return [{column,label:label(column),items:loaded,count:query.isPending?'…':query.isError&&!query.data?'—':loaded.length,loading:query.isPending&&!query.data,onRetry:()=>{void query.refetch();},
