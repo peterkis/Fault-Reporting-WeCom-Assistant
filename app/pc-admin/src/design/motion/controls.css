@@ -14,6 +14,14 @@ html body .ds-modal-container[data-exiting] {opacity:0;transform:scale(var(--pre
 html body .ds-modal-backdrop[data-entering],html body .ds-modal-backdrop[data-exiting] {opacity:0;}
 html body .ds-modal-backdrop[data-exiting] {transition-duration:var(--dur-fast);transition-timing-function:var(--ease-exit);}
 html body .ds-modal {animation:none;transition:none;}
+/* D1: Drawer replaces keyframes with CSS transitions so mid-open Esc/backdrop click reverses smoothly. */
+html body .ds-drawer-content,html body .ds-drawer-backdrop {animation:none;opacity:1;transform:none;transition:opacity var(--dur-slow) var(--ease-soft);}
+html body .ds-drawer-content {transition:transform var(--dur-slow) var(--ease-soft),opacity var(--dur-slow) var(--ease-soft);}
+html body .ds-drawer-content[data-entering] {opacity:0;transform:translateX(var(--shift-lg));}
+html body .ds-drawer-content[data-exiting] {opacity:0;transform:translateX(var(--space-4));transition-duration:var(--dur-base);transition-timing-function:var(--ease-exit);pointer-events:none;}
+html body .ds-drawer-backdrop[data-entering],html body .ds-drawer-backdrop[data-exiting] {opacity:0;}
+html body .ds-drawer-backdrop[data-exiting] {transition-duration:var(--dur-base);transition-timing-function:var(--ease-exit);pointer-events:none;}
+html body .ds-drawer-content>.ds-drawer,html body .ds-drawer-content[data-entering]>.ds-drawer,html body .ds-drawer-content[data-exiting]>.ds-drawer {animation:none;translate:none;transition:none;}
 
 /* E3: HeroUI's panel-height transition is superseded by a single grid track. */
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content {
@@ -46,14 +54,26 @@ html[data-motion-reduced] body :is(.ds-skeleton,.ds-button-spinner,.workbench-to
   html body .ds-modal-container {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
   html body .ds-modal-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
   html body .ds-modal-container[data-exiting],html body .ds-modal-backdrop[data-exiting] {transition-timing-function:var(--ease-exit);}
+  html body .ds-drawer-backdrop .ds-drawer-content,html body .ds-drawer-backdrop .ds-drawer-content[data-entering],html body .ds-drawer-backdrop .ds-drawer-content[data-exiting] {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+  html body .ds-drawer-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
+  html body .ds-drawer-backdrop .ds-drawer-content[data-exiting],html body .ds-drawer-backdrop[data-exiting] {transition-duration:var(--dur-fast);transition-timing-function:var(--ease-exit);}
+  html body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner),html body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+  html body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-entering],html body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-entering] {transform:none;opacity:0;}
+  html body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-exiting],html body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-exiting] {transform:none;opacity:0;transition:opacity var(--dur-fast) var(--ease-exit);}
   html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content,html body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator] {transition:none;}
 }
 html[data-motion-reduced] body :is(.dropdown__popover,.select__popover,.popover,.date-picker__popover,.workbench-select-popover,.processed-date-popover,.ds-online-panel,.ds-closure-search-results) {transform:none;transition-property:opacity;}
 html[data-motion-reduced] body .ds-modal-container {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
 html[data-motion-reduced] body .ds-modal-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
 html[data-motion-reduced] body .ds-modal-container[data-exiting],html[data-motion-reduced] body .ds-modal-backdrop[data-exiting] {transition-timing-function:var(--ease-exit);}
+html[data-motion-reduced] body .ds-drawer-backdrop .ds-drawer-content,html[data-motion-reduced] body .ds-drawer-backdrop .ds-drawer-content[data-entering],html[data-motion-reduced] body .ds-drawer-backdrop .ds-drawer-content[data-exiting] {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body .ds-drawer-backdrop {transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body .ds-drawer-backdrop .ds-drawer-content[data-exiting],html[data-motion-reduced] body .ds-drawer-backdrop[data-exiting] {transition-duration:var(--dur-fast);transition-timing-function:var(--ease-exit);}
+html[data-motion-reduced] body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner),html[data-motion-reduced] body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
+html[data-motion-reduced] body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-entering],html[data-motion-reduced] body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-entering] {transform:none;opacity:0;}
+html[data-motion-reduced] body #root :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-exiting],html[data-motion-reduced] body .workbench-drawer-backdrop :is(.ds-presence-tag,.ds-presence-capsule,.ds-presence-field-banner)[data-exiting] {transform:none;opacity:0;transition:opacity var(--dur-fast) var(--ease-exit);}
 html[data-motion-reduced] body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content,html[data-motion-reduced] body :is(.ds-board-group,.workbench-disclosure) [data-slot=disclosure-indicator] {transition:none;}
-html[data-motion-reduced] body .ds-button.button[data-tone],html[data-motion-reduced] body .ds-ticket-card.ticket-card {transform:none;transition:none;}
+html[data-motion-reduced] body .ds-button.button[data-tone],html[data-motion-reduced] body .ds-ticket-card.ticket-card,html[data-motion-reduced] body .ds-ticket-card.ticket-card[data-presence][data-presence-transition=mode] {transform:none;transition:none;}
 html[data-motion-reduced] body .ds-button.button[data-tone]:is(:active,[data-pressed=true]):not(:disabled):not([aria-disabled=true]) {transform:none;transition:none;}
 html[data-motion-reduced] body .ds-segmented-slider,html[data-motion-reduced] body .ds-collapse {transition:none;}
 html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}

@@ -106,9 +106,6 @@ strong {font-weight: var(--fw-semibold); }
 }
 @media (prefers-reduced-motion:no-preference) {
 .ticket-card {transition: box-shadow var(--dur-fast) var(--ease-standard); }
-@keyframes drawer-open {
-from {transform: translateX(var(--space-6));opacity: 0; }
-to {transform: translateX(0);opacity: 1; } }
 }
 @media (prefers-reduced-motion:reduce) {
 *, *::before, *::after {transition: none;animation: none;scroll-behavior: auto; } }

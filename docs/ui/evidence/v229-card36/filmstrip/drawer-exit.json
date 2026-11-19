@@ -1,0 +1,19 @@
+{
+  "selector": ".detail-dialog,.ds-drawer-backdrop",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 3,
+  "clip": {
+    "left": 696,
+    "top": 0,
+    "right": 1440,
+    "bottom": 900
+  },
+  "width": 3720,
+  "height": 900
+}
