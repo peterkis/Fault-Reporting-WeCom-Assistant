@@ -1,3 +1,6 @@
+import {BlockSkeleton} from '../../design/components/Skeleton/Skeleton';
+import {ErrorState,StaleRetry} from '../../design/components/ErrorState/ErrorState';
+import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,ListBox,TextArea as HTextArea} from "@heroui/react";
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
@@ -128,11 +131,12 @@ export function SupplementFollowUp({ticketId,principal,readReady,onBlockedChange
   }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorityFailure(error,commandId);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');}
   finally{if(request.current===controller)request.current=null;}
  }
+ const loading=useDelayedLoading(enabled&&page.isPending&&!page.data);
  if(!enabled)return null;
- if(currentRead&&!unique.length&&!pending&&!operationId&&!value.target&&!bound&&!replyBlocked&&state==='idle')return null;
+ if(currentRead&&!loading.visible&&!unique.length&&!pending&&!operationId&&!value.target&&!bound&&!replyBlocked&&state==='idle')return null;
  const canEdit=currentRead&&staff&&!locked&&!draft.probing&&!draft.restoring&&(!draft.rawEnabled||draft.canSubmit);
- return <section className="ticket-notes supplement-follow-up" aria-label="补充材料跟进" data-supplement-follow-up-state={state}>
-  <WorkbenchDisclosure title={<>补充跟进</>} forceOpen={Boolean(!currentRead||unique.some(item=>item.follow_up_state==='PENDING')||pending||operationId||value.target||bound||locked)||undefined}><p>请核对补充内容，再记录处理情况。提交后将标记为已跟进。</p>{page.isPending?<p role="status">正在读取当前可访问的补充材料…</p>:page.isError?<p role="alert">{errorMessage(page.error)}</p>:null}<SupplementFollowUpSummary pending={page.data?.pages[0]?.has_pending_supplements}/><ol className="supplement-follow-up-list">{unique.map(item=>{
+ return <section className="ticket-notes supplement-follow-up ds-state-region" data-refreshing={page.data&&page.isFetching?'true':undefined} data-stale={page.data&&page.isError?'true':undefined} aria-label="补充材料跟进" data-supplement-follow-up-state={state}>
+  <WorkbenchDisclosure title={<>补充跟进</>} forceOpen={Boolean(!currentRead||unique.some(item=>item.follow_up_state==='PENDING')||pending||operationId||value.target||bound||locked)||undefined}><p>请核对补充内容，再记录处理情况。提交后将标记为已跟进。</p>{loading.visible?<BlockSkeleton label="正在加载补充材料…" slow={loading.slow}/>:page.isError?busy?<p role="alert">{errorMessage(page.error)}</p>:page.data?<StaleRetry onRetry={()=>{void refresh();}}/>:<ErrorState title="补充材料没有读出来" onRetry={()=>{void refresh();}}/>:null}<SupplementFollowUpSummary pending={page.data?.pages[0]?.has_pending_supplements}/><ol className="supplement-follow-up-list ds-state-content">{unique.map(item=>{
    const selected=value.target!==null&&sameSupplementTarget(value.target,item),fieldId='supplement-note-'+item.source_ref.replace(':','-')+'-'+item.revision;
    const note=selected?value.note:'',editable=canEdit&&(!hasInput||selected),canSubmit=editable&&selected&&Boolean(note.trim())&&Array.from(note).length<=2000;
    return <li key={JSON.stringify([item.source_ref,item.revision])} data-supplement-source-ref={item.source_ref} data-supplement-revision={item.revision} data-follow-up-state={item.follow_up_state}>

@@ -1,0 +1,144 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-2a33448d-1885-4b54-bbfe-77bfd1bb5e55/new-detail-1920.png","width":1920,"height":1080,"sha256":"799b37865e94ae826c3acef08b1d7bb81177f3694fc77d36525456205d155407"}]}
+# Subtest: Card 16 arrival keeps official new-card reads, bounded motion and reading position
+ok 1 - Card 16 arrival keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1829.235041
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-ec10150f-9169-47b2-beee-c92ab0f6fdb4/new-detail-1920.png","width":1920,"height":1080,"sha256":"5ddca67dbc7fa81592ed5e83cbadc54e31aed2fd46c1ef8d32e3e4538ada3e2c"}]}
+# Subtest: Card 16 collapsed keeps official new-card reads, bounded motion and reading position
+ok 2 - Card 16 collapsed keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1613.554667
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-40c4aad1-3449-4113-9632-2966118958c8/new-detail-1920.png","width":1920,"height":1080,"sha256":"21e09afd194bb581592c5549352f91b015ccc19ac5320e857a23552b7f692e3b"}]}
+# Subtest: Card 16 scrolling keeps official new-card reads, bounded motion and reading position
+not ok 3 - Card 16 scrolling keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1265.321167
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/pc-admin-card16-arrivals.browser.test.mjs:9:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        {
+          id: '01a1ef81-107b-7985-9bc2-6ae7a75b5fa1',
+    +     top: 102
+    -     top: 100
+        },
+        {
+          id: '01a1ef81-107d-72ff-bf3d-b9665dabe851',
+    +     top: 240
+    -     top: 238
+        },
+        {
+          id: '01a1ef81-1042-795a-b4ce-4f3c18cbebfd',
+    +     top: 425
+    -     top: 423
+        },
+        {
+          id: '01a1ef81-1047-7fab-a2a3-d35d4cf2e1af',
+    +     top: 565
+    -     top: 563
+        },
+        {
+          id: '01a1ef81-104c-78e3-b51f-e309439bdfa1',
+    +     top: 705
+    -     top: 703
+        },
+        {
+          id: '01a1ef81-1050-7edc-a0c4-695c2b5d51a6',
+    +     top: 845
+    -     top: 843
+        },
+        {
+          id: '01a1ef81-1055-725c-905f-6f8e9b0fd676',
+    +     top: 985
+    -     top: 983
+        }
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: '01a1ef81-107b-7985-9bc2-6ae7a75b5fa1'
+      top: 100
+    1:
+      id: '01a1ef81-107d-72ff-bf3d-b9665dabe851'
+      top: 238
+    2:
+      id: '01a1ef81-1042-795a-b4ce-4f3c18cbebfd'
+      top: 423
+    3:
+      id: '01a1ef81-1047-7fab-a2a3-d35d4cf2e1af'
+      top: 563
+    4:
+      id: '01a1ef81-104c-78e3-b51f-e309439bdfa1'
+      top: 703
+    5:
+      id: '01a1ef81-1050-7edc-a0c4-695c2b5d51a6'
+      top: 843
+    6:
+      id: '01a1ef81-1055-725c-905f-6f8e9b0fd676'
+      top: 983
+  actual:
+    0:
+      id: '01a1ef81-107b-7985-9bc2-6ae7a75b5fa1'
+      top: 102
+    1:
+      id: '01a1ef81-107d-72ff-bf3d-b9665dabe851'
+      top: 240
+    2:
+      id: '01a1ef81-1042-795a-b4ce-4f3c18cbebfd'
+      top: 425
+    3:
+      id: '01a1ef81-1047-7fab-a2a3-d35d4cf2e1af'
+      top: 565
+    4:
+      id: '01a1ef81-104c-78e3-b51f-e309439bdfa1'
+      top: 705
+    5:
+      id: '01a1ef81-1050-7edc-a0c4-695c2b5d51a6'
+      top: 845
+    6:
+      id: '01a1ef81-1055-725c-905f-6f8e9b0fd676'
+      top: 985
+  operator: 'deepStrictEqual'
+  stack: |-
+    withT42BoardBrowser.realtime (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/pc-admin-card16-arrivals.browser.test.mjs:56:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:44:13
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT42BoardBrowser (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t42-board-browser-fixture.mjs:11:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-4d64bafb-cec9-4ecf-8baf-8acede2eceb6/new-detail-1920.png","width":1920,"height":1080,"sha256":"6f2d948a3ec2b65555fca7436a00f3be057064269e86a61f87d2a284cff0a527"}]}
+# Subtest: Card 16 reduced keeps official new-card reads, bounded motion and reading position
+ok 4 - Card 16 reduced keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1232.506042
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","board_boundaries":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-b107a34e-7b04-41e3-9c25-d93a14ab55db/new-detail-1920.png","width":1920,"height":1080,"sha256":"97bf54c0c3a7538fe42e771cba6fed43e182178903dbc212b8a2d485e916ad49"}]}
+# Subtest: Card 16 filtered keeps official new-card reads, bounded motion and reading position
+ok 5 - Card 16 filtered keeps official new-card reads, bounded motion and reading position
+  ---
+  duration_ms: 1551.324458
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7656.737166

@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: takeover keeps independent input visible when a failed peer draft meets temporary target failure
+ok 1 - takeover keeps independent input visible when a failed peer draft meets temporary target failure
+  ---
+  duration_ms: 2259.754291
+  type: 'test'
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-8b0a3b57-96a2-4293-946b-994565f10503"}
+# Subtest: UNKNOWN self takeover freezes its original intent through authorized
+not ok 2 - UNKNOWN self takeover freezes its original intent through authorized
+  ---
+  duration_ms: 2399.256791
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-8a148c19-9ba1-41cd-a502-d8251e346ccf"}
+# Subtest: UNKNOWN self takeover freezes its original intent through expired
+not ok 3 - UNKNOWN self takeover freezes its original intent through expired
+  ---
+  duration_ms: 2405.36125
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T07_DRAFT_PRIMARY {"message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-draft-ui-62e07fc8-726a-4e0e-806c-c605144266af"}
+# Subtest: UNKNOWN self takeover freezes its original intent through context-503
+not ok 4 - UNKNOWN self takeover freezes its original intent through context-503
+  ---
+  duration_ms: 2408.67075
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:51:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:129:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t07-draft-recovery.browser.test.mjs:54:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9655.713292

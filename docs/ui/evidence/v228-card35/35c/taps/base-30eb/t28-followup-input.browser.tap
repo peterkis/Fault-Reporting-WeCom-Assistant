@@ -1,0 +1,304 @@
+TAP version 13
+# T27_FAILURE_DIRECTORY /private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-88e77abd-9da2-48df-8dce-9dc45bd50d15
+# Subtest: T28 follow-up preserves unsubmitted input across parent conflict and retains exact UNKNOWN intent
+not ok 1 - T28 follow-up preserves unsubmitted input across parent conflict and retains exact UNKNOWN intent
+  ---
+  duration_ms: 1699.988625
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t28-followup-input.browser.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          detail: {
+            allowed_actions: [
+              'accept',
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1ef85-8864-73c7-9521-ea2a15b2cccc',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1ef85-8867-776c-bab5-296ef4a03c05',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+    ...
+          responsibility: {
+    +       conversations: [
+    +         {
+    +           assignment_status: null,
+    +           assignment_version: null,
+    +           combined_accept_allowed: true,
+    +           conversation_principal_id: null,
+    +           conversation_principal_name: null,
+    +           session_id: '01a1ef85-8869-70b7-b3cc-6bf8896c80df',
+    +           session_row_version: '1'
+    +         }
+    +       ],
+    -       conversations: [],
+            resolver_team_id: 'PILOT_IT',
+            resolver_team_name: 'Pilot 信息保障组',
+            ticket_assignee_id: null,
+            ticket_assignee_name: null,
+            ticket_id: '01a1ef85-845e-714d-9657-24d4fd998bca'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      ticketId: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+      detail:
+        id: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+        ticket_no: 'IT-20261119-0001'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-8444-768f-957d-7ac62a36c679'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+    1:
+      ticketId: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+      detail:
+        id: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+        ticket_no: 'IT-20261119-0002'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-8454-75e3-b0ef-1030879dda29'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+    2:
+      ticketId: '01a1ef85-845e-714d-9657-24d4fd998bca'
+      detail:
+        id: '01a1ef85-845e-714d-9657-24d4fd998bca'
+        ticket_no: 'IT-20261119-0003'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-845c-7d46-8873-fb78e0888424'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-845e-714d-9657-24d4fd998bca'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+  actual:
+    0:
+      ticketId: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+      detail:
+        id: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+        ticket_no: 'IT-20261119-0001'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-8444-768f-957d-7ac62a36c679'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-8446-7f5f-9cc9-cdde087c9d65'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1ef85-8864-73c7-9521-ea2a15b2cccc'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+    1:
+      ticketId: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+      detail:
+        id: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+        ticket_no: 'IT-20261119-0002'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-8454-75e3-b0ef-1030879dda29'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-8455-7bf3-a767-4076a4c2dc46'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1ef85-8867-776c-bab5-296ef4a03c05'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+    2:
+      ticketId: '01a1ef85-845e-714d-9657-24d4fd998bca'
+      detail:
+        id: '01a1ef85-845e-714d-9657-24d4fd998bca'
+        ticket_no: 'IT-20261119-0003'
+        request_type: 'INCIDENT'
+        status: 'QUEUED'
+        priority: 'NORMAL'
+        resolver_team_id: 'PILOT_IT'
+        assignee_id: ~
+        version: 1
+        created_at: '2026-11-19 00:37:47'
+        updated_at: '2026-11-19 00:37:47'
+        intake_id: '01a1ef85-845c-7d46-8873-fb78e0888424'
+        external_status: '等待受理'
+        allowed_actions:
+          0: 'accept'
+          1: 'dismiss'
+          2: 'add-note'
+          3: 'transfer-assignment'
+      events:
+        items:
+        next_cursor: ~
+      responsibility:
+        ticket_id: '01a1ef85-845e-714d-9657-24d4fd998bca'
+        ticket_assignee_id: ~
+        ticket_assignee_name: ~
+        resolver_team_id: 'PILOT_IT'
+        resolver_team_name: 'Pilot 信息保障组'
+        conversations:
+          0:
+            session_id: '01a1ef85-8869-70b7-b3cc-6bf8896c80df'
+            session_row_version: '1'
+            combined_accept_allowed: true
+            conversation_principal_id: ~
+            conversation_principal_name: ~
+            assignment_status: ~
+            assignment_version: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t28-followup-input.browser.test.mjs:53:16
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:70:17)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async candidateBrowser (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/wbint-t27-browser-fixture.mjs:19:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t28-followup-input.browser.test.mjs:8:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1863.967459

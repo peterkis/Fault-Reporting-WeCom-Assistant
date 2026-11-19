@@ -1,3 +1,4 @@
+import {DetailLoading} from '../../app/DetailLoading';
 import {StepEntry,useNextStep} from '../../design/components/Drawer/NextStep';
 import {shortCode} from '../../app/short-code';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
@@ -96,7 +97,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
     {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<StepEntry action="assign" label={pending||draft.operationId?'核对派单':action==='assign'?'派单给…':'转交'} fallbackTone={'secondary'}>{(tone,text)=><HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||draft.restoring||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
     {context.isError&&!open?<HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重试读取派单权限</HButton>:null}
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||draft.restoring} title="派单" closeLabel="关闭派单窗口" className="detail-action-dialog detail-assignment-dialog">
-    <p className="detail-operation-context">{itemLabel}</p>
+    <p className="detail-operation-context">{itemLabel}</p>{context.isPending||targets.isPending?<DetailLoading inline label="正在加载派单选项…"/>:null}
     {context.isError||targets.isError?<p role="alert">{errorMessage(context.error??targets.error)}</p>:null}
     <WorkbenchSelect label={<>处理组</>} value={team} isDisabled={blocked||(targets.isPending||targets.isError)} onChange={event=>{setTeam(event);setPerson('');}}><ListBox.Item id="" textValue={"请选择处理组"}>请选择处理组<ListBox.ItemIndicator/></ListBox.Item>{targets.data?.resolver_teams.map(group=><ListBox.Item key={group.team_id} id={group.team_id} textValue={String(group.display_name)}>{group.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
     <WorkbenchSelect label={<>处理人</>} value={person} isDisabled={blocked||!team||(targets.isPending||targets.isError)} onChange={event=>setPerson(event)}><ListBox.Item id="" textValue={"请选择处理同事"}>请选择处理同事<ListBox.ItemIndicator/></ListBox.Item>{targets.data?.items.map(item=><ListBox.Item key={item.principal_id} id={item.principal_id} textValue={String(item.display_name)}>{item.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>

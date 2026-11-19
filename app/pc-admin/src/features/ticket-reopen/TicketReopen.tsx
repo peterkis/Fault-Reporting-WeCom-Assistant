@@ -1,3 +1,4 @@
+import {DetailLoading} from '../../app/DetailLoading';
 import {StepWorkflow} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
@@ -76,7 +77,7 @@ export function TicketReopen({ticketId,principal,onBlockedChange,boardMode=false
  if(!allowed&&!commandId&&!reason&&!context.data?.reopen_follow_up&&state==='idle'&&context.isSuccess&&!context.isError)return null;
  return <StepWorkflow readState={context.isError?'unknown':context.isLoading?'pending':'ready'} action="reopen" label="重新打开" available={allowed} attention={Boolean(boardMode||reason||commandId||blocked||message||context.data?.reopen_follow_up)}><section className="ticket-notes ticket-reopen" aria-label="工作人员重开工单">
   <h3>重开同一工单</h3>
-  {loading?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
+  {loading?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:null}
   {context.data?<p hidden>工单版本 {context.data.version}</p>:null}
   {principal.ticket_reopen_rounds_enabled&&!context.isPending&&!context.isError&&context.data?.reopen_follow_up?<p data-reopen-follow-up role="status">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>:null}
   {allowed?<HForm onSubmit={event=>{event.preventDefault();if(blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!context.data||!reason.trim()||reason.trim().length>2000)return;void send(Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'STAFF_REOPEN',note:reason.trim()}));}}><HLabel htmlFor="reopen-reason">重开原因</HLabel><p>请先确认是同一故障。原因仅信息科可见。</p><HTextArea id="reopen-reason" maxLength={2000} disabled={blocked||loading} value={reason} onChange={event=>setReason(event.target.value)}/><p>保留原工单号和处理组。重开后需要重新接单。</p><HButton type="submit" data-action="reopen-ticket" isDisabled={blocked||loading||(context.isPending||context.isError)||!draft.canSubmit||!reason.trim()} tone="secondary">重开此工单</HButton></HForm>:<p>当前没有重开此工单的权限。</p>}

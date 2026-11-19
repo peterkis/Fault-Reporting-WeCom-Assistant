@@ -1,0 +1,50 @@
+TAP version 13
+# T07_LEGACY_PRIMARY {"mode":"t04-memory","message":"lost ACK retains the original in-memory navigation fence\\n\\nfalse !== true\\n","directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-legacy-62b8b84f-2fee-4620-9c96-a04dec2400ff"}
+# Subtest: mixed T07 t04-memory retains the original legacy recovery controller after genuine realtime removes its new actions
+not ok 1 - mixed T07 t04-memory retains the original legacy recovery controller after genuine realtime removes its new actions
+  ---
+  duration_ms: 1866.199625
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-legacy-recovery.browser.test.mjs:12:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    lost ACK retains the original in-memory navigation fence
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.ticketTakeoverEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-legacy-recovery.browser.test.mjs:101:28)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t07-legacy-recovery.browser.test.mjs:14:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# T07_LEGACY_RECOVERY {"mode":"t05-sensitive","receipt":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-legacy-45d104d1-9b00-4f52-8259-c18ab6daf20f/receipt.json","original_uuid":true}
+# Subtest: mixed T07 t05-sensitive retains the original legacy recovery controller after genuine realtime removes its new actions
+ok 2 - mixed T07 t05-sensitive retains the original legacy recovery controller after genuine realtime removes its new actions
+  ---
+  duration_ms: 2149.949334
+  type: 'test'
+  ...
+# T07_LEGACY_RECOVERY {"mode":"t05-expired","receipt":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t07-legacy-43937d8f-65c6-4e06-bd5c-31e5cd021c57/receipt.json","original_uuid":true}
+# Subtest: mixed T07 t05-expired retains the original legacy recovery controller after genuine realtime removes its new actions
+ok 3 - mixed T07 t05-expired retains the original legacy recovery controller after genuine realtime removes its new actions
+  ---
+  duration_ms: 2133.495416
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6317.126

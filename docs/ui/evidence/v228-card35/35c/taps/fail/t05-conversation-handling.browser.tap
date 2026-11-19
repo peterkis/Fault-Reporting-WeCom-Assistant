@@ -1,0 +1,171 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-623dd1fc-b1f6-4df7-a845-1230eccb1fd2/new-detail-1920.png","width":1920,"height":1080,"sha256":"0cf9640e97aa90b984d0b5959915e44c588b9044fb8160acf7e03d00d9d19989"}]}
+# Subtest: the production detail names the sole conversation action without an extra selection and retains the 720px shell
+ok 1 - the production detail names the sole conversation action without an extra selection and retains the 720px shell
+  ---
+  duration_ms: 1408.927666
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a temporary draft authorization failure does not trap a read-only detail without input
+ok 2 - a temporary draft authorization failure does not trap a read-only detail without input
+  ---
+  duration_ms: 1942.604125
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: refresh restores the explicit selection with its original Session version from the encrypted purpose copy
+ok 3 - refresh restores the explicit selection with its original Session version from the encrypted purpose copy
+  ---
+  duration_ms: 1937.726916
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-3003124b-9349-4a05-9df9-dc16f7610b6f/new-detail-900.png","width":900,"height":900,"sha256":"05b64e509e4fcfea13bbf4b86bde00ee332b1139c1f53caede3bcb869d2832ce"}]}
+# Subtest: the real production selection submits one POST and refreshes both authoritative responsibilities at narrow width
+ok 4 - the real production selection submits one POST and refreshes both authoritative responsibilities at narrow width
+  ---
+  duration_ms: 1369.725208
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a true Web Ticket explicitly retains communication without inventing a Session and disabled recovery does not open storage
+ok 5 - a true Web Ticket explicitly retains communication without inventing a Session and disabled recovery does not open storage
+  ---
+  duration_ms: 1216.823375
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: the sole-session shortcut preserves its exact selection and UUID when the response is unknown
+ok 6 - the sole-session shortcut preserves its exact selection and UUID when the response is unknown
+  ---
+  duration_ms: 1325.912292
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a conversation assigned to another colleague still requires explicit selection
+ok 7 - a conversation assigned to another colleague still requires explicit selection
+  ---
+  duration_ms: 1305.549209
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: an UNKNOWN composite keeps its original identified selection through reload and replays only on explicit checking
+ok 8 - an UNKNOWN composite keeps its original identified selection through reload and replays only on explicit checking
+  ---
+  duration_ms: 2118.936042
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: an UNKNOWN composite keeps its original identified selection through reload and expires into safe read-only Ack
+ok 9 - an UNKNOWN composite keeps its original identified selection through reload and expires into safe read-only Ack
+  ---
+  duration_ms: 2147.712084
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a real version conflict preserves the identified selection and its old version until explicit discard
+ok 10 - a real version conflict preserves the identified selection and its old version until explicit discard
+  ---
+  duration_ms: 2129.38625
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: restore rejects an ended canonical choice and a fresh Ticket rejection clears its encrypted copy and private view
+ok 11 - restore rejects an ended canonical choice and a fresh Ticket rejection clears its encrypted copy and private view
+  ---
+  duration_ms: 2007.095541
+  type: 'test'
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-76a7758c-3ccd-435d-8969-09f9ffae16d8/new-detail-1920.png","width":1920,"height":1080,"sha256":"44fc05fb4e11573190e2d49cbc7bf8b5b683614085b6971b22451598dd722bda"}]}
+# Subtest: a temporary before-save read failure preserves an independent choice
+not ok 12 - a temporary before-save read failure preserves an independent choice
+  ---
+  duration_ms: 2027.331208
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:185:39'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    browserScenario.workbenchDraftRecoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:204:11)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:20:7)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async browserScenario (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:12:3)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:186:2)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a temporary after-save read failure preserves an independent choice
+ok 13 - a temporary after-save read failure preserves an independent choice
+  ---
+  duration_ms: 2306.373916
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a failed peer operation leaves this page's independent conversation choice visible
+ok 14 - a failed peer operation leaves this page's independent conversation choice visible
+  ---
+  duration_ms: 1954.276833
+  type: 'test'
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-b7acf106-7396-4c8d-ae99-009379ceacdc/new-detail-1920.png","width":1920,"height":1080,"sha256":"3bdfafe93185cbb9287fb6d81aec4c2b49676074f71fa79c523d99521dea428f"}]}
+# Subtest: checking a failed peer operation keeps the independent conversation selection visible
+not ok 15 - checking a failed peer operation keeps the independent conversation selection visible
+  ---
+  duration_ms: 2101.8205
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:239:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    browserScenario.workbenchDraftRecoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:253:236)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:20:7)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async browserScenario (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:12:3)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t05-conversation-handling.browser.test.mjs:240:2)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: a temporarily unavailable related list still shows this page's unsaved selected session
+ok 16 - a temporarily unavailable related list still shows this page's unsaved selected session
+  ---
+  duration_ms: 1824.365292
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_conversation_self_handling":true,"screenshots":[]}
+# Subtest: an unrelated settlement and temporary reauthorization failure never suggest refreshing an unsaved choice
+ok 17 - an unrelated settlement and temporary reauthorization failure never suggest refreshing an unsaved choice
+  ---
+  duration_ms: 1897.08025
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 15
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31191.118167

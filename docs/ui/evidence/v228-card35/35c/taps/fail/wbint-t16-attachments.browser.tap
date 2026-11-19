@@ -1,0 +1,76 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-92144de6-08bd-4108-99cb-d2d50b190a55/new-detail-1920.png","width":1920,"height":1080,"sha256":"b377920d1775831d1719b62826e3cd8925ae98523bea67191463087570a3703e"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-92144de6-08bd-4108-99cb-d2d50b190a55/new-detail-900.png","width":900,"height":1080,"sha256":"9225f0416f68d0842ec985ae8d5640bbeab838efadcb0c40aee95844c42eba13"}],"downloads":[{"mime_type":"image/png","byte_size":70,"sha256":"d5a51b6aed15684ec8c123e30fe5703155359d6543b6d7b47cb5766ef44939de"},{"mime_type":"image/jpeg","byte_size":761,"sha256":"31706d9755930b4d4b125bbaa8972382eb0a0e9ded9255946dd2b92277a0355a"}],"unmount_aborted":true,"blob_urls":0}
+# Subtest: production bundle displays a real authorized attachment and downloads actual stored bytes
+ok 1 - production bundle displays a real authorized attachment and downloads actual stored bytes
+  ---
+  duration_ms: 1940.801625
+  type: 'test'
+  ...
+# T16_TARGET_DOWNLOAD {"stage":"before-click","locker_pid":63681,"button":{"exists":true,"disabled":false}}
+# T16_TARGET_DOWNLOAD {"stage":"blocked","locker_pid":63681,"target_pid":63700,"target_arrivals":1,"target_finished":false,"relation_waiter_count":1,"blocked":true,"waiters":[{"pid":63700,"state":"active","wait_event_type":"Lock","wait_event":"relation","blocked_by_locker":true,"source_query":true,"query_sha256":"46fed91ae41c0a325813a299dae376ce60c86f2d970197d32a7f162b0a088bca"}]}
+# T16_TARGET_DOWNLOAD {"stage":"closed","target_arrivals":1,"target_finished":false,"disconnected":true,"headers_sent":false,"writable_ended":false,"destroyed":true}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-543f5370-196c-425c-80f7-da299984924f/new-detail-1920.png","width":1920,"height":1080,"sha256":"c4bc2fc3c2551de1de74020bf1bd1ce82f0405ca5d17777d7a3c32fc6f15724d"}]}
+# Subtest: production attachment UI reports disabled storage without reading it
+ok 2 - production attachment UI reports disabled storage without reading it
+  ---
+  duration_ms: 1320.680166
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG_AUTHENTICATED_FILE","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-c1bac149-4d4a-494d-bc6f-e4e76b3646a8/new-detail-1920.png","width":1920,"height":1080,"sha256":"74056a945dba47553527b6fc393d704d255d08a12d50a877f7512d93cc7ae05c"}]}
+# Subtest: real expiry, missing, oversized and HTML attachments stay unavailable and inactive identity clears the page
+ok 3 - real expiry, missing, oversized and HTML attachments stay unavailable and inactive identity clears the page
+  ---
+  duration_ms: 1388.28775
+  type: 'test'
+  ...
+# Subtest: real parent scope loss fences cached detail and attachment download authority together
+not ok 4 - real parent scope loss fences cached detail and attachment download authority together
+  ---
+  duration_ms: 31103.025166
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:250:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:260:9
+    async withAttachmentBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:184:9)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:35:13
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT16Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:10:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:251:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: attachment READ loss also clears the requested Review alias of its canonical Ticket
+not ok 5 - attachment READ loss also clears the requested Review alias of its canonical Ticket
+  ---
+  duration_ms: 31265.5925
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:266:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:283:13
+    async withAttachmentBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:184:9)
+    async withT16Fixture.manualReviewEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:277:9)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:35:13
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT16Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t16-fixture.mjs:10:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t16-attachments.browser.test.mjs:267:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67185.36875

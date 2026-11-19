@@ -11,17 +11,27 @@ import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-br
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 
+// A known title also appears in DetailSkeleton. Navigation resumes only after
+// the destination's real content and action reads have settled.
+async function waitForDisplayedDetail(browser,id){
+  const title=await browser.evaluate("document.querySelector('[data-item-id=\""+id+"\"] h3')?.getAttribute('title')");
+  assert.equal(typeof title,'string');assert.ok(title);
+  // Router URL commits can precede the destination render; the old heading is
+  // still real content, so also match the selected card's authorized title.
+  await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(id)+"&&document.querySelector('.detail-dialog .ds-detail-hero #detail-title')?.textContent==="+JSON.stringify(title)+"&&document.querySelector('.detail-dialog .ds-next-step')?.dataset.readState==='ready'");
+}
+
 test('v2.1 SSE arrival keeps the frozen detail navigation inside the rendered intake group',{timeout:120000},()=>withWeb01Fixture(async f=>{
   let browser,error;
   try{
     await f.runtime.realtimeProjector.runOnce();
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
     await browser.command('Page.bringToFront');
-    await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+    await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
     await clickWorkbenchControl(browser,'.board-column.pending [data-action=expand-column]');
     const initial=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(initial.length,7);
     await clickWorkbenchControl(browser,'.board-column.pending [data-item-id="'+initial[1]+'"] .card-open');
-    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    await waitForDisplayedDetail(browser,initial[1]);
     assert.equal(await browser.evaluate("document.querySelector('.board-column.pending .ds-column-sort').disabled"),true,'order freeze must be active');
     const source=await seedPersistedIntake({pool:f.pool,text:'SSE新增待判断分组的合成报修。'});await f.processReviewIntake(source.intakeId);
     const review=(await f.pool.query('SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid',[source.intakeId])).rows[0];assert.ok(review);
@@ -31,10 +41,10 @@ test('v2.1 SSE arrival keeps the frozen detail navigation inside the rendered in
     assert.equal(await browser.evaluate("document.querySelector('.board-column.pending .ds-column-sort').disabled"),true,'freeze must remain active after the real SSE reread');
     assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),initial[1]);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
-    await browser.waitFor("location.pathname.split('/').at(-1)!=="+JSON.stringify(initial[1]));
+    await waitForDisplayedDetail(browser,review.id);
     assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),review.id,'next follows the new rendered group member');
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
-    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(initial[1]));
+    await waitForDisplayedDetail(browser,initial[1]);
     assert.deepEqual(current.filter(id=>id!==review.id),initial,'the original group order stays stable');
   }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
 },{workbenchRealtimeEnabled:true,manualProjection:true}));
@@ -49,7 +59,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
       await browser.command('Page.bringToFront');
       await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
-      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('[data-summary-filter=mine]')?.getAttribute('aria-disabled')==='false'");
+      await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9&&document.querySelector('[data-summary-filter=mine]')?.getAttribute('aria-disabled')==='false'");
       const pages=await Promise.all(['pending','active','handled'].map(async column=>{const response=await fetch(f.origin+'/api/workbench/board?column='+column+'&range=recent',{headers:{cookie:f.cookies[0]}});assert.equal(response.status,200);return response.json();}));
       const loaded=pages.flatMap(page=>page.items),mine=loaded.filter(item=>item.attention.related_reasons.includes('HANDLING'));
       const initialReads=reads.length;
@@ -71,7 +81,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].filter(n=>n.checkVisibility()).every(n=>Boolean(n.querySelector('.ds-ticket-heat[data-tone=danger]')))"),true,'only cards with the red overdue marker stay visible');
       assert.equal(await browser.evaluate("location.search"),'','local summary does not replace server query criteria');
       await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');
-      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9");
+      await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9");
       await clickWorkbenchControl(browser,'[data-board-group=待判断] .ds-board-group-trigger');
       await browser.waitFor("document.querySelector('[data-board-group=待判断] .ds-board-group-trigger').getAttribute('aria-expanded')==='false'");
       await browser.waitFor("[...document.querySelectorAll('[data-board-group=待判断] .ticket-card')].every(n=>!n.checkVisibility())");
@@ -103,7 +113,7 @@ test('v2.1 board summary, sorting and intake groups only filter loaded authorize
     let browser,error;
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:900,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
-      await browser.waitFor("Boolean(document.querySelector('[data-action=new-report] kbd'))&&document.querySelectorAll('.ticket-card').length===9");
+      await browser.waitFor("Boolean(document.querySelector('[data-action=new-report] kbd'))&&document.querySelectorAll('.ticket-card[data-item-id]').length===9");
       assert.equal(await browser.evaluate("document.querySelector('[data-action=new-report] kbd').textContent"),'N');
       assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').getAttribute('aria-disabled')"),'true');
       // An unavailable 「我负责」 shows no count rather than a placeholder value.
@@ -119,18 +129,21 @@ for(const realtime of [false,true])test('v2.1 displayed order drives detail navi
   let browser,error;
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...f.browserCookies[0],url:f.origin}]});assert.ok(browser);
-    await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+    // The 35A minimum display time can keep nine skeleton cards after the counts arrive.
+    // Freeze navigation from real authorized items, never from their loading placeholders.
+    await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
     const before=await browser.evaluate("[...document.querySelectorAll('.board-column.handled .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(before.length,3);
     const card='.board-column.handled [data-item-id="'+before[1]+'"] .card-open';
-    await clickWorkbenchControl(browser,card);await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    await clickWorkbenchControl(browser,card);await waitForDisplayedDetail(browser,before[1]);
     assert.equal(await browser.evaluate("document.querySelector('.board-column.handled .ds-column-sort').disabled"),realtime,'only SSE detail activates the existing order freeze');
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.handled .ticket-card')].map(n=>n.dataset.itemId)"),before,'opening a detail freezes the displayed sort, not server order');
     const previousTitle=await browser.evaluate("document.querySelector('.detail-dialog #detail-title').textContent");
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
-    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title')?.textContent)&&document.querySelector('.detail-dialog #detail-title').textContent!=="+JSON.stringify(previousTitle));
+    await waitForDisplayedDetail(browser,before[2]);
+    assert.notEqual(await browser.evaluate("document.querySelector('.detail-dialog #detail-title').textContent"),previousTitle);
     assert.equal(await browser.evaluate("location.pathname.split('/').at(-1)"),before[2],'next opens the item below the selected card');
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
-    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(before[1]));
+    await waitForDisplayedDetail(browser,before[1]);
     assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.handled .ticket-card')].map(n=>n.dataset.itemId)"),before);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=关闭详情]');
     await browser.waitFor("!document.querySelector('.detail-dialog')");
@@ -138,11 +151,11 @@ for(const realtime of [false,true])test('v2.1 displayed order drives detail navi
     await clickWorkbenchControl(browser,'[data-summary-filter=pending]');
     const pending=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>n.dataset.itemId)");assert.equal(pending.length,3);
     await clickWorkbenchControl(browser,'.board-column.pending [data-item-id="'+pending[1]+'"] .card-open');
-    await browser.waitFor("Boolean(document.querySelector('.detail-dialog #detail-title'))");
+    await waitForDisplayedDetail(browser,pending[1]);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=下一项]');
-    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(pending[2]));
+    await waitForDisplayedDetail(browser,pending[2]);
     await clickWorkbenchControl(browser,'.detail-dialog button[aria-label=上一项]');
-    await browser.waitFor("location.pathname.split('/').at(-1)==="+JSON.stringify(pending[1]));
+    await waitForDisplayedDetail(browser,pending[1]);
   }catch(failure){error=failure;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);}
 },{workbenchRealtimeEnabled:realtime}));
 
@@ -232,7 +245,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.evaluate('globalThis.__t23InvalidDenial=true');await change('T23拒绝后必须清理的输入');
       await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       assert.equal(await browser.evaluate('document.body.innerText.includes("T23拒绝后必须清理的输入")'),false);
       assert.deepEqual(await browser.evaluate('globalThis.__t23Statuses'),[200,200,409,200,403]);
@@ -242,7 +255,7 @@ test('source group name editing keeps an exact version basis, reconciles the ori
       await browser.waitFor('Boolean(document.querySelector("[data-action=refresh-source-group]"))');await change('T23读取失权时须清理的输入');
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.evaluate('document.querySelector("[data-action=refresh-source-group]").click()');
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       assert.equal(await browser.evaluate('document.body.innerText.includes("T23读取失权时须清理的输入")'),false);
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
@@ -276,7 +289,7 @@ test('the default-off source group settings stays closed without requesting dire
   await withWeb01Fixture(async({origin,browserCookies,runtime})=>{
     const requests=[];runtime.server.on('request',request=>{if(request.url?.startsWith('/api/workbench/source-groups'))requests.push(request.url);});
     let browser,error;
-    try{browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups',width:900,height:900,cookies:[browserCookies[0]]});await browser.waitFor('document.body.innerText.includes("来源群目录未开放")');assert.equal(requests.length,0);assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);}
+    try{browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups',width:900,height:900,cookies:[browserCookies[0]]});await browser.waitFor('document.body.innerText.includes("来源群目录尚未开放")');assert.equal(requests.length,0);assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);}
     catch(failure){error=failure;}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   });
@@ -327,16 +340,16 @@ test('administrator source group settings searches the real directory across pag
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:300,downloadThroughput:-1,uploadThroughput:-1});
       await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="检索来源群"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'T23没有匹配的全新名称');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
       await browser.evaluate('document.querySelector("[data-action=search-source-groups]").click()');
-      await browser.waitFor('document.body.innerText.includes("正在读取来源群目录")');
-      await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
+      await browser.waitFor("Boolean(document.querySelector('[data-loading-status][aria-label=\"正在加载来源群目录…\"]'))");
+      await browser.waitFor('document.body.innerText.includes("没有符合条件的来源群")');assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
       await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
       await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');
-      await browser.waitFor('document.body.innerText.includes("目录读取失败")');assert.equal(await browser.evaluate('document.body.innerText.includes("未找到匹配来源群")'),false);
+      await browser.waitFor('document.body.innerText.includes("来源群目录没有读出来")');assert.equal(await browser.evaluate('document.body.innerText.includes("没有符合条件的来源群")'),false);
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
-      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');
+      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');await browser.waitFor('document.body.innerText.includes("没有符合条件的来源群")');
       await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
       await browser.command('Page.navigate',{url:origin+'/workbench/app/settings/source-groups'});
-      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      await browser.waitFor('document.body.innerText.includes("当前账号不能查看目录")');
       assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
       assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
       await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+tickets[0].ticket.id+'?detail=page'});
@@ -456,7 +469,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
         await browser.waitFor("document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelectorAll('[data-action=expand-column]').length===3");
         await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column][aria-expanded=false]')].forEach(button=>button.click())");
       };
-      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+      await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelectorAll('.board-column').length"),3);
       assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'24px',text:'rgb(55, 53, 47)',columns:3});
       assert.equal(await browser.evaluate("[...document.querySelectorAll('.ticket-card')].every(card=>card.querySelector('.ds-ticket-body')?.children.length===4&&card.querySelector('.card-meta .ds-source-label')&&!card.querySelector('.card-tags .ds-source-label'))"),true,'four rows and neutral source metadata');
@@ -539,14 +552,14 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("Boolean(document.querySelector('.topbar .connection'))"),false,'connection state does not reintroduce the removed header label');
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
-      await browser.waitFor("document.body.innerText.includes('连接失败')");
+      await browser.waitFor("document.querySelector('.ds-connection-slot[data-open=true] .ds-connection-bar')?.textContent.includes('连接已断开，正在重新连接…')");
       await capture('new-offline-900.png');
       await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
       // The existing test-auth port issues a distinct cookie name per principal.
       await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
       // The list view persists: an account that sees nothing gets the list's empty groups, then the empty board.
-      await browser.waitFor("document.querySelector('.work-table')?.innerText.includes('暂无事项')&&document.querySelectorAll('tbody tr.ds-work-row').length===0");
+      await browser.waitFor("document.querySelector('.work-table')?.innerText.includes('这里暂时没有工单')&&document.querySelectorAll('tbody tr.ds-work-row').length===0");
       await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('看板')).click()");
       await browser.waitFor("document.body.innerText.includes('这里暂时没有工单')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
       await browser.waitFor("Boolean(document.querySelector('.board-column.handled [data-action=view-earlier]'))");
@@ -557,7 +570,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       await browser.waitFor("document.body.innerText.includes('找不到这条事项，或您目前无法查看')");
       await browser.command('Network.deleteCookies',{name:browserCookies[1].name,url:origin});
       await browser.command('Network.setCookies',{cookies:[browserCookies[0]]});
-      await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card[data-item-id]').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
       assert.equal(await browser.evaluate("document.querySelector('.board').getBoundingClientRect().width<=innerWidth"),true);
       assert.equal(await browser.evaluate("(()=>{const board=document.querySelector('.board'),style=getComputedStyle(board),columns=style.gridTemplateColumns.split(' ').map(Number.parseFloat);return getComputedStyle(document.querySelector('.sidebar')).display==='none'&&columns.length===3&&columns.every(width=>width>=300)&&style.overflowX==='auto'&&board.scrollWidth>board.clientWidth;})()"),true,'v2 narrow board keeps three readable columns inside a horizontal scroller');
       await capture('new-board-900.png');

@@ -1,0 +1,1702 @@
+{
+  "schema_version": 1,
+  "base": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "rule": "Exact normalized paragraph fingerprints and counts; no directory-wide exemptions. See card-35c-inventory.md W01-W14 and D05.",
+  "entries": [
+    {
+      "file": "app/Workbench.tsx",
+      "kind": "jsx-p",
+      "sha256": "7a72a436169df5048490a1087f9a8e13eb6f29088acf08440cd42653ee5bae03",
+      "fragment": "<p>{text}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A03",
+        "A04",
+        "W11"
+      ],
+      "reason": "35A ownership: original shell text, outside 35C."
+    },
+    {
+      "file": "app/Workbench.tsx",
+      "kind": "jsx-p",
+      "sha256": "59f5ad99c6b5854594bf9fb673f46f0ac8bdf60a4b9155e54c95e6dbfdbba3fc",
+      "fragment": "<p role=\"status\">搜索入口当前关闭，已返回原分页看板。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A03",
+        "A04",
+        "W11"
+      ],
+      "reason": "35A ownership: original shell text, outside 35C."
+    },
+    {
+      "file": "design/components/Drawer/NextStep.tsx",
+      "kind": "jsx-p",
+      "sha256": "106af1b80f40f89e605349b3e638d3e8c83b1012a3c74b7d859031e29c8c31cf",
+      "fragment": "<p>{summary}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A06",
+        "W11"
+      ],
+      "reason": "35A ownership: original next-step summary."
+    },
+    {
+      "file": "design/components/EmptyState/EmptyState.tsx",
+      "kind": "jsx-p",
+      "sha256": "03c28357a4d990b9bbcb5688d563ef1efd6e4c9a31d5bf217ca0651a4769a38d",
+      "fragment": "<p>{summary??description}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A08",
+        "W11"
+      ],
+      "reason": "Approved design component implementation."
+    },
+    {
+      "file": "design/components/ErrorState/ErrorState.tsx",
+      "kind": "jsx-p",
+      "sha256": "3dceebc23707838d10a4005a577f1ff983ac63f17ef139bf11bca1ab69cf1d28",
+      "fragment": "<p>{description}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A08",
+        "W11"
+      ],
+      "reason": "Approved 35A error component implementation and copy feedback."
+    },
+    {
+      "file": "design/components/ErrorState/ErrorState.tsx",
+      "kind": "jsx-p",
+      "sha256": "5619a6daffb8d88ea0add483b4beda32719f546fa34b9a3d2c078729a4253c61",
+      "fragment": "<p role=\"status\">未能复制，请允许复制后重试。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "A08",
+        "W11"
+      ],
+      "reason": "Approved 35A error component implementation and copy feedback."
+    },
+    {
+      "file": "design/components/OnlineColleagues/OnlineColleagues.tsx",
+      "kind": "jsx-p",
+      "sha256": "80150e54a5cffef243bd0ae5979ec731ccbc8aa9dfa01478d5c3b796c17fa24f",
+      "fragment": "<p className=\"ds-online-panel-title\">在线同事 · {total}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "W04"
+      ],
+      "reason": "Business count, not a read placeholder."
+    },
+    {
+      "file": "design/components/PageHeader/PageHeader.tsx",
+      "kind": "jsx-p",
+      "sha256": "3dceebc23707838d10a4005a577f1ff983ac63f17ef139bf11bca1ab69cf1d28",
+      "fragment": "<p>{description}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "W04"
+      ],
+      "reason": "Page description, not a read placeholder."
+    },
+    {
+      "file": "design/components/TicketCard/ClosureDialog.tsx",
+      "kind": "jsx-p",
+      "sha256": "540712dd41d20cdb5b25eba2b87a20f34ed82b450591e32ea4e11ee56a66bb11",
+      "fragment": "<p role=\"status\">{message}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F42",
+        "F43",
+        "W07"
+      ],
+      "reason": "Q7: existing search result/validation copy retained; notification and item facts are not read errors."
+    },
+    {
+      "file": "design/components/TicketCard/ClosureDialog.tsx",
+      "kind": "jsx-p",
+      "sha256": "6e83658d727596a109c742790fdf34db5df87a1e3d2a924acfbfd14ec59d76d9",
+      "fragment": "<p className=\"ds-closure-context\"><span className=\"ds-closure-number\">{number}</span> · {title}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F42",
+        "F43",
+        "W07"
+      ],
+      "reason": "Q7: existing search result/validation copy retained; notification and item facts are not read errors."
+    },
+    {
+      "file": "design/components/TicketCard/ClosureDialog.tsx",
+      "kind": "jsx-p",
+      "sha256": "e937230ec2de8d287f65bb47a05e924c4e66f6622d96d6d003be7db4ecb769f7",
+      "fragment": "<p role=\"alert\" className=\"ds-closure-error\">{error}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F42",
+        "F43",
+        "W07"
+      ],
+      "reason": "Q7: existing search result/validation copy retained; notification and item facts are not read errors."
+    },
+    {
+      "file": "design/components/TicketCard/ClosureDialog.tsx",
+      "kind": "jsx-p",
+      "sha256": "11728ddd0568467e676f47288dea3b160fb9128fdba4bb18b48876a827ed1842",
+      "fragment": "<p data-closure-notification-text>「{notice.text}」</p>",
+      "maxCount": 2,
+      "inventory": [
+        "F42",
+        "F43",
+        "W07"
+      ],
+      "reason": "Q7: existing search result/validation copy retained; notification and item facts are not read errors."
+    },
+    {
+      "file": "design/components/TicketCard/TicketPresence.tsx",
+      "kind": "jsx-p",
+      "sha256": "ca5d102354f60248cfcb8120415c08b560208558f0ae2fad1089a5c27807c19d",
+      "fragment": "<p className=\"ds-presence-claim-hint\" data-presence-claim-hint><Eye aria-hidden=\"true\"/><span>{first.display_name}{first.mode==='EDITING'?'正在处理这张工单':'正在查看这张工单，领取前可先确认'}</span></p>",
+      "maxCount": 1,
+      "inventory": [
+        "A06",
+        "W11"
+      ],
+      "reason": "35A presence ownership; business editing fact, not a read placeholder."
+    },
+    {
+      "file": "features/attachments/AttachmentSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "f348b3abe8e173c2ca60cc69129a3a0adba0b7cb73ad9e17285bc3e39df4f30c",
+      "fragment": "<p role=\"status\">{errorMessage(legacyFailure)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O26",
+        "W14"
+      ],
+      "reason": "Existing retry is guarded by media/modal/preview state; ErrorState/StaleRetry has no disabled prop. Kept, D05."
+    },
+    {
+      "file": "features/conversations/ConversationAssociatedItem.tsx",
+      "kind": "jsx-p",
+      "sha256": "cfb30535db6e18d84f185dffa186712dccb3c2808e801fd0678f38bbe6b994b4",
+      "fragment": "<p role=\"alert\">{errorMessage(detail.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C33",
+        "W12"
+      ],
+      "reason": "Q7: existing error and full-item action; no new summary retry."
+    },
+    {
+      "file": "features/conversations/ConversationComposer.tsx",
+      "kind": "jsx-p",
+      "sha256": "6868025cc528b0ca11a34ac7231b2f4d965e4c546a0b61ad8904e840899cfb7a",
+      "fragment": "<p className={'ds-composer-disabled-reason'+(receptionVisible?' sr-only':'')} id={'audience-'+purpose}><LockKeyhole aria-hidden=\"true\"/>{disabledReason}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C36",
+        "C37",
+        "W13"
+      ],
+      "reason": "Q3/Q4: reply/note action reasons are not page read-only reasons."
+    },
+    {
+      "file": "features/conversations/ConversationControl.tsx",
+      "kind": "jsx-p",
+      "sha256": "5ca678ea73ed981b75958ebde358dd3213a8c967642231f802ebec939161cff6",
+      "fragment": "<p role=\"alert\">{errorMessage(eligible.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C39",
+        "W12"
+      ],
+      "reason": "Q7: existing eligible-person error, retry-only enhancement deferred."
+    },
+    {
+      "file": "features/conversations/ConversationInbox.tsx",
+      "kind": "jsx-p",
+      "sha256": "698bc4e7ce5c93a7721d64da04ad9326dcb1b49e33e1c755820b629b10df8756",
+      "fragment": "<p role=\"alert\">{errorMessage(related.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C22",
+        "C23",
+        "C25",
+        "C28",
+        "W02",
+        "W03",
+        "W13"
+      ],
+      "reason": "Q7 deferred menu error; media safety, per-message confirmation, ended-topic reason stay local."
+    },
+    {
+      "file": "features/conversations/ConversationInbox.tsx",
+      "kind": "jsx-p",
+      "sha256": "c2519484ae612bbec5aaff323dd5b89fac983ae3ae10b08f56f1b4bc1e420694",
+      "fragment": "<p className=\"inbox-media\"><Paperclip size={14}/> 媒体暂不可用；已保存附件请从关联事项受控下载。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C22",
+        "C23",
+        "C25",
+        "C28",
+        "W02",
+        "W03",
+        "W13"
+      ],
+      "reason": "Q7 deferred menu error; media safety, per-message confirmation, ended-topic reason stay local."
+    },
+    {
+      "file": "features/conversations/ConversationInbox.tsx",
+      "kind": "jsx-p",
+      "sha256": "5304731a9396754aa6b9ea19e7cccde692c8a493e06a6542d76c5082b1451922",
+      "fragment": "<p className=\"inbox-committed\" key={r.message_id} data-pending-message={r.message_id}>已提交，正在确认发送状态</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C22",
+        "C23",
+        "C25",
+        "C28",
+        "W02",
+        "W03",
+        "W13"
+      ],
+      "reason": "Q7 deferred menu error; media safety, per-message confirmation, ended-topic reason stay local."
+    },
+    {
+      "file": "features/conversations/ConversationInbox.tsx",
+      "kind": "jsx-p",
+      "sha256": "af1cad7ed3c4e2514c22ed80c11108ac4050d7ba5fcedee1c6a13c8f5304ad6c",
+      "fragment": "<p className=\"inbox-ended\">历史主题只读；新沟通请明确续接后继续接待。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C22",
+        "C23",
+        "C25",
+        "C28",
+        "W02",
+        "W03",
+        "W13"
+      ],
+      "reason": "Q7 deferred menu error; media safety, per-message confirmation, ended-topic reason stay local."
+    },
+    {
+      "file": "features/conversations/Conversations.tsx",
+      "kind": "jsx-p",
+      "sha256": "6cb176c88de942bc9cd2b8fa914117640435d4cc743e4d196b17ba8b895464bb",
+      "fragment": "<p role=\"alert\">{errorMessage(query.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C16",
+        "C42",
+        "W03",
+        "W12"
+      ],
+      "reason": "Q7 deferred association error; per-delivery facts and confirmation stay local."
+    },
+    {
+      "file": "features/conversations/Conversations.tsx",
+      "kind": "jsx-p",
+      "sha256": "15048fa6a983807ad6194318b737b08c43377eb225e6de335420bc5025c775cf",
+      "fragment": "<p key={d.delivery_id} data-delivery-id={d.delivery_id}>{d.side_effect_state==='UNKNOWN'||d.status==='UNKNOWN'?'发送结果待核对':d.status==='SENT'?'已发送':d.status==='DEAD_LETTER'?'发送失败':d.status==='SENDING'?'正在发送':'等待发送'}{d.last_error_code?<DiagnosticCopy data={copiedReadDiagnostics({code:d.last_error_code})}/>:null}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C16",
+        "C42",
+        "W03",
+        "W12"
+      ],
+      "reason": "Q7 deferred association error; per-delivery facts and confirmation stay local."
+    },
+    {
+      "file": "features/conversations/Conversations.tsx",
+      "kind": "jsx-p",
+      "sha256": "c4179aae51fc3f9666796ef319116ac2b667e046ff76156da6756e180535046d",
+      "fragment": "<p>已提交，正在确认发送状态</p>",
+      "maxCount": 1,
+      "inventory": [
+        "C16",
+        "C42",
+        "W03",
+        "W12"
+      ],
+      "reason": "Q7 deferred association error; per-delivery facts and confirmation stay local."
+    },
+    {
+      "file": "features/efficiency/WorkbenchEfficiency.tsx",
+      "kind": "jsx-p",
+      "sha256": "76777f680115f564e11e9b3de51c19bfabd6273ae7fc654112faafc89acc80e8",
+      "fragment": "<p>领取沿用当前工单的可用操作；没有领取权限时不执行。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O58",
+        "O59",
+        "O61",
+        "W06",
+        "W07"
+      ],
+      "reason": "Command palette one-line loading/validation/result; not a page content block."
+    },
+    {
+      "file": "features/efficiency/WorkbenchEfficiency.tsx",
+      "kind": "jsx-p",
+      "sha256": "76220cff267bf790a67873001a33c92c1ee63b692c8310d5a25a73eb10a055eb",
+      "fragment": "<p className=\"efficiency-status\" role=\"status\">{blocked?'请先完成当前操作。':criteria===null?'搜索文字包含不支持的字符，请修改后重试。':principal.workbench_search_enabled&&(query&&!current||query&&searched.isPending)?'正在搜索…':query&&searched.isError?errorMessage(searched.error):query&&!options.length?'没有找到当前可查看的事项或操作。':searched.data?.next_cursor?'仅显示首批结果；缩小搜索范围可找到更多事项。':'↑ ↓ 选择 · Enter 打开 · Esc 关闭'}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O58",
+        "O59",
+        "O61",
+        "W06",
+        "W07"
+      ],
+      "reason": "Command palette one-line loading/validation/result; not a page content block."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "0349e44d8c71d88d1a661d35cc6929b5235737259d94b5ffb50f207a8b5ca1e1",
+      "fragment": "<p>共享时间维护已关闭；仍可核对原操作。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "6cb176c88de942bc9cd2b8fa914117640435d4cc743e4d196b17ba8b895464bb",
+      "fragment": "<p role=\"alert\">{errorMessage(query.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "4bdd7cbb3310561943b40e23ee1b51bd27446bd5b265a94574179b1b6d0abc04",
+      "fragment": "<p role=\"status\">以下为最近已确认资料，最新安排仍需重新读取。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "071271ce31fdd2dfaf1ee8acf3a2c141ad8f8132b4d412ce9223837bb7008cb0",
+      "fragment": "<p>{view.active?<><BeijingTime value={view.active.due_at}/>{view.active.is_due?' · 已到期，请跟进':' · 已安排'}</>:'尚无活动的共享时间'}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "bbfcba670f6147d0d67e3c44d0d28e2b11fc0abae2db943e8fb3273ec1c731e5",
+      "fragment": "<p>当前仅可查看安排与历史。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/follow-up/SharedFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "f880b14e978442e925befc50e1b03b51a0b7f3c125fbab4af846d88d440041a6",
+      "fragment": "<p>显示最近20条记录，仍有更早历史。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F39",
+        "F40",
+        "O51",
+        "O52",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q3 local feature reason/facts. Read retries have busy guards unsupported by new component API, D05."
+    },
+    {
+      "file": "features/incident-candidates/CandidateDecisionForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "75650a789f912ae4422d9509d7cee96461d7824b52f9cae6f15b8ec2f316b894",
+      "fragment": "<p role=\"alert\">已有选择当前不可读取或未提供；没有自动替换或删除原选择，请重新核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I10",
+        "I13",
+        "W07",
+        "W13"
+      ],
+      "reason": "Field choice safety/validation and local decision permission."
+    },
+    {
+      "file": "features/incident-candidates/CandidateDecisionForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "0318ce6c0f11a67d4da0e744a68e4332c7ad33d5de5f0bee2635b848bb39a4e9",
+      "fragment": "<p>当前可读取候选，没有人工决定权限。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I10",
+        "I13",
+        "W07",
+        "W13"
+      ],
+      "reason": "Field choice safety/validation and local decision permission."
+    },
+    {
+      "file": "features/incident-candidates/CandidateDetail.tsx",
+      "kind": "jsx-p",
+      "sha256": "8b074c4390e4c11b99b7e51445146319c1ed01666f7786fa7527f98caef2c378",
+      "fragment": "<p role=\"alert\">{cleanupError}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I08",
+        "W05"
+      ],
+      "reason": "Known-result draft cleanup safety, Q5/Q13 original copy retained."
+    },
+    {
+      "file": "features/incident-candidates/IncidentDeliveryControls.tsx",
+      "kind": "jsx-p",
+      "sha256": "2787096f519ddd8f4168ac4e054894b2e764f8582a9eed4a049a6ae41e86a5fe",
+      "fragment": "<p role=\"alert\">{errorMessage(capability.error)}；无法读取能力不代表有操作权。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I24",
+        "W12"
+      ],
+      "reason": "Q7 existing capability error; no new retry or authority inference."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "edc0846e2c0191cb8d4e2593a7e734400a86ae8a63fe6ecb0de0feb046021a41",
+      "fragment": "<p>{title}：当前页 {current} 项；已加载窗口 {count} 项（最近最多三页，每页30）。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "f920c263f7e4c322e8658da90ecee7e26740601b5a4bae603e5bb76a52d06097",
+      "fragment": "<p role=\"alert\">{errorMessage(query.error)} 已知结果和原输入不会由读取失败改写。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "1d6a1e9a1d2b8822a37e58d27b4a2a77e5ae522d1902c41a974ea61e500376f7",
+      "fragment": "<p role=\"alert\">{errorMessage(reports.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "4428e0fbca15383b1904e568b70c383ef9e736ecf993f09d9e70c4f60723a79d",
+      "fragment": "<p role=\"alert\">{errorMessage(history.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "9a54da7d025ce8ff8cc47b76d780b1058f9de758377a9397ef64c4c6311a4e6a",
+      "fragment": "<p role=\"alert\">{errorMessage(notifications.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentFollowup.tsx",
+      "kind": "jsx-p",
+      "sha256": "49e2f8c0287938717eede6b75b5d8d69235b19ce4a36070ec8503b73748c1bb6",
+      "fragment": "<p>当前窗口暂无投递记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I18",
+        "I19",
+        "I20",
+        "I21",
+        "I22",
+        "W04",
+        "W12",
+        "W14"
+      ],
+      "reason": "Business window count/deferred empty copy; busy-time errors retained to preserve read mutex, D05."
+    },
+    {
+      "file": "features/incident-candidates/IncidentInternalNotes.tsx",
+      "kind": "jsx-p",
+      "sha256": "1ff8eb780752c1e7429f27d88d55003e9ccd67275dd67eef33ef88f1f3bd9a3a",
+      "fragment": "<p role=\"alert\">{errorMessage(history.error)}；未能读取不代表没有记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I26",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing error/retry-only enhancement deferred."
+    },
+    {
+      "file": "features/incident-candidates/IncidentOwnerTransfer.tsx",
+      "kind": "jsx-p",
+      "sha256": "496756816d007aaeaa003b70d12c09cb054ef7ca3e03e9b5bb5f9eb42695a260",
+      "fragment": "<p role=\"alert\">{errorMessage(targets.error)}；未能读取不代表没有合格目标。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I29",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing error/eligibility preserved."
+    },
+    {
+      "file": "features/incident-candidates/IncidentPublicProgress.tsx",
+      "kind": "jsx-p",
+      "sha256": "1ff8eb780752c1e7429f27d88d55003e9ccd67275dd67eef33ef88f1f3bd9a3a",
+      "fragment": "<p role=\"alert\">{errorMessage(history.error)}；未能读取不代表没有记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I27",
+        "I28",
+        "W12"
+      ],
+      "reason": "Q7 mixed items: loading fixed; original failure facts/refresh guard preserved."
+    },
+    {
+      "file": "features/incident-candidates/IncidentPublicProgress.tsx",
+      "kind": "jsx-p",
+      "sha256": "2b14f8fb43ab380072383fd03ecc58ff1a5f7bda943a476956263c46dbfcb4c2",
+      "fragment": "<p role=\"alert\">{errorMessage(routes.error)}；未读取不代表未发送。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I27",
+        "I28",
+        "W12"
+      ],
+      "reason": "Q7 mixed items: loading fixed; original failure facts/refresh guard preserved."
+    },
+    {
+      "file": "features/manual-review/ReviewStartControls.tsx",
+      "kind": "jsx-p",
+      "sha256": "48a25a7f33d11390dd5d046d54bc04fa489b29ba4f030a17760c6fef2d917c68",
+      "fragment": "<p role=\"alert\">工单已被更新：查看最新内容后再操作。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F36",
+        "W07"
+      ],
+      "reason": "Existing form conflict safety, not a page read failure."
+    },
+    {
+      "file": "features/manual-review/ReviewWorkspace.tsx",
+      "kind": "jsx-p",
+      "sha256": "2db5bbe7d5864493f99ce78e51b5249970fd7f0f63a66c9c1d5c53134811979c",
+      "fragment": "<p role=\"alert\">报修内容有风险提示。请先核实，再处理。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O21",
+        "O22",
+        "W07"
+      ],
+      "reason": "Existing input risk and changed-material safety remain beside fields."
+    },
+    {
+      "file": "features/manual-review/ReviewWorkspace.tsx",
+      "kind": "jsx-p",
+      "sha256": "c252084f229eb96ed67a86dd0a1c59cedc3682b5361ce1c9386f509c688a5814",
+      "fragment": "<p role=\"alert\">报修内容已变化。请取消旧复核，再选择新的待复核记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O21",
+        "O22",
+        "W07"
+      ],
+      "reason": "Existing input risk and changed-material safety remain beside fields."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "970ca4b7747e0669e140691fcb1d83c311c8b1993d086845c468f860827ad4ad",
+      "fragment": "<p><Tag className=\"notification-result\" tone={notificationTones[item.status]??'neutral'}>{item.status==='DEAD_LETTER'?<TriangleAlert aria-hidden=\"true\"/>:<Clock aria-hidden=\"true\"/>}{statuses[item.status]}</Tag> {domains[item.domain]} · {routes[item.route_kind]}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "2d4652c5921bd7a08af01a0ab2d90b04b6c4e0c6d8c5357ad512115f19004a54",
+      "fragment": "<p className=\"ds-preserve-lines\">{item.safe_summary}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "363e84841bd4065ef89c1d05657891091c01a897538d73aed97200013602d96e",
+      "fragment": "<p>尝试 {item.attempt_count} 次 · {item.side_effect_state==='UNKNOWN'?'尚不能确认是否送达':item.side_effect_state==='NOT_ATTEMPTED'?'已确认发送失败':'已有发送结果，请结合来源核对'}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "7cf9e54d51c121ac2006458f0818502ba51e5c9af7e64de56e49203779a718b7",
+      "fragment": "<p>最近一次尝试：{item.last_attempt.started_at.replace('T',' ')}（北京时间）</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "24a0c165b5b8d6f4d4def38bf5b49f7d946fc5e718d8a09d307dcbfda94c1e9b",
+      "fragment": "<p>暂时没有尝试记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/notification-exceptions/NotificationExceptions.tsx",
+      "kind": "jsx-p",
+      "sha256": "93f0bc574b68a319abe4902f3489bfae57e812a9a8345a2a7f128ce274a8df05",
+      "fragment": "<p>当前仅可查看这条通知。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "N08",
+        "N11",
+        "N12",
+        "W04",
+        "W12",
+        "W13"
+      ],
+      "reason": "Per-notification facts/summary, deferred no-attempt copy, feature-specific query-only reason."
+    },
+    {
+      "file": "features/search/WorkbenchSearch.tsx",
+      "kind": "jsx-p",
+      "sha256": "e30e9d79368161a5ea357ba6317c2927f85b16dadeecac7b03b06514c01ccd5b",
+      "fragment": "<p role=\"alert\">{error}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O61",
+        "W07"
+      ],
+      "reason": "Search input validation, not a read failure."
+    },
+    {
+      "file": "features/source-groups/GroupNameEditor.tsx",
+      "kind": "jsx-p",
+      "sha256": "ed00f97f35f820ef71fc78f2c5c613f18554de8646b578b264927a1c1834f8c1",
+      "fragment": "<p role=\"alert\">这个群的名称已修改太多次，暂时不能再改。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "G10",
+        "W13"
+      ],
+      "reason": "Q3/Q4 single-action edit limit, no page read-only inference."
+    },
+    {
+      "file": "features/source-groups/SourceGroupDirectory.tsx",
+      "kind": "jsx-p",
+      "sha256": "870d379a18e533609fdf39bf24f6d93488e237d9dbf69ad5c67585be2d011efc",
+      "fragment": "<p role=\"alert\">检索内容最多128个字符，不得含控制字符。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "G03",
+        "W07"
+      ],
+      "reason": "Search field validation, not a read failure."
+    },
+    {
+      "file": "features/supplement-follow-up/SupplementFollowUp.tsx",
+      "kind": "jsx-p",
+      "sha256": "7142459517158ad4bcdf67a5a79247b42fdd08d86575b53cea2d1bedaaf69bfd",
+      "fragment": "<p role=\"alert\">{errorMessage(page.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O48",
+        "W14"
+      ],
+      "reason": "Original error kept during busy state; no active retry while original read button disabled, D05."
+    },
+    {
+      "file": "features/ticket-assignment/TicketAssignment.tsx",
+      "kind": "jsx-p",
+      "sha256": "562d9ffcf685d4f383b8f0ac09de076d10788b082809398d0719bec7abdceff8",
+      "fragment": "<p className=\"detail-operation-context\">{itemLabel}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F18",
+        "F19",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing errors deferred; selected-item/count are facts."
+    },
+    {
+      "file": "features/ticket-assignment/TicketAssignment.tsx",
+      "kind": "jsx-p",
+      "sha256": "d37e8e129b60cd8e1899be4ea9f9c3bffd23e789dca992cc8068c6d6a2808d8f",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error??targets.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F18",
+        "F19",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing errors deferred; selected-item/count are facts."
+    },
+    {
+      "file": "features/ticket-assignment/TicketAssignment.tsx",
+      "kind": "jsx-p",
+      "sha256": "698bc4e7ce5c93a7721d64da04ad9326dcb1b49e33e1c755820b629b10df8756",
+      "fragment": "<p role=\"alert\">{errorMessage(related.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F18",
+        "F19",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing errors deferred; selected-item/count are facts."
+    },
+    {
+      "file": "features/ticket-assignment/TicketAssignment.tsx",
+      "kind": "jsx-p",
+      "sha256": "f20b407992469cd9f05c62f6410f3dddddb605634bf9ae04308404f93f2d3754",
+      "fragment": "<p>已选择 {selected.length} 个会话（最多 8 个）。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F18",
+        "F19",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 mixed item: loading fixed, existing errors deferred; selected-item/count are facts."
+    },
+    {
+      "file": "features/ticket-completion/TicketCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F09",
+        "W14"
+      ],
+      "reason": "Original blocked-time error retained so no active retry bypasses mutex, D05."
+    },
+    {
+      "file": "features/ticket-handling/TicketConversationHandling.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F04",
+        "F06",
+        "W04",
+        "W05",
+        "W14"
+      ],
+      "reason": "Original unsaved-selection safety/count; blocked-time read error kept, D05."
+    },
+    {
+      "file": "features/ticket-handling/TicketConversationHandling.tsx",
+      "kind": "jsx-p",
+      "sha256": "d5f572b6d7569f7221798d30a96f64c030cd8f3f2cee1e43a49c6cac2b98d40e",
+      "fragment": "<p>以下为本页未保存的选择，请先自行留存。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F04",
+        "F06",
+        "W04",
+        "W05",
+        "W14"
+      ],
+      "reason": "Original unsaved-selection safety/count; blocked-time read error kept, D05."
+    },
+    {
+      "file": "features/ticket-handling/TicketConversationHandling.tsx",
+      "kind": "jsx-p",
+      "sha256": "f20b407992469cd9f05c62f6410f3dddddb605634bf9ae04308404f93f2d3754",
+      "fragment": "<p>已选择 {selected.length} 个会话（最多 8 个）。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F04",
+        "F06",
+        "W04",
+        "W05",
+        "W14"
+      ],
+      "reason": "Original unsaved-selection safety/count; blocked-time read error kept, D05."
+    },
+    {
+      "file": "features/ticket-handling/TicketSelfHandling.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F02",
+        "W14"
+      ],
+      "reason": "Original blocked-time error retained so no active retry bypasses mutex, D05."
+    },
+    {
+      "file": "features/ticket-notes/TicketNotes.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F15",
+        "F16",
+        "F17",
+        "W12",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q7 deferred initial error, local permission; stale error has guarded portal retry, D05."
+    },
+    {
+      "file": "features/ticket-notes/TicketNotes.tsx",
+      "kind": "jsx-p",
+      "sha256": "a546de65a242fe49693d9432d57e29bb31d25cf6caf9d20c4b8c1bba53094bf2",
+      "fragment": "<p role=\"status\">动作读取失败；最近确认资料和输入已保留，请重新读取后提交新的操作。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F15",
+        "F16",
+        "F17",
+        "W12",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q7 deferred initial error, local permission; stale error has guarded portal retry, D05."
+    },
+    {
+      "file": "features/ticket-notes/TicketNotes.tsx",
+      "kind": "jsx-p",
+      "sha256": "c36726797879bfaaa7dc3bb2003c0c9ce1f20d21c18c52d29125d68d6580d4c7",
+      "fragment": "<p>当前没有内部备注写入权限。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F15",
+        "F16",
+        "F17",
+        "W12",
+        "W13",
+        "W14"
+      ],
+      "reason": "Q7 deferred initial error, local permission; stale error has guarded portal retry, D05."
+    },
+    {
+      "file": "features/ticket-reopen/TicketReopen.tsx",
+      "kind": "jsx-p",
+      "sha256": "45ade46153e5cbf0b63af278e4bd351378cd1c41e3eac7b282ee87693dbc7042",
+      "fragment": "<p data-reopen-follow-up role=\"status\">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理。':''}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单。':'报修人反馈仍未解决。'}等待重新接单。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F10",
+        "F12",
+        "F13",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Original reopened facts/local permission. Existing retry disabled on read error; new component mismatch, D05."
+    },
+    {
+      "file": "features/ticket-reopen/TicketReopen.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F10",
+        "F12",
+        "F13",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Original reopened facts/local permission. Existing retry disabled on read error; new component mismatch, D05."
+    },
+    {
+      "file": "features/ticket-reopen/TicketReopen.tsx",
+      "kind": "jsx-p",
+      "sha256": "c86de631eae8c952cf5a7fded64c27990f43cea85c81050d0de51a87930ce5b7",
+      "fragment": "<p data-reopen-follow-up role=\"status\">{context.data.reopen_follow_up.is_previous_handler?'上轮由您处理，':'原处理组保留，'}{context.data.reopen_follow_up.origin==='STAFF'?'信息科已重开此工单；':'报修人反馈仍未解决；'}等待重新接单。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F10",
+        "F12",
+        "F13",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Original reopened facts/local permission. Existing retry disabled on read error; new component mismatch, D05."
+    },
+    {
+      "file": "features/ticket-reopen/TicketReopen.tsx",
+      "kind": "jsx-p",
+      "sha256": "be2e22c8599b965ab08ca066b4f23f1034bf172e5c63665ac81d9ac1f738efe3",
+      "fragment": "<p>当前没有重开此工单的权限。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F10",
+        "F12",
+        "F13",
+        "W04",
+        "W13",
+        "W14"
+      ],
+      "reason": "Original reopened facts/local permission. Existing retry disabled on read error; new component mismatch, D05."
+    },
+    {
+      "file": "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F26",
+        "F27",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; communication-selection and internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx",
+      "kind": "jsx-p",
+      "sha256": "8c205cfd7733af3fb9468219d7799d448cca9a7925efbff2d58f3d58c8ae2bf7",
+      "fragment": "<p>两段说明只进入内部记录。退回保留原处理组和本轮，默认保留沟通责任，不会新增对外通知。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F26",
+        "F27",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; communication-selection and internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx",
+      "kind": "jsx-p",
+      "sha256": "9bc0b9f338e13ed65838b5822b99bc37e7b4cfefc82f2d8ef3c5833a6c942153",
+      "fragment": "<p role=\"alert\">{errorMessage(targets.error??related.error)} 当前选择保留，读取成功后重新核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F26",
+        "F27",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; communication-selection and internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx",
+      "kind": "jsx-p",
+      "sha256": "b4a0c4a9a57caf0e3d14dd6b3fd5d98d1da09027020faa524a4123155a345331",
+      "fragment": "<p>本次已选 {value.sessions.length} 个会话，最多 8 个。请选择这些会话共同允许的沟通同事；原选择确认前不能提交。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F26",
+        "F27",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; communication-selection and internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-round-notifications/TicketRoundNotifications.tsx",
+      "kind": "jsx-p",
+      "sha256": "17dad10b5b2a98844f2d49c79508cd992b56de03b811adb744f27acf54ec17a3",
+      "fragment": "<p role=\"status\">{result.data?'通知状态暂未更新，保留最近已确认内容。':errorMessage(result.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O42",
+        "W14"
+      ],
+      "reason": "Original retry disabled while fetching; no disabled prop in new error/stale API, D05."
+    },
+    {
+      "file": "features/ticket-takeover/TicketTakeover.tsx",
+      "kind": "jsx-p",
+      "sha256": "d37e8e129b60cd8e1899be4ea9f9c3bffd23e789dca992cc8068c6d6a2808d8f",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error??targets.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F20",
+        "F21",
+        "W04",
+        "W14"
+      ],
+      "reason": "Existing guarded retry/selection count retained; new retry API has no disabled prop, D05."
+    },
+    {
+      "file": "features/ticket-takeover/TicketTakeover.tsx",
+      "kind": "jsx-p",
+      "sha256": "698bc4e7ce5c93a7721d64da04ad9326dcb1b49e33e1c755820b629b10df8756",
+      "fragment": "<p role=\"alert\">{errorMessage(related.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F20",
+        "F21",
+        "W04",
+        "W14"
+      ],
+      "reason": "Existing guarded retry/selection count retained; new retry API has no disabled prop, D05."
+    },
+    {
+      "file": "features/ticket-takeover/TicketTakeover.tsx",
+      "kind": "jsx-p",
+      "sha256": "f20b407992469cd9f05c62f6410f3dddddb605634bf9ae04308404f93f2d3754",
+      "fragment": "<p>已选择 {selected.length} 个会话（最多 8 个）。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F20",
+        "F21",
+        "W04",
+        "W14"
+      ],
+      "reason": "Existing guarded retry/selection count retained; new retry API has no disabled prop, D05."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "9af1b5bc5cf8ef96f0dd1c24722497283cd14d28244e20e8976a7ec3022034ab",
+      "fragment": "<p>已选择 {value.sessions.length} 个会话（最多 8 个）。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "ed3a71889874dc0a8b3a85d22a44d059b23b9c850e010f6547293efdfeded0c2",
+      "fragment": "<p>必填，仅供获权工作人员协作。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "397e4c238a84faaa66ec5c171915926a83c37a5126ad97cbb73e12aa662e99a7",
+      "fragment": "<p>请单独填写可向报修人展示的结果。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "82d33dc6624c17cc1279289ca6c4da6de003a21923418745a3819e7c0c16e4ab",
+      "fragment": "<p>对外结果预览</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "249601c800fcb33a303a77090e55c3cb8d5982119cb037538a329ec1375332a9",
+      "fragment": "<p data-takeover-completion-preview>{value.summary}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx",
+      "kind": "jsx-p",
+      "sha256": "020e5db6174a73859daca75a7031d602713ecd9dd8d39017cdc67e7a6b29c294",
+      "fragment": "<p>输入仅保留在当前页面；离开前请完成提交或清空输入。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F22",
+        "W04",
+        "W05",
+        "W12"
+      ],
+      "reason": "Q7 errors deferred; form selection, audience, preview and input-retention facts retained."
+    },
+    {
+      "file": "features/ticket-unassign/TicketUnassign.tsx",
+      "kind": "jsx-p",
+      "sha256": "11827bc2087a93f0ce7290675867ceeaad45c991b742739f4053c631df676f54",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F24",
+        "F25",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; original selection/internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-unassign/TicketUnassign.tsx",
+      "kind": "jsx-p",
+      "sha256": "e3fe2e8b183c3a6f95a504518423b9625ec096c1116d1db0f40c5de3028eb2b2",
+      "fragment": "<p>原因只进入内部记录。撤派保留原处理组，不会新增对外通知。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F24",
+        "F25",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; original selection/internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-unassign/TicketUnassign.tsx",
+      "kind": "jsx-p",
+      "sha256": "9bc0b9f338e13ed65838b5822b99bc37e7b4cfefc82f2d8ef3c5833a6c942153",
+      "fragment": "<p role=\"alert\">{errorMessage(targets.error??related.error)} 当前选择保留，读取成功后重新核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F24",
+        "F25",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; original selection/internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-unassign/TicketUnassign.tsx",
+      "kind": "jsx-p",
+      "sha256": "be4c713b4ad5303164476dd0eafc7d815d212b68bdbfe5911cd894b54d5cc45b",
+      "fragment": "<p>本次已选 {value.sessions.length} 个会话，最多 8 个。目标列表展示最多 100 人；原选择提交时确认。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F24",
+        "F25",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred existing errors; original selection/internal-only facts retained."
+    },
+    {
+      "file": "features/ticket-waiting/ClosureActions.tsx",
+      "kind": "jsx-p",
+      "sha256": "ce33b254b312b62fbdae7c6ed472850e2f7ca8b6a8617a2ba266dcfe0619a98a",
+      "fragment": "<p role=\"alert\">当前事项不可执行此操作，请刷新后核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F30",
+        "F33",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred unavailable/empty states; restore follow-up safety fact retained."
+    },
+    {
+      "file": "features/ticket-waiting/ClosureActions.tsx",
+      "kind": "jsx-p",
+      "sha256": "cd6a77693ce3504b08e644c5b418072a2c0be97e6c90e3a7187300389d7331fc",
+      "fragment": "<p className=\"ds-restore-followups\">已终止的跟进与提醒不会自动重建，需要时请重新发起。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F30",
+        "F33",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred unavailable/empty states; restore follow-up safety fact retained."
+    },
+    {
+      "file": "features/ticket-waiting/ClosureActions.tsx",
+      "kind": "jsx-p",
+      "sha256": "9d2be219394b3a28d5270855386757259168b279955a97f2d583d9dfe2454416",
+      "fragment": "<p>当前没有可恢复的关闭记录。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F30",
+        "F33",
+        "W04",
+        "W12"
+      ],
+      "reason": "Q7 deferred unavailable/empty states; restore follow-up safety fact retained."
+    },
+    {
+      "file": "features/ticket-waiting/ClosureHistory.tsx",
+      "kind": "jsx-p",
+      "sha256": "af0fd23182d63543b8bbc7dd65868acbc73c2fafa87b237f4eb1e4a4ba76af7b",
+      "fragment": "<p role=\"alert\">更早记录暂不可读。<Button tone=\"secondary\" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>重试加载</Button></p>",
+      "maxCount": 1,
+      "inventory": [
+        "O46",
+        "W14"
+      ],
+      "reason": "Earlier-record retry disabled during fetching; no disabled prop, D05."
+    },
+    {
+      "file": "features/web-report/WebReportSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "d1ea58c6b6d81dc97375dbb912c1cab49154a43579c3f069e232b33791df1596",
+      "fragment": "<p role=\"status\">你暂时无法查看报修资料，请重新打开详情。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O34",
+        "O35",
+        "O36",
+        "O37",
+        "O38",
+        "W05",
+        "W07",
+        "W14"
+      ],
+      "reason": "No-read/safety/conflict explanation kept; new read-state retry API cannot preserve guards, D05."
+    },
+    {
+      "file": "features/web-report/WebReportSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "ca5e9b08760c27f1866eb86635fb4972019d0d37e1cd63aa9b055ccc0c461d2a",
+      "fragment": "<p role=\"status\">{errorMessage(error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O34",
+        "O35",
+        "O36",
+        "O37",
+        "O38",
+        "W05",
+        "W07",
+        "W14"
+      ],
+      "reason": "No-read/safety/conflict explanation kept; new read-state retry API cannot preserve guards, D05."
+    },
+    {
+      "file": "features/web-report/WebReportSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "68da8067d6c15d062bc8aa3435d1beae81577cb0b78a59f8c4edf67957845b88",
+      "fragment": "<p role=\"status\">报修资料当前不可用，原操作仍需核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O34",
+        "O35",
+        "O36",
+        "O37",
+        "O38",
+        "W05",
+        "W07",
+        "W14"
+      ],
+      "reason": "No-read/safety/conflict explanation kept; new read-state retry API cannot preserve guards, D05."
+    },
+    {
+      "file": "features/web-report/WebReportSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "70d0baaab8d3d0aa0274ad8e4cb6bb0a29215dd72c9b692f81fd82a75d77ceb2",
+      "fragment": "<p role=\"status\">资料暂未更新，保留最近已确认内容。<HButton type=\"button\" isDisabled={view.isFetching} onClick={()=>{void view.refetch();}} tone=\"secondary\">重试</HButton></p>",
+      "maxCount": 1,
+      "inventory": [
+        "O34",
+        "O35",
+        "O36",
+        "O37",
+        "O38",
+        "W05",
+        "W07",
+        "W14"
+      ],
+      "reason": "No-read/safety/conflict explanation kept; new read-state retry API cannot preserve guards, D05."
+    },
+    {
+      "file": "features/web-report/WebReportSection.tsx",
+      "kind": "jsx-p",
+      "sha256": "e9defcf99aeaf88087c43b57871d13b1a782f8cfe16e5a01ebf6f672ffedf560",
+      "fragment": "<p role=\"status\">工单已被更新：查看最新内容后再操作。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O34",
+        "O35",
+        "O36",
+        "O37",
+        "O38",
+        "W05",
+        "W07",
+        "W14"
+      ],
+      "reason": "No-read/safety/conflict explanation kept; new read-state retry API cannot preserve guards, D05."
+    },
+    {
+      "file": "login/main.ts",
+      "kind": "dom-p",
+      "sha256": "dc479d2c79074ff15ef1111f69ada5574acced10c8c868556df5ba40e5ee09d9",
+      "fragment": "document.createElement('p')",
+      "maxCount": 2,
+      "inventory": [
+        "O67",
+        "O68",
+        "O69",
+        "O70",
+        "O71",
+        "O72",
+        "W10"
+      ],
+      "reason": "Q11: native login is excluded and unchanged; separate card required."
+    },
+    {
+      "file": "features/incident-candidates/IncidentDeliveryControls.tsx",
+      "kind": "jsx-p",
+      "sha256": "99be3e5d09af8f818c706a674b6f5f186445c4d0379dba277d7c0fc87b8d8c58",
+      "fragment": "<p>{operationHint(outcomeFor.current===originalId&&known.current?'committed':outcomeFor.current===originalId&&knownFailed.current?'failed':'unknown',outcomeFor.current===originalId&&cleanupPending)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I37",
+        "W05"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/incident-candidates/IncidentInternalNotes.tsx",
+      "kind": "jsx-p",
+      "sha256": "a6d20f71a66c708fa16487cdabc91b6530c178767738fdb2125aadcd8166b556",
+      "fragment": "<p>{operationHint(knownFor.current===id&&known.current?'committed':knownFor.current===id&&knownFailed.current?'failed':'unknown')}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I37",
+        "W05"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/incident-candidates/IncidentOwnerTransfer.tsx",
+      "kind": "jsx-p",
+      "sha256": "a6d20f71a66c708fa16487cdabc91b6530c178767738fdb2125aadcd8166b556",
+      "fragment": "<p>{operationHint(knownFor.current===id&&known.current?'committed':knownFor.current===id&&knownFailed.current?'failed':'unknown')}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I37",
+        "W05"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/incident-candidates/IncidentPublicProgress.tsx",
+      "kind": "jsx-p",
+      "sha256": "a6d20f71a66c708fa16487cdabc91b6530c178767738fdb2125aadcd8166b556",
+      "fragment": "<p>{operationHint(knownFor.current===id&&known.current?'committed':knownFor.current===id&&knownFailed.current?'failed':'unknown')}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "I37",
+        "W05"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualReportForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "4d026a8868e63a6684f807881b9fb470bafb0ad346e3f02f4280de637652fe1c",
+      "fragment": "<p role=\"status\">{principal.reporter_candidates_enabled?'已恢复先前选择成员的意图，请重新选择报修人，或明确改为手填。':'成员选择当前不可用，先前选择不能继续提交；请明确改为手填。'}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualReportForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "e053a23a9214b7bcaa9c8512616cfda7d213252ac7941c20dbce00f82903a33e",
+      "fragment": "<p role=\"status\">{searchMessage}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualReportForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "183e0eca6511fada7bee035ad25e34eae7dd262ca8f906aeba936c893c6a18f6",
+      "fragment": "<p>原操作仍未知，敏感内容已清理；只能只读核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualSelfHandlingForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "758be36c36051a852195b628360c65126ce024aa8d7b91d85861e06353328c5d",
+      "fragment": "<p role=\"alert\">本人立即处理当前尚未开放。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualSelfHandlingForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "9599b7062e8f25e6221f52ee24f62ebc350ce944e5d4bb5df152c7073ab37db4",
+      "fragment": "<p role=\"alert\">{errorMessage(context.error)}；{draft.safeToLeave?'草稿已保存在这台电脑，可重新打开页面后再试。':'当前输入可能还没保存，请先保留此页面，点击「重新读取」再试。'}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-report/ManualSelfHandlingForm.tsx",
+      "kind": "jsx-p",
+      "sha256": "183e0eca6511fada7bee035ad25e34eae7dd262ca8f906aeba936c893c6a18f6",
+      "fragment": "<p>原操作仍未知，敏感内容已清理；只能只读核对。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O08",
+        "O10",
+        "O11",
+        "O12",
+        "O13",
+        "O14",
+        "O15",
+        "W05",
+        "W06",
+        "W13"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/manual-review/ReviewWorkspace.tsx",
+      "kind": "jsx-p",
+      "sha256": "2c1c485bb6b7a102a14989de451e0fc755b747ba431aa05431980fa616229001",
+      "fragment": "<p role=\"alert\">报修内容已变化。您的选择已保留。请核对新内容，再点击“使用最新报修内容”。</p>",
+      "maxCount": 1,
+      "inventory": [
+        "O23",
+        "W07"
+      ],
+      "reason": "Q5/Q13: original recovery, known-result/cleanup, field conflict or selection safety explanation. A conditionally hidden ancestor is still checked; no pending reason is inferred."
+    },
+    {
+      "file": "features/ticket-handling/TicketConversationHandling.tsx",
+      "kind": "jsx-p",
+      "sha256": "698bc4e7ce5c93a7721d64da04ad9326dcb1b49e33e1c755820b629b10df8756",
+      "fragment": "<p role=\"alert\">{errorMessage(related.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "F06",
+        "W14"
+      ],
+      "reason": "Original related-read error kept during blocked state; the only existing refresh action is hidden then. No active retry bypasses it."
+    },
+    {
+      "file": "features/source-groups/SourceGroupDirectory.tsx",
+      "kind": "jsx-p",
+      "sha256": "d0ef8805c126347af919d924de1b373bcfe96849c8d54cb707719fe09d679be1",
+      "fragment": "<p role=\"alert\">目录读取失败：{errorMessage(result.error)}</p>",
+      "maxCount": 1,
+      "inventory": [
+        "G05",
+        "W14"
+      ],
+      "reason": "The original directory read error stays while the group editor is busy; the original reader is disabled then. The new error component cannot activate another reader across this guard."
+    }
+  ]
+}

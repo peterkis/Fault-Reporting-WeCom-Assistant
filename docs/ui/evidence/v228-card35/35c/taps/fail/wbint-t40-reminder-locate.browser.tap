@@ -1,0 +1,31 @@
+TAP version 13
+# Subtest: T40 a real reminder locates a card beyond the first server page, preserves a failed read intent and clears actual revoked READ
+not ok 1 - T40 a real reminder locates a card beyond the first server page, preserves a failed read intent and clears actual revoked READ
+  ---
+  duration_ms: 529.737167
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t40-reminder-locate.browser.test.mjs:29:1'
+  failureType: 'testCodeFailure'
+  error: 'SERVICE_CLOSURE_SCHEMA_DRIFT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    normalizeServiceClosureReceiptCatalog (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/src/p2-006-delivery-command-schema.mjs:58:15)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async followReceiptSchemaReady (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/scripts/workbench-follow-migrate.mjs:26:21)
+    async followSchemaReady (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/scripts/workbench-follow-migrate.mjs:32:10)
+    async migrateWorkbenchFollow (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/scripts/workbench-follow-migrate.mjs:88:14)
+    async withT37Fixture.workbenchFollowUpSchedulesEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t40-reminder-locate-fixture.mjs:33:9)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t37-follow-up-fixture.mjs:104:17)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT37Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t37-follow-up-fixture.mjs:32:5)
+    async withT40LocateFixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t40-reminder-locate-fixture.mjs:17:5)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 704.28525

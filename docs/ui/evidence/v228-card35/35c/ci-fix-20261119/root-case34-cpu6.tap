@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: v2.1 displayed order drives detail navigation; SSE=false
+not ok 1 - v2.1 displayed order drives detail navigation; SSE=false
+  ---
+  duration_ms: 32624.8655
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:118:36'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async clickWorkbenchControl (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/heroui-workbench-controls.mjs:61:5)
+    async withWeb01Fixture.workbenchRealtimeEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:125:5)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: v2.1 displayed order drives detail navigation; SSE=true
+not ok 2 - v2.1 displayed order drives detail navigation; SSE=true
+  ---
+  duration_ms: 32261.263791
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:118:36'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async clickWorkbenchControl (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/heroui-workbench-controls.mjs:61:5)
+    async withWeb01Fixture.workbenchRealtimeEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:125:5)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 65040.110667

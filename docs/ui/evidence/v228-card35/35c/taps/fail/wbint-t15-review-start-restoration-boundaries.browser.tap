@@ -1,0 +1,81 @@
+TAP version 13
+# T15_RESTORATION_BOUNDARY {"mode":"ended","phase":"ACTUAL_POST","status":200,"body":{"ok":true,"review_id":"01a1efbe-a361-7e76-9980-cffe22457c6a","status":"RESOLVED","resolution_decision_id":"01a1efbe-a90e-7098-88aa-6bbd4ba440e4","action_count":2,"ticket_id":"01a1efbe-a327-7060-ace3-0fbeba2715fe","ticket_version":4,"ticket_event_id":"01a1efbe-a93c-79c4-87fb-44c56f661c63","handling_cycle":{"id":"01a1efbe-a938-7fa6-b9df-74e54ea67db6","cycle_no":1,"first_responsibility_event_id":"01a1efbe-a92e-7763-8a7b-1b91b2c47ad3"},"communication_choice":"TAKE_SELECTED","conversations":[{"session_id":"01a1efbe-a37e-7e27-ba06-b02784eeb4f2","session_row_version":2,"control_event_id":"01a1efbe-a944-7f31-bacd-7e815cee7ddf","changed":true}],"canonical_item":{"kind":"ticket","id":"01a1efbe-a327-7060-ace3-0fbeba2715fe"},"replayed":false},"command_id":"70b9afb4-cddb-4aea-857d-db12b72b1bcf"}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"ended","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-ac40c171-5e42-40b0-bd37-a243aa0efb67/new-detail-900.png","width":900,"height":900,"sha256":"e53dd196896d30da952f8f1de754782827a8c89e5b14356316accb81d8ed5ec8"}]}
+# Subtest: T15 restores original UNKNOWN intent when its exact still-readable selected Session has lawfully ended
+ok 1 - T15 restores original UNKNOWN intent when its exact still-readable selected Session has lawfully ended
+  ---
+  duration_ms: 2537.06775
+  type: 'test'
+  ...
+# T15_RESTORATION_BOUNDARY {"mode":"purpose-denied","phase":"ACTUAL_POST","status":403,"body":{"error":{"code":"P2_016_FORBIDDEN","retryable":false}},"command_id":"c9e7fdf7-c4d4-497e-8bf6-2075e4aa73da"}
+# T15_RESTORATION_BOUNDARY {"mode":"purpose-denied","phase":"BOUNDED_REVOCATION","revokes":1}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"purpose-denied","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-901fa204-8100-4246-9cca-172d49c4951b/new-detail-900.png","width":900,"height":900,"sha256":"7d125de58223cc1b221403ec8105afaef6d3435977b5f16e8310e47e8e09c38d"}]}
+# Subtest: T15 real current-purpose rejection clears once without a self-sustaining draft invalidation broadcast
+ok 2 - T15 real current-purpose rejection clears once without a self-sustaining draft invalidation broadcast
+  ---
+  duration_ms: 2213.52625
+  type: 'test'
+  ...
+# T15_RESTORATION_BOUNDARY {"mode":"restore-denied","phase":"ACTUAL_POST","status":200,"body":{"ok":true,"review_id":"01a1efbe-b592-7442-9f94-0bdb85c6f045","status":"RESOLVED","resolution_decision_id":"01a1efbe-baba-7688-8932-d856371bedfe","action_count":2,"ticket_id":"01a1efbe-b564-7733-9479-1764421f5f8c","ticket_version":4,"ticket_event_id":"01a1efbe-badd-738c-8349-33bd53ab207b","handling_cycle":{"id":"01a1efbe-bad9-7c5e-923d-28f9ca89b9c0","cycle_no":1,"first_responsibility_event_id":"01a1efbe-bad1-71a9-a336-54e3f464513a"},"communication_choice":"TAKE_SELECTED","conversations":[{"session_id":"01a1efbe-b59c-7931-a11f-868d7d3b14b7","session_row_version":2,"control_event_id":"01a1efbe-bae4-727f-bf13-30bd7b1ad189","changed":true}],"canonical_item":{"kind":"ticket","id":"01a1efbe-b564-7733-9479-1764421f5f8c"},"replayed":false},"command_id":"0a66add9-d388-4101-b13d-e2a23128aa37"}
+# T15_RESTORATION_BOUNDARY {"mode":"restore-denied","phase":"CURRENT_SESSION_DENIED","copies":{"sensitive":0,"ordinary":1,"operations":["0a66add9-d388-4101-b13d-e2a23128aa37"]}}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"restore-denied","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-a45e8554-0844-4afe-b6a8-1ec44c26d558/new-detail-900.png","width":900,"height":900,"sha256":"2a984513b1cda5e3594bf1e55117d7c9f40623f87f1e6cca7c190f2574a60785"}]}
+# Subtest: T15 selected Session current READ denial during restore clears only this purpose sensitive copy
+ok 3 - T15 selected Session current READ denial during restore clears only this purpose sensitive copy
+  ---
+  duration_ms: 2328.684375
+  type: 'test'
+  ...
+# T15_RESTORATION_BOUNDARY {"mode":"opaque-failed","phase":"ACTUAL_POST","status":409,"body":{"ok":false,"error":{"code":"P2_016_VERSION_CONFLICT","retryable":false},"replayed":false},"command_id":"e0a127f3-63b7-4ea1-a4eb-3b853e514855"}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"opaque-failed","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-233b02e8-751b-4475-b717-601e2d9d16df/new-detail-900.png","width":900,"height":900,"sha256":"9916319b53df683fceef1bcee71e81e73ae7b36e374460b7a278b9c8de7782f8"}]}
+# Subtest: T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure
+not ok 4 - T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure
+  ---
+  duration_ms: 2385.818125
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:264:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    known FAILED cleanup failure must retain a usable original UUID read-only retry
+    + actual - expected
+    
+    + undefined
+    - false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.workbenchManualReviewEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:241:28)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async runBoundary (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:47:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T15_RESTORATION_BOUNDARY {"mode":"purpose-regrant","phase":"ACTUAL_POST","status":403,"body":{"error":{"code":"P2_016_FORBIDDEN","retryable":false}},"command_id":"5584c588-96b1-4151-8452-48368493c633"}
+# T15_RESTORATION_BOUNDARY {"mode":"purpose-regrant","phase":"BOUNDED_REVOCATION","revokes":1}
+# T15_RESTORATION_BOUNDARY {"mode":"purpose-regrant","phase":"SECOND_CURRENT_PURPOSE_DENIAL","copies":{"sensitive":0,"ordinary":1,"operations":[]}}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"purpose-regrant","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-b1585591-ec81-4fb7-9386-0420c2b0519a/new-detail-900.png","width":900,"height":900,"sha256":"e253956756aa7536c5c7170be8e236a012f971555db8fe6cd7330c569ecd0a09"}]}
+# Subtest: T15 a regranted same-mount explicit intent is cleared on its second real purpose rejection
+ok 5 - T15 a regranted same-mount explicit intent is cleared on its second real purpose rejection
+  ---
+  duration_ms: 3237.640708
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","raw_off_terminal_original_receipt":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-a5e0628d-d531-42eb-9fb5-e119e619d6b4/new-detail-page-1280.png","width":1280,"height":1000,"sha256":"26f2b3c4d2bb04a4ee13a80c1c8fc8d76ff90e8ef675f08e4050937d30c8cd64"}]}
+# Subtest: MVP keeps the original committed review-start opaque receipt reachable on a terminal review after raw recovery is switched off
+ok 6 - MVP keeps the original committed review-start opaque receipt reachable on a terminal review after raw recovery is switched off
+  ---
+  duration_ms: 1681.711625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14553.480791

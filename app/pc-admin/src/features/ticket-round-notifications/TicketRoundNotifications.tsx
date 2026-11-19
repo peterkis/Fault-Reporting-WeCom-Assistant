@@ -10,7 +10,8 @@ import {RefreshCw} from 'lucide-react';
 import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {P2016TicketNotification} from '../../api/client';
 import {clearItemAuthorization,clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
-import {DetailLoading} from '../../app/DetailLoading';
+import {BlockSkeleton} from '../../design/components/Skeleton/Skeleton';
+import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
 
 const nodeLabels={FIRST_RESPONSIBILITY:'首次责任通知',FIRST_HANDLING:'接单通知',STAFF_COMPLETED:'完工通知'};
 const deliveryLabels:Record<P2016TicketNotification['status'],string>={PENDING:'待发送',LEASED:'已领取待发送',SENDING:'发送中',SENT:'已发送',DEAD_LETTER:'发送失败',RECONCILIATION_REQUIRED:'待核对',CANCELLED:'已取消'};
@@ -22,6 +23,7 @@ interface Round {cycle:number|null;nodes:Node[]}
 export function TicketRoundNotifications({ticketId,principalId,readReady=true,requested}:{ticketId:string;principalId:string;readReady?:boolean;requested?:{kind:'ticket'|'review'|'intake';id:string}}){
   const client=useQueryClient();
   const result=useQuery({queryKey:['ticket-round-notifications',principalId,ticketId],enabled:readReady,retry:false,gcTime:0,queryFn:async({signal})=>{const current=captureWorkbenchRead(signal),response=await api.ticketNotifications(ticketId,signal);current();return response;}});
+  const loading=useDelayedLoading(readReady&&result.isPending&&!result.data);
   useEffect(()=>{const error=result.error;if(!(error instanceof ApiError)||![401,403,404].includes(error.status))return;if(error.status===401)void clearSessionAuthorization(client,principalId,401,'revoked');else{void clearTicketAuthorization(client,principalId,ticketId,error);if(requested&&(requested.kind!=='ticket'||requested.id!==ticketId))void clearItemAuthorization(client,principalId,requested.kind,requested.id,error);}},[result.error,client,principalId,ticketId,requested?.kind,requested?.id]);
   const rounds=useMemo(()=>{
     const groups=new Map<number|null,Round>();
@@ -34,10 +36,10 @@ export function TicketRoundNotifications({ticketId,principalId,readReady=true,re
     return [...groups.values()].sort((a,b)=>(b.cycle??-1)-(a.cycle??-1));
   },[result.data]);
   return <Section className="ticket-round-notifications ds-notification-summaries" title="报修人通知" headingClassName="detail-section-heading" role="region" aria-label="报修人通知" actions={<HButton type="button" className="icon-button notification-refresh" aria-label="刷新通知状态" title="刷新通知状态" isIconOnly isDisabled={result.isFetching||!readReady} onClick={()=>{void result.refetch();}} tone="ghost"><RefreshCw size={15}/></HButton>}>
-    {result.isPending&&!result.data?<DetailLoading label="正在加载通知状态…"/>:null}
+    {loading.visible?<BlockSkeleton label="正在加载通知状态…" slow={loading.slow}/>:null}
     {result.isError?<p role="status">{result.data?'通知状态暂未更新，保留最近已确认内容。':errorMessage(result.error)}</p>:null}
-    {result.isSuccess&&!rounds.length?<p className="notification-empty">暂无轮次通知记录。</p>:null}
-    {rounds.map(round=><div className="notification-round" key={round.cycle??'unassigned'}>
+    {!loading.visible&&result.isSuccess&&!rounds.length?<p className="notification-empty">暂无轮次通知记录。</p>:null}
+    {!loading.visible&&rounds.map(round=><div className="notification-round" key={round.cycle??'unassigned'}>
       <h4>{round.cycle===null?'未标注轮次':'处理轮次 '+round.cycle}</h4>
       <div className="notification-timeline-scroll" tabIndex={0} aria-label={(round.cycle===null?'历史':'第'+round.cycle+'轮')+'通知时间线'}><ol className="notification-timeline">{round.nodes.map(node=><NotificationSummary key={node.kind} data-notification-node={node.kind} title={nodeLabels[node.kind]}>
         {node.deliveries.map(item=><div className="notification-delivery" key={item.delivery_id}>

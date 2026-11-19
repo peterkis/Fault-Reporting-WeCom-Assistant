@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: takeover completion keeps independent input when target reading is unavailable
+ok 1 - takeover completion keeps independent input when target reading is unavailable
+  ---
+  duration_ms: 2226.464167
+  type: 'test'
+  ...
+# Subtest: takeover completion clears all Ticket views and drafts when targets404 loses Ticket access
+not ok 2 - takeover completion clears all Ticket views and drafts when targets404 loses Ticket access
+  ---
+  duration_ms: 32073.9055
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:18:5'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withT12Profile.recoveryEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:77:21)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:19:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+# Subtest: takeover completion clears all Ticket views and drafts when relation404 loses Ticket access
+not ok 3 - takeover completion clears all Ticket views and drafts when relation404 loses Ticket access
+  ---
+  duration_ms: 32100.452625
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:18:5'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withT12Profile.recoveryEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:77:21)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:19:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+# T12_RECOVERY_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-recovery-e7a72cb3-73d3-4600-b1c2-5ce6302715ee/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-recovery-e7a72cb3-73d3-4600-b1c2-5ce6302715ee/failure.png","sha256":"da348b54589c951ae4547f830a41e0e2520f16e604c19b4b88a9c3e720c84a29"}]}
+# Subtest: independent encrypted T12 recovery reauthorizes saved input, resets preview confirmation, and preserves the original UNKNOWN through closed actions for manual GET only
+not ok 4 - independent encrypted T12 recovery reauthorizes saved input, resets preview confirmation, and preserves the original UNKNOWN through closed actions for manual GET only
+  ---
+  duration_ms: 4297.413083
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:88:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withT12Profile.recoveryEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:198:20)
+    async file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:89:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70866.287833

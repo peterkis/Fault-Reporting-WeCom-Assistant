@@ -1,0 +1,31 @@
+TAP version 13
+# CARD35C_INITIAL_SCROLL {"cpu":1,"initial":{"top":1987,"height":2577,"client":590,"count":50,"distance":0},"anchorOffsetDelta":0}
+# Subtest: Card 35C delayed inbox timeline mounts at the latest message and keeps the history reader anchor
+ok 1 - Card 35C delayed inbox timeline mounts at the latest message and keeps the history reader anchor
+  ---
+  duration_ms: 2025.607333
+  type: 'test'
+  ...
+# CARD35C_CANDIDATE_FOCUS {"cpu":1,"focused":true}
+# Subtest: Card 35C delayed candidate detail focuses its real heading after the skeleton
+ok 2 - Card 35C delayed candidate detail focuses its real heading after the skeleton
+  ---
+  duration_ms: 2201.403208
+  type: 'test'
+  ...
+# CARD35C_ATTACHMENT_ROOT {"cpu":1,"observed":true}
+# Subtest: Card 35C attachment visibility observation follows an empty-state root remount
+ok 3 - Card 35C attachment visibility observation follows an empty-state root remount
+  ---
+  duration_ms: 2425.755791
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6831.697209

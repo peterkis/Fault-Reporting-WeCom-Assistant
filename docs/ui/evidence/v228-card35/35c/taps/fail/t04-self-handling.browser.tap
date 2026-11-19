@@ -1,0 +1,92 @@
+TAP version 13
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_self_handling":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-0afd738e-0c89-4c91-b7d9-5914b4a57a07/new-detail-1920.png","width":1920,"height":1080,"sha256":"8201b04d33187e238db1518052ef1c9a5e607bf093c03e7e72489b85c0bff796"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-0afd738e-0c89-4c91-b7d9-5914b4a57a07/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"01b3184dd4417904744b31d72882e93d57e90348a78f4f8cb818d4f1bdd7f50d"}]}
+# Subtest: production Ticket-only controls use one POST, GET refresh, and reuse the accept-for-later cycle
+ok 1 - production Ticket-only controls use one POST, GET refresh, and reuse the accept-for-later cycle
+  ---
+  duration_ms: 1469.844083
+  type: 'test'
+  ...
+# Subtest: formal self handling keeps the original intent and verifies one cycle after disconnect
+not ok 2 - formal self handling keeps the original intent and verifies one cycle after disconnect
+  ---
+  duration_ms: 1749.79575
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:62:53'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:74:14
+    async handlingBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:18:5)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:64:5)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:63:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: formal self handling keeps the original intent and verifies one cycle after invalid-success
+not ok 3 - formal self handling keeps the original intent and verifies one cycle after invalid-success
+  ---
+  duration_ms: 1966.275167
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:62:53'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:74:14
+    async handlingBrowser (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:18:5)
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:64:5)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t04-self-handling.browser.test.mjs:63:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_self_handling":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-a6b17261-8833-479a-a86c-0c8834ad292d/new-detail-900.png","width":900,"height":1080,"sha256":"7730fd1a3930a2c5336d89cbd988728578e2482656f57ae2fe7336ebd0ff435b"}]}
+# Subtest: another actor winning causes a refreshed conflict, and later identity loss clears all cached actions
+ok 4 - another actor winning causes a refreshed conflict, and later identity loss clears all cached actions
+  ---
+  duration_ms: 1331.315
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_self_handling":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-74aac8a8-3df7-4cde-a86c-595b0695d640/new-detail-1920.png","width":1920,"height":1080,"sha256":"a110f8677684ead03d428e570f6680e811b8721c6badeda322ccb8eddd882805"}]}
+# Subtest: malformed object denial is authoritative and the original 720px shell stays bounded
+ok 5 - malformed object denial is authoritative and the original 720px shell stays bounded
+  ---
+  duration_ms: 1244.157917
+  type: 'test'
+  ...
+# ALL43_BROWSER_DIAGNOSTIC_CLEANUP {"messages":["ALL43_ORIGINAL_BUSINESS_FAILURE","P2_006_BROWSER_DISCONNECTED"],"owned":{"processes":0,"profiles":0,"commandTimers":0,"sockets":0}}
+# Subtest: ALL43 disconnected diagnostics retain the primary failure and close the owned browser
+ok 6 - ALL43 disconnected diagnostics retain the primary failure and close the owned browser
+  ---
+  duration_ms: 3002.573375
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 4
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10952.200458

@@ -88,7 +88,7 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
   const directory=join(tmpdir(),'detail-media-browser-'+randomUUID()),downloads=join(directory,'downloads');await mkdir(downloads,{recursive:true});
   let browser:Browser|undefined,failure:unknown;const screenshots:{width:number;file:string;sha256:string}[]=[];
   try{
-    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);const active=browser;
+    browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1280,height:900,cookies:[{...cookie,url:cookie.url}]});assert.ok(browser);await browser.command('Emulation.setCPUThrottlingRate',{rate:Number(process.env.CARD35C_CPU_RATE??'1')});const active=browser;
     await browser.command('Page.enable');await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
     await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const original=fetch;globalThis.__detailMediaDocument=location.pathname;globalThis.__detailMediaReads=[];globalThis.fetch=async(url,options)=>{const parsed=new URL(String(url),location.href);if((options?.method??'GET')==='GET'&&/^\\/api\\/tickets\\/[0-9a-f-]+\\/reporter-contact$/.test(parsed.pathname))return new Response(JSON.stringify({contact:{mobile:'13800000000'}}),{headers:{'content-type':'application/json'}});const response=await original(url,options);if(parsed.pathname.includes('/actor-avatars/')||parsed.pathname.includes('/web-report/media/'))globalThis.__detailMediaReads.push({path:parsed.pathname,variant:parsed.searchParams.get('variant'),status:response.status});return response;};})()`});
     const navigate=async(id:string,tab:'activity'|'attachments'='activity')=>{await active.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+id+'?detail=page'});if(tab==='attachments')await clickWorkbenchControl(active,'#detail-tab-trigger-attachments');await active.waitFor(`location.pathname.endsWith(${JSON.stringify(id)})&&globalThis.__detailMediaDocument===location.pathname&&document.querySelector('.reporter-phone')?.textContent==='138-0000-0000'&&!document.querySelector('.report-materials .detail-loading')&&Boolean(document.querySelector('.activity-title'))`);};
@@ -119,7 +119,18 @@ test('detail phone geometry, storage tooltip, cached avatars and failed-conversi
     }
     await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
     assert.equal(await browser.evaluate("document.querySelector('.detail-attachments h4>span').textContent"),'1');
-    await tooltipByPointerAndKeyboard(browser,conversionHint,'原始文件已保存',[failed.error.code,failed.error.at]);
+    await tooltipByPointerAndKeyboard(browser,conversionHint,'原始文件已保存');
+    assert.equal(await browser.evaluate(visibleTooltip(failed.error.code)),false,'provider diagnostics are absent from tooltip copy');
+    const diagnostic=await browser.evaluate("JSON.parse(document.querySelector('.detail-attachments h4 [data-action=copy-diagnostics]').dataset.diagnostics)") as {materials:{code:string;time:string}[];requestId:string};
+    assert.equal(diagnostic.materials[0]?.code,failed.error.code);assert.equal(diagnostic.materials[0]?.time,failed.error.at);assert.equal(diagnostic.requestId,'未提供');
+    await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
+    await browser.evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(Error('CARD35C_COPY_REFUSED'))}})");
+    await clickWorkbenchControl(browser,'.detail-attachments h4 [data-action=copy-diagnostics]');
+    await browser.waitFor("document.querySelector('.detail-attachments textarea[aria-label=诊断信息]')?.value.includes('materials')");
+    assert.equal(await browser.evaluate("document.querySelector('.detail-attachments textarea[aria-label=诊断信息]').readOnly"),true,'copy fallback remains selectable, read-only diagnostic text');
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    const diagnosticPixels=Buffer.from(await browser.screenshot(),'base64'),diagnosticFile=join(directory,'detail-media-diagnostic-copy-1440.png');await writeFile(diagnosticFile,diagnosticPixels);screenshots.push({width:1440,file:diagnosticFile,sha256:hash(diagnosticPixels)});
+    await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
     await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
     await clickWorkbenchControl(browser,'.detail-media-card');await browser.waitFor("document.querySelector('.detail-media-dialog img')?.naturalWidth>0");
     await assertWorkbenchPrimaryActions(browser);

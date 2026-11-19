@@ -69,7 +69,6 @@
 @keyframes voice-pulse {
 0%,100%{opacity:.4;transform:scale(.92)}
 50%{opacity:1;transform:scale(1.04)}}
-.media-empty {font-size:var(--fs-xs);color:var(--text-secondary);margin:var(--space-1-5) 0 0}
 .detail-workflows {border-bottom:1px solid var(--border-hair);padding:var(--space-1) 0;margin:0}
 .detail-workflows>summary {font-size:var(--fs-sm);color:var(--text-secondary);cursor:pointer;padding:var(--space-1) 0;min-height:var(--control-h-md)}
 .detail-workflows>.ticket-notes {padding:var(--space-3) 0}

@@ -1,3 +1,4 @@
+import {DetailLoading} from '../../../app/DetailLoading';
 import {useId,useState} from 'react';
 import type {KeyboardEvent,ReactNode} from 'react';
 import {Bell,BellOff,Search,Ticket,TriangleAlert,X} from 'lucide-react';
@@ -41,6 +42,7 @@ export function ClosureSearchField({query,selected,items,busy,disabled,message,o
     <TicketCategoryTile service={item.service}/><span className="ds-closure-number">{item.number}</span><span className="ds-closure-option-title" title={item.title}>{item.title}</span><Tag tone={stage.tone} className="ds-closure-option-stage">{stage.label}</Tag>
    </li>;}):<li className="ds-closure-search-empty" role="presentation">{message}</li>}
   </ul>:null}
+  {busy?<DetailLoading inline label="正在查找原单…"/>:null}
   {!open&&message&&!selected&&!items.length&&!query.trim()?<p role="status">{message}</p>:null}
  </div>;
 }

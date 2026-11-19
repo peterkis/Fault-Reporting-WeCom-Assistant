@@ -1,0 +1,294 @@
+/* ==========================================================================
+   医小修 PC 管理端 · Design Tokens v2.1
+   放置位置建议：app/pc-admin/src/design/tokens.css
+   导入顺序：tailwindcss → @heroui/styles → tokens.css → heroui-bridge.css → components/*.css → features/*.css
+   规则：features/*.css 只允许使用第 2、3 层（语义 / 组件）Token，禁止裸 hex、裸 px 字号、裸圆角。
+   ========================================================================== */
+
+/* ---------- 第 1 层：原始色板（只允许在本文件内被引用） ---------- */
+:root {
+  /* 暖灰（Notion 系），全站唯一中性色 */
+  --gray-0:   #FFFFFF;
+  --gray-25:  #FBFBFA;
+  --gray-50:  #F7F7F5;
+  --gray-unclassified-ring: #C9C7C1;
+  --gray-100: #F1F1EF;
+  --gray-150: #EBEBE9;
+  --gray-200: #E3E2DF;
+  --gray-300: #D3D1CB;
+  --gray-400: #A5A29A;
+  --gray-500: #8C8A84;
+  --gray-600: #6B6965;   /* 白底 5.48:1 */
+  --gray-650: #5F5E5B;
+  --gray-700: #4A4844;
+  --gray-900: #37352F;   /* 白底 12.26:1 */
+
+  /* 品牌蓝：全站唯一强调色 */
+  --blue-25: #F6F9FE;
+  --blue-200: #BFD3F2;
+  --yellow-25: #FCFAF4;
+  --green-25: #F5FAF6;
+  --orange-25: #FDF6EC;
+  --orange-200: #F2D9B8;
+  --yellow-10: #FFFDF6;
+  --red-600: #C9332D;   /* 白字 5.26:1 */
+  --blue-50:  #EEF4FD;
+  --blue-stage-50: #E8F0FC;
+  --blue-100: #DCE8FB;
+  --blue-500: #2F6FDB;
+  --blue-600: #2563C9;   /* 白字 5.67:1 */
+  --blue-700: #1D4FA3;   /* 白字 7.78:1 */
+
+  /* 语义色（柔和底 + 深字，均 ≥ 5.3:1） */
+  --yellow-50: #FBF3DB;  --yellow-700: #7F5F01;  --yellow-500: #D9A400;
+  --sky-50:    #E7F3F8;  --sky-700:    #1B6A8F;  --sky-500:    #2E8AB8;
+  --green-50:  #EDF3EC;  --green-700:  #2F6B4A;  --green-500:  #448361;
+  --orange-50: #FAEBDD;  --orange-700: #9A4A0A;  --orange-500: #D9730D;
+  --red-50:    #FDEBEC;  --red-700:    #B4332B;  --red-500:    #D44C47;
+  --purple-50: #F3EEF8;  --purple-700: #6940A5;  --purple-500: #9065B0;
+
+  /* v2.1：紧急描边与服务目录类别专用浅色 */
+  --orange-ring: #F2D2B4; --red-ring: #F0C2BF; --purple-ring: #DCCDEE;
+  --clinical-bg: #EFE9F8;
+  --access-bg: #FBF0D9; --access-fg: #8A6100;
+  --diag-bg: #E1F3EF; --diag-fg: #1F6B5C;
+  --pharm-bg: #E8F3E8;
+  --billing-bg: #F6EDE3; --billing-fg: #7A5230;
+  --online-bg: #E8EBFA; --online-fg: #3B4BA8;
+  --endpoint-bg: #ECEEF2; --endpoint-fg: #46505E;
+  --network-bg: #E3F1F8;
+  --identity-bg: #FBE8EE; --identity-fg: #A3365C;
+  --config-bg: #EFEDE8; --config-fg: #5C5548;
+}
+
+/* ---------- 第 2 层：语义 Token（业务 CSS 只用这一层和第 3 层） ---------- */
+:root {
+  /* 字体 */
+  --font-sans: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-num: var(--font-sans);
+  --font-numeric-variant: tabular-nums;
+
+  /* 文字 */
+  --text-primary:   var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary:  var(--gray-500);   /* 仅用于禁用、占位、装饰性图标；不得承载必读信息 */
+  --text-inverse:   var(--gray-0);
+  --text-link:      var(--blue-600);
+  --text-danger:    var(--red-700);
+
+  /* 背景 */
+  --bg-canvas:   var(--gray-0);    /* 主工作区 */
+  --bg-subtle:   var(--gray-50);   /* 侧栏、行悬停、引用块 */
+  --bg-group:    var(--gray-25);   /* 卡32 A1 列表分组行：浅于行悬停，靠上下 hairline 区分 */
+  --bg-stage-count: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+  --bg-muted:    var(--gray-100);  /* 中性标签、分段控件底、次按钮 */
+  --bg-hover:    var(--gray-150);  /* 幽灵按钮 / 导航悬停 */
+  --bg-active:   var(--gray-200);  /* 按下、导航当前项 */
+  --bg-selected: var(--blue-50);   /* 选中行 / 选中卡片 */
+  --bg-overlay:  rgba(55, 53, 47, .16);
+
+  /* 线 */
+  --border-hair:    rgba(55, 53, 47, .09);  /* 分隔线 */
+  --border-default: rgba(55, 53, 47, .16);  /* 输入框、次按钮描边 */
+  --border-strong:  rgba(55, 53, 47, .28);  /* 输入框悬停 */
+  --border-focus:   var(--blue-500);
+  --border-brand-subtle: var(--blue-200);
+  --lane-intake: var(--yellow-25);
+  --lane-active: var(--blue-25);
+  --lane-done: var(--green-25);
+  --lane-border: rgba(55,53,47,.05);
+  --shadow-lane: inset 0 0 0 1px var(--lane-border);
+
+  /* 品牌 */
+  --brand:        var(--blue-600);
+  --brand-hover:  var(--blue-700);
+  --brand-subtle: var(--blue-50);
+  --on-brand:     var(--gray-0);
+
+  /* 语气（tone）：用于标签、状态点、提示条。每个 tone = bg / fg / dot */
+  --tone-neutral-bg: var(--gray-100);  --tone-neutral-fg: var(--gray-650);            --tone-neutral-dot: var(--gray-400);
+  --tone-brand-bg:   var(--blue-50);   --tone-brand-fg:   var(--blue-700);    --tone-brand-dot:   var(--blue-500);
+  --tone-info-bg:    var(--sky-50);    --tone-info-fg:    var(--sky-700);     --tone-info-dot:    var(--sky-500);
+  --tone-success-bg: var(--green-50);  --tone-success-fg: var(--green-700);   --tone-success-dot: var(--green-500);
+  --tone-warning-bg: var(--yellow-50); --tone-warning-fg: var(--yellow-700);  --tone-warning-dot: var(--yellow-500);
+  --tone-attention-bg: var(--orange-50); --tone-attention-fg: var(--orange-700); --tone-attention-dot: var(--orange-500);
+  --tone-danger-bg:  var(--red-50);    --tone-danger-fg:  var(--red-700);     --tone-danger-dot:  var(--red-500);
+  --tone-review-bg:  var(--purple-50); --tone-review-fg:  var(--purple-700);  --tone-review-dot:  var(--purple-500);
+
+  /* 实心小徽标：白字使用 --text-inverse，全部 ≥ 4.5:1 */
+  --tone-neutral-solid: var(--tone-neutral-fg);
+  --tone-brand-solid: var(--blue-600); /* 白字 5.67:1 */
+  --tone-info-solid: var(--tone-info-fg);
+  --tone-success-solid: var(--tone-success-fg);
+  --tone-warning-solid: var(--tone-warning-fg);
+  --tone-attention-solid: var(--tone-attention-fg);
+  --tone-danger-solid: var(--red-600); /* 白字 5.26:1 */
+  --tone-review-solid: var(--tone-review-fg);
+
+  /* 阶段：与子状态 tone 分开，不改变状态值或列归属 */
+  --stage-intake-accent: var(--yellow-500); --stage-intake-bg: var(--yellow-50); --stage-intake-fg: var(--yellow-700);
+  --stage-active-accent: var(--blue-500); --stage-active-bg: var(--blue-stage-50); --stage-active-fg: var(--blue-700);
+  --stage-done-accent: var(--green-500); --stage-done-bg: var(--green-50); --stage-done-fg: var(--green-700);
+  --stage-dismissed-accent: var(--gray-400); /* 卡32C D3 / ADR-0058：「已关闭」状态点为中性灰，与完成绿区分 */
+  --ring-attention: var(--orange-ring);
+  --ring-danger: var(--red-ring);
+  --ring-review: var(--purple-ring);
+
+  /* 类别：只由 category-map.ts 映射，未知类别显示中性虚线 */
+  --cat-clinical-bg: var(--clinical-bg); --cat-clinical-fg: var(--purple-700);
+  --cat-access-bg: var(--access-bg); --cat-access-fg: var(--access-fg);
+  --cat-diag-bg: var(--diag-bg); --cat-diag-fg: var(--diag-fg);
+  --cat-pharm-bg: var(--pharm-bg); --cat-pharm-fg: var(--green-700);
+  --cat-billing-bg: var(--billing-bg); --cat-billing-fg: var(--billing-fg);
+  --cat-online-bg: var(--online-bg); --cat-online-fg: var(--online-fg);
+  --cat-endpoint-bg: var(--endpoint-bg); --cat-endpoint-fg: var(--endpoint-fg);
+  --cat-network-bg: var(--network-bg); --cat-network-fg: var(--sky-700);
+  --cat-identity-bg: var(--identity-bg); --cat-identity-fg: var(--identity-fg);
+  --cat-config-bg: var(--config-bg); --cat-config-fg: var(--config-fg);
+  --cat-route-bg: var(--tone-neutral-bg); --cat-route-fg: var(--tone-neutral-fg);
+  --cat-unclassified-bg: var(--bg-muted); --cat-unclassified-fg: var(--text-secondary);
+  --cat-unclassified-border: none;
+
+  /* 字号阶梯：6 档，禁止其它值 */
+  --fs-xs:  12px;  --lh-xs:  18px;   /* 元信息、时间、标签、编号 */
+  --fs-2xs: 11px;                    /* 卡30B 协作在场名牌、「+N」 */
+  --fs-sm:  13px;  --lh-sm:  20px;   /* 次级正文、表头、工具栏、属性名 */
+  --fs-md:  14px;  --lh-md:  22px;   /* 正文、卡片标题、按钮、输入 */
+  --fs-lg:  16px;  --lh-lg:  24px;   /* 抽屉标题、弹窗内分节标题 */
+  --fs-xl:  20px;  --lh-xl:  28px;   /* 弹窗标题、独立详情页标题 */
+  --fs-2xl: 24px;  --lh-2xl: 32px;   /* 一级页面标题（每页 1 个） */
+
+  /* 字重：3 档，名称与数值一致 */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+
+  /* 间距：4px 栅格 */
+  --space-0: 0;     --space-0-5: 2px; --space-1: 4px;  --space-1-5: 6px;
+  --space-2: 8px;   --space-3: 12px;  --space-4: 16px; --space-5: 20px;
+  --space-6: 24px;  --space-8: 32px;  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* 圆角：5 档 + 全圆 */
+  --radius-xs: 4px;    /* 标签、徽标、小芯片 */
+  --radius-sm: 6px;    /* 按钮、输入、导航项、表格行、分段控件 */
+  --radius-md: 8px;    /* 卡片、媒体缩略图、提示条 */
+  --radius-lg: 12px;   /* 看板列、下拉/日期弹层、浮动抽屉 */
+  --radius-xl: 16px;   /* 居中弹窗 */
+  --radius-full: 9999px;
+
+  /* 阴影：4 档 */
+  --shadow-1: 0 1px 2px rgba(15,15,15,.06), 0 0 0 1px rgba(15,15,15,.04);           /* 静态卡片 */
+  --shadow-dismissed: 0 0 0 1px rgba(15,15,15,.06); /* 已关闭卡片：原型01b的1px/6%描边 */
+  --shadow-presence-tag: 0 1px 2px rgba(15,15,15,.18); /* 卡30B 协作在场名牌 */
+  /* 卡31 侧栏在线同事：头像外 2px 侧栏底色间隔、在线点外圈 1.5px */
+  --shadow-presence-stack-ring: 0 0 0 2px var(--bg-subtle);
+  --shadow-presence-stack-dot: 0 0 0 1.5px var(--bg-subtle);
+  /* 卡30B 有人在场的卡片外圈 1.5px（outline 在 DPR 1 会取整为 1px，故用阴影扩展） */
+  --shadow-presence-viewing: inset 0 0 0 1.5px var(--brand), 0 1px 2px rgba(15,15,15,.06);
+  --presence-editing: var(--tone-attention-solid); /* 卡32 A6 编辑态名牌、卡片外圈、抽屉胶囊共用；白字对比度 6.25:1 */
+  --shadow-presence-editing: inset 0 0 0 1.5px var(--presence-editing), 0 1px 2px rgba(15,15,15,.06);
+  --shadow-presence-viewing-hover: inset 0 0 0 1.5px var(--brand), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
+  --shadow-presence-editing-hover: inset 0 0 0 1.5px var(--presence-editing), 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);
+  --shadow-2: 0 2px 4px rgba(15,15,15,.06), 0 6px 16px rgba(15,15,15,.08);          /* 卡片悬停、分段选中 */
+  --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
+  --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */
+  --shadow-toast: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.10);     /* 卡33 操作提示 Toast */
+
+  /* 全局细滚动条 */
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: var(--gray-300);
+  --scrollbar-thumb-hover: var(--gray-400);
+  --scrollbar-track: transparent;
+
+  /* 尺寸 */
+  --control-h-sm: 28px;
+  --control-h-md: 32px;    /* 默认 */
+  --control-h-lg: 36px;
+  --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px;
+  --avatar-sm: 20px; --avatar-md: 24px; --avatar-msg: 28px; --avatar-lg: 32px;
+  --fs-avatar-sm: calc(var(--avatar-sm) / 2); /* §6.13: avatar glyph = 50% of size. */
+
+  /* 布局 */
+  --sidebar-w: 240px;
+  --sidebar-collapsed-w: 56px;
+  --topbar-h: 44px;
+  --page-pad-x: var(--space-8);    /* ≤1280 时 24px，≤900 时 16px */
+  --page-max: 1440px;              /* 工作区上限，左对齐，不居中 */
+  --reading-max: 760px;            /* 详情正文阅读列 */
+  --drawer-w: 720px;
+  --modal-w-sm: 440px; --modal-w-md: 560px; --modal-w-lg: 720px;
+
+  /* 层级 */
+  --z-sticky: 10; --z-dropdown: 40; --z-drawer: 50; --z-modal: 60; --z-toast: 70; --z-tooltip: 80;
+
+  /* 动效 */
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(.4, 0, 1, 1);
+
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  font-variant-numeric: var(--font-numeric-variant);
+  line-height: var(--lh-md);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  color-scheme: light;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 1280px) { :root { --page-pad-x: var(--space-6); } }
+@media (max-width: 900px)  { :root { --page-pad-x: var(--space-4); } }
+@media (pointer: coarse)   { :root { --control-h-md: 40px; } }
+
+/* ---------- 第 3 层：HeroUI 桥接（HeroUI 变量全部从语义 Token 派生） ---------- */
+:root {
+  --accent: var(--brand);
+  --accent-foreground: var(--on-brand);
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  --surface: var(--bg-canvas);
+  --surface-foreground: var(--text-primary);
+  --muted: var(--text-secondary);
+  --border: var(--border-default);
+  --field-background: var(--bg-canvas);
+  --field-foreground: var(--text-primary);
+  --field-placeholder: var(--text-tertiary);
+  --field-focus: var(--bg-subtle);
+  --field-border-focus: var(--border-focus);
+  --radius: var(--radius-sm);
+  --field-radius: var(--radius-sm);
+  --focus: var(--border-focus);
+  --ring-offset-width: 0px;
+}
+
+
+/* 卡18：原型抽屉等待/备注专用色，用户授权追加；既有Token保持不变。 */
+:root {
+  --drawer-waiting-bg: var(--orange-25);
+  --drawer-waiting-border: var(--orange-200);
+  --drawer-composer-bg: var(--yellow-10);
+}
+
+/* Card 35A: state durations are read by JS through design/hooks/state-timing.ts. */
+:root {
+  --load-delay: 150ms;
+  --load-min: 300ms;
+  --load-slow: 8s;
+  --load-pulse: 1.4s;
+  --connection-recovered: 2s;
+  --connection-stale: 60s;
+  --connection-retry-1: 1s;
+  --connection-retry-2: 3s;
+  --connection-retry-3: 8s;
+  --state-content-opacity: .6;
+  --state-disabled-opacity: .48;
+  --state-progress-h: 2px;
+  --radius-skeleton: var(--radius-xs);
+  --state-icon: 36px;
+  --state-bar-icon: 15px;
+}

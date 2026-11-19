@@ -1,0 +1,37 @@
+TAP version 13
+# T20_PC_UNKNOWN {"directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t20-staff-browser-e53562a2-913a-4f01-bf5e-c825be40467e","role":"HANDLER","production_asset":true,"real_http_pg":true,"external_calls":0,"png":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t20-staff-browser-e53562a2-913a-4f01-bf5e-c825be40467e/staff-explicit-reopen-1920.png","sha256":"3e207f8805939476a7cca09f633358f5fe4aec64cc165b40ed0fcb36a8faa1e8"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t20-staff-browser-e53562a2-913a-4f01-bf5e-c825be40467e/staff-new-round-1920.png","sha256":"54dc2529060bd1f5b972c82460b3994ff7b43d441054a7fa167fa31bb63e806e"}]}
+# Subtest: production PC HANDLER checks its original unknown STAFF_REOPEN by GET without raw storage or resending
+ok 1 - production PC HANDLER checks its original unknown STAFF_REOPEN by GET without raw storage or resending
+  ---
+  duration_ms: 1804.438542
+  type: 'test'
+  ...
+# Subtest: raw OFF HANDLER clears its mounted original UUID on same-scope native invalidation and ignores a late receipt after actual READ loss
+not ok 2 - raw OFF HANDLER clears its mounted original UUID on same-scope native invalidation and ignores a late receipt after actual READ loss
+  ---
+  duration_ms: 31525.572625
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t20-staff-unknown.browser.test.mjs:87:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t20-staff-unknown.browser.test.mjs:146:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:26:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT11Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t11-completion-fixture.mjs:18:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t20-staff-unknown.browser.test.mjs:88:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33493.586875

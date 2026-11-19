@@ -1,3 +1,5 @@
+import {DetailLoading} from '../../app/DetailLoading';
+import {ErrorState} from '../../design/components/ErrorState/ErrorState';
 import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
 import {motionToken} from '../../design/motion/tokens';
 import type {ReactNode} from 'react';
@@ -171,7 +173,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
    }catch(error){if(!controller.signal.aborted&&request.current===controller&&!denied(error))setMessage('核对暂未完成，未重复提交。');}finally{if(request.current===controller){request.current=null;requestOperation.current=null;setBusy(false);}}
  };
  const close=async()=>{if(locked)return;onClose();};
- const feedback=<>{context.isPending?<p role="status">正在加载…</p>:context.isError?<p role="alert">读取失败。<Button tone="ghost" onPress={()=>{void context.refetch();}}>重试</Button></p>:!context.data?.allowed&&!originalId?<p role="alert">当前事项不可执行此操作，请刷新后核对。</p>:null}{message?<DialogAlert className="ticket-waiting-state" source={action==='close'?'ticket-waiting-cancel':'closure-restore'} state={originalId?'unknown':'idle'}>{message}</DialogAlert>:null}</>;
+ const feedback=<>{context.isPending?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?<ErrorState title="可用操作没有读出来" onRetry={()=>{void context.refetch();}}/>:!context.data?.allowed&&!originalId?<p role="alert">当前事项不可执行此操作，请刷新后核对。</p>:null}{message?<DialogAlert className="ticket-waiting-state" source={action==='close'?'ticket-waiting-cancel':'closure-restore'} state={originalId?'unknown':'idle'}>{message}</DialogAlert>:null}</>;
  const draftStatus=raw&&draft.message?<DraftStatus notify={false} inlineText data-waiting-draft-status>{draft.message}</DraftStatus>:null,discard=action==='close'&&(value.reason||value.note)&&!locked?()=>{if(raw)void draft.discard();else setValue(emptyClosureForm);}:null;
  const recovery=<>{originalId?<Button tone="secondary" data-toast-avoid="bottom" data-action={action==='close'?'check-cancel-command':'check-restore-command'} isDisabled={busy} onPress={()=>{void check();}}>核对结果</Button>:null}</>;
  const enabled=Boolean(storageReady&&draft.canSubmit&&context.data?.allowed&&!context.isFetching&&!context.isError&&!otherBlocked);
@@ -182,7 +184,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  return <Modal.Backdrop isOpen={target.open} isDismissable={false} isKeyboardDismissDisabled={locked} onOpenChange={open=>{if(!open)void close();}}><Modal.Container size="sm" className="ds-restore-container"><Modal.Dialog className="ds-closure-dialog ds-restore-dialog" aria-label="恢复事项" data-workbench-overlay data-workbench-modal data-toast-host>
   <header data-toast-avoid="top"><Modal.Heading>恢复事项</Modal.Heading><Button tone="ghost" isIconOnly aria-label="关闭恢复窗口" isDisabled={locked} onPress={()=>{void close();}}><X size={18}/></Button></header>
   <p className="ds-closure-context"><span className="ds-closure-number">{item.number}</span> · {item.title}</p>
-  {history.isPending?<p role="status">正在核对恢复目标…</p>:history.isError?<p role="alert">恢复目标暂不可读。<Button tone="ghost" onPress={()=>{void history.refetch();}}>重试</Button></p>:restore?<>
+  {history.isPending?<DetailLoading inline label="正在加载恢复后的安排…"/>:history.isError?<ErrorState title="恢复安排没有读出来" onRetry={()=>{void history.refetch();}}/>:restore?<>
    <dl className="ds-restore-facts" data-restore-confirmation>
     <div><dt>回到</dt><dd><Tag tone={stagePresentation[restore.column].tone}>{restoreColumn()}</Tag></dd></div>
     <div><dt>负责人</dt><dd>{restore.assignee_name?<><Avatar name={restore.assignee_name} size={20} aria-hidden="true"/><span>{restore.assignee_name}</span></>:<span className="ds-restore-unassigned">未领取</span>}</dd></div>

@@ -1,0 +1,27 @@
+TAP version 13
+# Subtest: Card 29 list, search, board and drawer closure presentation use real HTTP/PG reads without writes
+not ok 1 - Card 29 list, search, board and drawer closure presentation use real HTTP/PG reads without writes
+  ---
+  duration_ms: 31810.887792
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card29.browser.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withWeb01Fixture.precisionV212 (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card29.browser.test.mjs:63:9)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31997.173666

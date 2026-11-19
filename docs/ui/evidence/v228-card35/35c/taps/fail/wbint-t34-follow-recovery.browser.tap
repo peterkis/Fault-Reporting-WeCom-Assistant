@@ -1,0 +1,68 @@
+TAP version 13
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-e874453f-69fa-4a21-a70b-be6e6a847876/new-detail-1920.png","width":1920,"height":1080,"sha256":"44b1815e02a28dd22e04ac3df3bfba98991e7a3c22cdab69b1bd9eec86167505"}]}
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-e874453f-69fa-4a21-a70b-be6e6a847876/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"f3ebe5a31881b092ff7ef0db8d2ed8ed9031a8d6b9401b81e6af655eb945ef53"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T34 a real committed POST followed by HTTP bootstrap503 preserves its UUID for read-only acknowledgement
+ok 1 - T34 a real committed POST followed by HTTP bootstrap503 preserves its UUID for read-only acknowledgement
+  ---
+  duration_ms: 1738.219
+  type: 'test'
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-06f7af54-9dc3-4166-a71a-003b29807505/new-detail-1920.png","width":1920,"height":1080,"sha256":"383601fe19e2d674dd4b5a60b8c317603ce635422d869e4b8ed3accb2de7ed80"}]}
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-06f7af54-9dc3-4166-a71a-003b29807505/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"9a5560a86c5769afd7d984de323e31e965d26e546e33ad6033ae94953eb98c72"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T34 lost acknowledgement retains the original intent with recovery OFF for read-only acknowledgement
+ok 2 - T34 lost acknowledgement retains the original intent with recovery OFF for read-only acknowledgement
+  ---
+  duration_ms: 1699.439542
+  type: 'test'
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-6b7ec6a2-efa8-455a-be7b-0df9dd6133f2/new-detail-1920.png","width":1920,"height":1080,"sha256":"7910a8f3d3b45e2105f48b838cd483cd947c98e3ed34f748ebea5388df1ad574"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T34 lost acknowledgement retains the original intent with recovery ON across reload and explicit replay
+not ok 3 - T34 lost acknowledgement retains the original intent with recovery ON across reload and explicit replay
+  ---
+  duration_ms: 1432.311833
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t34-follow-recovery.browser.test.mjs:57:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    TypeError: Cannot read properties of null (reading 'click')
+        at <anonymous>:1:382
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    <anonymous>:1:382
+    Object.evaluate (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:216:15)
+    async withWeb01Fixture.workbenchFollowEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t34-follow-recovery.browser.test.mjs:88:21)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t34-follow-recovery.browser.test.mjs:58:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-051fd213-dec9-4db3-a568-eba26ebf72fd/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"a4b6134b601af45e023246821ef938512484868d31365e3bc4ab39c85967a3f3"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T34 current object READ loss clears the personal projection while its session remains valid, and late receipt cannot resurrect it
+ok 4 - T34 current object READ loss clears the personal projection while its session remains valid, and late receipt cannot resurrect it
+  ---
+  duration_ms: 6272.180583
+  type: 'test'
+  ...
+# T34_BROWSER_SESSION_DENIED {"bootstrap_reads":[{"url":"/api/lifecycle/bootstrap","method":"GET","status":401}],"old_control_remained":true,"closed_entry":true,"protected_detail":false}
+# WEB01_BROWSER {"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-56636544-bf78-4217-8521-44f035946fc4/new-detail-1920.png","width":1920,"height":1080,"sha256":"8203efd5634f067a2fba06600de74a847d650c9bf503cf4e4d746d6f98f3a8dd"}]}
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: T34 an actual bootstrap401 from an inactive staff principal closes the session before a new Follow POST
+ok 5 - T34 an actual bootstrap401 from an inactive staff principal closes the session before a new Follow POST
+  ---
+  duration_ms: 1998.621209
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13304.565916
