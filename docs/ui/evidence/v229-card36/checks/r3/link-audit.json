@@ -1,0 +1,956 @@
+{
+  "base": "30eb2fc80353d1ab834c5da4bcc183c6415311c6",
+  "head": "bfeb7251e05c301a33ec389fdcde6c36bda7234c",
+  "method": "Marked + parse5 (CI parser), git ls-files, visible untracked inventory, git check-ignore",
+  "committed": {
+    "markdown_files": 6,
+    "local_links": 51,
+    "issues": [
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/related.log",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/related.log",
+        "status": "FAIL",
+        "tracked": false,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/motion.log",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/motion.log",
+        "status": "FAIL",
+        "tracked": false,
+        "new_nonignored": false,
+        "directory": false
+      }
+    ],
+    "targets": [
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../app/pc-admin/src/design/motion/README.md",
+        "target": "app/pc-admin/src/design/motion/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "evidence/v229-card36/README.md",
+        "target": "docs/ui/evidence/v229-card36/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "evidence/v228-card35/README.md#open-questions--%E5%81%8F%E5%B7%AE",
+        "target": "docs/ui/evidence/v228-card35/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.3%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+        "target": "docs/ui/prototype/医小修 PC 管理端 v2.2.3 设计原型.html",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0057_workbench_activity_batch_view.md",
+        "target": "adr/0057_workbench_activity_batch_view.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.2%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+        "target": "docs/ui/prototype/医小修 PC 管理端 v2.2.2 设计原型.html",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0058_completion_and_dismissal_language.md",
+        "target": "adr/0058_completion_and_dismissal_language.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0055_workbench_closure_kind_projection.md",
+        "target": "adr/0055_workbench_closure_kind_projection.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-27b.md",
+        "target": "plans/pc-admin-design-v21/card-27b.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-26.md",
+        "target": "plans/pc-admin-design-v21/card-26.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0054_conversation_inbox_counts_and_waiting_since.md",
+        "target": "adr/0054_conversation_inbox_counts_and_waiting_since.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-24.md",
+        "target": "plans/pc-admin-design-v21/card-24.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "design-system-v2.1.md",
+        "target": "docs/ui/design-system-v2.1.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "design-system-v2.1.md",
+        "target": "docs/ui/design-system-v2.1.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-34c-copy-inventory.md",
+        "target": "plans/pc-admin-design-v21/card-34c-copy-inventory.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../agents/desktop-login.md",
+        "target": "docs/agents/desktop-login.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/main-style-parity.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r2/main-style-parity.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/compiled-chevron.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r2/compiled-chevron.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/related.log",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/related.log",
+        "status": "FAIL",
+        "tracked": false,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/motion.log",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/motion.log",
+        "status": "FAIL",
+        "tracked": false,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-vs-main.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-vs-main.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/main-capture-meta.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/main-capture-meta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-capture-meta.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-capture-meta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-vs-main-board.png",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-vs-main-board.png",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "round1-report.md",
+        "target": "docs/ui/evidence/v229-card36/round1-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "round0-report.md",
+        "target": "docs/ui/evidence/v229-card36/round0-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/",
+        "target": "docs/ui/evidence/v229-card36/checks/r2",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": true
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/artifact-delta.json",
+        "target": "docs/ui/evidence/v229-card36/checks/artifact-delta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../../../app/pc-admin/src/design/motion/README.md",
+        "target": "app/pc-admin/src/design/motion/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../design-system.md#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "token-audit.json",
+        "target": "docs/ui/evidence/v229-card36/token-audit.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/",
+        "target": "docs/ui/evidence/v229-card36/checks",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": true,
+        "directory": true
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/nonbrowser-summary.json",
+        "target": "docs/ui/evidence/v229-card36/checks/nonbrowser-summary.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/routed-plan.json",
+        "target": "docs/ui/evidence/v229-card36/checks/routed-plan.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/browser-status.json",
+        "target": "docs/ui/evidence/v229-card36/checks/browser-status.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../../../tests/helpers/motion-filmstrip.mts",
+        "target": "tests/helpers/motion-filmstrip.mts",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/cleanup.json",
+        "target": "docs/ui/evidence/v229-card36/checks/cleanup.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "round0-report.md",
+        "target": "docs/ui/evidence/v229-card36/round0-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "../../design-system.md#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/visual-report.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/visual-report.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/input-index.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/input-index.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/baseline-to-main.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/baseline-to-main.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/baseline-to-main.patch",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/baseline-to-main.patch",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      }
+    ]
+  },
+  "working": {
+    "markdown_files": 6,
+    "local_links": 51,
+    "issues": [],
+    "targets": [
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../app/pc-admin/src/design/motion/README.md",
+        "target": "app/pc-admin/src/design/motion/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "evidence/v229-card36/README.md",
+        "target": "docs/ui/evidence/v229-card36/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "evidence/v228-card35/README.md#open-questions--%E5%81%8F%E5%B7%AE",
+        "target": "docs/ui/evidence/v228-card35/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.3%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+        "target": "docs/ui/prototype/医小修 PC 管理端 v2.2.3 设计原型.html",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0057_workbench_activity_batch_view.md",
+        "target": "adr/0057_workbench_activity_batch_view.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "prototype/%E5%8C%BB%E5%B0%8F%E4%BF%AE%20PC%20%E7%AE%A1%E7%90%86%E7%AB%AF%20v2.2.2%20%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%9E%8B.html",
+        "target": "docs/ui/prototype/医小修 PC 管理端 v2.2.2 设计原型.html",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0058_completion_and_dismissal_language.md",
+        "target": "adr/0058_completion_and_dismissal_language.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0055_workbench_closure_kind_projection.md",
+        "target": "adr/0055_workbench_closure_kind_projection.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-27b.md",
+        "target": "plans/pc-admin-design-v21/card-27b.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-26.md",
+        "target": "plans/pc-admin-design-v21/card-26.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../adr/0054_conversation_inbox_counts_and_waiting_since.md",
+        "target": "adr/0054_conversation_inbox_counts_and_waiting_since.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-24.md",
+        "target": "plans/pc-admin-design-v21/card-24.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "design-system-v2.1.md",
+        "target": "docs/ui/design-system-v2.1.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "#%E7%8A%B6%E6%80%81v228--%E5%8D%A135a",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "design-system-v2.1.md",
+        "target": "docs/ui/design-system-v2.1.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../../plans/pc-admin-design-v21/card-34c-copy-inventory.md",
+        "target": "plans/pc-admin-design-v21/card-34c-copy-inventory.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/design-system.md",
+        "raw": "../agents/desktop-login.md",
+        "target": "docs/agents/desktop-login.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r3/link-audit.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r3/link-audit.json",
+        "status": "PASS",
+        "tracked": false,
+        "new_nonignored": true,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r3/results.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r3/results.json",
+        "status": "PASS",
+        "tracked": false,
+        "new_nonignored": true,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/main-style-parity.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r2/main-style-parity.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/compiled-chevron.json",
+        "target": "docs/ui/evidence/v229-card36/checks/r2/compiled-chevron.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-vs-main.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-vs-main.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/main-capture-meta.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/main-capture-meta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-capture-meta.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-capture-meta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "reviewer-r2/incoming-r1-vs-main-board.png",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r2/incoming-r1-vs-main-board.png",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "round1-report.md",
+        "target": "docs/ui/evidence/v229-card36/round1-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "round0-report.md",
+        "target": "docs/ui/evidence/v229-card36/round0-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "checks/r2/",
+        "target": "docs/ui/evidence/v229-card36/checks/r2",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": true
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/README.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/artifact-delta.json",
+        "target": "docs/ui/evidence/v229-card36/checks/artifact-delta.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../../../app/pc-admin/src/design/motion/README.md",
+        "target": "app/pc-admin/src/design/motion/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../design-system.md#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "token-audit.json",
+        "target": "docs/ui/evidence/v229-card36/token-audit.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/",
+        "target": "docs/ui/evidence/v229-card36/checks",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": true,
+        "directory": true
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/nonbrowser-summary.json",
+        "target": "docs/ui/evidence/v229-card36/checks/nonbrowser-summary.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/routed-plan.json",
+        "target": "docs/ui/evidence/v229-card36/checks/routed-plan.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/browser-status.json",
+        "target": "docs/ui/evidence/v229-card36/checks/browser-status.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "../../../../tests/helpers/motion-filmstrip.mts",
+        "target": "tests/helpers/motion-filmstrip.mts",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round0-report.md",
+        "raw": "checks/cleanup.json",
+        "target": "docs/ui/evidence/v229-card36/checks/cleanup.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "round0-report.md",
+        "target": "docs/ui/evidence/v229-card36/round0-report.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "../../design-system.md#%E5%8A%A8%E6%95%88",
+        "target": "docs/ui/design-system.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/visual-report.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/visual-report.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/input-index.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/input-index.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/baseline-to-main.json",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/baseline-to-main.json",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "reviewer-r1/baseline-to-main.patch",
+        "target": "docs/ui/evidence/v229-card36/reviewer-r1/baseline-to-main.patch",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      },
+      {
+        "file": "docs/ui/evidence/v229-card36/round1-report.md",
+        "raw": "filmstrip/README.md",
+        "target": "docs/ui/evidence/v229-card36/filmstrip/README.md",
+        "status": "PASS",
+        "tracked": true,
+        "new_nonignored": false,
+        "directory": false
+      }
+    ]
+  }
+}

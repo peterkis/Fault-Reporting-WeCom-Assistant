@@ -1,4 +1,92 @@
-# Card 36A — rework round 2
+# Card 36A — rework round 4
+
+Round 3 is preserved below, including the native single-table exception and confirmed tokens. This round changes only the Card16 arrivals test and documentation; no production motion, selectors, scroll amount or reading-position assertion changes. Base remains `bfeb7251e05c301a33ec389fdcde6c36bda7234c`, with all changes uncommitted.
+
+### Incoming reviewer verification
+
+The reviewer reports that the round-3 tree passed typecheck/build/Stylelint/ESLint/copy, Node motion 16/16, pr-plan `--check-docs`, Card36A motion 8/8, Card29/Card32A and all other related suites previously selected. All 18 screens, including list-default and list-closed-groups, were 0 px against the previous main-identical captures. These are reviewer results for round 3, not a new local browser run.
+
+The additionally selected Card16 arrivals suite failed twice in arrival/collapsed/scrolling; reduced/filtered passed. Card31 failed once at “online changes never re-render board cards” and then passed on rerun; that observation is recorded only and is outside this round.
+
+### 1 — exact arrival timing follows the computed token
+
+The old assertion required a literal 2000ms although 36A's token sweep already made the existing hook read `motionToken('--dur-highlight')` and `motionToken('--ease-standard')`. Owner decision: **existing card16 arrival highlight now follows --dur-highlight (2000→1200ms, --ease-standard); 36B owns C2**.
+
+The test now reads `--dur-highlight` with `getComputedStyle(document.documentElement)`, converts its CSS time to milliseconds, asserts exactly 1200, then requires the captured arrival duration to equal that computed value exactly. The `mode!=='reduced'` expectation remains unchanged. No arrival implementation is redesigned.
+
+### 2 — wait for E3 expansion before scrolling or measuring
+
+`Workbench` now renders board remainder cards in `Collapse`; its grid track transitions from 0fr to 1fr over `--dur-base` (180ms). The old test clicked expand and immediately called `window.scrollTo(0,200)` while the page could still be too short to scroll. Main's immediate expansion had hidden this timing assumption.
+
+The scrolling branch now waits for `aria-expanded=true` and the shared `waitForAnimationsSettled` helper before the same scroll call. Arrival/collapsed setup also settles after the requested expansion state and before geometry snapshots. The scroll amount 200, `scrollY>0`, exact reading-position equality and all original selectors/business assertions remain unchanged. No product-code defect or change is introduced by this round.
+
+### Round 4 verification and handoff
+
+Local command logs use `/private/tmp/card36a-r4-*.log` as plain paths only; no links to ignored logs are added.
+
+| Check | Round 4 status |
+| --- | --- |
+| `npm run migration:typecheck` → `npm run migration:build` | PASS; 975 typed, 329 unchecked legacy, 3056 outputs; syntax 975/975 |
+| `npm run lint:css --prefix app/pc-admin` / `npm run lint:features --prefix app/pc-admin` | PASS |
+| `node --experimental-strip-types tests/pc-admin-copy-terms.test.mts` | PASS 6/6 |
+| Compiled `pc-admin-motion-policy` + `pc-admin-motion-tools` | PASS 16/16; source sweep 261 files, 0 bare CSS timings, 0 inline/WAAPI violations |
+| `npm run docs:agents:check` / pr-plan `--check-docs` against main `30eb2fc8` | PASS |
+| `node --test .build/tools/check-agent-docs.test.mjs` | PASS 20/20 |
+| `node .build/tools/verify-artifact.mjs` / `git diff --check` | PASS |
+| Card16 arrival/collapsed/scrolling/reduced/filtered | pending reviewer rerun |
+| Card36A/related browser suites and 18-screen pixel parity | pending reviewer rerun |
+
+The exact motion command was `TS_MIGRATION_TEST_SOURCE_ROOT="$PWD" TS_MIGRATION_TEST_RUNTIME_ROOT="$PWD/.build/runtime" node --test .build/runtime/tests/pc-admin-motion-policy.test.mjs .build/runtime/tests/pc-admin-motion-tools.test.mjs`. The exact plan command was `node .build/tools/pr-plan.mjs --base 30eb2fc80353d1ab834c5da4bcc183c6415311c6 --head HEAD --check-docs --out /private/tmp/card36a-r4-pr-plan.json`.
+
+Build source input hash: `b0be286f78623addc3370c639a26f8574e02412f0b1e0d67b96f057bcc4479ed`; verified manifest SHA256: `609607ecf8a752b3f7c74f363740631828956d7b8e4d8da50bc6c3556ef1051e`. All six beyond-A1 token values and round-3 code patches remain unchanged.
+
+No browser launch, baseline approval, commit/push/rebase/stash/branch change or database work is performed in this round. The reviewer reruns the updated compiled Card16 suite; static checks do not establish its browser verdict.
+
+---
+
+## Round 3 record (preserved)
+
+Current base: `bfeb7251e05c301a33ec389fdcde6c36bda7234c` (PR #193). This round leaves its changes uncommitted. No commit/push/rebase/stash/branch change, baseline approval or browser launch. Static/reference appearance remains current main `30eb2fc80353d1ab834c5da4bcc183c6415311c6`.
+
+### Confirmed owner decisions
+
+The six beyond-A1 tokens are **confirmed by the owner (2026-11-19)**: `--ease-ambient`, `--ease-linear`, `--ease-toast`, `--scale-popover`, `--hover-lift`, `--delay-tooltip`. Only confirmation wording changed; their values are unchanged. Each token comment and the design chapter carries the same confirmation.
+
+**列表视图分组保持原生单表，不做高度展开，仅箭头旋转（2026-11-19 负责人确认）**。
+
+List stages, subgroups and remaining-item controls now use main's direct table rows and immediate visibility/mount changes. The chevrons keep `--dur-base` / `--ease-standard`, with no transition in reduced motion. Board groups, board remaining items and drawer sections keep their full E3 grid collapse; the board zero-jump test is unchanged.
+
+### CI link root cause and correction
+
+The README linked `reviewer-r2/related.log` and `reviewer-r2/motion.log`. They existed locally but were excluded by the root `*.log` rule, so fresh CI checkouts could not resolve them. Those references are now plain text paths, supported by tracked summaries and input records. No `.gitignore` change or forced log staging is used.
+
+The [Git-aware link audit](checks/r3/link-audit.json) checks all Markdown files introduced/changed by this PR, using the CI Markdown parser, `git ls-files`, visible untracked files and `git check-ignore`. It reproduces the two ignored-link failures in committed HEAD and checks the working version independently, including directory links with tracked descendants. `docs:agents:check` and the exact pr-plan `--check-docs` path are also run against the required main base. Local ignored raw logs are not claimed as tracked evidence.
+
+### Native-table accessibility correction
+
+`TableCollapse` created nested headerless tables, so the outer `scope=col` headers no longer labelled the data cells. Removed that wrapper and all list-specific exit retention, nested colgroups and segment/clipping CSS. The stage/subgroup/remainder branches follow main, preserving hidden rows, IDs, ARIA state/controls, row-link and keyboard claim hooks. No list row height/grid animation remains.
+
+Card29 now checks both the initial list and expanded remainders: no nested table, exactly seven outer column headers, every data row directly in an outer `tbody.list-group`, and every cell in the same table as its indexed `scope=col` header. Its previous clipping assertion is strengthened with a no-wrapper condition. Card32A returns to flat sibling-row traversal and adds a same-table assertion. All existing business and geometry values remain unchanged.
+
+### Verification and handoff
+
+[Round 3 results](checks/r3/results.json) records final commands, the tested source/artifact identity, token-value and link audits. Raw local command logs use `/private/tmp/card36a-r3-*.log` and are cited as paths only.
+
+| Check | Round 3 status |
+| --- | --- |
+| Typecheck, then build | PASS; strict/negative types and 975/975 compiled syntax checks |
+| Stylelint / ESLint / copy terms / Node motion checks | PASS; copy6/6 and combined frontend97/97 |
+| docs:agents:check / pr-plan --check-docs / Git-visible link targets | PASS; current link audit has 0 missing/ignored targets |
+| List accessibility, keyboard/ARIA and exact list-default/list-closed-groups pixels | pending reviewer rerun |
+| Other related browser tests and A6 browser/filmstrip acceptance | pending reviewer rerun |
+
+Reviewer reruns the updated Card29/Card32A checks and related list/claim scenarios, then compares list-default and list-closed-groups directly with main; the target remains 0 changed pixels. No pixel result is inferred from static source checks. No board/drawer motion, business schema, permissions or data flow was changed by this round.
+
+---
+
+The round 2 record below retains its original source identity and results; current list behaviour and owner confirmation are governed by round 3 above.
+
+## Historical round 2 record
 
 **Local checks PASS. Browser and pixel acceptance PASS (reviewer rerun 2026-11-19, macOS 25.6.0 / Chrome 157.0.8103.79; see 「Reviewer rerun」).** All changes remain uncommitted on `claude/v229-card36a-ddc815`, base `30eb2fc80353d1ab834c5da4bcc183c6415311c6`. No commit/push, PR, baseline approval, deployment, schema change or 36B/36C motion wiring. The supplied prototype and other worktree are preserved.
 
@@ -63,8 +151,8 @@ R1's passing Card29/Card31/Card32A fixes are retained. No global hit-test check 
 
 These results describe **R1**, not the revised R2 candidate:
 
-- Related browser suite: **40/41 PASS**. Card29/Card31/Card32A PASS; Card35A A4.6–8 failed at the old settle helper's frame deadline. [Raw log](reviewer-r2/related.log).
-- Motion browser entry: **5/6 subtests PASS**; E1 filmstrip failed. The later URL slow/off subtest was not reached after that failure. [Raw log](reviewer-r2/motion.log).
+- Related browser suite: **40/41 PASS**. Card29/Card31/Card32A PASS; Card35A A4.6–8 failed at the old settle helper's frame deadline. Local-only raw log: `reviewer-r2/related.log` (ignored; tracked summaries/input records below).
+- Motion browser entry: **5/6 subtests PASS**; E1 filmstrip failed. The later URL slow/off subtest was not reached after that failure. Local-only raw log: `reviewer-r2/motion.log` (ignored; tracked summaries/input records below).
 - Recomputed from the supplied existing PNGs with pixelmatch threshold .1: **12 changed / 6 identical** against captured main, exactly matching the reviewer's counts. This offline comparison did not launch or recapture an application. [Machine comparison and hashes](reviewer-r2/incoming-r1-vs-main.json), [main metadata](reviewer-r2/main-capture-meta.json), [R1 metadata](reviewer-r2/incoming-r1-capture-meta.json), [side crop: main left / R1 right](reviewer-r2/incoming-r1-vs-main-board.png).
 
 | Screen | Incoming R1 vs main pixels | Disposition |
@@ -158,7 +246,7 @@ standard=`cubic-bezier(.2,0,0,1)`; soft=`cubic-bezier(.16,1,.3,1)`; exit=`cubic-
 
 The historical select/date fallback remains removed; E4 and explicit reduced-motion handling own those states. Toast curves/durations and 35A state timing remain unchanged. `motion` remains installed and forbidden outside login.
 
-## Added beyond A1, owner to confirm
+## Added beyond A1, confirmed by the owner (2026-11-19)
 
 All six retain an individual reason in `tokens.css` and the design chapter:
 
@@ -171,7 +259,7 @@ All six retain an individual reason in `tokens.css` and the design chapter:
 | `--hover-lift` | -1px | E6's existing lift |
 | `--delay-tooltip` | 400ms | E7's first-tooltip wait |
 
-Login decorative motion remains outside the workbench sweep. The only extra CSS-duration whitelist is Skeleton/refresh's narrowly scoped 35A `--load-pulse`; ambient/Toast/spinner curves are tokenized instead of exempted. Public WAAPI frame properties remain restricted; E3 grid, E2 text colour and E6 shadow are explicit CSS exceptions. The table-only `overflow:clip` variant is documented and retains the original scroll owner.
+Login decorative motion remains outside the workbench sweep. The only extra CSS-duration whitelist is Skeleton/refresh's narrowly scoped 35A `--load-pulse`; ambient/Toast/spinner curves are tokenized instead of exempted. Public WAAPI frame properties remain restricted; E3 grid, E2 text colour and E6 shadow are explicit CSS exceptions. The historical table-only `overflow:clip` variant is removed in round 3; the current list uses direct native rows and no collapse clipping layer.
 
 ## Handoff / remaining verification
 
@@ -200,3 +288,16 @@ macOS 25.6.0 (darwin), Chrome 157.0.8103.79, Postgres `127.0.0.1:5432`.
 
 Measured timings (`motion-receipt.json`): E1 80/120ms standard; E2 180 standard; E3 grid + arrow 180 standard; E4 in 120 standard / out 80 exit; E5 panel + backdrop in 240 soft / out 120 exit; E6 120 standard; E7 80 standard — all equal to the tokens.
 
+
+## Reviewer rerun — rounds 3 and 4 (2026-11-19, outside the Codex sandbox)
+
+macOS 25.6.0, Chrome 157.0.8103.79, Postgres `127.0.0.1:5432`.
+
+| Check | Result |
+|---|---|
+| typecheck → build, Stylelint, ESLint, copy terms, Node motion 16/16, `docs:agents:check`, `pr-plan --check-docs` vs `30eb2fc8` | PASS |
+| `pc-admin-card36a-motion.browser.test` | 8/8 PASS |
+| Related browser/integration suites (card12-review, 16, 16-arrivals, 29, 30B, 31, 32A, 35A, legacy-retirement, t10-waiting, t35×2, wbint t19/t22/t32, ss-009, ss-010) | 52/53 PASS |
+| Card16 arrivals `scrolling` | FAIL, **pre-existing on main**: main `30eb2fc8` fails the same assertion twice with the same 2px reading-position shift (cards 100→102, 238→240) when the 「1 条新报修」 capsule appears. Not caused by 36A; recorded for a separate fix. |
+| Card31 | Failed once (online change re-rendered a board card), passed on rerun; it also passed in rounds 1–2. Recorded as intermittent. |
+| 18 screens vs the round-2 captures (themselves 0 px vs main) | 0 px on all 18, including list-default and list-closed-groups |

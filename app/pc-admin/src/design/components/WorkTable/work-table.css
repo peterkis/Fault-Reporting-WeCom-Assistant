@@ -102,14 +102,6 @@
 
 .ds-table-state:is([data-refreshing],[data-stale]) .list-group {opacity:var(--state-content-opacity);}
 .ds-empty-state[data-tone=success][data-size=block] .ds-empty-icon>svg {width:var(--space-6);height:var(--space-6);}
-.work-table.ds-work-table .ds-list-collapse-row>td {padding:0;height:auto;overflow:visible;}
-.work-table.ds-work-table .ds-work-table-segment {margin:0;min-width:100%;width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;text-align:left;}
-.work-table.ds-work-table .ds-list-collapse-row {background:var(--bg-canvas);}
-/* Structural rows must not become hover/positioning owners for their descendant data rows. */
-.work-table.ds-work-table .ds-list-collapse-row,.work-table.ds-work-table .ds-list-collapse-row:hover {position:static;background:var(--bg-canvas);}
-/* Hidden overflow creates nested scroll containers: scrollIntoView/focus can scroll a still-expanding
-   grid item and leave later buttons clipped. clip keeps the outer table wrap as the scroll owner. */
-.ds-list-collapse-row .ds-collapse-inner {overflow:clip;}
 
 /* The label and retry share the existing 36px header, keeping every old row in place. */
 .ds-work-table thead th:last-child:has(.ds-stale-retry)>.ds-work-header-label {display:block;line-height:var(--lh-xs);}

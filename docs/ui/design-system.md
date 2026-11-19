@@ -22,12 +22,12 @@ v2.2.9 / 卡36A。
 | `--ease-exit` | cubic-bezier(.4, 0, 1, 1) | 退出 |
 | `--shift-xs / sm / md / lg` | 2 / 4 / 8 / 24px | 位移 |
 | `--press-scale` | .98 | 按压、弹窗 |
-| `--scale-popover` | .97 | 菜单、气泡；added beyond A1, owner to confirm |
-| `--hover-lift` | -1px | 保留E6既有悬停上浮；added beyond A1, owner to confirm |
-| `--delay-tooltip` | 400ms | E7首次等待、相邻共享热身；added beyond A1, owner to confirm |
-| `--ease-ambient` | ease-in-out | 保留35A/语音循环节奏；added beyond A1, owner to confirm |
-| `--ease-linear` | linear | 保留旋转指示器匀速；added beyond A1, owner to confirm |
-| `--ease-toast` | ease-out | 保留卡33 Toast曲线；added beyond A1, owner to confirm |
+| `--scale-popover` | .97 | 菜单、气泡；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--hover-lift` | -1px | 保留E6既有悬停上浮；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--delay-tooltip` | 400ms | E7首次等待、相邻共享热身；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--ease-ambient` | ease-in-out | 保留35A/语音循环节奏；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--ease-linear` | linear | 保留旋转指示器匀速；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--ease-toast` | ease-out | 保留卡33 Toast曲线；added beyond A1, confirmed by the owner (2026-11-19) |
 
 35A的 `--load-*`、`--connection-*` 是状态时序，值保持。循环指示器保留原有线性/往返节奏，由 `--ease-linear`、`--ease-ambient` 表达；Toast保留卡33的轨迹，用 `--ease-toast` 保持原 ease-out 曲线。它们不是新的交互动效。
 
@@ -46,7 +46,7 @@ v2.2.9 / 卡36A。
 | --- | --- | --- | --- |
 | E1 按压 | scale(`--press-scale`)，按下instant、回弹fast，standard；保留背景反馈 | 无缩放、无过渡 | 即时反向 |
 | E2 分段滑块 | 独立背景，translateX与视觉宽度变化，base / standard，文字颜色同步；首次静止 | 直接到位 | 从当前位置接续 |
-| E3 折叠 | grid 0fr↔1fr，base / standard，内层overflow:hidden，箭头同步；剩余行随整块展开 | 直接展开/收起 | 即时反向 |
+| E3 折叠 | 看板分组/显示剩余、抽屉区块：grid 0fr↔1fr，base / standard，内层overflow:hidden，箭头同步；剩余行随整块展开。列表视图分组保持原生单表，不做高度展开，仅箭头旋转（2026-11-19 负责人确认）；箭头仍为base / standard | 内容直接展开/收起；箭头无过渡 | 即时反向；列表内容即时显隐 |
 | E4 菜单/气泡/下拉 | scale(`--scale-popover`) + opacity，进fast / standard，出instant / exit；原点靠近触发器 | 仅opacity，时长不变 | Esc从当前状态退出；结束卸载并归还焦点 |
 | E5 弹窗 | 面板translateY(md) + scale(press) + opacity，进slow / soft；出仅scale(press) + opacity，fast / exit；遮罩同步opacity | 仅opacity，fast / standard或exit | Esc从当前状态退出，结束卸载并归还焦点 |
 | E6 卡片悬停 | 既有上浮1px与阴影一档，fast / standard | 无位移与过渡 | 即时反向 |
@@ -59,7 +59,9 @@ v2.2.9 / 卡36A。
 
 公共工具在页面隐藏时直接到终态；系统偏好变化会清缓存并结束在途动画。`NumberRoll`首渲染静止，`aria-live="off"`，动画层aria-hidden，视觉隐藏文本只暴露最终值。
 
-E3的表格裁剪层使用`overflow:clip`（其他折叠仍为`overflow:hidden`），避免`scrollIntoView`/焦点滚动把嵌套裁剪层变成滚动所有者；唯一滚动区仍是原表格外层。待受理的相邻分组在grid item上补偿原block布局向下一组折叠的末卡间距；末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
+列表的阶段、子分组和「显示剩余 N 项 / 收起」均按原生表内行即时显隐，不使用嵌套表、grid容器或退出保留计时；数据单元格与外层`scope=col`列头属于同一张表。原有`hidden`、行ID、`aria-controls`、`aria-expanded`、row-link和键盘E领取语义保留。看板和抽屉的E3仍为grid折叠：待受理的相邻分组在grid item上补偿原block布局向下一组折叠的末卡间距，末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
+
+兼容性记录：existing card16 arrival highlight now follows --dur-highlight (2000→1200ms, --ease-standard); 36B owns C2。保留既有到达表现，本次仅令牌化；Card16测试从页面读取计算后的时长令牌，并精确断言为1200ms，减少动态效果时仍不得产生该到达动画。
 
 下表记录画板C/D与F的后续规范，**实现及业务接线待36B/36C**，不把36A的本地检查当作这些动效已交付。
 

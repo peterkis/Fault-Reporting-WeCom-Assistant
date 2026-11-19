@@ -24,8 +24,18 @@ test('Card 29 list, search, board and drawer closure presentation use real HTTP/
   const go=async(path:string,ready:string)=>{await b.command('Page.navigate',{url:f.origin+path});await b.waitFor(ready);await b.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');};
   const capture=async(name:string)=>{await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');const bytes=Buffer.from(await b.screenshot(),'base64');const viewport=object(await b.evaluate('({width:innerWidth,height:innerHeight,dpr:devicePixelRatio,zoom:visualViewport.scale})'));assert.equal(viewport.dpr,1);assert.equal(viewport.zoom,1);await writeFile(join(directory,name+'.png'),bytes);screenshots.push({file:name+'.png',width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex'),viewport});};
   const row=(id:string)=>'.ds-work-row[data-item-id="'+id+'"]';
+  const assertNativeTable=async(phase:string)=>{
+   await waitForAnimationsSettled(b);
+   const context=object(await b.evaluate("(()=>{const table=document.querySelector('.work-table.ds-work-table'),headers=[...table.querySelectorAll(':scope>thead th[scope=col]')],rows=[...table.querySelectorAll('tr.ds-work-row')];return {rows:rows.length,headers:headers.length,nested:table.querySelectorAll('table').length,direct:rows.every(row=>row.parentElement.matches('tbody.list-group')&&row.parentElement.parentElement===table),columnContext:rows.every(row=>row.cells.length===7&&[...row.cells].every((cell,index)=>cell.closest('table')===table&&headers[index]?.closest('table')===table&&headers[index]?.scope==='col'))};})()"));
+   metrics[phase+'TableSemantics']=context;
+   assert.ok(typeof context.rows==='number'&&context.rows>0,'real list data rows must be present');
+   assert.equal(context.headers,7);assert.equal(context.nested,0,'the list must have no table table');
+   assert.equal(context.direct,true,'data rows must be direct children of the outer table row groups');
+   assert.equal(context.columnContext,true,'every data cell must share the outer scope=col headers');
+  };
   const listReady="document.querySelectorAll('.ds-list-stage').length===3&&document.querySelectorAll('.ds-work-row').length>=8";
   await b.waitFor(listReady);
+  await assertNativeTable('initial');
   // L1: a missing reporter or location never renders as 「— · 位置」; both missing renders a single dash.
   assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-list-reporter')].some(n=>/—\\s·|·\\s—/u.test(n.textContent))"),false);
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(row(ids.pending[2]??'')+' .ds-list-reporter')})?.textContent`),'—');
@@ -46,8 +56,9 @@ test('Card 29 list, search, board and drawer closure presentation use real HTTP/
   await waitForAnimationsSettled(b);
   for(const selector of await b.evaluate("[...document.querySelectorAll('.ds-list-more [data-action=expand-column][aria-expanded=false]')].map(n=>'#'+n.closest('tr').id+' button')") as string[]){
    await clickWorkbenchControl(b,selector);await waitForAnimationsSettled(b);
-   assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-list-collapse-row .ds-collapse-inner')].every(n=>n.scrollTop===0&&n.scrollLeft===0)"),true,'grid clipping layers cannot capture scrollIntoView offsets');
+   assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-list-collapse-row .ds-collapse-inner')].every(n=>n.scrollTop===0&&n.scrollLeft===0)&&document.querySelectorAll('.ds-list-collapse-row,.ds-work-table-segment,.work-table table').length===0"),true,'native rows have no nested table or grid clipping layer');
   }
+  await assertNativeTable('expanded');
   // L5/B1: the original is the external IT- number, inside the single reason tag.
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(row(ids.duplicateWith)+' [data-closure-reason]')}).textContent`),'重复 · '+ids.duplicateOfRef);assert.match(ids.duplicateOfRef,/^IT-/u);
   await capture('list-1440-closed');

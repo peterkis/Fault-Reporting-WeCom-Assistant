@@ -96,7 +96,8 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   assert.equal(subgroup.background,subgroup.group);assert.equal(subgroup.background,'rgb(251, 251, 250)');assert.notEqual(subgroup.background,subgroup.hover);assert.equal(subgroup.hairlines,2);assert.equal(subgroup.header,'rgb(255, 255, 255)');
   await b.evaluate(`${sub}.scrollIntoView({block:'center'})`);
   await capture('list-1440-subgroup');
-  const row="(()=>{const g=document.querySelector('.ds-list-subgroup');let n=g.nextElementSibling;while(n&&!(n.classList.contains('ds-work-row')&&!n.hidden)){const inner=n.querySelector('.ds-work-row:not([hidden])');if(inner)return inner;n=n.nextElementSibling;}return n;})()";
+  const row="(()=>{const g=document.querySelector('.ds-list-subgroup');let n=g.nextElementSibling;while(n&&!(n.classList.contains('ds-work-row')&&!n.hidden))n=n.nextElementSibling;return n;})()";
+  assert.equal(await b.evaluate("[...document.querySelectorAll('.ds-work-row:not([hidden])')].every(n=>n.parentElement.matches('tbody.list-group')&&n.closest('table')===document.querySelector('.work-table.ds-work-table'))"),true,'visible rows retain the single native table context');
   const rowPoint=object(await b.evaluate(`(()=>{const r=${row}.querySelector('.ds-list-reporter').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
   await move(Number(rowPoint.x),Number(rowPoint.y));await b.waitFor(`getComputedStyle(${row}).backgroundColor==='rgb(247, 247, 245)'`);
   metrics.subgroupHover={row:await b.evaluate(`getComputedStyle(${row}).backgroundColor`),subgroup:await b.evaluate(`getComputedStyle(${sub}).backgroundColor`)};

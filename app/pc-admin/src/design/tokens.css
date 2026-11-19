@@ -229,14 +229,14 @@
   --ease-standard: cubic-bezier(.2, 0, 0, 1);
   --ease-soft: cubic-bezier(.16, 1, .3, 1);
   --ease-exit: cubic-bezier(.4, 0, 1, 1);
-  --ease-ambient: ease-in-out; /* Beyond A1: preserve 35A/voice ambient loop curves; owner to confirm. */
-  --ease-linear: linear; /* Beyond A1: preserve spinner rotation speed; owner to confirm. */
-  --ease-toast: ease-out; /* Beyond A1: preserve card33 Toast curves; owner to confirm. */
+  --ease-ambient: ease-in-out; /* Beyond A1: preserve 35A/voice ambient loop curves; confirmed by the owner (2026-11-19). */
+  --ease-linear: linear; /* Beyond A1: preserve spinner rotation speed; confirmed by the owner (2026-11-19). */
+  --ease-toast: ease-out; /* Beyond A1: preserve card33 Toast curves; confirmed by the owner (2026-11-19). */
   --shift-xs: 2px; --shift-sm: 4px; --shift-md: 8px; --shift-lg: 24px;
   --press-scale: .98;
-  --scale-popover: .97; /* Beyond A1: express E4's specified menu scale; owner to confirm. */
-  --hover-lift: -1px; /* Beyond A1: preserve E6's existing hover lift; owner to confirm. */
-  --delay-tooltip: 400ms; /* Beyond A1: express E7's cold-open delay; owner to confirm. */
+  --scale-popover: .97; /* Beyond A1: express E4's specified menu scale; confirmed by the owner (2026-11-19). */
+  --hover-lift: -1px; /* Beyond A1: preserve E6's existing hover lift; confirmed by the owner (2026-11-19). */
+  --delay-tooltip: 400ms; /* Beyond A1: express E7's cold-open delay; confirmed by the owner (2026-11-19). */
 
   font-family: var(--font-sans);
   font-size: var(--fs-md);
