@@ -26,12 +26,13 @@ const appPath='/workbench/app/';
 const panel='.ds-drawer-content';
 const backdrop='.ds-drawer-backdrop';
 const liveBody='.ds-detail-body-live';
-const scrollBody=liveBody+' .detail-body';
+const detailView=liveBody+' .ds-detail-view';
+const scrollBody=detailView+' .detail-body';
 const stage='.ds-detail-body-stage';
 const toolbar='.detail-navigation';
 const next='.detail-next[aria-label="下一项"]';
 const position='.ds-detail-position';
-const heading=liveBody+' #detail-title';
+const heading=detailView+' #detail-title';
 const enterBody='[data-detail-body-enter=next]';
 const exitBody='[data-detail-body-exit=next]';
 const timeline='.detail-main';
@@ -173,7 +174,16 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await b.command('Emulation.setDeviceMetricsOverride',{width:1440,height,deviceScaleFactor:1,mobile:false});
       await navigate(appPath+'?range=all'+(mode?'&motion='+mode:''));
       await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
-      await b.waitFor(`document.fonts.status==='loaded'&&document.querySelectorAll('.board-column .ticket-card').length>=7`);
+      // Wait for all three columns to finish loading past 35A TicketCardSkeleton placeholders (which also carry .ticket-card).
+      await b.waitFor(`
+        document.fonts.status==='loaded'&&
+        document.querySelectorAll('.board-column .ticket-card[data-item-id]').length>=7&&
+        ['pending','active','handled'].every(column=>{
+          const section=document.querySelector('.board-column.'+column);
+          return Boolean(section&&/^\\d+$/.test(section.querySelector('.ds-stage-count')?.textContent?.trim()??'')&&
+            !section.querySelector('[data-loading-status],.ds-ticket-skeleton,[data-refreshing]'));
+        })
+      `);
       if(mode)await b.waitFor(`document.documentElement.dataset.motion===${JSON.stringify(mode)}`);
     };
     const overlayClosed=()=>b.waitFor('!'+q(panel));
@@ -189,7 +199,14 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await waitForAnimationsSettled(b,'.board-column.'+lane);
     };
     const visibleActive=async()=>{
-      const ids:unknown=await b.evaluate("[...document.querySelectorAll('.board-column.active .ticket-card[data-kind=ticket]')].filter(card=>card.checkVisibility()&&card.getBoundingClientRect().height>0).map(card=>card.dataset.itemId)");
+      const read=()=>b.evaluate(`(()=>{
+        const cards=[...document.querySelectorAll('.board-column.active .ticket-card[data-item-id]')];
+        const visibleTicket=card=>card?.dataset.kind==='ticket'&&card.checkVisibility()&&card.getBoundingClientRect().height>0;
+        const first=cards.findIndex((card,index)=>visibleTicket(card)&&visibleTicket(cards[index+1]));
+        return first<0?[]:[cards[first].dataset.itemId,cards[first+1].dataset.itemId];
+      })()`);
+      let ids:unknown=await read();
+      if(!Array.isArray(ids)||ids.length<2){await expandLane('active');ids=await read();}
       assert.ok(Array.isArray(ids)&&typeof ids[0]==='string'&&typeof ids[1]==='string','fixture needs two adjacent active tickets');
       return [ids[0],ids[1]] as const;
     };
@@ -313,7 +330,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await board('slow',420);
       for(const lane of ['pending','active'])await expandLane(lane);
       await waitForAnimationsSettled(b);
-      const sequence=await b.evaluate(`[...document.querySelectorAll('.board-column:is(.pending,.active) .ticket-card')].filter(card=>card.checkVisibility()&&card.getBoundingClientRect().height>0).map(card=>({id:card.dataset.itemId,title:card.querySelector('.card-open h3')?.textContent.trim()??card.querySelector('.card-open')?.textContent.trim()}))`) as {id:string;title:string}[];
+      const sequence=await b.evaluate(`[...document.querySelectorAll('.board-column:is(.pending,.active) .ticket-card[data-item-id]')].filter(card=>card.checkVisibility()&&card.getBoundingClientRect().height>0).map(card=>({id:card.dataset.itemId,title:card.querySelector('.card-open h3')?.textContent.trim()??card.querySelector('.card-open')?.textContent.trim()}))`) as {id:string;title:string}[];
       const first=sequence[0],sixth=sequence[5];
       assert.ok(first&&sixth&&sequence[6],'the sixth item must still have an enabled next control');
       await open(first.id);
@@ -525,7 +542,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await b.waitFor(`document.querySelectorAll('.activity-list [data-record-id]').length>${Number(count)}`);
       await settleOverlay();
       await click(next);
-      await b.waitFor('!location.pathname.endsWith('+JSON.stringify('/'+target.id)+')&&Boolean('+q('.activity-list '+record)+')');
+      await b.waitFor('!location.pathname.endsWith('+JSON.stringify('/'+target.id)+')&&Boolean('+q(detailView+' .activity-list '+record)+')');
       await settleOverlay();
       assert.deepEqual(await b.evaluate('window.__stopTimeline()'),[]);
     });
