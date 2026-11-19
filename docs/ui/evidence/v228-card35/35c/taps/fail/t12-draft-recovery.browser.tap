@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: takeover completion keeps independent input when target reading is unavailable
+ok 1 - takeover completion keeps independent input when target reading is unavailable
+  ---
+  duration_ms: 2169.748583
+  type: 'test'
+  ...
+# Subtest: takeover completion clears all Ticket views and drafts when targets404 loses Ticket access
+not ok 2 - takeover completion clears all Ticket views and drafts when targets404 loses Ticket access
+  ---
+  duration_ms: 32034.102667
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:18:5'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withT12Profile.recoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:77:21)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:19:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+# Subtest: takeover completion clears all Ticket views and drafts when relation404 loses Ticket access
+not ok 3 - takeover completion clears all Ticket views and drafts when relation404 loses Ticket access
+  ---
+  duration_ms: 32031.692875
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:18:5'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-006-browser-harness.mjs:42:20)
+    async withT12Profile.recoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:77:21)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:19:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+# T12_RECOVERY_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-recovery-d1263b3e-c7ce-4cc3-a31d-8ff6ad2fb45d/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-recovery-d1263b3e-c7ce-4cc3-a31d-8ff6ad2fb45d/failure.png","sha256":"cab17cc0bc4a215b1bbd4d222abc258f5da8e0497772bbc8f5956517c358212b"}]}
+# Subtest: independent encrypted T12 recovery reauthorizes saved input, resets preview confirmation, and preserves the original UNKNOWN through closed actions for manual GET only
+not ok 4 - independent encrypted T12 recovery reauthorizes saved input, resets preview confirmation, and preserves the original UNKNOWN through closed actions for manual GET only
+  ---
+  duration_ms: 3720.410041
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:88:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withT12Profile.recoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:198:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-draft-recovery.browser.test.mjs:89:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70120.135542

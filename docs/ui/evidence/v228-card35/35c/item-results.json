@@ -1,0 +1,3166 @@
+[
+  {
+    "id": "C01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c01",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:54"
+    ]
+  },
+  {
+    "id": "C02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c02",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:52",
+      "features/conversations/Conversations.tsx:57"
+    ]
+  },
+  {
+    "id": "C03",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c03",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:57"
+    ]
+  },
+  {
+    "id": "C04",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c04",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:57"
+    ]
+  },
+  {
+    "id": "C05",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c05",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:58"
+    ]
+  },
+  {
+    "id": "C06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c06",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:166"
+    ]
+  },
+  {
+    "id": "C07",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c07",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:166"
+    ]
+  },
+  {
+    "id": "C08",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c08",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:172"
+    ]
+  },
+  {
+    "id": "C09",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c09",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:175"
+    ]
+  },
+  {
+    "id": "C10",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c10",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:169"
+    ]
+  },
+  {
+    "id": "C11",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c11",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:39"
+    ]
+  },
+  {
+    "id": "C12",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c12",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:39"
+    ]
+  },
+  {
+    "id": "C13",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c13",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:43"
+    ]
+  },
+  {
+    "id": "C14",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c14",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:42",
+      "features/conversations/Conversations.tsx:48"
+    ]
+  },
+  {
+    "id": "C15",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c15",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:46"
+    ]
+  },
+  {
+    "id": "C16",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c16",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:46"
+    ]
+  },
+  {
+    "id": "C17",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c17",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:99"
+    ]
+  },
+  {
+    "id": "C18",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c18",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:99"
+    ]
+  },
+  {
+    "id": "C19",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c19",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:133"
+    ]
+  },
+  {
+    "id": "C20",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c20",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:137"
+    ]
+  },
+  {
+    "id": "C21",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c21",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:127",
+      "features/conversations/ConversationReadTimeline.tsx:58"
+    ]
+  },
+  {
+    "id": "C22",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c22",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:127"
+    ]
+  },
+  {
+    "id": "C23",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c23",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:138"
+    ]
+  },
+  {
+    "id": "C24",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c24",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:118",
+      "features/conversations/ConversationInbox.tsx:122",
+      "features/conversations/ConversationInbox.tsx:54"
+    ]
+  },
+  {
+    "id": "C25",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c25",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:143"
+    ]
+  },
+  {
+    "id": "C26",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c26",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:146"
+    ]
+  },
+  {
+    "id": "C27",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c27",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:66"
+    ]
+  },
+  {
+    "id": "C28",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c28",
+    "base_positions": [
+      "features/conversations/ConversationInbox.tsx:68"
+    ]
+  },
+  {
+    "id": "C29",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c29",
+    "base_positions": [
+      "features/conversations/ConversationAssociatedItem.tsx:33"
+    ]
+  },
+  {
+    "id": "C30",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c30",
+    "base_positions": [
+      "features/conversations/ConversationAssociatedItem.tsx:33"
+    ]
+  },
+  {
+    "id": "C31",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c31",
+    "base_positions": [
+      "features/conversations/ConversationAssociatedItem.tsx:35"
+    ]
+  },
+  {
+    "id": "C32",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c32",
+    "base_positions": [
+      "features/conversations/ConversationAssociatedItem.tsx:39"
+    ]
+  },
+  {
+    "id": "C33",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/conversation-inbox.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c33",
+    "base_positions": [
+      "features/conversations/ConversationAssociatedItem.tsx:39"
+    ]
+  },
+  {
+    "id": "C34",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c34",
+    "base_positions": [
+      "features/conversations/ConversationComposer.tsx:51"
+    ]
+  },
+  {
+    "id": "C35",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c35",
+    "base_positions": [
+      "features/conversations/ConversationComposer.tsx:45",
+      "features/conversations/ConversationComposer.tsx:51"
+    ]
+  },
+  {
+    "id": "C36",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c36",
+    "base_positions": [
+      "features/conversations/ConversationComposer.tsx:143",
+      "features/conversations/ConversationComposer.tsx:146"
+    ]
+  },
+  {
+    "id": "C37",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c37",
+    "base_positions": [
+      "features/conversations/ConversationComposer.tsx:143",
+      "features/conversations/ConversationComposer.tsx:146"
+    ]
+  },
+  {
+    "id": "C38",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c38",
+    "base_positions": [
+      "features/conversations/ConversationComposer.tsx:87",
+      "features/conversations/ConversationComposer.tsx:145",
+      "features/conversations/ConversationComposer.tsx:146"
+    ]
+  },
+  {
+    "id": "C39",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c39",
+    "base_positions": [
+      "features/conversations/ConversationControl.tsx:39"
+    ]
+  },
+  {
+    "id": "C40",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c40",
+    "base_positions": [
+      "features/conversations/ConversationControl.tsx:32"
+    ]
+  },
+  {
+    "id": "C41",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c41",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:28"
+    ]
+  },
+  {
+    "id": "C42",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c42",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:28"
+    ]
+  },
+  {
+    "id": "C43",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t22-conversations.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#c43",
+    "base_positions": [
+      "features/conversations/Conversations.tsx:28"
+    ]
+  },
+  {
+    "id": "I01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i01",
+    "base_positions": [
+      "features/incident-candidates/IncidentCandidates.tsx:22",
+      "features/incident-candidates/CandidateDetail.tsx:22",
+      "features/incident-candidates/IncidentResult.tsx:15"
+    ]
+  },
+  {
+    "id": "I02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i02",
+    "base_positions": [
+      "features/incident-candidates/IncidentCandidates.tsx:27"
+    ]
+  },
+  {
+    "id": "I03",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i03",
+    "base_positions": [
+      "features/incident-candidates/IncidentCandidates.tsx:27"
+    ]
+  },
+  {
+    "id": "I04",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i04",
+    "base_positions": [
+      "features/incident-candidates/IncidentCandidates.tsx:27"
+    ]
+  },
+  {
+    "id": "I05",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i05",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:38"
+    ]
+  },
+  {
+    "id": "I06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i06",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:38"
+    ]
+  },
+  {
+    "id": "I07",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i07",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:36"
+    ]
+  },
+  {
+    "id": "I08",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i08",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:37"
+    ]
+  },
+  {
+    "id": "I09",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i09",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:44"
+    ]
+  },
+  {
+    "id": "I10",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i10",
+    "base_positions": [
+      "features/incident-candidates/CandidateDetail.tsx:48"
+    ]
+  },
+  {
+    "id": "I11",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i11",
+    "base_positions": [
+      "features/incident-candidates/CandidateDecisionForm.tsx:119"
+    ]
+  },
+  {
+    "id": "I12",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i12",
+    "base_positions": [
+      "features/incident-candidates/CandidateDecisionForm.tsx:106"
+    ]
+  },
+  {
+    "id": "I13",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i13",
+    "base_positions": [
+      "features/incident-candidates/CandidateDecisionForm.tsx:110"
+    ]
+  },
+  {
+    "id": "I14",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i14",
+    "base_positions": [
+      "features/incident-candidates/CandidateDecisionForm.tsx:112"
+    ]
+  },
+  {
+    "id": "I15",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i15",
+    "base_positions": [
+      "features/incident-candidates/IncidentResult.tsx:20"
+    ]
+  },
+  {
+    "id": "I16",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i16",
+    "base_positions": [
+      "features/incident-candidates/IncidentResult.tsx:21"
+    ]
+  },
+  {
+    "id": "I17",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i17",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:152"
+    ]
+  },
+  {
+    "id": "I18",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i18",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:153"
+    ]
+  },
+  {
+    "id": "I19",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i19",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:177"
+    ]
+  },
+  {
+    "id": "I20",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i20",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:178"
+    ]
+  },
+  {
+    "id": "I21",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i21",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:179"
+    ]
+  },
+  {
+    "id": "I22",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i22",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:179"
+    ]
+  },
+  {
+    "id": "I23",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i23",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:180"
+    ]
+  },
+  {
+    "id": "I24",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i24",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:165"
+    ]
+  },
+  {
+    "id": "I25",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i25",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:81",
+      "features/incident-candidates/IncidentFollowup.tsx:161"
+    ]
+  },
+  {
+    "id": "I26",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i26",
+    "base_positions": [
+      "features/incident-candidates/IncidentInternalNotes.tsx:89"
+    ]
+  },
+  {
+    "id": "I27",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i27",
+    "base_positions": [
+      "features/incident-candidates/IncidentPublicProgress.tsx:99"
+    ]
+  },
+  {
+    "id": "I28",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i28",
+    "base_positions": [
+      "features/incident-candidates/IncidentPublicProgress.tsx:100"
+    ]
+  },
+  {
+    "id": "I29",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i29",
+    "base_positions": [
+      "features/incident-candidates/IncidentOwnerTransfer.tsx:99"
+    ]
+  },
+  {
+    "id": "I30",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i30",
+    "base_positions": [
+      "features/incident-candidates/IncidentDeliveryControls.tsx:262"
+    ]
+  },
+  {
+    "id": "I31",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i31",
+    "base_positions": [
+      "features/incident-candidates/IncidentInternalNotes.tsx:82",
+      "features/incident-candidates/IncidentInternalNotes.tsx:85"
+    ]
+  },
+  {
+    "id": "I32",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i32",
+    "base_positions": [
+      "features/incident-candidates/IncidentPublicProgress.tsx:85",
+      "features/incident-candidates/IncidentPublicProgress.tsx:95"
+    ]
+  },
+  {
+    "id": "I33",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i33",
+    "base_positions": [
+      "features/incident-candidates/IncidentOwnerTransfer.tsx:86",
+      "features/incident-candidates/IncidentOwnerTransfer.tsx:94"
+    ]
+  },
+  {
+    "id": "I34",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i34",
+    "base_positions": [
+      "features/incident-candidates/IncidentDeliveryControls.tsx:249",
+      "features/incident-candidates/IncidentDeliveryControls.tsx:256",
+      "features/incident-candidates/IncidentDeliveryControls.tsx:267"
+    ]
+  },
+  {
+    "id": "I35",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i35",
+    "base_positions": [
+      "features/incident-candidates/IncidentFollowup.tsx:155",
+      "features/incident-candidates/IncidentFollowup.tsx:156",
+      "features/incident-candidates/IncidentFollowup.tsx:172"
+    ]
+  },
+  {
+    "id": "I36",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i36",
+    "base_positions": [
+      "features/incident-candidates/IncidentInternalNotes.tsx:85",
+      "features/incident-candidates/IncidentPublicProgress.tsx:95",
+      "features/incident-candidates/IncidentOwnerTransfer.tsx:98",
+      "features/incident-candidates/IncidentDeliveryControls.tsx:261",
+      "features/incident-candidates/IncidentFollowup.tsx:166"
+    ]
+  },
+  {
+    "id": "I37",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i37",
+    "base_positions": [
+      "features/incident-candidates/IncidentInternalNotes.tsx:86",
+      "features/incident-candidates/IncidentPublicProgress.tsx:96",
+      "features/incident-candidates/IncidentOwnerTransfer.tsx:100",
+      "features/incident-candidates/IncidentDeliveryControls.tsx:266"
+    ]
+  },
+  {
+    "id": "I38",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t27-candidate-detail.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#i38",
+    "base_positions": [
+      "features/incident-candidates/CandidateDecisionForm.tsx:105",
+      "features/incident-candidates/CandidateDecisionForm.tsx:106",
+      "features/incident-candidates/CandidateDecisionForm.tsx:107",
+      "features/incident-candidates/CandidateDecisionForm.tsx:108"
+    ]
+  },
+  {
+    "id": "N01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n01",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:45"
+    ]
+  },
+  {
+    "id": "N02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n02",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:34",
+      "features/notification-exceptions/NotificationExceptions.tsx:45"
+    ]
+  },
+  {
+    "id": "N03",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n03",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:38",
+      "features/notification-exceptions/NotificationExceptions.tsx:45"
+    ]
+  },
+  {
+    "id": "N04",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n04",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:45"
+    ]
+  },
+  {
+    "id": "N05",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n05",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:45"
+    ]
+  },
+  {
+    "id": "N06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n06",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:46",
+      "features/notification-exceptions/NotificationExceptions.tsx:47",
+      "features/notification-exceptions/NotificationExceptions.tsx:48",
+      "features/notification-exceptions/NotificationExceptions.tsx:49"
+    ]
+  },
+  {
+    "id": "N07",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n07",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:41",
+      "features/notification-exceptions/NotificationExceptions.tsx:47"
+    ]
+  },
+  {
+    "id": "N08",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n08",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:51",
+      "features/notification-exceptions/NotificationExceptions.tsx:52"
+    ]
+  },
+  {
+    "id": "N09",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n09",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:75"
+    ]
+  },
+  {
+    "id": "N10",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n10",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:75"
+    ]
+  },
+  {
+    "id": "N11",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n11",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:79"
+    ]
+  },
+  {
+    "id": "N12",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t32-exception-authorization.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#n12",
+    "base_positions": [
+      "features/notification-exceptions/NotificationExceptions.tsx:81"
+    ]
+  },
+  {
+    "id": "G01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g01",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:27"
+    ]
+  },
+  {
+    "id": "G02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g02",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:28"
+    ]
+  },
+  {
+    "id": "G03",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g03",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:33"
+    ]
+  },
+  {
+    "id": "G04",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g04",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:35"
+    ]
+  },
+  {
+    "id": "G05",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g05",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:35"
+    ]
+  },
+  {
+    "id": "G06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g06",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:36"
+    ]
+  },
+  {
+    "id": "G07",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g07",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:37"
+    ]
+  },
+  {
+    "id": "G08",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g08",
+    "base_positions": [
+      "features/source-groups/SourceGroupDirectory.tsx:37"
+    ]
+  },
+  {
+    "id": "G09",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g09",
+    "base_positions": [
+      "features/source-groups/GroupNameEditor.tsx:46"
+    ]
+  },
+  {
+    "id": "G10",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g10",
+    "base_positions": [
+      "features/source-groups/GroupNameEditor.tsx:46"
+    ]
+  },
+  {
+    "id": "G11",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#g11",
+    "base_positions": [
+      "features/source-groups/GroupNameEditor.tsx:25",
+      "features/source-groups/GroupNameEditor.tsx:46",
+      "features/source-groups/GroupNameEditor.tsx:47"
+    ]
+  },
+  {
+    "id": "S01",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#s01",
+    "base_positions": [
+      "features/reminders/WorkbenchReminders.tsx:51",
+      "features/reminders/WorkbenchReminders.tsx:183",
+      "features/reminders/WorkbenchReminders.tsx:184"
+    ]
+  },
+  {
+    "id": "S02",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#s02",
+    "base_positions": [
+      "features/reminders/WorkbenchReminders.tsx:128",
+      "features/reminders/WorkbenchReminders.tsx:154",
+      "features/reminders/WorkbenchReminders.tsx:159",
+      "features/reminders/WorkbenchReminders.tsx:184",
+      "features/reminders/WorkbenchReminders.tsx:185"
+    ]
+  },
+  {
+    "id": "S03",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#s03",
+    "base_positions": [
+      "features/reminders/WorkbenchReminders.tsx:156",
+      "features/reminders/WorkbenchReminders.tsx:188",
+      "features/reminders/WorkbenchReminders.tsx:190",
+      "features/reminders/WorkbenchReminders.tsx:191"
+    ]
+  },
+  {
+    "id": "S04",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#s04",
+    "base_positions": [
+      "features/reminders/WorkbenchReminders.tsx:183"
+    ]
+  },
+  {
+    "id": "F01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t04-self-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f01",
+    "base_positions": [
+      "features/ticket-handling/TicketSelfHandling.tsx:48"
+    ]
+  },
+  {
+    "id": "F02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t04-self-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f02",
+    "base_positions": [
+      "features/ticket-handling/TicketSelfHandling.tsx:48"
+    ]
+  },
+  {
+    "id": "F03",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t05-conversation-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f03",
+    "base_positions": [
+      "features/ticket-handling/TicketConversationHandling.tsx:93"
+    ]
+  },
+  {
+    "id": "F04",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t05-conversation-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f04",
+    "base_positions": [
+      "features/ticket-handling/TicketConversationHandling.tsx:93"
+    ]
+  },
+  {
+    "id": "F05",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t05-conversation-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f05",
+    "base_positions": [
+      "features/ticket-handling/TicketConversationHandling.tsx:95"
+    ]
+  },
+  {
+    "id": "F06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t05-conversation-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f06",
+    "base_positions": [
+      "features/ticket-handling/TicketConversationHandling.tsx:95"
+    ]
+  },
+  {
+    "id": "F07",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t05-conversation-handling.browser.test.mjs",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f07",
+    "base_positions": [
+      "features/ticket-handling/TicketConversationHandling.tsx:94"
+    ]
+  },
+  {
+    "id": "F08",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t11-completion.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f08",
+    "base_positions": [
+      "features/ticket-completion/TicketCompletion.tsx:70"
+    ]
+  },
+  {
+    "id": "F09",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t11-completion.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f09",
+    "base_positions": [
+      "features/ticket-completion/TicketCompletion.tsx:70"
+    ]
+  },
+  {
+    "id": "F10",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t11-completion.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f10",
+    "base_positions": [
+      "features/ticket-completion/TicketCompletion.tsx:76"
+    ]
+  },
+  {
+    "id": "F11",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t12-production-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f11",
+    "base_positions": [
+      "features/ticket-reopen/TicketReopen.tsx:79"
+    ]
+  },
+  {
+    "id": "F12",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t12-production-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f12",
+    "base_positions": [
+      "features/ticket-reopen/TicketReopen.tsx:79"
+    ]
+  },
+  {
+    "id": "F13",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t12-production-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f13",
+    "base_positions": [
+      "features/ticket-reopen/TicketReopen.tsx:82"
+    ]
+  },
+  {
+    "id": "F14",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f14",
+    "base_positions": [
+      "features/ticket-notes/TicketNotes.tsx:63",
+      "features/ticket-notes/TicketNotes.tsx:65"
+    ]
+  },
+  {
+    "id": "F15",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f15",
+    "base_positions": [
+      "features/ticket-notes/TicketNotes.tsx:64"
+    ]
+  },
+  {
+    "id": "F16",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f16",
+    "base_positions": [
+      "features/ticket-notes/TicketNotes.tsx:70"
+    ]
+  },
+  {
+    "id": "F17",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f17",
+    "base_positions": [
+      "features/ticket-notes/TicketNotes.tsx:72",
+      "features/ticket-notes/TicketNotes.tsx:75"
+    ]
+  },
+  {
+    "id": "F18",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t06-assignment.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f18",
+    "base_positions": [
+      "features/ticket-assignment/TicketAssignment.tsx:100"
+    ]
+  },
+  {
+    "id": "F19",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t06-assignment.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f19",
+    "base_positions": [
+      "features/ticket-assignment/TicketAssignment.tsx:105"
+    ]
+  },
+  {
+    "id": "F20",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f20",
+    "base_positions": [
+      "features/ticket-takeover/TicketTakeover.tsx:75"
+    ]
+  },
+  {
+    "id": "F21",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f21",
+    "base_positions": [
+      "features/ticket-takeover/TicketTakeover.tsx:78"
+    ]
+  },
+  {
+    "id": "F22",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f22",
+    "base_positions": [
+      "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx:87"
+    ]
+  },
+  {
+    "id": "F23",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f23",
+    "base_positions": [
+      "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx:90"
+    ]
+  },
+  {
+    "id": "F24",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f24",
+    "base_positions": [
+      "features/ticket-unassign/TicketUnassign.tsx:266"
+    ]
+  },
+  {
+    "id": "F25",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f25",
+    "base_positions": [
+      "features/ticket-unassign/TicketUnassign.tsx:272"
+    ]
+  },
+  {
+    "id": "F26",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f26",
+    "base_positions": [
+      "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx:268"
+    ]
+  },
+  {
+    "id": "F27",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f27",
+    "base_positions": [
+      "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx:275"
+    ]
+  },
+  {
+    "id": "F28",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f28",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:173"
+    ]
+  },
+  {
+    "id": "F29",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f29",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:173"
+    ]
+  },
+  {
+    "id": "F30",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f30",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:173"
+    ]
+  },
+  {
+    "id": "F31",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f31",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:184"
+    ]
+  },
+  {
+    "id": "F32",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f32",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:184"
+    ]
+  },
+  {
+    "id": "F33",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f33",
+    "base_positions": [
+      "features/ticket-waiting/ClosureActions.tsx:190"
+    ]
+  },
+  {
+    "id": "F34",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f34",
+    "base_positions": [
+      "features/manual-review/ReviewStartControls.tsx:108"
+    ]
+  },
+  {
+    "id": "F35",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f35",
+    "base_positions": [
+      "features/manual-review/ReviewStartControls.tsx:109"
+    ]
+  },
+  {
+    "id": "F36",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f36",
+    "base_positions": [
+      "features/manual-review/ReviewStartControls.tsx:115"
+    ]
+  },
+  {
+    "id": "F37",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/wbint-t15-review-start-restoration-boundaries.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f37",
+    "base_positions": [
+      "features/manual-review/ReviewStartControls.tsx:114"
+    ]
+  },
+  {
+    "id": "F38",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f38",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:139"
+    ]
+  },
+  {
+    "id": "F39",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f39",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:139"
+    ]
+  },
+  {
+    "id": "F40",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f40",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:141"
+    ]
+  },
+  {
+    "id": "F41",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f41",
+    "base_positions": [
+      "features/ticket-waiting/ClosureLinks.tsx:23",
+      "features/ticket-waiting/ClosureLinks.tsx:27"
+    ]
+  },
+  {
+    "id": "F42",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f42",
+    "base_positions": [
+      "features/ticket-waiting/ClosureLinks.tsx:41",
+      "features/ticket-waiting/ClosureLinks.tsx:42",
+      "features/ticket-waiting/ClosureLinks.tsx:50",
+      "design/components/TicketCard/ClosureDialog.tsx:40",
+      "design/components/TicketCard/ClosureDialog.tsx:42"
+    ]
+  },
+  {
+    "id": "F43",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f43",
+    "base_positions": [
+      "design/components/TicketCard/ClosureDialog.tsx:59"
+    ]
+  },
+  {
+    "id": "F44",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/t06-assignment.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#f44",
+    "base_positions": [
+      "features/ticket-assignment/TicketAssignment.tsx:107",
+      "features/ticket-handling/TicketConversationHandling.tsx:97",
+      "features/ticket-takeover/TicketTakeover.tsx:78",
+      "features/ticket-takeover-completion/TicketTakeoverCompletion.tsx:90",
+      "features/ticket-unassign/TicketUnassign.tsx:278",
+      "features/ticket-return-to-dispatch/TicketReturnToDispatch.tsx:281"
+    ]
+  },
+  {
+    "id": "O01",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o01",
+    "base_positions": [
+      "app/App.tsx:28",
+      "app/App.tsx:74"
+    ]
+  },
+  {
+    "id": "O02",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o02",
+    "base_positions": [
+      "app/App.tsx:72"
+    ]
+  },
+  {
+    "id": "O03",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o03",
+    "base_positions": [
+      "app/App.tsx:48",
+      "app/App.tsx:62"
+    ]
+  },
+  {
+    "id": "O04",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/web01-workbench.browser.test.mjs",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o04",
+    "base_positions": [
+      "app/App.tsx:80"
+    ]
+  },
+  {
+    "id": "O05",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o05",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O06",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o06",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O07",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o07",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:132",
+      "features/manual-report/ManualReportForm.tsx:135"
+    ]
+  },
+  {
+    "id": "O08",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o08",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:118",
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O09",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o09",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:119",
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O10",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o10",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:120",
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O11",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o11",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O12",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t17-manual-form.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o12",
+    "base_positions": [
+      "features/manual-report/ManualReportForm.tsx:132"
+    ]
+  },
+  {
+    "id": "O13",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o13",
+    "base_positions": [
+      "features/manual-report/ManualSelfHandlingForm.tsx:71"
+    ]
+  },
+  {
+    "id": "O14",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o14",
+    "base_positions": [
+      "features/manual-report/ManualSelfHandlingForm.tsx:71"
+    ]
+  },
+  {
+    "id": "O15",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o15",
+    "base_positions": [
+      "features/manual-report/ManualSelfHandlingForm.tsx:71"
+    ]
+  },
+  {
+    "id": "O16",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/wbint-t19-manual-self-handling.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o16",
+    "base_positions": [
+      "features/manual-report/ManualSelfHandlingForm.tsx:27",
+      "features/manual-report/ManualSelfHandlingForm.tsx:71"
+    ]
+  },
+  {
+    "id": "O17",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o17",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:120"
+    ]
+  },
+  {
+    "id": "O18",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o18",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:121"
+    ]
+  },
+  {
+    "id": "O19",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o19",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:47"
+    ]
+  },
+  {
+    "id": "O20",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o20",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:59"
+    ]
+  },
+  {
+    "id": "O21",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o21",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:41",
+      "features/manual-review/ReviewWorkspace.tsx:42"
+    ]
+  },
+  {
+    "id": "O22",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o22",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:44"
+    ]
+  },
+  {
+    "id": "O23",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o23",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:129"
+    ]
+  },
+  {
+    "id": "O24",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card12-review.browser.test.mts",
+      "tests/wbint-t15-review-start.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o24",
+    "base_positions": [
+      "features/manual-review/ReviewWorkspace.tsx:126",
+      "features/manual-review/ReviewWorkspace.tsx:127",
+      "features/manual-review/ReviewWorkspace.tsx:128"
+    ]
+  },
+  {
+    "id": "O25",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o25",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:140"
+    ]
+  },
+  {
+    "id": "O26",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o26",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:141",
+      "features/attachments/AttachmentSection.tsx:146"
+    ]
+  },
+  {
+    "id": "O27",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o27",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:142"
+    ]
+  },
+  {
+    "id": "O28",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o28",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:143"
+    ]
+  },
+  {
+    "id": "O29",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o29",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:143"
+    ]
+  },
+  {
+    "id": "O30",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o30",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:20",
+      "features/attachments/AttachmentSection.tsx:35",
+      "features/attachments/AttachmentSection.tsx:143"
+    ]
+  },
+  {
+    "id": "O31",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o31",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:139"
+    ]
+  },
+  {
+    "id": "O32",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o32",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:148"
+    ]
+  },
+  {
+    "id": "O33",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o33",
+    "base_positions": [
+      "features/attachments/AttachmentSection.tsx:31",
+      "features/attachments/AttachmentSection.tsx:32",
+      "features/attachments/AttachmentSection.tsx:33",
+      "features/attachments/AttachmentSection.tsx:143"
+    ]
+  },
+  {
+    "id": "O34",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o34",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:61"
+    ]
+  },
+  {
+    "id": "O35",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o35",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:62"
+    ]
+  },
+  {
+    "id": "O36",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o36",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:63"
+    ]
+  },
+  {
+    "id": "O37",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o37",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:75"
+    ]
+  },
+  {
+    "id": "O38",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o38",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:83"
+    ]
+  },
+  {
+    "id": "O39",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o39",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:80"
+    ]
+  },
+  {
+    "id": "O40",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/yxx-h5-flow.integration.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o40",
+    "base_positions": [
+      "features/web-report/WebReportSection.tsx:64",
+      "features/web-report/WebReportSection.tsx:83"
+    ]
+  },
+  {
+    "id": "O41",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t24-round-notifications.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o41",
+    "base_positions": [
+      "features/ticket-round-notifications/TicketRoundNotifications.tsx:37"
+    ]
+  },
+  {
+    "id": "O42",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/t24-round-notifications.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o42",
+    "base_positions": [
+      "features/ticket-round-notifications/TicketRoundNotifications.tsx:38"
+    ]
+  },
+  {
+    "id": "O43",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/t24-round-notifications.browser.test.mts",
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o43",
+    "base_positions": [
+      "features/ticket-round-notifications/TicketRoundNotifications.tsx:39"
+    ]
+  },
+  {
+    "id": "O44",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o44",
+    "base_positions": [
+      "features/ticket-waiting/ClosureHistory.tsx:18"
+    ]
+  },
+  {
+    "id": "O45",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o45",
+    "base_positions": [
+      "features/ticket-waiting/ClosureHistory.tsx:16"
+    ]
+  },
+  {
+    "id": "O46",
+    "pre": true,
+    "result": "paused",
+    "tests": [
+      "tests/t10-waiting.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o46",
+    "base_positions": [
+      "features/ticket-waiting/ClosureHistory.tsx:22"
+    ]
+  },
+  {
+    "id": "O47",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t36-supplement-production.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o47",
+    "base_positions": [
+      "features/supplement-follow-up/SupplementFollowUp.tsx:135"
+    ]
+  },
+  {
+    "id": "O48",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t36-supplement-production.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o48",
+    "base_positions": [
+      "features/supplement-follow-up/SupplementFollowUp.tsx:135"
+    ]
+  },
+  {
+    "id": "O49",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/t36-supplement-production.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o49",
+    "base_positions": [
+      "features/supplement-follow-up/SupplementFollowUp.tsx:132",
+      "features/supplement-follow-up/SupplementFollowUp.tsx:142"
+    ]
+  },
+  {
+    "id": "O50",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/t36-supplement-production.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o50",
+    "base_positions": [
+      "features/supplement-follow-up/SupplementFollowUp.tsx:133",
+      "features/supplement-follow-up/SupplementFollowUp.tsx:140"
+    ]
+  },
+  {
+    "id": "O51",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o51",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:139"
+    ]
+  },
+  {
+    "id": "O52",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o52",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:142"
+    ]
+  },
+  {
+    "id": "O53",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/t37-shared-follow-up-drawer.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o53",
+    "base_positions": [
+      "features/follow-up/SharedFollowUp.tsx:143"
+    ]
+  },
+  {
+    "id": "O54",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o54",
+    "base_positions": [
+      "features/item-follow/ItemFollow.tsx:152",
+      "features/item-follow/ItemFollow.tsx:156",
+      "features/item-follow/ItemFollow.tsx:157"
+    ]
+  },
+  {
+    "id": "O55",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o55",
+    "base_positions": [
+      "features/board-actions/BoardConflictIntent.tsx:43"
+    ]
+  },
+  {
+    "id": "O56",
+    "pre": true,
+    "result": "done",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o56",
+    "base_positions": [
+      "features/board-actions/BoardConflictIntent.tsx:46"
+    ]
+  },
+  {
+    "id": "O57",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o57",
+    "base_positions": [
+      "features/board-actions/BoardActions.tsx:169"
+    ]
+  },
+  {
+    "id": "O58",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card29.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o58",
+    "base_positions": [
+      "features/efficiency/WorkbenchEfficiency.tsx:93"
+    ]
+  },
+  {
+    "id": "O59",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card29.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o59",
+    "base_positions": [
+      "features/efficiency/WorkbenchEfficiency.tsx:93"
+    ]
+  },
+  {
+    "id": "O60",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-card29.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o60",
+    "base_positions": [
+      "features/efficiency/WorkbenchEfficiency.tsx:93"
+    ]
+  },
+  {
+    "id": "O61",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-card29.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o61",
+    "base_positions": [
+      "features/efficiency/WorkbenchEfficiency.tsx:93",
+      "features/search/WorkbenchSearch.tsx:75"
+    ]
+  },
+  {
+    "id": "O62",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o62",
+    "base_positions": [
+      "design/components/OnlineColleagues/OnlineColleagues.tsx:25"
+    ]
+  },
+  {
+    "id": "O63",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o63",
+    "base_positions": [
+      "app/DialogFeedback.tsx:15",
+      "app/DialogFeedback.tsx:30"
+    ]
+  },
+  {
+    "id": "O64",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o64",
+    "base_positions": [
+      "app/ToastFeedback.tsx:201",
+      "app/ToastFeedback.tsx:206",
+      "features/drafts/use-note-draft.ts:37",
+      "features/drafts/use-note-draft.ts:77",
+      "features/drafts/use-note-draft.ts:120",
+      "features/drafts/use-note-draft.ts:231"
+    ]
+  },
+  {
+    "id": "O65",
+    "pre": true,
+    "result": "kept",
+    "tests": [
+      "tests/workbench-detail-media.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o65",
+    "base_positions": [
+      "app/DiagnosticCopy.tsx:25",
+      "app/DiagnosticCopy.tsx:26",
+      "app/DiagnosticCopy.tsx:27",
+      "app/DiagnosticCopy.tsx:40",
+      "app/DiagnosticCopy.tsx:41",
+      "app/DiagnosticCopy.tsx:42"
+    ]
+  },
+  {
+    "id": "O66",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/workbench-detail-restructure.browser.test.mts",
+      "tests/pc-admin-copy-terms.test.mts",
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o66",
+    "base_positions": [
+      "features/personal-read/PersonalReadMaterial.tsx:77",
+      "features/personal-read/PersonalReadMaterial.tsx:78"
+    ]
+  },
+  {
+    "id": "O67",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o67",
+    "base_positions": [
+      "login/main.ts:193"
+    ]
+  },
+  {
+    "id": "O68",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o68",
+    "base_positions": [
+      "login/main.ts:185",
+      "login/main.ts:212",
+      "login/main.ts:214"
+    ]
+  },
+  {
+    "id": "O69",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o69",
+    "base_positions": [
+      "login/main.ts:192"
+    ]
+  },
+  {
+    "id": "O70",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o70",
+    "base_positions": [
+      "login/main.ts:206"
+    ]
+  },
+  {
+    "id": "O71",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o71",
+    "base_positions": [
+      "login/main.ts:138"
+    ]
+  },
+  {
+    "id": "O72",
+    "pre": false,
+    "result": "deferred",
+    "tests": [
+      "tests/pc-admin-copy-terms.test.mts"
+    ],
+    "evidence": "items.md#o72",
+    "base_positions": [
+      "login/main.ts:162"
+    ]
+  }
+]

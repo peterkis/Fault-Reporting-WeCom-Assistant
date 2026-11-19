@@ -1,0 +1,36 @@
+TAP version 13
+# WEB01_KEYBOARD_FAILURE {"url":"http://127.0.0.1:64446/workbench/app/","focus":"BODY","focusLabel":null,"focusId":"","hasFocus":false,"events":[],"dialogs":0}
+# Subtest: WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state
+not ok 1 - WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state
+  ---
+  duration_ms: 2293.815667
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:433:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    stage-tinted columns with stage glyph headings
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:465:14
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/web01-workbench.browser.test.mjs:434:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2438.590958

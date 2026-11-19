@@ -1,0 +1,116 @@
+TAP version 13
+# ARCH006_NEGATIVE_FIXTURE {"fixture":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/yxx-current-scope-VTPt1j","receipt":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/arch006-negative-receipt-2JGwJ7","pid":31656}
+# Subtest: ARCH-006 logical source migration allows the approved inventory and rejects dual or out-of-scope source
+ok 1 - ARCH-006 logical source migration allows the approved inventory and rejects dual or out-of-scope source
+  ---
+  duration_ms: 1080.730625
+  type: 'test'
+  ...
+# Subtest: ARCH-006 validator passes
+not ok 2 - ARCH-006 validator passes
+  ---
+  duration_ms: 1336.269334
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:131:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    ARCH-006 validation failed with 1 error(s):
+    - current ADR-0045 structure and protected history are valid
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:133:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: ARCH-006 current structure rejects missing scope and changed historical evidence
+not ok 3 - ARCH-006 current structure rejects missing scope and changed historical evidence
+  ---
+  duration_ms: 2637.651875
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:136:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      Comparison {
+    +   code: 'CURRENT_SCOPE_INVALID'
+    -   code: 'CURRENT_EVIDENCE_HISTORY_INVALID'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'CURRENT_EVIDENCE_HISTORY_INVALID'
+  actual:
+  error: 'CURRENT_SCOPE_INVALID'
+  stack: |-
+    readYxxScope (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/src/yxx-current-readiness-scope.mjs:141:29)
+    readCurrentYxxScope (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/src/yxx-current-readiness-scope.mjs:24:52)
+    checkSS010 (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/app/server/src/yxx-self-service-readiness.mjs:37:19)
+    assert.throws.code (file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:165:27)
+    getActual (node:assert:611:5)
+    strict.throws (node:assert:759:24)
+    file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:165:16
+    withScopeCheckout (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/yxx-current-scope-checkout.mjs:19:9)
+    TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:145:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  operator: 'throws'
+  stack: |-
+    file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:165:16
+    withScopeCheckout (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/yxx-current-scope-checkout.mjs:19:9)
+    TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/tests/arch-006-rule-first-service-loop.test.mjs:145:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+ok 4 - machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+  ---
+  duration_ms: 1.022459
+  type: 'test'
+  ...
+# Subtest: ten safe deterministic results are first-class and Manual Review is valid
+ok 5 - ten safe deterministic results are first-class and Manual Review is valid
+  ---
+  duration_ms: 0.168875
+  type: 'test'
+  ...
+# Subtest: Ticket lifecycle reuses authoritative actions and reliable notification boundary
+ok 6 - Ticket lifecycle reuses authoritative actions and reliable notification boundary
+  ---
+  duration_ms: 0.284167
+  type: 'test'
+  ...
+# Subtest: Incident remains human-confirmed and AI-independent
+ok 7 - Incident remains human-confirmed and AI-independent
+  ---
+  duration_ms: 0.076875
+  type: 'test'
+  ...
+# Subtest: AI-off readiness and feature flags are closed by default
+ok 8 - AI-off readiness and feature flags are closed by default
+  ---
+  duration_ms: 0.216
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6260.265416

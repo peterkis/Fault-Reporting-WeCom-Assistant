@@ -1,0 +1,113 @@
+TAP version 13
+# Subtest: checking a failed peer assignment keeps independent local choices visible
+ok 1 - checking a failed peer assignment keeps independent local choices visible
+  ---
+  duration_ms: 2089.78975
+  type: 'test'
+  ...
+# Subtest: checking a failed peer assignment keeps independent local choices visible after replacement
+not ok 2 - checking a failed peer assignment keeps independent local choices visible after replacement
+  ---
+  duration_ms: 2073.552458
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:16:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.ticketSelfHandlingEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:52:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:17:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: assignment retained choices stay locked while the restored target is reauthorized
+ok 3 - assignment retained choices stay locked while the restored target is reauthorized
+  ---
+  duration_ms: 2327.601583
+  type: 'test'
+  ...
+# Subtest: assignment retained choices cannot delete a peer draft when their target is revoked
+ok 4 - assignment retained choices cannot delete a peer draft when their target is revoked
+  ---
+  duration_ms: 2141.533209
+  type: 'test'
+  ...
+# Subtest: assignment retained choices remain visible if target reauthorization is unavailable
+ok 5 - assignment retained choices remain visible if target reauthorization is unavailable
+  ---
+  duration_ms: 2199.052667
+  type: 'test'
+  ...
+# T06_BROWSER_PRIMARY {"name":"AssertionError","message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","stack":"AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\\n\\nfalse !== true\\n\\n    at withWeb01Fixture.ticketAssignmentEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:201:24)\\n    at async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)\\n    at async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)\\n    at async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:119:9)\\n    at async Test.run (node:internal/test_runner/test:1332:7)\\n    at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)"}
+# T06_BROWSER_FAILURE_DIR {"directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-03cafdc6-b398-43c4-9a95-39b9094a342a"}
+# Subtest: an UNKNOWN assignment keeps the original UUID through reload and restores only the currently authorized encrypted purpose
+not ok 6 - an UNKNOWN assignment keeps the original UUID through reload and restores only the currently authorized encrypted purpose
+  ---
+  duration_ms: 2239.232584
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:118:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.ticketAssignmentEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:201:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:119:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# T06_BROWSER_PRIMARY {"name":"AssertionError","message":"Expected values to be strictly equal:\\n\\nfalse !== true\\n","stack":"AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\\n\\nfalse !== true\\n\\n    at withWeb01Fixture.ticketAssignmentEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:201:24)\\n    at async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)\\n    at async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)\\n    at async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:119:9)\\n    at async Test.run (node:internal/test_runner/test:1332:7)\\n    at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)"}
+# T06_BROWSER_FAILURE_DIR {"directory":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-2e3c4f75-2bb3-41d9-b28e-39cff8992838"}
+# Subtest: an UNKNOWN assignment keeps the original UUID through reload and 24h expiry retains only opaque read-only reconciliation
+not ok 7 - an UNKNOWN assignment keeps the original UUID through reload and 24h expiry retains only opaque read-only reconciliation
+  ---
+  duration_ms: 2335.59225
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:118:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.ticketAssignmentEnabled (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:201:24)
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/t06-assignment-recovery.browser.test.mjs:119:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 4
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15577.035875

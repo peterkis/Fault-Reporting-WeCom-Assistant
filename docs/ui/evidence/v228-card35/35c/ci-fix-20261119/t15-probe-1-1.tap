@@ -1,0 +1,38 @@
+TAP version 13
+# T15_RESTORATION_BOUNDARY {"mode":"opaque-failed","phase":"ACTUAL_POST","status":409,"body":{"ok":false,"error":{"code":"P2_016_VERSION_CONFLICT","retryable":false},"replayed":false},"command_id":"a4a3480c-f093-43c7-8854-6b187d4e4e85"}
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","review_resolve_and_start_boundary":"opaque-failed","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-295dced9-52f2-4290-9011-ce7aa390d306/new-detail-900.png","width":900,"height":900,"sha256":"1400529e3ddf29d4493637e75c466abcea68d8f50f6dfcf9190dd12194f7a6ac"}]}
+# Subtest: T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure
+not ok 1 - T15 opaque FAILED receipt settlement can be explicitly retried after one local cleanup failure
+  ---
+  duration_ms: 2535.420417
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:264:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    known FAILED cleanup failure must retain a usable original UUID read-only retry
+    + actual - expected
+    
+    + undefined
+    - false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  operator: 'strictEqual'
+  stack: |-
+    withWeb01Fixture.workbenchManualReviewEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:241:28)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async runBoundary (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/wbint-t15-review-start-restoration-boundaries.browser.test.mjs:47:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2723.629166

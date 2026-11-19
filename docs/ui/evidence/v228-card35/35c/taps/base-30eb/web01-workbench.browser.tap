@@ -1,0 +1,122 @@
+TAP version 13
+# WEB01_MANUAL_PROJECTION_CLEANUP {"http_listening":false,"http_connections":0,"sse_clients":0}
+# Subtest: v2.1 SSE arrival keeps the frozen detail navigation inside the rendered intake group
+ok 1 - v2.1 SSE arrival keeps the frozen detail navigation inside the rendered intake group
+  ---
+  duration_ms: 2196.751416
+  type: 'test'
+  ...
+# WBINT_T17_FIXTURE_BASELINE {"source_stream":"CHANNEL_MESSAGE_INBOX","scanned":15,"inserted":15,"replayed":0,"channel_failures":0,"other_stream_failures":3}
+# Subtest: v2.1 board summary, sorting and intake groups only filter loaded authorized HTTP data
+ok 2 - v2.1 board summary, sorting and intake groups only filter loaded authorized HTTP data
+  ---
+  duration_ms: 3399.026042
+  type: 'test'
+  ...
+# Subtest: v2.1 displayed order drives detail navigation; SSE=false
+ok 3 - v2.1 displayed order drives detail navigation; SSE=false
+  ---
+  duration_ms: 2416.097625
+  type: 'test'
+  ...
+# Subtest: v2.1 displayed order drives detail navigation; SSE=true
+ok 4 - v2.1 displayed order drives detail navigation; SSE=true
+  ---
+  duration_ms: 2279.459167
+  type: 'test'
+  ...
+# WORKBENCH_FILTER_VIEWPORTS {"samples":[{"width":1920,"mode":"board","collapsed":false,"left":1008,"right":1648,"toolbarLeft":272,"toolbarRight":1648,"panelOverflow":false,"pageOverflow":false},{"width":1440,"mode":"board","collapsed":false,"left":768,"right":1408,"toolbarLeft":272,"toolbarRight":1408,"panelOverflow":false,"pageOverflow":false},{"width":1280,"mode":"board","collapsed":false,"left":616,"right":1256,"toolbarLeft":264,"toolbarRight":1256,"panelOverflow":false,"pageOverflow":false},{"width":1000,"mode":"board","collapsed":false,"left":328,"right":968,"toolbarLeft":264,"toolbarRight":968,"panelOverflow":false,"pageOverflow":false},{"width":900,"mode":"board","collapsed":false,"left":16,"right":656,"toolbarLeft":16,"toolbarRight":876,"panelOverflow":false,"pageOverflow":false},{"width":600,"mode":"board","collapsed":false,"left":16,"right":576,"toolbarLeft":16,"toolbarRight":576,"panelOverflow":false,"pageOverflow":false},{"width":390,"mode":"board","collapsed":false,"left":16,"right":366,"toolbarLeft":16,"toolbarRight":366,"panelOverflow":false,"pageOverflow":false},{"width":1920,"mode":"search","collapsed":false,"left":1008,"right":1648,"toolbarLeft":272,"toolbarRight":1648,"panelOverflow":false,"pageOverflow":false},{"width":1440,"mode":"search","collapsed":false,"left":760,"right":1400,"toolbarLeft":272,"toolbarRight":1400,"panelOverflow":false,"pageOverflow":false},{"width":1280,"mode":"search","collapsed":false,"left":608,"right":1248,"toolbarLeft":264,"toolbarRight":1248,"panelOverflow":false,"pageOverflow":false},{"width":1000,"mode":"search","collapsed":false,"left":328,"right":968,"toolbarLeft":264,"toolbarRight":968,"panelOverflow":false,"pageOverflow":false},{"width":900,"mode":"search","collapsed":false,"left":16,"right":656,"toolbarLeft":16,"toolbarRight":876,"panelOverflow":false,"pageOverflow":false},{"width":600,"mode":"search","collapsed":false,"left":16,"right":576,"toolbarLeft":16,"toolbarRight":576,"panelOverflow":false,"pageOverflow":false},{"width":390,"mode":"search","collapsed":false,"left":16,"right":366,"toolbarLeft":16,"toolbarRight":366,"panelOverflow":false,"pageOverflow":false},{"width":1920,"mode":"board","collapsed":true,"left":824,"right":1464,"toolbarLeft":88,"toolbarRight":1464,"panelOverflow":false,"pageOverflow":false},{"width":1440,"mode":"board","collapsed":true,"left":768,"right":1408,"toolbarLeft":88,"toolbarRight":1408,"panelOverflow":false,"pageOverflow":false},{"width":1280,"mode":"board","collapsed":true,"left":616,"right":1256,"toolbarLeft":80,"toolbarRight":1256,"panelOverflow":false,"pageOverflow":false},{"width":1000,"mode":"board","collapsed":true,"left":328,"right":968,"toolbarLeft":80,"toolbarRight":968,"panelOverflow":false,"pageOverflow":false},{"width":900,"mode":"board","collapsed":true,"left":16,"right":656,"toolbarLeft":16,"toolbarRight":876,"panelOverflow":false,"pageOverflow":false},{"width":600,"mode":"board","collapsed":true,"left":16,"right":576,"toolbarLeft":16,"toolbarRight":576,"panelOverflow":false,"pageOverflow":false},{"width":390,"mode":"board","collapsed":true,"left":16,"right":366,"toolbarLeft":16,"toolbarRight":366,"panelOverflow":false,"pageOverflow":false},{"width":1920,"mode":"search","collapsed":true,"left":824,"right":1464,"toolbarLeft":88,"toolbarRight":1464,"panelOverflow":false,"pageOverflow":false},{"width":1440,"mode":"search","collapsed":true,"left":760,"right":1400,"toolbarLeft":88,"toolbarRight":1400,"panelOverflow":false,"pageOverflow":false},{"width":1280,"mode":"search","collapsed":true,"left":608,"right":1248,"toolbarLeft":80,"toolbarRight":1248,"panelOverflow":false,"pageOverflow":false},{"width":1000,"mode":"search","collapsed":true,"left":328,"right":968,"toolbarLeft":80,"toolbarRight":968,"panelOverflow":false,"pageOverflow":false},{"width":900,"mode":"search","collapsed":true,"left":16,"right":656,"toolbarLeft":16,"toolbarRight":876,"panelOverflow":false,"pageOverflow":false},{"width":600,"mode":"search","collapsed":true,"left":16,"right":576,"toolbarLeft":16,"toolbarRight":576,"panelOverflow":false,"pageOverflow":false},{"width":390,"mode":"search","collapsed":true,"left":16,"right":366,"toolbarLeft":16,"toolbarRight":366,"panelOverflow":false,"pageOverflow":false}],"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-1920.png","width":1920,"height":900,"sha256":"16a240c3a81d81ce4008903fb7a5705b28515f53265ef8e07f4a38d7403f6ec0"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-1440.png","width":1440,"height":900,"sha256":"5abe3ed64535128b1c8175b691a14706ee60d3fdf65832b2279b2865bdbf507a"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-1280.png","width":1280,"height":900,"sha256":"cfca57a6097e7e1a80605c5656e5e3b4991b03a8647cff39efe87db7efdadf12"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-900.png","width":900,"height":900,"sha256":"25fd7bf35ef53a4bb0297914f36876e443103bf3b94cf7fee7d45a2f6c408c52"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-600.png","width":600,"height":900,"sha256":"3af246da602700d149f4de6e26f4e0392f0cda308e977fb53af2b5ec356b51f8"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-board-390.png","width":390,"height":900,"sha256":"b916c69266d794880b3e589dc5995501818112c22c65677364151b03abc4e742"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-1920.png","width":1920,"height":900,"sha256":"79ba259d947d2c6372144861d8e285569f058b85dd130add0570d5cd9dc30e83"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-1440.png","width":1440,"height":900,"sha256":"3ba0f3f5e1bccdef7242d58b2929d2844d4194ed36d93e7287ddc07024281901"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-1280.png","width":1280,"height":900,"sha256":"b482b235dafcc3a28239c00f4a498e621509289d9c2ca5de8cca114dffdd965d"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-900.png","width":900,"height":900,"sha256":"b0f876588234c2b655f089b8008f7d16f768271a9ab7deef33997936fbd4ec4f"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-600.png","width":600,"height":900,"sha256":"fa104d62ea2d86badb28e688467c5443eb68ad16df920eb0d1a7c03380325af2"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/toolbar-filter-529a00f7-f303-4c55-beba-2f7c3a41d552/filters-search-390.png","width":390,"height":900,"sha256":"8acf13b2a5a239889ba25a7b91db7fac9efa5dc2894c1146b6eb30637cfaa745"}]}
+# Subtest: open workbench filters stay inside content bounds with reachable search and date controls
+ok 5 - open workbench filters stay inside content bounds with reachable search and date controls
+  ---
+  duration_ms: 5288.152959
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","source_group_command_basis":true,"screenshots":[]}
+# Subtest: source group name editing keeps an exact version basis, reconciles the original unknown command, and fences revoked ADMIN authority
+ok 6 - source group name editing keeps an exact version basis, reconciles the original unknown command, and fences revoked ADMIN authority
+  ---
+  duration_ms: 2143.967167
+  type: 'test'
+  ...
+# Subtest: the default-off source group settings stays closed without requesting directory storage
+ok 7 - the default-off source group settings stays closed without requesting directory storage
+  ---
+  duration_ms: 1008.530292
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","source_group_directory":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-4467c284-84e7-47ef-a777-a9d9547d6c52/new-list-1920.png","width":1920,"height":1080,"sha256":"c093b162b4982ae505e58a0c6d817e593d5eb64ddd2bb958c3de2d556c621949"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-4467c284-84e7-47ef-a777-a9d9547d6c52/new-list-900.png","width":900,"height":900,"sha256":"2bc6b3d0f1af77382615320f576c624a109a0ac0dcbae41d4af902bde1f613d0"}]}
+# Subtest: administrator source group settings searches the real directory across pages and keeps same-name identities separate
+ok 8 - administrator source group settings searches the real directory across pages and keeps same-name identities separate
+  ---
+  duration_ms: 2251.529625
+  type: 'test'
+  ...
+# Subtest: a real object denial clears cached note actions even when the rejection body is unreadable
+ok 9 - a real object denial clears cached note actions even when the rejection body is unreadable
+  ---
+  duration_ms: 1057.86575
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_internal_notes":true,"fault":"disconnect","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-6ec89aa9-2a74-4120-9fba-66fa00e3ea3d/new-detail-1920.png","width":1920,"height":1080,"sha256":"a91167d1be010fa5af0f45c3266c88ede75dab35d495f83ffc9d1b36f3e23fd9"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-6ec89aa9-2a74-4120-9fba-66fa00e3ea3d/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"1cb24996fe63103fdd61f461fe72b2b7ee18a7b094cf13d83be26f83af9ee471"}]}
+# Subtest: Ticket internal note production form preserves the original command after disconnect
+ok 10 - Ticket internal note production form preserves the original command after disconnect
+  ---
+  duration_ms: 1387.414625
+  type: 'test'
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","ticket_internal_notes":true,"fault":"invalid-success","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-ee288677-fa43-4ea7-9ed6-af557c403dcb/new-detail-1920.png","width":1920,"height":1080,"sha256":"12937585151532ddd29c8eaf550c09ff4e0503a728b0d28db43f5574d4c41d2a"},{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-ee288677-fa43-4ea7-9ed6-af557c403dcb/new-detail-page-1920.png","width":1920,"height":1080,"sha256":"ad2d0f1218d5754f1907d6481aafbcbe47c24854c9a061b7d3c6a77d114e66bb"}]}
+# Subtest: Ticket internal note production form preserves the original command after invalid-success
+ok 11 - Ticket internal note production form preserves the original command after invalid-success
+  ---
+  duration_ms: 1416.285958
+  type: 'test'
+  ...
+# Subtest: Ticket note conflict retains input without resending and a later identity rejection clears the session
+ok 12 - Ticket note conflict retains input without resending and a later identity rejection clears the session
+  ---
+  duration_ms: 1217.998584
+  type: 'test'
+  ...
+# WEB01_KEYBOARD_FAILURE {"url":"http://127.0.0.1:54593/workbench/app/","focus":"BODY","focusLabel":null,"focusId":"","hasFocus":false,"events":[],"dialogs":0}
+# Subtest: WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state
+not ok 13 - WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state
+  ---
+  duration_ms: 1222.04625
+  type: 'test'
+  location: '/private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/web01-workbench.browser.test.mjs:433:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    stage-tinted columns with stage glyph headings
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/web01-workbench.browser.test.mjs:465:14
+    async run (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async TestContext.<anonymous> (file:///private/tmp/card35c-baseline-60qkgypw/checkout/.build/runtime/tests/web01-workbench.browser.test.mjs:434:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# WEB01_BROWSER {"api":"REAL_LOOPBACK_HTTP_PG","source_group_names":true,"screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/web01-ui-ac91df7e-0ca7-4117-ade4-fc20a22835ef/new-detail-1920.png","width":1920,"height":1080,"sha256":"1f364c63ede684c2be312eb48bb280e1d954d15f7ede29f9d0c2cdcd552d79ca"}]}
+# Subtest: source group administrator edits real HTTP metadata and refreshes card, list and detail
+ok 14 - source group administrator edits real HTTP metadata and refreshes card, list and detail
+  ---
+  duration_ms: 1810.326542
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 13
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29315.154583

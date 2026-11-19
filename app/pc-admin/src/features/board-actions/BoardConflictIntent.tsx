@@ -1,3 +1,4 @@
+import {InlineAlert} from '../../design/components/InlineAlert/InlineAlert';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {useEffect,useRef,useState} from 'react';
 import {captureWorkbenchRead} from '../../api/client';
@@ -40,10 +41,10 @@ export function BoardConflictIntent({original,onAdopt}:{original:unknown;onAdopt
     finally{if(token===generation.current){active.current=false;if(!controller.signal.aborted)setBusy(false);}}
   };
   return <section className="board-conflict-intent" data-board-original-intent data-original-fingerprint={fingerprint||undefined}>
-    <p role="alert">原操作冲突，完整原意图保留。未自动发送，也未按拖动目标移动事项。</p>
+    <InlineAlert tone="warning">原操作冲突，完整原意图保留。未自动发送，也未按拖动目标移动事项。</InlineAlert>
     {/* Card 34C: the original operation is diagnostics; it is copied on request, not shown in the body. */}
     <DiagnosticCopy data={boardDiagnostics(original)}/>
-    {failed?<p role="alert">新意图尚未开始，原操作与输入保留，请重新核对。</p>:null}
+    {failed?<InlineAlert tone="danger">新意图尚未开始，原操作与输入保留，请重新核对。</InlineAlert>:null}
     <HButton type="button" data-action="adopt-current-board-facts" isDisabled={busy} onClick={()=>{void adopt();}} tone="secondary">明确读取当前事实，保留填写内容并开始新意图</HButton>
   </section>;
 }

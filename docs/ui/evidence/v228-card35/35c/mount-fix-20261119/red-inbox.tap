@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: Card 35C delayed inbox timeline mounts at the latest message and keeps the history reader anchor
+not ok 1 - Card 35C delayed inbox timeline mounts at the latest message and keeps the history reader anchor
+  ---
+  duration_ms: 1876.395125
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:200:1'
+  failureType: 'testCodeFailure'
+  error: 'a delayed conversation must initially show the latest message: {"top":0,"height":2577,"client":590,"count":50,"distance":1987}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    withT22Fixture.inbox (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:230:20)
+    async withWeb01Fixture.beforeClosureMigration.async.databaseUrl.databaseUrl (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t22-fixture.mjs:94:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT22Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/wbint-t22-fixture.mjs:44:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card35c-states.browser.test.mjs:201:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2007.274417

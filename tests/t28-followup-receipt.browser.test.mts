@@ -32,7 +32,7 @@ test('T28 default-disabled workspace keeps old Incident READ while follow-up rec
     assert.equal((await fetch(context.origin+path,{headers})).status,200);
     assert.equal((await fetch(context.origin+path+'/commands/'+randomUUID(),{headers})).status,404);
     await context.browser.command('Page.navigate',{url:context.origin+'/workbench/app/incidents/'+id});
-    await context.browser.waitFor('document.body.innerText.includes("候选工作区尚未启用")');
+    await context.browser.waitFor('document.body.innerText.includes("公共故障页面尚未开放")');
     assert.deepEqual(await context.browser.evaluate('globalThis.__t27DomainReads'),[]);assert.deepEqual(await context.browser.evaluate('globalThis.__t27Posts'),[]);
     assert.equal(await context.browser.evaluate('Boolean(document.querySelector("[data-action=submit-incident]"))'),false);
     assert.equal(await context.browser.evaluate('(async()=>!(await indexedDB.databases()).some(db=>db.name==="wecom-workbench-drafts-v1"))()'),true);

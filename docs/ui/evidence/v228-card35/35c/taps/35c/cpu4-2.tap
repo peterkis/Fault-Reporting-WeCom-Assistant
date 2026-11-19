@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: Card 35C areas: loading, failure, retry, factual empty states and local settings feedback
+ok 1 - Card 35C areas: loading, failure, retry, factual empty states and local settings feedback
+  ---
+  duration_ms: 19344.946125
+  type: 'test'
+  ...
+# Subtest: Card 35C inbox: contacts skeleton, error, fast read and slow request notice
+ok 2 - Card 35C inbox: contacts skeleton, error, fast read and slow request notice
+  ---
+  duration_ms: 13530.224084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33102.888666

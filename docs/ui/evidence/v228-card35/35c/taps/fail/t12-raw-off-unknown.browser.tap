@@ -1,0 +1,40 @@
+TAP version 13
+# T12_RAW_OFF_DIAGNOSTIC {"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-raw-off-b42cfc7c-c73e-4ee5-84e0-3e5fef228e79/receipt.json","screenshots":[{"file":"/private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/t12-raw-off-b42cfc7c-c73e-4ee5-84e0-3e5fef228e79/failure.png","sha256":"9760917f99115898f20c2bf0a87b82059b8fd04c70672bf0ec31b8dc81c390d0"}]}
+# Subtest: raw-off UNKNOWN retains the original capture and mounted controller but its check control never forwards another POST after a genuinely committed lost ACK
+not ok 1 - raw-off UNKNOWN retains the original capture and mounted controller but its check control never forwards another POST after a genuinely committed lost ACK
+  ---
+  duration_ms: 1716.061834
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    withT12Profile.recoveryEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:64:20)
+    async file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:16:13
+    async withWeb01Fixture.ticketSelfHandlingEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:23:13)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async withT12Fixture (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-completion-fixture.mjs:7:5)
+    async withT12Profile (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/t12-profile-fixture.mjs:5:5)
+    async TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/t12-raw-off-unknown.browser.test.mjs:12:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1881.745917

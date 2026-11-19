@@ -1,3 +1,5 @@
+import {ErrorState} from '../../design/components/ErrorState/ErrorState';
+import {DetailLoading} from '../../app/DetailLoading';
 import {StepEntry} from '../../design/components/Drawer/NextStep';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
@@ -45,7 +47,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
   if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&state==='idle')return null;
   const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<StepEntry action="take" label={cardMode?'领取 E':'接单'} fallbackTone={cardMode?'secondary':'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={tone}>{text}</HButton>}</StepEntry>:null;
   return <section data-activity-field="ticket-handling" data-board-claim-state={cardMode?state:undefined} className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
-    {context.isPending?<p role="status">正在读取可用操作…</p>:context.isError?<p role="alert">{errorMessage(context.error)}</p>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
+    {context.isPending?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?blocked?<p role="alert">{errorMessage(context.error)}</p>:<ErrorState title="可用操作没有读出来" onRetry={()=>{void context.refetch();}}/>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
       {cardMode?(cardActionTarget?createPortal(action,cardActionTarget):null):action}

@@ -1,0 +1,295 @@
+TAP version 13
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 18 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-yjjJxR/.build/emit/h5/index.html                          0.30 kB │ gzip:  0.22 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-yjjJxR/.build/emit/h5/.vite/manifest.json                 0.41 kB │ gzip:  0.21 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-yjjJxR/.build/emit/h5/assets/index-BbRmaI7S.css           4.26 kB │ gzip:  1.44 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-yjjJxR/.build/emit/h5/assets/bridge.native-ryokJVMg.js    0.08 kB │ gzip:  0.09 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-yjjJxR/.build/emit/h5/assets/index-C7yTsEs4.js          220.96 kB │ gzip: 69.15 kB
+# ✓ built in 50ms
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 19 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/assets/logo-D8tK5WRJ.svg            0.09 kB │ gzip:  0.10 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/index.html                          0.30 kB │ gzip:  0.22 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/.vite/manifest.json                 0.56 kB │ gzip:  0.24 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/assets/index-Di020akx.css           0.03 kB │ gzip:  0.05 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/assets/bridge.native-ryokJVMg.js    0.08 kB │ gzip:  0.09 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/emit/h5/assets/index-3gQTocEU.js          221.03 kB │ gzip: 69.19 kB
+# ✓ built in 50ms
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/app/h5/src/screen.tsx(1,32): error TS2322: 
+# Type 'string' is not assignable to type 'number'.
+# (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#   - import "./compile-i18n" without a file extension (../../../../../../../../private/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/app/h5/vite.config.ts:8:28). Add the file extension
+# Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+# vite v8.3.0 building client environment for production...
+# transforming...
+# ✓ 24 modules transformed.
+# rendering chunks...
+# computing gzip size...
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/index.html                             0.37 kB │ gzip:  0.24 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/.vite/manifest.json                    0.48 kB │ gzip:  0.23 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/assets/prepaint-88e07a0272a4d194.js    0.67 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/assets/index-Di020akx.css              0.03 kB │ gzip:  0.05 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/assets/bridge.native-ryokJVMg.js       0.08 kB │ gzip:  0.09 kB
+# ../../../../../../../var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-tvanPc/.build/emit/h5/assets/index-CHbe0a3s.js             240.44 kB │ gzip: 76.52 kB
+# ✓ built in 97ms
+# Subtest: media test tools are explicit, absolute and forwarded only to registered consumers
+ok 1 - media test tools are explicit, absolute and forwarded only to registered consumers
+  ---
+  duration_ms: 0.537792
+  type: 'test'
+  ...
+# Subtest: H5 Tailwind scanning uses production sources and ignores design and DEV changes
+not ok 2 - H5 Tailwind scanning uses production sources and ignores design and DEV changes
+  ---
+  duration_ms: 338.131042
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:85:1'
+  failureType: 'testCodeFailure'
+  error: 'H5_BUILD_OUTPUT_INVALID'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+    emitH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:131:22)
+    buildH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:148:52)
+    TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:96:9)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: H5 release inputs, strict React sources, and controlled Vite assets share the formal artifact
+    # Subtest: source identity includes production TSX/styles/assets/config/dependencies and excludes design/preview originals
+    ok 1 - source identity includes production TSX/styles/assets/config/dependencies and excludes design/preview originals
+      ---
+      duration_ms: 173.860875
+      type: 'test'
+      ...
+    # Subtest: a real production Vite build stages hashed scripts/styles and same-origin image assets without preview code
+    not ok 2 - a real production Vite build stages hashed scripts/styles and same-origin image assets without preview code
+      ---
+      duration_ms: 257.294459
+      type: 'test'
+      location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:132:17'
+      failureType: 'testCodeFailure'
+      error: 'H5_BUILD_OUTPUT_INVALID'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+        emitH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:131:22)
+        buildH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:148:52)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:133:13)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:132:17)
+        async Test.run (node:internal/test_runner/test:1332:7)
+      ...
+    # Subtest: source or staged H5 asset drift is rejected by the existing artifact verifier
+    not ok 3 - source or staged H5 asset drift is rejected by the existing artifact verifier
+      ---
+      duration_ms: 0.626958
+      type: 'test'
+      location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:153:17'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /MIGRATION_INPUT_DRIFT/u. Input:
+        
+        "Error: ENOENT: no such file or directory, lstat '/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/runtime/build-manifest.json'"
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+      error: "ENOENT: no such file or directory, lstat '/var/folders/d3/mkb5svlx6r32xdhb9tjj_km40000gn/T/h5-artifact-test-JlcEyo/.build/runtime/build-manifest.json'"
+      stack: |-
+        lstatSync (node:fs:1710:25)
+        safeFile (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:23:13)
+        verifyArtifact (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/verify-artifact.mjs:37:31)
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:154:94
+        getActual (node:assert:611:5)
+        strict.throws (node:assert:759:24)
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:154:81
+        alter (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:34:9)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:154:13)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+      operator: 'throws'
+      stack: |-
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:154:81
+        alter (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:34:9)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:154:13)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:153:17)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+      ...
+    # Subtest: out-of-scope production TSX fails even when the narrowed program compiles
+    ok 4 - out-of-scope production TSX fails even when the narrowed program compiles
+      ---
+      duration_ms: 130.926458
+      type: 'test'
+      ...
+    # Subtest: TSX type errors, disabled strictness, and dependency drift fail before release emission
+    ok 5 - TSX type errors, disabled strictness, and dependency drift fail before release emission
+      ---
+      duration_ms: 53.407042
+      type: 'test'
+      ...
+    # Subtest: manifest path traversal, hidden documents, development chunks, and orphan scripts cannot enter runtime mappings
+    not ok 6 - manifest path traversal, hidden documents, development chunks, and orphan scripts cannot enter runtime mappings
+      ---
+      duration_ms: 161.240875
+      type: 'test'
+      location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:179:17'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /H5_MANIFEST_ASSET_INVALID/u. Input:
+        
+        'Error: H5_BUILD_OUTPUT_INVALID'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+      error: 'H5_BUILD_OUTPUT_INVALID'
+      stack: |-
+        h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+        mappings (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:297:28)
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:185:152
+        getActual (node:assert:611:5)
+        strict.throws (node:assert:759:24)
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:185:139
+        alter (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:34:9)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:185:17)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+      operator: 'throws'
+      stack: |-
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:185:139
+        alter (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:34:9)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:185:17)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:179:17)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+      ...
+    # Subtest: public files are limited to declared image/font assets with original bytes
+    not ok 7 - public files are limited to declared image/font assets with original bytes
+      ---
+      duration_ms: 0.405334
+      type: 'test'
+      location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:197:17'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /H5_PUBLIC_ASSET_INVALID/u. Input:
+        
+        'Error: H5_BUILD_OUTPUT_INVALID'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+      error: 'H5_BUILD_OUTPUT_INVALID'
+      stack: |-
+        h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+        file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:201:41
+        getActual (node:assert:611:5)
+        strict.throws (node:assert:759:24)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:201:28)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:197:17)
+      operator: 'throws'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:201:28)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:197:17)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+      ...
+    # Subtest: compressed sidecars and startup dependency costs remain verified artifact outputs
+    not ok 8 - compressed sidecars and startup dependency costs remain verified artifact outputs
+      ---
+      duration_ms: 0.216292
+      type: 'test'
+      location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:210:17'
+      failureType: 'testCodeFailure'
+      error: 'H5_BUILD_OUTPUT_INVALID'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:211:27)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:210:17)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+      ...
+    1..8
+not ok 3 - H5 release inputs, strict React sources, and controlled Vite assets share the formal artifact
+  ---
+  duration_ms: 836.195208
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:114:1'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: startup metrics count all initial and route imports once, including the standalone theme script
+ok 4 - startup metrics count all initial and route imports once, including the standalone theme script
+  ---
+  duration_ms: 4.255083
+  type: 'test'
+  ...
+# Subtest: actual theme build emits one small synchronous hashed script and a deferred application module
+not ok 5 - actual theme build emits one small synchronous hashed script and a deferred application module
+  ---
+  duration_ms: 426.139334
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:261:1'
+  failureType: 'testCodeFailure'
+  error: 'H5_BUILD_OUTPUT_INVALID'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    h5OutputFiles (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/common.mjs:117:15)
+    emitH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:131:22)
+    buildH5 (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/web.mjs:148:52)
+    TestContext.<anonymous> (file:///Users/petervans/Projects/ticket-wt-35c/.build/tools/h5.test.mjs:282:9)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..5
+# tests 13
+# suites 0
+# pass 5
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1731.335292

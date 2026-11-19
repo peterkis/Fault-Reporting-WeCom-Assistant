@@ -1,0 +1,39 @@
+TAP version 13
+# Subtest: Card 31 sidebar online colleagues: SSE-based online set, status priority, grace, popover, collapsed state and F4 measurements
+not ok 1 - Card 31 sidebar online colleagues: SSE-based online set, status priority, grace, popover, collapsed state and F4 measurements
+  ---
+  duration_ms: 25683.047167
+  type: 'test'
+  location: '/Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card31.browser.test.mjs:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    online changes never re-render board cards
+    + actual - expected
+    
+    + [
+    +   '01a1efcb-22ba-7e1f-8943-3f651527adb4'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '01a1efcb-22ba-7e1f-8943-3f651527adb4'
+  operator: 'deepStrictEqual'
+  stack: |-
+    withWeb01Fixture.workbenchRealtimeEnabled (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/pc-admin-card31.browser.test.mjs:120:16)
+    async run (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/web01-workbench-fixture.mjs:296:12)
+    async withP2015IsolatedDatabase (file:///Users/petervans/Projects/ticket-wt-35c/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:34:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25877.11525
