@@ -1,7 +1,7 @@
 import {connectionTiming} from '../design/hooks/state-timing';
 import {activityTransport,flushActivity} from '../features/activity/client';
 import {presenceHint} from '../features/activity/presence-store';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,advanceWorkbenchAuthorizationEpoch,setWorkbenchTransportWritable} from '../api/client';
 import type {Principal} from '../api/client';
@@ -107,10 +107,11 @@ export function useWorkbenchRealtime(principal:Principal|undefined):RealtimeView
     const environment=()=>{const visible=isWorkbenchVisible();owned.setEnvironment(navigator.onLine,canRunWorkbenchTransport());if(desktopHost&&visible&&!wasVisible)owned.refresh();wasVisible=visible;};
     environment();window.addEventListener('online',environment);window.addEventListener('offline',environment);document.addEventListener('visibilitychange',environment);
     const unsubscribe=client.getQueryCache().subscribe(event=>{
-      if(event.type==='updated'&&event.action.type==='success'&&isBusinessQuery(event.query.queryKey,principal.principal_id)&&event.query.isActive()&&mounted)setView(current=>({...current,lastReadAt:event.query.state.dataUpdatedAt}));
+      if(event.type==='updated'&&event.action.type==='success'&&isBusinessQuery(event.query.queryKey,principal.principal_id)&&event.query.isActive()&&mounted)setView(current=>current.lastReadAt===event.query.state.dataUpdatedAt?current:{...current,lastReadAt:event.query.state.dataUpdatedAt});
     });
     return()=>{mounted=false;reconnect.current=()=>{};activityTransport(null,false);owned.dispose();unsubscribe();window.removeEventListener('online',environment);window.removeEventListener('offline',environment);document.removeEventListener('visibilitychange',environment);};
   },[client,key,enabled,activityEnabled,interval]);
-  return {...view,reconnect:()=>reconnect.current()};
+  const stableReconnect=useCallback(()=>{reconnect.current();},[]);
+  return useMemo(()=>({...view,reconnect:stableReconnect}),[view,stableReconnect]);
 }
 export const realtimeLabels:Record<WorkbenchRealtimeStatus,string>={disabled:'手动刷新',connecting:'正在连接',live:'实时更新中',reconnecting:'连接已断开，正在重试',polling:'实时暂不可用，定时重读',offline:'连接失败，显示最近已确认资料','auth-blocked':'会话需要重新核验'};

@@ -43,6 +43,7 @@ function scrollerRight(element:HTMLElement):number{
   return Infinity;
 }
 const shown=(element:Element)=>element instanceof HTMLElement&&element.checkVisibility()&&!element.closest('[aria-hidden="true"],[data-exiting]');
+const inBoardSubtree=(node:Node)=>node instanceof Element&&Boolean(node.closest('.board,.ds-work-table'));
 /** The declared detail container (drawer, full page or closing dialog) whose bottom-right corner the notices dock to. */
 function toastHost(target:HTMLElement):HTMLElement|null{
   if(target.matches('[data-toast-host]'))return target;
@@ -157,12 +158,24 @@ function useToastPlacement(viewport:HTMLDivElement|null,chip:HTMLElement|null,ta
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(place);};
     place();
-    const resize=new ResizeObserver(schedule);resize.observe(document.documentElement);resize.observe(viewport);if(chip)resize.observe(chip);
-    const host=target.matches('[data-workbench-modal]')?target:toastHost(target);if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
-    const mutation=new MutationObserver(schedule);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
+    const host=target.matches('[data-workbench-modal]')?target:toastHost(target);
+    const resize=count>0||host?new ResizeObserver(schedule):null;
+    if(resize){
+      resize.observe(document.documentElement);resize.observe(viewport);if(chip)resize.observe(chip);
+      if(host){resize.observe(host);for(const area of host.querySelectorAll('[data-toast-avoid]'))resize.observe(area);}
+    }
+    const onMutation=(records:MutationRecord[])=>{
+      for(const record of records){
+        if(record.type==='attributes'){schedule();return;}
+        if(inBoardSubtree(record.target))continue;
+        schedule();return;
+      }
+    };
+    const mutation=new MutationObserver(onMutation);mutation.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-toast-host','data-toast-avoid','aria-hidden','data-exiting']});
     // A detail opening or closing settles through its own animation; recompute once when it ends.
-    window.addEventListener('resize',schedule);document.addEventListener('animationend',schedule,true);document.addEventListener('transitionend',schedule,true);
-    return()=>{if(frame)cancelAnimationFrame(frame);if(reserve.current){reserve.current=0;document.documentElement.style.removeProperty('--workbench-toast-reserve');}resize.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',schedule,true);document.removeEventListener('transitionend',schedule,true);};
+    const onMotionEnd=(event:Event)=>{if(event.target instanceof Node&&inBoardSubtree(event.target))return;schedule();};
+    window.addEventListener('resize',schedule);document.addEventListener('animationend',onMotionEnd,true);document.addEventListener('transitionend',onMotionEnd,true);
+    return()=>{if(frame)cancelAnimationFrame(frame);if(reserve.current){reserve.current=0;document.documentElement.style.removeProperty('--workbench-toast-reserve');}resize?.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);document.removeEventListener('animationend',onMotionEnd,true);document.removeEventListener('transitionend',onMotionEnd,true);};
   },[viewport,chip,target,count,expanded]);
 }
 
@@ -255,7 +268,15 @@ export function WorkbenchToasts(){
       const next=focused?.isConnected&&!focused.closest('[aria-hidden="true"],[data-exiting]')?focused:Array.from(document.querySelectorAll<HTMLElement>('[data-workbench-overlay]')).filter(element=>!element.closest('[aria-hidden="true"],[data-exiting]')).at(-1)??document.body;
       setTarget(previous=>previous===next?previous:next);
     };
-    update();const observer=new MutationObserver(update);observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-hidden','data-exiting']});document.addEventListener('focusin',update);
+    update();
+    const onMutation=(records:MutationRecord[])=>{
+      for(const record of records){
+        if(record.type==='attributes'){update();return;}
+        if(inBoardSubtree(record.target))continue;
+        update();return;
+      }
+    };
+    const observer=new MutationObserver(onMutation);observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-hidden','data-exiting']});document.addEventListener('focusin',update);
     return()=>{observer.disconnect();document.removeEventListener('focusin',update);};
   },[]);
   useEffect(()=>{clearWorkbenchToasts();},[location.pathname,location.search]);

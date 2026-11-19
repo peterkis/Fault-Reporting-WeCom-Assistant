@@ -2,6 +2,7 @@ import {useLayoutEffect,useRef} from 'react';
 import {trackAnimation} from '../../motion/lifecycle';
 import {useExitPresence} from '../../motion/presence';
 import {motionToken,prefersReducedMotion} from '../../motion/tokens';
+import {cancelPointerButtonPress,endButtonPressFor,enterPointerButtonPress,isKeyboardPressActive,leavePointerButtonPress,startKeyboardButtonPress,startPointerButtonPress} from '../Button/press-feedback';
 import './new-items-chip.css';
 
 export interface NewItemsChipProps {
@@ -22,6 +23,7 @@ export function NewItemsChip({count,direction,noun,onActivate,className=''}:NewI
   if(visible)last.current={count,direction,noun};
 
   useLayoutEffect(()=>()=>{
+    endButtonPressFor(button.current);
     activeAnimation.current?.cancel();
     activeAnimation.current=null;
   },[]);
@@ -29,6 +31,7 @@ export function NewItemsChip({count,direction,noun,onActivate,className=''}:NewI
   useLayoutEffect(()=>{
     const node=button.current;
     const prev=activeAnimation.current;
+    if(!visible)endButtonPressFor(node);
     if(!present||!node){
       prev?.cancel();
       activeAnimation.current=null;
@@ -70,6 +73,14 @@ export function NewItemsChip({count,direction,noun,onActivate,className=''}:NewI
   const shown=visible?{count,direction,noun}:last.current;
   const arrow=shown.direction==='down'?'↓':'↑';
   return <div className={'ds-new-items-chip-region'+(className?' '+className:'')} role="status" data-new-items-chip-region>
-    {present?<button ref={button} type="button" className="ds-new-items-chip" data-new-items-chip data-direction={shown.direction} data-exiting={!visible?'true':undefined} aria-hidden={!visible?true:undefined} tabIndex={!visible?-1:undefined} inert={!visible} onClick={()=>{if(visible)onActivate();}} onKeyDown={event=>{if(visible&&(event.key==='Enter'||event.key===' ')&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey){event.preventDefault();onActivate();}}}>{arrow} {shown.count} 条新{shown.noun}</button>:null}
+    {present?<button ref={button} type="button" className="ds-new-items-chip" data-new-items-chip data-direction={shown.direction} data-exiting={!visible?'true':undefined} aria-hidden={!visible?true:undefined} tabIndex={!visible?-1:undefined} inert={!visible}
+      onPointerDown={event=>startPointerButtonPress(event,!visible)}
+      onPointerLeave={leavePointerButtonPress}
+      onPointerEnter={event=>enterPointerButtonPress(event,!visible)}
+      onPointerCancel={cancelPointerButtonPress}
+      onDragStart={event=>endButtonPressFor(event.currentTarget)}
+      onKeyDown={event=>startKeyboardButtonPress(event,!visible,{ignoreShift:true})}
+      onBlur={event=>endButtonPressFor(event.currentTarget)}
+      onClick={event=>{if(!visible||isKeyboardPressActive(event.currentTarget))return;onActivate();}}>{arrow} {shown.count} 条新{shown.noun}</button>:null}
   </div>;
 }

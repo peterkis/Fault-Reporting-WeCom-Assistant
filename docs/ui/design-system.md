@@ -556,7 +556,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 - 状态：hover 底色加深一级；pressed `--bg-active`；普通 disabled 文字 `--text-tertiary`、不降透明度；只读禁用控件见[状态](#状态v228--卡35a)；loading 保持宽度，文字替换为 14px spinner。
 - 按钮组顺序：从左到右 ghost → secondary → primary；弹窗底部「取消」在左、「确认」在右。
 - MUST NOT：近黑实心按钮（现有 `take-and-start`、`complete-ticket`、`send-conversation-reply` 的 `--text-1` 底色）、任何硬编码蓝。
-- HeroUI 映射：`primary`→`variant="primary"`，`secondary`→`variant="outline"`（或自定义），`ghost`→`variant="ghost"`。封装为 `<WbButton tone>`，业务代码不直接写 HeroUI variant。
+- HeroUI 映射：`primary`→`variant="primary"`，`secondary`→`variant="outline"`（或自定义），`ghost`→`variant="ghost"`。封装为 `<WbButton tone>`，业务代码不直接写 HeroUI variant。高频静止卡片工具入口可使用同目录轻量化原语 `CardActionButton`（`design/components/Button/Button.tsx`），保持 E1 指针与键盘按压反馈（`data-pressed`）、不因长按 Enter/Space 重复触发及只读禁用提示。
 
 ### 6.2 表单控件
 
@@ -853,9 +853,12 @@ app/pc-admin/src/design/
   tokens.css            第 1–3 层 Token + 旧变量兼容层（本规范附件）
   base.css              reset、排版、焦点规则（替代 heroui-workbench.css 的焦点部分）
   status-map.ts         第七章状态 → tone 映射
-  components/           Button Tag StatusBadge SourceLabel Avatar PageHeader Toolbar
-                        FilterSelect SearchField Section PropertyList Timeline
-                        EmptyState InlineAlert Drawer Modal TicketCard BoardColumn
+  components/           Button (含 CardActionButton) Link (CardLink) Tag StatusBadge
+                        SourceLabel Avatar PageHeader Toolbar FilterSelect FilterChip
+                        SearchField Section PropertyList Timeline EmptyState ErrorState
+                        InlineAlert Drawer Modal TicketCard BoardColumn BoardSummary
+                        WorkTable SegmentedControl NewItemsChip PresenceTags
+                        PresenceStack OnlineColleagues ReadOnlyBar ConnectionBar Skeleton
 features/*/             只组合 design/components，原则上不再有自己的 .css
 ```
 

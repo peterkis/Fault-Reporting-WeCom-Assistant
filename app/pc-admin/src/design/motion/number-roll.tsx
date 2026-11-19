@@ -20,9 +20,9 @@ export function NumberRoll({value,animate=true}:{value:number;animate?:boolean})
       host.style.minWidth='';
       return;
     }
+    const direction=value>before?1:-1,options={duration:motionToken('--dur-base'),easing:motionToken('--ease-standard')};
     leaving.dataset.value=String(before);
     host.style.minWidth=Math.max(String(before).length,String(value).length)+'ch';
-    const direction=value>before?1:-1,options={duration:motionToken('--dur-base'),easing:motionToken('--ease-standard')};
     const leaveAnim=trackAnimation(leaving.animate([{transform:'translateY(0)',opacity:1},{transform:`translateY(${-direction*100}%)`,opacity:0}],options));
     const enterAnim=trackAnimation(entering.animate([{transform:`translateY(${direction*100}%)`,opacity:0},{transform:'translateY(0)',opacity:1}],options));
     active.current=[leaveAnim,enterAnim];

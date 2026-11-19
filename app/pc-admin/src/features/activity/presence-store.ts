@@ -1,4 +1,4 @@
-import {useEffect,useSyncExternalStore} from 'react';
+import {useCallback,useEffect,useSyncExternalStore} from 'react';
 import type {Principal} from '../../api/client';
 import type {WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchOnlineView} from '../../../../../contracts/workbench_activity_contracts';
 import {isWorkbenchVisible} from '../../desktop/host';
@@ -73,7 +73,10 @@ function expire(){
  * Consecutive reads stay PRESENCE_MIN_READ_GAP_MS apart: the server already sends at most one hint per second.
  */
 function schedule(delay:number){
-  if(!enabled()){clear();return;}
+  if(!enabled()){
+    if(people.size||request||onlineRequest||readTimer!==null||online!==null||onlineFailing)clear();
+    return;
+  }
   if(!rendered.size&&!onlineWanted)return;
   const at=Date.now();if(readTimer===null)firstTriggerAt=at;else clearTimeout(readTimer);
   const due=Math.max(Math.min(at+delay,firstTriggerAt+Math.max(delay,PRESENCE_HINT_MAX_WAIT_MS)),readAt?readAt+PRESENCE_MIN_READ_GAP_MS:0);
@@ -144,11 +147,14 @@ function subscribe(key:string,listener:()=>void){
   let set=listeners.get(key);if(!set){set=new Set();listeners.set(key,set);}set.add(listener);
   return()=>{set.delete(listener);if(!set.size)listeners.delete(key);};
 }
+const getEmptyPeople=()=>EMPTY;
 /** A rendered card registers its target and subscribes to its own key only; a hidden or closed card passes `active=false`. */
 export function usePresence(target:WorkbenchActivityTarget,active:boolean):People{
   const key=keyOf(target);
   useEffect(()=>active?register({kind:target.kind,id:target.id}):undefined,[active,target.kind,target.id]);
-  return useSyncExternalStore(callback=>subscribe(key,callback),()=>active?people.get(key)??EMPTY:EMPTY,()=>EMPTY);
+  const subscribeKey=useCallback((callback:()=>void)=>subscribe(key,callback),[key]);
+  const getSnapshot=useCallback(()=>active?people.get(key)??EMPTY:EMPTY,[active,key]);
+  return useSyncExternalStore(subscribeKey,getSnapshot,getEmptyPeople);
 }
 /** Test and evidence hooks; no production caller depends on them. */
 /** Card 31: only the sidebar row subscribes; board and list cards never re-render for online changes. */

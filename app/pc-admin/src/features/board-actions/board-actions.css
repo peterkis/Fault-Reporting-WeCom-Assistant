@@ -33,10 +33,10 @@
 .ds-ticket-card .board-action-tools [data-action=board-drag-handle] {display: none;}
 .ds-ticket-card .board-action-card .card-open {cursor: grab;}
 .ds-ticket-card .board-action-card.is-dragging .card-open {cursor: grabbing;}
-.ds-ticket-card:has(.board-action-tools):is(:hover,:focus-within) .card-top {padding-right: var(--space-8);}
+.ds-ticket-card:is(:hover,:focus-within) .board-action-card .card-top {padding-right: var(--space-8);}
 
 @media (pointer:coarse) {
   .ds-ticket-card .board-action-tools {padding: 0;}
-  .ds-ticket-card:has(.board-action-tools) .card-top {padding-right: var(--space-12);}
+  .ds-ticket-card .board-action-card .card-top {padding-right: var(--space-12);}
   .ds-ticket-card .ds-board-claim-slot {bottom: var(--space-3);}
 }

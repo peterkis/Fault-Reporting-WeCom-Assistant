@@ -1,12 +1,12 @@
 import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import type {RefObject} from 'react';
-import {flip,getFlipLayout,hasFreeFlipSlot} from './flip';
+import {canStartLiftFlip,flip,getFlipLayout,hasFreeFlipSlot} from './flip';
 import type {MotionRect} from './flip';
 import {highlight} from './highlight';
 import type {HighlightTone} from './highlight';
 import {finishedAnimation,trackAnimation} from './lifecycle';
 import {consumeSelfWrite} from './self-write';
-import {highlightToneColor,motionToken,prefersReducedMotion,subscribeMotion} from './tokens';
+import {highlightToneColor,motionToken,prefersReducedMotion,subscribeMotion,warmMotionTokens} from './tokens';
 
 export type MotionColumn='pending'|'active'|'handled';
 export interface MotionItem {
@@ -129,21 +129,12 @@ function listGroupKey(item:MotionItem):string{
   return 'active';
 }
 
-function collapsedGroupHeader(card:HTMLElement):HTMLElement|null{
-  const group=card.closest<HTMLElement>('.ds-board-group');
-  if(!group)return null;
+function groupCollapsedHeader(group:HTMLElement):HTMLElement|null{
   const trigger=group.querySelector<HTMLElement>('.ds-board-group-trigger');
   if(trigger?.getAttribute('aria-expanded')==='false')return trigger;
   const content=group.querySelector<HTMLElement>(':scope > .disclosure__content');
   if(content&&content.getAttribute('data-expanded')!=='true')return trigger;
   return null;
-}
-
-function columnOfElement(card:HTMLElement):{column:MotionColumn;columnEl:HTMLElement|null}{
-  const columnEl=card.closest<HTMLElement>('.board-column');
-  const list=columnEl?.classList;
-  const column:MotionColumn=list?.contains('pending')?'pending':list?.contains('active')?'active':'handled';
-  return {column,columnEl};
 }
 
 function computeColumnSignatures(items:readonly MotionItem[]):Record<MotionColumn,string>{
@@ -161,49 +152,69 @@ function computeColumnSignatures(items:readonly MotionItem[]):Record<MotionColum
 function scanBoardCards(itemsByKey:Map<string,MotionItem>,inFlight:Map<string,InFlightMove>,columnsToScan?:ReadonlySet<MotionColumn>):Map<string,LiveCard>{
   const result=new Map<string,LiveCard>();
   if(columnsToScan&&columnsToScan.size===0)return result;
-  const selector=columnsToScan&&columnsToScan.size<COLUMNS.length
-    ?[...columnsToScan].map(col=>`.board .board-column.${col} .ticket-card`).join(',')
-    :'.board .ticket-card';
-  for(const card of document.querySelectorAll<HTMLElement>(selector)){
-    const kind=card.dataset.kind,id=card.dataset.itemId;
-    if(!kind||!id)continue;
-    const key=kind+':'+id;
-    const {column,columnEl}=columnOfElement(card);
-    const group=card.closest<HTMLElement>('[data-board-group]')?.getAttribute('data-board-group')??null;
-    const header=collapsedGroupHeader(card);
-    const rect=card.getBoundingClientRect();
-    const visible=header===null&&rect.width>0&&rect.height>0;
-    const activeFlight=inFlight.get(key);
-    let left=rect.left,top=rect.top;
-    if(activeFlight&&activeFlight.el===card&&activeFlight.animation.playState==='running'){
-      left=activeFlight.to.left-(window.scrollX-activeFlight.scrollX);
-      top=activeFlight.to.top-(window.scrollY-activeFlight.scrollY);
-    }else if(card.dataset.motionFlipping==='true'||card.dataset.motionEntering==='true'){
-      const transform=getComputedStyle(card).transform;
-      if(transform&&transform!=='none'){
-        const matrix=new DOMMatrixReadOnly(transform);
-        left-=matrix.m41;
-        top-=matrix.m42;
-      }else{
-        const flipLayout=getFlipLayout(card);
-        if(flipLayout){left=flipLayout.left;top=flipLayout.top;}
-      }
+  const board=document.querySelector<HTMLElement>('.board');
+  if(!board)return result;
+  const targetCols=columnsToScan&&columnsToScan.size<COLUMNS.length?[...columnsToScan]:COLUMNS;
+  const scrollX=window.scrollX,scrollY=window.scrollY;
+  for(const column of targetCols){
+    const columnEl=board.querySelector<HTMLElement>(`.board-column.${column}`);
+    if(!columnEl)continue;
+    const groupMeta=new Map<HTMLElement,{name:string|null;collapsedHeader:HTMLElement|null}>();
+    const groups=columnEl.querySelectorAll<HTMLElement>('.ds-board-group');
+    for(const groupEl of groups){
+      groupMeta.set(groupEl,{
+        name:groupEl.getAttribute('data-board-group'),
+        collapsedHeader:groupCollapsedHeader(groupEl),
+      });
     }
-    result.set(key,{
-      el:card,
-      columnEl,
-      collapsedHeader:header,
-      left,
-      top,
-      right:left+rect.width,
-      bottom:top+rect.height,
-      width:rect.width,
-      height:rect.height,
-      column,
-      group,
-      visible,
-      intakeId:itemsByKey.get(key)?.intake_id??'',
-    });
+    const hasGroups=groupMeta.size>0;
+    for(const card of columnEl.querySelectorAll<HTMLElement>('.ticket-card')){
+      const kind=card.dataset.kind,id=card.dataset.itemId;
+      if(!kind||!id)continue;
+      const key=kind+':'+id;
+      let group:string|null=null;
+      let header:HTMLElement|null=null;
+      if(hasGroups){
+        const groupEl=card.closest<HTMLElement>('.ds-board-group');
+        const meta=groupEl?groupMeta.get(groupEl):undefined;
+        if(meta){group=meta.name;header=meta.collapsedHeader;}
+      }
+      const rect=card.getBoundingClientRect();
+      const visible=header===null&&rect.width>0&&rect.height>0;
+      const activeFlight=inFlight.get(key);
+      let left=rect.left,top=rect.top;
+      const isActiveFlight=Boolean(activeFlight&&activeFlight.el===card&&activeFlight.animation.playState==='running');
+      if(isActiveFlight||card.dataset.motionFlipping==='true'||card.dataset.motionEntering==='true'){
+        const transform=getComputedStyle(card).transform;
+        if(transform&&transform!=='none'){
+          const matrix=new DOMMatrixReadOnly(transform);
+          left-=matrix.m41;
+          top-=matrix.m42;
+        }else{
+          const flipLayout=getFlipLayout(card);
+          if(flipLayout){left=flipLayout.left;top=flipLayout.top;}
+          else if(isActiveFlight&&activeFlight){
+            left=activeFlight.to.left-(scrollX-activeFlight.scrollX);
+            top=activeFlight.to.top-(scrollY-activeFlight.scrollY);
+          }
+        }
+      }
+      result.set(key,{
+        el:card,
+        columnEl,
+        collapsedHeader:header,
+        left,
+        top,
+        right:left+rect.width,
+        bottom:top+rect.height,
+        width:rect.width,
+        height:rect.height,
+        column,
+        group,
+        visible,
+        intakeId:itemsByKey.get(key)?.intake_id??'',
+      });
+    }
   }
   return result;
 }
@@ -312,8 +323,65 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
   const boardOffscreenRef=useRef(boardOffscreen);boardOffscreenRef.current=boardOffscreen;
   const listOffscreenRef=useRef(listOffscreen);listOffscreenRef.current=listOffscreen;
   const revealedKeys=useRef(new Set<string>());
+  const pendingSettled=useRef(new Map<string,HTMLElement>());
+  const settledFrame=useRef(0);
+  const deferredHighlightBatches=useRef(new Map<ReturnType<typeof setTimeout>,Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>>());
+  const followUpHighlights=useRef(new Map<Animation,{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>());
+
+  const scheduleSettledRectRefresh=useCallback((key:string,el:HTMLElement)=>{
+    pendingSettled.current.set(key,el);
+    if(settledFrame.current)return;
+    settledFrame.current=requestAnimationFrame(()=>{
+      settledFrame.current=0;
+      const batch=pendingSettled.current;
+      if(!batch.size)return;
+      const entries=[...batch.entries()];
+      batch.clear();
+      for(const [itemKeyEntry,node] of entries){
+        if(!node.isConnected)continue;
+        const stored=previousCards.current.get(itemKeyEntry);
+        if(!stored||!stored.visible)continue;
+        const activeFlight=inFlight.current.get(itemKeyEntry);
+        if(activeFlight&&activeFlight.el===node&&activeFlight.animation.playState==='running')continue;
+        const flipLayout=getFlipLayout(node);
+        if(flipLayout){
+          stored.left=flipLayout.left;stored.top=flipLayout.top;
+          stored.right=flipLayout.left+stored.width;stored.bottom=flipLayout.top+stored.height;
+          continue;
+        }
+        if(node.dataset.motionFlipping==='true'||node.dataset.motionEntering==='true')continue;
+        const rect=node.getBoundingClientRect();
+        if(rect.width<=0||rect.height<=0)continue;
+        stored.left=rect.left;stored.top=rect.top;
+        stored.right=rect.right;stored.bottom=rect.bottom;
+        stored.width=rect.width;stored.height=rect.height;
+      }
+    });
+  },[]);
+
+  const drainPendingHighlights=useCallback(()=>{
+    const pending:Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>=[];
+    if(deferredHighlightBatches.current.size>0){
+      const entries=[...deferredHighlightBatches.current.entries()];
+      deferredHighlightBatches.current.clear();
+      for(const [timer,batch] of entries){
+        clearTimeout(timer);
+        pending.push(...batch);
+      }
+    }
+    if(followUpHighlights.current.size>0){
+      pending.push(...followUpHighlights.current.values());
+      followUpHighlights.current.clear();
+    }
+    return pending;
+  },[]);
 
   const clearTransientEffects=useCallback(()=>{
+    if(settledFrame.current){cancelAnimationFrame(settledFrame.current);settledFrame.current=0;}
+    pendingSettled.current.clear();
+    for(const timer of deferredHighlightBatches.current.keys())clearTimeout(timer);
+    deferredHighlightBatches.current.clear();
+    followUpHighlights.current.clear();
     for(const flight of inFlight.current.values())flight.animation.cancel();
     inFlight.current.clear();
     for(const ghost of flightGhosts.current)ghost.remove();
@@ -325,6 +393,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
   useEffect(()=>{
     scrollOrigin.current={x:window.scrollX,y:window.scrollY};
     const refreshBaseline=()=>{
+      pendingSettled.current.clear();
       const scanned=scanBoardCards(itemsByKeyRef.current,inFlight.current);
       const merged=new Map(previousCards.current);
       for(const [key,card] of scanned)merged.set(key,toSnapshot(card));
@@ -360,7 +429,15 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       }
     };
     const unsubscribe=subscribeMotion(()=>{
-      if(prefersReducedMotion()||document.hidden)clearTransientEffects();
+      if(document.hidden){
+        clearTransientEffects();
+      }else if(prefersReducedMotion()){
+        const pendingHighlights=drainPendingHighlights();
+        clearTransientEffects();
+        for(const {el,tone,bg} of pendingHighlights){
+          if(el.isConnected)highlight(el,{tone,...(bg?{background:bg}:{})});
+        }
+      }
     });
     document.addEventListener('pointerdown',capture,true);
     window.addEventListener('keydown',capture,true);
@@ -379,7 +456,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       unsubscribe();
       clearTransientEffects();
     };
-  },[clearTransientEffects]);
+  },[clearTransientEffects,drainPendingHighlights]);
 
   const arrivalSignature=arrivalKeys.join('|');
   useLayoutEffect(()=>{
@@ -411,6 +488,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       if(!settled.current){
         if(ready&&!refreshing){
           const initial=scanBoardCards(itemsByKey,inFlight.current);
+          warmMotionTokens();
           scrollOrigin.current={x:window.scrollX,y:window.scrollY};
           settled.current=true;
           lastCommitSig.current=commitSig;
@@ -452,6 +530,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
 
       // Single batched read phase: measure cards in affected columns first (forces layout and browser scroll anchoring).
       const scanned=scanBoardCards(itemsByKey,inFlight.current,columnsToScan);
+      for(const key of scanned.keys())pendingSettled.current.delete(key);
       const anchorDx=window.scrollX-scrollOrigin.current.x,anchorDy=window.scrollY-scrollOrigin.current.y;
       scrollOrigin.current={x:window.scrollX,y:window.scrollY};
       if(anchorDx||anchorDy){
@@ -546,6 +625,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         if(flight&&flight.animation.playState==='running'&&flight.el!==curr.el){
           const timing=flight.animation.effect?.getComputedTiming();
           fromVisual=interpolateFlightOrigin(flight.from,flight.to,timing?.progress,window.scrollX-flight.scrollX,window.scrollY-flight.scrollY);
+          followUpHighlights.current.delete(flight.animation);
           flight.animation.cancel();
           inFlight.current.delete(oldKey);
           inFlight.current.delete(key);
@@ -603,7 +683,11 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         }
       }
 
-      // Write / Animate Phase: no layout or computed-style reads between animate() calls.
+      // Write / Animate Phase: no layout, scroll, or computed-style reads between animate() calls.
+      const currentScroll={x:scrollOrigin.current.x,y:scrollOrigin.current.y};
+      const motionDisabled=document.hidden||prefersReducedMotion();
+      let liftSlotsExhausted=motionDisabled;
+      const snappedHighlights:Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>=[];
       // Priority 1: Moving cards first so they claim the 6 FLIP slots.
       for(const move of moves){
         const {key,curr,old,fromVisual,selfCaused}=move;
@@ -611,13 +695,14 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         if(curr.collapsedHeader){
           const headerRect=headerRects.get(curr.collapsedHeader);
           const colRect=curr.columnEl?columnRects.get(curr.columnEl):undefined;
-          if(headerRect&&!document.hidden&&!prefersReducedMotion()){
+          if(headerRect&&!motionDisabled&&!liftSlotsExhausted){
             const target=colRect?clampToColumnEdge(colRect,{left:headerRect.left,top:headerRect.top,height:headerRect.height},viewportHeight):{left:headerRect.left,top:headerRect.top};
             const ghost=createFlightGhost(curr.el,old.width,target);
             document.body.appendChild(ghost);
-            const animation=flip(ghost,fromVisual,target,{duration:'--dur-move',easing:'--ease-soft',lift:true,fadeOut:true});
+            const animation=flip(ghost,fromVisual,target,{duration:'--dur-move',easing:'--ease-soft',lift:true,fadeOut:true,scroll:currentScroll});
             if(animation.playState==='finished'){
               ghost.remove();
+              if(!canStartLiftFlip(ghost))liftSlotsExhausted=true;
             }else{
               flightGhosts.current.add(ghost);
               const cleanup=()=>{ghost.remove();flightGhosts.current.delete(ghost);};
@@ -629,53 +714,91 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
 
         const offDir=isOutsideVerticalBounds(curr,0,viewportHeight);
         if(offDir){
-          const colRect=curr.columnEl?columnRects.get(curr.columnEl):undefined;
-          const edge=colRect?clampToColumnEdge(colRect,{left:curr.left,top:curr.top,height:curr.height},viewportHeight):{left:curr.left,top:offDir==='up'?0:Math.max(0,viewportHeight-motionToken('--space-12'))};
-          const animation=flip(curr.el,fromVisual,{left:curr.left,top:curr.top},{duration:'--dur-move',easing:'--ease-soft',lift:true,fadeOut:true,end:edge});
-          if(animation.playState==='running'){
-            const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:edge,scrollX:window.scrollX,scrollY:window.scrollY,column:curr.column};
-            inFlight.current.set(key,record);
-            const release=()=>{if(inFlight.current.get(key)===record)inFlight.current.delete(key);};
-            void animation.finished.then(release,release);
+          if(!liftSlotsExhausted||curr.el.dataset.motionFlipping==='true'){
+            const colRect=curr.columnEl?columnRects.get(curr.columnEl):undefined;
+            const edge=colRect?clampToColumnEdge(colRect,{left:curr.left,top:curr.top,height:curr.height},viewportHeight):{left:curr.left,top:offDir==='up'?0:Math.max(0,viewportHeight-motionToken('--space-12'))};
+            const animation=flip(curr.el,fromVisual,{left:curr.left,top:curr.top},{duration:'--dur-move',easing:'--ease-soft',lift:true,fadeOut:true,end:edge,scroll:currentScroll});
+            if(animation.playState==='running'){
+              const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:edge,scrollX:currentScroll.x,scrollY:currentScroll.y,column:curr.column};
+              inFlight.current.set(key,record);
+              const release=()=>{if(inFlight.current.get(key)===record)inFlight.current.delete(key);};
+              void animation.finished.then(release,release);
+            }else if(!canStartLiftFlip(curr.el)){
+              liftSlotsExhausted=true;
+            }
           }
           if(!selfCaused)addBoardOffscreen(curr.column,{key,direction:offDir,tone});
           continue;
         }
 
+        if(liftSlotsExhausted&&curr.el.dataset.motionFlipping!=='true'){
+          if(!selfCaused){
+            const bg=cardBackgrounds.get(curr.el);
+            if(motionDisabled){
+              if(!document.hidden){
+                void Promise.resolve().then(()=>{
+                  if(curr.el.isConnected&&!document.hidden)highlight(curr.el,{tone,...(bg?{background:bg}:{})});
+                });
+              }
+            }else{
+              snappedHighlights.push({el:curr.el,tone,bg});
+            }
+          }
+          continue;
+        }
+
         const toRect:MotionRect={left:curr.left,top:curr.top};
-        const animation=flip(curr.el,fromVisual,toRect,{duration:'--dur-move',easing:'--ease-soft',lift:true});
+        const animation=flip(curr.el,fromVisual,toRect,{duration:'--dur-move',easing:'--ease-soft',lift:true,scroll:currentScroll});
         if(animation.playState==='running'){
-          const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:toRect,scrollX:window.scrollX,scrollY:window.scrollY,column:curr.column};
+          const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:toRect,scrollX:currentScroll.x,scrollY:currentScroll.y,column:curr.column};
           inFlight.current.set(key,record);
           const release=()=>{
             if(inFlight.current.get(key)===record){
               inFlight.current.delete(key);
-              if(curr.el.isConnected){
-                const settledRect=curr.el.getBoundingClientRect();
-                const stored=previousCards.current.get(key);
-                if(stored){
-                  stored.left=settledRect.left;stored.top=settledRect.top;
-                  stored.right=settledRect.right;stored.bottom=settledRect.bottom;
-                }
-              }
+              if(curr.el.isConnected)scheduleSettledRectRefresh(key,curr.el);
             }
           };
           void animation.finished.then(release,release);
+        }else if(!canStartLiftFlip(curr.el)){
+          liftSlotsExhausted=true;
         }
         if(!selfCaused){
           const bg=cardBackgrounds.get(curr.el);
+          const entry={el:curr.el,tone,bg};
+          followUpHighlights.current.set(animation,entry);
           void animation.finished.then(()=>{
-            if(curr.el.isConnected)highlight(curr.el,{tone,...(bg?{background:bg}:{})});
-          },()=>{});
+            if(!followUpHighlights.current.delete(animation))return;
+            if(entry.el.isConnected&&!document.hidden)highlight(entry.el,{tone:entry.tone,...(entry.bg?{background:entry.bg}:{})});
+          },()=>{
+            followUpHighlights.current.delete(animation);
+          });
         }
       }
 
+      if(snappedHighlights.length>0){
+        const batch=snappedHighlights;
+        const timer=setTimeout(()=>{
+          deferredHighlightBatches.current.delete(timer);
+          for(const {el,tone,bg} of batch){
+            if(el.isConnected)highlight(el,{tone,...(bg?{background:bg}:{})});
+          }
+        },0);
+        deferredHighlightBatches.current.set(timer,batch);
+      }
+
       // Priority 2: Make-room / close-up sibling cards in affected columns.
-      if(visuallyAffectedColumns.size>0){
+      if(visuallyAffectedColumns.size>0&&!liftSlotsExhausted){
         const arrivedKeySet=new Set(arrivalsToProcess.map(entry=>entry.key));
         for(const [key,curr] of scanned){
           if(movedKeys.has(key)||arrivedKeySet.has(key)||!curr.visible)continue;
           if(!visuallyAffectedColumns.has(curr.column))continue;
+          const activeFlight=inFlight.current.get(key);
+          if(activeFlight&&activeFlight.el===curr.el&&activeFlight.animation.playState==='running'){
+            activeFlight.to={left:curr.left,top:curr.top};
+            activeFlight.scrollX=currentScroll.x;
+            activeFlight.scrollY=currentScroll.y;
+            continue;
+          }
           if(!hasFreeFlipSlot()&&curr.el.dataset.motionFlipping!=='true')continue;
           const old=prev.get(key);
           if(!old||!old.visible||old.column!==curr.column||old.group!==curr.group)continue;
@@ -683,7 +806,13 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
           if(Math.abs(old.left-curr.left)<1&&Math.abs(old.top-curr.top)<1)continue;
           // Skip cards completely outside the viewport both before and after so visible cards get the 6 slots.
           if(isOutsideVerticalBounds(old,0,viewportHeight)!==null&&isOutsideVerticalBounds(curr,0,viewportHeight)!==null)continue;
-          flip(curr.el,{left:old.left,top:old.top},{left:curr.left,top:curr.top},{duration:'--dur-base',easing:'--ease-standard'});
+          const animation=flip(curr.el,{left:old.left,top:old.top},{left:curr.left,top:curr.top},{duration:'--dur-base',easing:'--ease-standard',scroll:currentScroll});
+          if(animation.playState==='running'){
+            const el=curr.el,runScope=scope;
+            void animation.finished.then(()=>{
+              if(owner.current===runScope&&!document.hidden&&el.isConnected)scheduleSettledRectRefresh(key,el);
+            },()=>{});
+          }
         }
       }
 
@@ -703,9 +832,14 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         }
         if(!selfCaused){
           const bg=cardBackgrounds.get(curr.el);
+          const entry={el:curr.el,tone,bg};
+          followUpHighlights.current.set(animation,entry);
           void animation.finished.then(()=>{
-            if(curr.el.isConnected)highlight(curr.el,{tone,...(bg?{background:bg}:{})});
-          },()=>{});
+            if(!followUpHighlights.current.delete(animation))return;
+            if(entry.el.isConnected&&!document.hidden)highlight(entry.el,{tone:entry.tone,...(entry.bg?{background:entry.bg}:{})});
+          },()=>{
+            followUpHighlights.current.delete(animation);
+          });
         }
       }
 
@@ -738,6 +872,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
 
     if(!settled.current){
       if(ready&&!refreshing){
+        warmMotionTokens();
         settled.current=true;
         lastCommitSig.current=commitSig;
         previousList.current=nextList;
@@ -809,7 +944,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     setListOffscreen(current=>sameEntries(current,nextOffscreen)?current:nextOffscreen);
     seenArrivals.current=new Set(newArrivals);
     previousList.current=refreshing?new Map([...prevList,...nextList]):nextList;
-  },[view,principalId,sequence,refreshing,ready,scope,arrivalSignature,clearTransientEffects]);
+  },[view,principalId,sequence,refreshing,ready,scope,arrivalSignature,clearTransientEffects,scheduleSettledRectRefresh]);
 
   // IntersectionObserver for board off-screen arrivals: scrolling them into view dismisses chip and highlights once.
   const boardOffscreenKey=COLUMNS.map(col=>col+':'+boardOffscreen[col].map(entry=>entry.key).join(',')).join('|');
@@ -918,11 +1053,14 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     for(const {entry,el} of elements)highlight(el,{tone:entry.tone});
   },[]);
 
+  const activatePending=useCallback(()=>activateBoardColumn('pending'),[activateBoardColumn]);
+  const activateActive=useCallback(()=>activateBoardColumn('active'),[activateBoardColumn]);
+  const activateHandled=useCallback(()=>activateBoardColumn('handled'),[activateBoardColumn]);
   const boardChips=useMemo<Record<MotionColumn,OffscreenChipState>>(()=>({
-    pending:{count:boardOffscreen.pending.length,direction:boardOffscreen.pending[0]?.direction??'up',activate:()=>activateBoardColumn('pending')},
-    active:{count:boardOffscreen.active.length,direction:boardOffscreen.active[0]?.direction??'up',activate:()=>activateBoardColumn('active')},
-    handled:{count:boardOffscreen.handled.length,direction:boardOffscreen.handled[0]?.direction??'up',activate:()=>activateBoardColumn('handled')},
-  }),[boardOffscreen,activateBoardColumn]);
+    pending:{count:boardOffscreen.pending.length,direction:boardOffscreen.pending[0]?.direction??'up',activate:activatePending},
+    active:{count:boardOffscreen.active.length,direction:boardOffscreen.active[0]?.direction??'up',activate:activateActive},
+    handled:{count:boardOffscreen.handled.length,direction:boardOffscreen.handled[0]?.direction??'up',activate:activateHandled},
+  }),[boardOffscreen,activatePending,activateActive,activateHandled]);
 
   const listChip=useMemo<OffscreenChipState>(()=>({
     count:listOffscreen.length,

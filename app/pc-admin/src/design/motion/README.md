@@ -5,16 +5,19 @@ CSS tokens are the only numeric source. `motionToken('--dur-base')` returns mill
 preference/visibility changes and development overrides. `useReducedMotion()` subscribes to
 the same source. Importing tokens has no DOM side effect until first use / initialization.
 
-- `flip(el, from, to, {duration, easing, lift, fadeOut, end})` accepts viewport `{left, top}`
-  rectangles and token names. It returns an `Animation`. Repeating on the same element samples
-  its current visual rectangle before cancelling. At most six elements run concurrently (checked
-  before measuring layout so overflow elements snap without forced reflow; `lift: true` cross-column
-  moves evict a `lift: false` sibling flip if slots filled across split query ticks). `getFlipLayout`
-  and `hasFreeFlipSlot` expose running slot state without extra DOM reads. `lift` sets
-  shadow/z-index temporarily; `fadeOut` fades opacity from 1 to 0 over the last 30% of the flight
-  (for flights into collapsed groups or to an optional `end` visible column edge); only
-  transform and (when `fadeOut`) opacity are animated. While running, `data-motion-flipping` is
-  set on `el` so expanded `.ds-board-group` containers unclip temporarily while preserving BFC.
+- `flip(el, from, to, {duration, easing, lift, fadeOut, end, scroll})` accepts viewport `{left, top}`
+  rectangles and token names (plus optional pre-read `scroll` coordinates so batched callers avoid
+  reading `window.scrollX`/`scrollY` after DOM writes). It returns an `Animation`. Repeating on the
+  same element samples its current visual rectangle before cancelling. At most six elements run
+  concurrently (checked before measuring layout so overflow elements snap without forced reflow;
+  `lift: true` cross-column moves evict a `lift: false` sibling flip if slots filled across split
+  query ticks). `getFlipLayout`, `hasFreeFlipSlot`, and `canStartLiftFlip` expose running slot
+  state without extra DOM reads. `lift` sets shadow/z-index temporarily; `fadeOut` fades opacity
+  from 1 to 0 over the last 30% of the flight (for flights into collapsed groups or to an optional
+  `end` visible column edge); only transform and (when `fadeOut`) opacity are animated. While
+  running, `data-motion-flipping` is set on `el` and ref-counted `data-motion-flip-host` is set on
+  enclosing `.ds-collapse`/`.disclosure__content` ancestors so expanded containers unclip
+  temporarily without `:has()` subtree invalidation.
 - `highlight(el, {tone: 'intake'|'active'|'done'|'brand', background?})` fades the cached phase
   background (`highlightToneColor`) to the original computed (or pre-batched) background. Repeating
   restarts 1200ms. Reduced motion holds the solid colour for that duration, then restores the

@@ -3,7 +3,7 @@ import {Button as HButton} from '../../design/components/Button/Button';
 import {Fieldset as HFieldset,Form as HForm,Input as HInput,Label as HLabel,ListBox,ComboBox} from "@heroui/react";
 import {WorkbenchDisclosure} from "../../app/WorkbenchDisclosure";
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
-import {useEffect,useRef,useState} from 'react';
+import {memo,useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {useInfiniteQuery,useQueryClient} from '@tanstack/react-query';
 import {api,statusLabels} from '../../api/client';
@@ -40,7 +40,7 @@ export function useWorkbenchSearch(principal:Principal,criteria:WorkbenchSearchC
 }
 interface Props {principal:Principal;criteria:WorkbenchSearchCriteria|null;blocked:boolean;busy?:boolean;inlineLeave?:boolean;active:boolean;loaded:WorkbenchCard[];
  onApply:(criteria:WorkbenchSearchCriteria)=>void;onLeave:()=>void}
-export function SearchControls({principal,criteria,blocked,busy=false,inlineLeave=false,active,loaded,onApply,onLeave}:Props){
+export const SearchControls=memo(function SearchControls({principal,criteria,blocked,busy=false,inlineLeave=false,active,loaded,onApply,onLeave}:Props){
  const fallback=parseSearchRequest(new URLSearchParams()).criteria,key=criteria?searchCriteriaKey(criteria):'invalid';
  const [draft,setDraft]=useState(()=>searchParameters(criteria??fallback)),[error,setError]=useState<string|null>(null);
  const previous=useRef(criteria);
@@ -73,7 +73,7 @@ export function SearchControls({principal,criteria,blocked,busy=false,inlineLeav
     <WorkbenchSelect label={<>补充跟进</>} name="supplement" isDisabled={blocked||!principal.supplement_follow_up_enabled} value={draft.get('supplement')??'any'} onChange={event=>set('supplement',event)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="pending" textValue={"仍待跟进"}>仍待跟进<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="followed" textValue={"均已跟进"}>均已跟进<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="none" textValue={"没有可读补充"}>没有可读补充<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
     <WorkbenchSelect label={<>共享跟进时间</>} name="schedule" isDisabled={blocked||!principal.follow_up_schedules_enabled} value={draft.get('schedule')??'any'} onChange={event=>set('schedule',event)}><ListBox.Item id="any" textValue={"不限"}>不限<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="active" textValue={"已有安排"}>已有安排<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="due" textValue={"当前已到期"}>当前已到期<ListBox.ItemIndicator/></ListBox.Item><ListBox.Item id="none" textValue={"没有活动安排"}>没有活动安排<ListBox.ItemIndicator/></ListBox.Item></WorkbenchSelect>
    </div></WorkbenchDisclosure></HFieldset>{error?<p role="alert">{error}</p>:<p className="search-caption">{active?'当前显示可见事项中符合条件的分页结果；已加载条数不是总数。':'提交条件后检索全部当前可读事项；空条件可查询全部。搜索不改变报修或回复草稿。'}</p>}</HForm>;
-}
+});
 export function searchEmptyMessage(criteria:WorkbenchSearchCriteria|null){
  return criteria&&hasSearchCriteria(criteria)?'当前没有符合这些条件的可见事项。':'当前没有可见的事项。';
 }

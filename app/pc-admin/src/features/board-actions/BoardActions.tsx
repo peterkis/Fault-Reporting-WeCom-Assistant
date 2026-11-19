@@ -1,13 +1,14 @@
-import {Button as HButton} from '../../design/components/Button/Button';
+import {Button as HButton,CardActionButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
-import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
+import {createContext,useCallback,useContext,useEffect,useId,useMemo,useRef,useState} from 'react';
 import type {ReactNode} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {createPortal} from 'react-dom';
 import {TicketSelfHandling} from '../ticket-handling/TicketSelfHandling';
 import {Ellipsis} from 'lucide-react';
-import {DragDropProvider,useDraggable,useDroppable} from '@dnd-kit/react';
-import {Feedback,KeyboardSensor,PointerSensor,PointerActivationConstraints} from '@dnd-kit/dom';
+import {DragDropProvider,useDroppable} from '@dnd-kit/react';
+import {AutoScroller,Cursor,Draggable,Feedback,KeyboardSensor,PointerSensor,PointerActivationConstraints,PreventSelection} from '@dnd-kit/dom';
+import type {DragDropManager} from '@dnd-kit/dom';
 import {api,ApiError,captureWorkbenchRead,errorMessage} from '../../api/client';
 import type {Principal,WorkbenchCard,BoardColumn} from '../../api/client';
 import {reviewApi} from '../manual-review/client';
@@ -16,11 +17,104 @@ import type {WorkbenchBoardActionIntent} from '../../../../../contracts/workbenc
 import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './intent';
 import './board-actions.css';
 
+interface CardDragMeta {
+  id:string;
+  element:HTMLElement;
+  handle:HTMLElement;
+  data:{kind:WorkbenchCard['kind'];id:string;source_column:BoardColumn;target_column:BoardColumn};
+  disabled:boolean;
+  setDragging:(value:boolean)=>void;
+}
+const cardDragRegistry=new WeakMap<HTMLElement,CardDragMeta>();
+const touchNoop=()=>{};
+function resolveCardMeta(handle:HTMLElement):CardDragMeta|undefined{
+  const cardEl=handle.closest<HTMLElement>('.board-action-card');
+  const meta=cardEl?cardDragRegistry.get(cardEl):undefined;
+  return meta&&!meta.disabled&&meta.handle===handle?meta:undefined;
+}
+/** Single delegated pointer listener instantiates a Draggable lazily on pointerdown, avoiding per-card signal/AbortController churn on board refresh. */
+class DelegatedPointerSensor extends PointerSensor {
+  private activeCleanup:(()=>void)|null=null;
+  private releaseActive(){
+    const release=this.activeCleanup;
+    this.activeCleanup=null;
+    release?.();
+  }
+  private readonly onPointerDown=(event:PointerEvent)=>{
+    if(this.disabled||!event.isPrimary||event.button!==0||!this.manager.dragOperation.status.idle)return;
+    const handle=event.target instanceof Element?event.target.closest<HTMLElement>('[data-action="board-drag-handle"]'):null;
+    if(!handle)return;
+    const meta=resolveCardMeta(handle);
+    if(!meta)return;
+    this.releaseActive();
+    const source=new Draggable({id:meta.id,element:meta.element,handle:meta.handle,disabled:false,data:meta.data,register:false},this.manager);
+    this.activeCleanup=source.register()??null;
+    this.handlePointerDown(event,source,this.options);
+  };
+  constructor(manager:DragDropManager){
+    super(manager,{activationConstraints:event=>event.pointerType==='touch'?[new PointerActivationConstraints.Delay({value:250,tolerance:5})]:[new PointerActivationConstraints.Distance({value:5})]});
+    if(typeof document!=='undefined')document.addEventListener('pointerdown',this.onPointerDown);
+    if(typeof window!=='undefined')window.addEventListener('touchmove',touchNoop,{capture:false,passive:false});
+  }
+  override bind(){return touchNoop;}
+  override cleanup(){
+    super.cleanup();
+    if(this.manager.dragOperation.status.idle)this.releaseActive();
+  }
+  override destroy(){
+    if(typeof document!=='undefined')document.removeEventListener('pointerdown',this.onPointerDown);
+    if(typeof window!=='undefined')window.removeEventListener('touchmove',touchNoop);
+    this.releaseActive();
+    super.destroy();
+  }
+}
+/** Single delegated Space listener instantiates a Draggable lazily on Space activation. */
+class DelegatedKeyboardSensor extends KeyboardSensor {
+  private activeCleanup:(()=>void)|null=null;
+  private releaseActive(){
+    const release=this.activeCleanup;
+    this.activeCleanup=null;
+    release?.();
+  }
+  private readonly onKeyDown=(event:KeyboardEvent)=>{
+    if(event.code!=='Space'||this.disabled||event.defaultPrevented||!this.manager.dragOperation.status.idle)return;
+    const handle=event.target instanceof HTMLElement&&event.target.dataset.action==='board-drag-handle'?event.target:null;
+    if(!handle)return;
+    const meta=resolveCardMeta(handle);
+    if(!meta)return;
+    this.releaseActive();
+    const source=new Draggable({id:meta.id,element:meta.element,handle:meta.handle,disabled:false,data:meta.data,register:false},this.manager);
+    this.activeCleanup=source.register()??null;
+    this.handleSourceKeyDown(event,source,this.options);
+    if(this.manager.dragOperation.status.idle)this.releaseActive();
+  };
+  constructor(manager:DragDropManager){
+    super(manager,{preventActivation:(event,source)=>event.code!=='Space'||event.target!==source.handle});
+    if(typeof document!=='undefined')document.addEventListener('keydown',this.onKeyDown);
+  }
+  override bind(){return touchNoop;}
+  override cleanup(){
+    super.cleanup();
+    if(this.manager.dragOperation.status.idle)this.releaseActive();
+  }
+  override destroy(){
+    if(typeof document!=='undefined')document.removeEventListener('keydown',this.onKeyDown);
+    this.releaseActive();
+    super.destroy();
+  }
+}
+const BOARD_SENSORS=[DelegatedPointerSensor,DelegatedKeyboardSensor];
+const BOARD_PLUGINS=[AutoScroller,Cursor,Feedback.configure({feedback:'clone',dropAnimation:null}),PreventSelection];
+const ENABLED_DRAG_PROPS={sensors:BOARD_SENSORS,plugins:BOARD_PLUGINS,modifiers:[]};
+const DISABLED_DRAG_PROPS={sensors:[],plugins:[],modifiers:[]};
+// Identical wording to @dnd-kit/dom's default Accessibility screenReaderInstructions.draggable.
+const DRAG_INSTRUCTIONS_TEXT='To pick up a draggable item, press the space bar. While dragging, use the arrow keys to move the item in a given direction. Press space again to drop the item in its new position, or press escape to cancel.';
+
 type Entry={intent:WorkbenchBoardActionIntent;selector:string};
 type Claim={principalId:string;mode:'self'|'form';item:Pick<WorkbenchCard,'kind'|'id'|'column'>;target:HTMLElement|null};
-const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;navigationBlocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,navigationBlocked:false,open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
+const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;navigationBlocked:boolean;instructionsId:string;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,navigationBlocked:false,instructionsId:'',open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
 export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlocked,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;onClaimBlocked:(blocked:boolean)=>void;children:ReactNode}){
-  const client=useQueryClient(),enabled=principal.board_actions_enabled===true,request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
+  const client=useQueryClient(),enabled=principal.board_actions_enabled===true,instructionsId=useId(),request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
   const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
   const [claim,setClaim]=useState<Claim|null>(null),[claimBlocked,setClaimBlocked]=useState(false);
   const claimScope=principal.principal_id+':'+principal.authorization_revision;
@@ -94,26 +188,68 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
     finally{if(request.current===controller){request.current=null;setChecking(false);}}
   };
   const disabled=blocked||claimBlocked||checking||!enabled;
-  // Keep original business controllers at the same React tree position. Only
-  // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
-  return <BoardActionsContext.Provider value={{enabled,blocked:disabled,navigationBlocked:blocked||claimBlocked||checking,open:intent=>{void open(intent);},releaseClaim,prepareClaim:(item,target)=>{
+  const navigationBlocked=blocked||claimBlocked||checking;
+  const openRef=useRef(open);openRef.current=open;
+  const stableOpen=useCallback((intent:WorkbenchBoardActionIntent)=>{void openRef.current(intent);},[]);
+  const prepareClaimRef=useRef((item:WorkbenchCard,target:HTMLElement)=>{
     if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
     const mode=principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?'form':'self';
     setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item:{kind:item.kind,id:item.id,column:item.column},target});
-  }}}>
-    <DragDropProvider {...(!enabled?{sensors:[],plugins:[],modifiers:[]}:{})}
+  });
+  prepareClaimRef.current=(item:WorkbenchCard,target:HTMLElement)=>{
+    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
+    const mode=principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?'form':'self';
+    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item:{kind:item.kind,id:item.id,column:item.column},target});
+  };
+  const stablePrepareClaim=useCallback((item:WorkbenchCard,target:HTMLElement)=>{prepareClaimRef.current(item,target);},[]);
+  const contextValue=useMemo(()=>({enabled,blocked:disabled,navigationBlocked,instructionsId,open:stableOpen,releaseClaim,prepareClaim:stablePrepareClaim}),[enabled,disabled,navigationBlocked,instructionsId,stableOpen,releaseClaim,stablePrepareClaim]);
+  const liveRegion=useRef<HTMLDivElement|null>(null);
+  const announce=(text:string)=>{if(liveRegion.current&&liveRegion.current.textContent!==text)liveRegion.current.textContent=text;};
+  // Keep original business controllers at the same React tree position. Only
+  // drag capabilities may close; UNKNOWN commands and unsaved inputs may not.
+  return <BoardActionsContext.Provider value={contextValue}>
+    <DragDropProvider {...(enabled?ENABLED_DRAG_PROPS:DISABLED_DRAG_PROPS)}
       onDragStart={({operation})=>{
         const data:unknown=operation.source?.data;
         const value=readBoardIntent(data);captured.current=value?{kind:value.kind,id:value.id,column:value.source_column}:null;
         focus.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
+        const el=operation.source?.element;
+        if(el instanceof HTMLElement){
+          el.classList.add('is-dragging');
+          const meta=cardDragRegistry.get(el);
+          if(meta){meta.setDragging(true);meta.handle.setAttribute('aria-pressed','true');meta.handle.setAttribute('aria-grabbed','true');}
+        }
+        if(operation.source)announce(`Picked up draggable item ${String(operation.source.id)}.`);
+      }}
+      onDragOver={({operation})=>{
+        const source=operation.source,target=operation.target;
+        if(!source||source.id===target?.id)return;
+        if(target)announce(`Draggable item ${String(source.id)} was moved over droppable target ${String(target.id)}.`);
+        else announce(`Draggable item ${String(source.id)} is no longer over a droppable target.`);
       }}
       onDragEnd={event=>{
+        const el=event.operation.source?.element;
+        if(el instanceof HTMLElement){
+          el.classList.remove('is-dragging');
+          const meta=cardDragRegistry.get(el);
+          if(meta){meta.setDragging(false);meta.handle.setAttribute('aria-pressed','false');meta.handle.setAttribute('aria-grabbed','false');}
+        }
         const original=captured.current;captured.current=null;
-        if(event.canceled){setMessage('已取消拖动，未提交业务操作。');if(focus.current?.isConnected)focus.current.focus();return;}
-        const target=event.operation.target?.id;
+        const source=event.operation.source,targetObj=event.operation.target;
+        if(event.canceled){
+          if(source)announce(`Dragging was cancelled. Draggable item ${String(source.id)} was dropped.`);
+          setMessage('已取消拖动，未提交业务操作。');
+          if(focus.current?.isConnected)focus.current.focus();
+          return;
+        }
+        if(source){
+          announce(targetObj?`Draggable item ${String(source.id)} was dropped over droppable target ${String(targetObj.id)}`:`Draggable item ${String(source.id)} was dropped.`);
+        }
+        const target=targetObj?.id;
         if(!original||!boardColumns.some(column=>column===target)){setMessage('请使用合法业务列；当前位置未作本地变更。');return;}
         const intent=readBoardIntent({kind:original.kind,id:original.id,source_column:original.column,target_column:target});if(intent)void open(intent);
       }}>{children}</DragDropProvider>
+    {enabled?<><div id={instructionsId} hidden>{DRAG_INSTRUCTIONS_TEXT}</div><div ref={liveRegion} className="sr-only" role="status" aria-live="polite" aria-atomic="true"/></>:null}
     {activeClaim?<div className="board-claim-controller" key={activeClaim.principalId+':'+activeClaim.item.id}>{activeClaim.mode==='form'?<BoardClaimForm principal={principal} claim={{...activeClaim,target:claimEntryEnabled?activeClaim.target:null}} blocked={disabled} open={intent=>{void open(intent);}}/>:<TicketSelfHandling ticketId={activeClaim.item.id} principal={principal} boardMode otherBlocked={checking} onBlockedChange={changeClaimBlocked} cardActionTarget={claimEntryEnabled?activeClaim.target:null}/>}</div>:null}
     {enabled&&message?<ToastFeedback revision={messageRevision} source="board-actions" state={checking?'checking':undefined} className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</ToastFeedback>:null}
   </BoardActionsContext.Provider>;
@@ -128,12 +264,46 @@ export function BoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
   return context.enabled?<EnabledBoardActionCard item={item}>{children}</EnabledBoardActionCard>:context.navigationBlocked?<div className="board-action-passive" onClickCapture={event=>{if(event.target instanceof Element&&event.target.closest('.card-open')){event.preventDefault();event.stopPropagation();}}}>{children}</div>:<>{children}</>;
 }
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
-  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null);
+  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),[isDragging,setIsDragging]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null),cardNode=useRef<HTMLDivElement|null>(null);
   const releaseClaim=context.releaseClaim;
   useEffect(()=>{const target=claimTarget.current;return()=>{if(target)releaseClaim(target);};},[releaseClaim]);
-  const {ref,handleRef,isDragging}=useDraggable({id:'item:'+item.kind+':'+item.id,disabled:context.blocked,sensors:[PointerSensor.configure({activationConstraints:event=>event.pointerType==='touch'?[new PointerActivationConstraints.Delay({value:250,tolerance:5})]:[new PointerActivationConstraints.Distance({value:5})]}),KeyboardSensor.configure({preventActivation:(event,source)=>event.code!=='Space'||event.target!==source.handle})],plugins:[Feedback.configure({feedback:'clone',dropAnimation:null})],data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column}});
+  const instructionsId=context.instructionsId;
+  const metaRef=useRef<{id:string;data:{kind:WorkbenchCard['kind'];id:string;source_column:BoardColumn;target_column:BoardColumn};disabled:boolean}>({id:'item:'+item.kind+':'+item.id,data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column},disabled:context.blocked});
+  metaRef.current={id:'item:'+item.kind+':'+item.id,data:{kind:item.kind,id:item.id,source_column:item.column,target_column:item.column},disabled:context.blocked};
+  if(cardNode.current){
+    const existing=cardDragRegistry.get(cardNode.current);
+    if(existing){existing.id=metaRef.current.id;existing.data=metaRef.current.data;existing.disabled=metaRef.current.disabled;}
+  }
+  useEffect(()=>{
+    const existing=cardNode.current?cardDragRegistry.get(cardNode.current):undefined;
+    const disabledText=String(context.blocked);
+    if(existing&&existing.handle.getAttribute('aria-disabled')!==disabledText){
+      existing.handle.setAttribute('aria-disabled',disabledText);
+    }
+  },[context.blocked]);
+  const bindCardRef=useCallback((node:HTMLDivElement|null)=>{
+    const previous=cardNode.current;
+    if(previous&&previous!==node)cardDragRegistry.delete(previous);
+    cardNode.current=node;
+    if(!node)return;
+    const link=node.querySelector<HTMLElement>('.card-open');
+    if(link){
+      link.dataset.action='board-drag-handle';
+      link.setAttribute('aria-roledescription','draggable');
+      if(instructionsId){
+        const describedBy=link.getAttribute('aria-describedby');
+        if(!describedBy?.split(/\s+/u).includes(instructionsId)){
+          link.setAttribute('aria-describedby',describedBy?describedBy+' '+instructionsId:instructionsId);
+        }
+      }
+      link.setAttribute('aria-pressed','false');
+      link.setAttribute('aria-grabbed','false');
+      link.setAttribute('aria-disabled',String(metaRef.current.disabled));
+      cardDragRegistry.set(node,{id:metaRef.current.id,element:node,handle:link,data:metaRef.current.data,disabled:metaRef.current.disabled,setDragging:setIsDragging});
+    }
+  },[instructionsId]);
   const prepareClaim=()=>{if(claimTarget.current)context.prepareClaim(item,claimTarget.current);};
-  return <div ref={node=>{ref(node);const link=node?.querySelector<HTMLElement>('.card-open')??null;if(link)link.dataset.action='board-drag-handle';handleRef(link);}} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
+  return <div ref={bindCardRef} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
     if(event.key.toLowerCase()!=='e'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!(event.target instanceof Element)||!event.target.closest('.card-open')||event.target.closest('input,textarea,[contenteditable=true]'))return;
     const button=claimTarget.current?.querySelector<HTMLButtonElement>('button:not(:disabled)');if(button&&!context.blocked){event.preventDefault();event.stopPropagation();button.click();}
   }} onClickCapture={event=>{
@@ -144,7 +314,7 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
     {children}
     <span ref={claimTarget} className="ds-board-claim-slot"/>
     {context.enabled?<div className="board-action-tools">
-      <HButton type="button" ref={menuButton} data-action="board-action-menu" data-drag-excluded isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></HButton>
+      <CardActionButton type="button" ref={menuButton} data-action="board-action-menu" data-drag-excluded isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></CardActionButton>
       {menu?<div className="board-action-options" role="group" aria-label={item.number+' 的业务列'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setMenu(false);menuButton.current?.focus();}}}>
         {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" isDisabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}} tone="secondary">移至{boardColumnNames[target]}：打开合法表单</HButton>)}
         <HButton type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}} tone="secondary">取消</HButton>

@@ -24,10 +24,10 @@ html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[data-e
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content>.disclosure__body {min-height:0;overflow:hidden;}
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[aria-hidden=true] {pointer-events:none;}
 /* B1: allow cross-column FLIP cards inside expanded groups/remainders to cross column edges unclipped without losing BFC. */
-html body .ds-board-group>.disclosure__content[data-expanded=true]:has([data-motion-flipping]),
-html body .ds-board-group>.disclosure__content[data-expanded=true]:has([data-motion-flipping])>.disclosure__body,
-html body .ds-collapse[data-expanded=true]:has([data-motion-flipping])>.ds-collapse-inner {overflow:visible;}
-html body .ds-board-group>.disclosure__content[data-expanded=true]:has([data-motion-flipping])>.disclosure__body {display:flow-root;}
+html body .ds-board-group>.disclosure__content[data-expanded=true][data-motion-flip-host],
+html body .ds-board-group>.disclosure__content[data-expanded=true][data-motion-flip-host]>.disclosure__body,
+html body .ds-collapse[data-expanded=true][data-motion-flip-host]>.ds-collapse-inner {overflow:visible;}
+html body .ds-board-group>.disclosure__content[data-expanded=true][data-motion-flip-host]>.disclosure__body {display:flow-root;}
 /* Keep the independent-rotate reset in a different selector/rule. Combining it with transform
    lets CSS optimisation fold it away, leaving HeroUI's expanded rotate stacked with ours. */
 html body :is(.ds-board-group,.workbench-disclosure) .disclosure__indicator {rotate:none;}
@@ -63,4 +63,4 @@ html[data-motion-reduced] body .ds-button.button[data-tone]:is(:active,[data-pre
 html[data-motion-reduced] body .ds-segmented-slider,html[data-motion-reduced] body .ds-collapse {transition:none;}
 html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
 html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results)[data-exiting] {transition-duration:var(--dur-instant);transition-timing-function:var(--ease-exit);}
-html[data-motion-reduced] body #root .ds-new-items-chip,html[data-motion-reduced] body #root .ds-new-items-chip[data-exiting] {transform:none;}
+html[data-motion-reduced] body #root .ds-new-items-chip,html[data-motion-reduced] body #root .ds-new-items-chip[data-exiting],html[data-motion-reduced] body #root .ds-new-items-chip:is(:active,[data-pressed=true]) {transform:none;transition:none;}

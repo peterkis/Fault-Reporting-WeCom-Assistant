@@ -1,6 +1,6 @@
 import {DetailLoading} from '../../app/DetailLoading';
 import {ErrorState} from '../../design/components/ErrorState/ErrorState';
-import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
+import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
 import {motionToken} from '../../design/motion/tokens';
 import {markSelfWrite} from '../../design/motion/self-write';
 import type {ReactNode} from 'react';
@@ -64,9 +64,13 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
  const [target,setTarget]=useState<Target|null>(null),[blocked,setBlocked]=useState(false),[highlighted,setHighlighted]=useState<string|null>(null),[success,setSuccess]=useState<{action:Action;revision:number;column:string}|null>(null);
  const report=useCallback((value:boolean)=>{setBlocked(value);onBlockedChange(value);},[onBlockedChange]);
  useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));return()=>clearTimeout(timer);},[highlighted]);
- const sameClosedTarget=(item:WorkbenchCard,action:Action)=>Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id);
- const canOpen=(item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||sameClosedTarget(item,action));
- return <ClosureScope.Provider value={{request:(item,action,initial=emptyClosureForm)=>{if(canOpen(item,action)){returnFocus.current=collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}},canOpen,highlighted,blocked:blocked||otherBlocked}}>
+ const canOpen=useCallback((item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id)),[otherBlocked,blocked,target]);
+ const requestImpl=(item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{if(canOpen(item,action)){returnFocus.current=collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}};
+ const requestRef=useRef(requestImpl);requestRef.current=requestImpl;
+ const request=useCallback((item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{requestRef.current(item,action,initial);},[]);
+ const isBlocked=blocked||otherBlocked;
+ const scopeValue=useMemo(()=>({request,canOpen,highlighted,blocked:isBlocked}),[request,canOpen,highlighted,isBlocked]);
+ return <ClosureScope.Provider value={scopeValue}>
   {children}{success?<ToastFeedback source={success.action==='close'?'ticket-waiting-cancel':'closure-restore'} revision={success.revision} state="succeeded" title={success.action==='close'?'已关闭':'已恢复'}>{success.action==='close'?'可在「已处理 · 已关闭」中恢复':'已回到'+success.column}</ToastFeedback>:null}{target?<ClosureActionDialog key={target.item.kind+':'+target.item.id+':'+target.action} target={target} principal={principal} otherBlocked={otherBlocked} onBlockedChange={report} onClose={()=>{setTarget(value=>value?{...value,open:false}:null);restoreTriggerFocus(returnFocus.current);}} onSuccess={column=>{if(target.action==='restore')setHighlighted(target.item.intake_id);setSuccess({action:target.action,revision:Date.now(),column});setTarget(null);}}/>:null}
  </ClosureScope.Provider>;
 }
