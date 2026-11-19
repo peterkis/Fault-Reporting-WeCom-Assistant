@@ -36,7 +36,7 @@ The reviewer captured all seven strips on macOS 26.6.2 (Darwin 25.6.0) with head
 | Return cue | `--dur-return` 600 ms, `--ease-standard` | 600 ms, `cubic-bezier(0.2, 0, 0, 1)` |
 | Timeline entry | `--dur-base` 180 ms, `--ease-standard` | 180 ms, `cubic-bezier(0.2, 0, 0, 1)` |
 | Timeline intake highlight | `--dur-highlight` 1,200 ms, `--ease-standard` | 1,200 ms, `cubic-bezier(0.2, 0, 0, 1)` |
-| Timeline arrival while reading below the top | The visible record stays within 1 px of its original viewport top and the timeline top stays offscreen. Browser scroll anchoring can adjust `scrollTop` to hold the reading position. The chip reads 「↑ 1 条新记录」. | Reviewer verified the reading-position assertion. |
+| Timeline arrival while reading below the top | The visible record stays within 1 px of its original viewport top and the timeline top stays offscreen. Browser scroll anchoring can adjust `scrollTop` to hold the reading position. The shared `NewItemsChip` (`noun="记录"`) reads 「↑ 1 条新记录」. | Reviewer verified the reading-position assertion. |
 | Presence tag enter and re-enter, outline appear | `--dur-fast` 120 ms, `--ease-standard` | 120 ms, `cubic-bezier(0.2, 0, 0, 1)` |
 | Presence tag exit | `--dur-fast` 120 ms, `--ease-exit` | 120 ms, `cubic-bezier(0.4, 0, 1, 1)` |
 | View ↔ edit colour and outline, pencil fade, +N NumberRoll | `--dur-base` 180 ms, `--ease-standard` | 180 ms, `cubic-bezier(0.2, 0, 0, 1)` |

@@ -22,7 +22,7 @@ import {DetailDialog,useDetailModalOpen} from './DetailDialog';
 import {AssignmentCommunication,assignmentAction} from '../features/assignment-history/TicketAssignmentHistory';
 import type {P2016AssignmentHistoryItem} from '../../../../contracts/p2_016_assignment_history_contracts';
 import {animateTimelineEntry,highlightTimelineEntry,scrollAndHighlightEntries} from '../design/motion/timeline-entry';
-import {NewItemsChip} from './timeline-new-items-chip';
+import {NewItemsChip} from '../design/components/NewItemsChip/NewItemsChip';
 
 type Assignments=ReadonlyMap<string,P2016AssignmentHistoryItem>;
 

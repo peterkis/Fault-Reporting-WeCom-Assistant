@@ -37,7 +37,7 @@ const enterBody='[data-detail-body-enter=next]';
 const exitBody='[data-detail-body-exit=next]';
 const timeline='.detail-main';
 const record='[data-record-id]';
-const chip='[data-new-items-chip][data-direction=up]';
+const chip=detailView+' [data-timeline-chip-anchor] [data-new-items-chip-region] [data-new-items-chip][data-direction=up]';
 const timelineEnter='[data-timeline-entry-enter=true]';
 const timelineHighlight='[data-timeline-entry-highlight=true]';
 const cue='[data-return-cue=true]';
@@ -605,6 +605,13 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       assert.ok(after.top!==null&&Math.abs(after.top-before.top)<=1,JSON.stringify({before,after}));
       assert.ok(after.timelineTop<after.bodyTop-1,'arrival leaves the timeline top above the viewport');
       assert.deepEqual(await b.evaluate('window.__stopTimeline()'),[]);
+      const chipStyle=object(await b.evaluate(`(()=>{
+        const style=getComputedStyle(${q(chip)});
+        return {radius:style.borderRadius,height:style.height,
+          radiusToken:style.getPropertyValue('--radius-lg').trim(),heightToken:style.getPropertyValue('--space-6').trim()};
+      })()`));
+      assert.equal(chipStyle.radius,chipStyle.radiusToken,'the timeline chip uses --radius-lg');
+      assert.equal(chipStyle.height,chipStyle.heightToken,'the timeline chip uses --space-6');
       // Inspect hit testing before using the click helper (which intentionally scrolls
       // controls into view). The chip must be actionable from the current reading position.
       const point=await b.evaluate(`(()=>{const button=${q(chip)},box=button.getBoundingClientRect(),x=box.x+box.width/2,y=box.y+box.height/2;return {x,y,hit:button.contains(document.elementFromPoint(x,y))};})()`) as {x:number;y:number;hit:boolean};
@@ -612,6 +619,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       for(const type of ['mousePressed','mouseReleased'])await b.command('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,x:point.x,y:point.y});
       await b.waitFor('Boolean('+q(node+timelineHighlight)+')',{intervalMs:8,timeoutMs:5000});
       await settleOverlay();
+      await b.waitFor('!'+q(chip));
       assert.equal(await b.evaluate('Boolean('+q(chip)+')'),false);
       const revealed=await b.evaluate(`({scroll:${q(scrollBody)}.scrollTop,offset:${q(timeline)}.getBoundingClientRect().top-${q(scrollBody)}.getBoundingClientRect().top})`) as {scroll:number;offset:number};
       assert.ok(revealed.scroll<after.scroll&&Math.abs(revealed.offset)<=2,JSON.stringify(revealed));

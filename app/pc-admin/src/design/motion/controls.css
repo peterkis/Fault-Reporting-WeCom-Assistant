@@ -78,3 +78,4 @@ html[data-motion-reduced] body .ds-button.button[data-tone]:is(:active,[data-pre
 html[data-motion-reduced] body .ds-segmented-slider,html[data-motion-reduced] body .ds-collapse {transition:none;}
 html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results) {transform:none;transition:opacity var(--dur-fast) var(--ease-standard);}
 html[data-motion-reduced] body #root :is(.ds-online-panel,.ds-closure-search-results)[data-exiting] {transition-duration:var(--dur-instant);transition-timing-function:var(--ease-exit);}
+html[data-motion-reduced] body #root .ds-new-items-chip,html[data-motion-reduced] body #root .ds-new-items-chip[data-exiting] {transform:none;}
