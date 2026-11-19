@@ -63,7 +63,7 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   assert.deepEqual(board.view?.tags,[{text:'周宁',mode:'viewing',pencil:false}]);assert.equal(board.view?.presence,'viewing');assert.equal(board.view?.ring,null);assert.equal(board.view?.outline,'1.5px');
   assert.deepEqual(board.edit?.tags,[{text:'陈悦',mode:'editing',pencil:true},{text:'周宁',mode:'viewing',pencil:false}]);assert.equal(board.edit?.presence,'editing');assert.equal(board.edit?.label,'陈悦正在编辑内部备注、周宁正在查看');
   assert.deepEqual((board.crowd?.tags as {text:string;mode:string}[]).map(tag=>tag.mode),['viewing','more']);
-  const more=object(await b.evaluate(`(()=>{const tag=document.querySelector(${JSON.stringify(card(crowdTarget)+' .ds-presence-tag[data-mode=more]')}),next=tag.querySelector('.ds-number-roll-next');return {count:tag.dataset.presenceMore,visible:tag.querySelector('.ds-presence-more-value').firstChild.textContent+next.textContent,visibleSpan:next.checkVisibility(),spoken:tag.querySelector('.sr-only').textContent};})()`));
+  const more=object(await b.evaluate(`(()=>{const tag=document.querySelector(${JSON.stringify(card(crowdTarget)+' .ds-presence-tag[data-mode=more]')}),next=tag.querySelector('.ds-number-roll-next');return {count:tag.dataset.presenceMore,visible:tag.querySelector('.ds-presence-more-value').firstChild.textContent+(next.getAttribute('data-value')??next.textContent),visibleSpan:next.checkVisibility(),spoken:tag.querySelector('.sr-only').textContent};})()`));
   assert.deepEqual(more,{count:'2',visible:'+2',visibleSpan:true,spoken:'2'});
   // Tag geometry: outside the top edge, 18px high, 4/4/4/0 corners, 11px / 600; the card keeps its height.
   await waitForAnimationsSettled(b,card(viewTarget));

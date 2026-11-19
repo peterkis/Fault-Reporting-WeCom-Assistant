@@ -477,7 +477,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
         assert.equal(await b.evaluate(q(more)+'.dataset.presenceMore'),'3');
       });
       await waitForAnimationsSettled(b,presenceCard);
-      assert.equal(await b.evaluate(textIs(roll+' .ds-number-roll-next','3')),true);
+      assert.equal(await b.evaluate(`(()=>{const next=${q(roll+' .ds-number-roll-next')};return next.getAttribute('data-value')??next.textContent;})()`),'3');
     });
 
     const note=async(writer:ReturnType<typeof session>,message:string)=>{
