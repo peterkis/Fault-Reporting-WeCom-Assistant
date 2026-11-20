@@ -80,7 +80,7 @@ v2.2.9 / 卡36A、卡36B。
 | --- | --- | --- | --- |
 | D1 抽屉与返回提示 | 进入lg + opacity，slow / soft；退出16px（既有space-4）+ opacity，base / exit；遮罩同步；返回brand浅色return | 仅opacity，≤fast；返回色保留后直接移除 | 打开途中Esc从当前状态退出 |
 | D2 上一张/下一张 | 正文md，出fast / exit、进base / standard；工具栏不动，方向相反 | 直接替换 | 连续按键只播最后一次 |
-| D3 时间线新条目 | 他人条目同C2：md + base + highlight；阅读不在顶部时只出胶囊 | 不滑入，底色静态保留highlight | 同条目更新重计时，不改变阅读位置 |
+| D3 时间线新条目 | 他人条目同C2：md + base + highlight；阅读不在顶部时复用共享 `NewItemsChip`（`noun="记录"`，「↑ N 条新记录」） | 不滑入，底色静态保留highlight；胶囊仅opacity | 同条目更新重计时，不改变阅读位置 |
 | D4 在场名牌 | 进xs + scale(.9)，fast；出opacity fast，离开后保留fast；模式颜色base | 仅opacity | 同人300ms内重复进出不重播 |
 
 ### 技术与检查

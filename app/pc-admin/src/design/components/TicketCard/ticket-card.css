@@ -183,12 +183,17 @@
 .ds-closure-restored-event {display: flex; align-items: center; gap: var(--space-1); margin: 0 0 0 calc(var(--space-5) + var(--space-1-5)); color: var(--text-secondary); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-closure-restored-event>svg {width: var(--space-3); height: var(--space-3); flex: none;}
 .ds-closure-restored-event strong {font-weight: var(--fw-medium); color: var(--text-primary);}
-/* Card 30B B2: presence on board cards. Tags sit outside the card's top edge; the outline replaces heat/attention/review rings. */
+/* Card 30B B2 / D4: presence on board cards. Tags sit outside the card's top edge; the outline replaces heat/attention/review rings. */
 .ds-ticket-card .ds-ticket-presence {position: absolute; top: calc(-1 * var(--space-2) - 1px); right: var(--space-3); z-index: var(--z-sticky);}
+/* Keep two outer shadows before the inset outline so the stack interpolates with the FLIP lift's --shadow-3. */
+.ds-ticket-card.ticket-card:not([data-closure-kind=DISMISSED]) {--shadow-card-outline-hidden: inset 0 0 0 1.5px transparent; box-shadow: var(--shadow-1), var(--shadow-card-outline-hidden);}
+.ds-ticket-card.ticket-card:not([data-closure-kind=DISMISSED]):hover {box-shadow: var(--shadow-2), var(--shadow-card-outline-hidden);}
 .ds-ticket-card.ticket-card[data-presence=viewing] {outline: 0; box-shadow: var(--shadow-presence-viewing);}
 .ds-ticket-card.ticket-card[data-presence=editing] {outline: 0; box-shadow: var(--shadow-presence-editing);}
 .ds-ticket-card.ticket-card[data-presence=viewing]:hover {box-shadow: var(--shadow-presence-viewing-hover);}
 .ds-ticket-card.ticket-card[data-presence=editing]:hover {box-shadow: var(--shadow-presence-editing-hover);}
+.ds-ticket-card.ticket-card[data-presence][data-presence-transition=mode] {transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);}
+@media (prefers-reduced-motion: reduce) {.ds-ticket-card.ticket-card[data-presence][data-presence-transition=mode] {transition: none;}}
 .ds-ticket-card.ticket-card.is-selected[data-presence] {outline: 2px solid var(--brand); outline-offset: -2px;}
 .ds-presence-claim-hint {position: absolute; right: var(--space-3); bottom: var(--space-3); left: var(--space-3); z-index: var(--z-sticky); display: none; align-items: center; gap: var(--space-1-5); height: var(--control-h-sm); margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;}
 .ds-presence-claim-hint>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}

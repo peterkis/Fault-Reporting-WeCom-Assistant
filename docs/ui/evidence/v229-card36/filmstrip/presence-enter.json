@@ -1,0 +1,19 @@
+{
+  "selector": "#card36c-presence",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 3,
+  "clip": {
+    "left": 26,
+    "top": 26,
+    "right": 366,
+    "bottom": 178
+  },
+  "width": 1700,
+  "height": 152
+}

@@ -9,9 +9,6 @@
 @media (max-width:900px) {
 .detail-body {padding-left: var(--space-6);padding-right: var(--space-6); }
 }
-@media (prefers-reduced-motion:no-preference) {
-.detail-dialog[open] {animation: drawer-open var(--dur-base) var(--ease-standard); }
-}
 .detail-report-description {margin:0 0 var(--space-4);line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;}
 .web-report-urge{white-space:nowrap}
 .work-table .web-report-urge{margin-top:var(--space-1)}

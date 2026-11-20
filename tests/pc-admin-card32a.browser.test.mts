@@ -60,6 +60,7 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   metrics.categories=object(await b.evaluate("(()=>{const fallback=t=>t.dataset.category==='unclassified'||Boolean(t.querySelector('svg.lucide-circle-help'));const tiles=[...document.querySelectorAll('.board .ticket-card[data-kind=ticket] .ds-ticket-category')],intakes=[...document.querySelectorAll('.board .ticket-card:not([data-kind=ticket]) .ds-ticket-category')];return {tiles:tiles.length,fallback:tiles.filter(fallback).length,categories:[...new Set(tiles.map(t=>t.dataset.category))].sort(),untriagedIntakes:intakes.length,untriagedFallback:intakes.filter(fallback).length};})()"));
   assert.ok(Number(object(metrics.categories).tiles)>=6,JSON.stringify(metrics.categories));assert.equal(object(metrics.categories).fallback,0,'no fallback category icon on synthetic fixture cards');
   // A6: the editing tag, the card outline and (below) the drawer capsule share one colour token.
+  await waitForAnimationsSettled(b,card(editTarget));
   metrics.editingColour=object(await b.evaluate(`(()=>{const c=document.querySelector(${JSON.stringify(card(editTarget))}),tag=c.querySelector('.ds-presence-tag[data-mode=editing]'),probe=document.createElement('span');probe.style.color='var(--presence-editing)';document.body.append(probe);const token=getComputedStyle(probe).color;probe.remove();return {token,tag:getComputedStyle(tag).backgroundColor,outline:getComputedStyle(c).boxShadow.includes(token)};})()`));
   assert.equal(object(metrics.editingColour).tag,object(metrics.editingColour).token);assert.equal(object(metrics.editingColour).outline,true);
   await move(5,5);
@@ -135,6 +136,7 @@ test('Card 32A list subgroup, show-more chevron, registered categories, claim hi
   assert.equal(withoutBanner,withBanner);assert.equal(again,withBanner);assert.deepEqual(metrics.bannerOverlap,{onTop:true,clearOfContent:true});
   assert.deepEqual({...one,frameRadius:undefined},{text:'陈悦正在编辑内部备注',height:28,gap:0,width:true,left:true,radius:one.frameRadius+' '+one.frameRadius+' 0px 0px',frameRadius:undefined,frameTop:'0px 0px',padding:'12px 12px',font:'12px',pencil:true,icon:12,stroke:'1.75px',area:'陈悦正在编辑内部备注',locked:false,glyph:false});
   // A6: the capsule's editing tag uses the same token as the board.
+  await waitForAnimationsSettled(b,'.detail-toolbar-actions .ds-presence-capsule');
   metrics.capsuleColour=await b.evaluate("getComputedStyle(document.querySelector('.detail-toolbar-actions [data-workbench-activity] .ds-presence-tag[data-mode=editing]')).backgroundColor");
   assert.equal(metrics.capsuleColour,object(metrics.editingColour).token);
   await capture('drawer-1440-banner');
