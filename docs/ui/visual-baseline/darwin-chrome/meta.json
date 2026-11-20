@@ -2,10 +2,15 @@
   "schema_version": 1,
   "platform": "darwin-chrome",
   "os_version": "macOS 26.6.2 / Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050 / 25.6.0",
-  "browser_version": "Chrome/157.0.8103.79",
+  "browser_version": "Chrome/158.0.8127.37",
   "dpr": 1,
   "viewports": {
     "board-default": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "board-new-chip": {
       "width": 1440,
       "height": 1000,
       "dpr": 1
@@ -96,27 +101,28 @@
       "dpr": 1
     }
   },
-  "source_head": "f76fffef7c693ddcee0139b4f6f03bf59376e358",
-  "input_hash": "39f4e20b7502d517524e239bbc60a6ea547fe2014a135d87901bef9e56c40ff3",
-  "captured_at": "2026-11-18T04:03:00.633Z",
+  "source_head": "1798592a8b48416bc01a9c9ddfa022f80d6ae0aa",
+  "input_hash": "579c3fa1d531a2c033954e6dcf120f7d4dc07770f83090a5e39ac4c57e28841a",
+  "captured_at": "2026-11-20T04:48:03.285Z",
   "screens": {
-    "board-default": "b1795c66b61601072a38845fb29167e43077b9ee6bdd398468aaefc54483f0eb",
-    "board-presence": "9e02525e407d4d02231dcc082fe68ca109b705348ae04e92e295d0a19e845d88",
-    "board-filtered-empty": "28918fb63db1c73d586ce8525ceb4c18fcea051c3606b38fef7f907ce493b75b",
-    "list-default": "e4ee1365c8539664ea27d7d8d7fd6c0271e1378c0a592ae90e6e8f343db7e41b",
-    "list-closed-groups": "ef4ea10156fa4e0a51d76279a6772dcb2d2009e143a0c8c150cd8081580bca19",
-    "drawer-processing": "adf4c7953d4bdd4971b9e73b60129daf485fe800061f5e3541d1e27770be7145",
-    "drawer-dismissed": "54a17226fd6af8bcb8c63df29b03b34e351aa48b8ec0f59dc0a8f6c2174b0c3e",
-    "drawer-completed": "4898eb844184e917a82a066c0c58ddf837224bada53b7b06507cdc404c141d13",
-    "drawer-banner-editing": "d6654c5eec698d42c8991e4bad79baebf023d28f09840bc585ece6b50a06bfc3",
-    "detail-fullpage-1280": "b0415a7eeb64649dcf92a408aea7dde85f8f4e9949bd77354002f845365fa5b9",
-    "close-dialog-out-of-scope": "17fd9156c9eb704f2abbcf2fe46980b9255d8620a8422ea39e0252dcfd33a036",
-    "close-dialog-duplicate": "d335aab41593963e03ee03f939109a20daad4b3844d214d49f65480833373f52",
-    "restore-dialog": "11aa475aa3676476c3edd3f509419d52e8b8fdaddc44a5d2dfc9b3595da23c24",
+    "board-default": "ee824a187f31952e4499d8bdf7dfd0b543189675689c9fa1c1c370fd74d58b86",
+    "board-new-chip": "7ff079831533c0fcc4bb870d572c1f64a3138c09a012aed7fc66be7b06b43399",
+    "board-presence": "c22c1f1b54792f302e430425283dd324c0f24f9d7b51125f688bfdc78451ca66",
+    "board-filtered-empty": "aad018c5573f25129403cb613c7a0e2a2c6bcd0973890a35af5e97f1bc92d5ee",
+    "list-default": "3112a7927d26b740d7d98a57acccab5a84532397c9785c8ac691694da41bf65d",
+    "list-closed-groups": "7c448138bd82c38b2f9aec87aaaf21b17514178ab698434501a32befba798050",
+    "drawer-processing": "abe985a9fa55f7744f3a558e9e629caae9f0c3d5dc8c5cff360778d8e5c0085a",
+    "drawer-dismissed": "76c03a28213c299bf204c433a70204897fc943c5f5499caef6ec0a47b7c11e17",
+    "drawer-completed": "bef72669045989d734d84ac90271dd0ce98c3123755435cd710352d7879c29ce",
+    "drawer-banner-editing": "28351b2647e92a88283844adc01c9dddd1dc3cec0c9da4affb502b6dc62ea660",
+    "detail-fullpage-1280": "4593aecdbb7379b67892c94979cf8cabd86823a741ce4531453045931ffea974",
+    "close-dialog-out-of-scope": "8dbb70afa159384524ad4a189957f2705f964bf9e58a883b1569935479a08c0b",
+    "close-dialog-duplicate": "b01b0118569eb85eacf155420b9564c48e7f4911d0bb57456fe80088d0690743",
+    "restore-dialog": "542a57ba475c0cd07713abae2f6993a42014a9124698b5daa4d06511a02af09d",
     "toast-tones": "2d94ec7e0f889bbdc9d531c5bea3a21340c083479d1b1fce93f5dc1052c4b258",
-    "toast-drawer-stack": "ee2e3ca6ff6edd469e5aa9900eb7de1708811beed98defc2da91231fa7cb6248",
-    "sidebar-online-popover": "5779643f20d496662a3fa972e280bb72361763b9bd4b643cf8e283867b39a7ef",
-    "conversation-default": "311cdb9a8d1b99d93100311e0b0d56b9dcf6b926f52377ae98dacd712590e069",
-    "notifications-default": "5659f453dab160e7093dee4075942f81326fa5be649314e839d335aaec95804c"
+    "toast-drawer-stack": "eb28a0cb14e2b1b4cc90066817b98df40f758eb5a906e548deac1fd03a0f6e40",
+    "sidebar-online-popover": "a7badef7df191ceb336b453c0b92979b477dc9ad807d6f5323b276133ef16e38",
+    "conversation-default": "3759a01a74e6c76efc681dcfda7f823fe1e4db842b3a525aaa08a0e369200e45",
+    "notifications-default": "49699a2fb4bf4bd217823f555fa46b1f29d9610370ddaaf20acb3b4a8f37e5cb"
   }
 }
