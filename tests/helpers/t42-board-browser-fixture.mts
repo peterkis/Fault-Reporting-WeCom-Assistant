@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
+import {boardColumnReady} from './workbench-board-readiness.mjs';
 import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 type Browser=NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
@@ -24,7 +25,7 @@ export async function withT42BoardBrowser(run:(f:T42Fixture,browser:Browser,card
     try{
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:options.width??1920,height:1080,cookies:[{...browserCookie,url:f.origin+'/'}]});assert.ok(browser);
       await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:options.reduceMotion?'reduce':'no-preference'}]});
-      const card='[data-kind="ticket"][data-item-id="'+first.ticket.id+'"]';await browser.waitFor("Boolean(document.querySelector('.board-column.pending .column-cards'))");
+      const card='[data-kind="ticket"][data-item-id="'+first.ticket.id+'"]';await browser.waitFor(boardColumnReady('pending'));
       await browser.evaluate(`(()=>{if(!document.querySelector('.board-column.pending '+${JSON.stringify(card)}))document.querySelector('.board-column.pending [data-action=expand-column]')?.click();})()`);await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)}))`);
       assert.equal(await browser.evaluate("Array.from(document.querySelectorAll('script[type=module][src]')).some(script=>new URL(script.src).pathname.startsWith('/workbench/app/assets/'))"),true);
       await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t42Writes=[];globalThis.__t42Responses=[];globalThis.fetch=async(path,options)=>{if(options?.method==='POST')globalThis.__t42Writes.push({path:String(path),body:JSON.parse(options.body)});const response=await original(path,options);if(options?.method==='POST')globalThis.__t42Responses.push({path:String(path),status:response.status});return response;};})()`);

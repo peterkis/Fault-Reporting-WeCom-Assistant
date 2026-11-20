@@ -9,6 +9,7 @@ import {createPortal} from 'react-dom';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction} from '../../api/client';
+import {markSelfWrite} from '../../design/motion/self-write';
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
@@ -28,7 +29,7 @@ export function TicketSelfHandling({ticketId,principal,onBlockedChange,boardMode
   };
   const mutation=useMutation({mutationKey:['ticket-self-handling',principal.principal_id,ticketId],
     mutationFn:({intent,signal}:{intent:Pending;signal:AbortSignal})=>api.selfHandle(ticketId,intent.action,intent.command,principal.csrf_token,signal),
-    onSuccess:(result,variables)=>{setPending(null);setState('succeeded');setMessage(variables.intent.action==='accept-for-later'?'已接单，可稍后开始处理。':'已开始处理。');if(result.replayed)setMessage(variables.intent.action==='accept-for-later'?'已核对：原操作已接单。':'已核对：原操作已开始处理。');refresh();},
+    onSuccess:(result,variables)=>{markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});setPending(null);setState('succeeded');setMessage(variables.intent.action==='accept-for-later'?'已接单，可稍后开始处理。':'已开始处理。');if(result.replayed)setMessage(variables.intent.action==='accept-for-later'?'已核对：原操作已接单。':'已核对：原操作已开始处理。');refresh();},
     onError:(error,variables)=>{
       if(error instanceof ApiError){setPending(boardMode&&error.status===409?variables.intent:null);setState(error.status===409?'conflict':'denied');setMessage(error.status===409?'操作冲突：请重新读取工单后确认新的操作。':'操作被拒绝：'+errorMessage(error));if(error.status===409)refresh();}
       else{setPending(variables.intent);setState('unknown');setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');}

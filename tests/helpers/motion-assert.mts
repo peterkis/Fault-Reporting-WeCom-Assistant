@@ -5,7 +5,7 @@ export interface MotionBrowser {evaluate(expression:string):Promise<unknown>;com
 export interface MotionMeasurement {duration:number;easing:string;properties:string[];name:string}
 const frameMetadata=new Set(['offset','computedOffset','easing','composite']);
 /** Includes CSS transitions. Each explicit CSS exception must be named at its call site. */
-export async function assertMotion(browser:MotionBrowser,selector:string,durationToken:string,easingToken:string,{subtree=false,cssExceptions=[]}:{subtree?:boolean;cssExceptions?:string[]}={}):Promise<MotionMeasurement[]>{
+export async function assertMotion(browser:MotionBrowser,selector:string,durationToken:string,easingToken:string,{subtree=false,cssExceptions=[],animationName}:{subtree?:boolean;cssExceptions?:string[];animationName?:string}={}):Promise<MotionMeasurement[]>{
   const observed=await browser.evaluate(`(()=>{
     const node=document.querySelector(${JSON.stringify(selector)});if(!node)throw Error('MOTION_TARGET_MISSING');
     const root=getComputedStyle(document.documentElement),raw=root.getPropertyValue(${JSON.stringify(durationToken)}).trim();
@@ -19,14 +19,15 @@ export async function assertMotion(browser:MotionBrowser,selector:string,duratio
     }));return {duration,easing:canonical,animations};
   })()`);
   assert.ok(observed&&typeof observed==='object'&&'duration' in observed&&'easing' in observed&&'animations' in observed&&Array.isArray(observed.animations));
-  assert.ok(observed.animations.length>0,selector+' must produce an observable animation');
   const allowed=new Set(['transform','opacity','backgroundColor','background-color',...cssExceptions]),measurements:MotionMeasurement[]=[];
   for(const animation of observed.animations){
     assert.ok(animation&&typeof animation==='object'&&'duration' in animation&&typeof animation.duration==='number'&&'easing' in animation&&typeof animation.easing==='string'&&'properties' in animation&&Array.isArray(animation.properties)&&'name' in animation&&typeof animation.name==='string');
+    if(animationName!==undefined&&animation.name!==animationName)continue;
     assert.equal(animation.duration,observed.duration,selector+' '+animation.name+' duration');assert.equal(animation.easing,observed.easing,selector+' '+animation.name+' easing');
     const properties:string[]=[];for(const property of animation.properties){assert.equal(typeof property,'string');if(typeof property!=='string'||frameMetadata.has(property))continue;assert.ok(allowed.has(property),selector+' unexpected animated property '+property);properties.push(property);}
     measurements.push({duration:animation.duration,easing:animation.easing,properties,name:animation.name});
   }
+  assert.ok(measurements.length>0,selector+' must produce an observable animation'+(animationName===undefined?'':` named ${animationName}`));
   return measurements;
 }
 export async function assertNoTransformAnimations(browser:MotionBrowser,selector:string){

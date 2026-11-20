@@ -1,7 +1,8 @@
 import {DetailLoading} from '../../app/DetailLoading';
 import {ErrorState} from '../../design/components/ErrorState/ErrorState';
-import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
+import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
 import {motionToken} from '../../design/motion/tokens';
+import {markSelfWrite} from '../../design/motion/self-write';
 import type {ReactNode} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {CircleX,Undo2,X} from 'lucide-react';
@@ -63,9 +64,13 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
  const [target,setTarget]=useState<Target|null>(null),[blocked,setBlocked]=useState(false),[highlighted,setHighlighted]=useState<string|null>(null),[success,setSuccess]=useState<{action:Action;revision:number;column:string}|null>(null);
  const report=useCallback((value:boolean)=>{setBlocked(value);onBlockedChange(value);},[onBlockedChange]);
  useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));return()=>clearTimeout(timer);},[highlighted]);
- const sameClosedTarget=(item:WorkbenchCard,action:Action)=>Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id);
- const canOpen=(item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||sameClosedTarget(item,action));
- return <ClosureScope.Provider value={{request:(item,action,initial=emptyClosureForm)=>{if(canOpen(item,action)){returnFocus.current=collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}},canOpen,highlighted,blocked:blocked||otherBlocked}}>
+ const canOpen=useCallback((item:WorkbenchCard,action:Action)=>!otherBlocked&&(!blocked||Boolean(target&&!target.open&&target.action===action&&subject(target.item).kind===subject(item).kind&&subject(target.item).id===subject(item).id)),[otherBlocked,blocked,target]);
+ const requestImpl=(item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{if(canOpen(item,action)){returnFocus.current=collapseTriggerMenu();setTarget(previous=>blocked&&previous?{...previous,initial,open:true}:{item,action,initial,open:true});}};
+ const requestRef=useRef(requestImpl);requestRef.current=requestImpl;
+ const request=useCallback((item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{requestRef.current(item,action,initial);},[]);
+ const isBlocked=blocked||otherBlocked;
+ const scopeValue=useMemo(()=>({request,canOpen,highlighted,blocked:isBlocked}),[request,canOpen,highlighted,isBlocked]);
+ return <ClosureScope.Provider value={scopeValue}>
   {children}{success?<ToastFeedback source={success.action==='close'?'ticket-waiting-cancel':'closure-restore'} revision={success.revision} state="succeeded" title={success.action==='close'?'已关闭':'已恢复'}>{success.action==='close'?'可在「已处理 · 已关闭」中恢复':'已回到'+success.column}</ToastFeedback>:null}{target?<ClosureActionDialog key={target.item.kind+':'+target.item.id+':'+target.action} target={target} principal={principal} otherBlocked={otherBlocked} onBlockedChange={report} onClose={()=>{setTarget(value=>value?{...value,open:false}:null);restoreTriggerFocus(returnFocus.current);}} onSuccess={column=>{if(target.action==='restore')setHighlighted(target.item.intake_id);setSuccess({action:target.action,revision:Date.now(),column});setTarget(null);}}/>:null}
  </ClosureScope.Provider>;
 }
@@ -160,6 +165,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
    await draft.prepare(command);current();setPending(command);known.current=null;sent=true;
    if(action==='restore'){const input:RestoreCommand={client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'RESTORE_CLOSED'};if(s.kind==='ticket')await api.restoreClosedTicket(s.id,input,fresh.fresh.csrf_token,controller.signal);else await closureApi.restoreIntake(s.id,input,fresh.fresh.csrf_token,controller.signal);}
    else{const input=command as IntakeClosureCommand;if(s.kind==='ticket')await api.closeTicket(s.id,input,fresh.fresh.csrf_token,controller.signal);else await closureApi.closeIntake(s.id,input,fresh.fresh.csrf_token,controller.signal);}
+   markSelfWrite(principal.principal_id,{kind:item.kind,id:item.id,intakeId:item.intake_id});
    current();known.current='COMMITTED';await finish(command.client_command_id,'COMMITTED',current);
   }catch(error){if(controller.signal.aborted)return;if(denied(error))return;
    if(known.current==='COMMITTED'){setCleanupBlocked(true);setOpaque(command.client_command_id);setMessage('原操作已提交，刷新或清理尚待核对。');}
@@ -169,7 +175,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  };
   const check=async()=>{if(!originalId||request.current)return;const controller=new AbortController(),read=captureWorkbenchRead(controller.signal),current=()=>{read();if(request.current!==controller)throw new DOMException('CLOSURE_CHANGED','AbortError');};request.current=controller;requestOperation.current=originalId;setBusy(true);
   try{await readContext(controller.signal);current();const result=s.kind==='intake'?await closureApi.intakeReceipt(s.id,action,originalId,controller.signal):action==='restore'?await closureApi.ticketRestoreReceipt(s.id,originalId,controller.signal):await api.waitingAcknowledgement(s.id,'dismiss',originalId,controller.signal);current();
-   if(result.state==='UNKNOWN'){setMessage('提交结果仍待核对；原操作标识保留。');return;}await finish(originalId,result.state,current);
+   if(result.state==='UNKNOWN'){setMessage('提交结果仍待核对；原操作标识保留。');return;}if(result.state==='COMMITTED')markSelfWrite(principal.principal_id,{kind:item.kind,id:item.id,intakeId:item.intake_id});await finish(originalId,result.state,current);
    }catch(error){if(!controller.signal.aborted&&request.current===controller&&!denied(error))setMessage('核对暂未完成，未重复提交。');}finally{if(request.current===controller){request.current=null;requestOperation.current=null;setBusy(false);}}
  };
  const close=async()=>{if(locked)return;onClose();};

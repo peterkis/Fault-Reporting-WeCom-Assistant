@@ -92,6 +92,8 @@ for(const status of [403,404])test('Card 12 related profile READ '+status+' clea
   await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
   const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
   const committed=await get(ticketPath);assert.equal(committed.status,'IN_PROGRESS');
+  // The board refresh can put a different claimable card under the stationary pointer.
+  await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
   await browser.evaluate("(()=>{globalThis.__card12DeniedController=document.querySelector('.board-claim-controller .ticket-self-handling');globalThis.__card12ReleaseProfile();return true;})()");
   await browser.waitFor("!document.querySelector('.board-claim-controller')");
   assert.equal(await browser.evaluate('globalThis.__card12DeniedController.isConnected'),false);

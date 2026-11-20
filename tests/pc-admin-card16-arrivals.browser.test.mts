@@ -6,6 +6,8 @@ import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.
 import {assertLocalDateTime} from '../app/server/src/platform/time-contract.mjs';
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
+import {captureMotionReadingPosition,scrollPastMotionItem,seedMotionTicket} from './helpers/motion-board-fixture.mjs';
+import {boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
 
 for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as const)test('Card 16 '+mode+' keeps official new-card reads, bounded motion and reading position',{timeout:240000},()=>withT42BoardBrowser(async(f,browser,_card,get)=>{
   const cpuRate=process.env.CARD16_CPU_RATE;
@@ -17,7 +19,7 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
   await browser.command('Page.bringToFront');await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
   await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:mode==='reduced'?'reduce':'no-preference'}]});
   // Wait for the initial confirmed three-column batch before creating a new source fact.
-  await browser.waitFor("[...document.querySelectorAll('.ds-stage-count')].every(n=>n.textContent!=='—')&&document.querySelectorAll('.ticket-card').length>3");
+  await browser.waitFor(boardColumnsReady+"&&[...document.querySelectorAll('.ds-stage-count')].every(n=>n.textContent!=='—')&&document.querySelectorAll('.ticket-card[data-item-id]').length>3");
   if(mode==='arrival'||mode==='collapsed'){
     const expanded=mode==='arrival';
     await browser.evaluate(`(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')!==${JSON.stringify(String(expanded))})button.click();})()`);
@@ -31,13 +33,18 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
     await chooseWorkbenchSelect(browser,'[data-field-label=处理人]','name:'+String(owner.assignee_name));
   }
   if(mode==='scrolling'){
+    const fillers=[];
+    for(let index=0;index<8;index++)fillers.push(await seedMotionTicket(f.pool,`卡十六阅读位置 ${index+1}`));
+    await browser.evaluate("document.querySelector('.ds-page-header button[aria-label=刷新]').click()");
     await browser.evaluate("(()=>{const button=document.querySelector('.board-column.pending [data-action=expand-column]');if(button?.getAttribute('aria-expanded')==='false')button.click();})()");
     await browser.waitFor("document.querySelector('.board-column.pending [data-action=expand-column]')?.getAttribute('aria-expanded')==='true'");
+    await browser.waitFor(`${JSON.stringify(fillers)}.every(id=>document.querySelector('.board-column.pending .ticket-card[data-item-id="'+id+'"]'))`);
     await waitForAnimationsSettled(browser);
-    await browser.evaluate('window.scrollTo(0,200)');
+    await scrollPastMotionItem(browser,'.board-column.pending [data-board-group=待接单] .ticket-card');
     await browser.waitFor('scrollY>0');
   }
-  const scroll=await browser.evaluate('scrollY'),visible=await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>({id:n.dataset.itemId,top:n.getBoundingClientRect().top}))");
+  const reading=mode==='scrolling'?await captureMotionReadingPosition(browser,'.board-column.pending .ticket-card'):undefined;
+  const layout=mode==='scrolling'?await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>({id:n.dataset.itemId,top:n.getBoundingClientRect().top+scrollY}))"):undefined;
   await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__card16IncomingRead=false;globalThis.fetch=async(...args)=>{const response=await original(...args);if(String(args[0]).startsWith('/api/workbench/board?column=pending')&&JSON.stringify(await response.clone().json()).includes(globalThis.__card16IncomingId))globalThis.__card16IncomingRead=true;return response;};})()");
   const intake=await seedWeb01NoConversationIntake({pool:f.pool,text:'卡十六实时到达的新合成报修',location:'合成门诊'});
   const ticket=(await createPilotTicketCore({pool:f.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:assertLocalDateTime(intake.receivedAt),traceId:'card16-arrival'})).ticket;assert.ok(ticket);
@@ -52,14 +59,24 @@ for(const mode of ['arrival','collapsed','scrolling','reduced','filtered'] as co
     assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0);return;
   }
   if(mode==='scrolling'){
-    await browser.waitFor("document.querySelector('.ds-column-arrivals')?.textContent.includes('1 条新报修')");
-    assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`),false);
-    assert.equal(await browser.evaluate('scrollY'),scroll);
-    assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.board-column.pending .ticket-card')].map(n=>({id:n.dataset.itemId,top:n.getBoundingClientRect().top}))"),visible);
-    await browser.evaluate("document.querySelector('.ds-column-arrivals').click()");
+    const chip='.board-column.pending [data-new-items-chip], .ds-column-arrivals';
+    await browser.waitFor(`document.querySelector(${JSON.stringify(chip)})?.textContent.trim()==='↑ 1 条新工单'`);
+    await waitForAnimationsSettled(browser);
+    assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)})?.checkVisibility())`),true);
+    assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect().bottom<=0`),true,'the new card is in layout above the reading position');
+    assert.ok(reading);await reading.assertUnchanged();
+    const positions:unknown=await browser.evaluate(`[...document.querySelectorAll('.board-column.pending .ticket-card')].filter(n=>n.dataset.itemId!==${JSON.stringify(ticket.id)}).map(n=>({id:n.dataset.itemId,top:n.getBoundingClientRect().top+scrollY,shift:n.closest('[data-board-group=待接单]')!==null}))`);
+    assert.ok(Array.isArray(positions)&&Array.isArray(layout));
+    const current=positions.find(value=>object(value).shift);assert.ok(current);
+    const prior=layout.find(value=>object(value).id===object(current).id);assert.ok(prior);
+    const insertionShift=Number(object(current).top)-Number(object(prior).top);
+    assert.ok(insertionShift>0,'the real insertion pushes the previous first card down');
+    assert.deepEqual(positions.map(value=>{const {id,top,shift}=object(value);return {id,top:Number(top)-(shift?insertionShift:0)};}),layout);
+    await browser.evaluate(`document.querySelector(${JSON.stringify(chip)}).click()`);
   }
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);
   assert.equal(await browser.evaluate("[...document.querySelectorAll('.board-column.pending [data-board-group=待接单] .ticket-card')][0]?.dataset.itemId"),ticket.id);
+  if(mode!=='reduced')await browser.waitFor(`globalThis.__card16Motion.some(event=>event.id===${JSON.stringify(ticket.id)}&&event.frames.some(frame=>'backgroundColor' in frame))`);
   const motions:unknown=await browser.evaluate('globalThis.__card16Motion');assert.ok(Array.isArray(motions));
   const highlightDuration=await browser.evaluate("(()=>{const value=getComputedStyle(document.documentElement).getPropertyValue('--dur-highlight').trim();return Number.parseFloat(value)*(value.endsWith('ms')?1:1000);})()");
   assert.equal(highlightDuration,1200,'the computed --dur-highlight token must remain exactly 1200ms');

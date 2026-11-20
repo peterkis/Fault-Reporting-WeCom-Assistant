@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { clickWorkbenchControl } from '../helpers/heroui-workbench-controls.mjs';
 import { waitForAnimationsSettled } from '../helpers/browser-animations.mjs';
+import { boardReady, expandPendingBoard, refreshBoard, scrollPastMotionItem, seedMotionTicket, ticketCard } from '../helpers/motion-board-fixture.mjs';
 import type { Browser } from '../helpers/t43-service-actions.mjs';
 import type { VisualFixture } from './fixture.mjs';
 import type { Screen } from '../../tools/visual-regression/model.mjs';
@@ -219,6 +220,27 @@ export async function prepareScreen(b: Browser, f: VisualFixture, s: Screen): Pr
       case 'seed-notifications':
       case 'detail-ready':
         break;
+      case 'board-new-chip': {
+        await b.waitFor(boardReady);
+        const fillers: string[] = [];
+        for (let index = 0; index < 10; index++) {
+          fillers.push(await seedMotionTicket(f.pool, `工作台阅读位置 ${index + 1}`));
+        }
+        await b.evaluate(refreshBoard);
+        await b.waitFor("Boolean(document.querySelector('.board-column.pending [data-action=expand-column]'))");
+        await expandPendingBoard(b);
+        await b.waitFor(`${JSON.stringify(fillers)}.every(id=>document.querySelector('.board-column.pending .ticket-card[data-item-id="'+id+'"]'))&&!document.querySelector('[data-refreshing=true]')`);
+        await b.evaluate("document.querySelector('.board-column.pending [data-new-items-chip]:not([data-exiting])')?.click()");
+        await waitForAnimationsSettled(b);
+        await scrollPastMotionItem(b, '.board-column.pending [data-board-group=待接单] .ticket-card');
+        const id = await seedMotionTicket(f.pool, '刚到达的打印故障');
+        await b.evaluate(refreshBoard);
+        await b.waitFor(`(()=>{
+          const card=document.querySelector(${JSON.stringify(ticketCard(id))}),chip=document.querySelector('.board-column.pending [data-new-items-chip]:not([data-exiting])');
+          return card?.getBoundingClientRect().bottom<=0&&chip?.textContent.trim()==='↑ 1 条新工单'&&chip.getBoundingClientRect().top>=0&&chip.getBoundingClientRect().bottom<=innerHeight;
+        })()`);
+        break;
+      }
       case 'expand-board-groups':
         await b.waitFor(`document.querySelectorAll('.ticket-card').length >= 3 &&
   Boolean(

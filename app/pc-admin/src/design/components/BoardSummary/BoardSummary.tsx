@@ -1,40 +1,70 @@
 import {useDetailsDismiss} from '../Popover/useDetailsDismiss';
 import {CalendarDays,ChevronDown,Shapes,UserRound} from 'lucide-react';
-import {useRef,useState} from 'react';
+import {memo,useCallback,useMemo,useRef,useState} from 'react';
 import type {ReactNode} from 'react';
 import type {BoardCompletionRange,WorkbenchCard} from '../../../api/client';
 import {ProcessedDatePicker} from '../../../app/ProcessedDatePicker';
 import {matchesBoardSummary,type BoardSummaryFilter} from '../../board-presentation';
+import {NumberRoll} from '../../motion/number-roll';
 import {Button} from '../Button/Button';
 import './board-summary.css';
 
-export function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,partial,blocked,scope,relatedAvailable,onScope}:{
+const SUMMARY_TABS=[
+  {key:'all',label:'全部',tone:'neutral',note:'计数基于已加载数据。'},
+  {key:'mine',label:'我负责',tone:'brand',note:'仅计当前资料中由你负责处理的事项。'},
+  {key:'related',label:'与我有关',tone:'brand',note:'查看与你有关的事项；当前没有独立计数。'},
+  {key:'overdue',label:'已超时',tone:'danger',note:'计入所有显示红色超时热度的事项。'},
+  {key:'today',label:'今日完成',tone:'success',note:'按北京时间完成时间统计，沿当前日期与查询范围。'},
+] as const;
+type SummaryTabKey=(typeof SUMMARY_TABS)[number]['key'];
+
+const SummaryTab=memo(function SummaryTab({tabKey,label,tone,count,description,active,disabled,animateCount,onActivate}:{
+  tabKey:SummaryTabKey;label:string;tone:'neutral'|'brand'|'danger'|'success';count:number|null;description:string;active:boolean;disabled:boolean;animateCount:boolean;onActivate:(key:SummaryTabKey)=>void;
+}){
+  const handlePress=useCallback(()=>{onActivate(tabKey);},[onActivate,tabKey]);
+  return <Button tone="ghost" className="ds-summary-card" data-summary-filter={tabKey} data-summary-tone={tone}
+    {...(tabKey==='related'?{'data-action':'related-scope'}:{})} data-overdue={tabKey==='overdue'&&count!==null&&count>0?'true':undefined}
+    aria-label={label+(count===null?'':' '+count)} aria-pressed={active} aria-disabled={disabled} title={description}
+    onPress={handlePress}>
+    <span className="ds-summary-label">{label}</span>{count===null?null:<strong className="ds-summary-value"><NumberRoll value={count} animate={animateCount}/></strong>}
+  </Button>;
+});
+
+export const BoardSummary=memo(function BoardSummary({items,now,selected,onSelect,mineAvailable,loading,partial,blocked,scope,relatedAvailable,onScope,animateCount=false}:{
   items:readonly WorkbenchCard[];now:number;selected:BoardSummaryFilter|null;
   onSelect:(value:BoardSummaryFilter|null)=>void;mineAvailable:boolean;loading:boolean;partial:boolean;blocked:boolean;
-  scope:'team'|'related';relatedAvailable:boolean;onScope:(value:'team'|'related')=>void;
+  scope:'team'|'related';relatedAvailable:boolean;onScope:(value:'team'|'related')=>void;animateCount?:boolean;
 }){
-  const tabs=[
-    {key:'all',label:'全部',tone:'neutral',note:'计数基于已加载数据。'},
-    {key:'mine',label:'我负责',tone:'brand',note:'仅计当前资料中由你负责处理的事项。'},
-    {key:'related',label:'与我有关',tone:'brand',note:'查看与你有关的事项；当前没有独立计数。'},
-    {key:'overdue',label:'已超时',tone:'danger',note:'计入所有显示红色超时热度的事项。'},
-    {key:'today',label:'今日完成',tone:'success',note:'按北京时间完成时间统计，沿当前日期与查询范围。'},
-  ] as const;
+  const counts=useMemo(()=>{
+    let mine=0,overdue=0,today=0;
+    if(!loading&&!partial){
+      for(const item of items){
+        if(mineAvailable&&matchesBoardSummary(item,'mine',now))mine++;
+        if(matchesBoardSummary(item,'overdue',now))overdue++;
+        if(matchesBoardSummary(item,'today',now))today++;
+      }
+    }
+    return {all:items.length,mine,overdue,today};
+  },[items,now,loading,partial,mineAvailable]);
+  const activateRef=useRef<(key:SummaryTabKey)=>void>(()=>{});
+  activateRef.current=(key:SummaryTabKey)=>{
+    const metric=key==='mine'||key==='overdue'||key==='today'?key:null;
+    if(blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable)return;
+    if(metric)onSelect(selected===metric?null:metric);
+    else{onSelect(null);onScope(key==='related'?'related':'team');}
+  };
+  const onActivate=useCallback((key:SummaryTabKey)=>{activateRef.current(key);},[]);
   return <div className="ds-board-summary scope-tabs" role="group" aria-label="工作范围">
-    {tabs.map(({key,label,tone,note})=>{
+    {SUMMARY_TABS.map(({key,label,tone,note})=>{
       const unavailable=partial||(key==='mine'&&!mineAvailable),metric=key==='mine'||key==='overdue'||key==='today'?key:null;
-      const count=loading||unavailable||key==='related'?null:metric?items.filter(item=>matchesBoardSummary(item,metric,now)).length:items.length;
+      const count=loading||unavailable||key==='related'?null:metric?counts[metric]:counts.all;
       const description=(key==='all'?'已加载 '+items.length+' 项；':'基于已加载的 '+items.length+' 项。')+note+(loading?'正在读取，暂不显示计数。':partial?'部分事项读取失败，暂无法统计。':key==='mine'&&!mineAvailable?'当前没有本人处理关系资料，暂无法统计。':'');
       const active=metric?selected===metric:!selected&&(key==='related'?scope==='related':scope==='team');
-      return <Button key={key} tone="ghost" className="ds-summary-card" data-summary-filter={key} data-summary-tone={tone}
-        {...(key==='related'?{'data-action':'related-scope'}:{})} data-overdue={key==='overdue'&&count!==null&&count>0?'true':undefined}
-        aria-label={label+(count===null?'':' '+count)} aria-pressed={active} aria-disabled={blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable} title={description}
-        onPress={()=>{if(blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable)return;if(metric)onSelect(selected===metric?null:metric);else{onSelect(null);onScope(key==='related'?'related':'team');}}}>
-        <span className="ds-summary-label">{label}</span>{count===null?null:<strong className="ds-summary-value">{count}</strong>}
-      </Button>;
+      const disabled=blocked||loading||key==='mine'&&!mineAvailable||key==='related'&&!relatedAvailable;
+      return <SummaryTab key={key} tabKey={key} label={label} tone={tone} count={count} description={description} active={active} disabled={disabled} animateCount={animateCount} onActivate={onActivate}/>;
     })}
   </div>;
-}
+});
 
 /** Decorations only: selection and the original Select controller remain with the caller. */
 export function BoardFilterPill({active,label,onClear,blocked,children}:{active:boolean;label:string;onClear:()=>void;blocked:boolean;children:ReactNode}){
@@ -44,7 +74,7 @@ export function BoardFilterPill({active,label,onClear,blocked,children}:{active:
 const dateLabels={today:'今天',recent:'近两天',week:'近 7 天',month:'本月'} as const;
 type Preset=keyof typeof dateLabels;
 const dateKey=(range:BoardCompletionRange,dates?:{from:string;to:string})=>[range,dates?.from??'',dates?.to??''].join(':');
-export function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardCompletionRange;dates?:{from:string;to:string}|undefined;now:number;blocked:boolean;onApply:(range:BoardCompletionRange,dates?:{from:string;to:string})=>void}){
+export const BoardDatePresets=memo(function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardCompletionRange;dates?:{from:string;to:string}|undefined;now:number;blocked:boolean;onApply:(range:BoardCompletionRange,dates?:{from:string;to:string})=>void}){
   const panel=useRef<HTMLDetailsElement>(null),day=new Date(now+8*3_600_000).toISOString().slice(0,10);
   useDetailsDismiss(panel);
   const [choice,setChoice]=useState<{key:string;preset:Preset|'custom'}|null>(null);
@@ -64,4 +94,4 @@ export function BoardDatePresets({range,dates,now,blocked,onApply}:{range:BoardC
       </div></details>
     </div>
   </div>;
-}
+});

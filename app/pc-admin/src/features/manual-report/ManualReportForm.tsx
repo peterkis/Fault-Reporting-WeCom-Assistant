@@ -27,6 +27,7 @@ import {clearManualReportAuthority,manualReportCapabilitiesKey,useManualReportDr
 import {hasExistingDraft} from '../drafts/encrypted-drafts';
 import {MANUAL_REPORT_DRAFT_ID} from '../../contracts/workbench-manual-report-browser-contracts.mjs';
 import {ManualSelfHandlingForm} from './ManualSelfHandlingForm';
+import {markSelfWrite} from '../../design/motion/self-write';
 import './manual-report.css';
 export function ManualReportEntry({principal,blocked}:{principal:Principal;blocked:boolean}){
   const navigate=useNavigate();
@@ -80,6 +81,9 @@ function OrdinaryManualReportForm({principal,initialValue,onSelf,onBlockedChange
   useEffect(()=>{if(context.error instanceof ApiError&&[401,403,404].includes(context.error.status))deny(context.error);},[context.error]);
   const refresh=()=>{void client.invalidateQueries({queryKey:['board',principal.principal_id]});};
   async function accepted(id:string,accepted:ManualReportAdmissionResult,label:string){
+    markSelfWrite(principal.principal_id,{intakeId:accepted.intake_id});
+    if(accepted.ticket)markSelfWrite(principal.principal_id,{kind:'ticket',id:accepted.ticket.id,intakeId:accepted.intake_id});
+    if(accepted.review)markSelfWrite(principal.principal_id,{kind:'review',id:accepted.review.id,intakeId:accepted.intake_id});
     const cleaned=await draft.success(id);if(!mounted.current)return;setPending(null);setValue(emptyManualReportInput());setSelected(null);setSelectionIntent(false);setPage(null);setResult(accepted);setState('succeeded');
     setMessage(label+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();
   }

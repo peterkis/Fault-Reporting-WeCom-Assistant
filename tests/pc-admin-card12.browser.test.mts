@@ -12,6 +12,9 @@ import {card22Filters,assertCard22Filters,assertCard22Avatars,captureCard22} fro
 import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {boardColumnReady,boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
+
+const handledListLoaded="!document.querySelector('.list-group[aria-label=已处理] [data-loading-status]')";
 
 test('Card 28 single table preserves read actions, grouped preferences and one-line search across Windows widths',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
  const ids=await seedCard28Board(f),directory=process.env.CARD28_EVIDENCE_DIR??await mkdtemp(join(tmpdir(),'card28-list-'));await mkdir(directory,{recursive:true});
@@ -22,7 +25,7 @@ test('Card 28 single table preserves read actions, grouped preferences and one-l
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?view=list&range=all',width:1440,height:1060,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
   await b.command('Page.bringToFront');
-  const ready="document.querySelectorAll('.ds-work-table thead').length===1&&document.querySelectorAll('.ds-list-stage').length===3&&document.querySelectorAll('.ds-work-row').length>=8";
+  const ready="document.querySelectorAll('.ds-work-table thead').length===1&&document.querySelectorAll('.ds-list-stage').length===3&&!document.querySelector('.ds-work-table [data-loading-status]')&&document.querySelectorAll('.ds-work-row[data-item-id]').length>=8";
   await b.waitFor(ready);await b.waitFor("document.querySelector('[data-realtime-status=live]')!==null");await b.evaluate('document.fonts.ready');
   const click=async(selector:string)=>clickWorkbenchControl(b,selector);
   const settle=()=>b.waitFor("!document.querySelector('.workbench-search[aria-busy=true]')&&!document.querySelector('[role=option]')");
@@ -129,7 +132,7 @@ test('Card 28 saved closure filters fall back to all ordinary stages when search
   for(const kind of ['dismissed','completed']){
    const previousDocument=kind==='completed'?await b.evaluate('performance.timeOrigin'):undefined;
    if(kind==='completed')await b.command('Page.navigate',{url:f.origin+'/workbench/app/?view=list&range=all&search=1&closure_kind='+kind});
-   await b.waitFor(`new URL(location.href).searchParams.get('closure_kind')===${JSON.stringify(kind)}&&new URL(location.href).searchParams.get('search')==='1'&&${previousDocument===undefined?'true':`performance.timeOrigin!==${JSON.stringify(previousDocument)}`}&&document.querySelectorAll('.list-group').length===3&&document.querySelector('.list-group[aria-label=已处理] .ds-list-stage-count')?.textContent==='9'&&document.querySelector('.ds-work-row[data-item-id="${ticket.ticket.id}"]')!==null`);
+   await b.waitFor(`new URL(location.href).searchParams.get('closure_kind')===${JSON.stringify(kind)}&&new URL(location.href).searchParams.get('search')==='1'&&${previousDocument===undefined?'true':`performance.timeOrigin!==${JSON.stringify(previousDocument)}`}&&document.querySelectorAll('.list-group').length===3&&${handledListLoaded}&&[...document.querySelectorAll('.list-group .ds-list-stage-count')].filter(node=>/^\\d+$/.test(node.textContent.trim())).length===3&&document.querySelector('.list-group[aria-label=已处理] .ds-list-stage-count')?.textContent==='9'&&document.querySelector('.ds-work-row[data-item-id="${ticket.ticket.id}"]')!==null`);
    assert.deepEqual(await b.evaluate("[...document.querySelectorAll('.list-group')].map(n=>n.getAttribute('aria-label'))"),['待受理','处理中','已处理']);
    assert.deepEqual(await b.evaluate("[...document.querySelectorAll('.ds-list-subgroup')].map(n=>n.dataset.boardGroup)"),['待判断','待接单','已完成','已关闭']);
    assert.equal(await b.evaluate("Boolean(document.querySelector('.workbench-search,[data-field-label=结束方式],.ds-list-note'))"),false);
@@ -162,7 +165,7 @@ test('Card 27B separates closure groups, rejects dismissed drops and filters the
   await b.command('Page.bringToFront');
   const group=(label:string)=>'.board-column.handled [data-board-group="'+label+'"]',trigger=(label:string)=>group(label)+' .ds-board-group-trigger';
   const visibleCards=(label:string)=>`[...document.querySelectorAll(${JSON.stringify(group(label)+' .ticket-card')})].filter(n=>n.checkVisibility()).length`;
-  const ready="document.querySelectorAll('.column-cards').length===3&&document.querySelector('.board-column.handled .ds-stage-count')?.textContent==='9'";
+  const ready=boardColumnsReady+"&&document.querySelector('.board-column.handled .ds-stage-count')?.textContent==='9'";
   await b.waitFor(ready);await b.evaluate('document.fonts.ready.then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))');
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(trigger('已完成'))}).getAttribute('aria-expanded')`),'true');
   assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(trigger('已关闭'))}).getAttribute('aria-expanded')`),'false');
@@ -232,13 +235,13 @@ test('Card 27B separates closure groups, rejects dismissed drops and filters the
   await clickWorkbenchControl(b,'[data-summary-filter=today]');await clickWorkbenchControl(b,trigger('已完成'));await b.waitFor(visibleCards('已完成')+'===3');assert.equal(await b.evaluate(visibleCards('已关闭')),0);
   assert.equal(await b.evaluate("[...document.querySelectorAll('.board-column.handled .ticket-card')].filter(n=>n.checkVisibility()).every(n=>n.dataset.closureKind==='COMPLETED')"),true);metrics.today={completedGroup:4,dismissedGroup:4,summary:3};
   await navigate(f.origin+'/workbench/app/?view=list&range=all');await b.waitFor("Boolean(document.querySelector('[data-field-label=结束方式] select'))&&document.querySelectorAll('.work-table').length===1");
-  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor("new URLSearchParams(location.search).get('closure_kind')==='dismissed'&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'");
+  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor(`new URLSearchParams(location.search).get('closure_kind')==='dismissed'&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'`);
   assert.ok(reads.some(url=>{const q=new URL(url,f.origin).searchParams;return url.startsWith('/api/workbench/search?')&&q.get('closure_kind')==='dismissed';}));
   await clickWorkbenchControl(b,'.list-group[aria-label=已处理] [data-action=expand-column]');await b.waitFor("document.querySelectorAll('.list-group[aria-label=已处理] tr.ds-work-row[data-closure-kind=DISMISSED]').length===5");
   const rows=await b.evaluate("[...document.querySelectorAll('.list-group[aria-label=已处理] tr.ds-work-row')].map(n=>{const reason=n.querySelector('[data-closure-reason]'),cell=reason?.closest('td');return {kind:n.dataset.closureKind,color:getComputedStyle(n).color,reason:reason?.textContent??null,width:cell?.getBoundingClientRect().width??null};})");assert.ok(Array.isArray(rows));assert.equal(rows.length,5);for(const value of rows){const row=object(value);assert.equal(row.kind,'DISMISSED');assert.equal(row.color,secondaryColor);assert.ok(row.reason);assert.ok(typeof row.width==='number'&&row.width<=160,JSON.stringify(row));}metrics.dismissedRows=rows;await capture('list-dismissed');
-  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','completed');await b.waitFor("new URLSearchParams(location.search).get('closure_kind')==='completed'&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'");assert.equal(await b.evaluate("[...document.querySelectorAll('.list-group[aria-label=已处理] tr.ds-work-row')].every(n=>n.dataset.closureKind==='COMPLETED')"),true);
-  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','all');await b.waitFor("!new URLSearchParams(location.search).has('closure_kind')&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'");
-  await navigate(f.origin+'/workbench/app/?view=list');await b.waitFor("Boolean(document.querySelector('[data-field-label=结束方式] select'))&&document.querySelectorAll('.work-table').length===1");await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor("new URLSearchParams(location.search).get('range')==='recent'&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'");assert.ok(reads.some(url=>{const q=new URL(url,f.origin).searchParams;return url.startsWith('/api/workbench/search?')&&q.get('closure_kind')==='dismissed'&&q.get('range')==='recent';}));metrics.defaultListRange='recent';
+  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','completed');await b.waitFor(`new URLSearchParams(location.search).get('closure_kind')==='completed'&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'`);assert.equal(await b.evaluate("[...document.querySelectorAll('.list-group[aria-label=已处理] tr.ds-work-row')].every(n=>n.dataset.closureKind==='COMPLETED')"),true);
+  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','all');await b.waitFor(`!new URLSearchParams(location.search).has('closure_kind')&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'`);
+  await navigate(f.origin+'/workbench/app/?view=list');await b.waitFor("Boolean(document.querySelector('[data-field-label=结束方式] select'))&&document.querySelectorAll('.work-table').length===1");await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor(`new URLSearchParams(location.search).get('range')==='recent'&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'`);assert.ok(reads.some(url=>{const q=new URL(url,f.origin).searchParams;return url.startsWith('/api/workbench/search?')&&q.get('closure_kind')==='dismissed'&&q.get('range')==='recent';}));metrics.defaultListRange='recent';
   assert.deepEqual(posts,[]);assert.deepEqual((await f.pool.query('SELECT id::text,status,version,assignee_id::text FROM pilot_ticket.ticket ORDER BY id')).rows,before);assert.deepEqual((await f.pool.query('SELECT count(*)::integer AS count FROM pilot_ticket.ticket_event')).rows,eventCount);metrics.businessPosts=posts;
  }catch(error){failure=error;}
  finally{await closeBrowserTestResources([
@@ -261,14 +264,14 @@ test('Card 27B B5 date presets and custom dates compose with every closure kind 
  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?view=list&range=all',width:1440,height:1060,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
-  await b.command('Page.bringToFront');await b.waitFor("document.querySelectorAll('.work-table').length===1&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'");
+  await b.command('Page.bringToFront');await b.waitFor(`document.querySelectorAll('.work-table').length===1&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'`);
   const instrument="(()=>{if(globalThis.__b5Instrumented)return;globalThis.__b5Instrumented=true;globalThis.__b5Reads=[];const original=globalThis.fetch;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/search')&&response.ok){const page=await response.clone().json();globalThis.__b5Reads.push({criteria:page.criteria,range:page.range,closed:page.items.filter(n=>n.column==='handled').map(n=>n.id).sort(),open:page.items.filter(n=>n.column!=='handled').map(n=>n.id).sort()});}return response;};})()";
   await b.command('Page.addScriptToEvaluateOnNewDocument',{source:instrument});await b.evaluate(instrument);
   await clickWorkbenchControl(b,'.search-main input[name=q]');await b.command('Input.insertText',{text:draftText});await b.waitFor(`document.querySelector('.search-main input[name=q]').value===${JSON.stringify(draftText)}`);
   const rowIds="[...document.querySelectorAll('.list-group[aria-label=已处理] tr.ds-work-row .row-link')].map(n=>new URL(n.href).pathname.split('/').at(-1)).sort()";
   const confirm=async(kind:'all'|'completed'|'dismissed',from:string,to:string,q='')=>{
    const wanted=expected(kind,from,to),criteria=`c.range==='custom'&&c.handled_from===${JSON.stringify(from)}&&c.handled_to===${JSON.stringify(to)}&&c.q===${JSON.stringify(q)}&&${kind==='all'?"!Object.hasOwn(c,'closure_kind')":`c.closure_kind===${JSON.stringify(kind)}`}`;
-   await b.waitFor(`(()=>{const r=globalThis.__b5Reads?.at(-1),c=r?.criteria;return c&&${criteria}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(wanted.length))};})()`);
+   await b.waitFor(`(()=>{const r=globalThis.__b5Reads?.at(-1),c=r?.criteria;return c&&${criteria}&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(wanted.length))};})()`);
    const result=object(await b.evaluate('globalThis.__b5Reads.at(-1)'));assert.deepEqual(result.closed,wanted);if(q==='')assert.deepEqual(result.open,open,'date and closure kind must preserve the other stages');
    assert.deepEqual(result.range,{from:from+' 00:00:00',until:new Date(Date.parse(to+'T00:00:00Z')+86400000).toISOString().slice(0,10)+' 00:00:00',mode:'custom',timezone:'Asia/Shanghai'});
    for(const label of ['已完成','已关闭']){const trigger='.ds-list-subgroup[data-board-group="'+label+'"] button';if(await b.evaluate(`document.querySelector(${JSON.stringify(trigger)})?.getAttribute('aria-expanded')==='false'`))await clickWorkbenchControl(b,trigger);}
@@ -292,16 +295,16 @@ test('Card 27B B5 date presets and custom dates compose with every closure kind 
    // A date change in search mode starts its own real read. Wait for that
    // result before the next kind change, preserving the App's single-search budget.
    if(await b.evaluate("new URLSearchParams(location.search).get('search')==='1'"))await confirm('all',from,to);
-   else await b.waitFor(`document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(expected('all',from,to).length))}`);
+   else await b.waitFor(`${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(expected('all',from,to).length))}`);
    for(const kind of ['dismissed','completed','all'] as const){await chooseWorkbenchSelect(b,'[data-field-label=结束方式]',kind);const observation=await confirm(kind,from,to);windows.push({preset,...observation});if(kind==='dismissed')for(const width of [1440,1920])await capture('list-'+preset+'-dismissed',width);}
   }
   // The same unsubmitted q survives every date/kind update; committing it preserves the custom window.
   await clickWorkbenchControl(b,'.workbench-search .workbench-disclosure-trigger');await clickWorkbenchControl(b,'.workbench-search button[type=submit]');await confirm('all',ids.yesterday,ids.yesterday,draftText);
   const documentTime=await b.evaluate('performance.timeOrigin');await b.command('Page.reload');await b.waitFor(`performance.timeOrigin!==${JSON.stringify(documentTime)}&&document.readyState==='complete'`);await confirm('all',ids.yesterday,ids.yesterday,draftText);
-  await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor("new URLSearchParams(location.search).get('view')==='board'&&document.querySelectorAll('.column-cards').length===3");assert.equal(await b.evaluate("new URLSearchParams(location.search).get('handled_from')"),ids.yesterday);
+  await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor("new URLSearchParams(location.search).get('view')==='board'&&"+boardColumnsReady);assert.equal(await b.evaluate("new URLSearchParams(location.search).get('handled_from')"),ids.yesterday);
   await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor("new URLSearchParams(location.search).get('view')==='list'&&document.querySelectorAll('.work-table').length===1");await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await confirm('dismissed',ids.yesterday,ids.yesterday,draftText);
-  await clickWorkbenchControl(b,'.search-main button[type=button]');await b.waitFor(`!new URLSearchParams(location.search).has('search')&&!new URLSearchParams(location.search).has('q')&&!new URLSearchParams(location.search).has('closure_kind')&&new URLSearchParams(location.search).get('range')==='custom'&&new URLSearchParams(location.search).get('handled_from')===${JSON.stringify(ids.yesterday)}&&new URLSearchParams(location.search).get('handled_to')===${JSON.stringify(ids.yesterday)}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(expected('all',ids.yesterday,ids.yesterday).length))}`);
-  await clickWorkbenchControl(b,'[data-action=open-handled-date-filter]');await clickWorkbenchControl(b,'[aria-label=清除已处理日期和取消筛选]');await b.waitFor("new URLSearchParams(location.search).get('range')==='all'&&!new URLSearchParams(location.search).has('handled_from')&&!new URLSearchParams(location.search).has('handled_to')");await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor("globalThis.__b5Reads?.at(-1)?.criteria.range==='all'&&globalThis.__b5Reads.at(-1).criteria.closure_kind==='dismissed'&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'");
+  await clickWorkbenchControl(b,'.search-main button[type=button]');await b.waitFor(`!new URLSearchParams(location.search).has('search')&&!new URLSearchParams(location.search).has('q')&&!new URLSearchParams(location.search).has('closure_kind')&&new URLSearchParams(location.search).get('range')==='custom'&&new URLSearchParams(location.search).get('handled_from')===${JSON.stringify(ids.yesterday)}&&new URLSearchParams(location.search).get('handled_to')===${JSON.stringify(ids.yesterday)}&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent===${JSON.stringify(String(expected('all',ids.yesterday,ids.yesterday).length))}`);
+  await clickWorkbenchControl(b,'[data-action=open-handled-date-filter]');await clickWorkbenchControl(b,'[aria-label=清除已处理日期和取消筛选]');await b.waitFor("new URLSearchParams(location.search).get('range')==='all'&&!new URLSearchParams(location.search).has('handled_from')&&!new URLSearchParams(location.search).has('handled_to')");await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor(`globalThis.__b5Reads?.at(-1)?.criteria.range==='all'&&globalThis.__b5Reads.at(-1).criteria.closure_kind==='dismissed'&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'`);
   const allCriteria=object(object(await b.evaluate('globalThis.__b5Reads.at(-1)')).criteria);assert.equal(Object.hasOwn(allCriteria,'handled_from'),false);assert.equal(Object.hasOwn(allCriteria,'handled_to'),false);
   assert.ok(searches.length<=20,'the real search rate budget must hold: '+searches.length);assert.deepEqual(writes,[]);assert.deepEqual((await f.pool.query('SELECT id::text,status,version,assignee_id::text FROM pilot_ticket.ticket ORDER BY id')).rows,before);assert.deepEqual((await f.pool.query('SELECT count(*)::integer AS count FROM pilot_ticket.ticket_event')).rows,eventCount);metrics.searchRequests=searches.length;metrics.businessPosts=writes;metrics.reloadAndViewPreserved=true;metrics.leaveSearchPreservedDates=true;metrics.clearDateRemovedPair=true;
  }catch(error){failure=error;}
@@ -321,8 +324,8 @@ test('Card 27B pending searches lock date and closure controls until the genuine
  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?view=list&range=all',width:1440,height:1060,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
-  await b.command('Page.bringToFront');await b.waitFor("document.querySelectorAll('.work-table').length===1&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'");
-  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor("document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'&&document.querySelector('[data-date-preset=today]:not([data-compact])')?.disabled===false&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false");
+  await b.command('Page.bringToFront');await b.waitFor(`document.querySelectorAll('.work-table').length===1&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='9'`);
+  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','dismissed');await b.waitFor(`${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='5'&&document.querySelector('[data-date-preset=today]:not([data-compact])')?.disabled===false&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false`);
   assert.equal(reads.length,1);assert.equal(reads[0]?.status,200);
   // Hold the next custom-window statement before execution. The real search
   // already owns its App-wide busy slot; statement_timeout itself is unchanged.
@@ -353,8 +356,8 @@ test('Card 27B pending searches lock date and closure controls until the genuine
   await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor("new URLSearchParams(location.search).get('view')==='board'&&document.querySelectorAll('.board-column').length===3");await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');assert.equal(reads.length,2,'switching view cannot replace the unfinished search');assert.equal(await b.evaluate("document.querySelector('[data-date-preset=today]:not([data-compact])').disabled"),true);const heldView=object(await b.evaluate("({range:new URLSearchParams(location.search).get('range'),from:new URLSearchParams(location.search).get('handled_from'),to:new URLSearchParams(location.search).get('handled_to'),kind:new URLSearchParams(location.search).get('closure_kind')})"));assert.deepEqual(heldView,{range:'custom',from:ids.today,to:ids.today,kind:'dismissed'});metrics.heldViewSwitch=heldView;
   releaseGate();await b.waitFor("document.querySelector('.board-column.handled .ds-stage-count')?.textContent==='4'&&document.querySelector('[data-date-preset=today]:not([data-compact])')?.disabled===false&&document.querySelector('.search-main button[type=submit]')?.disabled===false&&document.querySelector('.search-main button[type=button]')?.disabled===false&&document.querySelector('button[aria-label=刷新]')?.disabled===false");
   assert.equal(await b.evaluate("document.querySelector('.search-main input[name=q]').value"),draft);assert.equal(reads[1]?.status,200);const todayRequest=new URL(reads[1]?.url??'',f.origin).searchParams;assert.equal(todayRequest.get('range'),'custom');assert.equal(todayRequest.get('handled_from'),ids.today);assert.equal(todayRequest.get('handled_to'),ids.today);assert.equal(todayRequest.get('closure_kind'),'dismissed');
-  await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor("new URLSearchParams(location.search).get('view')==='list'&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false");assert.equal(reads.length,2);metrics.unlockedOnBoard=true;
-  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','completed');await b.waitFor("document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false");
+  await clickWorkbenchControl(b,'.view-tabs button[aria-pressed=false]');await b.waitFor(`new URLSearchParams(location.search).get('view')==='list'&&${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false`);assert.equal(reads.length,2);metrics.unlockedOnBoard=true;
+  await chooseWorkbenchSelect(b,'[data-field-label=结束方式]','completed');await b.waitFor(`${handledListLoaded}&&document.querySelector('.list-group[aria-label=已处理] .column-heading>span')?.textContent==='4'&&document.querySelector('[data-field-label=结束方式] [data-slot=select-trigger]')?.disabled===false`);
   assert.equal(await b.evaluate("document.querySelector('.search-main input[name=q]').value"),draft);assert.equal(reads.length,3);assert.ok(reads.every(row=>row.status===200));assert.ok(reads.length<20);assert.deepEqual(posts,[]);assert.deepEqual((await f.pool.query('SELECT id::text,status,version,assignee_id::text FROM pilot_ticket.ticket ORDER BY id')).rows,before);assert.deepEqual((await f.pool.query('SELECT count(*)::integer AS count FROM pilot_ticket.ticket_event')).rows,eventCount);metrics.released={dismissedToday:4,completedToday:4,qPreserved:true};metrics.searchRequests=reads.length;metrics.businessPosts=posts;
  }catch(error){failure=error;}
  finally{
@@ -392,7 +395,7 @@ test('Card 17 stages, date presets and custom calendar keep the original read-on
     for(const [preset,from] of [['today',day],['week',week],['month',day.slice(0,8)+'01'],['recent',null]] as const){
       await clickWorkbenchControl(browser,`[data-date-preset=${preset}]:not([data-compact])`);
       await browser.waitFor(`new URLSearchParams(location.search).get('range')===${JSON.stringify(from?'custom':'recent')}&&${from?`new URLSearchParams(location.search).get('handled_from')===${JSON.stringify(from)}`:'true'}`);
-      await browser.waitFor("document.querySelector('.board-column.handled .column-cards')!==null");
+      await browser.waitFor(boardColumnReady('handled'));
       await waitRead(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='handled'&&p.get('range')===(from?'custom':'recent')&&(!from||p.get('handled_from')===from&&p.get('handled_to')===day);});
       assert.ok(reads.some(url=>{const p=new URL(url,f.origin).searchParams;return p.get('column')==='handled'&&p.get('range')===(from?'custom':'recent')&&(!from||p.get('handled_from')===from&&p.get('handled_to')===day);}),'preset must send its existing range parameters: '+preset);
     }
@@ -495,7 +498,7 @@ test('Card 12 category, state heat, missing fields and loaded filters use the re
   assert.ok(Date.now()-Date.parse(expected)<4*3_600_000);
   assert.equal(await browser.evaluate(`Boolean(document.querySelector(${JSON.stringify(activeCard+' .ds-ticket-heat[data-heat-tone=danger]')}))`),false);
   await chooseWorkbenchSelect(browser,'[data-field-label=类别]',service.category);
-  await browser.waitFor("document.querySelectorAll('.ticket-card').length===1");
+  await browser.waitFor(boardColumnsReady+"&&document.querySelectorAll('.ticket-card[data-item-id]').length===1");
   assert.equal(await browser.evaluate("document.querySelector('.ticket-card').dataset.itemId"),first.ticket.id);
   assert.equal(await browser.evaluate('globalThis.__t42Writes.length'),0,'filtering is read-only and never a command');
   await chooseWorkbenchSelect(browser,'[data-field-label=处理人]','unassigned');
@@ -509,7 +512,7 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   const original=await get('/api/tickets/'+first.ticket.id);
   await browser.command('Page.bringToFront');
   if(trigger==='pointer')await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card12ActiveHeld=false;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/board?column=active')&&globalThis.__t42Writes.length){globalThis.__card12ActiveHeld=true;await new Promise(resolve=>{globalThis.__card12ReleaseActive=resolve;});}return response;};})()`);
-  await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.matches('.ticket-card'))globalThis.__card12Motions.push({id:this.dataset.itemId,duration:options.duration,frames});return animate.call(this,frames,options);};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
+  await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){const animation=animate.call(this,frames,options);if(this.matches('.ticket-card')){const {duration,easing}=animation.effect.getTiming();globalThis.__card12Motions.push({id:this.dataset.itemId,duration,easing,frames});}return animation;};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')}).dataset.tone`),'secondary');
   if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'e',code:'KeyE',windowsVirtualKeyCode:69});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'e',code:'KeyE',windowsVirtualKeyCode:69});}
@@ -526,7 +529,14 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   assert.deepEqual(body,{client_command_id:body.client_command_id,expected_version:original.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:original.resolver_team_id});
   const result=await get('/api/tickets/'+first.ticket.id);assert.equal(result.status,'IN_PROGRESS');assert.equal(result.assignee_id,actor.id);
   const motions:unknown=await browser.evaluate('globalThis.__card12Motions');assert.ok(Array.isArray(motions));
-  assert.ok(motions.some(motion=>object(motion).id===first.ticket.id&&object(motion).duration===180));
+  const timing=object(await browser.evaluate(`(()=>{
+    const styles=getComputedStyle(document.documentElement),raw=styles.getPropertyValue('--dur-move').trim();
+    const duration=Number.parseFloat(raw)*(raw.endsWith('ms')?1:1000);
+    const easing=new KeyframeEffect(null,[],{easing:styles.getPropertyValue('--ease-soft').trim()}).getTiming().easing;
+    return {duration,easing};
+  })()`));
+  assert.ok(motions.some(motion=>{const {id,duration,easing}=object(motion);return id===first.ticket.id&&duration===timing.duration&&easing===timing.easing;}),
+    'the confirmed claim uses --dur-move and --ease-soft');
   assert.equal(await browser.evaluate("Boolean(document.querySelector('.detail-dialog'))"),false,'the plain action needs no detail detour');
 },{realtime:false}));
 
@@ -578,10 +588,13 @@ test('Card 20 K3 K4 categories, spacing and clear filters use real synthetic pro
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);
   browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);const b=browser;
-  await b.waitFor("document.querySelectorAll('.column-cards').length===3&&document.querySelector('[data-summary-filter=mine] .ds-summary-value')?.textContent==='3'");
+  await b.waitFor(boardColumnsReady+"&&document.querySelector('[data-summary-filter=mine] .ds-summary-value')?.textContent==='3'");
   assert.equal(await b.evaluate("getComputedStyle(document.querySelector('.connection-status'),'::before').display"),'none');
   assert.equal(await b.evaluate("(()=>{const toggle=document.querySelector('.topbar .icon-button'),settings=document.querySelector('.topbar-settings'),a=toggle.getBoundingClientRect(),z=settings.getBoundingClientRect();return toggle.dataset.tone==='ghost'&&a.width===z.width&&a.height===z.height&&a.width===32;})()"),true);
-  for(const selector of ['.board-column.pending [data-action=expand-column]','.board-column.active [data-action=expand-column]'])await clickWorkbenchControl(b,selector);
+  for(const selector of ['.board-column.pending [data-action=expand-column]','.board-column.active [data-action=expand-column]']){
+   await clickWorkbenchControl(b,selector);
+   await b.waitFor(`document.querySelector(${JSON.stringify(selector)})?.getAttribute('aria-expanded')==='true'`);
+  }
   const cases=[{index:1,label:null,ring:null},{index:2,label:'12 分钟',ring:null},{index:5,label:'45 分钟',ring:null},{index:8,label:'2 小时',ring:'attention'},{index:6,label:'超时 5 小时',ring:'danger'},{index:0,label:'超时 1 天',ring:'danger'}];
   for(const item of cases){const ticket=f.tickets[item.index];assert.ok(ticket);const selector='.board .ticket-card[data-item-id="'+ticket.ticket.id+'"]';
    assert.deepEqual(await b.evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});return {label:e.querySelector('.ds-ticket-heat')?.textContent??null,ring:e.dataset.ring??null};})()`),{label:item.label,ring:item.ring});
@@ -622,7 +635,7 @@ test('Card 20 K3 K4 categories, spacing and clear filters use real synthetic pro
   // Observe the existing date read so summary selection captures the current range scope.
   await b.evaluate("(()=>{const original=globalThis.fetch;globalThis.__card27CurrentDateRead=false;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/board?')){const q=new URL(String(path),location.href).searchParams;if(q.get('column')==='handled'&&q.get('range')==='custom'&&response.ok)globalThis.__card27CurrentDateRead=true;}return response;};})()");
   await clickWorkbenchControl(b,'[data-date-preset=today]:not([data-compact])');
-  await b.waitFor("globalThis.__card27CurrentDateRead===true&&new URLSearchParams(location.search).get('range')==='custom'&&document.querySelectorAll('.column-cards').length===3");
+  await b.waitFor("globalThis.__card27CurrentDateRead===true&&new URLSearchParams(location.search).get('range')==='custom'&&"+boardColumnsReady);
   await clickWorkbenchControl(b,'[data-summary-filter=overdue]');
   await b.waitFor("document.querySelector('[data-summary-filter=overdue]').getAttribute('aria-pressed')==='true'");
   await chooseWorkbenchSelect(b,'[data-field-label=类别]','ENDPOINT_PRINT');
@@ -644,7 +657,7 @@ test('Card 20 K3 K4 categories, spacing and clear filters use real synthetic pro
 test('Card 20 K3 unavailable ownership projection omits the count and explains why',{timeout:240000},()=>withWeb01Fixture(async(f:T11Fixture)=>{
  let browser:NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>|undefined,failure:unknown;
  try{const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);
-  await browser.waitFor("document.querySelectorAll('.column-cards').length===3");assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value')===null"),true);assert.match(String(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').title")),/当前没有本人处理关系资料，暂无法统计/u);
+  await browser.waitFor(boardColumnsReady);assert.equal(await browser.evaluate("document.querySelector('[data-summary-filter=mine] .ds-summary-value')===null"),true);assert.match(String(await browser.evaluate("document.querySelector('[data-summary-filter=mine]').title")),/当前没有本人处理关系资料，暂无法统计/u);
  }catch(error){failure=error;}await closeBrowserTestResources([async()=>{await browser?.close();}],failure);
 }));
 
@@ -654,9 +667,11 @@ test('R1 R2 R5 card22 avatars, shared overdue membership and aligned board filte
  const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')posts.push(new URL(request.url??'/',f.origin).pathname);};f.runtime.server.on('request',observe);
  try{
   const cookie=f.browserCookies[0];assert.ok(cookie);browser=await launchSystemBrowser({url:f.origin+'/workbench/app/',width:1920,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);
-  const ready="Boolean(document.querySelector('[data-summary-filter=overdue] .ds-summary-value'))&&document.querySelectorAll('.column-cards .ticket-card').length>=9";
-  await browser.waitFor(ready);await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
-  await browser.waitFor("document.querySelectorAll('.board [data-heat-tone=danger]').length===2");
+  const ready=boardColumnsReady+"&&Boolean(document.querySelector('[data-summary-filter=overdue] .ds-summary-value'))&&document.querySelectorAll('.column-cards .ticket-card[data-item-id]').length>=9";
+  const expandColumns="[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())";
+  const columnsExpanded="!document.querySelector('[data-action=expand-column][aria-expanded=false]')";
+  await browser.waitFor(ready);await browser.evaluate(expandColumns);
+  await browser.waitFor(columnsExpanded+"&&document.querySelectorAll('.board [data-heat-tone=danger]').length===2");
   const cards=await browser.evaluate("[...document.querySelectorAll('.board [data-item-id]')].map(n=>({id:n.dataset.itemId,kind:n.dataset.kind,column:n.closest('.board-column').className,heat:n.querySelector('[data-heat-tone]')?.dataset.heatTone??null}))") as {id:string;kind:string;column:string;heat:string|null}[];
   for(const [key,tone] of [['a','danger'],['b','danger'],['c','warning'],['d',null],['e',null]])assert.equal(cards.find(card=>card.id===ids[key??''])?.heat,tone,key??'');
   assert.equal(await browser.evaluate("Number(document.querySelector('[data-summary-filter=overdue] .ds-summary-value').textContent)"),2);
@@ -666,7 +681,8 @@ test('R1 R2 R5 card22 avatars, shared overdue membership and aligned board filte
   await chooseWorkbenchSelect(browser,'[data-field-label="类别"]','unclassified');
   const active=await card22Filters(browser,'.ds-board-search');assertCard22Filters(active);assert.ok(active.chips.some(chip=>chip.active));metrics.push({R5:'board-active',...active});await captureCard22(browser,directory,'toolbar-board-1440','.ds-board-toolbar-bottom');
   await clickWorkbenchControl(browser,'[aria-label="清除类别筛选"]');
-  await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
+  await browser.waitFor(`!document.querySelector('[aria-label="清除类别筛选"]')&&${ready}`);
+  await browser.evaluate(expandColumns);await browser.waitFor(columnsExpanded);
   await captureCard22(browser,directory,'avatar-board-owner','.board [data-item-id="'+ids.b+'"] .ds-ticket-owner');
   await captureCard22(browser,directory,'avatar-sidebar-account','.account-menu-trigger');
   await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');
@@ -677,8 +693,8 @@ test('R1 R2 R5 card22 avatars, shared overdue membership and aligned board filte
   metrics.push({R1:'drawer',avatars:await assertCard22Avatars(browser)});await captureCard22(browser,directory,'drawer-1920');await captureCard22(browser,directory,'avatar-drawer-owner','.property-field:has(.lucide-headset) dd');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});await captureCard22(browser,directory,'drawer-1440');
   await f.pool.query("UPDATE intake.manual_review_item SET created_at=platform.local_now()-interval '5 hours' WHERE status='PENDING'");
-  await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor(ready);await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column]')].filter(n=>n.getAttribute('aria-expanded')==='false').forEach(n=>n.click())");
-  await browser.waitFor("document.querySelectorAll('.board [data-heat-tone=danger]').length===3");
+  await browser.command('Page.navigate',{url:f.origin+'/workbench/app/'});await browser.waitFor(ready);await browser.evaluate(expandColumns);
+  await browser.waitFor(columnsExpanded+"&&document.querySelectorAll('.board [data-heat-tone=danger]').length===3");
   const red=await browser.evaluate("[...document.querySelectorAll('.board [data-heat-tone=danger]')].map(n=>({id:n.closest('[data-item-id]').dataset.itemId,kind:n.closest('[data-kind]').dataset.kind}))") as {id:string;kind:string}[];
   assert.ok(red.some(row=>row.kind==='review'));assert.equal(await browser.evaluate("Number(document.querySelector('[data-summary-filter=overdue] .ds-summary-value').textContent)"),red.length);
   await clickWorkbenchControl(browser,'[data-summary-filter=overdue]');await browser.waitFor("document.querySelectorAll('.board [data-item-id]').length===3");

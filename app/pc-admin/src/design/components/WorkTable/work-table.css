@@ -75,6 +75,7 @@
 .work-table.ds-work-table .ds-list-note>td {height:var(--space-8);font-size:var(--fs-xs);color:var(--text-tertiary);text-align:left;}
 @container work-table (max-width:1080px) {
   .work-table.ds-work-table .ds-work-row>th,.work-table.ds-work-table thead th:first-child {position:sticky;left:0;z-index:var(--z-sticky);background:var(--bg-canvas);box-shadow:var(--shadow-list-sticky);}
+  .work-table.ds-work-table .ds-work-row>th {background-color:inherit;}
   .work-table.ds-work-table .ds-work-row:is(:hover,:focus-within)>th {background:var(--bg-subtle);}
   .work-table.ds-work-table .ds-work-row.is-selected>th {background:var(--brand-subtle);box-shadow:var(--shadow-list-selected-sticky);}
 }
@@ -107,3 +108,5 @@
 .ds-work-table thead th:last-child:has(.ds-stale-retry)>.ds-work-header-label {display:block;line-height:var(--lh-xs);}
 .ds-work-table thead .ds-stale-retry {display:flex;align-items:center;contain:inline-size;height:var(--lh-xs);margin-left:0;line-height:var(--lh-xs);}
 .ds-work-table thead .ds-stale-retry .ds-button.button[data-tone] {height:var(--lh-xs);min-height:var(--lh-xs);line-height:var(--lh-xs);}
+/* Card 36B B3: float NewItemsChip centred below the sticky 36px table header without shifting rows. */
+.ds-table-chip-anchor {position:sticky;top:var(--space-0);z-index:var(--z-dropdown);height:0;overflow-anchor:none;--new-items-chip-top:calc(var(--space-8) + var(--space-1) + var(--space-2));}

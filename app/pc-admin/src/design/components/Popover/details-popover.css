@@ -1,12 +1,17 @@
 /* Native details retain their original summary/selectors and command owners.
-   content-visibility switches discretely at exit end; only transform/opacity interpolate. */
+   content-visibility becomes visible immediately on open so descendants are focusable at t=0,
+   and switches discretely at exit end; only transform/opacity interpolate. */
 html body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {
   opacity:0;transform:scale(var(--scale-popover));transform-origin:top right;content-visibility:hidden;
   transition:opacity var(--dur-instant) var(--ease-exit),transform var(--dur-instant) var(--ease-exit),content-visibility var(--dur-instant) var(--ease-exit) allow-discrete;
 }
 html body :is(.ds-drawer-more,.ds-toolbar-filters)[open]::details-content {
   opacity:1;transform:none;content-visibility:visible;
-  transition-duration:var(--dur-fast);transition-timing-function:var(--ease-standard);
+  transition:opacity var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard),content-visibility 0s allow-discrete;
 }
-@media(prefers-reduced-motion:reduce){html body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition-property:opacity,content-visibility;}}
-html[data-motion-reduced] body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition-property:opacity,content-visibility;}
+@media(prefers-reduced-motion:reduce){
+  html body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition:opacity var(--dur-instant) var(--ease-exit),content-visibility var(--dur-instant) var(--ease-exit) allow-discrete;}
+  html body :is(.ds-drawer-more,.ds-toolbar-filters)[open]::details-content {transition:opacity var(--dur-fast) var(--ease-standard),content-visibility 0s allow-discrete;}
+}
+html[data-motion-reduced] body :is(.ds-drawer-more,.ds-toolbar-filters)::details-content {transform:none;transition:opacity var(--dur-instant) var(--ease-exit),content-visibility var(--dur-instant) var(--ease-exit) allow-discrete;}
+html[data-motion-reduced] body :is(.ds-drawer-more,.ds-toolbar-filters)[open]::details-content {transition:opacity var(--dur-fast) var(--ease-standard),content-visibility 0s allow-discrete;}

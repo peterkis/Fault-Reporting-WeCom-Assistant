@@ -2,9 +2,9 @@
 
 ## 动效
 
-v2.2.9 / 卡36A。
+v2.2.9 / 卡36A、卡36B。
 
-依据原型「08 动效系统 v2.2.9」A、B、E、F 与卡36。本章是工作台动效的唯一规格入口；旧章节的时长、提示延迟与技术描述以前向规则为准。36A 交付工具与控件，数据、详情和在场的业务接线分别留给36B、36C。
+依据原型「08 动效系统 v2.2.9」A、B、C、E、F 与卡36。本章是工作台动效的唯一规格入口；旧章节的时长、提示延迟与技术描述以前向规则为准。36A 交付工具与控件，36B 交付数据动效（C1–C3）与 `NewItemsChip` 胶囊，详情和在场的业务接线留给36C。
 
 ### 令牌
 
@@ -35,7 +35,7 @@ v2.2.9 / 卡36A。
 
 1. **有因才动**：只有数据变化、层级切换和操作反馈触发动效。首次加载、换视图、改筛选时内容直接到位。
 2. **自己的操作不等动画**：界面立即响应；下一次操作从当前视觉状态接续，不排队。
-3. **别人的变化要看得见**：他人或系统触发的移动/新增追加1.2秒阶段浅色高亮；自己操作只位移。该业务判定由36B接线。
+3. **别人的变化要看得见**：他人或系统触发的移动/新增追加1.2秒阶段浅色高亮；自己操作只位移。该业务判定由36B展示层写入登记接线。
 4. **时长按距离分档**：原地≤180ms、浮层≤240ms、跨列320ms；退出更快。高亮和来源提示使用各自专用时长。
 5. **只动合成属性**：公共WAAPI工具只允许transform、opacity、background-color。E2用transform改变滑块的视觉宽度；E3唯一布局例外为grid的0fr→1fr，内层overflow:hidden，绝不插值height/top/left。E2文字颜色、E6既有阴影属于卡片明确指定的CSS例外。原生details用content-visibility离散切换维持退出期间的可见性，该属性不做插值。
 6. **减少动态效果**：取消位移与缩放，保留≤120ms淡入淡出；折叠直接展开，数字直接替换；高亮保留1.2秒后直接移除。
@@ -52,24 +52,32 @@ v2.2.9 / 卡36A。
 | E6 卡片悬停 | 既有上浮1px与阴影一档，fast / standard | 无位移与过渡 | 即时反向 |
 | E7 tooltip | 首次悬停delay-tooltip，opacity instant / standard；相邻提示不再等待 | 仅opacity | 离开即取消等待，进入相邻提示复用热身状态 |
 | Toast | 卡33原轨迹，base进入、fast退出，ease-toast | 原卡33静态表现 | 原卡33行为 |
-| FLIP工具（36B接线） | transform；传入duration/easing Token；最多同时6个，可静态抬高阴影与层级 | 已完成占位，无位移 | 同元素从当前视觉位置继续 |
-| highlight工具（36B/36C接线） | intake/active/done/brand浅色→原背景，highlight / standard | 底色保持highlight后移除 | 重复调用重新计时 |
-| NumberRoll工具（36B接线） | 增加向上、减少向下，整值滚动一行高，base / standard，等宽数字、预留较宽值 | 直接替换 | 只取最新值；`animate={false}`禁止滚动 |
-| useExitPresence工具（36C接线） | 消失后按传入duration Token保留，再卸载 | 保留时间0 | 再次出现取消卸载；页面隐藏直接结束 |
+| FLIP工具（36B已接线） | transform（支持可选 `fadeOut`/`end` 供飞向折叠分组头或列可视边缘在末30%淡出）；传入duration/easing Token；最多同时6个，可静态抬高阴影与层级 | 已完成占位，无位移 | 同元素或跨列重挂均从当前视觉位置继续 |
+| highlight工具（36B已接线 / 36C复用） | intake/active/done/brand浅色→原背景，highlight / standard | 底色保持highlight后移除 | 重复调用重新计时 |
+| NumberRoll工具（36B已接线） | 增加向上、减少向下，整值滚动一行高，base / standard，等宽数字、预留较宽值 | 直接替换 | 只取最新值；`animate={false}`禁止滚动 |
+| useExitPresence工具（36B胶囊已接线 / 36C复用） | 消失后按传入duration Token保留，再卸载 | 保留时间0 | 再次出现取消卸载；页面隐藏直接结束 |
+| C1 跨列与让位 | 服务端确认后，移动卡move / soft + lift；让位/收拢base / standard；飞入折叠分组（已完成/已关闭）飞向分组头并在末30%淡出；目标在可视区外飞向列可视边缘并淡出，不自动滚动；最多6张（移动卡优先） | 不位移；他人触发保留高亮 | 跨列或同列打断均从当前视觉位置接续 |
+| C2 到达、高亮与胶囊 | 新卡直接落位（保留待接单置顶与详情打开时的顺序冻结，不再隐藏延迟）；可视区内上移 `--shift-md` + opacity，base / standard，随后按所在列阶段色 `highlight`；恢复高亮 `closure-restored` 并入 `highlight`（看板取列阶段色、列表取 `brand`）；落点在可视区外时显示 `NewItemsChip` 胶囊（`--shift-sm` + opacity，进fast / standard，出fast / exit） | 不滑入；底色保留highlight后直接移除；胶囊仅opacity；点击滚动用auto | 同卡更新重计时；连续到达合并计数，不弹出第二枚胶囊 |
+| C3 列表行与计数 | 表格行不做位移，换组或新行直接出现在新位置并 `brand` 高亮（仅他人/系统触发）；新行在可视区外时在表头下方复用 `NewItemsChip`；看板列头、分组（已完成/已关闭等）、列表分组、顶部摘要 `BoardSummary` 及侧栏在线同事人数接入 `NumberRoll`（仅数值滚动，「…」「—」保持静态） | 行保留静态高亮，数字直接替换 | 数字只取最新值；首次渲染与筛选/搜索/切视图/切范围不滚动 |
 
-公共工具在页面隐藏时直接到终态；系统偏好变化会清缓存并结束在途动画。`NumberRoll`首渲染静止，`aria-live="off"`，动画层aria-hidden，视觉隐藏文本只暴露最终值。
+公共工具在页面隐藏时直接到终态；系统偏好变化会清缓存并结束在途动画。`NumberRoll`首渲染静止，`aria-live="off"`，动画层aria-hidden且通过伪元素呈现，视觉隐藏文本只暴露最终值（父级计数的 `textContent` 恒等于最终数字）。自己 / 他人判定使用展示层短时写入登记（仅记录当前账号最近成功提交的事项键并按首次确认消费、带超时上限），无新增接口字段；无法确认时按他人处理。
+
+### 新条目提示胶囊 `NewItemsChip`（v2.2.9 / 卡36B）
+
+共享组件位于 `app/pc-admin/src/design/components/NewItemsChip/`，供看板列、列表视图及 36C 时间线复用。
+
+- **DOM 与定位**：持久容器 `<div class="ds-new-items-chip-region" role="status" data-new-items-chip-region>` 采用 `position:absolute; left:0; right:0; margin-inline:auto; width:max-content` 居中（不用 `transform` 居中），纵坐标取 `top: var(--new-items-chip-top, var(--space-2))`，由调用方提供定位锚点，不改变列头/表头高度也不推动下方内容。
+- **内容与外观**：`count === 0` 时经 `useExitPresence(visible, '--dur-fast')` 退出并卸载；可见时渲染可键盘聚焦的 `<button type="button" class="ds-new-items-chip" data-new-items-chip data-direction>`，文案为 `↑ N 条新{noun}` / `↓ N 条新{noun}`（看板与列表为「工单」）。深色底 `--text-primary`、白字 `--text-inverse`、高 `--space-6`（24px）、圆角 `--radius-lg`（12px）、阴影 `--shadow-2`。
+- **交互与动效**：进入为 `translateY(var(--shift-sm))` → `0` + opacity，`--dur-fast` `--ease-standard`；退出为 `--dur-fast` `--ease-exit`；减少动态效果时仅保留 opacity。点击平滑滚动（减少动态效果为 `auto`）至最早一条新项并对全部新项触发 `highlight`，胶囊消失；用户自行滚动使新项进入视口（IntersectionObserver）时胶囊自动消失并触发一次高亮；连续到达合并计数。
 
 列表的阶段、子分组和「显示剩余 N 项 / 收起」均按原生表内行即时显隐，不使用嵌套表、grid容器或退出保留计时；数据单元格与外层`scope=col`列头属于同一张表。原有`hidden`、行ID、`aria-controls`、`aria-expanded`、row-link和键盘E领取语义保留。看板和抽屉的E3仍为grid折叠：待受理的相邻分组在grid item上补偿原block布局向下一组折叠的末卡间距，末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
 
-兼容性记录：existing card16 arrival highlight now follows --dur-highlight (2000→1200ms, --ease-standard); 36B owns C2。保留既有到达表现，本次仅令牌化；Card16测试从页面读取计算后的时长令牌，并精确断言为1200ms，减少动态效果时仍不得产生该到达动画。
+前向替换记录（卡36B，2026-11-19 负责人确认）：取代卡16「滚动或打开详情时暂存新卡并显示列头幽灵按钮『N 条新报修』」的延迟机制。新卡始终直接落位（保留待接单置顶与打开详情时的 `holdOrder` 顺序冻结），页面不自动跳转（依赖浏览器默认滚动锚定）；落点在视口外时改为列头下方居中的 `NewItemsChip`（「↑ N 条新工单」/「↓ N 条新工单」）。旧 `closure-restored` 关键帧已删除，并入 `highlight()`。
 
-下表记录画板C/D与F的后续规范，**实现及业务接线待36B/36C**，不把36A的本地检查当作这些动效已交付。
+下表记录画板D与F的后续规范，**实现及业务接线待36C**，不把36A/36B的本地检查当作这些动效已交付。
 
 | 后续动效 | 规格 | 减少动态效果 | 打断 |
 | --- | --- | --- | --- |
-| C1 跨列与让位 | 服务端确认后，移动卡move / soft；让位base / standard；最多6张 | 不位移；他人触发保留高亮 | 新位置从当前视觉位置继续 |
-| C2 到达、高亮与胶囊 | md上移 + opacity，base / standard；阶段浅色highlight；胶囊sm + opacity，fast | 不滑入；底色保留highlight后直接移除，滚动用auto | 同卡更新重计时；连续到达合并计数 |
-| C3 行与数字 | 行直接到位并brand高亮；数字整值增加向上、减少向下，base / standard，预留较宽值 | 行保留静态高亮，数字直接替换 | 只取最新值，首次/筛选/切视图不滚动 |
 | D1 抽屉与返回提示 | 进入lg + opacity，slow / soft；退出16px（既有space-4）+ opacity，base / exit；遮罩同步；返回brand浅色return | 仅opacity，≤fast；返回色保留后直接移除 | 打开途中Esc从当前状态退出 |
 | D2 上一张/下一张 | 正文md，出fast / exit、进base / standard；工具栏不动，方向相反 | 直接替换 | 连续按键只播最后一次 |
 | D3 时间线新条目 | 他人条目同C2：md + base + highlight；阅读不在顶部时复用共享 `NewItemsChip`（`noun="记录"`，「↑ N 条新记录」） | 不滑入，底色静态保留highlight；胶囊仅opacity | 同条目更新重计时，不改变阅读位置 |
@@ -473,7 +481,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 ### 4.4 层级与动效
 
 - z-index：sticky 10 → dropdown 40 → drawer 50 → modal 60 → toast 70 → tooltip 80，禁止其它数字。
-- 时长、曲线、位移、减少动态效果与打断规则统一见[动效](#动效)。36B/36C的业务接线按子卡边界推进。
+- 时长、曲线、位移、减少动态效果与打断规则统一见[动效](#动效)。36B已接入看板/列表数据动效与胶囊，36C的业务接线按子卡边界推进。
 
 ### 4.5 焦点规则（修订 10-29 版本）
 
@@ -548,7 +556,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 - 状态：hover 底色加深一级；pressed `--bg-active`；普通 disabled 文字 `--text-tertiary`、不降透明度；只读禁用控件见[状态](#状态v228--卡35a)；loading 保持宽度，文字替换为 14px spinner。
 - 按钮组顺序：从左到右 ghost → secondary → primary；弹窗底部「取消」在左、「确认」在右。
 - MUST NOT：近黑实心按钮（现有 `take-and-start`、`complete-ticket`、`send-conversation-reply` 的 `--text-1` 底色）、任何硬编码蓝。
-- HeroUI 映射：`primary`→`variant="primary"`，`secondary`→`variant="outline"`（或自定义），`ghost`→`variant="ghost"`。封装为 `<WbButton tone>`，业务代码不直接写 HeroUI variant。
+- HeroUI 映射：`primary`→`variant="primary"`，`secondary`→`variant="outline"`（或自定义），`ghost`→`variant="ghost"`。封装为 `<WbButton tone>`，业务代码不直接写 HeroUI variant。高频静止卡片工具入口可使用同目录轻量化原语 `CardActionButton`（`design/components/Button/Button.tsx`），保持 E1 指针与键盘按压反馈（`data-pressed`）、不因长按 Enter/Space 重复触发及只读禁用提示。
 
 ### 6.2 表单控件
 
@@ -599,7 +607,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 
 ### 6.6 看板列 BoardColumn
 
-2026-11-04 当前正式视觉基准为用户离线原型 **01**；06–08均为讨论稿，不参与验收。当前列头为26px高、13px/600阶段胶囊（虚线环/半填环/勾选圆），计数在胶囊外，13px secondary；无顶部色条。列头内控件（排序、「N 条新报修」）同为26px高，出现或消失时不改变列头高度、不推动卡片。下方卡10的色条/胶囊计数叙述仅保留历史语境，当前以本段及卡17为准。
+2026-11-04 当前正式视觉基准为用户离线原型 **01**；06–08均为讨论稿，不参与验收。当前列头为26px高、13px/600阶段胶囊（虚线环/半填环/勾选圆），计数在胶囊外，13px secondary；无顶部色条。列头内排序控件为26px高；新到达事项在可视区外时，不再在列头渲染旧的「N 条新报修」按钮，改由列头下方居中浮动的 `NewItemsChip` 胶囊（「↑ N 条新工单」/「↓ N 条新工单」）提示，出现或消失时不改变列头高度、不推动卡片（详见[动效](#动效)）。下方卡10的色条/胶囊计数叙述仅保留历史语境，当前以本段及卡17、卡36B为准。
 
 - v2.1 卡 10：列底 `--bg-column`、圆角 12、内边距 8；看板底 `--bg-board`。不染整列。
 - 列头：顶部 3px 阶段 accent 色条、阶段 bg 底、圆点 + 名称 14/600、白色半透明计数胶囊、右侧排序菜单；计数仅为当前筛选后已加载项，分页仍沿服务器游标。
@@ -845,9 +853,12 @@ app/pc-admin/src/design/
   tokens.css            第 1–3 层 Token + 旧变量兼容层（本规范附件）
   base.css              reset、排版、焦点规则（替代 heroui-workbench.css 的焦点部分）
   status-map.ts         第七章状态 → tone 映射
-  components/           Button Tag StatusBadge SourceLabel Avatar PageHeader Toolbar
-                        FilterSelect SearchField Section PropertyList Timeline
-                        EmptyState InlineAlert Drawer Modal TicketCard BoardColumn
+  components/           Button (含 CardActionButton) Link (CardLink) Tag StatusBadge
+                        SourceLabel Avatar PageHeader Toolbar FilterSelect FilterChip
+                        SearchField Section PropertyList Timeline EmptyState ErrorState
+                        InlineAlert Drawer Modal TicketCard BoardColumn BoardSummary
+                        WorkTable SegmentedControl NewItemsChip PresenceTags
+                        PresenceStack OnlineColleagues ReadOnlyBar ConnectionBar Skeleton
 features/*/             只组合 design/components，原则上不再有自己的 .css
 ```
 

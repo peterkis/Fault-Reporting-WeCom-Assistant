@@ -42,9 +42,13 @@ test('visual alternate current outputs cannot target official baselines or escap
   assert.throws(() => transientCurrentRoot(root, path.join(root, '.build/visual/../../docs')));
   assert.throws(() => transientCurrentRoot(root, path.join(root, '..', 'elsewhere')));
 });
-test('visual manifest: exact 18 names, viewport and mandatory override/mask reasons', () => {
+test('visual manifest: 19 screens including the board arrival chip, with strict overrides and masks', () => {
   validateManifest(manifest);
-  assert.equal(manifest.length, 18);
+  assert.equal(manifest.length, 19);
+  const boardNewChip = manifest.find((screen) => screen.name === 'board-new-chip');
+  assert.ok(boardNewChip);
+  assert.deepEqual(boardNewChip.viewport, { width: 1440, height: 1000, dpr: 1 });
+  assert.deepEqual(boardNewChip.prepare, ['seed-board', 'board-new-chip']);
   for (const screen of manifest) {
     assert.deepEqual(screen.threshold, DEFAULT_THRESHOLD);
     assert.deepEqual(screen.mask, []);
@@ -120,7 +124,7 @@ test('visual missing baseline/current produces a complete readable report and fa
     const report = JSON.parse(await readFile(path.join(dir, 'report/report.json'), 'utf8')) as {
       results: unknown[];
     };
-    assert.equal(report.results.length, 18);
+    assert.equal(report.results.length, 19);
     assert.match(
       await readFile(path.join(dir, 'report/index.html'), 'utf8'),
       /Current screenshot is missing/u,
@@ -340,7 +344,7 @@ async function withReceiptFixture(
   }
 }
 
-test('visual partial capture cannot silently reuse 17 old PNGs; named subset is explicit', async () => {
+test('visual partial capture cannot silently reuse 18 old PNGs; named subset is explicit', async () => {
   await withReceiptFixture(async ({ options, meta }) => {
     assert.equal(await compare(options), 0);
     const first = manifest[0];
@@ -354,7 +358,7 @@ test('visual partial capture cannot silently reuse 17 old PNGs; named subset is 
       unrecorded: string[];
       results: { status: string; current: string | null }[];
     };
-    assert.equal(report.unrecorded.length, 17);
+    assert.equal(report.unrecorded.length, 18);
     assert.ok(
       report.results
         .filter((row) => row.status === 'unrecorded')
@@ -371,7 +375,7 @@ test('visual partial capture cannot silently reuse 17 old PNGs; named subset is 
     };
     assert.equal(selected.scope, 'named-subset');
     assert.deepEqual(selected.selected_screens, [first.name]);
-    assert.equal(selected.not_compared.length, 17);
+    assert.equal(selected.not_compared.length, 18);
     await assert.rejects(compare({ ...options, names: ['unknown-screen'] }));
   });
 });

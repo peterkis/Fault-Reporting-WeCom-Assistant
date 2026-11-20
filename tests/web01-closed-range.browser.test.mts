@@ -11,6 +11,7 @@ import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {boardColumnReady,boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
 
 interface Fixture {pool:PostgresPool;origin:string;tickets:{ticket:{id:string}}[];cookies:string[];runtime:P2016EnabledRuntime}
 const selection='range=custom&handled_from=2024-02-29&handled_to=2024-02-29';
@@ -57,7 +58,9 @@ test('formal board applies a selected date range, preserves it across view, scop
   f.runtime.server.on('request',(request:IncomingMessage)=>{if(request.method!=='GET')writes++;});
   try{
     browser=await launchSystemBrowser({url:f.origin+'/workbench/app/?scope=team',width:1920,height:1080,cookies:[{name:cookieHeader.slice(0,separator),value:cookieHeader.slice(separator+1),url:f.origin+'/',httpOnly:true,secure:f.origin.startsWith('https:'),sameSite:'Lax'}]});assert.ok(browser);
-    await browser.waitFor('Boolean(document.querySelector(".processed-date-picker"))&&document.querySelectorAll(".board-column.handled .ticket-card").length===1');
+    const handledBoardCount=(count:number)=>`${boardColumnReady('handled')}&&document.querySelectorAll('.board-column.handled .ticket-card[data-item-id]').length===${count}`;
+    const handledListReady=`!document.querySelector('.list-group[aria-label="已处理"] [data-loading-status]')&&document.querySelectorAll('.list-group[aria-label="已处理"] tr.ds-work-row[data-item-id]').length===3`;
+    await browser.waitFor('Boolean(document.querySelector(".processed-date-picker"))&&'+handledBoardCount(1));
     // Card 10 defaults to oldest-first; this date-boundary assertion retains its explicit newest-first sequence.
     await clickWorkbenchControl(browser,'.board-column.handled .ds-column-sort');
     await clickWorkbenchControl(browser,'[data-key=newest]');
@@ -72,24 +75,24 @@ test('formal board applies a selected date range, preserves it across view, scop
     }
     await browser.waitFor("!document.querySelector('.processed-date-popover')");
     await clickWorkbenchControl(browser,'[aria-label="应用已处理日期"]');
-    await browser.waitFor('new URLSearchParams(location.search).get("range")==="custom"&&document.querySelectorAll(".board-column.handled .ticket-card").length===3');
+    await browser.waitFor('new URLSearchParams(location.search).get("range")==="custom"&&'+handledBoardCount(3));
     assert.deepEqual(await browser.evaluate('[...document.querySelectorAll(".board-column.handled .ticket-card")].map(node=>node.dataset.itemId)'),[ids.last,ids.first,ids.resolved]);
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".workspace .workspace-footnote,.range-caption"))'),false);
     await capture('new-board-1920');
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("列表")).click()');
-    await browser.waitFor('new URLSearchParams(location.search).get("view")==="list"&&document.querySelectorAll(".list-group[aria-label=已处理] tr.ds-work-row").length===3');
+    await browser.waitFor('new URLSearchParams(location.search).get("view")==="list"&&'+handledListReady);
     const priorDocument=await browser.evaluate('performance.timeOrigin');assert.equal(typeof priorDocument,'number');await browser.command('Page.reload');
     await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&Boolean(document.querySelector('.processed-date-picker'))`);
     await clickWorkbenchControl(browser,'.ds-toolbar-filters>summary');
-    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('handled_from')==='2024-02-29'&&document.querySelectorAll('.list-group[aria-label="已处理"] tr.ds-work-row').length===3`);
+    await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(priorDocument)}&&document.querySelector('.processed-date-picker')?.innerText.includes('2024')&&new URLSearchParams(location.search).get('handled_from')==='2024-02-29'&&${handledListReady}`);
     await browser.waitFor('document.querySelector("[data-action=related-scope]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-action=related-scope]');
     await browser.waitFor('new URLSearchParams(location.search).get("scope")==="related"&&document.querySelector(".scope-tabs [data-action=related-scope]").getAttribute("aria-pressed")==="true"');
     assert.equal(await browser.evaluate('new URLSearchParams(location.search).get("handled_to")'),'2024-02-29');
     await browser.waitFor('document.querySelector("[data-summary-filter=all]")?.getAttribute("aria-disabled")==="false"');await clickWorkbenchControl(browser,'[data-summary-filter=all]');
-    await browser.waitFor('new URLSearchParams(location.search).get("scope")==="team"&&document.querySelectorAll(".list-group[aria-label=已处理] tr.ds-work-row").length===3');
+    await browser.waitFor('new URLSearchParams(location.search).get("scope")==="team"&&'+handledListReady);
     await browser.evaluate('[...document.querySelectorAll(".view-tabs button")].find(button=>button.textContent.includes("看板")).click()');
     await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:960,deviceScaleFactor:1,mobile:false});
-    await browser.waitFor('document.querySelectorAll(".board-column.handled .ticket-card").length===3');
+    await browser.waitFor(handledBoardCount(3));
     assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);await capture('new-board-900');
     await typeWorkbenchDates(browser,'2024-03-02','2024-03-01');
     assert.equal(await browser.evaluate('document.querySelector("[aria-label=应用已处理日期]").disabled'),true);
@@ -105,7 +108,7 @@ test('formal board applies a selected date range, preserves it across view, scop
       ['2023-12-31','2024-01-01','12/31–01/01 没有已处理的工单'],
     ] as const){
       await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?range=custom&handled_from='+from+'&handled_to='+to});
-      await browser.waitFor(`document.querySelector('.board-column.handled .empty p')?.textContent===${JSON.stringify(expected)}`);
+      await browser.waitFor(`${boardColumnsReady}&&document.querySelector('.board-column.handled .ds-empty-state > h2')?.textContent===${JSON.stringify(expected)}`);
       assert.equal(await browser.evaluate('document.querySelectorAll(".ticket-card").length'),0,'empty date presentation cannot widen current READ');
     }
     assert.equal(writes,0);console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',custom_range:true,read_only:true,dates_survive_scope_view_reload:true,screenshots}));

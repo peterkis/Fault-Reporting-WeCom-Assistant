@@ -156,12 +156,12 @@
       "reason": "Card 36C: protect drawer reversal, switch concurrency, timeline arrivals and debounced presence through real browser timing and isolated synthetic PG fixtures."
     },
     {
-      "pattern": "^app/pc-admin/(?:(?:motion-token-rule\\.mts|eslint\\.config\\.mjs|\\.stylelintrc\\.json)$|src/(?:features/ticket-waiting/ClosureActions\\.tsx$|main\\.tsx$|design/(?:tokens\\.css$|use-board-card-motion\\.ts$|motion/|components/(?:Button|SegmentedControl|Modal|Collapse|Popover|Tooltip|Section|BoardColumn|WorkTable|PresenceTags|OnlineColleagues)/)))|^tests/(?:pc-admin-(?:motion-|card36a-)|helpers/motion-|fixtures/motion-app\\.)",
+      "pattern": "^app/pc-admin/(?:(?:motion-token-rule\\.mts|eslint\\.config\\.mjs|\\.stylelintrc\\.json)$|src/(?:features/(?:efficiency/use-board-arrivals\\.ts$|(?:manual-report|manual-review|ticket-(?:assignment|completion|handling|reopen|return-to-dispatch|takeover-completion|takeover|unassign|waiting))/)|app/(?:Workbench\\.tsx|authorization\\.ts)$|main\\.tsx$|design/(?:tokens\\.css$|use-board-card-motion\\.ts$|motion/|components/(?:Button|SegmentedControl|Modal|Collapse|Popover|Tooltip|Section|BoardColumn|BoardSummary|NewItemsChip|TicketCard|WorkTable|PresenceTags|OnlineColleagues)/)))|^tests/(?:pc-admin-(?:motion-|card36[ab]-|card16-arrivals\\.)|helpers/motion-|fixtures/motion-app\\.)",
       "profiles": [
         "pc",
         "motion"
       ],
-      "reason": "Card36A: token/WAAPI provenance, production debug exclusion and isolated E1–E7/browser API behaviour; business regression stays in the PC profile."
+      "reason": "Cards 36A/B: token and WAAPI provenance, production debug exclusion, isolated control motion, and board/list data transitions; business regression stays in the PC profile."
     },
     {
       "pattern": "^tools/visual-regression/|^tests/(?:visual/|visual-regression\\.test\\.mts$|helpers/visual-stable\\.mts$)",

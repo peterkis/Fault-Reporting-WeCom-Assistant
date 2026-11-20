@@ -12,13 +12,33 @@ export function returnCue(el:HTMLElement):ReturnCueHandle{
   const original=el.style.backgroundColor,background=getComputedStyle(el).backgroundColor;
   const color=getComputedStyle(document.documentElement).getPropertyValue('--brand-subtle').trim();
   const duration=motionToken('--dur-return');
-  let timer:ReturnType<typeof setTimeout>|undefined,released=false,holding=false;
+  let timer:ReturnType<typeof setTimeout>|undefined,holdFrame=0,released=false,holding=false;
   const reduced=prefersReducedMotion();
   el.setAttribute('data-return-cue','true');
   const animation=reduced?undefined:el.animate([{backgroundColor:color},{backgroundColor:background}],{duration,easing:motionToken('--ease-standard')});
   let complete=()=>{};const finished=new Promise<void>(resolve=>{complete=resolve;});
-  const cleanup=()=>{if(released)return;released=true;clearTimeout(timer);unsubscribe();animation?.cancel();el.style.backgroundColor=original;el.removeAttribute('data-return-cue');running.delete(el);complete();};
-  const hold=()=>{if(holding)return;holding=true;animation?.cancel();el.style.backgroundColor=color;clearTimeout(timer);timer=setTimeout(cleanup,duration);};
+  const cleanup=()=>{
+    if(released)return;
+    released=true;
+    cancelAnimationFrame(holdFrame);
+    clearTimeout(timer);
+    unsubscribe();
+    animation?.cancel();
+    el.style.backgroundColor=original;
+    el.removeAttribute('data-return-cue');
+    running.delete(el);
+    complete();
+  };
+  const hold=()=>{
+    if(holding)return;
+    holding=true;
+    animation?.cancel();
+    el.style.backgroundColor=color;
+    // The board needs a paint opportunity before the visible hold starts counting down.
+    holdFrame=requestAnimationFrame(()=>{
+      holdFrame=requestAnimationFrame(()=>{timer=setTimeout(cleanup,duration);});
+    });
+  };
   const unsubscribe=subscribeMotion(()=>{if(document.hidden)cleanup();else if(prefersReducedMotion())hold();});
   running.set(el,cleanup);
   if(reduced)hold();else if(animation)void animation.finished.then(()=>{if(!holding)cleanup();},()=>{if(!holding)cleanup();});

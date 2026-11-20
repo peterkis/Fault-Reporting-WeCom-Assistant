@@ -14,6 +14,7 @@ import {useCompletionDraft,EMPTY_COMPLETION} from './use-completion-draft';
 import type {CompletionInput} from './use-completion-draft';
 import {subscribeDrafts} from '../drafts/encrypted-drafts';
 import {StepWorkflow,useNextStep} from '../../design/components/Drawer/NextStep';
+import {markSelfWrite} from '../../design/motion/self-write';
 
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=false,presentation='inline',onOpenChange}:{ticketId:string;principal:Principal;boardMode?:boolean;presentation?:'inline'|'dialog';onOpenChange?:(open:boolean)=>void;onBlockedChange:(value:boolean)=>void}){
@@ -44,6 +45,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
       try{await draft.prepare(command);}catch{if(current()){setPending(checking?command:null);setState(checking?'unknown':'denied');setMessage(checking?'原操作仍未知；恢复存储不可用，尚未再次发送。':'草稿未能保存：本次没有提交，你的输入还在。检查浏览器存储后重试。');}return;}
       if(!current())return;
       const result=await completion.mutateAsync({command,signal:controller.signal});if(!current())return;
+      markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});
       settling.current=true;let cleaned:boolean;try{cleaned=await draft.success(command.client_command_id);}finally{settling.current=false;}if(!current())return;setValue(EMPTY_COMPLETION);setPending(null);setState('succeeded');setMessage((result.replayed?'已完工：已核对原操作结果。':'已完工，本轮工作人员处理已结束。')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();
     }catch(error){
       if(!current())return;
@@ -57,6 +59,7 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
     try{
       const result=await receipt.mutateAsync({commandId:draft.operationId,signal:controller.signal});if(!current())return;
       if(result.state==='UNKNOWN'){setState('unknown');setMessage('结果仍未知：查不到终态收据不代表未提交，请继续只读核对。');refresh();return;}
+      if(result.state==='COMMITTED')markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});
       const before=latest.current,preserve=Boolean(before.process||before.summary);settling.current=true;let cleaned:boolean;try{cleaned=result.state==='COMMITTED'?await draft.success(result.client_command_id,preserve):await draft.knownFailure(result.client_command_id,!pending,{notifyLocal:false});}finally{settling.current=false;}if(!current())return;
       if(!preserve)setValue(EMPTY_COMPLETION);setPending(null);setState(result.state==='COMMITTED'?'succeeded':'conflict');setMessage((result.state==='COMMITTED'?'已完工：已核对原操作结果。':'已核对原操作失败；请读取工单信息后明确新的操作。')+(preserve?' 较新的未提交输入已保留。':'')+(cleaned?'':' 草稿未能清空：为避免重复提交，暂时只能查看。点击重试。'));refresh();
     }catch(error){if(!current())return;if(error instanceof ApiError&&[401,403,404].includes(error.status)){await authorization(error);return;}setState('unknown');setMessage('只读核对失败，原操作仍未知；尚未发送新的操作。');}
