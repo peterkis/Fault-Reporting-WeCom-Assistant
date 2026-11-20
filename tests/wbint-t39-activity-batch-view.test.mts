@@ -9,11 +9,11 @@ import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
 // ADR-0057 card 30A: person field/order, batch view, global presence version and service-level A5 measurement.
 interface Auth {principal_id:string;csrf_token:string;session_id:string;name:string}
 function fixture(){
-  let now=100000,calls=0;const denied=new Set<string>(),forbidden=new Set<string>();let hook:((principal:string,target:WorkbenchActivityTarget)=>void)|null=null;
+  let now=100000,calls=0;const denied=new Set<string>(),forbidden=new Set<string>();let hook:((principal:string,target:WorkbenchActivityTarget)=>void|Promise<void>)|null=null;
   const service=createWorkbenchActivity({enabled:true,now:()=>now,authorize:async(auth,target)=>{
     calls++;
     if(!auth||typeof auth!=='object'||!('principal_id' in auth)||typeof auth.principal_id!=='string'||!('name' in auth)||typeof auth.name!=='string')throw Object.assign(new Error('denied'),{status:403});
-    hook?.(auth.principal_id,target);
+    const pending=hook?.(auth.principal_id,target);if(pending)await pending;
     if(forbidden.has(auth.principal_id))throw Object.assign(new Error('session revoked'),{status:403});
     if(denied.has(auth.principal_id+':'+target.id))throw Object.assign(new Error('denied'),{status:404});
     return {principal_id:auth.principal_id,display_name:auth.name,binding:auth.principal_id+':'+String('csrf_token' in auth?auth.csrf_token:'')};
@@ -27,6 +27,35 @@ function fixture(){
 }
 const batch=(targets:unknown[])=>({schema_version:1,targets});
 const p95=(samples:number[])=>{const sorted=[...samples].sort((a,b)=>a-b);return sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*0.95)-1)]??0;};
+
+test('batch view keeps a peer heartbeat while fencing lease replacements during authorization',async t=>{
+  const f=fixture();t.after(()=>f.service.close());
+  const item=f.target(),viewer=f.person('观察者'),peer=f.person('周宁'),browser=randomUUID();
+  const renew=(body=f.renew(item,browser))=>f.service.perform({authContext:{...peer},body});
+  await renew();
+
+  function readDuring(update:()=>Promise<unknown>){
+    f.onAuthorize(async principal=>{
+      if(principal!==peer.principal_id)return;
+      f.onAuthorize(null);
+      await update();
+    });
+    return f.service.batchView(viewer,batch([item]));
+  }
+
+  f.advance(5000);
+  const renewed=await readDuring(()=>renew());
+  assert.deepEqual(renewed.items[0]?.people,[{display_name:peer.name,mode:'VIEWING',field:null,expires_epoch_ms:'120000'}],
+    'a concurrent heartbeat keeps the viewer with the renewed expiry');
+
+  const switched=await readDuring(()=>renew(f.renew(item,browser,{mode:'EDITING',field:'internal-note'})));
+  assert.deepEqual(switched.items,[],'a VIEWING authorization cannot include a newly edited field');
+  const replaced=await readDuring(async()=>{
+    await f.service.perform({authContext:peer,body:{schema_version:1,browser_id:browser,action:'RELEASE',target:item}});
+    await renew(f.renew(item,browser,{mode:'EDITING',field:'internal-note'}));
+  });
+  assert.deepEqual(replaced.items,[],'a newly acquired lease requires its own authorization even at the same key');
+});
 
 test('A1 people carry the most recently edited field, editors first then display name, in single and batch views',async t=>{
   const f=fixture();t.after(()=>f.service.close());
