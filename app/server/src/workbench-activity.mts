@@ -172,7 +172,16 @@ export function createWorkbenchActivity({enabled=false,now=Date.now,authorize,wa
       const editedAt=command.mode==='EDITING'?(command.active?at:old?.editedAt??null):null;
       const mode=command.mode==='EDITING'&&editedAt!==null&&at-editedAt<10000?'EDITING':'VIEWING';
       const field=mode==='EDITING'?command.field:null,winner=editingWinner(identity.principal_id,command.target);
-      const expires=at+15000;leases.set(key,{key,browser:command.browser_id,target:command.target,authContext,identity,mode,field,viewedAt:command.active?at:old?.viewedAt??at,editedAt,expires});
+      const expires=at+15000,viewedAt=command.active?at:old?.viewedAt??at;
+      // current() uses object identity to fence a pending authorization. A heartbeat for the
+      // same live lease may extend its timestamps; a change in authorized scope replaces it.
+      if(old&&old.expires>at&&at-old.viewedAt<WORKBENCH_ACTIVITY_LIMITS.viewing_idle_ms
+        &&old.identity.principal_id===identity.principal_id&&old.identity.binding===identity.binding&&sameAuthentication(old.authContext,authContext)
+        &&old.mode===mode&&old.field===field){
+        Object.assign(old,{authContext,identity,viewedAt,editedAt,expires});
+      }else{
+        leases.set(key,{key,browser:command.browser_id,target:command.target,authContext,identity,mode,field,viewedAt,editedAt,expires});
+      }
       // A newer edit in another tab of the same person can change the merged field without changing this lease.
       if(!old||old.mode!==mode||old.field!==field||winner!==editingWinner(identity.principal_id,command.target))version++;
       notify();
