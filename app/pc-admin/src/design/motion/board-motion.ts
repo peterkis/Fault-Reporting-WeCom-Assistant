@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import type {RefObject} from 'react';
-import {canStartLiftFlip,flip,getFlipLayout,hasFreeFlipSlot} from './flip';
+import {canStartLiftFlip,flip,getFlipLayout,getFlipPosition,hasFreeFlipSlot,recordFlipLayout} from './flip';
 import type {MotionRect} from './flip';
 import {highlight} from './highlight';
 import type {HighlightTone} from './highlight';
@@ -55,11 +55,6 @@ interface LiveCard extends CardSnapshot {
 interface InFlightMove {
   el:HTMLElement;
   animation:Animation;
-  from:MotionRect;
-  to:MotionRect;
-  scrollX:number;
-  scrollY:number;
-  column:MotionColumn;
 }
 interface OffscreenEntry {
   key:string;
@@ -87,14 +82,6 @@ export function clampToColumnEdge(colRect:{top:number;bottom:number},target:{lef
     return {left:target.left,top:Math.max(0,visibleBottom-Math.min(target.height,edgeInset))};
   }
   return {left:target.left,top:target.top};
-}
-
-export function interpolateFlightOrigin(from:MotionRect,to:MotionRect,progress:number|null|undefined,deltaScrollX=0,deltaScrollY=0):MotionRect{
-  const p=typeof progress==='number'&&Number.isFinite(progress)?Math.min(1,Math.max(0,progress)):1;
-  return {
-    left:from.left+(to.left-from.left)*p-deltaScrollX,
-    top:from.top+(to.top-from.top)*p-deltaScrollY,
-  };
 }
 
 /** Pure during render (StrictMode-safe): returns true only after the current scope has settled at least once. */
@@ -155,7 +142,6 @@ function scanBoardCards(itemsByKey:Map<string,MotionItem>,inFlight:Map<string,In
   const board=document.querySelector<HTMLElement>('.board');
   if(!board)return result;
   const targetCols=columnsToScan&&columnsToScan.size<COLUMNS.length?[...columnsToScan]:COLUMNS;
-  const scrollX=window.scrollX,scrollY=window.scrollY;
   for(const column of targetCols){
     const columnEl=board.querySelector<HTMLElement>(`.board-column.${column}`);
     if(!columnEl)continue;
@@ -190,13 +176,12 @@ function scanBoardCards(itemsByKey:Map<string,MotionItem>,inFlight:Map<string,In
           const matrix=new DOMMatrixReadOnly(transform);
           left-=matrix.m41;
           top-=matrix.m42;
-        }else{
+        }else if(!isActiveFlight){
           const flipLayout=getFlipLayout(card);
           if(flipLayout){left=flipLayout.left;top=flipLayout.top;}
-          else if(isActiveFlight&&activeFlight){
-            left=activeFlight.to.left-(scrollX-activeFlight.scrollX);
-            top=activeFlight.to.top-(scrollY-activeFlight.scrollY);
-          }
+        }
+        if(isActiveFlight&&visible){
+          recordFlipLayout(card,{left,top},{x:window.scrollX,y:window.scrollY});
         }
       }
       result.set(key,{
@@ -623,8 +608,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         const flight=inFlight.current.get(oldKey)??inFlight.current.get(key);
         let fromVisual:MotionRect={left:old.left,top:old.top};
         if(flight&&flight.animation.playState==='running'&&flight.el!==curr.el){
-          const timing=flight.animation.effect?.getComputedTiming();
-          fromVisual=interpolateFlightOrigin(flight.from,flight.to,timing?.progress,window.scrollX-flight.scrollX,window.scrollY-flight.scrollY);
+          fromVisual=getFlipPosition(flight.el)??fromVisual;
           followUpHighlights.current.delete(flight.animation);
           flight.animation.cancel();
           inFlight.current.delete(oldKey);
@@ -719,7 +703,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
             const edge=colRect?clampToColumnEdge(colRect,{left:curr.left,top:curr.top,height:curr.height},viewportHeight):{left:curr.left,top:offDir==='up'?0:Math.max(0,viewportHeight-motionToken('--space-12'))};
             const animation=flip(curr.el,fromVisual,{left:curr.left,top:curr.top},{duration:'--dur-move',easing:'--ease-soft',lift:true,fadeOut:true,end:edge,scroll:currentScroll});
             if(animation.playState==='running'){
-              const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:edge,scrollX:currentScroll.x,scrollY:currentScroll.y,column:curr.column};
+              const record:InFlightMove={el:curr.el,animation};
               inFlight.current.set(key,record);
               const release=()=>{if(inFlight.current.get(key)===record)inFlight.current.delete(key);};
               void animation.finished.then(release,release);
@@ -750,7 +734,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         const toRect:MotionRect={left:curr.left,top:curr.top};
         const animation=flip(curr.el,fromVisual,toRect,{duration:'--dur-move',easing:'--ease-soft',lift:true,scroll:currentScroll});
         if(animation.playState==='running'){
-          const record:InFlightMove={el:curr.el,animation,from:fromVisual,to:toRect,scrollX:currentScroll.x,scrollY:currentScroll.y,column:curr.column};
+          const record:InFlightMove={el:curr.el,animation};
           inFlight.current.set(key,record);
           const release=()=>{
             if(inFlight.current.get(key)===record){
@@ -793,12 +777,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
           if(movedKeys.has(key)||arrivedKeySet.has(key)||!curr.visible)continue;
           if(!visuallyAffectedColumns.has(curr.column))continue;
           const activeFlight=inFlight.current.get(key);
-          if(activeFlight&&activeFlight.el===curr.el&&activeFlight.animation.playState==='running'){
-            activeFlight.to={left:curr.left,top:curr.top};
-            activeFlight.scrollX=currentScroll.x;
-            activeFlight.scrollY=currentScroll.y;
-            continue;
-          }
+          if(activeFlight&&activeFlight.el===curr.el&&activeFlight.animation.playState==='running')continue;
           if(!hasFreeFlipSlot()&&curr.el.dataset.motionFlipping!=='true')continue;
           const old=prev.get(key);
           if(!old||!old.visible||old.column!==curr.column||old.group!==curr.group)continue;

@@ -13,11 +13,12 @@ import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-work
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {assertMotion,assertNoTransformAnimations} from './helpers/motion-assert.mjs';
 import {createFilmstripCapture} from './helpers/motion-filmstrip.mjs';
+import {calibrateCard36bCpu} from './helpers/motion-cpu-calibration-36b.mjs';
 import {boardReady,captureMotionReadingPosition,expandPendingBoard,query,refreshBoard,scrollPastMotionItem,seedMotionTicket,ticketCard,ticketRow} from './helpers/motion-board-fixture.mjs';
 
 type Browser=Parameters<Parameters<typeof withT42BoardBrowser>[0]>[1];
 const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
-const evidence=process.env.CARD36B_EVIDENCE_DIR??join(root,'docs/ui/evidence/v229-card36');
+const evidence=process.env.CARD36B_EVIDENCE_DIR??join(root,'.build','card36b-evidence');
 const timeout=240000,base='/workbench/app/?range=all';
 // The Web01 fixture issues sessions in this order: actor, unauthorized outsider, teammate.
 const teammateSession=2;
@@ -232,13 +233,16 @@ test('36B B5.5 slow-mode cross-column interruption continues from the mid-flight
   }catch(error){failure=error;}finally{await closeBrowserTestResources([()=>server?.close(),()=>rm(cache,{recursive:true,force:true})],failure);}
 }));
 
-test('36B B5.6 twenty confirmed moves share six slots and record 4× long frames',{timeout},()=>withT42BoardBrowser(async(fixture,browser)=>{
+test('36B B5.6 twenty confirmed moves share six slots and record i3-calibrated long frames',{timeout},t=>withT42BoardBrowser(async(fixture,browser)=>{
   const ids=await seedMany(fixture,20,'批量换列');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1800,height:3200,deviceScaleFactor:1,mobile:false});
   await navigate(browser,fixture.origin);await expandPendingBoard(browser);await expandActiveBoard(browser);
   await browser.waitFor(`${JSON.stringify(ids)}.every(id=>document.querySelector('.board-column.pending .ticket-card[data-item-id="'+id+'"]')?.checkVisibility())`);
+  const calibration=await calibrateCard36bCpu(browser);
+  t.diagnostic(`B5.6 CPU calibration ${JSON.stringify(calibration)}`);
+  await browser.evaluate(frames);
   await stageFixture(fixture,ids,'IN_PROGRESS');
-  await browser.command('Emulation.setCPUThrottlingRate',{rate:4});
+  await browser.command('Emulation.setCPUThrottlingRate',{rate:calibration.rate});
   try{
     const refreshStartedAtMs=await browser.evaluate(`(()=>{
       if(!PerformanceObserver.supportedEntryTypes.includes('long-animation-frame'))throw Error('long-animation-frame unsupported');
@@ -280,14 +284,14 @@ test('36B B5.6 twenty confirmed moves share six slots and record 4× long frames
     const batch=object(await browser.evaluate('batchState()'));
     const records:unknown=await browser.evaluate('finishLoaf()');assert.ok(Array.isArray(records));
     const maxDurationMs=Math.max(0,...records.map(entry=>Number(object(entry).duration)));
-    await writeEvidence('long-animation-frames-36b.json',{os:{platform:platform(),release:release()},browser:await browser.command('Browser.getVersion'),cpuRate:4,requestedMoves:ids.length,refreshStartedAtMs,batch,count:records.length,maxDurationMs,records});
+    await writeEvidence('long-animation-frames-36b.json',{...calibration,cpuRate:calibration.rate,requestedMoves:ids.length,refreshStartedAtMs,batch,count:records.length,maxDurationMs,records});
     assert.ok(Array.isArray(batch.moved)&&Array.isArray(batch.snapped));
     assert.ok(Number(batch.peak)>0&&Number(batch.peak)<=6,`expected 1–6 concurrent moves: ${JSON.stringify(batch)}`);
     assert.ok(batch.moved.length>0&&batch.moved.length<=6,'only six cards may animate their column move');
     assert.deepEqual([...batch.moved,...batch.snapped.map(entry=>object(entry).id)].sort(),[...ids].sort());
     assert.ok(batch.snapped.every(entry=>object(entry).transform==='none'),'remaining cards are at layout on the first committed frame');
     for(const entry of batch.snapped){const rect=object(entry);within(await position(browser,active(ticketCard(String(rect.id)))),rect,1,'snapped card stays in its final layout slot');}
-    assert.ok(maxDurationMs<=200,`4× CPU long frame ${maxDurationMs}ms exceeded 200ms`);
+    assert.ok(maxDurationMs<=200,`i3-calibrated CPU (rate ${calibration.rate.toFixed(2)}×) long frame ${maxDurationMs}ms exceeded 200ms`);
   }finally{await browser.command('Emulation.setCPUThrottlingRate',{rate:1});}
 }));
 

@@ -11,7 +11,7 @@ export interface FlipOptions {
   end?:MotionRect;
   scroll?:{x:number;y:number};
 }
-const running=new Map<HTMLElement,{animation:Animation;layout:MotionRect;scrollX:number;scrollY:number;lift:boolean;release:()=>void}>();
+const running=new Map<HTMLElement,{animation:Animation;layout:MotionRect;scrollX:number;scrollY:number;start:MotionRect;end:MotionRect;lift:boolean;release:()=>void}>();
 const flipHostCounts=new WeakMap<HTMLElement,number>();
 
 function acquireFlipHosts(el:HTMLElement):HTMLElement[]{
@@ -48,6 +48,28 @@ export function getFlipLayout(el:HTMLElement):MotionRect|null{
   const dx=typeof window==='undefined'?0:(window.scrollX??0)-entry.scrollX;
   const dy=typeof window==='undefined'?0:(window.scrollY??0)-entry.scrollY;
   return {left:entry.layout.left-dx,top:entry.layout.top-dy};
+}
+
+/** Reflow shifts the box under an active transform without changing its keyframes. */
+export function recordFlipLayout(el:HTMLElement,layout:MotionRect,scroll:{x:number;y:number}){
+  const entry=running.get(el);
+  if(!entry||entry.animation.playState!=='running')return;
+  entry.layout=layout;
+  entry.scrollX=scroll.x;
+  entry.scrollY=scroll.y;
+}
+
+/** The source node can already be detached when a board card remounts in another column. */
+export function getFlipPosition(el:HTMLElement):MotionRect|null{
+  const layout=getFlipLayout(el);
+  const entry=running.get(el);
+  if(!layout||!entry)return null;
+  const progress=entry.animation.effect?.getComputedTiming().progress??1;
+  const p=Number.isFinite(progress)?Math.min(1,Math.max(0,progress)):1;
+  return {
+    left:layout.left+entry.start.left+(entry.end.left-entry.start.left)*p,
+    top:layout.top+entry.start.top+(entry.end.top-entry.start.top)*p,
+  };
 }
 
 export function hasFreeFlipSlot():boolean{
@@ -104,6 +126,6 @@ export function flip(el:HTMLElement,from:MotionRect,to:MotionRect,{duration='--d
     :[{transform:`translate(${x}px, ${y}px)`},{transform:endTransform}];
   const animation=el.animate(frames,{duration:durationMs,easing:easingValue});
   const release=()=>{if(running.get(el)?.animation===animation){running.delete(el);if(el.dataset)delete el.dataset.motionFlipping;if(lift){el.style.boxShadow=shadow;el.style.zIndex=zIndex;}releaseFlipHosts(hosts);}};
-  running.set(el,{animation,layout:{left:layout.left,top:layout.top},scrollX,scrollY,lift,release});
+  running.set(el,{animation,layout:{left:layout.left,top:layout.top},scrollX,scrollY,start:{left:x,top:y},end:{left:endX,top:endY},lift,release});
   return trackAnimation(animation,release);
 }
