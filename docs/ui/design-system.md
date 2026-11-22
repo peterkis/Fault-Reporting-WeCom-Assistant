@@ -5,7 +5,7 @@
 - 组件边界与组合：`app/pc-admin/src/design/components/HoverCard/`；复用 `usePopoverPresence` 与 E4 浮层过渡规则，不与 `Tooltip` 共享暖切换状态。
 - 表面与层级：使用 `--bg-canvas`、`--radius-lg`、`--shadow-3`（已含描边 Ring），最大宽度 `calc(100vw - var(--space-4))`，统一内边距 `calc(var(--space-3) + var(--space-0-5))`（14px），宽度以既有 `--space-*` 令牌组合配置（人员 `calc(var(--space-16) * 4 + var(--space-10) + var(--space-1))` / 300px、工单及拒访/缺失状态统一 `calc(var(--space-16) * 5)` / 320px）；在低视口下按可用高度设定 `max-height` 并保留 `overflow-y: auto` 与 `pointer-events: auto`。常规层级为 `--z-dropdown`（`40`）；若触发器位于 `[data-workbench-modal]`、`[data-workbench-overlay]` 或 `[role="dialog"]` 内，悬停卡片挂载到最近的 `.ds-modal-container` / `.ds-drawer-content` 并提升至 `--z-hover-card-overlay`（`65`），高于抽屉（`50`）与弹窗（`60`）且低于 Toast（`70`）。
 - 延迟、定位与懒挂载：冷打开延迟 `--delay-tooltip`（`400ms`），指针离开触发器与卡片后的关闭延迟 `--delay-hover-card-close`（`150ms`），同层触发器间切换暖窗口 `--delay-hover-card-warm`（`300ms`）。延迟届满前不创建 Portal 节点、不挂载卡片子树、不发起数据读取。默认位于触发器下方左对齐、间距 `6px`，底部空间不足时翻转至上方并水平钳制在视口内 `8px` 边距，绝不遮盖触发器，窗口变化或卡片尺寸变化时重新定位。
-- 无障碍与停用规则：触发器在启用状态下提供 `aria-haspopup="dialog"`、`aria-expanded` 与打开态 `aria-controls`；卡片使用 `role="dialog"` 与 `aria-labelledby` 关联标题（人员姓名或工单编号），采用非模态行为（悬停打开不抢占焦点）；从打开的触发器按 `Tab` 进入卡片首交互项、`Shift-Tab` 退回触发器，按 `Esc` 关闭并恢复触发器焦点，视口外滚动/外部点击/焦点离开双方均关闭卡片。在 `(hover: none)`、`(pointer: coarse)` 或 `(max-width: 640px)` 下响应式停用，原样渲染触发器子元素且保持原有点击行为。
+- 无障碍与停用规则：触发器在启用状态下提供 `aria-haspopup="dialog"`、`aria-expanded` 与打开态 `aria-controls`；卡片使用 `role="dialog"` 与 `aria-labelledby` 关联标题（人员姓名或工单编号），采用非模态行为（悬停打开不抢占焦点）；从打开的触发器按 `Tab` 进入卡片首交互项、`Shift-Tab` 退回触发器，按 `Esc` 关闭并恢复触发器焦点，视口外滚动/外部点击/焦点离开双方均关闭卡片。在触屏（`(pointer: coarse)`）或 `(max-width: 640px)` 下响应式停用（不以 `(hover: none)` 判断，无指针的无头浏览器仍视为桌面），原样渲染触发器子元素且保持原有点击行为。
 - 头像尺寸扩展：`Avatar` 支持 `--avatar-xs`（`18px`，工单悬停卡片负责人）与 `--avatar-xl`（`36px`，人员悬停卡片头部）。
 
 ## 动效

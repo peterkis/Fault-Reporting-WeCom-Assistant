@@ -53,7 +53,7 @@ export const PersonHoverRendererContext=createContext<PersonHoverRenderer|null>(
 
 const HoverCardLevelContext=createContext<number>(0);
 
-const DISABLE_MEDIA_QUERY='(hover: none), (pointer: coarse), (max-width: 640px)';
+const DISABLE_MEDIA_QUERY='(pointer: coarse), (max-width: 640px)';
 const VIEWPORT_MARGIN=8;
 const PLACEMENT_GAP=6;
 
