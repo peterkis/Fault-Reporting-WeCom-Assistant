@@ -23,6 +23,24 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card37a-motion.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37a-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/card37a-notification-undo-window.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9219,6 +9237,8 @@
     "pc-admin-motion": [
       "tests/pc-admin-card37a-store.test.mts",
       "tests/pc-admin-card37a-optimistic.browser.test.mts",
+      "tests/pc-admin-card37a-motion.browser.test.mts",
+      "tests/pc-admin-card37a-recovery.browser.test.mts",
       "tests/pc-admin-motion-policy.test.mts",
       "tests/pc-admin-motion-tools.test.mts",
       "tests/pc-admin-card36a-motion.browser.test.mts",

@@ -68,14 +68,18 @@ export CARD37A_EVIDENCE_DIR="$PWD/docs/ui/evidence/v230-card37"
 npm run migration:typecheck
 npm run migration:build
 npm run migration:verify-artifact
-node --test --test-concurrency=1 .build/runtime/tests/pc-admin-card37a-optimistic.browser.test.mjs
+node --test --test-concurrency=1 \
+  .build/runtime/tests/pc-admin-card37a-optimistic.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37a-motion.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37a-recovery.browser.test.mjs
 ```
 
 The full browser suite produces all five stills and both PNG/JSON filmstrip pairs. To repeat just the capture cases after the build, run the following from the same shell.
 
 ```sh
 node --test --test-concurrency=1 --test-name-pattern='^37A A5[.](3|5|11) ' \
-  .build/runtime/tests/pc-admin-card37a-optimistic.browser.test.mjs
+  .build/runtime/tests/pc-admin-card37a-optimistic.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37a-motion.browser.test.mjs
 ```
 
 For the existing move-form conflict and lost-acknowledgement replay checks, run `node --test --test-concurrency=1 .build/runtime/tests/wbint-t42-board-boundaries.browser.test.mjs`.

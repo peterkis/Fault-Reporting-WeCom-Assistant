@@ -13,6 +13,8 @@ import {type T11Fixture, t11Http} from './t11-completion-fixture.mjs';
 import {launchSystemBrowser, closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 import {boardReady, expandPendingBoard, query, seedMotionTicket, ticketCard} from './motion-board-fixture.mjs';
 import {waitForAnimationsSettled} from './browser-animations.mjs';
+import {createFilmstripCapture} from './motion-filmstrip.mjs';
+import {assertNoTransformAnimations} from './motion-assert.mjs';
 import {clickWorkbenchControl} from './heroui-workbench-controls.mjs';
 
 export type Browser = NonNullable<Awaited<ReturnType<typeof launchSystemBrowser>>>;
@@ -36,6 +38,15 @@ export const active = (card:string) => '.board-column.active '+card;
 export const pending = (card:string) => '.board-column.pending '+card;
 export const counts = `['pending','active'].map(column=>Number(document.querySelector('.board-column.'+column+' .column-heading').getAttribute('aria-label').match(/\\d+$/)[0]))`;
 export const indexOf = (card:string) => `[...document.querySelectorAll('.board-column.pending .ticket-card')].indexOf(${query(card)})`;
+
+export const options={timeout:120000};
+export const claimPath='/take-and-start';
+export const toast=(source:string)=>'.workbench-toast[data-visible=true]:has([data-toast-source="'+source+'"])';
+export const heading=(source:string)=>query(toast(source)+' .workbench-toast-purpose')+'?.textContent';
+export const claimToast=toast('ticket-self-handling');
+export const badge=(card:string)=>card+' [data-optimistic-badge]';
+export const moving=(selector:string)=>query(selector)+`?.getAnimations().some(a=>a.effect.getKeyframes()
+  .some(f=>typeof f.transform==='string'&&f.transform.startsWith('translate(')))`;
 
 export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean}={}) {
   await withWeb01Fixture(async (base:T11Fixture)=>{
@@ -125,7 +136,11 @@ export async function openDetail(s:Scene){
 }
 export async function fillClose(s:Scene,reason:'REPORTER_WITHDREW'|'FALSE_REPORT_OR_TEST'='FALSE_REPORT_OR_TEST'){
   await openDetail(s);
-  await clickWorkbenchControl(s.b,'.ds-drawer-more [data-action=cancel]');
+  // The loading skeleton already has a detail title. The disclosure helper
+  // needs the actual action to find and open its enclosing menu.
+  const closeAction='.ds-drawer-more [data-action=cancel]';
+  await s.b.waitFor(query(closeAction)+'?.disabled===false');
+  await clickWorkbenchControl(s.b,closeAction);
   await s.b.waitFor(visible(closeDialog));
   await clickWorkbenchControl(s.b,closeDialog+' input[value="'+reason+'"]');
   await s.b.evaluate(query(closeDialog+' textarea')+'.focus()');
@@ -167,4 +182,176 @@ export async function ctrlZ(b:Browser,nativeEdit=false){
   const key={key:'z',code:'KeyZ',modifiers:2,windowsVirtualKeyCode:90};
   await b.command('Input.dispatchKeyEvent',{type:'rawKeyDown',...key,...(nativeEdit?{commands:['Undo']}:{})});
   await b.command('Input.dispatchKeyEvent',{type:'keyUp',...key});
+}
+
+export async function startTrace(b:Browser,card:string,watchRollback=false){
+  await b.evaluate(`(()=>{
+    const card=${JSON.stringify(card)}, node=()=>document.querySelector(card);
+    const trace=window.card37Trace={clicked:null,moved:null,counts:null,badge:false,rollback:false,
+      unknownAt:null,badgeAt:null,moveTimes:[],transforms:[],flashStarts:[],stop:null};
+    const seen=new WeakSet();
+    const probe=document.createElement('span');probe.style.color='var(--tone-danger-dot)';
+    document.body.append(probe);const danger=getComputedStyle(probe).color;probe.remove();
+    const nativeAnimate=Element.prototype.animate,flashes=new Map();
+    function flashPosition(el){
+      const rect=el.getBoundingClientRect(),x=rect.left+rect.width/2;
+      const columns=[...document.querySelectorAll('.board-column')];
+      const visual=columns.find(col=>{const r=col.getBoundingClientRect();return x>=r.left&&x<r.right;});
+      const stage=col=>['pending','active','handled'].find(name=>col?.classList.contains(name))??null;
+      const pending=document.querySelector('.board-column.pending').getBoundingClientRect();
+      const active=document.querySelector('.board-column.active').getBoundingClientRect();
+      const between=x>=pending.right&&x<active.left||x>=active.right&&x<pending.left;
+      return {dom:stage(el.closest('.board-column')),visual:stage(visual)??(between?'returning':'outside'),
+        index:[...document.querySelectorAll('.board-column.pending .ticket-card')].indexOf(el),x};
+    }
+    if(${watchRollback}){
+      Element.prototype.animate=function(...args){
+        const animation=nativeAnimate.apply(this,args);
+        if(this.matches(card)&&animation.effect.getKeyframes().some(f=>f.boxShadow?.includes('1.5px')&&f.boxShadow.includes(danger))){
+          const observation={start:animation.effect.getTiming().delay>0?null:flashPosition(this),firstFrame:null,inActive:null,finished:false,
+            reminder:this.closest('.reminder-location')!==null};
+          void animation.finished.then(()=>{observation.finished=true;},()=>{});
+          trace.flashStarts.push(observation);
+          flashes.set(animation,{el:this,observation});
+        }
+        return animation;
+      };
+    }
+    function sampleFlashes(){
+      for(const [animation,{el,observation}] of flashes){
+        if(!el.isConnected||['finished','idle'].includes(animation.playState)){flashes.delete(animation);continue;}
+        if(animation.effect.getComputedTiming().progress===null||!getComputedStyle(el).boxShadow.includes(danger))continue;
+        // FLIP can install its transform later in the same React commit as the outline.
+        // Its DOM parent alone cannot tell us where Chrome is painting this frame.
+        const here=flashPosition(el);
+        observation.start??=here;
+        observation.firstFrame??=here;
+        if(here.dom==='active'||here.visual==='active')observation.inActive??=here;
+      }
+    }
+    function sample(){
+      const c=node(),now=performance.now();
+      if(c?.closest('.board-column.active')&&trace.moved===null&&trace.clicked!==null){trace.moved=now;trace.counts=${counts};}
+      if(c?.querySelector('[data-optimistic-badge]')){trace.badge=true;trace.badgeAt??=now;}
+      if(c?.dataset.optimisticState==='unknown'&&document.querySelector('[data-action=check-self-handling]'))trace.unknownAt??=now;
+      for(const a of c?.getAnimations()??[]){
+        if(seen.has(a))continue;seen.add(a);
+        const frames=a.effect.getKeyframes();
+        if(frames.some(f=>typeof f.transform==='string'&&f.transform.startsWith('translate')))trace.moveTimes.push(now);
+        if(frames.some(f=>['transform','translate','scale','rotate'].some(k=>k in f)))trace.transforms.push(now);
+        if(c.dataset.optimisticRollback==='true'&&frames.some(f=>f.boxShadow?.includes('1.5px')&&f.boxShadow.includes(danger)))trace.rollback=true;
+      }
+    }
+    const obs=new MutationObserver(records=>{
+      for(const r of records)for(const n of r.addedNodes)if(n.nodeType===1&&(n.matches('[data-optimistic-badge]')||n.querySelector('[data-optimistic-badge]'))){
+        if(n.closest(card)||n.matches(card)||n.querySelector(card))trace.badge=true;
+      }
+      sample();
+    });
+    obs.observe(document.body,{childList:true,attributes:true,subtree:true});
+    let raf;const frame=()=>{sample();sampleFlashes();raf=requestAnimationFrame(frame);};raf=requestAnimationFrame(frame);
+    const click=e=>{if(e.target.closest(card+' [data-board-claim-action]'))trace.clicked??=performance.now();};
+    document.addEventListener('click',click,true);
+    trace.stop=()=>{sample();obs.disconnect();cancelAnimationFrame(raf);document.removeEventListener('click',click,true);
+      if(${watchRollback})Element.prototype.animate=nativeAnimate;};
+  })()`);
+}
+
+interface FlashPosition {dom:string|null;visual:string|null;index:number;x:number}
+interface FlashStart {start:FlashPosition|null;firstFrame:FlashPosition|null;inActive:FlashPosition|null}
+
+export async function conflict(s:Scene,mode:'normal'|'film'|'reduce'='normal'){
+  const {b,f,id,card}=s;
+  const index=await b.evaluate(indexOf(card));assert.ok(Number(index)>=0);
+  const originalCounts=await b.evaluate(counts);
+  await routeWrite(b,claimPath,'hold');
+  await startTrace(b,card,mode!=='reduce');
+  await claim(b,card);
+  await b.waitFor(visible(active(card)));
+  await waitForAnimationsSettled(b);
+  // Hold only the board refetch, so rollback to the previous projection is observable
+  // before the newly committed colleague's claim legitimately moves the card again.
+  await b.evaluate(`(()=>{const fetch=window.fetch,gate=new Promise(r=>{window.release37Board=r});
+    window.fetch=async(p,o)=>{if(new URL(p,location.href).pathname==='/api/workbench/board')await gate;return fetch(p,o);};})()`);
+  try{
+    const peer=await t11Http(f,2,{closeConnections:true});
+    await peer.start(id);
+    const name='陈悦（合成）';
+    const trigger=async()=>{
+      await b.evaluate('card37Route.release()');
+      await b.waitFor(visible(pending(card)));
+      if(mode==='film')await b.waitFor(moving(pending(card)));
+    };
+    if(mode==='reduce')await assertNoTransformAnimations(b,active(card));
+    if(mode==='film'){
+      await settleBoardAndDrawer(b);
+      await createFilmstripCapture(b,evidence)('rollback',trigger,card,{finishAtLastFrame:true});
+    }else await trigger();
+    if(mode==='reduce')await b.waitFor(query(pending(card)+'[data-optimistic-rollback]')+'!=null');
+    if(mode==='reduce')await assertNoTransformAnimations(b,pending(card));
+    await b.waitFor(visible(claimToast+' [data-toast-action=view]'));
+    assert.match(String(await b.evaluate(query(claimToast)+'.innerText')),new RegExp(name,'u'));
+    assert.equal(await b.evaluate(query(claimToast+' [data-toast-action=view]')+'.textContent.trim()'),'查看');
+    assert.equal(await b.evaluate(indexOf(card)),index);
+    assert.equal(await b.evaluate('document.querySelectorAll("[data-optimistic-state]").length'),0);
+    if(mode==='reduce')assert.deepEqual(await b.evaluate('card37Trace.transforms'),[]);
+    assert.equal(await b.evaluate('card37Route.status'),409);
+    if(mode!=='reduce'){
+      // Keep the rejected board read gated until the still and positional evidence are complete.
+      // Capture first so a failing flash assertion leaves its PNG and filmstrip for review.
+      if(mode==='normal')await screenshot(b,'claim-conflict-rollback',
+        visible(pending(card))+'&&'+indexOf(card)+'==='+index+'&&'+visible(claimToast+' [data-toast-action=view]')+
+        `&&JSON.stringify(${counts})===JSON.stringify(${JSON.stringify(originalCounts)})`,claimToast);
+      await b.waitFor('card37Trace.flashStarts.some(f=>f.firstFrame!==null)');
+      await settleBoardAndDrawer(b);
+      assert.equal(await b.evaluate('card37Trace.rollback'),true,'original card had the danger outline animation');
+      const starts=await b.evaluate('card37Trace.flashStarts') as FlashStart[];
+      assert.ok(starts.length>0);
+      for(const flash of starts){
+        if(!flash.start)continue; // A delayed effect can be cancelled before its active interval.
+        const context='rollback outline on the returned card: '+JSON.stringify(flash);
+        assert.equal(flash.start.dom,'pending',context);
+        assert.equal(flash.start.index,index,context);
+        assert.equal(flash.start.visual,'pending',context);
+        if(flash.firstFrame){
+          assert.equal(flash.firstFrame.dom,'pending',context);
+          assert.equal(flash.firstFrame.index,index,context);
+          assert.equal(flash.firstFrame.visual,'pending',context);
+        }
+        assert.equal(flash.inActive,null,context);
+      }
+    }
+  }finally{await b.evaluate('release37Board();card37Trace.stop()');}
+}
+export async function closeUndo(s:Scene,capture=false){
+  const {b,http,id,card}=s;
+  const status=(await http.detail(id)).status;
+  await fillClose(s,'REPORTER_WITHDREW');
+  await clickWorkbenchControl(b,confirmClose);
+  const button=toast('ticket-waiting-cancel')+' [data-toast-action=undo]';
+  await b.waitFor(visible(button));assert.equal((await http.detail(id)).status,'DISMISSED');
+  if(capture){
+    const bar='.detail-dialog [data-readonly-reason=dismissed]';
+    const header='.detail-dialog .ds-detail-state [data-closure-state=dismissed]';
+    await screenshot(b,'undo-dismiss-toast',visible(button)+'&&'+visible(bar)+'&&'+
+      query(bar)+'?.textContent.includes("已关闭")&&'+visible(header)+'&&'+query(header)+'?.textContent.trim()==="已关闭"',
+      toast('ticket-waiting-cancel'));
+  }
+  await clickWorkbenchControl(b,button);
+  await b.waitFor(heading('closure-restore')+'==="已撤销"');
+  assert.equal((await http.detail(id)).status,status);
+  if(await b.evaluate(visible('[aria-label=关闭详情]')))await clickWorkbenchControl(b,'[aria-label=关闭详情]');
+  await b.waitFor(visible(pending(card)));
+}
+export async function followUndo(s:Scene){
+  const {b}=s;
+  await openDetail(s);
+  await b.waitFor(query(follow)+'?.disabled===false');
+  assert.equal(await b.evaluate(query(follow)+'.getAttribute("aria-pressed")'),'false');
+  await clickWorkbenchControl(b,follow);
+  const button=toast('item-follow')+' [data-toast-action=undo]';
+  await b.waitFor(visible(button));await b.waitFor(query(follow)+'.getAttribute("aria-pressed")==="true"');
+  await clickWorkbenchControl(b,button);
+  await b.waitFor(heading('item-follow')+'==="已撤销"');
+  await b.waitFor(query(follow)+'.getAttribute("aria-pressed")==="false"&&'+query(follow)+'.dataset.following==="false"');
 }

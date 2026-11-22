@@ -156,7 +156,7 @@
       "reason": "Card 37A: preserve return command coverage and verify transactional cancellation at the claim window boundary."
     },
     {
-      "pattern": "^tests/(?:pc-admin-card37a-(?:optimistic\\.browser|store)\\.test\\.mts|helpers/card37a-optimistic-fixture\\.mts)$|^app/pc-admin/src/(?:features/(?:optimistic/|board-actions/|item-follow/|ticket-handling/|ticket-waiting/)|app/(?:Workbench|ToastFeedback)\\.tsx|design/(?:components/OptimisticBadge/|motion/rollback-cue\\.ts))",
+      "pattern": "^tests/(?:pc-admin-card37a-(?:(?:optimistic|motion|recovery)\\.browser|store)\\.test\\.mts|helpers/card37a-optimistic-fixture\\.mts)$|^app/pc-admin/src/(?:features/(?:optimistic/|board-actions/|item-follow/|ticket-handling/|ticket-waiting/)|app/(?:Workbench|ToastFeedback)\\.tsx|design/(?:components/OptimisticBadge/|motion/rollback-cue\\.ts))",
       "profiles": ["pc", "motion"],
       "reason": "Card 37A: optimistic projection, conflict recovery, inverse commands, toast timing and reduced motion in Chrome."
     },
