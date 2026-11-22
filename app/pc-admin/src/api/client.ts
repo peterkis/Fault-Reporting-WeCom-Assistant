@@ -340,6 +340,13 @@ async function postFollow(requested:FollowItem,command:WorkbenchFollowCommand,cs
 }
 export const api={
   profile:(signal:AbortSignal)=>get('/api/workbench/profile',signal,value=>{const v=object(value);if(Object.keys(v).length!==2||!Object.hasOwn(v,'name')||!Object.hasOwn(v,'department'))throw new ApiError(502,'INVALID_RESPONSE');return {name:nullable(v.name),department:nullable(v.department)};}),
+  peopleProfile:(displayName:string,csrfToken:string|null,signal:AbortSignal):Promise<{name:string;department:string|null}>=>get('/api/workbench/people/profile',signal,value=>{
+    const v=object(value);
+    if(Object.keys(v).length!==2||!Object.hasOwn(v,'name')||!Object.hasOwn(v,'department'))throw new ApiError(502,'INVALID_RESPONSE');
+    const name=text(v.name);
+    if(!name||[...name].length>128)throw new ApiError(502,'INVALID_RESPONSE');
+    return {name,department:nullable(v.department)};
+  },{method:'POST',headers:{'content-type':'application/json',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify({display_name:displayName.trim()})}),
   reporterContact:(id:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(id)+'/reporter-contact',signal,value=>{const v=object(value),historical=v.contact===null||v.contact===undefined?null:object(v.contact),current=v.current_profile===undefined?null:object(v.current_profile),contact=historical??(current?.contact?object(current.contact):null);return {phone:contact?nullable(contact.mobile??contact.telephone??null):null};}),
   reporterProfile:(kind:WorkbenchCard['kind'],id:string,signal:AbortSignal)=>get('/api/workbench/items/'+kind+'/'+id+'/reporter-profile',signal,value=>{const v=object(value);if(Object.keys(v).length!==3||typeof v.source!=='string'||!['REPORT_SNAPSHOT','CURRENT_PROFILE','RETAINED_PROFILE','UNAVAILABLE'].includes(v.source))throw new ApiError(502,'INVALID_RESPONSE');return {name:nullable(v.name),department:nullable(v.department),current:v.source==='CURRENT_PROFILE'};}),
   search:(criteria:WorkbenchSearchCriteria,cursor:string|null,signal:AbortSignal,csrfToken:string|null=null):Promise<WorkbenchSearchPage>=>{

@@ -2,13 +2,13 @@ import {useSyncExternalStore} from 'react';
 
 export type DurationToken='--dur-instant'|'--dur-fast'|'--dur-base'|'--dur-slow'|'--dur-move'|'--dur-highlight'|'--dur-return';
 export type EasingToken='--ease-standard'|'--ease-soft'|'--ease-exit';
-type NumericToken=DurationToken|'--delay-tooltip'|'--press-scale'|'--scale-popover'|'--shift-xs'|'--shift-sm'|'--shift-md'|'--shift-lg'|'--space-12';
+type NumericToken=DurationToken|'--delay-tooltip'|'--delay-hover-card-close'|'--delay-hover-card-warm'|'--press-scale'|'--scale-popover'|'--shift-xs'|'--shift-sm'|'--shift-md'|'--shift-lg'|'--space-12';
 const cache=new Map<string,string>();
 const listeners=new Set<()=>void>();
 const WARM_TOKENS:readonly string[]=[
   '--dur-instant','--dur-fast','--dur-base','--dur-slow','--dur-move','--dur-highlight','--dur-return',
   '--ease-standard','--ease-soft','--ease-exit',
-  '--delay-tooltip','--press-scale','--scale-popover',
+  '--delay-tooltip','--delay-hover-card-close','--delay-hover-card-warm','--press-scale','--scale-popover',
   '--shift-xs','--shift-sm','--shift-md','--shift-lg','--space-12',
   '--brand-subtle','--stage-intake-bg','--stage-active-bg','--stage-done-bg',
 ];

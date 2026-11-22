@@ -7,18 +7,43 @@ import {TooltipAnchor} from '../Tooltip/Tooltip';
 import {cancelPointerButtonPress,endButtonPressFor,enterPointerButtonPress,isKeyboardPressActive,leavePointerButtonPress,startKeyboardButtonPress,startPointerButtonPress} from './press-feedback';
 
 type HeroProps=ComponentProps<typeof HeroButton>;
-export type ButtonProps=Omit<HeroProps,'variant'|'className'> & Pick<ButtonHTMLAttributes<HTMLButtonElement>,'title'|'role'|'tabIndex'> & {
+export type ButtonProps=Omit<HeroProps,'variant'|'className'|'ref'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & Pick<ButtonHTMLAttributes<HTMLButtonElement>,'title'|'role'|'tabIndex'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & {
+  ref?:Ref<HTMLButtonElement>;
   disabledReason?:string;
   tone?:'primary'|'secondary'|'ghost'|'danger';
   className?:string|undefined;
 };
 
+function mergeButtonRefs(first:Ref<HTMLButtonElement>|undefined,second:Ref<HTMLButtonElement>|undefined){
+  return (node:HTMLButtonElement|null)=>{
+    if(typeof first==='function')first(node);
+    else if(first)(first as {current:HTMLButtonElement|null}).current=node;
+    if(typeof second==='function')second(node);
+    else if(second)(second as {current:HTMLButtonElement|null}).current=node;
+  };
+}
+
 /** Presentation only: the caller retains every command, pending and disabled decision. */
-export function Button({tone='secondary',size='md',title,role,tabIndex,className='',children,disabledReason,...props}:ButtonProps){
+export function Button({ref,tone='secondary',size='md',title,role,tabIndex,className='',children,disabledReason,onPointerEnter,onPointerLeave,onPointerDown,onFocus,onBlur,onKeyDown,...props}:ButtonProps){
   const inheritedReason=useContext(DisabledReasonContext),tooltip=useId();
   const reason=props.isDisabled?(disabledReason??inheritedReason):null;
   const content=<HeroButton {...props} {...(reason?{isDisabled:false,'aria-disabled':true,'aria-describedby':[props['aria-describedby'],tooltip].filter(Boolean).join(' '),onPress:()=>{}}:{})} size={size} variant={tone==='secondary'||tone==='danger'?'outline':tone} data-tone={tone} data-size={size} data-icon-only={props.isIconOnly?'true':undefined} className={'ds-button '+className}
-    render={buttonProps=><button {...buttonProps} title={title??(props.isIconOnly?props['aria-label']:undefined)} role={role} tabIndex={tabIndex??buttonProps.tabIndex}/>}>
+    render={buttonProps=>{
+      const renderedRef=(buttonProps as {ref?:Ref<HTMLButtonElement>}).ref;
+      return <button
+        {...buttonProps}
+        ref={mergeButtonRefs(renderedRef,ref)}
+        title={title??(props.isIconOnly?props['aria-label']:undefined)}
+        role={role}
+        tabIndex={tabIndex??buttonProps.tabIndex}
+        onPointerEnter={event=>{buttonProps.onPointerEnter?.(event);onPointerEnter?.(event);}}
+        onPointerLeave={event=>{buttonProps.onPointerLeave?.(event);onPointerLeave?.(event);}}
+        onPointerDown={event=>{buttonProps.onPointerDown?.(event);onPointerDown?.(event);}}
+        onFocus={event=>{buttonProps.onFocus?.(event);onFocus?.(event);}}
+        onBlur={event=>{buttonProps.onBlur?.(event);onBlur?.(event);}}
+        onKeyDown={event=>{buttonProps.onKeyDown?.(event);onKeyDown?.(event);}}
+      />;
+    }}>
     {state=><><span className="ds-button-label">{typeof children==='function'?children(state):children}</span>{state.isPending?<span className="ds-button-spinner" aria-hidden="true"/>:null}</>}
   </HeroButton>;
   return reason?<TooltipAnchor className="ds-read-only-control" data-readonly-disabled onClickCapture={event=>{event.preventDefault();event.stopPropagation();}} onKeyDownCapture={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();}}}>{content}<span id={tooltip} className="ds-read-only-tooltip" role="tooltip">{reason}</span></TooltipAnchor>:content;

@@ -11,6 +11,7 @@ import {formatListTime} from '../../format-time';
 import {Avatar} from '../Avatar/Avatar';
 import {BeijingTime} from '../Timeline/BeijingTime';
 import {ClosureOriginalLink} from '../../../features/ticket-waiting/ClosureLinks';
+import {PersonHoverTrigger} from '../HoverCard/HoverCard';
 import {closureReasonText,externalTicketNumber} from './closure-presentation';
 import './ticket-card.css';
 
@@ -25,14 +26,18 @@ export function TicketHeat({heat,heatStart}:{heat:Heat;heatStart?:string|null|un
   return <Tag className="ds-ticket-heat" data-heat-tone={heat.tone} title={heatStart?'自 '+heatStart.slice(5,16)+' 起计时':undefined} tone={heat.tone}><Clock3 aria-hidden="true"/>{heat.label}</Tag>;
 }
 
+type FooterProps={tags:readonly CardTag[];owner:ReactNode;hasOwnerName?:boolean;activity:ReactNode;followUp?:ReactNode;className?:string};
+export function TicketCardFooter({tags,owner,hasOwnerName,activity,followUp,className=''}:FooterProps){
+  const {shown,hidden}=visibleCardTags(tags);
+  return <footer className={'card-footer'+(className?' '+className:'')}><div className="card-tags">{shown.map(tag=><Tag key={tag.key} tone={tag.tone} className={'status-chip '+(tag.className??'')} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} title={tag.title??tag.label}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:tag.icon==='clock'?<Clock3 aria-hidden="true"/>:null}<span>{tag.label}</span></Tag>)}{hidden.length?<Tag className={hidden.map(tag=>tag.className??'').join(' ')} {...(hidden.some(tag=>tag.key==='supplement')?{'data-supplement-follow-up-pending':'true'}:{})} title={hidden.map(tag=>tag.title??tag.label).join('；')} aria-label={'另有 '+hidden.length+' 项：'+hidden.map(tag=>tag.label).join('、')}>+{hidden.length}</Tag>:null}{followUp}</div><span className="ds-ticket-owner" data-has-owner-name={hasOwnerName?'true':undefined}>{owner}</span>{activity}</footer>;
+}
 type BodyProps={number:string;title:string;metadata:ReactNode;tags:readonly CardTag[];owner:ReactNode;hasOwnerName?:boolean;activity:ReactNode;followUp?:ReactNode;deadline?:{tone:'attention'|'danger';label:string};category?:ReactNode;heat?:Heat|null;heatStart?:string|null;completedAt?:string|null};
 export function TicketCardBody({number,title,metadata,tags,owner,hasOwnerName,activity,followUp,deadline,category,heat,heatStart,completedAt}:BodyProps){
-  const {shown,hidden}=visibleCardTags(tags);
   return <div className={'ds-ticket-body'+(category?' has-category':'')}>
     <div className="card-top"><span title={number}>{number}</span>{completedAt?<time className="ds-ticket-completed" dateTime={completedAt.replace(' ','T')+'+08:00'} title={completedAt+'（北京时间）'}><Check aria-hidden="true"/>{completedAt.slice(11,16)} 完成</time>:heat?<TicketHeat heat={heat} heatStart={heatStart}/>:deadline?<span className="ds-ticket-deadline" data-tone={deadline.tone}><Clock3 aria-hidden="true"/>{deadline.label}</span>:null}{category}</div>
     <h3 title={title}>{title||'待补充的问题描述'}</h3>
     <div className="ds-ticket-metadata">{metadata}</div>
-    <footer className="card-footer"><div className="card-tags">{shown.map(tag=><Tag key={tag.key} tone={tag.tone} className={'status-chip '+(tag.className??'')} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} title={tag.title??tag.label}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:tag.icon==='clock'?<Clock3 aria-hidden="true"/>:null}<span>{tag.label}</span></Tag>)}{hidden.length?<Tag className={hidden.map(tag=>tag.className??'').join(' ')} {...(hidden.some(tag=>tag.key==='supplement')?{'data-supplement-follow-up-pending':'true'}:{})} title={hidden.map(tag=>tag.title??tag.label).join('；')} aria-label={'另有 '+hidden.length+' 项：'+hidden.map(tag=>tag.label).join('、')}>+{hidden.length}</Tag>:null}{followUp}</div><span className="ds-ticket-owner" data-has-owner-name={hasOwnerName?'true':undefined}>{owner}</span>{activity}</footer>
+    <TicketCardFooter tags={tags} owner={owner} {...(hasOwnerName===undefined?{}:{hasOwnerName})} activity={activity} followUp={followUp}/>
   </div>;
 }
 
@@ -70,11 +75,11 @@ export function ClosureRecord({entry,now}:{entry:ClosureRecordEntry;now?:number}
   const name=entry.ended_by_display_name;
   return <div className="ds-closure-entry" data-closure-record="true">
     <div className="ds-closure-entry-head">{entry.source==='SYSTEM'?<Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/>:name?<Avatar name={name} size={20} aria-hidden="true"/>:null}
-      {name?<strong className="ds-closure-entry-name">{name}</strong>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.ended_at?<> · <BeijingTime value={entry.ended_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
+      {name?entry.source==='SYSTEM'?<strong className="ds-closure-entry-name">{name}</strong>:<PersonHoverTrigger name={name}><strong className="ds-closure-entry-name">{name}</strong></PersonHoverTrigger>:null}<span className="ds-closure-entry-method">{entry.source==='SYSTEM'?'系统判定':'人工关闭'}{entry.ended_at?<> · <BeijingTime value={entry.ended_at} {...(now===undefined?{}:{now})}/></>:null}</span></div>
     <div className="ds-closure-entry-facts"><ClosureFacts closure={entry}/>
       {entry.notification_state==='SENT'?<span className="ds-closure-entry-notified">已通知报修人</span>:null}</div>
     {entry.note?<p className="ds-closure-entry-note">说明：{entry.note}</p>:null}
-    {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restore_source==='SYSTEM'?null:entry.restored_by_display_name?<strong>{entry.restored_by_display_name}</strong>:null}<span>{entry.restore_source==='SYSTEM'?'系统自动恢复（报修人补充后）':'恢复'} · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}
+    {entry.restored_at?<p className="ds-closure-restored-event" data-closure-restored-event><Undo2 aria-hidden="true"/>{entry.restore_source==='SYSTEM'?null:entry.restored_by_display_name?<PersonHoverTrigger name={entry.restored_by_display_name}><strong>{entry.restored_by_display_name}</strong></PersonHoverTrigger>:null}<span>{entry.restore_source==='SYSTEM'?'系统自动恢复（报修人补充后）':'恢复'} · <BeijingTime value={entry.restored_at} {...(now===undefined?{}:{now})}/></span></p>:null}
   </div>;
 }
 

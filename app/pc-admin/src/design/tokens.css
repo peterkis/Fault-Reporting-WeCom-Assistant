@@ -206,7 +206,7 @@
   --control-h-md: 32px;    /* 默认 */
   --control-h-lg: 36px;
   --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px;
-  --avatar-sm: 20px; --avatar-md: 24px; --avatar-msg: 28px; --avatar-lg: 32px;
+  --avatar-xs: 18px; --avatar-sm: 20px; --avatar-md: 24px; --avatar-msg: 28px; --avatar-lg: 32px; --avatar-xl: 36px; /* --avatar-xs / --avatar-xl: Card 37C */
   --fs-avatar-sm: calc(var(--avatar-sm) / 2); /* §6.13: avatar glyph = 50% of size. */
 
   /* 布局 */
@@ -220,7 +220,7 @@
   --modal-w-sm: 440px; --modal-w-md: 560px; --modal-w-lg: 720px;
 
   /* 层级 */
-  --z-sticky: 10; --z-dropdown: 40; --z-drawer: 50; --z-modal: 60; --z-toast: 70; --z-tooltip: 80;
+  --z-sticky: 10; --z-dropdown: 40; --z-drawer: 50; --z-modal: 60; --z-hover-card-overlay: 65; /* Card 37C C1 */ --z-toast: 70; --z-tooltip: 80;
 
   /* 动效 */
   --dur-instant: 80ms;
@@ -237,6 +237,8 @@
   --scale-popover: .97; /* Beyond A1: express E4's specified menu scale; confirmed by the owner (2026-11-19). */
   --hover-lift: -1px; /* Beyond A1: preserve E6's existing hover lift; confirmed by the owner (2026-11-19). */
   --delay-tooltip: 400ms; /* Beyond A1: express E7's cold-open delay; confirmed by the owner (2026-11-19). */
+  --delay-hover-card-close: 150ms; /* Card 37C C1 */
+  --delay-hover-card-warm: 300ms; /* Card 37C C1 */
 
   font-family: var(--font-sans);
   font-size: var(--fs-md);

@@ -146,4 +146,5 @@
 /* Card 34B: dialog footer of 撤销派工 / 退回待安排, the same layout as the 01d closing dialog: draft state left, actions right. */
 .ds-dialog-footer {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);margin-top:var(--space-4);}
 /* Card 34B: take-over and hand-over rows of 「处理记录」 list the conversations handed over with them as secondary lines. */
-.record-assignment-communication {display:flex;flex-direction:column;gap:var(--space-0-5);color:var(--text-tertiary);font-size:var(--fs-xs);line-height:var(--lh-xs);}
+.record-assignment-recipient {grid-column:2 / -1;display:flex;align-items:baseline;gap:var(--space-1);color:var(--text-secondary);font-size:var(--fs-xs);line-height:var(--lh-xs);}
+.record-assignment-communication {grid-column:2 / -1;display:flex;flex-direction:column;gap:var(--space-0-5);color:var(--text-tertiary);font-size:var(--fs-xs);line-height:var(--lh-xs);}

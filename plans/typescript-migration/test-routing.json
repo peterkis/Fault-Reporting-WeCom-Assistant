@@ -5,6 +5,24 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/pc-admin-card37c-hovercard.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37c-people-profile.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-motion-policy.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9159,6 +9177,7 @@
       "tests/workbench-desktop-session.gpu.browser.test.mts"
     ],
     "pr-read-safety": [
+      "tests/pc-admin-card37c-people-profile.integration.test.mts",
       "tests/t35-account-switch.browser.test.mts",
       "tests/t35-current-authority-wait.integration.test.mts",
       "tests/t35-unknown-read.browser.test.mts"
@@ -9179,6 +9198,7 @@
       "tests/visual-regression.test.mts"
     ],
     "pc-admin-motion": [
+      "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "tests/pc-admin-motion-policy.test.mts",
       "tests/pc-admin-motion-tools.test.mts",
       "tests/pc-admin-card36a-motion.browser.test.mts",

@@ -1,6 +1,6 @@
-import {useCallback,useEffect,useSyncExternalStore} from 'react';
+import {useCallback,useEffect,useMemo,useSyncExternalStore} from 'react';
 import type {Principal} from '../../api/client';
-import type {WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchOnlineView} from '../../../../../contracts/workbench_activity_contracts';
+import type {WorkbenchActivityField,WorkbenchActivityMode,WorkbenchActivityPerson,WorkbenchActivityTarget,WorkbenchOnlineView} from '../../../../../contracts/workbench_activity_contracts';
 import {isWorkbenchVisible} from '../../desktop/host';
 import {readActivityBatch,readOnlineView} from './client';
 
@@ -33,17 +33,22 @@ function same(a:People|undefined,b:People){
   if(!a)return b.length===0;if(a.length!==b.length)return false;
   return a.every((person,index)=>{const other=b[index];return other!==undefined&&person.display_name===other.display_name&&person.mode===other.mode&&person.field===other.field&&person.expires_epoch_ms===other.expires_epoch_ms;});
 }
+let presenceVersion=0;
+const globalListeners=new Set<()=>void>();
+function emitGlobal(){presenceVersion++;for(const listener of globalListeners)listener();}
 function emit(key:string){for(const listener of listeners.get(key)??[])listener();}
 function put(key:string,next:People){
   if(same(people.get(key),next))return;
   if(next.length)people.set(key,next);else people.delete(key);
-  emit(key);syncExpiry();
+  emit(key);emitGlobal();syncExpiry();
 }
 function enabled(){return Boolean(principal?.activity_enabled&&live&&typeof document!=='undefined'&&!document.hidden&&navigator.onLine&&isWorkbenchVisible());}
 function clear(){
   request?.abort();request=null;presenceQueued=false;onlineRequest?.abort();onlineRequest=null;onlineQueued=false;onlineFailing=false;putOnline(null);
   if(readTimer!==null){clearTimeout(readTimer);readTimer=null;}
+  const hadPeople=people.size>0;
   for(const key of [...people.keys()]){people.delete(key);emit(key);}
+  if(hadPeople)emitGlobal();
   syncExpiry();
 }
 // The 5-second check runs while someone is cached or while a failed online refresh is holding the last result.
@@ -158,6 +163,36 @@ export function usePresence(target:WorkbenchActivityTarget,active:boolean):Peopl
 }
 /** Test and evidence hooks; no production caller depends on them. */
 /** Card 31: only the sidebar row subscribes; board and list cards never re-render for online changes. */
+export interface PersonPresenceMatch {
+  kind:WorkbenchActivityTarget['kind'];
+  id:string;
+  mode:WorkbenchActivityMode;
+  field:WorkbenchActivityField|null;
+}
+
+export function findPersonPresence(map:ReadonlyMap<string,People>,displayName:string):PersonPresenceMatch|null{
+  const target=displayName.trim();
+  if(!target)return null;
+  let fallback:PersonPresenceMatch|null=null;
+  for(const [key,list] of map){
+    const sep=key.indexOf(':');
+    if(sep<=0)continue;
+    const rawKind=key.slice(0,sep),id=key.slice(sep+1);
+    if(rawKind!=='ticket'&&rawKind!=='review'&&rawKind!=='intake')continue;
+    for(const person of list){
+      if(person.display_name.trim()!==target)continue;
+      const match:PersonPresenceMatch={kind:rawKind,id,mode:person.mode,field:person.field};
+      if(person.mode==='EDITING')return match;
+      if(!fallback)fallback=match;
+    }
+  }
+  return fallback;
+}
+
+export function usePersonPresence(displayName:string):PersonPresenceMatch|null{
+  const revision=useSyncExternalStore(callback=>{globalListeners.add(callback);return()=>{globalListeners.delete(callback);};},()=>presenceVersion,()=>0);
+  return useMemo(()=>findPersonPresence(people,displayName),[revision,displayName]);
+}
 export function useOnlineColleagues():WorkbenchOnlineView|null{
   useEffect(()=>{onlineWanted++;if(!online)schedule(0);syncExpiry();return()=>{onlineWanted--;syncExpiry();};},[]);
   return useSyncExternalStore(callback=>{onlineListeners.add(callback);return()=>{onlineListeners.delete(callback);};},()=>online,()=>null);

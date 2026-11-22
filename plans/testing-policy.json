@@ -151,6 +151,16 @@
   },
   "rules": [
     {
+      "pattern": "^tests/(?:pc-admin-card37c-hovercard\\.browser\\.test\\.mts$|fixtures/card37c-(?:hovercard|board-publication)\\.|helpers/card37c-hover-browser\\.mts$)|^app/pc-admin/src/(?:design/components/HoverCard/|features/hover-cards/)",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 37C checks delayed hover reads, placement and focus, real board filtering, disclosure privacy and popover filmstrips."
+    },
+    {
+      "pattern": "^(?:app/server/src/workbench-people-profile\\.mts|tests/pc-admin-card37c-people-profile\\.integration\\.test\\.mts)$",
+      "profiles": ["pc", "core"],
+      "reason": "Card 37C department reads must preserve team visibility, session revocation, response projection and provider cache bounds."
+    },
+    {
       "pattern": "^tests/(?:pc-admin-card36c-motion\\.browser\\.test\\.mts$|fixtures/card36c-presence\\.)",
       "profiles": ["pc", "motion"],
       "reason": "Card 36C: protect drawer reversal, switch concurrency, timeline arrivals and debounced presence through real browser timing and isolated synthetic PG fixtures."

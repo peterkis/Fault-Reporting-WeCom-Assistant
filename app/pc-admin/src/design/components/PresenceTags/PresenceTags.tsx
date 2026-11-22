@@ -1,5 +1,5 @@
-import {useLayoutEffect,useRef,useState} from 'react';
-import type {RefObject} from 'react';
+import {memo,useCallback,useLayoutEffect,useRef,useState} from 'react';
+import type {KeyboardEvent,RefObject} from 'react';
 import {Pencil} from 'lucide-react';
 import type {WorkbenchActivityField,WorkbenchActivityPerson} from '../../../../../../contracts/workbench_activity_contracts';
 import {Avatar} from '../Avatar/Avatar';
@@ -10,7 +10,8 @@ import {trackAnimation} from '../../motion/lifecycle';
 import {motionToken,prefersReducedMotion} from '../../motion/tokens';
 import {useDebouncedPresence} from './use-debounced-presence';
 import './presence-tags.css';
-import {TooltipAnchor} from '../Tooltip/Tooltip';
+import {PersonHoverTrigger} from '../HoverCard/HoverCard';
+import {useTooltipTrigger} from '../Tooltip/Tooltip';
 
 const EMPTY_PEOPLE:readonly WorkbenchActivityPerson[]=Object.freeze([]);
 type PresenceState='entering'|'present'|'exiting';
@@ -70,9 +71,26 @@ export function PresenceCapsule({people,debounced,active,onExited}:{people:reado
 }
 export const presenceTone=(people:readonly WorkbenchActivityPerson[])=>people[0]?.mode==='EDITING'?'editing':people.length?'viewing':undefined;
 
-function PresencePersonTag({personKey,person,active,onExited}:{personKey:string;person:WorkbenchActivityPerson;active:boolean;onExited:()=>void}){
+function isInsidePresenceNameTag(target:EventTarget|null):boolean{
+  return target instanceof Element&&Boolean(target.closest('.ds-presence-tag:not([data-mode="more"])'));
+}
+
+function hasFocusedPresenceNameTag(container:Element):boolean{
+  const active=typeof document!=='undefined'?document.activeElement:null;
+  if(!active)return false;
+  if(container.contains(active)&&isInsidePresenceNameTag(active))return true;
+  for(const tag of container.querySelectorAll<HTMLElement>('.ds-presence-tag:not([data-mode="more"])[aria-controls]')){
+    const cardId=tag.getAttribute('aria-controls');
+    const card=cardId?document.getElementById(cardId):null;
+    if(card?.contains(active))return true;
+  }
+  return false;
+}
+
+const PresencePersonTag=memo(function PresencePersonTag({personKey,person,active,onExited}:{personKey:string;person:WorkbenchActivityPerson;active:boolean;onExited:(key:string)=>void}){
   const ref=useRef<HTMLSpanElement|null>(null);
-  const {retained,state,entering,exiting}=usePresenceLifecycle(ref,active,onExited);
+  const handleExited=useCallback(()=>onExited(personKey),[onExited,personKey]);
+  const {retained,state,entering,exiting}=usePresenceLifecycle(ref,active,handleExited);
   const previousMode=useRef(person.mode);
   const [pencilEnter,setPencilEnter]=useState(false);
   useLayoutEffect(()=>{
@@ -90,8 +108,17 @@ function PresencePersonTag({personKey,person,active,onExited}:{personKey:string;
     if(person.mode!=='EDITING')setPencilEnter(false);
   },[person.mode]);
   if(!retained)return null;
-  return <span ref={ref} className="ds-presence-tag" data-mode={person.mode==='EDITING'?'editing':'viewing'} data-presence-person={personKey} data-presence-state={state} data-entering={entering?'true':undefined} data-exiting={exiting?'true':undefined} aria-hidden="true">{person.mode==='EDITING'?<Pencil aria-hidden="true" data-presence-pencil-enter={pencilEnter?'true':undefined}/>:null}{shortPresenceName(person.display_name)}</span>;
-}
+  const fullName=person.display_name.trim()||shortPresenceName(person.display_name);
+  const tag=<span ref={ref} className="ds-presence-tag" data-mode={person.mode==='EDITING'?'editing':'viewing'} data-presence-person={personKey} data-presence-state={state} data-entering={entering?'true':undefined} data-exiting={exiting?'true':undefined} aria-label={fullName}>{person.mode==='EDITING'?<Pencil aria-hidden="true" data-presence-pencil-enter={pencilEnter?'true':undefined}/>:null}{shortPresenceName(person.display_name)}</span>;
+  return <PersonHoverTrigger name={person.display_name} disabled={exiting}>{tag}</PersonHoverTrigger>;
+},(prev,next)=>
+  prev.personKey===next.personKey
+  &&prev.active===next.active
+  &&prev.onExited===next.onExited
+  &&prev.person.display_name===next.person.display_name
+  &&prev.person.mode===next.person.mode
+  &&prev.person.field===next.person.field
+);
 
 function PresenceMoreTag({count,active}:{count:number;active:boolean}){
   const ref=useRef<HTMLSpanElement|null>(null);
@@ -110,6 +137,9 @@ interface RenderedTag {key:string;person:WorkbenchActivityPerson;active:boolean}
  * then exit over --dur-fast via useExitPresence.
  */
 export function PresenceTags({people,debounced,className=''}:{people:readonly WorkbenchActivityPerson[];debounced?:readonly WorkbenchActivityPerson[];className?:string}){
+  const tooltip=useTooltipTrigger();
+  const groupRef=useRef<HTMLSpanElement|null>(null);
+  const pointerOnAggregateRef=useRef(false);
   const internalDebounced=useDebouncedPresence(debounced?EMPTY_PEOPLE:people);
   const current=debounced??internalDebounced;
   const containerRetained=useExitPresence(current.length>0,'--dur-fast');
@@ -126,14 +156,48 @@ export function PresenceTags({people,debounced,className=''}:{people:readonly Wo
       return next;
     });
   },[shownSignature]);
-  const removeTag=(key:string)=>{setRendered(previous=>previous.filter(entry=>entry.key!==key||entry.active));};
+  const removeTag=useCallback((key:string)=>{setRendered(previous=>previous.filter(entry=>entry.key!==key||entry.active));},[]);
   useLayoutEffect(()=>{if(!containerRetained&&current.length===0)setRendered([]);},[containerRetained,current.length]);
   if(!containerRetained)return null;
   const tooltipPeople=people.length?people:current;
   const description=presenceDescription(people),listed=tooltipPeople.slice(0,8);
-  return <TooltipAnchor className={'ds-presence-tags '+className} role="img" aria-label={description} data-presence-count={people.length}>
-    {rendered.map(entry=><PresencePersonTag key={entry.key} personKey={entry.key} person={entry.person} active={entry.active} onExited={()=>removeTag(entry.key)}/>)}
+  const closeTooltip=()=>{tooltip.onKeyDown({key:'Escape'} as KeyboardEvent<HTMLElement>);};
+  const routePointer=(target:EventTarget|null,container:HTMLElement)=>{
+    if(isInsidePresenceNameTag(target)){
+      pointerOnAggregateRef.current=false;
+      closeTooltip();
+      return;
+    }
+    pointerOnAggregateRef.current=true;
+    if(hasFocusedPresenceNameTag(container)){
+      closeTooltip();
+      return;
+    }
+    tooltip.onPointerEnter();
+  };
+  return <span
+    ref={groupRef}
+    className={'ds-presence-tags '+className}
+    role="group"
+    aria-label={description}
+    data-presence-count={people.length}
+    data-tooltip-open={tooltip['data-tooltip-open']}
+    onFocusCapture={event=>{if(isInsidePresenceNameTag(event.target))closeTooltip();}}
+    onBlurCapture={()=>{
+      queueMicrotask(()=>{
+        if(pointerOnAggregateRef.current&&groupRef.current&&!hasFocusedPresenceNameTag(groupRef.current)){
+          tooltip.onPointerEnter();
+        }
+      });
+    }}
+    onPointerEnter={event=>{routePointer(event.target,event.currentTarget);}}
+    onPointerOver={event=>{routePointer(event.target,event.currentTarget);}}
+    onPointerMove={event=>{routePointer(event.target,event.currentTarget);}}
+    onPointerLeave={()=>{pointerOnAggregateRef.current=false;closeTooltip();}}
+    onKeyDown={tooltip.onKeyDown}
+  >
+    {rendered.map(entry=><PresencePersonTag key={entry.key} personKey={entry.key} person={entry.person} active={entry.active} onExited={removeTag}/>)}
     <PresenceMoreTag count={rest} active={rest>0}/>
     <span className="ds-presence-tooltip" aria-hidden="true">{withPresentationKeys(listed).map(({key,item:person})=><span key={key} className="ds-presence-tooltip-row"><Avatar name={person.display_name} size={20} className="ds-presence-tooltip-avatar" aria-hidden="true"/><strong>{person.display_name}</strong><span>{presenceAction(person)}</span></span>)}{tooltipPeople.length>listed.length?<span className="ds-presence-tooltip-more">另有 {tooltipPeople.length-listed.length} 人</span>:null}</span>
-  </TooltipAnchor>;
+  </span>;
 }

@@ -40,6 +40,8 @@ import { GroupNameEditor } from '../features/source-groups/GroupNameEditor';
 import { SupplementFollowUp } from '../features/supplement-follow-up/SupplementFollowUp';
 import { TicketAssignment } from '../features/ticket-assignment/TicketAssignment';
 import { TicketCompletion } from '../features/ticket-completion/TicketCompletion';
+import { PersonHoverCard } from '../features/hover-cards/PersonHoverCard';
+import { clearHoverItemDenied } from '../features/hover-cards/denied-items';
 import { TicketConversationHandling } from '../features/ticket-handling/TicketConversationHandling';
 import { TicketSelfHandling } from '../features/ticket-handling/TicketSelfHandling';
 import { TicketNotes } from '../features/ticket-notes/TicketNotes';
@@ -76,7 +78,7 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
   return <PropertyList aria-label="事项信息" header={<span className="sr-only"><Status item={item}/></span>}>
     <div className="property-field" hidden={!name}><dt><UserRound size={17}/>报修人</dt><dd title={profileTitle}><Owner name={name??null}/></dd></div>
     <div className="property-field" hidden={!department}><dt><Building2 size={17}/>报修部门</dt><dd title={profileTitle}>{department}{profile.data?.current?<small>（当前资料）</small>:null}</dd></div>
-    <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd></div>
+    <div className="property-field"><dt><Headset size={17}/>处理人</dt><dd>{detail.responsibility.ticket_assignee_name?<PersonHoverCard name={detail.responsibility.ticket_assignee_name}><Owner name={detail.responsibility.ticket_assignee_name}/></PersonHoverCard>:<Owner name={null}/>}</dd></div>
     <div className="property-field"><dt><Radio size={17}/>来源</dt><dd><span className="detail-source-tag">{item.source_label}</span></dd></div>
     {item.location?<div className="property-field"><dt><MapPin size={17}/>位置</dt><dd>{item.location}</dd></div>:null}
     <div className="property-field reporter-contact" hidden={!formatted&&!contactPending&&!contactError}><dt><Phone size={17}/>联系电话</dt><dd><span className="reporter-phone" data-empty={!formatted&&!contactPending&&!contactError}>{formatted??(contactPending?'正在读取…':contactError?'暂不可用':'未提供')}</span></dd></div>
@@ -256,7 +258,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
   const boardSelector=typeof route?.boardActionSelector==='string'&&selectors.includes(route.boardActionSelector)?route.boardActionSelector:'';
   const boardMode=Boolean(boardIntent&&boardSelector),[cancelledBoardIntent,setCancelledBoardIntent]=useState<string|null>(null),boardIntentKey=boardIntent?JSON.stringify(boardIntent):'';
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
-    queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
+    queryFn:async({pageParam,signal})=>{const page=await api.detail(kind,id,pageParam,signal);clearHoverItemDenied(principal.principal_id,page.item.kind,page.item.id,page.item.number);return page;},getNextPageParam:p=>p.next_cursor??undefined});
   const loading=useDelayedLoading(result.isPending&&!result.data);
   const sawSkeletonRef=useRef(false),consumedSwitchSeqRef=useRef(-1);
   if(loading.visible)sawSkeletonRef.current=true;

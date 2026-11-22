@@ -1,3 +1,4 @@
+import type { ComponentPropsWithRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Principal,WorkbenchCard } from '../api/client';
 import { api,statusLabels } from '../api/client';
@@ -18,8 +19,8 @@ export function TeamAvatar({name}:{name:string}){
   return <Avatar aria-hidden="true" name={name}/>;
 }
 
-export function Owner({name,compact=false}:{name:string|null;compact?:boolean}){
-  return <span className="owner">{name?<TeamAvatar name={name}/>:<Avatar aria-hidden="true"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
+export function Owner({name,compact=false,className='',...props}:{name:string|null;compact?:boolean}&Omit<ComponentPropsWithRef<'span'>,'children'|'style'|'color'>){
+  return <span {...props} className={className?'owner '+className:'owner'}>{name?<TeamAvatar name={name}/>:<Avatar aria-hidden="true"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
 }
 
 export function useReporterProfile(item:WorkbenchCard,principal:Principal){

@@ -4,6 +4,7 @@ import {api,ApiError} from '../../api/client';
 import type {Principal} from '../../api/client';
 import type {P2016AssignmentHistoryItem,P2016AssignmentHistoryName} from '../../../../../contracts/p2_016_assignment_history_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
+import {PersonHoverTrigger} from '../../design/components/HoverCard/HoverCard';
 const label=(name:P2016AssignmentHistoryName)=>name.state==='KNOWN'?name.name:name.state==='NONE'?'无人':'记录不足';
 
 /**
@@ -48,7 +49,26 @@ export function assignmentAction(item:P2016AssignmentHistoryItem,eventType:strin
  return (first?'派给 ':'转交给 ')+label(item.next.person);
 }
 
+function AssignmentPerson({person}:{person:P2016AssignmentHistoryName}){
+ if(person.state!=='KNOWN')return <>{label(person)}</>;
+ return <PersonHoverTrigger name={person.name}><span className="ds-inline-person">{person.name}</span></PersonHoverTrigger>;
+}
+
+/** React rendering of assignment action kept free of nested interactive triggers inside the record disclosure button. */
+export function AssignmentActionContent({item,eventType}:{item:P2016AssignmentHistoryItem;eventType:string}){
+ return <>{assignmentAction(item,eventType)}</>;
+}
+
+/** Exposes a distinct transfer or assignment recipient outside the timeline row disclosure button. */
+export function AssignmentRecipient({item,eventType,actorName}:{item:P2016AssignmentHistoryItem;eventType:string;actorName:string}){
+ if(eventType==='ticket.returned_to_dispatch'||eventType==='ticket.unassigned'||item.next.person.state!=='KNOWN')return null;
+ if(item.actor_is_next||eventType==='ticket.accepted')return null;
+ const recipientName=item.next.person.name.trim();
+ if(!recipientName||recipientName===actorName.trim())return null;
+ return <div className="record-assignment-recipient"><span>{item.kind==='FIRST_RESPONSIBILITY'?'派给：':'转交给：'}</span><PersonHoverTrigger name={recipientName}><span className="ds-inline-person">{recipientName}</span></PersonHoverTrigger></div>;
+}
+
 /** The hand-overs of conversations that came with the event, as plain secondary lines of the same row. */
 export function AssignmentCommunication({item}:{item:P2016AssignmentHistoryItem}){
- return item.communication.length?<span className="record-assignment-communication" aria-label="沟通交接">{item.communication.map(control=><span key={control.control_event_id}>沟通交接：{label(control.previous)} → {label(control.next)}</span>)}</span>:null;
+ return item.communication.length?<span className="record-assignment-communication" aria-label="沟通交接">{item.communication.map(control=><span key={control.control_event_id}>沟通交接：<AssignmentPerson person={control.previous}/> → <AssignmentPerson person={control.next}/></span>)}</span>:null;
 }

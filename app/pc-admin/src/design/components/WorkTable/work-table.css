@@ -52,8 +52,11 @@
 .ds-work-table .ds-work-row[data-closure-kind=DISMISSED] .ds-list-number {color:var(--text-tertiary);}
 .ds-work-table .ds-work-row[data-closure-kind=DISMISSED] .row-link {font-weight:var(--fw-medium);color:var(--text-secondary);}
 .ds-work-table .ds-board-claim-slot {right:calc(var(--list-activity-width) + var(--space-3));bottom:var(--space-2);z-index:var(--z-list-claim);width:calc(var(--list-time-width) - var(--space-6));}
-.ds-work-row:is(:hover,:focus-within):has(.ds-board-claim-slot button) .ds-board-claim-slot {display:block;}
-.ds-work-row:is(:hover,:focus-within):has(.ds-board-claim-slot button) .ds-list-owner {visibility:hidden;}
+.ds-work-row:is(:hover,:focus-within):not(:has(.ds-list-owner[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))):has(.ds-board-claim-slot button) .ds-board-claim-slot {display:block;}
+.ds-work-row:is(:hover,:focus-within):not(:has(.ds-list-owner[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))):has(.ds-board-claim-slot button) .ds-list-owner {visibility:hidden;}
+.ds-work-table .ds-list-owner[data-hover-card-trigger] {position:relative;z-index:var(--z-list-claim);}
+.ds-work-table .ds-list-owner-link {text-decoration:none;border-radius:var(--radius-xs);}
+.ds-work-table .ds-list-owner-link:focus-visible {outline:2px solid var(--border-focus);outline-offset:2px;}
 .ds-work-table .ds-board-claim-slot button {width:100%;height:var(--control-h-sm);min-height:var(--control-h-sm);padding:0 var(--space-2);font-size:var(--fs-xs);}
 .ds-work-table .ds-board-claim-slot button .ds-button-label {position:relative;width:100%;color:transparent;}
 .ds-work-table .ds-board-claim-slot button .ds-button-label::before {content:'领取';position:absolute;left:0;color:var(--text-primary);font-size:var(--fs-xs);}

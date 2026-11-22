@@ -11,6 +11,7 @@ import type {WorkbenchSearchCriteria} from '../../../../../contracts/workbench_s
 import {Button} from '../../design/components/Button/Button';
 import {clearSessionAuthorization} from '../../app/authorization';
 import {itemLink} from '../../app/WorkbenchItemPresentation';
+import {TicketHoverCard} from '../hover-cards/TicketHoverCard';
 
 export const closureSearchCriteria=(q:string):WorkbenchSearchCriteria=>({q,column:'all',range:'all',scope:'team',responsibility:'any',resolver_team_id:null,assignee_id:null,sources:[],source_group_ref:null,statuses:[],supplement:'any',schedule:'any'});
 export function ClosureOriginalLink({number}:{number:string}){
@@ -24,7 +25,7 @@ export function ClosureOriginalLink({number}:{number:string}){
   }catch(error){if(controller.signal.aborted)return;if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,client.getQueryData<Principal>(['session'])?.principal_id,401,'revoked');else setMessage(errorMessage(error));}
   finally{if(request.current===controller){request.current=null;setBusy(false);}}
  };
- return <><Button tone="ghost" className="ds-closure-original" data-action="open-closure-original" isDisabled={busy||blocked} aria-label={'打开原单 '+number} onPress={()=>{void open();}}>{number}</Button>{message?<span role="status">{message}</span>:null}</>;
+ return <><TicketHoverCard number={number}><Button tone="ghost" className="ds-closure-original" data-action="open-closure-original" isDisabled={busy||blocked} aria-label={'打开原单 '+number} onPress={()=>{void open();}}>{number}</Button></TicketHoverCard>{message?<span role="status">{message}</span>:null}</>;
 }
 
 /** Card 29 K3: typing searches after 250ms through the existing visible-ticket search; the original's ticket number is submitted.

@@ -77,11 +77,27 @@ test('Card 30B presence tags, outline, claim hint, list, drawer capsule and fiel
   // Tooltip after hover: full names and actions, editor first.
   const tags=card(editTarget)+' .ds-presence-tags';await b.evaluate(`document.querySelector(${JSON.stringify(tags)}).scrollIntoView({block:'center'})`);
   await waitForAnimationsSettled(b,tags);
-  const point=object(await b.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(tags)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
+  // Card 37C owner decision: the aggregate list opens from padding, gaps or +N; a name opens its person card.
+  const point=object(await b.evaluate(`(()=>{
+    const group=document.querySelector(${JSON.stringify(tags)}),rect=group.getBoundingClientRect();
+    for(let y=Math.max(0,Math.ceil(rect.top));y<Math.min(innerHeight,rect.bottom);y++){
+      for(let x=Math.max(0,Math.ceil(rect.left));x<Math.min(innerWidth,rect.right);x++){
+        const hit=document.elementFromPoint(x,y),more=hit?.closest('[data-mode=more]');
+        if(hit===group||(more&&group.contains(more)))return {x,y};
+      }
+    }
+    throw Error('No hit-testable aggregate tooltip point on the editing card');
+  })()`));
   await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(point.x),y:Number(point.y)});await b.waitFor(`document.querySelector(${JSON.stringify(tags)})?.dataset.tooltipOpen==='true'`);await waitForAnimationsSettled(b,tags);
   metrics.tooltip=object(await b.evaluate(`(()=>{const t=document.querySelector(${JSON.stringify(card(editTarget)+' .ds-presence-tooltip')});return {opacity:getComputedStyle(t).opacity,rows:[...t.querySelectorAll('.ds-presence-tooltip-row')].map(r=>r.querySelector('strong').textContent+' '+r.querySelector('strong+span').textContent),avatars:t.querySelectorAll('.ds-avatar').length};})()`));
   assert.equal(object(metrics.tooltip).opacity,'1');assert.deepEqual(object(metrics.tooltip).rows,['陈悦 正在编辑内部备注','周宁 正在查看']);assert.equal(object(metrics.tooltip).avatars,2);
   await capture('board-1440-tooltip');
+  await waitForAnimationsSettled(b,tags);
+  const nameTag=tags+' [data-hover-card-trigger=person]';
+  const namePoint=object(await b.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(nameTag)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`));
+  await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:Number(namePoint.x),y:Number(namePoint.y)});
+  await b.waitFor(`document.getElementById(document.querySelector(${JSON.stringify(nameTag)})?.getAttribute('aria-controls'))?.matches('[data-hover-card=person]:not([data-exiting])')`);
+  assert.notEqual(await b.evaluate(`document.querySelector(${JSON.stringify(tags)}).dataset.tooltipOpen`),'true','hovering a name opens only its person card');
   // Unclaimed card with someone present: hover hint, claiming not blocked.
   await waitForAnimationsSettled(b,card(viewTarget));
   const view=object(await b.evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(card(viewTarget))}).getBoundingClientRect();return {x:r.left+r.width/3,y:r.top+r.height/2};})()`));

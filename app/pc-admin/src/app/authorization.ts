@@ -5,12 +5,43 @@ import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 import {closeDesktopSession,desktopHost} from '../desktop/host';
 import {clearWorkbenchToasts} from './ToastFeedback';
 import {clearSelfWrites} from '../design/motion/self-write';
+import {markHoverItemDenied,resetHoverCardSessionState} from '../features/hover-cards/denied-items';
 
 let expiredDesktopCleanup:Promise<void>|undefined;
 
+function findCachedItemNumber(client:QueryClient,principal:string,kind:string,id:string):string|null{
+  const lowerId=id.toLowerCase();
+  for(const query of client.getQueryCache().findAll({predicate:entry=>entry.queryKey[1]===principal})){
+    const data=query.state.data as Record<string,unknown>|undefined;
+    if(!data||typeof data!=='object')continue;
+    if(query.queryKey[0]==='detail'&&query.queryKey[2]===kind&&query.queryKey[3]===id){
+      const item=data.item as {number?:unknown}|undefined;
+      if(typeof item?.number==='string'&&item.number.trim())return item.number.trim();
+    }
+    if(query.queryKey[0]==='board'&&Array.isArray(data.pages)){
+      for(const page of data.pages as Array<{items?:Array<{kind?:unknown;id?:unknown;number?:unknown}>}>){
+        for(const item of page.items??[]){
+          if(item.kind===kind&&typeof item.id==='string'&&item.id.toLowerCase()===lowerId&&typeof item.number==='string'&&item.number.trim())return item.number.trim();
+        }
+      }
+    }
+    if(query.queryKey[0]==='ticket-hover-search'&&Array.isArray(data.items)){
+      for(const item of data.items as Array<{kind?:unknown;id?:unknown;number?:unknown}>){
+        if(item.kind===kind&&typeof item.id==='string'&&item.id.toLowerCase()===lowerId&&typeof item.number==='string'&&item.number.trim())return item.number.trim();
+      }
+    }
+  }
+  return null;
+}
+
 export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
+  if(typeof principal==='string'&&typeof kind==='string'&&typeof id==='string'){
+    const cachedNumber=findCachedItemNumber(client,principal,kind,id);
+    markHoverItemDenied(principal,kind,id,error.status===404?404:403,cachedNumber);
+  }
   const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='actor-avatar'||key[0]==='reporter-profile'||key[0]==='reporter-contact'||key[0]==='web-report'||key[0]==='reminder-locate'||key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position'||key[0]==='personal-read-command')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-assignment-history','ticket-round-notifications','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-takeover-targets','ticket-takeover-completion-targets','ticket-takeover-completion-selection','ticket-return-to-dispatch-targets','ticket-follow-up-schedule','ticket-follow-up-ack','ticket-supplement-follow-up'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible','conversation-chat','conversation-related'].includes(String(key[0]))&&key[2]===id));
-  await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
+  await client.cancelQueries({predicate:query=>matches(query.queryKey)||(query.queryKey[0]==='ticket-hover-search'&&query.queryKey[1]===principal)},{revert:false});
+  client.removeQueries({queryKey:['ticket-hover-search',principal]});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
     if(query.queryKey[0]==='personal-read-command')client.removeQueries({queryKey:query.queryKey,exact:true});
     else query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
@@ -71,6 +102,7 @@ export function clearTicketAuthorization(client:QueryClient,principal:unknown,ti
 export function clearSessionView(client:QueryClient,status:401|403|undefined,notice?:string){
   clearSelfWrites();
   clearWorkbenchToasts();
+  resetHoverCardSessionState();
   closeDesktopSession();
   advanceWorkbenchAuthorizationEpoch();
   if(status)useUiStore.getState().failSession(status);else useUiStore.getState().closeSession(notice??'登录已过期，请重新登录。');
