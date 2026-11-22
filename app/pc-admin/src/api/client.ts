@@ -53,7 +53,7 @@ export function captureWorkbenchRead(signal:AbortSignal):()=>void {const epoch=a
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand,P2016CompletionCommand,P2016ConversationHandlingCommand,P2016ConversationHandlingAction,P2016RelatedConversationPage};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface P2016ReopenCommand {client_command_id:string;expected_version:number;reason_code:'STAFF_REOPEN';note:string}
-export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null;reopen_follow_up?:NonNullable<P2016TicketDetail['reopen_follow_up']>}
+export interface TicketCommandContext {id:string;version:number;assignee_id?:string|null;status?:string;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null;reopen_follow_up?:NonNullable<P2016TicketDetail['reopen_follow_up']>}
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardCompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error {
@@ -236,7 +236,7 @@ function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext
   if(actions.some(action=>['take-and-start','accept-for-later','take-and-start-with-conversations','accept-for-later-with-conversations','complete','return-to-dispatch'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
   let followUp:NonNullable<P2016TicketDetail['reopen_follow_up']>|undefined;
   if(Object.hasOwn(v,'reopen_follow_up')){const f=object(v.reopen_follow_up);if(Object.keys(f).length!==3||f.origin!=='WEB_REPORTER'&&f.origin!=='BOT_REPORTER'&&f.origin!=='STAFF'||typeof f.is_previous_handler!=='boolean'||f.awaiting_acceptance!==true)throw new ApiError(502,'INVALID_RESPONSE');followUp={origin:f.origin,is_previous_handler:f.is_previous_handler,awaiting_acceptance:true};}
-  return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
+  return {id:ticket,version:version(v.version),...(Object.hasOwn(v,'assignee_id')?{assignee_id:v.assignee_id===null?null:id(v.assignee_id)}:{}),...(Object.hasOwn(v,'status')?{status:text(v.status)}:{}),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{}),...(followUp?{reopen_follow_up:followUp}:{})};
 }
 function decodeTicketNotifications(value:unknown):{items:P2016TicketNotification[]} {
   const page=object(value);

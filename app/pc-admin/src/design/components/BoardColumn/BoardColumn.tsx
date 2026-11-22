@@ -1,5 +1,5 @@
 import type {HTMLAttributes,RefObject} from 'react';
-import {memo,useCallback,useMemo,useRef,useState} from 'react';
+import {createContext,memo,useCallback,useMemo,useRef,useState} from 'react';
 import {useDragDropMonitor} from '@dnd-kit/react';
 import {Disclosure,Button,Dropdown,Label} from '@heroui/react';
 import {ArrowDownWideNarrow,ChevronDown} from 'lucide-react';
@@ -42,11 +42,13 @@ export function BoardColumn({column,label,count,countTitle='当前筛选后已�
     </div><div className="ds-column-chip-anchor"><NewItemsChip count={newCount} direction={newDirection} noun="工单" onActivate={activateReveal}/></div>{children}</section>;
 }
 
+export const BoardGroupExpandedContext=createContext(true);
+
 export const BoardGroup=memo(function BoardGroup({label,count,children,note,defaultExpanded=true,preferenceKey,loading=false,animateCount=false}: {label:string;count:number|string;children:React.ReactNode;note?:string;defaultExpanded?:boolean;preferenceKey?:string;loading?:boolean;animateCount?:boolean}){
   const [expanded,setExpanded]=useState(()=>readGroupExpanded(defaultExpanded,preferenceKey));
   return <Disclosure className="ds-board-group" data-board-group={label} isExpanded={expanded} onExpandedChange={value=>{setExpanded(value);if(preferenceKey)try{sessionStorage.setItem(preferenceKey,String(value));}catch{/* Folding remains usable without browser storage. */}}}>
     <Disclosure.Heading><Button slot="trigger" variant="ghost" className="ds-board-group-trigger" isDisabled={loading}><Disclosure.Indicator/><span>{label}</span><span className="ds-board-group-count">{typeof count==='number'?<NumberRoll value={count} animate={animateCount}/>:count}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></Disclosure.Heading>
-    <Disclosure.Content><Disclosure.Body>{children}</Disclosure.Body></Disclosure.Content>
+    <Disclosure.Content><Disclosure.Body><BoardGroupExpandedContext.Provider value={expanded}>{children}</BoardGroupExpandedContext.Provider></Disclosure.Body></Disclosure.Content>
   </Disclosure>;
 });
 

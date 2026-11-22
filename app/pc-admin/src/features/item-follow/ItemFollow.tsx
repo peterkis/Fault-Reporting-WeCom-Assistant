@@ -1,8 +1,10 @@
 import {Button as HButton} from '../../design/components/Button/Button';
-import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
+import {OptimisticBadge} from '../../design/components/OptimisticBadge/OptimisticBadge';
+import {ToastFeedback,DraftStatus,showErrorActionToast,showUndoToast,useFeedbackState} from '../../app/ToastFeedback';
 import {Star} from 'lucide-react';
 import {TooltipAnchor} from '../../design/components/Tooltip/Tooltip';
 import {useEffect,useRef,useState} from 'react';
+import {useLocation,useNavigate} from 'react-router';
 import {useQueryClient} from '@tanstack/react-query';
 import type {InfiniteData} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
@@ -12,6 +14,9 @@ import {DRAFT_TTL_MS,DraftError,hasExistingDraft,matchesDraft,subscribeDrafts} f
 import {useAuthorizedDraft} from '../drafts/use-note-draft';
 import {decodeFollowCommand,matchesFollowResult} from '../../contracts/workbench-follow-browser-contracts.mjs';
 import type {FollowItem,WorkbenchFollowCommand,WorkbenchFollowResult} from '../../contracts/workbench-follow-browser-contracts.mjs';
+import {OPTIMISTIC_UNKNOWN_TIMEOUT_MS} from '../optimistic/constants';
+import {beginOptimisticOverlay,confirmOptimisticOverlay,markOptimisticUnknown,optimisticItemKey,removeOptimisticOverlay,triggerRollbackCue,useItemOptimisticState} from '../optimistic/store';
+import {executeFollowUndo} from '../optimistic/undo-actions';
 
 type State='idle'|'submitting'|'checking'|'reading'|'succeeded'|'conflict'|'unknown'|'denied';
 // A rejection from bootstrap has session scope. A purpose or object rejection
@@ -28,12 +33,14 @@ function decodeCopy(serialized:string):{value:string;pending:WorkbenchFollowComm
  }catch{throw new DraftError('DRAFT_CORRUPT');}
 }
 export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:{requested:FollowItem;item:WorkbenchCard;principal:Principal;readReady:boolean;onBlockedChange:(blocked:boolean)=>void}){
- const client=useQueryClient(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
+ const client=useQueryClient(),navigate=useNavigate(),location=useLocation(),request=useRef<AbortController|null>(null),generation=useRef(0),settling=useRef(false);
  const identity=JSON.stringify([principal.principal_id,principal.csrf_token,principal.authorization_revision,principal.expires_epoch_ms,principal.roles,principal.workbench_follow_enabled,principal.workbench_follow_draft_recovery_enabled,requested.kind,requested.id]);
  const latestIdentity=useRef(identity);latestIdentity.current=identity;
  const [pending,setPending]=useState<WorkbenchFollowCommand|null>(null),[opaque,setOpaque]=useState<string|null>(null),[state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[needsRead,setNeedsRead]=useState(false);
- const [existing,setExisting]=useState(false),[probing,setProbing]=useState(true);
+ const [existing,setExisting]=useState(false),[probing,setProbing]=useState(true),[suppressToast,setSuppressToast]=useState(false);
  const scope={principal:principal.principal_id,kind:requested.kind,id:requested.id,purpose:'item-follow'},attention=item.attention;
+ const followOpt=useItemOptimisticState(principal.principal_id,item.kind,item.id,item.intake_id);
+ const itemKey=optimisticItemKey(item.kind,item.id);
  const rawEnabled=principal.workbench_follow_enabled===true&&principal.workbench_follow_draft_recovery_enabled===true&&attention!==undefined;
  const detailKey=['detail',principal.principal_id,requested.kind,requested.id] as const;
  const clear=()=>{generation.current++;request.current?.abort();request.current=null;setPending(null);setOpaque(null);setState('idle');setMessage('');};
@@ -64,7 +71,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   onSensitiveClear:()=>{if(!settling.current)clear();},
  });
  const commandId=draft.operationId??opaque??pending?.client_command_id,busy=state==='submitting'||state==='checking'||state==='reading';
- const blocked=busy||Boolean(commandId);
+ const blocked=['checking','reading','unknown'].includes(state)||Boolean(commandId&&state!=='submitting'&&!settling.current);
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
  useEffect(()=>{generation.current++;request.current?.abort();request.current=null;if(commandId){if(!principal.workbench_follow_enabled){setPending(null);setOpaque(commandId);}setState('unknown');setMessage('当前会话或能力已更新；原操作保留，请只读核对。');}},[identity]);
@@ -96,66 +103,151 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   client.setQueryData<InfiniteData<WorkbenchDetail,string|null>>(detailKey,{pages:[fresh],pageParams:[null]});setNeedsRead(false);return fresh;
  }
  async function settle(id:string){settling.current=true;try{return await draft.success(id);}finally{settling.current=false;}}
- async function terminal(id:string,result:WorkbenchFollowResult|null,controller:AbortController,current:()=>boolean){
+ async function terminal(id:string,result:WorkbenchFollowResult|null,controller:AbortController,current:()=>boolean,optimistic=false,rejectionError:ApiError|null=null){
   const cleaned=await settle(id);if(!current())return;setPending(null);setOpaque(cleaned?null:id);setNeedsRead(true);
-  if(!cleaned){setState('unknown');setMessage('已核对原操作，恢复记录清理尚未确认；请继续只读核对。');return;}
+  if(!cleaned){
+   setSuppressToast(false);
+   if(result)confirmOptimisticOverlay(principal.principal_id,itemKey,'follow',id);
+   setState('unknown');setMessage('已核对原操作，恢复记录清理尚未确认；请继续只读核对。');return;
+  }
+  if(result){
+   confirmOptimisticOverlay(principal.principal_id,itemKey,'follow',id);
+   if(optimistic){
+    setSuppressToast(true);
+    showUndoToast({
+     id:'follow:'+id,
+     source:'item-follow',
+     title:result.following?'已关注':'已取消关注',
+     onUndo:()=>executeFollowUndo({
+      principal,
+      client,
+      requested,
+      item,
+      targetFollowing:!result.following,
+      committedFollowVersion:result.follow_version,
+      onOpenItem:()=>navigate('/items/'+item.kind+'/'+item.id+location.search),
+     }),
+    });
+   }else{
+    setSuppressToast(false);
+   }
+  }else{
+   removeOptimisticOverlay(principal.principal_id,itemKey,'follow',id);
+   triggerRollbackCue(principal.principal_id,item.kind,item.id,'follow',item.intake_id);
+   if(optimistic){
+    setSuppressToast(true);
+    showErrorActionToast({
+     id:'follow-error:'+itemKey,
+     source:'item-follow',
+     title:'没有生效',
+     message:rejectionError?.status===409?'关注状态已变化，请确认后再试':errorMessage(rejectionError),
+     actionLabel:'查看',
+     onAction:()=>navigate('/items/'+item.kind+'/'+item.id+location.search),
+     state:rejectionError?.status===409?'conflict':'denied',
+    });
+   }else{
+    setSuppressToast(false);
+   }
+  }
   setState(result?'succeeded':'conflict');setMessage(result?'原操作已提交；正在读取当前关注状态…':'原操作已被拒绝；请读取当前资料后确认新的操作。');
   try{await readLatest(controller.signal,current);if(!current())return;setMessage(result?'已确认原操作，当前关注状态已重新读取。':'原操作已被拒绝，当前资料已重新读取。');}
   catch(error){if(!current())return;if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&[401,403,404].includes(error.status)){authorityFailure(error);return;}setMessage(result?'原操作已确认提交，当前状态暂未读回，请重新读取。':'原操作已被拒绝，当前状态暂未读回，请重新读取。');}
   if(current())refresh();
  }
  async function rejectedPurpose(error:ApiError,id:string,controller:AbortController,current:()=>boolean){
-  if(error.status===401||error instanceof FollowSessionRejected){authorityFailure(error);return;}
+  if(error.status===401||error instanceof FollowSessionRejected){removeOptimisticOverlay(principal.principal_id,itemKey,'follow',id);authorityFailure(error);return;}
   // A purpose OFF404 is not loss of the underlying object READ and never settles an UNKNOWN intent.
-  try{await readLatest(controller.signal,current);}catch(readError){if(!current())return;if(readError instanceof DraftError&&readError.message==='DRAFT_IDENTITY_CHANGED'||readError instanceof ApiError&&[401,403,404].includes(readError.status)){authorityFailure(readError);return;}}
-  if(!current())return;setOpaque(id);setState('unknown');setMessage('当前关注操作或核对不可用；原操作仍保留，不会发送新的操作。');
+  try{await readLatest(controller.signal,current);}catch(readError){if(!current())return;if(readError instanceof DraftError&&readError.message==='DRAFT_IDENTITY_CHANGED'||readError instanceof ApiError&&[401,403,404].includes(readError.status)){removeOptimisticOverlay(principal.principal_id,itemKey,'follow',id);authorityFailure(readError);return;}}
+  if(!current())return;setSuppressToast(false);markOptimisticUnknown(principal.principal_id,itemKey,'follow',id);setOpaque(id);setState('unknown');setMessage('当前关注操作或核对不可用；原操作仍保留，不会发送新的操作。');
  }
  async function send(command:WorkbenchFollowCommand,replay=false){
   if(request.current||!principal.workbench_follow_enabled||!attention||!principal.csrf_token||!workbenchTransportWritable()||!draft.canSubmit&&!replay)return;
   if(replay&&(!pending||pending.client_command_id!==commandId||probing||draft.status==='loading'||draft.status==='failed'))return;
-  const controller=new AbortController(),token=++generation.current,startIdentity=latestIdentity.current,current=currentRequest(controller,token,startIdentity,captureWorkbenchRead(controller.signal));request.current=controller;setPending(command);setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false,postRejection:ApiError|null=null;
+  const controller=new AbortController(),token=++generation.current,startIdentity=latestIdentity.current,current=currentRequest(controller,token,startIdentity,captureWorkbenchRead(controller.signal));request.current=controller;
+  const optimistic=!replay;
+  let timedOut=false;
+  const timerId=optimistic?window.setTimeout(()=>{
+   if(!current()||request.current!==controller)return;
+   timedOut=true;
+   if(generation.current===token)request.current=null;
+   markOptimisticUnknown(principal.principal_id,itemKey,'follow',command.client_command_id);
+   setSuppressToast(false);
+   setState('unknown');
+   setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');
+   controller.abort();
+  },OPTIMISTIC_UNKNOWN_TIMEOUT_MS):undefined;
+  if(optimistic){
+   setSuppressToast(true);
+   beginOptimisticOverlay(principal.principal_id,{
+    itemKey,
+    intakeId:item.intake_id,
+    kind:'follow',
+    slot:'follow',
+    clientCommandId:command.client_command_id,
+    status:'pending',
+    startedAt:Date.now(),
+    from:{following:attention.following},
+    to:{following:command.following},
+   });
+  }else{
+   setSuppressToast(false);
+  }
+  setPending(command);setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false,postRejection:ApiError|null=null;
   try{
    await verifySession(controller.signal,current);await draft.prepare(command);if(!current())return;dispatched=true;
    let result:WorkbenchFollowResult;
    try{result=await api.follow(requested,command,principal.csrf_token,controller.signal);}
    catch(error){if(error instanceof ApiError&&error.status>=400&&error.status<500)postRejection=error;throw error;}
-   if(!current())return;await verifySession(controller.signal,current);
-   await terminal(command.client_command_id,result,controller,current);
+   if(timerId!==undefined)window.clearTimeout(timerId);
+   if(timedOut||!current())return;
+   await verifySession(controller.signal,current);
+   await terminal(command.client_command_id,result,controller,current,optimistic);
   }catch(error){
-   if(!current())return;
-   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof FollowSessionRejected||error instanceof ApiError&&error.status===401)authorityFailure(error);
-   else if(!dispatched){if(replay){setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}else{setPending(null);setOpaque(null);setState('denied');setMessage('关注没有提交：本机草稿未能保存。点击重试。');}}
+   if(timerId!==undefined)window.clearTimeout(timerId);
+   if(timedOut||!current())return;
+   if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof FollowSessionRejected||error instanceof ApiError&&error.status===401){removeOptimisticOverlay(principal.principal_id,itemKey,'follow',command.client_command_id);authorityFailure(error);}
+   else if(!dispatched){
+    if(replay){setSuppressToast(false);setState('unknown');setMessage('原操作仍待核对；本次未再次发送。');}
+    else{
+     removeOptimisticOverlay(principal.principal_id,itemKey,'follow',command.client_command_id);
+     triggerRollbackCue(principal.principal_id,item.kind,item.id,'follow',item.intake_id);
+     setSuppressToast(true);
+     showErrorActionToast({id:'follow-error:'+itemKey,source:'item-follow',title:'关注没有提交',message:'本机草稿未能保存，请重试',actionLabel:'查看',onAction:()=>navigate('/items/'+item.kind+'/'+item.id+location.search)});
+     setPending(null);setOpaque(null);setState('denied');setMessage('关注没有提交：本机草稿未能保存。点击重试。');
+    }
+   }
    else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,command.client_command_id,controller,current);
-   else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current);
-   else{setState('unknown');setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');}
-  }finally{if(generation.current===token)request.current=null;}
+   else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current,optimistic,postRejection);
+   else{setSuppressToast(false);markOptimisticUnknown(principal.principal_id,itemKey,'follow',command.client_command_id);setState('unknown');setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');}
+  }finally{if(timerId!==undefined)window.clearTimeout(timerId);if(generation.current===token)request.current=null;}
  }
  async function checkOriginal(){
   if(request.current||!commandId||probing||draft.status==='loading')return;
-  const id=commandId,command=pending,controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setState('checking');setMessage('正在只读核对原关注操作…');
+  const id=commandId,command=pending,controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setSuppressToast(false);setState('checking');setMessage('正在只读核对原关注操作…');
   try{
    await verifySession(controller.signal,current);const receipt=await api.followReceipt(requested,id,controller.signal);if(!current())return;await verifySession(controller.signal,current);
-   if(receipt.state==='UNKNOWN'){setState('unknown');setMessage('原操作尚无可确认终态；请保留原操作，不会自动再次发送。');return;}
+   if(receipt.state==='UNKNOWN'){markOptimisticUnknown(principal.principal_id,itemKey,'follow',id);setState('unknown');setMessage('原操作尚无可确认终态；请保留原操作，不会自动再次发送。');return;}
    if(receipt.state==='COMMITTED'&&command&&!matchesFollowResult(command,receipt.result,requested))throw Error('FOLLOW_ORIGINAL_RESULT_UNCONFIRMED');
-   await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,controller,current);
+   await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,controller,current,false);
   }catch(error){if(!current())return;if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')authorityFailure(error);else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,id,controller,current);else{setState('unknown');setMessage('只读核对暂未完成；原操作仍保留。');}}
   finally{if(generation.current===token)request.current=null;}
  }
  async function refreshCurrent(){
-  if(request.current)return;const controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setState('reading');
+  if(request.current)return;const controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setSuppressToast(false);setState('reading');
   try{await readLatest(controller.signal,current);if(current()){setState(commandId?'unknown':'idle');setMessage(commandId?'当前资料已读取；原操作仍须只读核对。':'');refresh();}}
   catch(error){if(current()){if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED'||error instanceof ApiError&&[401,403,404].includes(error.status))authorityFailure(error);else{setNeedsRead(true);setState(commandId?'unknown':'denied');setMessage(errorMessage(error));}}}
   finally{if(generation.current===token)request.current=null;}
  }
  if(!principal.workbench_follow_enabled&&!commandId&&!existing&&!pending)return null;
- const canStart=principal.workbench_follow_enabled&&attention!==undefined&&readReady&&!needsRead&&!blocked&&!probing&&draft.status!=='loading'&&draft.canSubmit&&Boolean(principal.csrf_token)&&workbenchTransportWritable();
- return <section className="compact-follow" aria-label="个人关注">
-  {principal.workbench_follow_enabled&&attention?<TooltipAnchor as="div" className="note-controls"><HButton type="button" data-action="toggle-item-follow" className="icon-button" aria-label={attention.following?'取消关注':'关注此事项'} title={attention.following?'取消关注此事项':'关注此事项，接收后续动态'} aria-pressed={attention.following} isDisabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}} tone="secondary"><Star size={18} fill={attention.following?'currentColor':'none'}/></HButton><span className="follow-tooltip" role="tooltip">{attention.following?'已关注此事项':'关注此事项'}<small>接收后续动态；不改变处理或沟通责任。</small></span></TooltipAnchor>:null}
-  <div className={state==='succeeded'&&!commandId&&!needsRead?'sr-only':'follow-feedback'} hidden={!commandId&&!needsRead&&draft.status!=='failed'&&!message}>
+ const displayFollowing=followOpt.followTarget??attention?.following??false;
+ const canStart=principal.workbench_follow_enabled&&attention!==undefined&&readReady&&!needsRead&&!busy&&!blocked&&!followOpt.followPending&&!probing&&draft.status!=='loading'&&draft.canSubmit&&Boolean(principal.csrf_token)&&workbenchTransportWritable();
+ return <section className="compact-follow" aria-label="个人关注" data-optimistic-pending={followOpt.followPending?'follow':undefined} data-optimistic-state={followOpt.state??undefined}>
+  {principal.workbench_follow_enabled&&attention?<TooltipAnchor as="div" className="note-controls"><HButton type="button" data-action="toggle-item-follow" className="icon-button" aria-label={displayFollowing?'取消关注':'关注此事项'} title={displayFollowing?'取消关注此事项':'关注此事项，接收后续动态'} aria-pressed={attention.following} data-following={displayFollowing?'true':'false'} isDisabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}} tone="secondary"><Star size={18} fill={displayFollowing?'currentColor':'none'}/></HButton><span className="follow-tooltip" role="tooltip">{displayFollowing?'已关注此事项':'关注此事项'}<small>接收后续动态；不改变处理或沟通责任。</small></span><OptimisticBadge pending={followOpt.followPending} kind="follow"/></TooltipAnchor>:null}
+  <div className={state==='succeeded'&&!commandId&&!needsRead?'sr-only':'follow-feedback'} hidden={!commandId&&!needsRead&&draft.status!=='failed'&&(!message||suppressToast)}>
   {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead||state==='conflict'||state==='denied'?<HButton type="button" data-action="follow-refresh" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">重新读取当前状态</HButton>:null}
   {draft.enabled&&draft.status==='failed'?<DraftStatus role="status" data-follow-draft-status={draft.status}>{draft.message}</DraftStatus>:null}
-  {message?<ToastFeedback revision={messageRevision} source="item-follow" state={state} className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
+  {message&&!suppressToast?<ToastFeedback revision={messageRevision} source="item-follow" state={state} className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
   </div>
  </section>;
 }

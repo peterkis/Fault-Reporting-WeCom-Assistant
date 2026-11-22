@@ -296,6 +296,7 @@ test('compiled entry completes normal Gateway intake, human handling, original r
    const second=await access.upsertPrincipal({wecomUserId:'runtime-handler',displayName:'闭环合成处理人',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
    const port=await unusedPort(),f=workbenchTestSettings(directory,port);
    f.env.PILOT_DATABASE_URL=databaseUrl;f.env.PILOT_LOG_IDENTITY_HASH_KEY=INBOX_IDENTITY_KEY;f.settings.transportEnabled=true;f.settings.workbenchRemindersEnabled=true;
+   f.settings.claimNotificationUndoWindowMs=0; // This multi-process scenario consumes FIRST_HANDLING immediately.
    f.settings.memberEntry={...f.settings.memberEntry,reporterUserIds:['synthetic-A','synthetic-B']};
    f.settings.bot.personTargetHashes.push(hashTarget('synthetic-B'));
    f.bindings.mappingConfigHash=yxxIdentityConfigHash(f.settings.memberEntry);

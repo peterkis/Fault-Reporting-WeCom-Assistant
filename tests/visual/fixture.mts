@@ -4,6 +4,8 @@ import type { T11Fixture } from '../helpers/t11-completion-fixture.mjs';
 import type { PostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 import { loadServiceCatalog } from '../../app/server/src/p2-007-service-catalog.mjs';
 import { createP2016Runtime } from '../../app/server/src/p2-016-runtime.mjs';
+import { migrateWorkbenchFollowUpSchedules } from '../../app/server/scripts/workbench-follow-up-schedules-migrate.mjs';
+import { migrateWorkbenchFollowUpDueSignals } from '../../app/server/scripts/workbench-follow-up-due-migrate.mjs';
 import { addInboxSession, attachInboxJourney } from '../helpers/conversation-inbox-fixture.mjs';
 import { appendCommunication } from '../../app/server/src/p2-004-communication-core.mjs';
 import { transactionP2016 } from '../../app/server/src/p2-016-domain-contracts.mjs';
@@ -46,8 +48,10 @@ export interface VisualFixture extends T11Fixture {
   sessionId: string;
 }
 export async function withVisualFixture(
+  prepare: readonly string[],
   run: (fixture: VisualFixture) => Promise<void>,
 ): Promise<void> {
+  const captureScheduleToasts = prepare.includes('toast-exhibit');
   try {
     await withWeb01Fixture(
       async (original: T11Fixture) => {
@@ -193,6 +197,7 @@ LOOP EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I SET DEFAULT uuidv7()',col
           workbenchInternalNotesEnabled: true,
           workbenchDraftRecoveryEnabled: true,
           workbenchFollowEnabled: true,
+          workbenchFollowUpSchedulesEnabled: captureScheduleToasts,
           workbenchSearchEnabled: true,
           workbenchAssignmentHistoryEnabled: true,
           workbenchRealtimeEnabled: true,
@@ -234,7 +239,13 @@ LOOP EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I SET DEFAULT uuidv7()',col
         workbenchDraftRecoveryEnabled: true,
         workbenchFollowEnabled: true,
         workbenchSearchEnabled: true,
-        beforeClosureMigration: fixedClock,
+        beforeClosureMigration: async (context) => {
+          await fixedClock(context);
+          if (captureScheduleToasts) {
+            await migrateWorkbenchFollowUpSchedules({ databaseUrl: context.databaseUrl, mode: 'apply' });
+            await migrateWorkbenchFollowUpDueSignals({ databaseUrl: context.databaseUrl, mode: 'apply' });
+          }
+        },
       },
     );
   } finally {

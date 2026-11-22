@@ -6,6 +6,9 @@ import type {BoardColumn,WorkbenchCard} from '../../../api/client';
 import {cardHeat,cardHeatStart} from '../../heat';
 import {formatListTime,formatWaitingTime} from '../../format-time';
 import {useClosureElementHighlight} from '../../motion/board-motion';
+import {useOptimisticRollbackCue} from '../../motion/rollback-cue';
+import {useItemOptimisticState,useItemRollbackCue} from '../../../features/optimistic/store';
+import {OptimisticBadge} from '../OptimisticBadge/OptimisticBadge';
 import {NumberRoll} from '../../motion/number-roll';
 import {cardTags,stagePresentation} from '../../status-map';
 import {Avatar} from '../Avatar/Avatar';
@@ -62,18 +65,21 @@ function ListTime({item,now}:{item:WorkbenchCard;now:number}){
   const heat=cardHeat(item,now),start=cardHeatStart(item),duration=formatWaitingTime(start,now);
   return heat?<TicketHeat heat={heat} heatStart={start}/>:duration?<span className="ds-list-time">{duration.label}</span>:<span className="ds-list-missing">—</span>;
 }
-function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTime}:Pick<Props,'selected'|'now'|'renderLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
+function WorkRow({principalId,item,hidden,selected,now,renderLink,renderFollowUp,relativeTime}:Pick<Props,'principalId'|'selected'|'now'|'renderLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
   const highlighted=useClosureHighlight(item),rowRef=useRef<HTMLTableRowElement>(null);
+  const opt=useItemOptimisticState(principalId,item.kind,item.id,item.intake_id);
+  const rollback=useItemRollbackCue(principalId,item,!hidden);
   useClosureElementHighlight(rowRef,highlighted&&!hidden,'brand');
+  useOptimisticRollbackCue(rowRef,rollback.active,rollback.revision,rollback.onFinished,{inset:true});
   const name=present(item.reporter_name),location=present(item.location),owner=present(item.assignee_name),dismissed=item.closure?.kind==='DISMISSED';
   const ownerName=owner?.replace(/\s*[（(][^（）()]*[）)]\s*$/u,'').trim()||owner;
   const sourceTitle='来源：'+(present(item.source_label)??'—')+' · 报修人：'+(name??'—')+' · 位置：'+(location??'—');
   const tags=cardTags(item).filter(tag=>['urge','review','supplement'].includes(tag.key));
   // Card 30B B3: only a shown, not-dismissed row reads presence; collapsed rows are not requested.
   const presence=usePresence({kind:item.kind,id:item.id},!hidden&&!dismissed);
-  return <tr ref={rowRef} hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined}>
+  return <tr ref={rowRef} hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined} data-optimistic-pending={opt.pendingKind??undefined} data-optimistic-state={opt.state??undefined}>
     <th scope="row"><span className="ds-list-identity"><TicketCategoryTile service={item.service}/><span className="ds-list-number" title={item.number}>{item.number}</span></span></th>
-    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}</span><PresenceTags people={presence} className="ds-list-presence"/></div></td>
+    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}<OptimisticBadge pending={opt.pending} kind={opt.pendingKind??undefined}/></span><PresenceTags people={presence} className="ds-list-presence"/></div></td>
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
     <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name}{name&&location?<span className="ds-list-separator"> · </span>:null}{location}</span></>:<span className="ds-list-missing">—</span>}</span></td>
@@ -82,12 +88,12 @@ function WorkRow({item,hidden,selected,now,renderLink,renderFollowUp,relativeTim
   </tr>;
 }
 /** Owner-confirmed E3 exception: native table rows change visibility instantly; only arrows animate. */
-function ListRows({items,expanded,id,...props}:Omit<Props,'groups'|'principalId'|'closureKind'|'newChip'|'animateCount'>&{items:WorkbenchCard[];expanded:boolean;id:string}){
+function ListRows({items,expanded,id,...props}:Omit<Props,'groups'|'closureKind'|'newChip'|'animateCount'>&{items:WorkbenchCard[];expanded:boolean;id:string}){
   const [all,setAll]=useState(false),visible=all?items:items.slice(0,3);
   return <><tr hidden={!expanded||items.length>0} id={id+'-empty'} className="ds-list-empty"><td colSpan={7}><EmptyState size="compact" title="这里暂时没有工单"/></td></tr>{visible.map(item=><WorkRow key={item.kind+':'+item.id} {...props} item={item} hidden={!expanded}/>)}{items.length>3?<tr hidden={!expanded} id={id+'-more'} className="ds-list-more"><td colSpan={7}><Button tone="ghost" data-action="expand-column" aria-expanded={all} aria-controls={items.map(item=>'list-item-'+item.kind+'-'+item.id).join(' ')} onPress={()=>setAll(value=>!value)}><CollapseChevron expanded={all}/>{all?'收起':('显示剩余 '+(items.length-3)+' 项')}</Button></td></tr>:null}</>;
 }
 type SubgroupLoading={rows:number;slow:boolean;onRetry?:()=>void};
-function Subgroup({label,items,preferenceKey,defaultExpanded=true,forced=false,note,loading,animateCount=false,...props}:Omit<Props,'groups'|'principalId'|'closureKind'|'newChip'>&{label:string;items:WorkbenchCard[];preferenceKey:string;defaultExpanded?:boolean;forced?:boolean;note?:string;loading?:SubgroupLoading}){
+function Subgroup({label,items,preferenceKey,defaultExpanded=true,forced=false,note,loading,animateCount=false,...props}:Omit<Props,'groups'|'closureKind'|'newChip'>&{label:string;items:WorkbenchCard[];preferenceKey:string;defaultExpanded?:boolean;forced?:boolean;note?:string;loading?:SubgroupLoading}){
   const [expanded,toggle]=useFold(preferenceKey,forced||defaultExpanded,forced),id='list-subgroup-'+preferenceKey.split(':').at(-1);
   const controls=loading?id+'-loading':items.length?items.slice(0,3).map(item=>'list-item-'+item.kind+'-'+item.id).join(' '):id+'-empty';
   return <><tr className="ds-list-subgroup" data-board-group={label}><th colSpan={7} scope="rowgroup"><Button className="ds-board-group-trigger" tone="ghost" aria-expanded={expanded} aria-controls={controls} isDisabled={Boolean(loading)} onPress={toggle}><CollapseChevron expanded={expanded} from="right"/><span>{label}</span><span className="ds-board-group-count">{loading?'…':<NumberRoll value={items.length} animate={animateCount}/>}</span>{note?<span className="ds-board-group-note">{note}</span>:null}</Button></th></tr>{loading?expanded?<WorkTableSkeletonRows rows={loading.rows} slow={loading.slow} {...(loading.onRetry?{onRetry:loading.onRetry}:{})} statusId={id+'-loading'}/>:null:<ListRows {...props} items={items} expanded={expanded} id={id}/>}</>;
@@ -99,11 +105,11 @@ function Stage({group,principalId,closureKind,skeletonRows,onLoadingChange,anima
   const definitions=column==='handled'?PROCESSED_GROUPS.filter(definition=>closureKind==='all'||definition.key===closureKind):column==='pending'?PENDING_GROUPS:[];
   const forced=(key:string)=>column==='handled'&&closureKind===key;
   const loadingGroups=definitions.filter(definition=>forced(definition.key)||readGroupExpanded(definition.defaultExpanded,groupPreferenceKey(definition,principalId,'list')));
-  const subgroups=(pending:boolean)=>definitions.map(definition=><Subgroup key={definition.key} {...props} animateCount={animateCount} label={definition.label} preferenceKey={groupPreferenceKey(definition,principalId,'list')} items={pending?[]:itemsInGroup(definition,items)} defaultExpanded={definition.defaultExpanded} forced={forced(definition.key)} {...(definition.note?{note:definition.note}:{})} {...(pending?{loading:{rows:loadingSlots(skeletonRows,loadingGroups.indexOf(definition),loadingGroups.length),slow:loading.slow,...(group.onRetry?{onRetry:group.onRetry}:{})}}:{})}/>);
+  const subgroups=(pending:boolean)=>definitions.map(definition=><Subgroup key={definition.key} {...props} principalId={principalId} animateCount={animateCount} label={definition.label} preferenceKey={groupPreferenceKey(definition,principalId,'list')} items={pending?[]:itemsInGroup(definition,items)} defaultExpanded={definition.defaultExpanded} forced={forced(definition.key)} {...(definition.note?{note:definition.note}:{})} {...(pending?{loading:{rows:loadingSlots(skeletonRows,loadingGroups.indexOf(definition),loadingGroups.length),slow:loading.slow,...(group.onRetry?{onRetry:group.onRetry}:{})}}:{})}/>);
 
   return <tbody className="list-group" aria-label={label} id={id}>
     <tr className="ds-list-stage" aria-label={label+'事项列表'}><th colSpan={7} scope="rowgroup"><div className="column-heading"><Button className="ds-list-stage-toggle" tone="ghost" isIconOnly aria-label={(expanded?'折叠':'展开')+label} aria-expanded={expanded} aria-controls={id} onPress={toggle}><CollapseChevron expanded={expanded} from="right"/></Button><h2 className={'stage-pill '+column}><StatusBadge tone={stagePresentation[column].tone}>{label}</StatusBadge></h2><span className="ds-list-stage-count" title="当前筛选后已加载的事项">{loading.visible||group.loading?'…':typeof count==='number'?<NumberRoll value={count} animate={animateCount}/>:count}</span></div></th></tr>
-    {expanded&&loading.visible?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{definitions.length?subgroups(true):<WorkTableSkeletonRows rows={skeletonRows} slow={loading.slow} onRetry={group.onRetry}/>}</>:expanded&&!group.loading?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{feedback?<tr className="ds-list-feedback"><td colSpan={7}>{feedback}</td></tr>:null}{feedback&&!items.length?null:definitions.length&&items.length?subgroups(false):<ListRows {...props} items={items} expanded id={id}/>} {nextPage?<tr className="ds-list-more"><td colSpan={7}>{nextPage}</td></tr>:null}</>:null}
+    {expanded&&loading.visible?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{definitions.length?subgroups(true):<WorkTableSkeletonRows rows={skeletonRows} slow={loading.slow} onRetry={group.onRetry}/>}</>:expanded&&!group.loading?<>{column==='handled'&&closureKind!=='all'?<tr className="ds-list-note"><td colSpan={7}>按结束方式筛选时只显示已处理事项</td></tr>:null}{feedback?<tr className="ds-list-feedback"><td colSpan={7}>{feedback}</td></tr>:null}{feedback&&!items.length?null:definitions.length&&items.length?subgroups(false):<ListRows {...props} principalId={principalId} items={items} expanded id={id}/>} {nextPage?<tr className="ds-list-more"><td colSpan={7}>{nextPage}</td></tr>:null}</>:null}
   </tbody>;
 }
 /** Native row/column headers preserve table semantics for cross-column group rows. */

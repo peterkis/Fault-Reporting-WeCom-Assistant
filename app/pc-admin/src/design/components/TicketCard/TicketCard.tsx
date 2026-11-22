@@ -45,14 +45,14 @@ export function ClosureReason({closure}:{closure:WorkbenchCard['closure']}){
   </Tag>;
 }
 
-export function DismissedTicketCardBody({item,now,followUp,titleLink}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode;titleLink?:ReactNode}){
+export function DismissedTicketCardBody({item,now,followUp,badge,titleLink}:{item:WorkbenchCard;now:number;metadata:ReactNode;followUp?:ReactNode;badge?:ReactNode;titleLink?:ReactNode}){
   const closure=item.closure;
   if(closure?.kind!=='DISMISSED')return null;
   const name=closure.ended_by_display_name;
   return <div className="ds-ticket-body ds-ticket-dismissed-body has-category">
     <div className="card-top"><span title={item.number}>{item.number}</span><span className="activity-time ds-ticket-dismissed-at" title={closure.ended_at?closure.ended_at+'（北京时间）':'关闭时间未记录'}><CircleX aria-hidden="true"/>{closure.ended_at?<time dateTime={closure.ended_at.replace(' ','T')+'+08:00'}>{formatListTime(closure.ended_at,now)} 关闭</time>:<span>时间未记录 关闭</span>}</span><TicketCategoryTile service={item.service}/></div>
     <h3 title={item.title}>{titleLink??(item.title||'待补充的问题描述')}</h3>
-    <footer className="card-footer"><div className="card-tags"><ClosureReason closure={closure}/>{followUp}</div><span className="ds-ticket-owner ds-ticket-closer" data-closure-source={closure.source??'unknown'}>
+    <footer className="card-footer"><div className="card-tags"><ClosureReason closure={closure}/>{followUp}{badge}</div><span className="ds-ticket-owner ds-ticket-closer" data-closure-source={closure.source??'unknown'}>
       {closure.source==='SYSTEM'?<><Avatar size={20} systemIcon={<Bot aria-hidden="true"/>} aria-hidden="true"/><span className="ds-ticket-close-method">系统判定</span></>:closure.source==='MANUAL'?<>{name?<><Avatar name={name} size={20} aria-hidden="true"/><span className="owner-name" title={name}>{name}</span><span aria-hidden="true"> · </span></>:null}<span className="ds-ticket-close-method">人工关闭</span></>:name?<span className="owner-name" title={name}>{name}</span>:null}
     </span></footer>
   </div>;

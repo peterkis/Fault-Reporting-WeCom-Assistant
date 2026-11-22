@@ -151,6 +151,21 @@
   },
   "rules": [
     {
+      "pattern": "^app/server/src/workbench-ticket-return-to-dispatch\\.mts$",
+      "profiles": ["core", "notification"],
+      "reason": "Card 37A: preserve return command coverage and verify transactional cancellation at the claim window boundary."
+    },
+    {
+      "pattern": "^tests/(?:pc-admin-card37a-(?:optimistic\\.browser|store)\\.test\\.mts|helpers/card37a-optimistic-fixture\\.mts)$|^app/pc-admin/src/(?:features/(?:optimistic/|board-actions/|item-follow/|ticket-handling/|ticket-waiting/)|app/(?:Workbench|ToastFeedback)\\.tsx|design/(?:components/OptimisticBadge/|motion/rollback-cue\\.ts))",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 37A: optimistic projection, conflict recovery, inverse commands, toast timing and reduced motion in Chrome."
+    },
+    {
+      "pattern": "^tests/card37a-notification-undo-window(?:\\.integration)?\\.test\\.mts$|^app/server/src/(?:notification-undo-window|service-closure-notifications|workbench-ticket-round-notifications)\\.mts$",
+      "profiles": ["notification"],
+      "reason": "Card 37A: reporter delivery eligibility and cancellation before and after worker projection."
+    },
+    {
       "pattern": "^tests/(?:pc-admin-card36c-motion\\.browser\\.test\\.mts$|fixtures/card36c-presence\\.)",
       "profiles": ["pc", "motion"],
       "reason": "Card 36C: protect drawer reversal, switch concurrency, timeline arrivals and debounced presence through real browser timing and isolated synthetic PG fixtures."

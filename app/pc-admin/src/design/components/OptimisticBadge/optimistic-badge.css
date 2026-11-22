@@ -1,0 +1,32 @@
+.ds-optimistic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  height: calc(var(--space-4) + var(--space-0-5));
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-xs);
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-fg);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ds-optimistic-badge > svg {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  animation: ds-optimistic-spin var(--dur-slow) var(--ease-linear) infinite;
+}
+
+@keyframes ds-optimistic-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-optimistic-badge > svg {
+    animation: none;
+  }
+}

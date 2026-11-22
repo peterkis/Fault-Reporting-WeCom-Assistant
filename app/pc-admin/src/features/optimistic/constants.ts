@@ -1,0 +1,9 @@
+export const OPTIMISTIC_UNKNOWN_TIMEOUT_MS=8_000;
+export const OPTIMISTIC_BADGE_DELAY_MS=150;
+export const OPTIMISTIC_CONFIRMED_HOLD_MAX_MS=12_000;
+
+export const CLAIM_UNDO_ROLES=new Set(['ADMIN','DISPATCHER','HANDLER']);
+export const CLAIM_UNDO_REASON_CODE='WORKBENCH_RETURN_TO_DISPATCH' as const;
+export const CLAIM_UNDO_REASON='撤销领取' as const;
+export const CLAIM_UNDO_UNFINISHED_WORK='刚领取即撤销，尚未开始处理' as const;
+export const CLOSE_UNDO_REASON_CODE='RESTORE_CLOSED' as const;

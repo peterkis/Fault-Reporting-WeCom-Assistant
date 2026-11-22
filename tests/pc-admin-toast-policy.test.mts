@@ -6,7 +6,7 @@ import {transpileModule,ModuleKind,ScriptTarget} from 'typescript';
 
 // Card 32D-T: toast timing and the three-notice cap are one dependency-free policy module, loaded from its PC source.
 interface Item {id:string;visible:boolean;duration?:number;createdAt:number}
-interface Policy {toastTone:(type:string,className?:string)=>string;toastHeading:(title:string|undefined,source:string)=>string|null;AUTO_DISMISS_MS:number;MAX_VISIBLE_TOASTS:number;toastDuration:(kind:{unknown:boolean;loading:boolean;error:boolean;persistent:boolean})=>number;overflowToasts:(toasts:readonly Item[])=>Item[]}
+interface Policy {isDetailNavigation:(from:{pathname:string;search:string},to:{pathname:string;search:string})=>boolean;toastTone:(type:string,className?:string)=>string;toastHeading:(title:string|undefined,source:string)=>string|null;AUTO_DISMISS_MS:number;MAX_VISIBLE_TOASTS:number;toastDuration:(kind:{unknown:boolean;loading:boolean;error:boolean;persistent:boolean})=>number;overflowToasts:(toasts:readonly Item[])=>Item[]}
 async function policy():Promise<Policy>{
  const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??resolve(import.meta.dirname,'..');
  const source=await readFile(resolve(root,'app/pc-admin/src/app/toast-policy.ts'),'utf8');
@@ -61,4 +61,18 @@ test('Card 33 headings: an outcome title, else the purpose label, else none — 
  assert.equal(p.toastHeading(undefined,'closure-restore'),null);assert.equal(p.toastHeading('','closure-restore'),null);
  // Never the generic 「操作提示」 fallback.
  assert.notEqual(p.toastHeading(undefined,'unlabelled-source'),'操作提示');assert.equal(p.toastHeading(undefined,'unlabelled-source'),null);
+});
+
+test('37A only same-view detail navigation can retain an undo toast',async()=>{
+ const {isDetailNavigation}=await policy();
+ const board={pathname:'/',search:'?view=list&scope=team'};
+ const drawer={pathname:'/items/ticket/20000000-0000-4000-8000-000000000001',search:board.search};
+ const page={...drawer,search:'?scope=team&detail=page&view=list'};
+ const next={...drawer,pathname:'/items/intake/20000000-0000-4000-8000-000000000002'};
+ for(const [from,to] of [[board,drawer],[drawer,page],[page,next],[page,board]] as const)assert.equal(isDetailNavigation(from,to),true);
+ for(const other of [{...page,search:'?view=list&scope=related'},{...drawer,search:drawer.search+'&locate=1'},
+  {...drawer,pathname:'/conversations'},{...drawer,pathname:'/notification-exceptions'},{...board,search:'?view=board'}]){
+  assert.equal(isDetailNavigation(drawer,other),false);
+ }
+ assert.equal(isDetailNavigation(board,board),false);
 });
