@@ -21,6 +21,7 @@ import {
   removeOptimisticOverlay,
   triggerRollbackCue,
 } from './store';
+import {dispatchRecoverable} from './command-recovery';
 import type {CardPositionAnchor} from './store';
 
 /** Matches Decision 2: show claim undo only when return-to-dispatch capability, role, and post-claim allowed action all permit it. */
@@ -155,7 +156,8 @@ export async function executeClaimUndo({
       throw new ApiError(409,'P2_016_RETURN_TO_DISPATCH_UNAVAILABLE');
     }
     // The server checks this receipt version again while holding the ticket lock.
-    await api.returnTicket(item.id,{
+    await dispatchRecoverable({principal:principal.principal_id,kind:'ticket',itemId:item.id},
+      {purpose:'return',id:commandId},controller.signal,()=>api.returnTicket(item.id,{
       client_command_id:commandId,
       expected_version:committedVersion,
       reason_code:CLAIM_UNDO_REASON_CODE,
@@ -164,7 +166,7 @@ export async function executeClaimUndo({
       communication_choice:'RETAIN_CURRENT',
       communication_target_principal_id:null,
       sessions:[],
-    },principal.csrf_token,controller.signal);
+    },principal.csrf_token,controller.signal));
     window.clearTimeout(timer);
     if(timedOut)return;
     markSelfWrite(principal.principal_id,{kind:'ticket',id:item.id,intakeId:item.intake_id});
@@ -273,28 +275,23 @@ export async function executeCloseUndo({
   },OPTIMISTIC_UNKNOWN_TIMEOUT_MS);
 
   try{
+    const scope={principal:principal.principal_id,kind:subjectKind,itemId:subjectId};
+    const intent={purpose:'restore' as const,id:commandId,requested:{kind:item.kind,id:item.id}};
+    const command={client_command_id:commandId,expected_version:committedVersion,reason_code:CLOSE_UNDO_REASON_CODE};
     if(subjectKind==='ticket'){
       const ctx=await api.ticketCommandContext(subjectId,controller.signal);
       if(ctx.version!==committedVersion||!ctx.allowed_actions.includes('restore')){
         versionConflictMessage=changedStatus(ctx.status);
         throw new ApiError(409,'CLOSURE_RESTORE_UNAVAILABLE');
       }
-      await api.restoreClosedTicket(subjectId,{
-        client_command_id:commandId,
-        expected_version:committedVersion,
-        reason_code:CLOSE_UNDO_REASON_CODE,
-      },principal.csrf_token,controller.signal);
+      await dispatchRecoverable(scope,intent,controller.signal,()=>api.restoreClosedTicket(subjectId,command,principal.csrf_token,controller.signal));
     }else{
       const ctx=await closureApi.intakeContext(subjectId,controller.signal);
       if(ctx.version!==committedVersion||!ctx.can_restore){
         versionConflictMessage=changedStatus(ctx.status);
         throw new ApiError(409,'CLOSURE_RESTORE_UNAVAILABLE');
       }
-      await closureApi.restoreIntake(subjectId,{
-        client_command_id:commandId,
-        expected_version:committedVersion,
-        reason_code:CLOSE_UNDO_REASON_CODE,
-      },principal.csrf_token,controller.signal);
+      await dispatchRecoverable(scope,intent,controller.signal,()=>closureApi.restoreIntake(subjectId,command,principal.csrf_token,controller.signal));
     }
     window.clearTimeout(timer);
     if(timedOut)return;
@@ -408,7 +405,8 @@ export async function executeFollowUndo({
       expected_follow_version:committedFollowVersion,
       following:targetFollowing,
     });
-    const result=await api.follow(requested,command,principal.csrf_token,controller.signal);
+    const result=await dispatchRecoverable({principal:principal.principal_id,kind:item.kind,itemId:item.id,intakeId:item.intake_id},
+      {purpose:'follow',id:commandId,requested,command},controller.signal,()=>api.follow(requested,command,principal.csrf_token,controller.signal));
     window.clearTimeout(timer);
     if(timedOut)return;
     confirmOptimisticOverlay(principal.principal_id,key,'follow',commandId);

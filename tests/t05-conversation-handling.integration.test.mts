@@ -299,7 +299,9 @@ test('fresh membership team role and principal govern composite writes while a s
     const command=body(selected),committed=await a.post('/api/tickets/'+id+'/take-and-start-with-conversations',command);assert.equal(committed.status,200);
     await context.pool.query('UPDATE conversation.assignment SET assigned_principal_id=$2::uuid WHERE session_id=$1::uuid',[session.session_id,other.id]);
     await context.pool.query('DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid',[actor.id]);await context.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES($1::uuid,'HANDLER')",[actor.id]);await context.pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid',[actor.id]);
-    assert.equal((await a.get('/api/tickets/'+id)).status,200);assert.equal((await a.get('/api/conversations/'+session.session_id)).status,404);assert.equal((await a.post('/api/tickets/'+id+'/take-and-start-with-conversations',command)).status,404);
+    assert.equal((await a.get('/api/tickets/'+id)).status,200);assert.equal((await a.get('/api/conversations/'+session.session_id)).status,404);
+    const deniedReplay=await a.post('/api/tickets/'+id+'/take-and-start-with-conversations',command);assert.equal(deniedReplay.status,404);
+    assert.equal(Object.hasOwn(deniedReplay.value,'replayed'),false,'a denial before receipt lookup has no ledger result');
     const before=(await context.pool.query('SELECT count(*)::int AS n FROM conversation.control_event')).rows;
     assert.deepEqual((await a.get('/api/tickets/'+id+'/conversation-handling-commands/'+command.client_command_id)).value,{state:'COMMITTED',ticket_id:id,ticket_version:committed.value.ticket_version,ticket_event_id:committed.value.ticket_event_id});
     assert.deepEqual((await context.pool.query('SELECT count(*)::int AS n FROM conversation.control_event')).rows,before);

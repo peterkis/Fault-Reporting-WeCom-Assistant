@@ -37,7 +37,7 @@ export const pending = (card:string) => '.board-column.pending '+card;
 export const counts = `['pending','active'].map(column=>Number(document.querySelector('.board-column.'+column+' .column-heading').getAttribute('aria-label').match(/\\d+$/)[0]))`;
 export const indexOf = (card:string) => `[...document.querySelectorAll('.board-column.pending .ticket-card')].indexOf(${query(card)})`;
 
-export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;remindersEnabled?:boolean}={}) {
+export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean}={}) {
   await withWeb01Fixture(async (base:T11Fixture)=>{
     await base.runtime.stop();
     const [actor,peer]=base.principals;assert.ok(actor&&peer);
@@ -47,6 +47,7 @@ export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn
       principalIds:[actor.id,base.outsider.id,peer.id],
       ticketSelfHandlingEnabled:true, ticketReturnToDispatchEnabled:options.canReturn!==false,
       ticketConversationSelfHandlingEnabled:options.conversationClaim===true,
+      workbenchDraftRecoveryEnabled:options.draftRecovery===true,
       ticketWaitingActionsEnabled:true, workbenchInternalNotesEnabled:true,
       workbenchBoardActionsEnabled:true, workbenchFollowEnabled:true,
       workbenchRemindersEnabled:options.remindersEnabled===true,

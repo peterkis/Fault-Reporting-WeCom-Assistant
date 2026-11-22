@@ -60,6 +60,8 @@ export class ApiError extends Error {
   readonly requestId:string;readonly requestIdSource:'response'|'local';
   constructor(public status:number,public code:string,requestId?:string){super(code);this.requestId=requestId||crypto.randomUUID();this.requestIdSource=requestId?'response':'local';}
 }
+export class UnconfirmedClaimReplay extends UnknownCommandOutcome {}
+export class ConfirmedClaimRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}
 export class ConfirmedManualReportRejection extends ApiError {constructor(status:number,code:string,readonly commandId:string){super(status,code);}}
 function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
 function text(value:unknown): string {if(typeof value!=='string')throw new ApiError(502,'INVALID_RESPONSE');return value;}
@@ -298,13 +300,34 @@ function decodeReopen(value:unknown,ticketId:string):P2016ReopenResult {
     ||Object.keys(c).length!==4||version(c.cycle_no)<2||c.first_responsibility_event_id!==null||c.staff_completion_event_id!==null)throw new ApiError(502,'INVALID_RESPONSE');
   return {...decodeTicketReceipt(v,ticketId),handling_cycle:{id:id(c.id),cycle_no:version(c.cycle_no),first_responsibility_event_id:null,staff_completion_event_id:null}};
 }
-export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016TakeoverCommand|P2016UnassignCommand|P2016ReopenCommand|P2016ReturnToDispatchCommand|P2016TakeoverCompletionCommand|SharedFollowUpCommand|ClosureCommand|RestoreCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+// A replay can be refused before the ledger reads the original command.
+async function checkClaimReplayFailure(response:Response,ticketId:string,commandId:string,signal:AbortSignal):Promise<never>{
+  if(response.status===401)return rejectAuthorization(response);
+  if(response.status===403||response.status===404){
+    // A selected conversation can be unreadable while the Ticket remains readable.
+    try{await api.ticketCommandContext(ticketId,signal);}
+    catch(error){if(error instanceof ApiError&&[401,403,404].includes(error.status))throw error;throw new UnconfirmedClaimReplay();}
+  }
+  if(response.headers.get('content-type')?.startsWith('application/json')){
+    const value:unknown=await response.json().catch(()=>null);
+    if(value&&typeof value==='object'&&'ok'in value&&value.ok===false&&'replayed'in value&&typeof value.replayed==='boolean'&&'error'in value){
+      const failure=value.error;
+      if(failure&&typeof failure==='object'&&'retryable'in failure&&failure.retryable===false
+        &&'code'in failure&&typeof failure.code==='string'&&/^P2_016_[A-Z0-9_]{1,64}$/u.test(failure.code)){
+        throw new ConfirmedClaimRejection(response.status,failure.code,commandId);
+      }
+    }
+  }
+  throw new UnconfirmedClaimReplay();
+}
+export async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand|P2016CompletionCommand|P2016ConversationHandlingCommand|P2016AssignmentCommand|P2016TakeoverCommand|P2016UnassignCommand|P2016ReopenCommand|P2016ReturnToDispatchCommand|P2016TakeoverCompletionCommand|SharedFollowUpCommand|ClosureCommand|RestoreCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T,checkingClaim=false):Promise<T> {
     const current=captureWorkbenchRead(signal);current();
     try{
       const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
         method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
         headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(action==='dismiss'?('reason_code' in command&&['FALSE_REPORT_OR_TEST','DUPLICATE','NOT_IT_SCOPE','REPORTER_WITHDREW','REPORTER_UNREACHABLE','OTHER'].includes(command.reason_code)?command:{client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'OTHER',note:'note' in command?command.note:null}):command)});
-      current();if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      current();if(checkingClaim&&!response.ok)return await checkClaimReplayFailure(response,ticketId,command.client_command_id,signal);
+      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
       if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
       const v=object(await response.json());current();
       if(!response.ok){
@@ -316,7 +339,7 @@ export async function postTicketCommand<T>(ticketId:string,action:string,command
       }
       if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
       return decode(v);
-    }catch(error){current();if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
+    }catch(error){current();if(error instanceof UnconfirmedClaimReplay||error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
 
 }
 async function postFollow(requested:FollowItem,command:WorkbenchFollowCommand,csrfToken:string|null,signal:AbortSignal):Promise<WorkbenchFollowResult>{
@@ -537,7 +560,7 @@ export const api={
     return {items,next_cursor:nullable(v.next_cursor)};
   }),
   readConversation:(sessionId:string,signal:AbortSignal):Promise<void>=>get('/api/conversations/'+encodeURIComponent(sessionId),signal,value=>{if(id(object(object(value).session).session_id)!==sessionId)throw new ApiError(502,'INVALID_RESPONSE');}),
-  handleConversations:(ticketId:string,action:P2016ConversationHandlingAction,command:P2016ConversationHandlingCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016ConversationHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
+  handleConversations:(ticketId:string,action:P2016ConversationHandlingAction,command:P2016ConversationHandlingCommand,csrfToken:string|null,signal:AbortSignal,checking=false):Promise<P2016ConversationHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
     if(v.communication_choice!==command.communication_choice||!Array.isArray(v.conversations)||v.conversations.length!==command.sessions.length)throw new UnknownCommandOutcome();
     const conversations=v.conversations.map(value=>{const row=object(value),session=id(row.session_id),original=command.sessions.find(item=>item.session_id===session),raw=row.session_row_version;
       if(Object.keys(row).length!==4||!original||typeof row.changed!=='boolean'||typeof raw!=='number'||!Number.isSafeInteger(raw)||raw!==original.expected_row_version+(row.changed?1:0)||(row.changed?(typeof row.control_event_id!=='string'):row.control_event_id!==null))throw new UnknownCommandOutcome();
@@ -546,7 +569,7 @@ export const api={
     if(new Set(conversations.map(row=>row.session_id)).size!==conversations.length)throw new UnknownCommandOutcome();
     const cycle=decodeCycle(v.handling_cycle);if(cycle.first_responsibility_event_id===null)throw new UnknownCommandOutcome();
     return {...decodeTicketReceipt(v,ticketId),handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id},communication_choice:command.communication_choice,conversations};
-  }),
+  },checking),
   conversationHandlingAcknowledgement:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016ConversationHandlingAcknowledgement>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/conversation-handling-commands/'+encodeURIComponent(commandId),signal,value=>{
     const v=object(value);if(v.state==='UNKNOWN'&&Object.keys(v).length===1)return {state:'UNKNOWN'};
     if(v.state==='FAILED'&&Object.keys(v).length===2){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||!/^P2_016_[A-Z0-9_]{1,64}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {state:'FAILED',error:{code,retryable:false}};}
@@ -595,10 +618,10 @@ export const api={
   ticketNotifications:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/deliveries',signal,decodeTicketNotifications),
   ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
   addInternalNote:(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'internal-notes',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
-  selfHandle:(ticketId:string,action:SelfHandlingAction,command:P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016SelfHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
+  selfHandle:(ticketId:string,action:SelfHandlingAction,command:P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal,checking=false):Promise<P2016SelfHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
     const receipt=decodeTicketReceipt(v,ticketId),cycle=decodeCycle(v.handling_cycle);if(cycle.first_responsibility_event_id===null)throw new UnknownCommandOutcome();
     return {...receipt,handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id}};
-  }),
+  },checking),
   board:(column:BoardColumn,range:BoardCompletionRange,cursor:string|null,signal:AbortSignal,scope?:'team'|'related',dates?:{from:string;to:string})=>get('/api/workbench/board?'+new URLSearchParams({column,range,limit:'50',...(cursor?{cursor}:{}),...(scope?{scope}:{}),...(range==='custom'&&dates?{handled_from:dates.from,handled_to:dates.to}:{})}),signal,decodePage),
   detail:(kind:string,id:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/items/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{
     const detail=decodeDetail(value);if(detail.item.kind!==kind||detail.item.id.toLowerCase()!==id.toLowerCase()){

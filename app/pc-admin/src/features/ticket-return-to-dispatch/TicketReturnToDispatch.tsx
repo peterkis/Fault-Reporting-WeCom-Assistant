@@ -22,6 +22,7 @@ import type {ReturnCopy,ReturnFence,ReturnInput} from './use-return-draft';
 import {shortCodes} from '../../app/short-code';
 import {useFullNumbers} from '../../app/FullNumbers';
 import {markSelfWrite} from '../../design/motion/self-write';
+import {forgetRecoveredCommand,useCommandRecovery} from '../optimistic/command-recovery';
 
 type State='idle'|'preparing'|'submitting'|'checking'|'unknown'|'conflict'|'failed'|'denied'|'committed';
 interface Job extends ReturnFence {controller:AbortController;generation:number;mode:'command'|'ack'|'review'|'privacy'}
@@ -66,8 +67,10 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
       else{setState('unknown');setMessage('上次操作的结果还没确认；可以只读核对，无需当前退回或所选会话的写权限。');}
     },onOperationCleared:conflict=>{generation.current++;request.current?.controller.abort();request.current=null;knownTerminal.current=null;storedId.current=null;opaqueRef.current=null;pendingRef.current=null;pendingSnapshot.current=null;setOpaque(null);setPending(null);setCleanupBlocked(false);setReviewRequired(true);setState('idle');setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，请重新核对后处理。');},onSensitiveClear:clearSensitive});
   storedId.current=draft.operationId;
-  const originalId=pending?.client_command_id??opaque??draft.operationId;
-  const blocked=busy||unknown||cleanupBlocked||draft.restorationBlocked||draft.restoring;
+  const recoveryScope={principal:principal.principal_id,kind:'ticket',itemId:ticketId};
+  const undo=useCommandRecovery(recoveryScope,'return');
+  const originalId=pending?.client_command_id??opaque??draft.operationId??(undo?.unknown?undo.intent.id:null);
+  const blocked=busy||unknown||Boolean(undo)||cleanupBlocked||draft.restorationBlocked||draft.restoring;
   const navigationBlocked=busy||cleanupBlocked||((unknown||hasReturnInput(value))&&!draft.safeToLeave);
   const selectionVisible=value.choice==='TRANSFER_SELECTED'&&allowed&&!unknown;
   const targets=useQuery({queryKey:['ticket-return-to-dispatch-targets',principal.principal_id,ticketId,value.target,returnInputSnapshot(value)],
@@ -176,6 +179,9 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
       if(!current(variables.job))return;
       if(result.state==='UNKNOWN'){variables.job.requireCurrent();setState('unknown');setMessage('结果仍未确认：暂时查不到结果，不代表没有提交。稍后再点击「核对结果」。');return;}
       if(result.state==='COMMITTED')markSelfWrite(principal.principal_id,{kind:'ticket',id:ticketId});
+      if(forgetRecoveredCommand(recoveryScope,'return',variables.commandId)){
+        applyKnown(variables.commandId,result.state,null,true,variables.job);return;
+      }
       knownTerminal.current={commandId:variables.commandId,state:result.state};
       try{variables.job.requireCurrent();const cleaned=await draft.settleKnown(variables.commandId,variables.job,result.state==='FAILED');variables.job.requireCurrent();applyKnown(variables.commandId,result.state,variables.snapshot,cleaned,variables.job);}
       catch{if(current(variables.job)){setCleanupBlocked(true);setOpaque(variables.commandId);setState(result.state==='COMMITTED'?'committed':'failed');setMessage('草稿未能清空：上次操作已有结果。为避免重复提交，暂时只能查看。点击重试。');refresh();}}
@@ -229,7 +235,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
     }
   };
   const check=async()=>{
-    const id=pendingRef.current?.client_command_id??opaqueRef.current??draft.operationId;if(!id||request.current)return;
+    const id=pendingRef.current?.client_command_id??opaqueRef.current??draft.operationId??(undo?.unknown?undo.intent.id:null);if(!id||request.current)return;
     const job=begin('ack');if(!job)return;setState('checking');setMessage('正在只读核对原操作…');
     try{await freshRead(job);job.requireCurrent();acknowledgement.mutate({commandId:id,snapshot:pendingRef.current?pendingSnapshot.current:null,job});}
     catch(error){if(current(job)){if(error instanceof ApiError&&error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else if(error instanceof ApiError&&[403,404].includes(error.status))void clearTicketAuthorization(client,principal.principal_id,ticketId,error);else{const terminal=knownTerminal.current?.commandId===id?knownTerminal.current:null;setState(terminal?terminal.state==='COMMITTED'?'committed':'failed':'unknown');setMessage(terminal?'上次操作已有结果，最新内容还没加载完。点击「核对结果」。':'暂时无法加载最新内容，没有重复提交。点击重试。');}}end(job);}
@@ -252,7 +258,7 @@ export function TicketReturnToDispatch({ticketId,principal,onBlockedChange}:{tic
   const canSubmit=!blocked&&draft.canSubmit&&allowed&&!context.isPending&&!context.isError&&!reviewRequired&&value.reason.length<=500&&Boolean(value.reason.trim())&&value.unfinished.length<=1400&&Boolean(value.unfinished.trim())&&value.version===context.data?.version&&selectedReady&&workbenchTransportWritable();
   const nextCursor=related.data?.next_cursor??null;
   const displayTarget=targets.data?.items.find(row=>sameId(row.principal_id,value.target))?.principal_id??value.target??'';
-  const showForm=allowed&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'||role==='HANDLER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
+  const showForm=allowed&&!undo&&principal.roles.some(role=>role==='ADMIN'||role==='DISPATCHER'||role==='HANDLER')&&!unknown&&request.current?.mode!=='ack'; // A readable Ticket's opaque ACK stays available when its write action disappears.
   // Card 34B: the read state is reported before any early return, so the hook order never changes.
   const readState:StepReadState=context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready';
   useStepRead(readState);

@@ -33,12 +33,14 @@ import {nowShanghaiLocalString} from '../optimistic/overlay';
 import {beginOptimisticOverlay,captureDisplayedCardPosition,confirmOptimisticOverlay,markOptimisticUnknown,optimisticItemKey,removeOptimisticOverlay,triggerRollbackCue} from '../optimistic/store';
 import type {CardPositionAnchor} from '../optimistic/store';
 import {currentUserDisplayName,executeCloseUndo} from '../optimistic/undo-actions';
+import {dispatchRecoverable,forgetRecoveredCommand,useCommandRecovery,useItemUndoRecovery} from '../optimistic/command-recovery';
 
 type Action='close'|'restore';
 type Command=IntakeClosureCommand|RestoreCommand;
 type Pending=Command|WaitingCommand;
-type Target={key:string;trigger:HTMLElement|null;background:boolean;item:WorkbenchCard;action:Action;initial:ClosureFormValue;open:boolean};
-interface ActionScope {request:(item:WorkbenchCard,action:Action,initial?:ClosureFormValue)=>void;canOpen:(item:WorkbenchCard,action:Action)=>boolean;highlighted:string|null;blocked:boolean}
+type ClosureSubject={kind:'ticket'|'intake';id:string};
+type Target={subject:ClosureSubject;key:string;trigger:HTMLElement|null;background:boolean;item:WorkbenchCard;action:Action;initial:ClosureFormValue;open:boolean};
+interface ActionScope {request:(item:WorkbenchCard,action:Action,initial?:ClosureFormValue,original?:ClosureSubject)=>void;canOpen:(item:WorkbenchCard,action:Action,original?:ClosureSubject)=>boolean;highlighted:string|null;blocked:boolean}
 const ClosureScope=createContext<ActionScope|null>(null);
 const draftPurpose=(kind:'ticket'|'intake',action:Action)=>kind==='ticket'&&action==='close'?'waiting-cancel':'service-'+action;
 export function useCloseItem(){const scope=useContext(ClosureScope);return (item:WorkbenchCard,initial=emptyClosureForm)=>scope?.request(item,'close',initial);}
@@ -76,19 +78,19 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
  const blocked=blockers.length>0,visible=targets.filter(t=>t.open).at(-1);
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
  useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));return()=>clearTimeout(timer);},[highlighted]);
- const canOpen=useCallback((item:WorkbenchCard,action:Action)=>{
-  const s=subject(item),same=targets.find(t=>subject(t.item).kind===s.kind&&subject(t.item).id===s.id&&t.action===action);
-  return !otherBlocked&&!targets.some(t=>t.background&&subject(t.item).kind===s.kind&&subject(t.item).id===s.id)
+ const canOpen=useCallback((item:WorkbenchCard,action:Action,s=subject(item))=>{
+  const same=targets.find(t=>t.subject.kind===s.kind&&t.subject.id===s.id&&t.action===action);
+  return !otherBlocked&&!targets.some(t=>t.background&&t.subject.kind===s.kind&&t.subject.id===s.id)
     &&(!blocked||Boolean(same&&!same.open&&blockers.every(key=>key===same.key)));
  },[otherBlocked,blocked,blockers,targets]);
- const requestImpl=(item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{
-  if(!canOpen(item,action))return;
-  const s=subject(item),key=principal.principal_id+':'+s.kind+':'+s.id+':'+action,trigger=collapseTriggerMenu();
+ const requestImpl=(item:WorkbenchCard,action:Action,initial=emptyClosureForm,s=subject(item))=>{
+  if(!canOpen(item,action,s))return;
+  const key=principal.principal_id+':'+s.kind+':'+s.id+':'+action,trigger=collapseTriggerMenu();
   setTargets(previous=>[...previous.filter(t=>t.key!==key&&(t.open||t.background||blockers.includes(t.key))),
-    {key,item,action,initial,open:true,background:false,trigger}]);
+    {key,item,subject:s,action,initial,open:true,background:false,trigger}]);
  };
  const requestRef=useRef(requestImpl);requestRef.current=requestImpl;
- const request=useCallback((item:WorkbenchCard,action:Action,initial=emptyClosureForm)=>{requestRef.current(item,action,initial);},[]);
+ const request=useCallback((item:WorkbenchCard,action:Action,initial=emptyClosureForm,original?:ClosureSubject)=>{requestRef.current(item,action,initial,original);},[]);
  const isBlocked=blocked||otherBlocked;
  const scopeValue=useMemo(()=>({request,canOpen,highlighted,blocked:isBlocked}),[request,canOpen,highlighted,isBlocked]);
  const update=(key:string,open:boolean,background=false)=>setTargets(previous=>previous.map(t=>t.key===key?{...t,open,background}:t));
@@ -115,15 +117,18 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
 export function CloseItemButton({item,principal,initial,shortcut=false}:{item:WorkbenchCard;principal:Principal;initial?:ClosureFormValue;shortcut?:boolean}){
  const scope=useContext(ClosureScope),[pending,setPending]=useState(false),target=subject(item);
  useEffect(()=>{let active=true;void hasExistingDraft({principal:principal.principal_id,...target,purpose:draftPurpose(target.kind,'close')}).then(value=>{if(active)setPending(value);}).catch(()=>{});return()=>{active=false;};},[principal.principal_id,target.kind,target.id,item.status]);
- if(!scope||!pending&&(!worker(principal)||!canClose(item)))return null;
- return <section className="ticket-notes ticket-waiting-actions detail-action-controller detail-cancel-controller" data-waiting-purpose="cancel" aria-label="关闭事项"><Button tone="secondary" data-action={shortcut?'close-out-of-scope':'cancel'} className="cancel-ticket-trigger" isDisabled={!scope.canOpen(item,'close')} onPress={()=>scope.request(item,'close',initial)}>{shortcut?null:<CircleX aria-hidden="true"/>}{pending?'核对关闭':shortcut?'记录范围外诉求':'关闭事项…'}</Button></section>;
+ const held=useCommandRecovery({principal:principal.principal_id,kind:target.kind,itemId:target.id},'close');
+ if(!scope||!pending&&!held?.unknown&&(!worker(principal)||!canClose(item)))return null;
+ return <section className="ticket-notes ticket-waiting-actions detail-action-controller detail-cancel-controller" data-waiting-purpose="cancel" aria-label="关闭事项"><Button tone="secondary" data-action={shortcut?'close-out-of-scope':'cancel'} className="cancel-ticket-trigger" isDisabled={!scope.canOpen(item,'close')} onPress={()=>scope.request(item,'close',initial)}>{shortcut?null:<CircleX aria-hidden="true"/>}{pending||held?.unknown?'核对关闭':shortcut?'记录范围外诉求':'关闭事项…'}</Button></section>;
 }
-export function RestoreClosedItem({item,principal,inline=false}:{item:WorkbenchCard;principal?:Principal;inline?:boolean}){
+export function RestoreClosedItem({item,principal,inline=false,requested}:{item:WorkbenchCard;principal?:Principal;inline?:boolean;requested?:Pick<WorkbenchCard,'kind'|'id'>|undefined}){
  const scope=useContext(ClosureScope),client=useQueryClient(),p=principal??client.getQueryData<Principal>(['session']);
  const [pending,setPending]=useState(false),target=subject(item);
  useEffect(()=>{if(!p)return;let active=true;void hasExistingDraft({principal:p.principal_id,...target,purpose:draftPurpose(target.kind,'restore')}).then(value=>{if(active)setPending(value);}).catch(()=>{});return()=>{active=false;};},[p?.principal_id,target.kind,target.id,item.status]);
- if(!scope||!p||!pending&&(!worker(p)||item.closure?.kind!=='DISMISSED'||!item.closure.can_restore))return null;
- return <Button tone={inline?'secondary':'ghost'} className={inline?'ds-closure-restore-inline':'ds-closure-restore'} data-action="restore-dismissed" isDisabled={!scope.canOpen(item,'restore')} onPress={()=>scope.request(item,'restore')}><Undo2 size={14}/>{pending?'核对恢复':'恢复'}</Button>;
+ const held=useItemUndoRecovery(p?.principal_id??'','restore',item,requested);
+ const owner=held?.scope,original:ClosureSubject=owner&&(owner.kind==='intake'||owner.kind==='ticket')?{kind:owner.kind,id:owner.itemId}:target;
+ if(!scope||!p||!pending&&!held?.unknown&&(!worker(p)||item.closure?.kind!=='DISMISSED'||!item.closure.can_restore))return null;
+ return <Button tone={inline?'secondary':'ghost'} className={inline?'ds-closure-restore-inline':'ds-closure-restore'} data-action="restore-dismissed" isDisabled={!scope.canOpen(item,'restore',original)} onPress={()=>scope.request(item,'restore',undefined,original)}><Undo2 size={14}/>{pending||held?.unknown?'核对恢复':'恢复'}</Button>;
 }
 
 function decodeDraft(text:string):{value:ClosureFormValue;pending:Pending|null}{
@@ -150,9 +155,10 @@ function decodeDraft(text:string):{value:ClosureFormValue;pending:Pending|null}{
 }
 
 function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onClose,onReopen,onSuccess,onOptimisticCloseSuccess}:{target:Target;principal:Principal;otherBlocked:boolean;onBlockedChange:(key:string,value:boolean)=>void;onClose:(background?:boolean)=>void;onReopen:()=>void;onSuccess:(column:string)=>void;onOptimisticCloseSuccess:(info:{closedItem:WorkbenchCard;notify:boolean;committedVersion:number;restorePosition:CardPositionAnchor|undefined})=>void}){
- const {item,action}=target,s=subject(item),client=useQueryClient(),navigate=useNavigate(),location=useLocation(),[value,setValue]=useState(emptyClosureForm),[pending,setPending]=useState<Pending|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[backgroundOptimistic,setBackgroundOptimistic]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+ const {item,action,subject:s}=target,client=useQueryClient(),navigate=useNavigate(),location=useLocation(),[value,setValue]=useState(emptyClosureForm),[pending,setPending]=useState<Pending|null>(null),[opaque,setOpaque]=useState<string|null>(null),[busy,setBusy]=useState(false),[backgroundOptimistic,setBackgroundOptimistic]=useState(false),[message,setMessage]=useState(''),[cleanupBlocked,setCleanupBlocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+ const displayed=subject(item),receiptOnly=s.kind!==displayed.kind||s.id!==displayed.id;
  const request=useRef<AbortController|null>(null),requestOperation=useRef<string|null>(null),known=useRef<'COMMITTED'|'FAILED'|null>(null),prefillApplied=useRef(false),scope={principal:principal.principal_id,...s,purpose:draftPurpose(s.kind,action)},raw=principal.closure_draft_recovery_enabled;
- const activeOptimisticRef=useRef<{commandId:string;notify:boolean;restorePosition:CardPositionAnchor|undefined;timerId:number|undefined;timedOut:boolean}|null>(null);
+ const activeOptimisticRef=useRef<{commandId:string;notify:boolean;restorePosition:CardPositionAnchor|undefined;timerId:number|undefined;timedOut:boolean;dispatched:boolean}|null>(null);
  const readContext=async(signal:AbortSignal)=>{
   const current=captureWorkbenchRead(signal);const fresh=await api.bootstrap(signal);current();if(fresh.principal_id!==principal.principal_id)throw new ApiError(401,'WORKBENCH_UNAUTHENTICATED');client.setQueryData(['session'],fresh);
   if(s.kind==='ticket'){const context=await api.ticketCommandContext(s.id,signal);current();return {fresh,version:context.version,allowed:context.allowed_actions.includes(action==='close'?'dismiss':'restore'),review:null};}
@@ -163,19 +169,31 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
  // The target is captured while visible: after a committed restore the refreshed history no longer has one.
  const shownTarget=useRef<'pending'|'active'|null>(null);if(history.data?.restore_target)shownTarget.current=history.data.restore_target.column;
  // Recovering after a lost response mounts with no target; the confirmed current item then says where it is.
- const restoreColumn=()=>{const column=history.data?.restore_target?.column??shownTarget.current??(item.column==='handled'?null:item.column);return column==='active'?'处理中':column==='pending'?(s.kind==='ticket'?'待接单':'待判断'):'关闭前所在列';};
+ const restoreColumn=()=>{const column=history.data?.restore_target?.column??shownTarget.current??(receiptOnly||item.column==='handled'?null:item.column);return column==='active'?'处理中':column==='pending'?(s.kind==='ticket'?'待接单':'待判断'):'关闭前所在列';};
  const clear=()=>{if(activeOptimisticRef.current?.timerId!==undefined)window.clearTimeout(activeOptimisticRef.current.timerId);activeOptimisticRef.current=null;setBackgroundOptimistic(false);request.current?.abort();request.current=null;requestOperation.current=null;setValue(emptyClosureForm);setPending(null);setBusy(false);};
- const denied=(error:unknown)=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){removeOptimisticOverlay(principal.principal_id,optimisticItemKey(item.kind,item.id),'movement');clear();if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearClosureRead(client,principal.principal_id,s.kind,s.id,error).then(()=>clearItemAuthorization(client,principal.principal_id,item.kind,item.id,error));onClose();return true;}return false;};
+ const denied=(error:unknown)=>{if(error instanceof ApiError&&[401,403,404].includes(error.status)){if(!receiptOnly)removeOptimisticOverlay(principal.principal_id,optimisticItemKey(item.kind,item.id),'movement');clear();if(error.status===401)void clearSessionAuthorization(client,principal.principal_id,401,'revoked');else void clearClosureRead(client,principal.principal_id,s.kind,s.id,error).then(()=>clearItemAuthorization(client,principal.principal_id,receiptOnly?s.kind:item.kind,receiptOnly?s.id:item.id,error));onClose();return true;}return false;};
  const draft=useAuthorizedDraft<ClosureFormValue,Pending>({scope,enabled:raw,writeEnabled:raw&&context.data?.allowed===true,refreshBlankAfterPurposeRemoval:true,value,pending,emptyValue:emptyClosureForm,hasInput:form=>Boolean(form.reason||form.note),serialise:copy=>JSON.stringify({schema:1,...copy}),decode:decodeDraft,commandId:command=>command.client_command_id,
   authorize:async signal=>{const result=await readContext(signal);return result.fresh.closure_draft_recovery_enabled&&result.allowed;},onAuthorityFailure:error=>{if(!denied(error))setMessage(errorMessage(error));},
   onRestore:(copy,retained)=>{setValue(!retained&&!copy.pending&&target.initial.reason?{...copy.value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}:copy.value);setPending(copy.pending);if(copy.pending)setMessage('上次操作结果待核对；不会重复提交。');},onOperation:(id,preserveInput)=>{if(request.current&&requestOperation.current!==id){request.current.abort();request.current=null;requestOperation.current=null;setBusy(false);known.current=null;}setOpaque(id);setPending(null);if(!preserveInput)setValue(emptyClosureForm);},onOperationCleared:conflict=>{request.current?.abort();request.current=null;requestOperation.current=null;setBusy(false);known.current=null;setOpaque(null);setPending(null);setCleanupBlocked(false);setMessage(conflict?'本页输入未保存，请先自行留存。':'上次操作已结束，可继续处理。');},onSensitiveClear:clear});
  const openItem=()=>{onClose();void navigate('/items/'+item.kind+'/'+item.id+location.search);};
- const originalId=pending?.client_command_id??opaque??draft.operationId,locked=busy||Boolean(originalId)||cleanupBlocked;
+ const recoveryScope={principal:principal.principal_id,kind:s.kind,itemId:s.id};
+ const held=useCommandRecovery(recoveryScope,action);
+ const originalId=pending?.client_command_id??opaque??draft.operationId??(held?.unknown?held.intent.id:null),locked=busy||Boolean(originalId)||Boolean(held)||cleanupBlocked;
  // A saved draft must be read before the opening intent supplies its reason.
  useEffect(()=>{if(!target.open){prefillApplied.current=false;return;}if(prefillApplied.current||!target.initial.reason||originalId||raw&&draft.status==='loading')return;prefillApplied.current=true;setValue(value=>({...value,reason:target.initial.reason,secondary:target.initial.secondary,duplicate:'',notify:false}));},[target.open,target.initial,originalId,raw,draft.status]);
  const unsaved=Boolean(value.reason||value.note)&&!draft.safeToLeave;
  useEffect(()=>{onBlockedChange(target.key,target.open||(!backgroundOptimistic&&unsaved));return()=>onBlockedChange(target.key,false);},[onBlockedChange,target.key,target.open,backgroundOptimistic,unsaved]);
- useEffect(()=>()=>{if(activeOptimisticRef.current?.timerId!==undefined)window.clearTimeout(activeOptimisticRef.current.timerId);request.current?.abort();},[]);
+ useEffect(()=>()=>{
+  const opt=activeOptimisticRef.current;
+  if(opt){
+   window.clearTimeout(opt.timerId);
+   const key=optimisticItemKey(item.kind,item.id);
+   if(opt.dispatched&&known.current==='COMMITTED')confirmOptimisticOverlay(principal.principal_id,key,'movement',opt.commandId);
+   else if(opt.dispatched&&known.current!=='FAILED')markOptimisticUnknown(principal.principal_id,key,'movement',opt.commandId);
+   else removeOptimisticOverlay(principal.principal_id,key,'movement',opt.commandId);
+  }
+  request.current?.abort();
+ },[]);
  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(locked&&target.open||unsaved)event.preventDefault();};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[locked,target.open,unsaved]);
  const existing=async(current:()=>void)=>{const found=await hasExistingDraft(scope);current();if(!found)return null;const copy=await openDraft(scope,{restore:false});current();if(copy.handle.record)await removeSensitiveDraft(copy.handle,'revoked',{requireMatchingRevision:true});current();return copy.handle;};
  useEffect(()=>{if(raw){setStorageReady(true);return;}const controller=new AbortController(),current=captureWorkbenchRead(controller.signal);setStorageReady(false);
@@ -211,7 +229,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
   }
  };
  const submit=async()=>{
-  if(request.current||locked||otherBlocked||!storageReady||!draft.canSubmit||!context.data?.allowed||context.isError||context.isFetching||action==='close'&&closureValidation(value)||action==='restore'&&(!history.data?.restore_target||history.isFetching||history.isError))return;
+  if(receiptOnly||request.current||locked||otherBlocked||!storageReady||!draft.canSubmit||!context.data?.allowed||context.isError||context.isFetching||action==='close'&&closureValidation(value)||action==='restore'&&(!history.data?.restore_target||history.isFetching||history.isError))return;
   if(action==='close'&&!workbenchTransportWritable()){setMessage('网络未就绪：网络恢复前不会提交，你的输入已保留。');return;}
   const controller=new AbortController(),read=captureWorkbenchRead(controller.signal),current=()=>{read();if(request.current!==controller)throw new DOMException('CLOSURE_CHANGED','AbortError');};request.current=controller;setBusy(true);setMessage('');let sent=false;
   const version=context.data.version,notice=closureNotification(value),base:ClosureCommand={client_command_id:crypto.randomUUID(),expected_version:version,reason_code:value.reason||'OTHER',...(value.reason==='NOT_IT_SCOPE'&&value.secondary?{secondary_reason_code:value.secondary}:{}),...(value.note.trim()?{note:value.note.trim()}:{}),...(value.reason==='DUPLICATE'&&value.duplicate?{duplicate_of_ref:value.duplicate}:{}),notify_reporter:notice.notify};
@@ -249,7 +267,7 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
    });
    setBackgroundOptimistic(true);
    onClose(true);
-   const optState={commandId:command.client_command_id,notify:notice.notify,restorePosition,timerId:undefined as number|undefined,timedOut:false};
+   const optState={commandId:command.client_command_id,notify:notice.notify,restorePosition,timerId:undefined as number|undefined,timedOut:false,dispatched:false};
    optState.timerId=window.setTimeout(()=>{
     if(request.current!==controller)return;
     controller.abort();
@@ -293,8 +311,15 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
    }
    let committedVersion:number|undefined;
    if(action==='restore'){const input:RestoreCommand={client_command_id:command.client_command_id,expected_version:command.expected_version,reason_code:'RESTORE_CLOSED'};if(s.kind==='ticket')await api.restoreClosedTicket(s.id,input,fresh.fresh.csrf_token,controller.signal);else await closureApi.restoreIntake(s.id,input,fresh.fresh.csrf_token,controller.signal);}
-   else{const input=command as IntakeClosureCommand;committedVersion=s.kind==='ticket'?(await api.closeTicket(s.id,input,fresh.fresh.csrf_token,controller.signal)).ticket_version
-     :(await closureApi.closeIntake(s.id,input,fresh.fresh.csrf_token,controller.signal)).version;}
+   else{
+    const input=command as IntakeClosureCommand;
+    const post=async()=>{
+     if(optState)optState.dispatched=true;
+     return s.kind==='ticket'?(await api.closeTicket(s.id,input,fresh.fresh.csrf_token,controller.signal)).ticket_version
+     :(await closureApi.closeIntake(s.id,input,fresh.fresh.csrf_token,controller.signal)).version;
+    };
+    committedVersion=raw?await post():await dispatchRecoverable(recoveryScope,{purpose:'close',id:input.client_command_id},controller.signal,post);
+   }
    if(optState?.timerId!==undefined)window.clearTimeout(optState.timerId);
    markSelfWrite(principal.principal_id,{kind:item.kind,id:item.id,intakeId:item.intake_id});
    current();known.current='COMMITTED';await finish(command.client_command_id,'COMMITTED',current,committedVersion);
@@ -349,14 +374,18 @@ function ClosureActionDialog({target,principal,otherBlocked,onBlockedChange,onCl
     removeOptimisticOverlay(principal.principal_id,optimisticItemKey(item.kind,item.id),'movement',originalId);
     triggerRollbackCue(principal.principal_id,item.kind,item.id,'close',item.intake_id);
    }
-   await finish(originalId,result.state,current);
+   if(forgetRecoveredCommand(recoveryScope,action,originalId)&&action==='restore'){
+    await refresh();current();
+    if(result.state==='COMMITTED')onSuccess(restoreColumn());
+    else setMessage('上次操作已明确失败。请核对当前资料后重新选择操作。');
+   }else await finish(originalId,result.state,current);
    }catch(error){if(!controller.signal.aborted&&request.current===controller&&!denied(error))setMessage('核对暂未完成，未重复提交。');}finally{if(request.current===controller){request.current=null;requestOperation.current=null;setBusy(false);}}
  };
  const close=async()=>{if(locked)return;onClose();};
  const feedback=<>{context.isPending?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?<ErrorState title="可用操作没有读出来" onRetry={()=>{void context.refetch();}}/>:!context.data?.allowed&&!originalId?<p role="alert">当前事项不可执行此操作，请刷新后核对。</p>:null}{message?<DialogAlert className="ticket-waiting-state" source={action==='close'?'ticket-waiting-cancel':'closure-restore'} state={originalId?'unknown':'idle'}>{message}</DialogAlert>:null}</>;
  const draftStatus=raw&&draft.message?<DraftStatus notify={false} inlineText data-waiting-draft-status>{draft.message}</DraftStatus>:null,discard=action==='close'&&(value.reason||value.note)&&!locked?()=>{if(raw)void draft.discard();else setValue(emptyClosureForm);}:null;
  const recovery=<>{originalId?<Button tone="secondary" data-toast-avoid="bottom" data-action={action==='close'?'check-cancel-command':'check-restore-command'} isDisabled={busy} onPress={()=>{void check();}}>核对结果</Button>:null}</>;
- const enabled=Boolean(storageReady&&draft.canSubmit&&context.data?.allowed&&!context.isFetching&&!context.isError&&!otherBlocked);
+ const enabled=Boolean(!receiptOnly&&storageReady&&draft.canSubmit&&context.data?.allowed&&!context.isFetching&&!context.isError&&!otherBlocked);
  if(action==='close')return <ClosureDialog open={target.open} number={item.number} title={item.title} value={value} onChange={setValue} busy={busy} locked={locked} canSubmit={enabled&&!closureValidation(value)} onClose={()=>{void close();}} onSubmit={()=>{void submit();}} search={<ClosureTicketSearch principal={principal} subjectId={s.id} selected={value.duplicate} disabled={locked} onSelect={duplicate=>setValue(value=>({...value,duplicate}))}/>} inProgress={item.column==='active'} feedback={feedback} error={value.reason==='OTHER'||value.reason==='NOT_IT_SCOPE'?closureValidation(value):null} recovery={recovery} draft={draftStatus} onDiscard={discard}/>;
  const restore=history.data?.restore_target;
  // Card 29 R2: three notice states. Restore notifies only after a closure that chose to notify, so the closure's own choice decides 「本次不发送」.

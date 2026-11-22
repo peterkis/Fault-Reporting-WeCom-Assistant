@@ -8,7 +8,7 @@ import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation,useNavigate} from 'react-router';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
-import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
+import {api,ApiError,UnconfirmedClaimReplay,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016SelfHandlingCommand,SelfHandlingAction,WorkbenchCard} from '../../api/client';
 import {markSelfWrite} from '../../design/motion/self-write';
 import {OPTIMISTIC_UNKNOWN_TIMEOUT_MS} from '../optimistic/constants';
@@ -16,6 +16,7 @@ import {nowShanghaiLocalString} from '../optimistic/overlay';
 import {beginOptimisticOverlay,captureDisplayedCardPosition,confirmOptimisticOverlay,getDisplayedCard,isItemActionPending,markOptimisticUnknown,optimisticItemKey,removeOptimisticOverlay,triggerRollbackCue} from '../optimistic/store';
 import type {CardPositionAnchor} from '../optimistic/store';
 import {canUndoClaim,currentUserDisplayName,executeClaimUndo,lookupClaimWinnerName} from '../optimistic/undo-actions';
+import {dispatchRecoverable,useCommandRecovery} from '../optimistic/command-recovery';
 
 type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type OptimisticMeta={active:boolean;instantClaim:boolean;commandId:string;itemSnapshot:WorkbenchCard|null;restorePosition:CardPositionAnchor|undefined};
@@ -26,9 +27,13 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
   const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[pending,setPending]=useState<Pending|null>(null),[suppressToast,setSuppressToast]=useState(false);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
   const activeCard=item??getDisplayedCard(principal.principal_id,'ticket',ticketId)??client.getQueryData<{pages?:{item?:WorkbenchCard}[]}>(['detail',principal.principal_id,'ticket',ticketId])?.pages?.[0]?.item;
-  const navigationBlocking=['checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
+  const scope={principal:principal.principal_id,kind:'ticket',itemId:ticketId};
+  const held=useCommandRecovery(scope,'self');
+  const recovered=cardActionTarget===undefined&&held?.unknown&&held.intent.purpose==='self'?held.intent:null;
+  const replay=state==='unknown'?pending??recovered:recovered;
+  const navigationBlocking=Boolean(recovered)||Boolean(cardActionTarget===undefined&&state==='submitting')||['checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   const busy=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
-  const blocked=busy||isItemActionPending(principal.principal_id,'ticket',ticketId,'movement');
+  const blocked=busy||Boolean(held)||isItemActionPending(principal.principal_id,'ticket',ticketId,'movement');
   useEffect(()=>{onBlockedChange(navigationBlocking);return()=>onBlockedChange(false);},[navigationBlocking,onBlockedChange]);
   useEffect(()=>{if(onPendingChange&&activeCard){onPendingChange(busy,activeCard);}},[busy,onPendingChange,activeCard]);
   useEffect(()=>()=>{if(onPendingChange&&activeCard)onPendingChange(false,activeCard);},[]);
@@ -42,7 +47,11 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
     void client.invalidateQueries({queryKey:['ticket-round-notifications',principal.principal_id,ticketId]});void client.invalidateQueries({queryKey:['web-report',principal.principal_id,'ticket',ticketId]});
   };
   const mutation=useMutation({mutationKey:['ticket-self-handling',principal.principal_id,ticketId],
-    mutationFn:({intent,signal}:SubmitVariables)=>api.selfHandle(ticketId,intent.action,intent.command,principal.csrf_token,signal),
+    mutationFn:({intent,signal,checking}:SubmitVariables)=>{
+      const post=()=>api.selfHandle(ticketId,intent.action,intent.command,principal.csrf_token,signal,checking);
+      return cardActionTarget===undefined
+        ?dispatchRecoverable(scope,{purpose:'self',id:intent.command.client_command_id,...intent},signal,post):post();
+    },
     onSuccess:(result,variables)=>{
       if(variables.timerRef.id!==undefined)window.clearTimeout(variables.timerRef.id);
       if(variables.timedOutRef.current)return;
@@ -138,7 +147,7 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
         setSuppressToast(false);
         setPending(variables.intent);
         setState('unknown');
-        setMessage('结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');
+        setMessage(error instanceof UnconfirmedClaimReplay?'原操作仍待核对；本次未能确认结果。':'结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。');
       }
     },
     onSettled:(_data,_error,variables)=>{
@@ -200,14 +209,14 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
   };
   const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[],cardMode=cardActionTarget!==undefined;
   // Keep the original request/result controller mounted; only its idle presentation is optional.
-  if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&state==='idle')return null;
+  if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&!replay&&state==='idle')return null;
   const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<StepEntry action="take" label={cardMode?'领取 E':'接单'} fallbackTone={cardMode?'secondary':'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={tone}>{text}</HButton>}</StepEntry>:null;
   return <section data-activity-field="ticket-handling" data-board-claim-state={cardMode?state:undefined} className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
     {context.isPending?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?blocked?<p role="alert">{errorMessage(context.error)}</p>:<ErrorState title="可用操作没有读出来" onRetry={()=>{void context.refetch();}}/>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}
     <div className="note-controls">
       {cardMode?(cardActionTarget?createPortal(action,cardActionTarget):null):action}
-      {state==='unknown'&&pending?<HButton type="button" data-action="check-self-handling" onClick={()=>send(pending,true)} tone="secondary">重新提交</HButton>:null}
+      {replay?<HButton type="button" data-action="check-self-handling" isDisabled={state==='checking'} onClick={()=>send(replay,true)} tone="secondary">重新提交</HButton>:null}
       {!blocked&&(context.isError||state==='conflict'||state==='denied')?<HButton type="button" data-action="refresh-self-handling" onClick={()=>{void context.refetch();}} tone="secondary">重试读取操作</HButton>:null}
     </div>
     {state!=='idle'&&!suppressToast?<ToastFeedback revision={messageRevision} source="ticket-self-handling" state={state} className="ticket-handling-state" role={['denied','conflict','unknown'].includes(state)?'alert':'status'}>{message}</ToastFeedback>:null}

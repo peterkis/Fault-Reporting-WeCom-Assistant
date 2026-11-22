@@ -16,6 +16,7 @@ import {decodeFollowCommand,matchesFollowResult} from '../../contracts/workbench
 import type {FollowItem,WorkbenchFollowCommand,WorkbenchFollowResult} from '../../contracts/workbench-follow-browser-contracts.mjs';
 import {OPTIMISTIC_UNKNOWN_TIMEOUT_MS} from '../optimistic/constants';
 import {beginOptimisticOverlay,confirmOptimisticOverlay,markOptimisticUnknown,optimisticItemKey,removeOptimisticOverlay,triggerRollbackCue,useItemOptimisticState} from '../optimistic/store';
+import {forgetRecoveredCommand,keepFollowReceipt,useItemUndoRecovery} from '../optimistic/command-recovery';
 import {executeFollowUndo} from '../optimistic/undo-actions';
 
 type State='idle'|'submitting'|'checking'|'reading'|'succeeded'|'conflict'|'unknown'|'denied';
@@ -70,7 +71,14 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   onOperation:id=>{if(!settling.current){setOpaque(id);setState('unknown');setMessage('原操作仍待核对；请只读核对。');}},
   onSensitiveClear:()=>{if(!settling.current)clear();},
  });
- const commandId=draft.operationId??opaque??pending?.client_command_id,busy=state==='submitting'||state==='checking'||state==='reading';
+ const held=useItemUndoRecovery(principal.principal_id,'follow',item,requested);
+ const recoveryScope=held?.scope??{principal:principal.principal_id,kind:item.kind,itemId:item.id};
+ const inverse=held?.unknown&&held.intent.purpose==='follow'?held.intent:null;
+ const commandId=draft.operationId??opaque??pending?.client_command_id??inverse?.id;
+ const undo=commandId===inverse?.id?inverse:null;
+ const replayCommand=undo?undo.command:pending;
+ useEffect(()=>{if(inverse&&!principal.workbench_follow_enabled)keepFollowReceipt(recoveryScope,inverse.id);},[inverse,principal.workbench_follow_enabled]);
+ const busy=state==='submitting'||state==='checking'||state==='reading';
  const blocked=['checking','reading','unknown'].includes(state)||Boolean(commandId&&state!=='submitting'&&!settling.current);
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
@@ -104,7 +112,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  }
  async function settle(id:string){settling.current=true;try{return await draft.success(id);}finally{settling.current=false;}}
  async function terminal(id:string,result:WorkbenchFollowResult|null,controller:AbortController,current:()=>boolean,optimistic=false,rejectionError:ApiError|null=null){
-  const cleaned=await settle(id);if(!current())return;setPending(null);setOpaque(cleaned?null:id);setNeedsRead(true);
+  const cleaned=forgetRecoveredCommand(recoveryScope,'follow',id)||await settle(id);if(!current())return;setPending(null);setOpaque(cleaned?null:id);setNeedsRead(true);
   if(!cleaned){
    setSuppressToast(false);
    if(result)confirmOptimisticOverlay(principal.principal_id,itemKey,'follow',id);
@@ -125,7 +133,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
       item,
       targetFollowing:!result.following,
       committedFollowVersion:result.follow_version,
-      onOpenItem:()=>navigate('/items/'+item.kind+'/'+item.id+location.search),
+      onOpenItem:()=>navigate('/items/'+requested.kind+'/'+requested.id+location.search),
      }),
     });
    }else{
@@ -162,7 +170,7 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  }
  async function send(command:WorkbenchFollowCommand,replay=false){
   if(request.current||!principal.workbench_follow_enabled||!attention||!principal.csrf_token||!workbenchTransportWritable()||!draft.canSubmit&&!replay)return;
-  if(replay&&(!pending||pending.client_command_id!==commandId||probing||draft.status==='loading'||draft.status==='failed'))return;
+  if(replay&&(!replayCommand||replayCommand.client_command_id!==commandId||probing||draft.status==='loading'||draft.status==='failed'))return;
   const controller=new AbortController(),token=++generation.current,startIdentity=latestIdentity.current,current=currentRequest(controller,token,startIdentity,captureWorkbenchRead(controller.signal));request.current=controller;
   const optimistic=!replay;
   let timedOut=false;
@@ -192,11 +200,12 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
   }else{
    setSuppressToast(false);
   }
-  setPending(command);setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false,postRejection:ApiError|null=null;
+  if(!undo)setPending(command);
+  setOpaque(command.client_command_id);setState('submitting');setMessage(replay?'正在明确重放原关注操作…':'正在保存关注选择…');let dispatched=false,postRejection:ApiError|null=null;
   try{
-   await verifySession(controller.signal,current);await draft.prepare(command);if(!current())return;dispatched=true;
+   await verifySession(controller.signal,current);if(!undo)await draft.prepare(command);if(!current())return;dispatched=true;
    let result:WorkbenchFollowResult;
-   try{result=await api.follow(requested,command,principal.csrf_token,controller.signal);}
+   try{result=await api.follow(undo?.requested??requested,command,principal.csrf_token,controller.signal);}
    catch(error){if(error instanceof ApiError&&error.status>=400&&error.status<500)postRejection=error;throw error;}
    if(timerId!==undefined)window.clearTimeout(timerId);
    if(timedOut||!current())return;
@@ -217,17 +226,17 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
     }
    }
    else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,command.client_command_id,controller,current);
-   else if(postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current,optimistic,postRejection);
+   else if(!undo&&postRejection!==null&&error===postRejection)await terminal(command.client_command_id,null,controller,current,optimistic,postRejection);
    else{setSuppressToast(false);markOptimisticUnknown(principal.principal_id,itemKey,'follow',command.client_command_id);setState('unknown');setMessage('关注结果未知；请只读核对原操作，或明确重放同一原操作。');}
   }finally{if(timerId!==undefined)window.clearTimeout(timerId);if(generation.current===token)request.current=null;}
  }
  async function checkOriginal(){
   if(request.current||!commandId||probing||draft.status==='loading')return;
-  const id=commandId,command=pending,controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setSuppressToast(false);setState('checking');setMessage('正在只读核对原关注操作…');
+  const id=commandId,command=replayCommand,originalItem=undo?.requested??requested,controller=new AbortController(),token=++generation.current,current=currentRequest(controller,token,latestIdentity.current,captureWorkbenchRead(controller.signal));request.current=controller;setSuppressToast(false);setState('checking');setMessage('正在只读核对原关注操作…');
   try{
-   await verifySession(controller.signal,current);const receipt=await api.followReceipt(requested,id,controller.signal);if(!current())return;await verifySession(controller.signal,current);
+   await verifySession(controller.signal,current);const receipt=await api.followReceipt(originalItem,id,controller.signal);if(!current())return;await verifySession(controller.signal,current);
    if(receipt.state==='UNKNOWN'){markOptimisticUnknown(principal.principal_id,itemKey,'follow',id);setState('unknown');setMessage('原操作尚无可确认终态；请保留原操作，不会自动再次发送。');return;}
-   if(receipt.state==='COMMITTED'&&command&&!matchesFollowResult(command,receipt.result,requested))throw Error('FOLLOW_ORIGINAL_RESULT_UNCONFIRMED');
+   if(receipt.state==='COMMITTED'&&command&&!matchesFollowResult(command,receipt.result,originalItem))throw Error('FOLLOW_ORIGINAL_RESULT_UNCONFIRMED');
    await terminal(id,receipt.state==='COMMITTED'?receipt.result:null,controller,current,false);
   }catch(error){if(!current())return;if(error instanceof DraftError&&error.message==='DRAFT_IDENTITY_CHANGED')authorityFailure(error);else if(error instanceof ApiError&&[401,403,404].includes(error.status))await rejectedPurpose(error,id,controller,current);else{setState('unknown');setMessage('只读核对暂未完成；原操作仍保留。');}}
   finally{if(generation.current===token)request.current=null;}
@@ -240,11 +249,11 @@ export function ItemFollow({requested,item,principal,readReady,onBlockedChange}:
  }
  if(!principal.workbench_follow_enabled&&!commandId&&!existing&&!pending)return null;
  const displayFollowing=followOpt.followTarget??attention?.following??false;
- const canStart=principal.workbench_follow_enabled&&attention!==undefined&&readReady&&!needsRead&&!busy&&!blocked&&!followOpt.followPending&&!probing&&draft.status!=='loading'&&draft.canSubmit&&Boolean(principal.csrf_token)&&workbenchTransportWritable();
+ const canStart=principal.workbench_follow_enabled&&attention!==undefined&&readReady&&!needsRead&&!busy&&!blocked&&!held&&!followOpt.followPending&&!probing&&draft.status!=='loading'&&draft.canSubmit&&Boolean(principal.csrf_token)&&workbenchTransportWritable();
  return <section className="compact-follow" aria-label="个人关注" data-optimistic-pending={followOpt.followPending?'follow':undefined} data-optimistic-state={followOpt.state??undefined}>
   {principal.workbench_follow_enabled&&attention?<TooltipAnchor as="div" className="note-controls"><HButton type="button" data-action="toggle-item-follow" className="icon-button" aria-label={displayFollowing?'取消关注':'关注此事项'} title={displayFollowing?'取消关注此事项':'关注此事项，接收后续动态'} aria-pressed={attention.following} data-following={displayFollowing?'true':'false'} isDisabled={!canStart} onClick={()=>{if(!canStart||!attention)return;void send(decodeFollowCommand({client_command_id:crypto.randomUUID(),canonical_item:{kind:item.kind,id:item.id},expected_follow_version:attention.follow_version,following:!attention.following}));}} tone="secondary"><Star size={18} fill={displayFollowing?'currentColor':'none'}/></HButton><span className="follow-tooltip" role="tooltip">{displayFollowing?'已关注此事项':'关注此事项'}<small>接收后续动态；不改变处理或沟通责任。</small></span><OptimisticBadge pending={followOpt.followPending} kind="follow"/></TooltipAnchor>:null}
   <div className={state==='succeeded'&&!commandId&&!needsRead?'sr-only':'follow-feedback'} hidden={!commandId&&!needsRead&&draft.status!=='failed'&&(!message||suppressToast)}>
-  {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{pending&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(pending,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
+  {commandId?<div className="note-controls"><HButton type="button" data-action="follow-ack" isDisabled={busy||probing||draft.status==='loading'} onClick={()=>{void checkOriginal();}} tone="secondary">核对结果</HButton>{replayCommand&&principal.workbench_follow_enabled&&attention?<HButton type="button" data-action="follow-replay" isDisabled={busy||probing||draft.status==='loading'||draft.status==='failed'||!readReady||!principal.csrf_token||!workbenchTransportWritable()} onClick={()=>{void send(replayCommand,true);}} tone="secondary">重新提交</HButton>:null}</div>:null}
   {needsRead||state==='conflict'||state==='denied'?<HButton type="button" data-action="follow-refresh" isDisabled={busy} onClick={()=>{void refreshCurrent();}} tone="secondary">重新读取当前状态</HButton>:null}
   {draft.enabled&&draft.status==='failed'?<DraftStatus role="status" data-follow-draft-status={draft.status}>{draft.message}</DraftStatus>:null}
   {message&&!suppressToast?<ToastFeedback revision={messageRevision} source="item-follow" state={state} className="ticket-note-state" data-follow-state={state} role={state==='unknown'||state==='conflict'||state==='denied'?'alert':'status'}>{message}</ToastFeedback>:null}
