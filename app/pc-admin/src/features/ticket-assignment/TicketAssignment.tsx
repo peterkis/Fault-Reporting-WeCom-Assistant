@@ -94,6 +94,8 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
     const desired=displayName.trim();
     if(!desired)return;
     pendingPreselect.current=desired;
+    // A new person entry never keeps an earlier choice: the handler stays empty unless exactly one candidate matches.
+    setPerson('');
     setOpen(true);
     const data=targets.data;
     if(data){
@@ -103,7 +105,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
       }
       if(team&&data.resolver_team_id===team){
         const matches=data.items.filter(item=>item.display_name.trim()===desired);
-        if(matches.length===1&&matches[0])setPerson(matches[0].principal_id);
+        setPerson(matches.length===1&&matches[0]?matches[0].principal_id:'');
         pendingPreselect.current=null;
       }
     }
@@ -132,7 +134,7 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
     }
     if(team&&targets.data.resolver_team_id===team){
       const matches=targets.data.items.filter(item=>item.display_name.trim()===desired);
-      if(matches.length===1&&matches[0])setPerson(matches[0].principal_id);
+      setPerson(matches.length===1&&matches[0]?matches[0].principal_id:'');
       pendingPreselect.current=null;
     }
   },[open,targets.data,targets.isSuccess,team]);
