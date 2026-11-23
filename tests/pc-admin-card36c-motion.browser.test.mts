@@ -56,10 +56,10 @@ async function escape(browser:Browser){
   for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
 }
 
-async function freeze(browser:Browser,inspect:()=>Promise<void>){
+async function freeze<T>(browser:Browser,inspect:()=>Promise<T>):Promise<T>{
   await browser.command('Animation.enable');
   await browser.command('Animation.setPlaybackRate',{playbackRate:0});
-  try{await inspect();}
+  try{return await inspect();}
   finally{await browser.command('Animation.setPlaybackRate',{playbackRate:1});}
 }
 
@@ -306,15 +306,21 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await waitForAnimationsSettled(b);
       const [id]=await visibleActive(),source=openControl(id);
       const pose=`(()=>{const node=${q(panel)};if(!node)return null;const style=getComputedStyle(node);return {x:new DOMMatrixReadOnly(style.transform).m41,opacity:Number(style.opacity),exiting:node.hasAttribute('data-exiting')};})()`;
-      await clickWorkbenchControl(b,source);
-      // Wait for an intermediate visual pose, since half the eased timeline can be visually almost open.
-      await b.waitFor(`(()=>{const p=${pose};return p&&p.opacity>=0.38&&p.opacity<=0.68;})()`,{intervalMs:8,timeoutMs:3000});
-      const before=await b.evaluate(pose) as {x:number;opacity:number};
-      await escape(b);
-      await b.waitFor(q(panel)+'?.hasAttribute("data-exiting")',{intervalMs:8,timeoutMs:1500});
-      const after=await b.evaluate(pose) as {x:number;opacity:number;exiting:boolean};
-      assert.ok(after.exiting&&after.opacity>0&&after.opacity<1&&after.x>0,JSON.stringify({before,after}));
-      assert.ok(Math.abs(after.x-before.x)<=3&&Math.abs(after.opacity-before.opacity)<=.12,'exit start jumped: '+JSON.stringify({before,after}));
+      const after=await freeze(b,async()=>{
+        await clickWorkbenchControl(b,source);await waitEffect(panel);await waitEffect(backdrop);
+        // Hold a real intermediate pose before sending trusted Esc. Polling a narrow opacity
+        // window can miss it entirely while a slow runner mounts the cold drawer content.
+        await b.evaluate(`(()=>{for(const selector of ${JSON.stringify([panel,backdrop])})for(const animation of document.querySelector(selector).getAnimations())animation.currentTime=Number(animation.effect.getComputedTiming().duration)*.1;})()`);
+        await b.evaluate(frames);
+        const before=await b.evaluate(pose) as {x:number;opacity:number};
+        assert.ok(before.opacity>=.38&&before.opacity<=.68,JSON.stringify(before));
+        await escape(b);
+        await b.waitFor(q(panel)+'?.hasAttribute("data-exiting")',{intervalMs:8,timeoutMs:1500});
+        const current=await b.evaluate(pose) as {x:number;opacity:number;exiting:boolean};
+        assert.ok(current.exiting&&current.opacity>0&&current.opacity<1&&current.x>0,JSON.stringify({before,after:current}));
+        assert.ok(Math.abs(current.x-before.x)<=3&&Math.abs(current.opacity-before.opacity)<=.12,'exit start jumped: '+JSON.stringify({before,after:current}));
+        return current;
+      });
       const samples=await b.evaluate(`(async()=>{const samples=[];while(samples.length<120){await new Promise(requestAnimationFrame);const pose=${pose};if(!pose)break;samples.push(pose);}return samples;})()`) as {x:number;opacity:number}[];
       let previous=after;
       for(const sample of samples){
@@ -326,7 +332,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await b.waitFor('document.activeElement==='+q(source),{timeoutMs:3000});
     });
 
-    await check('C5.4 five next presses in 200ms show item six, cap body animations and preserve focus',async()=>{
+    const checkNextBurst=async(interleave:boolean)=>{
       await board('slow',420);
       for(const lane of ['pending','active'])await expandLane(lane);
       await waitForAnimationsSettled(b);
@@ -342,7 +348,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
         const button=${q(next)},stage=${q(stage)},counter=${q(position)};
         button.focus({preventScroll:true});
         const counts=[],presses=[];
-        let buttonDisabled=false,finishedAt=null;
+        let buttonDisabled=false,finishedAt=null,timer;
         const sample=()=>counts.push(stage.getAnimations({subtree:true}).filter(a=>a.effect?.target?.matches('[data-detail-body-enter],[data-detail-body-exit]')&&a.effect.getKeyframes().some(f=>'transform' in f)).length);
         const press=()=>{
           if(button.disabled){buttonDisabled=true;clearInterval(timer);return;}
@@ -350,11 +356,13 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
           button.click();
           if(presses.length===5)clearInterval(timer);
         };
-        const timer=setInterval(press,40);
         const start=performance.now();
         try{
           sample();
-          press();
+          // Generate the <=200ms input burst in one task, independent of runner timer drift.
+          // A second pass retains the 40ms cadence to exercise cancellation across React commits.
+          if(${interleave}){timer=setInterval(press,40);press();}
+          else for(let index=0;index<5;index++){press();sample();}
           for(let now=await new Promise(requestAnimationFrame);now-start<3000;now=await new Promise(requestAnimationFrame)){
             sample();
             if(buttonDisabled)break;
@@ -366,7 +374,7 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       })()`) as {counts:number[];presses:number[];buttonDisabled:boolean;focus:boolean};
       assert.equal(burst.buttonDisabled,false);
       assert.equal(burst.presses.length,5);
-      assert.ok(Number(burst.presses.at(-1))-Number(burst.presses[0])<=200,JSON.stringify(burst.presses));
+      if(!interleave)assert.ok(Number(burst.presses.at(-1))-Number(burst.presses[0])<=200,JSON.stringify(burst.presses));
       const maxConcurrent=Math.max(...burst.counts);
       assert.ok(maxConcurrent>=1&&maxConcurrent<=2,JSON.stringify(burst.counts));
       await b.waitFor(textIs(heading,sixth.title));
@@ -377,6 +385,44 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       assert.equal(await b.evaluate(q(stage)+'.getAnimations({subtree:true}).length'),0);
       assert.equal(await b.evaluate(q(scrollBody)+'.scrollTop'),0);
       assert.ok(burst.focus&&await b.evaluate('document.activeElement==='+q(next)),'focus stays on the enabled next control');
+    };
+    await check('C5.4 five next presses in 200ms show item six, cap body animations and preserve focus',()=>checkNextBurst(false));
+    await check('C5.4 next presses interleaved with rendering cancel old body animations and preserve focus',()=>checkNextBurst(true));
+
+    await check('C5.5 trusted mouse clicks on next at a fixed point land on the button while items switch',async()=>{
+      await close();
+      await board();
+      for(const lane of ['pending','active'])await expandLane(lane);
+      await waitForAnimationsSettled(b);
+      const ids=await b.evaluate(`[...document.querySelectorAll('.board-column:is(.pending,.active) .ticket-card[data-item-id]')].filter(card=>card.checkVisibility()&&card.getBoundingClientRect().height>0).map(card=>card.dataset.itemId)`) as string[];
+      const presses=5;
+      assert.ok(ids.length>presses+1,'the loaded range must leave an enabled next control after the burst');
+      await open(String(ids[0]));
+      await b.waitFor(q('.detail-navigation .ds-drawer-more')+'?.checkVisibility()',{timeoutMs:5000});
+      const initialPosition=String(await b.evaluate(q(position)+'.textContent'));
+      assert.match(initialPosition,/^1 \/ \d+$/u);
+      const point=await b.evaluate(`(()=>{const box=${q(next)}.getBoundingClientRect();return {x:box.x+box.width/2,y:box.y+box.height/2};})()`) as {x:number;y:number};
+      // Record what every trusted press hits and how the toolbar moves on every frame of the burst.
+      await b.evaluate(`(()=>{
+        const log=window.__card36cTrusted={hits:[],shifts:[],stop:false};
+        const left=()=>${q(next)}?.getBoundingClientRect().left;
+        const origin=left();
+        document.addEventListener('pointerdown',event=>log.hits.push(event.target instanceof Element&&Boolean(event.target.closest('.detail-next'))?'next':(event.target instanceof Element?event.target.className||event.target.tagName:'none')),true);
+        const frame=()=>{const now=left();if(now!==origin)log.shifts.push(now-origin);if(!log.stop)requestAnimationFrame(frame);};
+        requestAnimationFrame(frame);
+      })()`);
+      for(let press=0;press<presses;press++){
+        for(const type of ['mousePressed','mouseReleased'])await b.command('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,x:point.x,y:point.y});
+        await b.evaluate('new Promise(resolve=>setTimeout(resolve,40))');
+      }
+      await b.waitFor('window.__card36cTrusted.hits.length==='+presses,{timeoutMs:5000});
+      await b.waitFor(q(heading)+'&&'+q('.detail-navigation .ds-drawer-more')+'?.checkVisibility()',{timeoutMs:5000});
+      await settleOverlay();
+      const log=await b.evaluate('(()=>{const log=window.__card36cTrusted;log.stop=true;return {hits:log.hits,shifts:log.shifts};})()') as {hits:string[];shifts:number[]};
+      assert.deepEqual(log.hits,Array(presses).fill('next'),'every trusted press lands on 下一项');
+      assert.deepEqual(log.shifts,[],'the navigation controls keep their place while the next item loads');
+      await b.waitFor(q(position)+'.textContent==='+JSON.stringify(String(presses+1)+initialPosition.slice(1)),{timeoutMs:5000});
+      await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
     });
 
     const [actorCookieHeader,chenCookie,zhouCookie,shenCookie]=f.cookies;
