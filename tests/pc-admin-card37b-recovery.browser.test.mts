@@ -355,9 +355,19 @@ test('37B R10 a closure awaiting permission persists its first note after anothe
       // Restore from the encrypted record in a new document, independently of the saved badge.
       const fresh = await yxxTab(b, f.origin + '/workbench/app/items/ticket/' + id + '?range=all');
       try {
-        const closeEntry = '.detail-dialog [data-action=cancel]';
-        await fresh.waitFor(query(closeEntry) + '?.disabled === false');
-        await fresh.evaluate(query(closeEntry) + '.click()');
+        const menu = '.detail-dialog .ds-drawer-more';
+        await fresh.waitFor(visible(menu + ' > summary'));
+        await fresh.evaluate(query(menu + ' > summary') + '.click()');
+        // Drawer initialization can briefly disable close. Check and activate
+        // the visible entry in one browser task so its enabled state still holds.
+        await fresh.waitFor(`(() => {
+          const entry = ${query(menu + '[open] [data-action=cancel]')};
+          if (!entry?.checkVisibility() || entry.matches(':disabled,[aria-disabled=true]')) return false;
+          entry.focus();
+          entry.click();
+          return true;
+        })()`);
+        await fresh.waitFor(visible(closeDialog));
         await fresh.waitFor(query(textarea) + '?.value === ' + JSON.stringify(note));
       } finally {
         await fresh.close();
