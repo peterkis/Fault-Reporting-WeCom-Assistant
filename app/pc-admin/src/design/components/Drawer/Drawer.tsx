@@ -19,8 +19,11 @@ export function Drawer({children,isOpen=true,dismissBlocked,onClose,onExited}:{c
   </HeroDrawer.Backdrop>;
 }
 
-/** A disclosure keeps command owners mounted while their entry points are tucked away. */
-export function DrawerMoreActions({children,label='更多工单操作'}:{children:ReactNode;label?:string}){
+/**
+ * A disclosure keeps command owners mounted while their entry points are tucked away.
+ * `holdPlace` keeps an empty menu's box (invisible and inert) so neighbouring toolbar controls do not move while actions load.
+ */
+export function DrawerMoreActions({children,label='更多工单操作',holdPlace=false}:{children:ReactNode;label?:string;holdPlace?:boolean}){
   const root=useRef<HTMLDetailsElement>(null);
   useEffect(()=>{const close=(event:PointerEvent)=>{
     const menu=root.current;if(!menu||!(event.target instanceof Node)||menu.contains(event.target))return;
@@ -33,7 +36,7 @@ export function DrawerMoreActions({children,label='更多工单操作'}:{childre
   const menu=root.current,escape=(event:KeyboardEvent)=>{if(event.key==='Escape'&&menu?.open&&event.target instanceof Node&&menu.contains(event.target)){event.preventDefault();event.stopPropagation();menu.open=false;menu.querySelector('summary')?.focus();}};
   document.addEventListener('pointerdown',close);menu?.addEventListener('keydown',escape,true);
   return()=>{document.removeEventListener('pointerdown',close);menu?.removeEventListener('keydown',escape,true);};},[]);
-  return <details className="ds-drawer-more" ref={root}>
+  return <details className="ds-drawer-more" data-hold-place={holdPlace?'true':undefined} ref={root}>
     <summary data-action="open-detail-actions" aria-label={label} title={label}><MoreHorizontal aria-hidden="true"/></summary>
     <div className="ds-drawer-more-panel" aria-label={label}>{children}</div>
   </details>;

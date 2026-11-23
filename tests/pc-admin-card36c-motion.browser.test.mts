@@ -379,6 +379,42 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       assert.ok(burst.focus&&await b.evaluate('document.activeElement==='+q(next)),'focus stays on the enabled next control');
     });
 
+    await check('C5.5 trusted mouse clicks on next at a fixed point land on the button while items switch',async()=>{
+      await close();
+      await board();
+      for(const lane of ['pending','active'])await expandLane(lane);
+      await waitForAnimationsSettled(b);
+      const ids=await b.evaluate(`[...document.querySelectorAll('.board-column:is(.pending,.active) .ticket-card[data-item-id]')].filter(card=>card.checkVisibility()&&card.getBoundingClientRect().height>0).map(card=>card.dataset.itemId)`) as string[];
+      const presses=5;
+      assert.ok(ids.length>presses+1,'the loaded range must leave an enabled next control after the burst');
+      await open(String(ids[0]));
+      await b.waitFor(q('.detail-navigation .ds-drawer-more')+'?.checkVisibility()',{timeoutMs:5000});
+      const initialPosition=String(await b.evaluate(q(position)+'.textContent'));
+      assert.match(initialPosition,/^1 \/ \d+$/u);
+      const point=await b.evaluate(`(()=>{const box=${q(next)}.getBoundingClientRect();return {x:box.x+box.width/2,y:box.y+box.height/2};})()`) as {x:number;y:number};
+      // Record what every trusted press hits and how the toolbar moves on every frame of the burst.
+      await b.evaluate(`(()=>{
+        const log=window.__card36cTrusted={hits:[],shifts:[],stop:false};
+        const left=()=>${q(next)}?.getBoundingClientRect().left;
+        const origin=left();
+        document.addEventListener('pointerdown',event=>log.hits.push(event.target instanceof Element&&Boolean(event.target.closest('.detail-next'))?'next':(event.target instanceof Element?event.target.className||event.target.tagName:'none')),true);
+        const frame=()=>{const now=left();if(now!==origin)log.shifts.push(now-origin);if(!log.stop)requestAnimationFrame(frame);};
+        requestAnimationFrame(frame);
+      })()`);
+      for(let press=0;press<presses;press++){
+        for(const type of ['mousePressed','mouseReleased'])await b.command('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,x:point.x,y:point.y});
+        await b.evaluate('new Promise(resolve=>setTimeout(resolve,40))');
+      }
+      await b.waitFor('window.__card36cTrusted.hits.length==='+presses,{timeoutMs:5000});
+      await b.waitFor(q(heading)+'&&'+q('.detail-navigation .ds-drawer-more')+'?.checkVisibility()',{timeoutMs:5000});
+      await settleOverlay();
+      const log=await b.evaluate('(()=>{const log=window.__card36cTrusted;log.stop=true;return {hits:log.hits,shifts:log.shifts};})()') as {hits:string[];shifts:number[]};
+      assert.deepEqual(log.hits,Array(presses).fill('next'),'every trusted press lands on 下一项');
+      assert.deepEqual(log.shifts,[],'the navigation controls keep their place while the next item loads');
+      await b.waitFor(q(position)+'.textContent==='+JSON.stringify(String(presses+1)+initialPosition.slice(1)),{timeoutMs:5000});
+      await b.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
+    });
+
     const [actorCookieHeader,chenCookie,zhouCookie,shenCookie]=f.cookies;
     assert.ok(actorCookieHeader&&chenCookie&&zhouCookie&&shenCookie);
     const actor=session(f.origin,actorCookieHeader),chen=session(f.origin,chenCookie);

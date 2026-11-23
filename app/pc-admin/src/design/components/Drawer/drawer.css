@@ -31,6 +31,7 @@
 .ds-detail .ds-drawer-command-buttons .take-and-start[data-tone=primary]:hover:not(:disabled) {background: var(--brand-hover); border-color: var(--brand-hover);}
 .ds-drawer-more {position: relative; flex: none;}
 .ds-drawer-more:not(:has(.ds-drawer-more-panel button,.ds-drawer-more-panel p:not([hidden]))) {display: none;}
+.ds-drawer-more[data-hold-place=true]:not(:has(.ds-drawer-more-panel button,.ds-drawer-more-panel p:not([hidden]))) {display: block; visibility: hidden;}
 .ds-drawer-more>summary {display: grid; place-items: center; list-style: none; width: var(--control-h-md); height: var(--control-h-md); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-standard);}
 .ds-drawer-more>summary::-webkit-details-marker {display: none;}
 .ds-drawer-more>summary svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75;}
