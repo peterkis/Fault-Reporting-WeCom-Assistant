@@ -60,11 +60,25 @@ export async function select(b:Browser,id:string,view:'board'|'list'){
   await b.waitFor(visible(owner+current)+'&&'+query(owner)+'.contains(document.activeElement)');
   return owner;
 }
+// Fresh ticket navigations get a new Resource Timing timeline. The toolbar can
+// be ready while the loading skeleton still owns the body. Wait for the real
+// body and its initial reads before setting keyboard focus or recording keys.
+export async function waitForTicketDrawerReads(b:Browser,id:string){
+  const ticket='/api/tickets/'+id;
+  const paths=[ticket,ticket+'/reporter-contact',ticket+'/closure-history','/api/workbench/items/ticket/'+id+'/attachments'];
+  await b.waitFor(visible('.detail-dialog .ds-detail-view')+`&&(()=>{
+    const completed=new Set(performance.getEntriesByType('resource')
+      .filter(entry=>entry.responseEnd>0).map(entry=>new URL(entry.name).pathname));
+    return ${JSON.stringify(paths)}.every(path=>completed.has(path));
+  })()`);
+}
+
 const seenDetailFollow=visible('.detail-dialog [data-action=toggle-item-follow]');
 export async function target(s:Scene,view:Surface,id=s.id){
   const {b}=s;
   if(view==='drawer'){
     await navigate(s,'items/ticket/'+id+'?range=all',seenDetailFollow);
+    await waitForTicketDrawerReads(b,id);
     await b.waitFor(query('.detail-dialog [aria-label=复制编号]')+'?.disabled===false');
     await waitForAnimationsSettled(b,'.detail-dialog');
     await b.evaluate(query('.detail-dialog [aria-label=复制编号]')+'.focus()');

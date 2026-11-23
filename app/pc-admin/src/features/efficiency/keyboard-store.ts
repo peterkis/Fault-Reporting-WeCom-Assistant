@@ -11,10 +11,19 @@ export interface KeyboardItemRef {
 
 export type DetailPendingAction = 'claim' | 'transfer' | 'complete' | 'note';
 
+export interface DetailTargetIdentity {
+  requestedKind: string;
+  requestedId: string;
+  canonicalKind: WorkbenchCard['kind'];
+  canonicalId: string;
+}
+
 export interface PendingDetailIntent {
   principalId: string;
   kind: string;
   id: string;
+  requestedKind?: string;
+  requestedId?: string;
   action: DetailPendingAction;
   seq: number;
 }
@@ -152,7 +161,7 @@ export interface DetailFollowController {
 
 export interface DetailTakeoverController {
   status: 'available' | 'pending' | 'error' | 'unavailable';
-  open: () => boolean;
+  open: (target: DetailTargetIdentity) => boolean;
 }
 
 let currentTarget: KeyboardItemRef | null = null;
@@ -344,8 +353,16 @@ export function setPendingDetailIntent(
   kind: string,
   id: string,
   action: DetailPendingAction,
+  requested?: {kind: string; id: string},
 ): PendingDetailIntent {
-  pendingIntent = {principalId, kind, id, action, seq: ++intentSeq};
+  pendingIntent = {
+    principalId,
+    kind,
+    id,
+    ...(requested ? {requestedKind: requested.kind, requestedId: requested.id} : {}),
+    action,
+    seq: ++intentSeq,
+  };
   notifyIntentListeners();
   return pendingIntent;
 }
@@ -369,7 +386,11 @@ export function clearPendingClaimIntent(expectedSeq?: number) {
 }
 
 export function clearPendingDetailIntentFor(kind: string, id: string) {
-  if (!pendingIntent || pendingIntent.kind !== kind || pendingIntent.id !== id) return;
+  if (!pendingIntent) return;
+  const matchesCanonical = pendingIntent.kind === kind && pendingIntent.id === id;
+  const matchesRequested =
+    pendingIntent.requestedKind === kind && pendingIntent.requestedId === id;
+  if (!matchesCanonical && !matchesRequested) return;
   pendingIntent = null;
   notifyIntentListeners();
 }

@@ -13,7 +13,7 @@ import type {Principal,P2016TakeoverAction,P2016TakeoverCommand} from '../../api
 import type {P2016TakeoverSession} from '../../../../../contracts/p2_016_takeover_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
 import {BLOCKING_OVERLAYS,clearPendingClaimIntent,consumePendingDetailIntent,emitShortcutHint,getDetailKeyboardBridge,hasBlockingOverlayOpen,hasSelfHandlingClaimAdmission,isEditableElement,registerDetailTakeover,usePendingDetailIntent} from '../efficiency/keyboard-store';
-import type {DetailTakeoverController} from '../efficiency/keyboard-store';
+import type {DetailTakeoverController,DetailTargetIdentity} from '../efficiency/keyboard-store';
 import {useTakeoverDraft} from './use-takeover-draft';
 import type {TakeoverIntent,TakeoverInput} from './use-takeover-draft';
 import {shortCodes} from '../../app/short-code';
@@ -34,6 +34,7 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
  const [open,setOpen]=useState(false);
  const [focusSeq,setFocusSeq]=useState(0);
  const sectionRef=useRef<HTMLElement|null>(null);
+ const focusTargetRef=useRef<DetailTargetIdentity|null>(null);
  const focusFrameRef=useRef(0);
  const clearInput=()=>{setTeam('');setChoice('TAKE_SELECTED');setSelected([]);setPending(null);};
  const restoreInput=(value:TakeoverInput)=>{setTeam(value.team);setChoice(value.choice);setSelected(value.sessions);};
@@ -73,10 +74,20 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
  const permitted=(action:P2016TakeoverAction)=>context.data?.allowed_actions.includes(action)===true&&targets.data?.allowed_actions.includes(action)===true;
  const available=permitted('takeover')||permitted('takeover-and-start');
  const takeoverStatus:DetailTakeoverController['status']=available?'available':context.isError||targets.isError?'error':context.isPending||targets.isPending?'pending':'unavailable';
- const openWorkflow=useCallback(()=>{setOpen(true);setFocusSeq(seq=>seq+1);return true;},[]);
- const canOwnTakeoverClaim=useCallback(():boolean=>{
+ const openWorkflow=useCallback((target:DetailTargetIdentity)=>{focusTargetRef.current=target;setOpen(true);setFocusSeq(seq=>seq+1);return true;},[]);
+ const canOwnTakeoverClaim=useCallback((expected:DetailTargetIdentity|null):boolean=>{
+  if(!expected||expected.canonicalKind!=='ticket'||expected.canonicalId!==ticketId){
+   return false;
+  }
   const detail=getDetailKeyboardBridge();
-  if(!detail?.open||detail.kind!=='ticket'||detail.id!==ticketId||detail.blocked){
+  if(
+   !detail?.open||
+   detail.blocked||
+   detail.kind!==expected.requestedKind||
+   detail.id!==expected.requestedId||
+   detail.item?.kind!==expected.canonicalKind||
+   detail.item?.id!==expected.canonicalId
+  ){
    return false;
   }
   if(hasBlockingOverlayOpen())return false;
@@ -92,7 +103,8 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
   return()=>registerDetailTakeover(ticketId,null);
  },[ticketId,takeoverStatus,openWorkflow]);
  const pendingDetailIntent=usePendingDetailIntent();
- const pendingClaimSeq=pendingDetailIntent&&pendingDetailIntent.principalId===principal.principal_id&&pendingDetailIntent.kind==='ticket'&&pendingDetailIntent.id===ticketId&&pendingDetailIntent.action==='claim'?pendingDetailIntent.seq:null;
+ const pendingClaim=pendingDetailIntent&&pendingDetailIntent.principalId===principal.principal_id&&pendingDetailIntent.kind==='ticket'&&pendingDetailIntent.id===ticketId&&pendingDetailIntent.action==='claim'?pendingDetailIntent:null;
+ const pendingClaimSeq=pendingClaim?.seq??null;
  useEffect(()=>{
   if(pendingClaimSeq===null)return;
   const cancel=()=>clearPendingClaimIntent(pendingClaimSeq);
@@ -110,18 +122,25 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
   };
  },[pendingClaimSeq]);
  useEffect(()=>{
-  if(pendingClaimSeq===null||takeoverStatus==='pending')return;
+  if(!pendingClaim||takeoverStatus==='pending')return;
+  const expected:DetailTargetIdentity={
+   requestedKind:pendingClaim.requestedKind??pendingClaim.kind,
+   requestedId:pendingClaim.requestedId??pendingClaim.id,
+   canonicalKind:'ticket',
+   canonicalId:ticketId,
+  };
   consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'claim');
   const selfAllowed=context.isSuccess&&!context.isError&&hasSelfHandlingClaimAdmission(principal,context.data.allowed_actions);
   if(selfAllowed)return;
-  if(!canOwnTakeoverClaim())return;
-  if(takeoverStatus==='available'){openWorkflow();}
+  if(!canOwnTakeoverClaim(expected))return;
+  if(takeoverStatus==='available'){openWorkflow(expected);}
   else if(takeoverStatus==='error'){emitShortcutHint('暂时无法确认工单操作，请稍后再试');}
   else{emitShortcutHint('这张工单现在不能领取');}
- },[pendingClaimSeq,principal,ticketId,takeoverStatus,context.isSuccess,context.isError,context.data,canOwnTakeoverClaim,openWorkflow]);
+ },[pendingClaim,principal,ticketId,takeoverStatus,context.isSuccess,context.isError,context.data,canOwnTakeoverClaim,openWorkflow]);
  useEffect(()=>{
   if(focusSeq===0)return;
-  if(!canOwnTakeoverClaim())return;
+  const expected=focusTargetRef.current;
+  if(!canOwnTakeoverClaim(expected))return;
   const focusFirstField=()=>{
    const root=sectionRef.current;
    if(!root)return false;
@@ -140,15 +159,18 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
    root.focus({preventScroll:true});
    return document.activeElement===root;
   };
-  focusFirstField();
   cancelAnimationFrame(focusFrameRef.current);
-  focusFrameRef.current=requestAnimationFrame(()=>{
-   if(!canOwnTakeoverClaim())return;
-   const root=sectionRef.current;
-   if(root&&(!document.activeElement||!root.contains(document.activeElement))){
-    focusFirstField();
-   }
-  });
+  focusFrameRef.current=0;
+  if(!focusFirstField()){
+   focusFrameRef.current=requestAnimationFrame(()=>{
+    focusFrameRef.current=0;
+    if(!canOwnTakeoverClaim(expected))return;
+    const root=sectionRef.current;
+    if(root&&(!document.activeElement||!root.contains(document.activeElement))){
+     focusFirstField();
+    }
+   });
+  }
   return()=>cancelAnimationFrame(focusFrameRef.current);
  },[focusSeq,canOwnTakeoverClaim]);
  const selectedCurrent=selected.every(item=>!related.data?.items.some(row=>row.session_id===item.session_id&&(row.session_row_version!==String(item.expected_row_version)||!row.take_allowed)));

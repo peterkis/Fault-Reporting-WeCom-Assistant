@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomUUID} from 'node:crypto';
 import {
-  current,
   frame,
   hint,
   key,
+  navigate,
   record,
   target,
   suite,
@@ -33,11 +33,15 @@ import {
   visible,
   withScene,
 } from './helpers/card37a-optimistic-fixture.mjs';
-import {query,seedMotionTicket} from './helpers/motion-board-fixture.mjs';
+import {query,seedMotionTicket,ticketCard} from './helpers/motion-board-fixture.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {object} from './helpers/t42-board-browser-fixture.mjs';
 import {yxxTab} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
+import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+import {type T11Fixture, t11Http} from './helpers/t11-completion-fixture.mjs';
+import {launchSystemBrowser} from './helpers/p2-006-browser-harness.mjs';
 
 test('37B R2 a denied read retires an UNKNOWN board claim controller once',suite,()=>scene(async s=>{
   const {b,id,card,f}=s,principal=f.principals[0];
@@ -84,38 +88,6 @@ test('37B R2 a denied read retires an UNKNOWN board claim controller once',suite
     assert.equal(await b.evaluate('claimRetirement.remounted'),0,'a 403 must retire the original controller without recreating it');
     assert.equal(await b.evaluate(seen('.board-claim-controller')),false);
   }finally{await b.evaluate('claimRetirement.stop()');}
-}));
-
-test('37B R3 canceling an untouched closure does not grant X after completion',suite,()=>scene(async s=>{
-  const {b,id,http,card}=s;
-  await target(s,'board');
-  await b.waitFor(query(card+' [data-board-claim-action]')+'?.disabled===false');
-  await record(b);
-  await key(b,'x');await b.waitFor(visible(closeDialog));
-  await key(b,'Escape');await b.waitFor('!'+seen(closeDialog));
-  assert.deepEqual(await b.evaluate(writeLog),[],'the canceled form owns no submitted command');
-
-  // Keep the provider mounted while the real ticket moves to the terminal state.
-  const started=await http.start(id);
-  const done=await http.post(id,'complete',http.command(started));
-  assert.equal(done.status,200,await done.text());
-  assert.ok(!(await http.detail(id)).allowed_actions.includes('dismiss'));
-  await clickWorkbenchControl(b,'.ds-page-header button[aria-label=刷新]');
-  await b.waitFor(visible('.board-column.handled '+card));
-  await waitForAnimationsSettled(b);
-  await clickWorkbenchControl(b,card+' .card-open');
-  await b.waitFor(visible('.detail-dialog .ds-next-step'));
-  assert.equal(await b.evaluate(seen('.detail-dialog [data-action=cancel]')),false,'no close or recovery entry for this completed ticket');
-  await key(b,'Escape');await b.waitFor('!'+seen('.detail-dialog'));
-  await waitForAnimationsSettled(b);
-  await key(b,'3');
-  await b.evaluate(query(card+' .card-open')+'.focus()');
-  await b.waitFor(visible(card+current)+'&&document.activeElement==='+query(card+' .card-open'));
-  await record(b);await key(b,'x');
-  await b.waitFor(seen(hint)+'||'+seen(closeDialog));
-  assert.equal(await b.evaluate(seen(closeDialog)),false,'an idle retained form cannot admit a fresh close');
-  assert.equal(await b.evaluate(title(hint)),'这张工单现在不能关闭');
-  assert.deepEqual(await b.evaluate('b5log.calls'),[]);
 }));
 
 test('37B R3 an unknown keyboard follow remains checkable in the same ticket drawer',suite,()=>scene(async s=>{
@@ -538,4 +510,130 @@ test('37B PR1 a pending A cannot take focus back from a newer internal-note acti
       await b.evaluate('window.releaseTakeoverTargets?.()');
       await b.command('Page.removeScriptToEvaluateOnNewDocument', {identifier: object(script).identifier});
     }
+  }));
+
+test('37B PR3 A opens takeover through the original converted review URL', suite, t =>
+  withWeb01Fixture(async (f: T11Fixture & {processReviewIntake: (id: string) => Promise<unknown>}) => {
+    const http = await t11Http(f, 0, {closeConnections: true});
+    const read = async (path: string) => {
+      const response = await http.get(path);
+      assert.equal(response.status, 200, await response.clone().text());
+      return object(await response.json());
+    };
+    const intake = await seedPersistedIntake({pool: f.pool, text: '复核转单后键盘接管（合成）'});
+    await f.processReviewIntake(intake.intakeId);
+    const reviews = await f.pool.query<{id: string}>(
+      'SELECT id::text FROM intake.manual_review_item WHERE service_intake_id=$1::uuid', [intake.intakeId]);
+    const reviewId = reviews.rows[0]?.id;
+    assert.ok(reviewId);
+    const reviewPath = '/api/manual-reviews/' + reviewId;
+    const review = await read(reviewPath);
+    const {csrf_token} = await read('/api/lifecycle/bootstrap');
+    const cookie = f.cookies[0], browserCookie = f.browserCookies[0];
+    assert.ok(cookie && browserCookie && typeof csrf_token === 'string' && typeof review.row_version === 'string');
+    const commandId = randomUUID();
+    const resolved = await fetch(f.origin + reviewPath + '/resolve', {
+      method: 'POST',
+      headers: {cookie, origin: f.origin, 'content-type': 'application/json', 'x-csrf-token': csrf_token,
+        'idempotency-key': commandId, 'if-match': '"' + review.row_version + '"'},
+      body: JSON.stringify({client_command_id: commandId, expected_row_version: review.row_version,
+        expected_material_basis: object(review.material_basis).current_hash,
+        resolution_code: 'CONFIRM_TICKET_ELIGIBLE', resolution_reason_code: 'EXPLICIT_HUMAN_CHOICE'}),
+    });
+    assert.equal(resolved.status, 200, await resolved.text());
+    const alias = 'review/' + reviewId, detail = await read('/api/workbench/items/' + alias);
+    assert.deepEqual(detail.requested_item, {kind: 'review', id: reviewId});
+    const item = object(detail.item);
+    assert.ok(item.kind === 'ticket' && typeof item.id === 'string' && item.id !== reviewId);
+    const id = item.id, path = 'items/' + alias, copy = '.detail-dialog [aria-label="复制编号"]';
+    const b = await launchSystemBrowser({url: f.origin + '/workbench/app/', width: 1280, height: 850,
+      cookies: [{...browserCookie, url: f.origin + '/'}]});
+    assert.ok(b);
+    try {
+      const s = {b, f, http, id, card: ticketCard(id)};
+      await assignTakeoverOnly(s);
+      for (const held of [false, true]) {
+        await t.test(held ? 'one queued A opens and focuses after targets are released' : 'one A opens and focuses with targets loaded', async () => {
+          // Hold only the targets response. The ticket query still publishes real command admission.
+          const script = held ? await b.command('Page.addScriptToEvaluateOnNewDocument', {source: `(() => {
+            const original = window.fetch;
+            const gate = new Promise(resolve => { window.releaseTargets = resolve; });
+            window.fetch = async function(input, init) {
+              const pathname = new URL(input.url ?? input, location.href).pathname;
+              const response = await original.apply(this, arguments);
+              if (pathname === ${JSON.stringify('/api/tickets/' + id + '/takeover-targets')} && response.ok) {
+                window.targetsHeld = true;
+                await gate;
+              }
+              if (pathname === ${JSON.stringify('/api/tickets/' + id)} && response.ok)
+                window.claimActions = (await response.clone().json()).allowed_actions;
+              return response;
+            };
+          })()`}) : null;
+          try {
+            await navigate(s, path, query(copy) + '?.disabled === false');
+            await b.waitFor(held ? 'window.targetsHeld && window.claimActions?.includes("takeover-and-start")' : visible(takeoverEntry));
+            await waitForAnimationsSettled(b);
+            assert.equal(await b.evaluate(visible(takeoverTeam)), false);
+            await b.evaluate(query(copy) + '.focus()');
+            await record(b);
+            await key(b, 'a');
+            if (held) {
+              await b.evaluate(frame);
+              assert.equal(await b.evaluate(visible(takeoverTeam)), false);
+              assert.equal(await b.evaluate('document.activeElement === ' + query(copy)), true);
+              assert.deepEqual(await b.evaluate(writeLog), []);
+              await b.evaluate('releaseTargets()');
+            }
+            await b.waitFor(visible(takeoverEntry));
+            await waitForAnimationsSettled(b);
+            assert.equal(await b.evaluate(title(takeoverEntry) + '.trim()'), '接管处理');
+            assert.equal(await b.evaluate(query(takeoverEntry) + '.getAttribute("aria-expanded")'), 'true');
+            assert.equal(await b.evaluate(visible(takeoverTeam)), true);
+            assert.equal(await b.evaluate('document.activeElement === ' + query(takeoverTeam)), true);
+            const labels = await b.evaluate(query(takeoverTeam) +
+              '.getAttribute("aria-labelledby").split(" ").map(id => document.getElementById(id)?.textContent.trim())');
+            assert.ok(labels.includes('接管处理组'));
+            assert.equal(await b.evaluate('location.pathname'), '/workbench/app/' + path);
+            assert.equal(await b.evaluate(seen(hint)), false);
+            assert.deepEqual(await b.evaluate(writeLog), []);
+          } finally {
+            if (script) {
+              await b.evaluate('window.releaseTargets?.()');
+              await b.command('Page.removeScriptToEvaluateOnNewDocument', {identifier: object(script).identifier});
+            }
+          }
+        });
+      }
+    } finally {
+      await b.close();
+    }
+  }, {workbenchManualReviewEnabled: true, workbenchBoardActionsEnabled: true, ticketSelfHandlingEnabled: true,
+    ticketTakeoverEnabled: true, manualProjection: true}));
+
+test('37B PR3 successful A focus leaves a subsequent pre-frame focus on 复制编号', suite, () =>
+  takeoverScene(async s => {
+    const {b} = s, copy = '.detail-dialog [aria-label="复制编号"]';
+    await assignTakeoverOnly(s);
+    await target(s, 'drawer');
+    await b.waitFor(visible(takeoverEntry));
+    await b.evaluate(`(() => {
+      const copy = ${query(copy)}, team = ${query(takeoverTeam)};
+      window.takeoverFocusOrder = [];
+      document.addEventListener('focusin', e => {
+        if (e.target === team) {
+          takeoverFocusOrder.push('team');
+          // Let focus() return success, then exercise the gap before the next paint.
+          if (takeoverFocusOrder.length === 1) queueMicrotask(() => copy.focus());
+        } else if (e.target === copy) takeoverFocusOrder.push('copy');
+      });
+    })()`);
+    await record(b);
+    await key(b, 'a');
+    await b.waitFor('window.takeoverFocusOrder.includes("copy")');
+    await b.evaluate(frame);
+    assert.deepEqual(await b.evaluate('takeoverFocusOrder'), ['team', 'copy']);
+    assert.equal(await b.evaluate('document.activeElement === ' + query(copy)), true);
+    assert.equal(await b.evaluate(query(takeoverEntry) + '.getAttribute("aria-expanded")'), 'true');
+    assert.deepEqual(await b.evaluate(writeLog), []);
   }));

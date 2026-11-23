@@ -13,6 +13,7 @@ import {
   palette,
   record,
   target,
+  waitForTicketDrawerReads,
   suite,
   scene,
   writeLog,
@@ -186,6 +187,7 @@ test('37B B5.1 B5.7 restricted account across board, list and drawer',suite,t=>w
   for(const view of ['board','list','drawer'] as const)await t.test(view,async()=>{
     if(view==='drawer'){
       await navigate(s,'items/ticket/'+id,visible('.detail-dialog .ds-next-step'));
+      await waitForTicketDrawerReads(b,id);
       await b.evaluate(query('.detail-dialog [aria-label=复制编号]')+'.focus()');
     }else await target(s,view);
     assert.equal(await b.evaluate('window.b5Role'),'REPORTER');
@@ -255,6 +257,7 @@ test('37B B5.1 unavailable item actions reuse command admission before navigatin
     for(const view of ['board','list','drawer'] as const)await t.test(view+' '+letter,async()=>{
       if(view==='drawer'){
         await navigate(s,'items/ticket/'+item,visible('.detail-dialog .ds-next-step'));
+        await waitForTicketDrawerReads(b,item);
         await b.evaluate(query('.detail-dialog [aria-label=复制编号]')+'.focus()');
       }else await target(s,view,item);
       const previous=await b.evaluate('location.href');

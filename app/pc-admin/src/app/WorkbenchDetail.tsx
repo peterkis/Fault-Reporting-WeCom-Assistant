@@ -219,7 +219,10 @@ function WorkbenchDetailSurface(props:DetailProps){
   useEffect(()=>{
     const pending=getPendingDetailIntent();
     if(!pending)return;
-    if(!isOpen||!targetKind||!targetId||pending.principalId!==props.principal.principal_id||pending.kind!==targetKind||pending.id!==targetId){
+    const matchesTarget=pending.requestedKind!==undefined&&pending.requestedId!==undefined
+      ?pending.requestedKind===targetKind&&pending.requestedId===targetId
+      :pending.kind===targetKind&&pending.id===targetId;
+    if(!isOpen||!targetKind||!targetId||pending.principalId!==props.principal.principal_id||!matchesTarget){
       clearPendingDetailIntent(pending.seq);
     }
   },[isOpen,targetKind,targetId,props.principal.principal_id]);

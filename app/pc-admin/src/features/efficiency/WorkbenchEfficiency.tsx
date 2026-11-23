@@ -84,7 +84,7 @@ import {
   useKeyboardBridgeRevision,
   useKeyboardCurrentTarget,
 } from './keyboard-store';
-import type {KeyboardItemRef,TicketActionAdmission,TicketCommandAction} from './keyboard-store';
+import type {DetailTargetIdentity,KeyboardItemRef,TicketActionAdmission,TicketCommandAction} from './keyboard-store';
 import './efficiency.css';
 
 type CapturedCommandTarget = {surface: 'detail' | 'board'; ref: KeyboardItemRef};
@@ -549,8 +549,14 @@ export function WorkbenchEfficiency({
               (detail.allowedActions !== null &&
                 hasSelfHandlingClaimAdmission(principal, detail.allowedActions));
             if (!selfHandlingAdmitted && principal.ticket_takeover_enabled) {
+              const targetIdentity: DetailTargetIdentity = {
+                requestedKind: detail.kind,
+                requestedId: detail.id,
+                canonicalKind: item.kind,
+                canonicalId: item.id,
+              };
               const takeover = getDetailTakeoverController(item.id);
-              if (takeover?.status === 'available' && takeover.open()) {
+              if (takeover?.status === 'available' && takeover.open(targetIdentity)) {
                 return true;
               }
               if (takeover?.status === 'pending') {
@@ -564,9 +570,14 @@ export function WorkbenchEfficiency({
                     existing?.principalId !== principal.principal_id ||
                     existing.kind !== item.kind ||
                     existing.id !== item.id ||
+                    existing.requestedKind !== detail.kind ||
+                    existing.requestedId !== detail.id ||
                     existing.action !== 'claim'
                   ) {
-                    setPendingDetailIntent(principal.principal_id, item.kind, item.id, 'claim');
+                    setPendingDetailIntent(principal.principal_id, item.kind, item.id, 'claim', {
+                      kind: detail.kind,
+                      id: detail.id,
+                    });
                   }
                 }
                 return true;

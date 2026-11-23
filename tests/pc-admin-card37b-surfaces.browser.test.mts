@@ -315,6 +315,38 @@ test('37B R3 every menu item on the last pending card is fully visible and hit-t
   await assertMenuItemsVisible(b);
 }));
 
+test('37B R3 canceling an untouched closure does not grant X after completion',suite,()=>scene(async s=>{
+  const {b,id,http,card}=s;
+  await target(s,'board');
+  await b.waitFor(query(card+' [data-board-claim-action]')+'?.disabled===false');
+  await record(b);
+  await key(b,'x');await b.waitFor(visible(closeDialog));
+  await key(b,'Escape');await b.waitFor('!'+seen(closeDialog));
+  assert.deepEqual(await b.evaluate(writeLog),[],'the canceled form owns no submitted command');
+
+  // Keep the provider mounted while the real ticket moves to the terminal state.
+  const started=await http.start(id);
+  const done=await http.post(id,'complete',http.command(started));
+  assert.equal(done.status,200,await done.text());
+  assert.ok(!(await http.detail(id)).allowed_actions.includes('dismiss'));
+  await clickWorkbenchControl(b,'.ds-page-header button[aria-label=刷新]');
+  await b.waitFor(visible('.board-column.handled '+card));
+  await waitForAnimationsSettled(b);
+  await clickWorkbenchControl(b,card+' .card-open');
+  await b.waitFor(visible('.detail-dialog .ds-next-step'));
+  assert.equal(await b.evaluate(seen('.detail-dialog [data-action=cancel]')),false,'no close or recovery entry for this completed ticket');
+  await key(b,'Escape');await b.waitFor('!'+seen('.detail-dialog'));
+  await waitForAnimationsSettled(b);
+  await key(b,'3');
+  await b.evaluate(query(card+' .card-open')+'.focus()');
+  await b.waitFor(visible(card+current)+'&&document.activeElement==='+query(card+' .card-open'));
+  await record(b);await key(b,'x');
+  await b.waitFor(seen(hint)+'||'+seen(closeDialog));
+  assert.equal(await b.evaluate(seen(closeDialog)),false,'an idle retained form cannot admit a fresh close');
+  assert.equal(await b.evaluate(title(hint)),'这张工单现在不能关闭');
+  assert.deepEqual(await b.evaluate('b5log.calls'),[]);
+}));
+
 test('37B R3 an idle close target gives a read-only role no recovery entry',suite,()=>scene(async s=>{
   const {b,id,card}=s;
   await target(s,'board');
