@@ -1,6 +1,8 @@
 import {ErrorState} from '../../design/components/ErrorState/ErrorState';
 import {DetailLoading} from '../../app/DetailLoading';
 import {StepEntry,useNextStep} from '../../design/components/Drawer/NextStep';
+import {ShortcutTooltip} from '../../design/components/Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../efficiency/shortcuts';
 import {RadioGroup as HRadioGroup,Radio as HRadio} from "@heroui/react";
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel} from "@heroui/react";
@@ -272,7 +274,7 @@ export function TicketConversationHandling({ticketId,principal,onBlockedChange,b
       {!open&&draft.restorationBlocked&&draft.hasUnsavedInput()?<HButton type="button" data-action="show-unsaved-conversation-handling" onClick={()=>setOpen(true)} tone="secondary">查看未保存选择</HButton>:null}
       {originalId?<HButton type="button" data-action="open-conversation-handling-recovery" isDisabled={state==='submitting'||state==='checking'} onClick={()=>setOpen(true)} tone="secondary">核对接单</HButton>:canStart?<>
         {simpleSession?<HButton type="button" className="icon-button" aria-label="接单选项" title="接单选项" isDisabled={blocked||otherBlocked} onClick={openOptions} tone="secondary"><ChevronDown size={16}/></HButton>:null}
-        <StepEntry action="take" label={'接单'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start-with-conversations" isDisabled={blocked||otherBlocked||context.isPending||context.isError||related.isPending||related.isError||draft.status==='loading'} onClick={()=>{if(direct)submit('take-and-start-with-conversations');else setOpen(true);}} tone={tone}>{text}</HButton>}</StepEntry>
+        <StepEntry action="take" label={'接单'} fallbackTone={'primary'}>{(tone,text)=><ShortcutTooltip label={text} keys={shortcutKeys('claim')} placement="top"><HButton type="button" className="take-and-start" data-action="take-and-start-with-conversations" aria-keyshortcuts={ariaKeyshortcuts('claim')} isDisabled={blocked||otherBlocked||context.isPending||context.isError||related.isPending||related.isError||draft.status==='loading'} onClick={()=>{if(direct)submit('take-and-start-with-conversations');else setOpen(true);}} tone={tone}>{text}</HButton></ShortcutTooltip>}</StepEntry>
       </>:null}
     </div>
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||state==='checking'||draft.restoring} title="接单选项" closeLabel="关闭接单选项" className="detail-action-dialog detail-accept-dialog">

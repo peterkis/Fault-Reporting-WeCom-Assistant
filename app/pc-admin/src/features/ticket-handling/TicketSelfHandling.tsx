@@ -1,6 +1,8 @@
 import {ErrorState} from '../../design/components/ErrorState/ErrorState';
 import {DetailLoading} from '../../app/DetailLoading';
 import {StepEntry} from '../../design/components/Drawer/NextStep';
+import {ShortcutTooltip} from '../../design/components/Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../efficiency/shortcuts';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {ToastFeedback,showErrorActionToast,showSuccessToast,showUndoToast,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
@@ -22,7 +24,7 @@ type Pending={action:SelfHandlingAction;command:P2016SelfHandlingCommand};
 type OptimisticMeta={active:boolean;instantClaim:boolean;commandId:string;itemSnapshot:WorkbenchCard|null;restorePosition:CardPositionAnchor|undefined};
 type SubmitVariables={intent:Pending;checking:boolean;signal:AbortSignal;controller:AbortController;timerRef:{id:number|undefined};timedOutRef:{current:boolean};meta:OptimisticMeta};
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
-export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPendingChange,boardMode=false,otherBlocked=false,cardActionTarget}:{ticketId:string;item?:WorkbenchCard|undefined;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void;onPendingChange?:((pending:boolean,item:WorkbenchCard)=>void)|undefined;cardActionTarget?:HTMLElement|null}){
+export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPendingChange,boardMode=false,otherBlocked=false,cardActionTarget}:{ticketId:string;item?:WorkbenchCard|undefined;principal:Principal;boardMode?:boolean;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void;onPendingChange?:((pending:boolean,item:WorkbenchCard,reason?:'change'|'unmount')=>void)|undefined;cardActionTarget?:HTMLElement|null}){
   const client=useQueryClient(),navigate=useNavigate(),location=useLocation(),request=useRef<AbortController|null>(null);
   const [state,setState]=useState<State>('idle'),[message,setMessage,messageRevision]=useFeedbackState(''),[pending,setPending]=useState<Pending|null>(null),[suppressToast,setSuppressToast]=useState(false);
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,ticketId],queryFn:({signal})=>api.ticketCommandContext(ticketId,signal)});
@@ -35,8 +37,10 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
   const busy=['submitting','checking','unknown'].includes(state)||Boolean(boardMode&&state==='conflict'&&pending);
   const blocked=busy||Boolean(held)||isItemActionPending(principal.principal_id,'ticket',ticketId,'movement');
   useEffect(()=>{onBlockedChange(navigationBlocking);return()=>onBlockedChange(false);},[navigationBlocking,onBlockedChange]);
-  useEffect(()=>{if(onPendingChange&&activeCard){onPendingChange(busy,activeCard);}},[busy,onPendingChange,activeCard]);
-  useEffect(()=>()=>{if(onPendingChange&&activeCard)onPendingChange(false,activeCard);},[]);
+  const pendingCallbackRef=useRef({onPendingChange,activeCard});
+  pendingCallbackRef.current={onPendingChange,activeCard};
+  useEffect(()=>{if(onPendingChange&&activeCard){onPendingChange(busy,activeCard,'change');}},[busy,onPendingChange,activeCard]);
+  useEffect(()=>()=>{const latest=pendingCallbackRef.current;if(latest.onPendingChange&&latest.activeCard)latest.onPendingChange(false,latest.activeCard,'unmount');},[]);
   useEffect(()=>()=>{request.current?.abort();},[]);
   useEffect(()=>{if(!navigationBlocking)return;const warn=(event:BeforeUnloadEvent)=>event.preventDefault();window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[navigationBlocking]);
   const refresh=(afterReturn?:Promise<void>)=>{
@@ -210,7 +214,7 @@ export function TicketSelfHandling({ticketId,item,principal,onBlockedChange,onPe
   const cycle=context.data?.handling_cycle,allowed=context.data?.allowed_actions??[],cardMode=cardActionTarget!==undefined;
   // Keep the original request/result controller mounted; only its idle presentation is optional.
   if(context.isSuccess&&!context.isError&&!allowed.includes('take-and-start')&&!pending&&!replay&&state==='idle')return null;
-  const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<StepEntry action="take" label={cardMode?'领取 E':'接单'} fallbackTone={cardMode?'secondary':'primary'}>{(tone,text)=><HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={tone}>{text}</HButton>}</StepEntry>:null;
+  const action=allowed.includes('take-and-start')&&(!cardMode||context.isSuccess&&!context.isFetching)?<StepEntry action="take" label={cardMode?'领取':'接单'} fallbackTone={cardMode?'secondary':'primary'}>{(tone,text)=><ShortcutTooltip label={text} keys={shortcutKeys('claim')} placement={cardMode?'top-end':'top'}><HButton type="button" className="take-and-start" data-action="take-and-start" data-board-claim-action={cardMode?'true':undefined} aria-keyshortcuts={ariaKeyshortcuts('claim')} size={cardMode?'sm':'md'} isDisabled={blocked||otherBlocked||context.isPending||context.isError} onClick={()=>submit('take-and-start')} tone={tone}>{text}</HButton></ShortcutTooltip>}</StepEntry>:null;
   return <section data-activity-field="ticket-handling" data-board-claim-state={cardMode?state:undefined} className="ticket-notes ticket-self-handling detail-action-controller" aria-label="本人承接工单">
     {context.isPending?<DetailLoading inline label="正在加载可用操作…"/>:context.isError?blocked?<p role="alert">{errorMessage(context.error)}</p>:<ErrorState title="可用操作没有读出来" onRetry={()=>{void context.refetch();}}/>:<p hidden className="ticket-handling-version">工单版本 {context.data.version}</p>}
     {cycle?<p hidden className="ticket-handling-cycle">处理轮次 {cycle.cycle_no}</p>:null}

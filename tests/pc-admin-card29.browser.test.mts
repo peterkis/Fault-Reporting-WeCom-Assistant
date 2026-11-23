@@ -87,8 +87,8 @@ test('Card 29 list, search, board and drawer closure presentation use real HTTP/
   await go('/workbench/app/items/ticket/'+ids.longOwner,"document.querySelector('[data-action=cancel]')!==null");
   await clickWorkbenchControl(b,'[data-action=open-detail-actions]');await b.waitFor("document.querySelector('.ds-drawer-more[open]')!==null");
   await waitForAnimationsSettled(b,'.ds-drawer-more');
-  metrics.menu=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-drawer-more[open]>.ds-drawer-more-panel'),c=p.querySelector('.cancel-ticket-trigger'),s=getComputedStyle(p);return {width:p.getBoundingClientRect().width,radius:s.borderRadius,padding:s.paddingTop,item:c.getBoundingClientRect().height,label:c.textContent,icon:c.querySelector('svg')?.getBoundingClientRect().width??0,danger:getComputedStyle(c).color===getComputedStyle(document.documentElement).getPropertyValue('--tone-danger-fg').trim()||getComputedStyle(c).color!==getComputedStyle(p).color};})()"));
-  assert.deepEqual(metrics.menu,{width:220,radius:'10px',padding:'4px',item:32,label:'关闭事项…',icon:14,danger:true});
+  metrics.menu=object(await b.evaluate("(()=>{const p=document.querySelector('.ds-drawer-more[open]>.ds-drawer-more-panel'),c=p.querySelector('.cancel-ticket-trigger'),s=getComputedStyle(p);return {width:p.getBoundingClientRect().width,radius:s.borderRadius,padding:s.paddingTop,item:c.getBoundingClientRect().height,label:(()=>{const label=c.cloneNode(true);label.querySelector('.ds-kbd-group')?.remove();return label.textContent})(),key:[...c.querySelectorAll('kbd')].map(node=>node.textContent),icon:c.querySelector('svg')?.getBoundingClientRect().width??0,danger:getComputedStyle(c).color===getComputedStyle(document.documentElement).getPropertyValue('--tone-danger-fg').trim()||getComputedStyle(c).color!==getComputedStyle(p).color};})()"));
+  assert.deepEqual(metrics.menu,{width:220,radius:'10px',padding:'4px',item:32,label:'关闭事项…',key:['X'],icon:14,danger:true});
   await capture('drawer-1440-menu');
   assert.deepEqual(writes,[],'Card 29 presentation reads submit no business writes');
  }catch(error){failure=error;}

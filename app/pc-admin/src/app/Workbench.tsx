@@ -1,4 +1,4 @@
-import {ClosureActionsProvider,RestoreClosedItem,useClosureHighlight} from '../features/ticket-waiting/ClosureActions';
+import {ClosureActionsProvider,RestoreClosedItem,useClosureBridge,useClosureHighlight} from '../features/ticket-waiting/ClosureActions';
 import {clearHoverItemDenied,clearHoverItemsBatch} from '../features/hover-cards/denied-items';
 import {HoverCardsBoardBridge} from '../features/hover-cards/hover-card-store';
 import {HoverCardsProvider,PersonHoverCard} from '../features/hover-cards/PersonHoverCard';
@@ -9,7 +9,7 @@ import { PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData } from 'luci
 import { Bell,ChevronDown,ChevronsUpDown,ChevronUp,LayoutGrid,List,LogOut,MessageSquare,RefreshCw,Search,Settings,TriangleAlert } from 'lucide-react';
 import { MorphIcon } from 'morphicons/react';
 import type { MouseEvent,ReactNode } from 'react';
-import { Fragment,memo,useCallback,useContext,useEffect,useMemo,useRef,useState } from 'react';
+import { Fragment,createContext,memo,useCallback,useContext,useEffect,useMemo,useRef,useState } from 'react';
 import { useLocation,useNavigate,useParams,useSearchParams } from 'react-router';
 import type { WorkbenchSearchCriteria } from '../../../../contracts/workbench_search_contracts';
 import { SEARCH_KEYS,hasSearchCriteria,searchCriteriaKey,searchParameters } from '../../../../shared/workbench-search-contracts.mjs';
@@ -45,8 +45,14 @@ import { applyOptimisticOverlay,applyOptimisticPositions,computeHandledDismissed
 import { readBoardPage,setDisplayedBoardSnapshot,useItemOptimisticState,useItemRollbackCue,useOptimisticSnapshot } from '../features/optimistic/store';
 import { WorkbenchEfficiency,EfficiencyEntry } from '../features/efficiency/WorkbenchEfficiency';
 import { useBoardArrivals } from '../features/efficiency/use-board-arrivals';
+import { cancelQueuedBoardFollows,clearBoardFollowHostStates,emitShortcutHint,getBoardKeyboardBridge,getKeyboardCurrentTarget,hasBlockingOverlayOpen,isDetailOpenInDom,registerQueuedFollowCanceller,setBoardFollowHostState,setBoardKeyboardBridge,setKeyboardCurrentTarget,setPendingDetailIntent,useDemandFollowHost,useFollowHostDemands,useIsKeyboardCurrent,useKeyboardCurrentTarget } from '../features/efficiency/keyboard-store';
+import type { FollowHostState } from '../features/efficiency/keyboard-store';
+import { ariaKeyshortcuts,isWorkerAccount,shortcutKeys } from '../features/efficiency/shortcuts';
+import { Kbd,ShortcutTooltip } from '../design/components/Kbd/Kbd';
+import { ItemFollow } from '../features/item-follow/ItemFollow';
+import type { ItemFollowController,ItemFollowControllerState } from '../features/item-follow/ItemFollow';
 import { useDesktopSession } from '../desktop/host';
-import { BoardActionCard,BoardActions,BoardDropColumn } from '../features/board-actions/BoardActions';
+import { BoardActionCard,BoardActions,BoardDropColumn,useBoardClaimBridge } from '../features/board-actions/BoardActions';
 import { readServiceCatalog } from '../features/board-filters/client';
 import { Conversations } from '../features/conversations/Conversations';
 import { conversationSummaryQuery } from '../features/conversations/inbox-client';
@@ -127,6 +133,7 @@ function guardCardOwnerClick(event:MouseEvent<HTMLAnchorElement>,blocked:boolean
 type CardProps={item:WorkbenchCard;principal:Principal;search:string;selected:boolean;now:number;blocked?:boolean;located?:boolean};
 const CardBase=memo(function CardBase({item,principal,search,selected,now,blocked=false,located=false,profileName,profileDepartment}:CardProps&{profileName?:string|null|undefined;profileDepartment?:string|null|undefined}){
   const highlighted=useClosureHighlight(item),cardRef=useRef<HTMLElement>(null);
+  const keyboardCurrent=useIsKeyboardCurrent(item.kind,item.id);
   const opt=useItemOptimisticState(principal.principal_id,item.kind,item.id,item.intake_id);
   const groupExpanded=useContext(BoardGroupExpandedContext);
   const rollback=useItemRollbackCue(principal.principal_id,item,groupExpanded);
@@ -155,7 +162,7 @@ const CardBase=memo(function CardBase({item,principal,search,selected,now,blocke
   const siblingOwnerNode=item.assignee_name
     ?<PersonHoverCard name={item.assignee_name}><CardLink draggable={false} className="owner ds-ticket-owner-link" to={itemLink(item,search)} state={FROM_BOARD_STATE} title={item.assignee_name} aria-label={'处理人：'+item.assignee_name} aria-disabled={blocked||undefined} onClick={event=>{guardCardOwnerClick(event,blocked);}}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/><span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span></CardLink></PersonHoverCard>
     :null;
-  return <TicketCard ref={cardRef} className={selected?'is-selected':''} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-presence-transition={presenceTransition} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined} data-optimistic-pending={opt.pendingKind??undefined} data-optimistic-state={opt.state??undefined}>
+  return <TicketCard ref={cardRef} className={selected?'is-selected':''} data-keyboard-current={keyboardCurrent?'true':undefined} aria-current={keyboardCurrent?'true':undefined} data-kind={item.kind} data-item-id={item.id} data-closure-highlight={highlighted?'true':undefined} data-ring={item.closure?.kind==='DISMISSED'||presenceMode?undefined:ring} data-presence={presenceMode} data-presence-transition={presenceTransition} data-closure-kind={item.closure?.kind} data-reminder-located={located?'true':undefined} data-optimistic-pending={opt.pendingKind??undefined} data-optimistic-state={opt.state??undefined}>
     {presenceEnabled?<TicketPresence people={presence} debounced={debouncedPresence} unclaimed={item.column==='pending'&&!item.assignee_name}/>:null}
     {item.closure?.kind==='DISMISSED'?<><div className="ds-dismissed-card-content"><DismissedTicketCardBody item={item} now={now} metadata={metadata} badge={<OptimisticBadge pending={opt.pending} kind={opt.pendingKind??undefined}/>} titleLink={<CardLink draggable={false} className="card-open ds-dismissed-open" role="link" to={itemLink(item,search)} state={FROM_BOARD_STATE}>{item.title}<span className="sr-only">查看详情</span></CardLink>}/></div><RestoreClosedItem item={item} principal={principal}/></>:<BoardActionCard item={item}><div className="ds-ticket-card-surface"><CardLink draggable={false} className="card-open" role="link" to={itemLink(item,search)} state={FROM_BOARD_STATE}>
       <TicketCardBody number={item.number} title={item.title} category={<TicketCategoryTile service={item.service}/>} heat={heat} heatStart={start??null} completedAt={item.column==='handled'?item.completed_at:null}
@@ -293,7 +300,8 @@ const BoardPageHeader=memo(function BoardPageHeader({searchConditionsBusy,onRefr
 const ViewTabs=memo(function ViewTabs({view,onView}:{view:'board'|'list';onView:(value:'board'|'list')=>void}){
   const toBoard=useCallback(()=>onView('board'),[onView]);
   const toList=useCallback(()=>onView('list'),[onView]);
-  return <SegmentedControl className="view-tabs" aria-label="展示方式"><HButton aria-pressed={view==='board'} onClick={toBoard} tone="ghost"><LayoutGrid size={16}/>看板</HButton><HButton aria-pressed={view==='list'} onClick={toList} tone="ghost"><List size={16}/>列表</HButton></SegmentedControl>;
+  const viewKeyShortcuts=ariaKeyshortcuts('toggle-view');
+  return <ShortcutTooltip label="看板 / 列表" keys={shortcutKeys('toggle-view')} placement="bottom-end"><SegmentedControl className="view-tabs" aria-label="展示方式"><HButton aria-pressed={view==='board'} aria-keyshortcuts={viewKeyShortcuts} onClick={toBoard} tone="ghost"><LayoutGrid size={16}/>看板</HButton><HButton aria-pressed={view==='list'} aria-keyshortcuts={viewKeyShortcuts} onClick={toList} tone="ghost"><List size={16}/>列表</HButton></SegmentedControl></ShortcutTooltip>;
 });
 const CategoryFilter=memo(function CategoryFilter({categories,value,isDisabled,onClear,onChange}:{categories:readonly {category:string;category_name_zh:string}[];value:string;isDisabled:boolean;onClear:()=>void;onChange:(value:string)=>void}){
   return <FilterChip active={value!=='all'} label="类别" icon={<Shapes/>} isDisabled={isDisabled} onClear={onClear} aria-label="类别" value={value} onChange={onChange}><ListBox.Item id="all" textValue="全部">全部<ListBox.ItemIndicator/></ListBox.Item>{categories.map(category=><ListBox.Item key={category.category} id={category.category} textValue={category.category_name_zh}>{category.category_name_zh}<ListBox.ItemIndicator/></ListBox.Item>)}<ListBox.Item id="unclassified" textValue="未分类">未分类<ListBox.ItemIndicator/></ListBox.Item></FilterChip>;
@@ -535,7 +543,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
         <ViewTabs view={view} onView={stableSetView}/>
       </div>
       <div className="ds-board-toolbar-bottom">
-        {principal.workbench_search_enabled?<div className="ds-board-search"><Search aria-hidden="true"/>{view==='board'?<kbd>/</kbd>:null}<SearchControls inlineLeave={view==='list'} principal={principal} criteria={parsed.criteria} active={searchMode} loaded={searchLoaded} blocked={navigationBlocked} busy={searchConditionsBusy} onApply={stableApplySearch} onLeave={stableLeaveSearch}/></div>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
+        {principal.workbench_search_enabled?<div className="ds-board-search"><Search aria-hidden="true"/>{view==='board'?<Kbd keys={shortcutKeys('focus-search')}/>:null}<SearchControls inlineLeave={view==='list'} principal={principal} criteria={parsed.criteria} active={searchMode} loaded={searchLoaded} blocked={navigationBlocked} busy={searchConditionsBusy} onApply={stableApplySearch} onLeave={stableLeaveSearch}/></div>:searchRequested?<p role="status">搜索入口当前关闭，已返回原分页看板。</p>:null}
         {principal.workbench_search_enabled?<span className="ds-board-toolbar-divider" aria-hidden="true"/>:null}
         <div className="ds-board-filter-layout"><div className="ds-board-filter-row" role="group" aria-label="筛选已加载事项" title="类别和处理人仅筛选已加载事项">
           {catalog.data||searchMode?<CategoryFilter categories={categories} value={categoryFilter} isDisabled={navigationBlocked||searchMode||catalog.isError} onClear={stableClearCategory} onChange={stableSetCategory}/>:null}
@@ -565,16 +573,268 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     <div className="range-bar sr-only" data-loaded-count><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span></div>
     </div>:null}
     {!fullPage?<HoverCardsBoardBridge items={fresh} range={range} handledDates={handledDates} searchMode={searchMode} now={now} onFilterByPerson={name=>stableSetHandler('name:'+name)}/>:null}
+    <KeyboardWorkbenchBridge principal={principal} view={view} items={visibleUnique} blocked={navigationBlocked} search={location.search} detailOpen={Boolean(selected.id&&!locationMode)} toggleView={()=>stableSetView(view==='board'?'list':'board')}/>
     <Detail key={principal.principal_id} open={Boolean(selected.id&&!locationMode)} itemKind={selected.kind??''} itemId={selected.id??''} principal={principal} items={visibleItems(view==='list'&&closureKind!=='all'?unique.filter(item=>item.column==='handled'):unique)} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>
   </BoardActions></ClosureActionsProvider></Shell>;
 }
+interface PendingFollowEntry {
+  seq:number;
+  principalId:string;
+  authorizationRevision:Principal['authorization_revision'];
+  kind:WorkbenchCard['kind'];
+  id:string;
+  requireKeyboardTarget:boolean;
+}
+const WorkbenchFollowContext=createContext<{
+  triggerFollow:(item:WorkbenchCard,options?:{requireKeyboardTarget?:boolean})=>'triggered'|'busy'|'unavailable';
+  cancelPending:()=>void;
+}|null>(null);
+
+function KeyboardFollowHost({principal,item,pendingEntry,onPendingHandled,onRegister,onStateChange}:{principal:Principal;item:WorkbenchCard;pendingEntry:PendingFollowEntry|undefined;onPendingHandled:(key:string,seq:number)=>void;onRegister:(key:string,controller:ItemFollowController|null)=>void;onStateChange:(key:string,state:ItemFollowControllerState|null)=>void}){
+  const itemKey=item.kind+':'+item.id;
+  const location=useLocation();
+  const controllerRef=useRef<ItemFollowController|null>(null);
+  const [controllerState,setControllerState]=useState<ItemFollowControllerState>({canStart:false,busy:false,inFlight:false,settled:false});
+  const opt=useItemOptimisticState(principal.principal_id,item.kind,item.id,item.intake_id);
+  const handleStateChange=useCallback((next:ItemFollowControllerState)=>{
+    setControllerState(next);
+    onStateChange(itemKey,next);
+    setBoardFollowHostState(principal.principal_id,itemKey,next);
+  },[principal.principal_id,itemKey,onStateChange]);
+  useEffect(()=>{
+    onRegister(itemKey,{
+      get canStart(){return controllerRef.current?.canStart??false;},
+      get busy(){return controllerRef.current?.busy??false;},
+      get inFlight(){return controllerRef.current?.inFlight??false;},
+      get settled(){return controllerRef.current?.settled??false;},
+      trigger:()=>controllerRef.current?.trigger()??false,
+    });
+    return()=>{
+      onRegister(itemKey,null);
+      onStateChange(itemKey,null);
+      setBoardFollowHostState(principal.principal_id,itemKey,null);
+    };
+  },[principal.principal_id,itemKey,onRegister,onStateChange]);
+  const pendingSeq=pendingEntry?.seq??0;
+  useEffect(()=>{
+    if(!pendingEntry||!pendingSeq)return;
+    const ctrl=controllerRef.current;
+    if(!ctrl)return;
+    const canStartQueuedFollow=(entry:PendingFollowEntry):boolean=>{
+      if(
+        entry.principalId!==principal.principal_id||
+        entry.authorizationRevision!==principal.authorization_revision||
+        location.pathname!=='/'||
+        isDetailOpenInDom()||
+        hasBlockingOverlayOpen()
+      ){
+        return false;
+      }
+      const board=getBoardKeyboardBridge();
+      if(!board||board.blocked||board.principalId!==principal.principal_id)return false;
+      const live=board.items.find(candidate=>candidate.kind===entry.kind&&candidate.id===entry.id);
+      if(!live||live.attention===undefined)return false;
+      if(entry.requireKeyboardTarget){
+        const current=getKeyboardCurrentTarget();
+        if(!current||current.kind!==entry.kind||current.id!==entry.id)return false;
+      }
+      return true;
+    };
+    if(!canStartQueuedFollow(pendingEntry)){
+      onPendingHandled(itemKey,pendingSeq);
+      return;
+    }
+    if(ctrl.canStart){
+      onPendingHandled(itemKey,pendingSeq);
+      ctrl.trigger();
+    }else if(controllerState.settled&&ctrl.settled&&!ctrl.busy&&!controllerState.busy&&!opt.followPending){
+      onPendingHandled(itemKey,pendingSeq);
+      emitShortcutHint(principal.workbench_follow_enabled?'这张工单现在不能关注':'你没有关注工单的权限');
+    }
+  },[pendingEntry,pendingSeq,location.pathname,itemKey,controllerState.canStart,controllerState.settled,controllerState.busy,opt.followPending,principal.principal_id,principal.authorization_revision,principal.workbench_follow_enabled,onPendingHandled,item.attention]);
+  return <ItemFollow headless controllerRef={controllerRef} requested={{kind:item.kind,id:item.id}} item={item} principal={principal} readReady={true} onBlockedChange={()=>{}} onStateChange={handleStateChange}/>;
+}
+
+function WorkbenchFollowHostProvider({principal,children}:{principal:Principal;children:ReactNode}){
+  const demands=useFollowHostDemands(),location=useLocation();
+  const [pinnedFollowItems,setPinnedFollowItems]=useState<Record<string,WorkbenchCard>>({});
+  const [followStates,setFollowStates]=useState<Record<string,FollowHostState>>({});
+  const [pendingFollow,setPendingFollow]=useState<Record<string,PendingFollowEntry>>({});
+  const followSeqRef=useRef(0);
+  const followControllersRef=useRef<Map<string,ItemFollowController>>(new Map());
+  const registerFollowController=useCallback((key:string,controller:ItemFollowController|null)=>{
+    if(controller)followControllersRef.current.set(key,controller);
+    else followControllersRef.current.delete(key);
+  },[]);
+  const handleFollowStateChange=useCallback((key:string,state:ItemFollowControllerState|null)=>{
+    setFollowStates(prev=>{
+      const existing=prev[key];
+      if(!state){
+        if(!existing)return prev;
+        const next={...prev};
+        delete next[key];
+        return next;
+      }
+      if(existing&&existing.canStart===state.canStart&&existing.busy===state.busy&&existing.inFlight===state.inFlight&&existing.settled===state.settled){
+        return prev;
+      }
+      return {...prev,[key]:state};
+    });
+  },[]);
+  const handlePendingHandled=useCallback((key:string,seq:number)=>{
+    setPendingFollow(prev=>{
+      if(prev[key]?.seq!==seq)return prev;
+      const next={...prev};
+      delete next[key];
+      return next;
+    });
+  },[]);
+  const cancelPending=useCallback(()=>{
+    setPendingFollow(prev=>Object.keys(prev).length?{}:prev);
+  },[]);
+  useEffect(()=>{
+    registerQueuedFollowCanceller(cancelPending);
+    return()=>{
+      registerQueuedFollowCanceller(null);
+      clearBoardFollowHostStates(principal.principal_id);
+    };
+  },[principal.principal_id,cancelPending]);
+  useEffect(()=>{
+    if(location.pathname!=='/')cancelPending();
+  },[location.pathname,principal.authorization_revision,cancelPending]);
+  const triggerFollowRef=useRef<(item:WorkbenchCard,options?:{requireKeyboardTarget?:boolean})=>'triggered'|'busy'|'unavailable'>(()=>'unavailable');
+  triggerFollowRef.current=(item,options)=>{
+    if(!principal.workbench_follow_enabled||item.attention===undefined)return 'unavailable';
+    const key=item.kind+':'+item.id;
+    const ctrl=followControllersRef.current.get(key);
+    if(ctrl?.busy||ctrl?.inFlight)return 'busy';
+    if(ctrl?.canStart){
+      setPinnedFollowItems(prev=>prev[key]===item?prev:{...prev,[key]:item});
+      return ctrl.trigger()?'triggered':'unavailable';
+    }
+    if(ctrl?.settled)return 'unavailable';
+    const seq=++followSeqRef.current;
+    setPinnedFollowItems(prev=>prev[key]===item?prev:{...prev,[key]:item});
+    setPendingFollow(prev=>({...prev,[key]:{seq,principalId:principal.principal_id,authorizationRevision:principal.authorization_revision,kind:item.kind,id:item.id,requireKeyboardTarget:options?.requireKeyboardTarget??true}}));
+    return 'triggered';
+  };
+  const demandedByKey=useMemo(()=>{
+    const map=new Map<string,WorkbenchCard>();
+    for(const item of demands.values()){
+      if(item.attention!==undefined)map.set(item.kind+':'+item.id,item);
+    }
+    return map;
+  },[demands]);
+  const detailMatch=/^\/items\/(ticket|intake|review)\/([^/]+)\/?$/iu.exec(location.pathname);
+  const openDetailKey=detailMatch?detailMatch[1]!.toLowerCase()+':'+detailMatch[2]!.toLowerCase():'';
+  useEffect(()=>{
+    const keys=Object.keys(pinnedFollowItems);
+    if(!keys.length)return;
+    const nextPinned:Record<string,WorkbenchCard>={};
+    let changed=false;
+    for(const key of keys){
+      const state=followStates[key],ctrl=followControllersRef.current.get(key);
+      const inFlight=Boolean(state?.inFlight||ctrl?.inFlight);
+      const busy=Boolean(state?.busy||ctrl?.busy);
+      const keep=Boolean(inFlight||(busy&&key.toLowerCase()!==openDetailKey)||pendingFollow[key]||demandedByKey.has(key));
+      if(keep)nextPinned[key]=pinnedFollowItems[key]!;
+      else changed=true;
+    }
+    if(changed)setPinnedFollowItems(nextPinned);
+  },[pinnedFollowItems,followStates,pendingFollow,demandedByKey,openDetailKey]);
+  const followHosts=useMemo(()=>{
+    if(principal.workbench_follow_enabled!==true)return [];
+    const map=new Map<string,WorkbenchCard>();
+    for(const [key,item]of demandedByKey)map.set(key,item);
+    for(const [key,pinned]of Object.entries(pinnedFollowItems)){
+      const item=demandedByKey.get(key)??pinned;
+      if(item.attention!==undefined)map.set(key,item);
+    }
+    return [...map.entries()];
+  },[principal.workbench_follow_enabled,demandedByKey,pinnedFollowItems]);
+  const contextValue=useMemo(()=>({
+    triggerFollow:(item:WorkbenchCard,options?:{requireKeyboardTarget?:boolean})=>triggerFollowRef.current(item,options),
+    cancelPending,
+  }),[cancelPending]);
+  return <WorkbenchFollowContext.Provider value={contextValue}>
+    {children}
+    {followHosts.map(([key,item])=><KeyboardFollowHost key={principal.principal_id+':'+key} principal={principal} item={item} pendingEntry={pendingFollow[key]} onPendingHandled={handlePendingHandled} onRegister={registerFollowController} onStateChange={handleFollowStateChange}/>)}
+  </WorkbenchFollowContext.Provider>;
+}
+
+function KeyboardWorkbenchBridge({principal,view,items,blocked,search,detailOpen,toggleView}:{principal:Principal;view:'board'|'list';items:readonly WorkbenchCard[];blocked:boolean;search:string;detailOpen:boolean;toggleView:()=>void}){
+  const closure=useClosureBridge(),triggerBoardClaim=useBoardClaimBridge(),followHost=useContext(WorkbenchFollowContext),navigate=useNavigate();
+  const keyboardTarget=useKeyboardCurrentTarget();
+  const activeTarget=!detailOpen?keyboardTarget:null;
+  const activeItem=activeTarget?items.find(item=>item.kind===activeTarget.kind&&item.id===activeTarget.id)??null:null;
+  const probeCloseDraft=closure?.probeCloseDraft;
+  useEffect(()=>{
+    if(activeItem&&probeCloseDraft)void probeCloseDraft(activeItem,true);
+  },[activeItem?.kind,activeItem?.id,activeItem?.status,activeItem?.column,probeCloseDraft]);
+  const prefetchTicketId=!detailOpen&&!blocked&&isWorkerAccount(principal)&&activeItem?.kind==='ticket'?activeItem.id:'';
+  useQuery({
+    queryKey:['ticket-command-context',principal.principal_id,prefetchTicketId],
+    queryFn:({signal})=>api.ticketCommandContext(prefetchTicketId,signal),
+    enabled:Boolean(prefetchTicketId),
+  });
+  useDemandFollowHost('keyboard-target',activeItem,!detailOpen&&!blocked&&principal.workbench_follow_enabled===true&&activeItem?.attention!==undefined);
+  useEffect(()=>{
+    cancelQueuedBoardFollows();
+  },[detailOpen,blocked,keyboardTarget?.kind,keyboardTarget?.id]);
+  useEffect(()=>()=>{cancelQueuedBoardFollows();},[]);
+  const triggerBoardTransferRef=useRef<(item:WorkbenchCard)=>void>(()=>{});
+  triggerBoardTransferRef.current=(item:WorkbenchCard)=>{
+    if(blocked||!principal.ticket_assignment_enabled||item.kind!=='ticket'||item.column==='handled'||item.closure?.kind==='DISMISSED')return;
+    setPendingDetailIntent(principal.principal_id,item.kind,item.id,'transfer');
+    void navigate(itemLink(item,search),{state:{fromBoard:true}});
+  };
+  const toggleViewRef=useRef(toggleView);toggleViewRef.current=toggleView;
+  useEffect(()=>{
+    if(!detailOpen&&keyboardTarget&&!items.some(item=>item.kind===keyboardTarget.kind&&item.id===keyboardTarget.id)){
+      setKeyboardCurrentTarget(null);
+    }
+  },[detailOpen,keyboardTarget,items]);
+  useEffect(()=>{
+    const onPointerDown=(event:PointerEvent)=>{
+      const current=getKeyboardCurrentTarget();
+      if(!current||!(event.target instanceof Element))return;
+      if(event.target.closest('.efficiency-panel,.efficiency-help,.workbench-toast-viewport,.board-action-options,[data-shortcut-hint],[data-goto-chip]'))return;
+      const card=event.target.closest<HTMLElement>('.ticket-card[data-kind][data-item-id],.ds-work-row[data-kind][data-item-id]');
+      if(card&&card.dataset.kind===current.kind&&card.dataset.itemId===current.id)return;
+      setKeyboardCurrentTarget(null);
+    };
+    document.addEventListener('pointerdown',onPointerDown,true);
+    return()=>document.removeEventListener('pointerdown',onPointerDown,true);
+  },[]);
+  useEffect(()=>{
+    setBoardKeyboardBridge({
+      principalId:principal.principal_id,
+      view,
+      items,
+      blocked,
+      toggleView:()=>toggleViewRef.current(),
+      openCloseDialog:(item,inDetail)=>closure?.requestClose(item,inDetail),
+      canCloseItem:(item,options)=>closure?.canClose(item,options)??'denied',
+      hasCloseRecovery:item=>closure?.hasCloseRecovery(item)??false,
+      isCloseDraftChecked:item=>closure?.isCloseDraftChecked(item)??true,
+      probeCloseDraft:(item,force)=>closure?.probeCloseDraft(item,force)??Promise.resolve(false),
+      triggerBoardClaim,
+      triggerBoardFollow:(item,options)=>followHost?.triggerFollow(item,options)??'unavailable',
+      triggerBoardTransfer:item=>triggerBoardTransferRef.current(item),
+    });
+    return()=>setBoardKeyboardBridge(null);
+  },[principal.principal_id,view,items,blocked,closure,triggerBoardClaim,followHost]);
+  return null;
+}
 export function WorkbenchPage({principal,realtime,navigationBlocked,setNavigationBlocked}:{principal:Principal;realtime:RealtimeView;navigationBlocked:boolean;setNavigationBlocked:(value:boolean)=>void}){
   const location=useLocation();
-  if(/^\/reports\/new\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ManualReportForm key={principal.principal_id+':'+principal.authorization_revision} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
-  if(/^\/conversations(?:\/[^/]+)?\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><Conversations key={principal.principal_id} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
-  if(/^\/incidents\/candidates\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentCandidates principal={principal}/></Shell>;
-  if(/^\/notification-exceptions\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime}><NotificationExceptions key={principal.principal_id} principal={principal}/></Shell>;
-  if(/^\/incidents\/candidates\/[^/]+\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><CandidateDetailPage principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
-  if(/^\/incidents\/[^/]+\/?$/iu.test(location.pathname))return <Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentResultPage principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
-  return /^\/settings\/source-groups\/?$/iu.test(location.pathname)?<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><SourceGroupDirectory key={principal.principal_id} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>:<Workbench key={principal.principal_id} principal={principal} realtime={realtime}/>;
+  let page:ReactNode;
+  if(/^\/reports\/new\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><ManualReportForm key={principal.principal_id+':'+principal.authorization_revision} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
+  else if(/^\/conversations(?:\/[^/]+)?\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><Conversations key={principal.principal_id} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
+  else if(/^\/incidents\/candidates\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentCandidates principal={principal}/></Shell>;
+  else if(/^\/notification-exceptions\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime}><NotificationExceptions key={principal.principal_id} principal={principal}/></Shell>;
+  else if(/^\/incidents\/candidates\/[^/]+\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><CandidateDetailPage principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
+  else if(/^\/incidents\/[^/]+\/?$/iu.test(location.pathname))page=<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><IncidentResultPage principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>;
+  else page=/^\/settings\/source-groups\/?$/iu.test(location.pathname)?<Shell principal={principal} realtime={realtime} navigationBlocked={navigationBlocked}><SourceGroupDirectory key={principal.principal_id} principal={principal} onBlockedChange={setNavigationBlocked}/></Shell>:<Workbench key={principal.principal_id} principal={principal} realtime={realtime}/>;
+  return <WorkbenchFollowHostProvider key={principal.principal_id} principal={principal}>{page}</WorkbenchFollowHostProvider>;
 }

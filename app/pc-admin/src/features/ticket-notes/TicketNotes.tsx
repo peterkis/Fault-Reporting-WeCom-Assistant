@@ -3,12 +3,13 @@ import {createPortal} from 'react-dom';
 import {Button as HButton} from '../../design/components/Button/Button';
 import {Form as HForm,Label as HLabel,TextArea as HTextArea} from "@heroui/react";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {Lock,RefreshCw} from 'lucide-react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {P2016InternalNoteCommand,Principal} from '../../api/client';
 import {useNoteDraft} from '../drafts/use-note-draft';
+import {consumePendingDetailIntent,emitShortcutHint,registerDetailNoteFocus,usePendingDetailIntent} from '../efficiency/keyboard-store';
 
 type NoteState='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{ticketId:string;principal:Principal;onBlockedChange:(blocked:boolean)=>void;actionsTarget:HTMLElement|null}){
@@ -61,10 +62,47 @@ export function TicketNotes({ticketId,principal,onBlockedChange,actionsTarget}:{
   // Codex review: the read-only lookup also serves an unconfirmed note whose replay cannot be prepared; it keeps the unconfirmed state
   // until a final receipt arrives.
   const checkReceipt=()=>{const commandId=draft.operationId??pending?.client_command_id;if(request.current||!commandId)return;const controller=new AbortController();request.current=controller;requestCommand.current=commandId;setState('checking');setMessage('正在核对上次操作…');receipt.mutate({commandId,signal:controller.signal});};
+  const pendingDetailIntent=usePendingDetailIntent();
+  const focusFrameRef=useRef(0);
+  useEffect(()=>()=>{cancelAnimationFrame(focusFrameRef.current);},[]);
+  const allowed=Boolean(context.data?.allowed_actions.includes('add-note'));
+  const focusInternalNote=useCallback(()=>{
+    if(!allowed||blocked)return false;
+    const input=document.getElementById('internal-note');
+    if(!(input instanceof HTMLElement))return false;
+    input.scrollIntoView({block:'nearest',behavior:'instant'});
+    input.focus({preventScroll:true});
+    return true;
+  },[allowed,blocked]);
+  useEffect(()=>{
+    registerDetailNoteFocus(ticketId,allowed&&!blocked?focusInternalNote:null);
+    return()=>registerDetailNoteFocus(ticketId,null);
+  },[ticketId,allowed,blocked,focusInternalNote]);
+  useEffect(()=>{
+    if(!pendingDetailIntent||pendingDetailIntent.principalId!==principal.principal_id||pendingDetailIntent.kind!=='ticket'||pendingDetailIntent.id!==ticketId||pendingDetailIntent.action!=='note')return;
+    if(context.isSuccess&&!context.isError){
+      if(allowed&&!blocked){
+        if(focusInternalNote()){
+          consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'note');
+          cancelAnimationFrame(focusFrameRef.current);
+          focusFrameRef.current=requestAnimationFrame(()=>{
+            const input=document.getElementById('internal-note');
+            if(input&&document.activeElement!==input)focusInternalNote();
+          });
+          return;
+        }
+        return;
+      }
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'note');
+      emitShortcutHint('这张工单现在不能写内部备注');
+    }else if(context.isError&&!context.data){
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'note');
+      emitShortcutHint('暂时无法确认工单操作，请稍后再试');
+    }
+  },[pendingDetailIntent,principal.principal_id,ticketId,context.isSuccess,context.isError,context.data,allowed,blocked,focusInternalNote]);
   if(context.isPending)return <DetailLoading inline label="正在加载可用操作…"/>;
   if(context.isError&&!context.data)return <section data-activity-field="internal-note" className="ticket-notes"><p role="alert">{errorMessage(context.error)}</p>{actionsTarget?createPortal(<HButton type="button" onClick={()=>{void context.refetch();}} tone="ghost"><RefreshCw aria-hidden="true"/>刷新可用操作</HButton>,actionsTarget):null}</section>;
   if(!context.data)return <DetailLoading inline label="正在加载可用操作…"/>;
-  const allowed=context.data.allowed_actions.includes('add-note');
   const routineDraft=!note&&!pending&&!draft.operationId&&(draft.message===''||draft.message==='草稿仅在当前浏览器恢复，最长24小时。');
   return <section data-activity-field="internal-note" className="ticket-notes detail-note-composer" aria-label="工单操作">
     <div className="note-composer-body">

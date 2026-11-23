@@ -93,3 +93,28 @@ The related r1 entry points are `node --test .build/runtime/tests/pc-admin-card3
 ## Card 37C hover evidence
 
 The 37C browser suite writes its capture inventory and measured popover motion to [card37c-hover.md](card37c-hover.md). The review record is [review.md](review.md).
+
+## Card 37B keyboard evidence
+
+
+The B5 browser suite records the host OS release and Chrome product version beside each screenshot when it captures the named state.
+
+| Screenshot | Capture OS | Browser version |
+| --- | --- | --- |
+| `shortcuts-dialog.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `menu-kbd.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `tooltip-kbd.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `board-keyboard-current.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `goto-chip.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `palette-kbd.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+| `shortcut-unavailable-hint.png` | darwin 25.6.0 | Chrome/158.0.8127.37 |
+
+All seven captures wait for the whole viewport to settle. The dialog and capsule captures also check opacity through their ancestors. `menu-kbd.png` shows the real menu on a single-result active board, with every item hit-tested. The separate R3 last-pending-card test exercises the unfiltered board where the disclosure clips the menu.
+
+Run from the worktree after `npm run migration:build`.
+
+```sh
+export TS_MIGRATION_TEST_SOURCE_ROOT="$PWD"
+export PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres
+node --test --test-concurrency=1 .build/runtime/tests/pc-admin-card37b-keyboard.browser.test.mjs
+```

@@ -5,6 +5,24 @@
   "legacy_entry_count": 207,
   "entries": [
     {
+      "path": "tests/pc-admin-card37b-keyboard.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37b-shortcuts.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9254,6 +9272,8 @@
       "tests/visual-regression.test.mts"
     ],
     "pc-admin-motion": [
+      "tests/pc-admin-card37b-keyboard.browser.test.mts",
+      "tests/pc-admin-card37b-shortcuts.test.mts",
       "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "tests/pc-admin-card37a-store.test.mts",
       "tests/pc-admin-card37a-optimistic.browser.test.mts",

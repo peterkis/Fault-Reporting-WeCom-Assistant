@@ -24,6 +24,9 @@ import {AssignmentActionContent,AssignmentCommunication,AssignmentRecipient,assi
 import type {P2016AssignmentHistoryItem} from '../../../../contracts/p2_016_assignment_history_contracts';
 import {animateTimelineEntry,highlightTimelineEntry,scrollAndHighlightEntries} from '../design/motion/timeline-entry';
 import {NewItemsChip} from '../design/components/NewItemsChip/NewItemsChip';
+import {ShortcutTooltip} from '../design/components/Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../features/efficiency/shortcuts';
+import {consumePendingDetailIntent,emitShortcutHint,registerDetailComplete,usePendingDetailIntent} from '../features/efficiency/keyboard-store';
 
 type Assignments=ReadonlyMap<string,P2016AssignmentHistoryItem>;
 
@@ -48,13 +51,33 @@ function escapeAttrValue(value:string):string{
   return typeof CSS!=='undefined'&&typeof CSS.escape==='function'?CSS.escape(value):value.replace(/["\\]/gu,'\\$&');
 }
 
-export function DetailActionDialog({children,blocked,attention,available=true,readError=false,onOpenChange}:{children:ReactNode;blocked:boolean;attention:boolean;available?:boolean;readError?:boolean;onOpenChange?:((open:boolean)=>void)|undefined}){
+export function DetailActionDialog({children,blocked,attention,available=true,readError=false,ticketId,principalId,commandReady=false,onOpenChange}:{children:ReactNode;blocked:boolean;attention:boolean;available?:boolean;readError?:boolean;ticketId?:string|undefined;principalId?:string|undefined;commandReady?:boolean|undefined;onOpenChange?:((open:boolean)=>void)|undefined}){
   const [open,setOpen]=useState(false);
   const step=useNextStep();
+  const pendingIntent=usePendingDetailIntent();
+  const canOpenComplete=(available||attention)&&!blocked;
   useEffect(()=>{if(attention)setOpen(true);},[attention]);
+  useEffect(()=>{
+    if(!ticketId)return;
+    registerDetailComplete(ticketId,canOpenComplete?()=>{setOpen(true);return true;}:null);
+    return()=>registerDetailComplete(ticketId,null);
+  },[ticketId,canOpenComplete]);
+  useEffect(()=>{
+    if(!ticketId||!pendingIntent||pendingIntent.kind!=='ticket'||pendingIntent.id!==ticketId||pendingIntent.action!=='complete')return;
+    if(principalId&&pendingIntent.principalId!==principalId)return;
+    const ownerId=principalId??pendingIntent.principalId;
+    if(commandReady){
+      consumePendingDetailIntent(ownerId,'ticket',ticketId,'complete');
+      if(canOpenComplete)setOpen(true);
+      else emitShortcutHint('这张工单现在不能登记完工');
+    }else if(readError){
+      consumePendingDetailIntent(ownerId,'ticket',ticketId,'complete');
+      emitShortcutHint('暂时无法确认工单操作，请稍后再试');
+    }
+  },[ticketId,principalId,pendingIntent,commandReady,readError,canOpenComplete]);
   const close=()=>{if(!blocked)setOpen(false);};
   if(step&&readError&&!open&&!attention)return children;
-  return <>{!step||available||attention?<StepEntry action="complete" label={attention?'核对完工操作':'登记完工'} fallbackTone={'primary'}>{(tone,text)=><HButton type="button" className="detail-complete-button" onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
+  return <>{!step||available||attention?<StepEntry action="complete" label={attention?'核对完工操作':'登记完工'} fallbackTone={'primary'}>{(tone,text)=><ShortcutTooltip label={text} keys={shortcutKeys('complete')} placement="top"><HButton type="button" className="detail-complete-button" aria-keyshortcuts={ariaKeyshortcuts('complete')} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton></ShortcutTooltip>}</StepEntry>:null}
     <DetailDialog open={open} onClose={close} closeBlocked={blocked} title="登记完工" closeLabel="关闭完工窗口" onOpenChange={onOpenChange}>{children}</DetailDialog></>;
 }
 

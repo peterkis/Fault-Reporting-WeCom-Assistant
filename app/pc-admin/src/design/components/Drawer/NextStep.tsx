@@ -2,6 +2,8 @@ import {createContext,useCallback,useContext,useId,useLayoutEffect,useMemo,useSt
 import type {ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {Button} from '../Button/Button';
+import {Kbd,ShortcutTooltip} from '../Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../../../features/efficiency/shortcuts';
 import {DrawerMoreActions} from './Drawer';
 import {CircleX,Clock3} from 'lucide-react';
 import type {WorkbenchCard} from '../../../api/client';
@@ -56,7 +58,7 @@ export function StepWorkflow({action,label,available,attention=false,readState='
   useLayoutEffect(()=>reportRead?.(id,readState),[reportRead,id,readState]);
   if(!scope)return children;
   return <>
-    {available?<StepEntry action={action} label={label}>{(tone,text)=><Button tone={tone} data-step-action={action} data-step-open={open?'true':'false'} aria-expanded={visible} aria-controls={id} onPress={()=>setOpen(value=>!value)}>{text}</Button>}</StepEntry>:null}
+    {available?<StepEntry action={action} label={label}>{(tone,text)=>{const button=<Button tone={tone} data-step-action={action} data-step-open={open?'true':'false'} aria-expanded={visible} aria-controls={id} aria-keyshortcuts={action==='complete'?ariaKeyshortcuts('complete'):undefined} onPress={()=>setOpen(value=>!value)}>{text}{action==='complete'?<Kbd keys={shortcutKeys('complete')} className="ds-menu-item-kbd"/>:null}</Button>;return action==='complete'?<ShortcutTooltip label={text} keys={shortcutKeys('complete')} placement="top">{button}</ShortcutTooltip>:button;}}</StepEntry>:null}
     <div id={id} className="ds-step-workflow" data-step-read-state={readState} hidden={!visible}>{children}</div>
   </>;
 }

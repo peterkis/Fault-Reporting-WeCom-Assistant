@@ -515,7 +515,7 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){const animation=animate.call(this,frames,options);if(this.matches('.ticket-card')){const {duration,easing}=animation.effect.getTiming();globalThis.__card12Motions.push({id:this.dataset.itemId,duration,easing,frames});}return animation;};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')}).dataset.tone`),'secondary');
-  if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'e',code:'KeyE',windowsVirtualKeyCode:69});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'e',code:'KeyE',windowsVirtualKeyCode:69});}
+  if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65});}
   else await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
   if(trigger==='pointer'){
     await browser.waitFor(`globalThis.__card12ActiveHeld===true&&!document.querySelector(${JSON.stringify('.board-column.pending '+card)})`);
@@ -527,6 +527,10 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   assert.match(String(body.client_command_id),/^[0-9a-f-]{36}$/u);
   assert.equal(sent.path,'/api/tickets/'+first.ticket.id+'/take-and-start');
   assert.deepEqual(body,{client_command_id:body.client_command_id,expected_version:original.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:original.resolver_team_id});
+  // The 37A projection moves before the server commits. Check the recorded
+  // response to this exact POST before reading the authoritative ticket.
+  await browser.waitFor(`globalThis.__t42Responses.some(response=>response.path===${JSON.stringify(sent.path)})`);
+  assert.deepEqual(await browser.evaluate('globalThis.__t42Responses'),[{path:sent.path,status:200}]);
   const result=await get('/api/tickets/'+first.ticket.id);assert.equal(result.status,'IN_PROGRESS');assert.equal(result.assignee_id,actor.id);
   const motions:unknown=await browser.evaluate('globalThis.__card12Motions');assert.ok(Array.isArray(motions));
   const timing=object(await browser.evaluate(`(()=>{

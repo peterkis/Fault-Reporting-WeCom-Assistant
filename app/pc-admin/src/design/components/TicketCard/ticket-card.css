@@ -201,7 +201,7 @@
 .ds-ticket-card.ticket-card[data-presence=editing]:hover {box-shadow: var(--shadow-presence-editing-hover);}
 .ds-ticket-card.ticket-card[data-presence][data-presence-transition=mode] {transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);}
 @media (prefers-reduced-motion: reduce) {.ds-ticket-card.ticket-card[data-presence][data-presence-transition=mode] {transition: none;}}
-.ds-ticket-card.ticket-card.is-selected[data-presence] {outline: 2px solid var(--brand); outline-offset: -2px;}
+.ds-ticket-card.ticket-card.is-selected[data-presence] {outline: 0;}
 .ds-presence-claim-hint {position: absolute; right: var(--space-3); bottom: var(--space-3); left: var(--space-3); z-index: var(--z-sticky); display: none; align-items: center; gap: var(--space-1-5); height: var(--control-h-sm); margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-sm); background: var(--brand-subtle); color: var(--brand); font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;}
 .ds-presence-claim-hint>svg {width: var(--icon-sm); height: var(--icon-sm); flex: none;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-presence-claim-hint {display: flex;}
@@ -210,3 +210,28 @@
 .ds-presence-claim-hint>span {min-width: 0; overflow: hidden; text-overflow: ellipsis;}
 .ds-ticket-card[data-presence]:is(:hover,:focus-within):has(.ds-board-claim-slot button) .ds-presence-claim-hint {right: calc(var(--space-3) + var(--space-16) + var(--space-2));}
 .ds-ticket-card[data-presence]:is(:hover,:focus-within):has(.ds-presence-claim-hint) :is(.ds-ticket-owner,.activity-time,.card-tags) {visibility: hidden;}
+
+/* Card 37B B3: keyboard-current card ring (priority: keyboard-current > presence outline > selected). Only ONE outer ring drawn. */
+.ds-ticket-card.ticket-card[data-keyboard-current="true"],
+.ds-ticket-card.ticket-card[data-keyboard-current="true"]:hover,
+.ds-ticket-card.ticket-card[data-keyboard-current="true"][data-presence],
+.ds-ticket-card.ticket-card[data-keyboard-current="true"][data-presence]:hover,
+.ds-ticket-card.ticket-card[data-keyboard-current="true"].is-selected,
+.ds-ticket-card.ticket-card[data-keyboard-current="true"][data-closure-kind="DISMISSED"] {
+  outline: 0;
+  box-shadow: var(--shadow-keyboard-current);
+}
+.ds-ticket-card.ticket-card[data-keyboard-current="true"] .card-open:focus-visible {
+  outline: 0;
+}
+@media (forced-colors: active) {
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"],
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"]:hover,
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"][data-presence],
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"][data-presence]:hover,
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"].is-selected,
+  .ds-ticket-card.ticket-card[data-keyboard-current="true"][data-closure-kind="DISMISSED"] {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

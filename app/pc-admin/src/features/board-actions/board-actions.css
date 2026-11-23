@@ -5,14 +5,25 @@
 .board-action-card.is-dragging { opacity:.65; border-radius: var(--radius-md); }
 .board-action-tools { position: relative; display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--space-4) var(--space-3); }
 .ds-ticket-card .board-action-tools {position: absolute; top: var(--space-2); right: var(--space-2); left: auto; flex-direction: row; gap: var(--space-1); padding: 0; opacity: 0; pointer-events: none;}
-.ds-ticket-card:is(:hover,:focus-within) .board-action-tools {opacity: 1; pointer-events: auto;}
+.ds-ticket-card:is(:hover,:focus-within) .board-action-tools,
+.ds-ticket-card .board-action-tools:has(.board-action-options) {opacity: 1; pointer-events: auto;}
 .ds-ticket-card .board-action-tools>button {width: var(--control-h-sm); height: var(--control-h-sm); min-height: var(--control-h-sm); padding: 0; border: 0; background: transparent;}
 .board-action-tools button,.board-action-notice button,.board-conflict-intent button { min-height: 36px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-canvas); color: var(--text-primary); }
 .board-action-tools [data-action=board-drag-handle] { touch-action: none; user-select: none; cursor: grab; }
 .board-action-tools [data-action=board-drag-handle]:active { cursor: grabbing; }
 .board-action-tools button:disabled { cursor: default; opacity: .55; }
-.board-action-options { display: grid; gap: var(--space-1-5); position: absolute; top: 100%; right: 0; max-width: min(320px,80vw); width: max-content; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-1); z-index: var(--z-dropdown); }
-.board-action-options button { white-space: normal; text-align: start; }
+.board-action-options { display: grid; gap: var(--space-0-5); position: absolute; top: calc(100% + var(--space-1)); right: 0; width: calc(var(--space-5) * 11); max-width: min(320px,calc(100vw - var(--space-4))); padding: var(--space-1); border: 0; border-radius: var(--radius-lg); background: var(--bg-canvas); box-shadow: var(--shadow-3); z-index: var(--z-dropdown); }
+.board-action-tools .board-action-options :is(.ds-button,button).button { display: flex; align-items: center; justify-content: flex-start; gap: var(--space-2); width: 100%; height: var(--space-8); min-height: var(--space-8); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; box-shadow: none; color: var(--text-primary); font-size: var(--fs-sm); font-weight: var(--fw-regular); text-align: left; white-space: nowrap; }
+.board-action-tools .board-action-options :is(.ds-button,button).button:hover:not(:disabled):not([aria-disabled=true]) { background: var(--bg-hover); }
+.board-action-tools .board-action-options :is(.ds-button,button).button:is(:disabled,[aria-disabled=true]) { background: transparent; color: var(--text-tertiary); }
+.board-action-options .ds-button-label { display: flex; align-items: center; gap: var(--space-2); width: 100%; }
+.board-action-options .ds-button svg { width: var(--icon-sm); height: var(--icon-sm); flex: none; color: var(--text-secondary); }
+.board-action-options .board-menu-kbd { margin-left: auto; }
+.board-action-options .board-menu-divider { height: 1px; background: var(--border-hair); margin: var(--space-1) 0; }
+.board-action-tools .board-action-options .board-menu-danger.button { color: var(--tone-danger-fg); }
+.board-action-tools .board-action-options .board-menu-danger.button svg { color: var(--tone-danger-fg); }
+.board-action-tools .board-action-options .board-menu-danger.button:hover:not(:disabled):not([aria-disabled=true]) { background: var(--tone-danger-bg); }
+.board-action-tools .board-action-options .board-menu-secondary.button { color: var(--text-secondary); font-size: var(--fs-xs); }
 .board-action-status { margin: var(--space-3) var(--space-6); color: var(--text-secondary); }
 .board-claim-controller .ticket-self-handling[data-board-claim-state=idle] {display: contents;}
 .board-claim-controller [data-board-claim-state=idle]>p:not([role=alert]),.board-claim-controller .note-controls:empty {display: none;}
@@ -33,7 +44,8 @@
 .ds-ticket-card .board-action-tools [data-action=board-drag-handle] {display: none;}
 .ds-ticket-card .board-action-card .card-open {cursor: grab;}
 .ds-ticket-card .board-action-card.is-dragging .card-open {cursor: grabbing;}
-.ds-ticket-card:is(:hover,:focus-within) .board-action-card .card-top {padding-right: var(--space-8);}
+.ds-ticket-card:is(:hover,:focus-within) .board-action-card .card-top,
+.ds-ticket-card .board-action-card[data-menu-open=true] .card-top {padding-right: var(--space-8);}
 
 @media (pointer:coarse) {
   .ds-ticket-card .board-action-tools {padding: 0;}

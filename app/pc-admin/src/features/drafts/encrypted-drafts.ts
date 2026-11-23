@@ -4,19 +4,19 @@ export interface DraftRecord {schema:1;scope:string;principal:string;kind:DraftS
 export interface OperationRecord extends DraftScope {scope:string;commandId:string;createdAt:number;prepared?:true}
 export interface DraftHandle {scope:DraftScope;record:DraftRecord|null;operation:OperationRecord|null;epoch:string}
 export class DraftError extends Error {}
-export interface DraftInvalidation {principal:string;kind?:DraftScope['kind'];id?:string;purpose?:string;reason:'discard'|'expired'|'settled'|'released'|'revoked'|'logout'|'logout-unknown'}
+export interface DraftInvalidation {principal:string;kind?:DraftScope['kind'];id?:string;purpose?:string;reason:'discard'|'expired'|'settled'|'released'|'revoked'|'logout'|'logout-unknown';epochChanged?:true}
 const listeners=new Set<(value:DraftInvalidation)=>void>();let channel:BroadcastChannel|null=null;
 function invalidation(value:unknown):DraftInvalidation|null{
   if(!value||typeof value!=='object'||Array.isArray(value))return null;const v=value as Record<string,unknown>;
   const reason=v.reason,kind=v.kind;
-  if(typeof v.principal!=='string'||!(kind==='web-feedback'?/^[a-f0-9]{64}$/u.test(v.principal):UUID.test(v.principal))||(reason!=='discard'&&reason!=='expired'&&reason!=='settled'&&reason!=='released'&&reason!=='revoked'&&reason!=='logout'&&reason!=='logout-unknown')||Object.keys(v).some(key=>!['principal','kind','id','purpose','reason'].includes(key)))return null;
-  if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'&&kind!=='conversation'&&kind!=='incident-candidate'&&kind!=='incident'&&kind!=='web-feedback'||v.id!==undefined&&(typeof v.id!=='string'||!(kind==='web-feedback'?/^[A-Za-z0-9_-]{32}$/u.test(v.id):UUID.test(v.id)))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose)))return null;
-  return {principal:v.principal,reason,...(kind!==undefined?{kind}:{}),...(typeof v.id==='string'?{id:v.id}:{}),...(typeof v.purpose==='string'?{purpose:v.purpose}:{})};
+  if(typeof v.principal!=='string'||!(kind==='web-feedback'?/^[a-f0-9]{64}$/u.test(v.principal):UUID.test(v.principal))||(reason!=='discard'&&reason!=='expired'&&reason!=='settled'&&reason!=='released'&&reason!=='revoked'&&reason!=='logout'&&reason!=='logout-unknown')||Object.keys(v).some(key=>!['principal','kind','id','purpose','reason','epochChanged'].includes(key)))return null;
+  if(kind!==undefined&&kind!=='ticket'&&kind!=='review'&&kind!=='intake'&&kind!=='conversation'&&kind!=='incident-candidate'&&kind!=='incident'&&kind!=='web-feedback'||v.id!==undefined&&(typeof v.id!=='string'||!(kind==='web-feedback'?/^[A-Za-z0-9_-]{32}$/u.test(v.id):UUID.test(v.id)))||v.purpose!==undefined&&(typeof v.purpose!=='string'||! /^[a-z][a-z-]{0,63}$/u.test(v.purpose))||v.epochChanged!==undefined&&v.epochChanged!==true)return null;
+  return {principal:v.principal,reason,...(kind!==undefined?{kind}:{}),...(typeof v.id==='string'?{id:v.id}:{}),...(typeof v.purpose==='string'?{purpose:v.purpose}:{}),...(v.epochChanged===true?{epochChanged:true as const}:{})};
 }
 function publishToOtherTabs(value:DraftInvalidation){if(!channel&&!globalThis.BroadcastChannel)return;const target=channel??new BroadcastChannel('wecom-workbench-drafts-v1');target.postMessage(value);if(!channel)target.close();}
 function publish(value:DraftInvalidation){for(const listener of listeners)listener(value);publishToOtherTabs(value);}
 // A released operation may leave an editable draft; it is distinct from a successful settlement.
-function publishReleased(scope:DraftScope,notifyOtherTabs:boolean){for(const listener of listeners)listener({...scope,reason:'released'});if(notifyOtherTabs)publishToOtherTabs({...scope,reason:'released'});}
+function publishReleased(scope:DraftScope,notifyOtherTabs:boolean,epochChanged=false){const event:DraftInvalidation={...scope,reason:'released',...(epochChanged?{epochChanged:true as const}:{})};for(const listener of listeners)listener(event);if(notifyOtherTabs)publishToOtherTabs(event);}
 export function matchesDraft(value:DraftInvalidation,scope:DraftScope){return value.principal===scope.principal&&(value.kind===undefined||value.kind===scope.kind)&&(value.id===undefined||value.id===scope.id)&&(value.purpose===undefined||value.purpose===scope.purpose);}
 export function subscribeDrafts(listener:(value:DraftInvalidation)=>void):()=>void{
   if(!globalThis.BroadcastChannel)throw new DraftError('DRAFT_STORAGE_UNAVAILABLE');
@@ -286,6 +286,22 @@ export async function claimDraftReplay(scope:DraftScope,commandId:string,handle?
 // Only the original preparation calls this, before it dispatches. A replay can claim the same number in another tab.
 export async function releaseUnsentOperation(handle:DraftHandle,commandId:string,text:string):Promise<void>{
   const {scope}=handle,key=draftScopeKey(scope);
+  if(!text){
+    const next=await state(value=>{
+      const current=value.drafts.find(row=>row.scope===key),operation=value.operations.find(row=>row.scope===key);
+      const removed=Boolean(operation?.commandId===commandId&&operation.prepared&&(!current||current.revision===handle.record?.revision));
+      const epochChanged=Boolean(removed&&current);
+      if(removed){
+        value.operationStore.delete(key);
+        value.control.delete(preparedKey(key,commandId));
+        if(current){value.draftStore.delete(key);value.epoch=crypto.randomUUID();value.control.put(value.epoch,'epoch');}
+      }
+      return {removed,epochChanged,record:removed?null:current??null,operation:removed?null:operation??null,epoch:value.epoch};
+    });
+    handle.record=next.record;handle.operation=next.operation;handle.epoch=next.epoch;
+    if(next.removed)publishReleased(scope,true,next.epochChanged);
+    return;
+  }
   if(handle.record&&handle.operation?.commandId===commandId&&handle.operation.prepared){
     try{
       await saveDraft(handle,text,{settledCommandId:commandId,releasePrepared:true});
