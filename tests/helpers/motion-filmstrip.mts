@@ -7,7 +7,7 @@ import type {MotionBrowser} from './motion-assert.mjs';
 interface ScreenshotBrowser extends MotionBrowser {screenshot():Promise<string>}
 /** Bind once. Prepare scrolling/hover before capture; trigger only starts the desired effect. */
 export function createFilmstripCapture(browser:ScreenshotBrowser,directory:string){
-  return async function captureFilmstrip(name:string,trigger:()=>Promise<unknown>,selector:string){
+  return async function captureFilmstrip(name:string,trigger:()=>Promise<unknown>,selector:string,{finishAtLastFrame=false}={}){
     assert.match(name,/^[a-z0-9-]+$/);await mkdir(directory,{recursive:true});
     const key='__motionFilmstrip_'+name.replaceAll('-','_');
     await browser.command('Animation.enable');
@@ -42,7 +42,12 @@ export function createFilmstripCapture(browser:ScreenshotBrowser,directory:strin
       assert.ok(right>left&&bottom>top,'filmstrip region must intersect the viewport');
       const frames:Buffer[]=[];
       for(const fraction of [0,.25,.5,.75,1]){
-        await seek(fraction);const screenshot=Buffer.from(await browser.screenshot(),'base64'),metadata=await sharp(screenshot).metadata();assert.ok(metadata.width&&metadata.height);
+        await seek(fraction);
+        if(fraction===1&&finishAtLastFrame){
+          // Seeking a paused FLIP to 100% can leave its finished promise pending. Capture the chained cue at onset.
+          await browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.finish();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+        }
+        const screenshot=Buffer.from(await browser.screenshot(),'base64'),metadata=await sharp(screenshot).metadata();assert.ok(metadata.width&&metadata.height);
         const sx=metadata.width/viewportWidth,sy=metadata.height/viewportHeight,x=Math.floor(left*sx),y=Math.floor(top*sy);
         frames.push(await sharp(screenshot).extract({left:x,top:y,width:Math.min(metadata.width-x,Math.ceil((right-left)*sx)),height:Math.min(metadata.height-y,Math.ceil((bottom-top)*sy))}).png().toBuffer());
       }

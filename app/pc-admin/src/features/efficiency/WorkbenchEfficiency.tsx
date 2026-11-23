@@ -8,6 +8,7 @@ import {Modal} from '../../design/components/Modal/Modal';
 import {SearchField} from '../../design/components/SearchField/SearchField';
 import {api,errorMessage} from '../../api/client';
 import type {Principal} from '../../api/client';
+import {triggerNewestUndoToast} from '../../app/ToastFeedback';
 import {manualReportCapabilitiesKey} from '../manual-report/use-manual-report-draft';
 import {parseSearchRequest} from '../../../../../shared/workbench-search-contracts.mjs';
 import type {WorkbenchSearchCriteria} from '../../../../../contracts/workbench_search_contracts';
@@ -54,8 +55,16 @@ export function WorkbenchEfficiency({principal,blocked,children}:{principal:Prin
   useEffect(()=>{
     const keydown=(event:KeyboardEvent)=>{
       const target=event.target;
-      if(event.defaultPrevented||event.repeat||event.isComposing||blocked||panel||!(target instanceof Element)||target.closest(editable)||document.querySelector(overlays))return;
+      if(event.defaultPrevented||event.repeat||event.isComposing||blocked||panel||!(target instanceof Element)||target.closest(editable))return;
       const key=event.key.toLowerCase();
+      if((event.ctrlKey||event.metaKey)&&!event.altKey&&!event.shiftKey&&key==='z'){
+        if(!document.querySelector('[data-workbench-modal]')&&triggerNewestUndoToast()){
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return;
+      }
+      if(document.querySelector(overlays))return;
       if((event.ctrlKey||event.metaKey)&&key==='k'&&!event.altKey&&!event.shiftKey){event.preventDefault();open('commands');return;}
       if(event.ctrlKey||event.metaKey||event.altKey)return;
       const board=document.querySelector<HTMLElement>('.board');

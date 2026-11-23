@@ -6,7 +6,7 @@
 /* Card 33 review: a scrolling stack is clipped (paint and hit testing) to its content box above and below, so a scrolled notice stays within the top-bar and bottom-area limits; scroll-padding brings focused notices into that box. */
 .workbench-toast-viewport[data-toast-overflow=true] {clip-path:inset(var(--toast-gutter-top) 0 var(--toast-gutter-bottom) 0)}
 /* Card 33: colour block | title and description | close button. data-tone drives the colours. A notice never shrinks below its content in a height-limited stack; the stack scrolls instead. */
-.workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;display:flex;flex:none;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) var(--ease-toast)}
+.workbench-toast {--toast-tone-bg:var(--tone-brand-bg);--toast-tone-fg:var(--tone-brand-fg);--toast-tone-width:52px;position:relative;display:flex;flex:none;align-items:stretch;min-height:64px;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-toast);pointer-events:auto;font:var(--fw-regular) var(--fs-md)/var(--lh-sm) var(--font-sans);animation:workbench-toast-enter var(--dur-base) var(--ease-toast)}
 .workbench-toast[data-tone=success] {--toast-tone-bg:var(--tone-success-bg);--toast-tone-fg:var(--tone-success-fg)}
 .workbench-toast[data-tone=warning] {--toast-tone-bg:var(--tone-warning-bg);--toast-tone-fg:var(--tone-warning-fg)}
 .workbench-toast[data-tone=danger] {--toast-tone-bg:var(--tone-danger-bg);--toast-tone-fg:var(--tone-danger-fg)}
@@ -22,6 +22,12 @@
 .workbench-toast .workbench-toast-close {display:grid;place-items:center;flex:none;align-self:center;width:28px;height:28px;min-width:28px;min-height:28px;margin:0 10px 0 var(--space-1);padding:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-tertiary);cursor:pointer;box-shadow:none}
 .workbench-toast .workbench-toast-close:hover {background:var(--bg-hover);color:var(--text-primary)}
 .workbench-toast-close-space {flex:none;width:42px}
+.workbench-toast-actions {display:flex;align-items:center;flex:none;gap:var(--space-1);margin-left:var(--space-2)}
+.workbench-toast .workbench-toast-action {display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1-5);flex:none;align-self:center;height:var(--control-h-sm);min-height:var(--control-h-sm);padding:0 calc(var(--space-2) + var(--space-0-5));border:0;border-radius:var(--radius-sm);background:var(--bg-muted);color:var(--text-primary);font-size:var(--fs-sm);font-weight:var(--fw-semibold);line-height:1;white-space:nowrap;cursor:pointer;box-shadow:none}
+.workbench-toast .workbench-toast-action:hover {background:var(--bg-hover)}
+.workbench-toast .workbench-toast-action:disabled {opacity:.6;cursor:default}
+.workbench-toast-countdown {position:absolute;inset:auto 0 0 var(--toast-tone-width);height:var(--space-0-5);background:var(--bg-muted);pointer-events:none;overflow:hidden}
+.workbench-toast-countdown-fill {display:block;width:100%;height:100%;background:var(--border-strong);transform-origin:left center}
 .workbench-draft-status {display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;color:var(--text-secondary);flex:none}
 /* Card 34A: while a modal is open the notices stay in the window corner (ToastFeedback writes the variables); none docks inside a modal. In chip mode the collapsed list is hidden and one chip stands for it. */
 .workbench-toast-viewport[hidden] {display:none}

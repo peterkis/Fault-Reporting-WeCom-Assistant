@@ -156,6 +156,21 @@ async function assertUnclippedShadow(b:Browser,label:string,directory?:string){
 }
 const intersects=(a:Rect,b:Rect)=>a.x<b.x+b.width&&b.x<a.x+a.width&&a.y<b.y+b.height&&b.y<a.y+a.height;
 
+// This command has independent feedback from the note draft used for the danger/warning stack.
+async function setSharedTime(b:Browser){
+ const previous=await b.evaluate("document.querySelector('.shared-follow-up p time')?.dateTime??null");
+ const epoch=Math.max(Date.now()+24*3600_000,typeof previous==='string'?Date.parse(previous)+60_000:0);
+ const due=new Date(epoch+8*3600_000).toISOString().slice(0,19).replace('T',' ');
+ const field='.shared-follow-up input[name=due_at]',submit='.shared-follow-up button[type=submit]';
+ await b.waitFor(`document.querySelector(${JSON.stringify(field)})?.disabled===false`);
+ await b.evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(field)});
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(due)});
+  input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+ await b.waitFor(`document.querySelector(${JSON.stringify(submit)})?.disabled===false`);
+ await b.evaluate(`document.querySelector(${JSON.stringify(submit)}).click()`);
+ return due;
+}
+
 test('Card 32D-T toasts stay clear of detail controls in the drawer, the full page and the closing dialog at four widths',{timeout:600000},()=>withT43Fixture(async f=>{
  const directory=process.env.CARD32D_EVIDENCE_DIR??join(tmpdir(),'card32d-'+randomUUID());await mkdir(directory,{recursive:true});
  const screenshots:{file:string;width:number;height:number;sha256:string}[]=[],table:{scenario:string;width:number;control:string;hit:boolean;clear:boolean}[]=[],shadows:Record<string,unknown>[]=[],passes:{scenario:string;width:number;height:number|null;points:number}[]=[];
@@ -170,16 +185,12 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   const size=async(width:number,height=width===900?820:1000)=>{await b.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});};
   const shot=async(name:string)=>{await waitForAnimationsSettled(b);const bytes=Buffer.from(await b.screenshot(),'base64');await writeFile(join(directory,name),bytes);screenshots.push({file:name,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
   const open=async(path:string)=>{await size(1440);await go(b,f.origin+path);await b.waitFor("Boolean(document.querySelector('#detail-title'))&&document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await waitForAnimationsSettled(b);};
-  // Success: a real follow toggle. Error and unknown: a note save answered with a conflict keeps the text and reports the conflict
-  // (error), and the draft guard reports that the draft was not saved (unknown, see draftWarning); both stay until closed.
-  // The follow toggle re-reads its state after each command and after a resize; press it only once it is enabled again.
-  const success=async()=>{await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false&&!document.querySelector('[data-action=toggle-item-follow]').closest('[aria-busy=true]')");
-   const before=await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')");
-   await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");
-   try{await b.waitFor(`document.querySelector('[data-action=toggle-item-follow]').getAttribute('aria-pressed')!==${JSON.stringify(before)}&&${kindCount('success')}>=1`);}
-   catch(error){const state=await b.evaluate(`(()=>{const f=document.querySelector('[data-action=toggle-item-follow]');return {before:${JSON.stringify(before)},pressed:f?.getAttribute('aria-pressed'),disabled:f?.disabled,
-    size:[innerWidth,innerHeight],toasts:[...document.querySelectorAll('.workbench-toast')].map(n=>n.className+'|'+n.dataset.visible+'|'+n.textContent.slice(0,40))};})()`);
-    throw Error('CARD32D_SUCCESS_TOAST_TIMEOUT '+JSON.stringify(state),{cause:error});}};
+  // The authoritative schedule reread and its plain success toast must both arrive.
+  const success=async()=>{
+   const due=await setSharedTime(b);
+   const time='.shared-follow-up p time[datetime="'+due.replace(' ','T')+'+08:00"]';
+   await b.waitFor(`Boolean(document.querySelector(${JSON.stringify(time)}))&&${kindCount('success')}>=1`);
+  };
   const note=async(mode:'conflict',text:string)=>{
    await b.evaluate(`globalThis.__toastMode['/internal-notes']=${JSON.stringify(mode)}`);
    const area='.ds-detail-footer textarea';await clickWorkbenchControl(b,area);await b.command('Input.insertText',{text});
@@ -245,7 +256,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
     assert.deepEqual(edges.points.filter(point=>point.hit),[],JSON.stringify({bar:edges.bar,input:edges.input})+' '+scenario+' shorter window scrolled to the '+end+': no notice enters the top bar, the bottom area or their 12px clear bands');
    }
   }
-  // Closing dialog: the notices stay in the window corner beside it (card 34A). The follow button behind the modal is
+  // Closing dialog: the notices stay in the window corner beside it (card 34A). The schedule form behind the modal is
   // the same real control, pressed programmatically because the modal keeps the pointer from reaching it.
   await open('/workbench/app/items/ticket/'+dialogId);
   await clickWorkbenchControl(b,'.ds-drawer-more>summary');await clickWorkbenchControl(b,'.ds-drawer-more [data-action=cancel]');
@@ -317,10 +328,8 @@ test('Card 33 toasts show five tones and a single-line notice with a full-height
    return items;
   };
   await size(1440);await open('/workbench/app/items/ticket/'+id);
-  const follow=async()=>{await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");};
-  // Loading: the follow request is held for 2.5s, so its in-progress notice shows (after its 200ms delay) without a close button.
-  await b.evaluate("globalThis.__toastMode['/follow']='slow'");await follow();await take('loading','loading');
-  // Success: the same follow request completes.
+  // Hold this ordinary schedule write for the original loading interval, then observe its confirmed success.
+  await b.evaluate("globalThis.__toastMode['/follow-up-schedule']='slow'");await setSharedTime(b);await take('loading','loading');
   await take('success','success');
   // Danger and warning: a note save answered with a conflict (danger, a two-line description at 400px), and the draft guard
   // reporting that the draft was not saved (warning; see draftWarning).

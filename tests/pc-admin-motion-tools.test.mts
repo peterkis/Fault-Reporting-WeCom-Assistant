@@ -78,7 +78,7 @@ test('Card36A settle preserves the 500ms frame grace and accepts an expired but 
 });
 
 test('Card36A filmstrip freezes before triggering, crops real frames and restores playback after success or failure',async()=>{
-  const {createFilmstripCapture}:{createFilmstripCapture:(browser:{command:(method:string,params?:Record<string,unknown>)=>Promise<unknown>;evaluate:(expression:string)=>Promise<unknown>;screenshot:()=>Promise<string>},directory:string)=>(name:string,trigger:()=>Promise<unknown>,selector:string)=>Promise<string>}=await import(await motionModule(resolve(root,'tests/helpers/motion-filmstrip.mts')));
+  const {createFilmstripCapture}:{createFilmstripCapture:(browser:{command:(method:string,params?:Record<string,unknown>)=>Promise<unknown>;evaluate:(expression:string)=>Promise<unknown>;screenshot:()=>Promise<string>},directory:string)=>(name:string,trigger:()=>Promise<unknown>,selector:string,options?:{finishAtLastFrame:boolean})=>Promise<string>}=await import(await motionModule(resolve(root,'tests/helpers/motion-filmstrip.mts')));
   const directory=await mkdtemp(resolve(tmpdir(),'card36a-filmstrip-unit-'));let rate=1,paused=false,finished=false,time=0;const times:number[]=[];
   const animation={effect:{getComputedTiming:()=>({duration:80})},pause:()=>{paused=true;},finish:()=>{finished=true;},get currentTime(){return time;},set currentTime(value:number){time=value;times.push(value);}};
   let effects=true;
@@ -93,6 +93,10 @@ test('Card36A filmstrip freezes before triggering, crops real frames and restore
     const file=await capture('press',async()=>{assert.equal(rate,0,'freeze must precede even an 80ms trigger');},'.button');
     const metadata=await sharp(file).metadata();assert.ok(metadata.width&&metadata.width<1000,'five cropped frames, not five full viewports');assert.ok(metadata.height&&metadata.height<160);
     assert.equal(paused,true);assert.equal(finished,true);assert.equal(rate,1);for(const value of [0,20,40,60,80])assert.ok(times.includes(value));
+    finished=false;const capturedFinished:boolean[]=[];
+    browser.screenshot=async()=>{capturedFinished.push(finished);return png.toString('base64');};
+    await capture('rollback',async()=>{},'.button',{finishAtLastFrame:true});
+    assert.deepEqual(capturedFinished,[false,false,false,false,true]);
     await assert.rejects(capture('failure',async()=>{throw Error('trigger failed');},'.button'),/trigger failed/);assert.equal(rate,1,'finally restores the page even when the trigger fails');
     effects=false;
     await assert.rejects(capture('no-effects',async()=>{},'.button'),error=>{
@@ -105,7 +109,7 @@ interface Motion {
   motionToken:(name:string)=>number|string;prefersReducedMotion:()=>boolean;invalidateMotionTokens:()=>void;
 }
 const tokens:Motion=await import(await motionModule('tokens.ts'));
-const {flip}:{flip:(el:FakeElement,from:{left:number;top:number},to:{left:number;top:number},options?:{lift?:boolean})=>FakeAnimation}=await import(await motionModule('flip.ts'));
+const {flip,afterFlip}:{afterFlip:(el:FakeElement,onSettled:()=>void)=>()=>void;flip:(el:FakeElement,from:{left:number;top:number},to:{left:number;top:number},options?:{lift?:boolean})=>FakeAnimation}=await import(await motionModule('flip.ts'));
 const {highlight}:{highlight:(el:FakeElement,options:{tone:'intake'|'active'|'done'|'brand'})=>{cancel:()=>void;finished:Promise<void>}}=await import(await motionModule('highlight.ts'));
 test('Card36A tools enforce cached CSS timing, reduced/hidden end states, continuation, cap and highlight restart',{concurrency:false},async t=>{
   try{
@@ -124,6 +128,22 @@ test('Card36A tools enforce cached CSS timing, reduced/hidden end states, contin
       const seventh=new FakeElement();assert.equal(flip(seventh,{left:0,top:0},{left:10,top:10}).playState,'finished');assert.equal(seventh.animations.length,0);
       for(const animation of active)animation.finish();await Promise.resolve();
       const available=flip(new FakeElement(),{left:0,top:0},{left:10,top:10});assert.equal(available.playState,'running');available.finish();await Promise.resolve();
+    });
+    await t.test('rollback waits for a later layout effect and replacement FLIP, and cancels on unmount',async()=>{
+      const el=new FakeElement(),origin={left:0,top:0},destination={left:80,top:20};
+      const shadows:string[]=[];
+      afterFlip(el,()=>shadows.push(el.style.boxShadow));
+      const first=flip(el,origin,destination,{lift:true});
+      await Promise.resolve();assert.equal(shadows.length,0);
+      const second=flip(el,destination,origin,{lift:true});
+      await Promise.resolve();assert.equal(first.playState,'idle');assert.equal(shadows.length,0);
+      const cancel=afterFlip(el,()=>shadows.push('unmounted'));
+      await Promise.resolve();cancel();second.finish();await Promise.resolve();
+      assert.deepEqual(shadows,[''],'the lift style is restored before the cue');
+      preference.matches=true;for(const listener of mediaListeners)listener();
+      afterFlip(el,()=>shadows.push('static'));flip(el,origin,destination);
+      await Promise.resolve();assert.deepEqual(shadows,['','static']);
+      preference.matches=false;for(const listener of mediaListeners)listener();
     });
     await t.test('all highlight tones use one token and repeated updates restart without a stale cleanup',async()=>{
       const el=new FakeElement();el.style.backgroundColor='original';

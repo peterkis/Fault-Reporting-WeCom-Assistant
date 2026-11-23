@@ -1,0 +1,19 @@
+{
+  "selector": ".ticket-card[data-kind=ticket][data-item-id=\"01a201d7-e43d-7cd3-8683-8475baba1794\"]",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 264,
+    "top": 241,
+    "right": 1192,
+    "bottom": 1189
+  },
+  "width": 4640,
+  "height": 948
+}

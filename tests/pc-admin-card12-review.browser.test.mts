@@ -7,7 +7,10 @@ for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN sur
   const first=f.tickets[0],actor=f.principals[0];assert.ok(first&&actor);
   await browser.command('Page.bringToFront');
   await browser.waitFor("document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
-  await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card12BoardOff=false;globalThis.__card12Seen=null;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path)==='/api/lifecycle/bootstrap'&&response.status===200){const body=await response.clone().json();globalThis.__card12Seen={principal:body.principal_id,revision:body.authorization_revision,board:body.board_actions_enabled,self:body.ticket_self_handling_enabled};if(globalThis.__card12BoardOff){const headers=new Headers(response.headers);headers.delete('content-length');return new Response(JSON.stringify({...body,board_actions_enabled:false}),{status:response.status,statusText:response.statusText,headers});}}return response;};})()`);
+  await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card12BoardOff=false;globalThis.__card12Seen=null;globalThis.fetch=async(path,options)=>{
+    const bootstrap=String(path)==='/api/lifecycle/bootstrap';
+    if(bootstrap&&globalThis.__card12BootstrapGate){globalThis.__card12BootstrapWaiting=true;await globalThis.__card12BootstrapGate;}
+    const response=await original(path,options);if(bootstrap&&response.status===200){const body=await response.clone().json();globalThis.__card12Seen={principal:body.principal_id,revision:body.authorization_revision,board:body.board_actions_enabled,self:body.ticket_self_handling_enabled};if(globalThis.__card12BoardOff){const headers=new Headers(response.headers);headers.delete('content-length');return new Response(JSON.stringify({...body,board_actions_enabled:false}),{status:response.status,statusText:response.statusText,headers});}}return response;};})()`);
   const beforeBootstrap=await get('/api/lifecycle/bootstrap');
   await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
@@ -20,7 +23,11 @@ for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN sur
     await browser.evaluate('globalThis.__card12BoardOff=true');
     await browser.waitFor("globalThis.__card12Seen?.board===true&&!document.querySelector('[data-action=board-drag-handle]')");
   }else{
-    await f.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES ($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[actor.id]);
+    await browser.evaluate('globalThis.__card12BootstrapGate=new Promise(resolve=>{globalThis.__card12ResumeBootstrap=resolve;});void 0');
+    try{
+      await browser.waitFor('globalThis.__card12BootstrapWaiting===true');
+      await f.pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) VALUES ($1::uuid,'HANDLER') ON CONFLICT DO NOTHING",[actor.id]);
+    }finally{await browser.evaluate('delete globalThis.__card12BootstrapGate;globalThis.__card12ResumeBootstrap()');}
     const fresh=await get('/api/lifecycle/bootstrap');assert.equal(fresh.principal_id,beforeBootstrap.principal_id);assert.notEqual(fresh.authorization_revision,beforeBootstrap.authorization_revision);
     await browser.waitFor(`globalThis.__card12Seen?.revision===${JSON.stringify(fresh.authorization_revision)}`);
   }

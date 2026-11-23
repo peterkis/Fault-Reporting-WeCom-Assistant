@@ -1,20 +1,264 @@
 import {useReportReadOnlyOperation} from '../design/components/ReadOnlyBar/ReadOnlyBar';
 import {WorkbenchButton as HButton} from './WorkbenchButton';
-import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
 import type {HTMLAttributes,SetStateAction} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import toast,{resolveValue,useToaster} from 'react-hot-toast/headless';
-import {overflowToasts,toastDuration,toastHeading,toastTone} from './toast-policy';
+import {AUTO_DISMISS_MS,UNDO_TOAST_MAX_VISIBLE_MS,UNDO_TOAST_MS,isDetailNavigation,overflowToasts,toastDuration,toastHeading,toastTone} from './toast-policy';
 import type {ToastTone} from './toast-policy';
-import {Bell,Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,X} from 'lucide-react';
+import {Bell,Check,CircleCheck,CircleX,Info,LoaderCircle,TriangleAlert,Undo2,X} from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
 
 const loadingStates=new Set(['loading','reading','preparing','submitting','checking','sending','saving']);
 const successStates=new Set(['succeeded','success','committed']);
 const errorStates=new Set(['failed','error','denied','conflict','invalid']);
 
-export function clearWorkbenchToasts(){toast.remove();}
+export interface UndoToastOptions {
+  id?:string|undefined;
+  source:string;
+  title:string;
+  message?:string|undefined;
+  actionLabel?:string|undefined;
+  onUndo:()=>void|Promise<unknown>;
+  onExpire?:(()=>void)|undefined;
+}
+
+export interface ErrorActionToastOptions {
+  id?:string|undefined;
+  source:string;
+  title:string;
+  message:string;
+  actionLabel?:string|undefined;
+  onAction?:(()=>void|Promise<unknown>)|undefined;
+  persistent?:boolean|undefined;
+  state?:string|undefined;
+}
+
+interface ToastActionMeta {
+  kind:'undo'|'view';
+  id:string;
+  source:string;
+  title:string;
+  message?:string|undefined;
+  actionLabel:string;
+  onAction:()=>void|Promise<unknown>;
+  onExpire?:(()=>void)|undefined;
+  createdAtMs:number;
+  undoDeadlineEpochMs?:number;
+  elapsedUnpausedMs:number;
+  lastTickMs:number;
+  expired:boolean;
+  triggered:boolean;
+}
+
+let toastSequence=0;
+let metaRevision=0;
+const toastMetaMap=new Map<string,ToastActionMeta>();
+const undoOrder:string[]=[];
+const metaListeners=new Set<()=>void>();
+
+function notifyMeta(){
+  metaRevision++;
+  for(const listener of metaListeners)listener();
+}
+
+function subscribeMeta(listener:()=>void){
+  metaListeners.add(listener);
+  return()=>{metaListeners.delete(listener);};
+}
+
+function unregisterUndoId(id:string){
+  const index=undoOrder.indexOf(id);
+  if(index>=0)undoOrder.splice(index,1);
+}
+
+function removeToastMeta(id:string){
+  unregisterUndoId(id);
+  if(toastMetaMap.delete(id))notifyMeta();
+}
+
+function renderImperativeContent(source:string,title:string|undefined,message:string|undefined,state?:string){
+  const heading=toastHeading(title,source);
+  const body=message?.trim()||'';
+  if(heading&&body){
+    return <div className="workbench-toast-content" data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{heading}</strong><span>{body}</span></div>;
+  }
+  const single=heading||body;
+  return <div className="workbench-toast-content is-single" data-toast-source={source} data-toast-state={state??''}><strong className="workbench-toast-purpose">{single}</strong></div>;
+}
+
+function nextImperativeId(prefix:string,explicit?:string){
+  if(explicit)return explicit;
+  toastSequence++;
+  return prefix+'-'+toastSequence;
+}
+
+function nowMonotonic(){
+  return typeof performance!=='undefined'?performance.now():Date.now();
+}
+
+function dismissUndoToastEntry(meta:ToastActionMeta){
+  if(meta.triggered||meta.expired)return;
+  unregisterUndoId(meta.id);
+  meta.expired=true;
+  notifyMeta();
+  meta.onExpire?.();
+  toast.dismiss(meta.id);
+}
+
+function expireUndoToastToPlainSuccess(meta:ToastActionMeta){
+  if(meta.triggered||meta.expired)return;
+  unregisterUndoId(meta.id);
+  meta.expired=true;
+  notifyMeta();
+  meta.onExpire?.();
+  toast.success(renderImperativeContent(meta.source,meta.title,meta.message,'succeeded'),{
+    id:meta.id,
+    duration:AUTO_DISMISS_MS,
+    removeDelay:180,
+    className:'',
+    ariaProps:{role:'status', 'aria-live':'polite'},
+  });
+}
+
+function undoWindowEnded(meta:ToastActionMeta){
+  return nowMonotonic()-meta.createdAtMs>=UNDO_TOAST_MAX_VISIBLE_MS
+    ||meta.undoDeadlineEpochMs!==undefined&&Date.now()>=meta.undoDeadlineEpochMs;
+}
+
+function triggerUndoMeta(meta:ToastActionMeta):boolean{
+  if(meta.kind!=='undo'||meta.expired||meta.triggered)return false;
+  if(undoWindowEnded(meta)){
+    expireUndoToastToPlainSuccess(meta);
+    return false;
+  }
+  meta.triggered=true;
+  unregisterUndoId(meta.id);
+  notifyMeta();
+  toast.dismiss(meta.id);
+  void Promise.resolve(meta.onAction());
+  return true;
+}
+
+/** Shows a 5s undoable success toast (paused per-toast on hover/focus, capped at 10s total). */
+export function showUndoToast(options:UndoToastOptions):string{
+  const id=nextImperativeId('undo',options.id);
+  unregisterUndoId(id);
+  const now=nowMonotonic();
+  const meta:ToastActionMeta={
+    kind:'undo',
+    id,
+    source:options.source,
+    title:options.title,
+    message:options.message,
+    actionLabel:options.actionLabel??'撤销',
+    onAction:options.onUndo,
+    undoDeadlineEpochMs:Date.now()+UNDO_TOAST_MAX_VISIBLE_MS,
+    ...(options.onExpire?{onExpire:options.onExpire}:{}),
+    createdAtMs:now,
+    elapsedUnpausedMs:0,
+    lastTickMs:now,
+    expired:false,
+    triggered:false,
+  };
+  toastMetaMap.set(id,meta);
+  undoOrder.push(id);
+  notifyMeta();
+  toast.success(renderImperativeContent(options.source,options.title,options.message,'succeeded'),{
+    id,
+    duration:UNDO_TOAST_MAX_VISIBLE_MS+AUTO_DISMISS_MS,
+    removeDelay:180,
+    className:'',
+    ariaProps:{role:'status','aria-live':'polite'},
+  });
+  return id;
+}
+
+/** Shows a plain auto-dismissing success toast. */
+export function showSuccessToast(options:{id?:string|undefined;source:string;title:string;message?:string|undefined;duration?:number|undefined}):string{
+  const id=nextImperativeId('success',options.id);
+  removeToastMeta(id);
+  toast.success(renderImperativeContent(options.source,options.title,options.message,'succeeded'),{
+    id,
+    duration:options.duration??AUTO_DISMISS_MS,
+    removeDelay:180,
+    className:'',
+    ariaProps:{role:'status','aria-live':'polite'},
+  });
+  return id;
+}
+
+/** Shows a plain informational notice toast. */
+export function showInfoToast(options:{id?:string|undefined;source:string;title?:string|undefined;message?:string|undefined;state?:string|undefined;persistent?:boolean|undefined}):string{
+  const id=nextImperativeId('info',options.id);
+  removeToastMeta(id);
+  const unknown=options.state==='unknown';
+  toast(renderImperativeContent(options.source,options.title,options.message,options.state),{
+    id,
+    duration:toastDuration({unknown,loading:false,error:false,persistent:Boolean(options.persistent)}),
+    removeDelay:180,
+    className:unknown?'is-warning':'',
+    ariaProps:{role:'status','aria-live':'polite'},
+  });
+  return id;
+}
+
+/** Shows an error notice toast with an optional contextual action button (e.g. 「查看」). */
+export function showErrorActionToast(options:ErrorActionToastOptions):string{
+  const id=nextImperativeId('error',options.id);
+  unregisterUndoId(id);
+  if(options.onAction){
+    const now=nowMonotonic();
+    toastMetaMap.set(id,{
+      kind:'view',
+      id,
+      source:options.source,
+      title:options.title,
+      message:options.message,
+      actionLabel:options.actionLabel??'查看',
+      onAction:options.onAction,
+      createdAtMs:now,
+      elapsedUnpausedMs:0,
+      lastTickMs:now,
+      expired:false,
+      triggered:false,
+    });
+    notifyMeta();
+  }else{
+    removeToastMeta(id);
+  }
+  toast.error(renderImperativeContent(options.source,options.title,options.message,options.state??'denied'),{
+    id,
+    duration:toastDuration({unknown:false,loading:false,error:true,persistent:Boolean(options.persistent)}),
+    removeDelay:180,
+    className:'',
+    ariaProps:{role:'alert','aria-live':'assertive'},
+  });
+  return id;
+}
+
+/** Triggers the newest still-active undo toast (used by `Ctrl+Z` / `⌘+Z`). */
+export function triggerNewestUndoToast():boolean{
+  for(let i=undoOrder.length-1;i>=0;i--){
+    const id=undoOrder[i];
+    if(!id)continue;
+    const meta=toastMetaMap.get(id);
+    if(!meta||meta.expired||meta.triggered){
+      undoOrder.splice(i,1);
+      continue;
+    }
+    if(triggerUndoMeta(meta))return true;
+  }
+  return false;
+}
+
+export function clearWorkbenchToasts(){
+  undoOrder.length=0;
+  toastMetaMap.clear();
+  notifyMeta();
+  toast.remove();
+}
 
 type Box={left:number;top:number;right:number;bottom:number;width:number};
 const viewportBox=():Box=>({left:0,top:0,right:window.innerWidth,bottom:window.innerHeight,width:window.innerWidth});
@@ -238,10 +482,60 @@ export function feedbackTone(state:string|undefined,role:string|undefined):'succ
 /** Card 33: each tone's icon; an error is a crossed circle so it never reads as an unknown outcome. */
 const toneIcons:Record<ToastTone,readonly [LucideIcon,string]>={success:[CircleCheck,'CircleCheck'],info:[Info,'Info'],warning:[TriangleAlert,'TriangleAlert'],danger:[CircleX,'CircleX'],loading:[LoaderCircle,'LoaderCircle']};
 
+function UndoToastCountdown({meta,visible,paused}:{meta:ToastActionMeta;visible:boolean;paused:boolean}){
+  const fillRef=useRef<HTMLSpanElement|null>(null);
+  useEffect(()=>{
+    if(!visible||meta.expired||meta.triggered)return;
+    let frame=0;
+    meta.lastTickMs=nowMonotonic();
+    const step=()=>{
+      if(meta.expired||meta.triggered)return;
+      const now=nowMonotonic();
+      if(undoWindowEnded(meta)){
+        expireUndoToastToPlainSuccess(meta);
+        return;
+      }
+      if(!paused){
+        meta.elapsedUnpausedMs+=Math.max(0,now-meta.lastTickMs);
+      }
+      meta.lastTickMs=now;
+      const remaining=Math.max(0,1-meta.elapsedUnpausedMs/UNDO_TOAST_MS);
+      if(fillRef.current){
+        fillRef.current.style.transform='scaleX('+remaining.toFixed(4)+')';
+      }
+      if(meta.elapsedUnpausedMs>=UNDO_TOAST_MS){
+        dismissUndoToastEntry(meta);
+        return;
+      }
+      frame=requestAnimationFrame(step);
+    };
+    const initialRemaining=Math.max(0,1-meta.elapsedUnpausedMs/UNDO_TOAST_MS);
+    if(fillRef.current){
+      fillRef.current.style.transform='scaleX('+initialRemaining.toFixed(4)+')';
+    }
+    frame=requestAnimationFrame(step);
+    return()=>cancelAnimationFrame(frame);
+  },[meta,visible,paused]);
+  if(meta.expired||meta.triggered)return null;
+  return <div className="workbench-toast-countdown" data-toast-countdown="true" aria-hidden="true"><span ref={fillRef} className="workbench-toast-countdown-fill"/></div>;
+}
+
 export function WorkbenchToasts(){
   const {toasts,handlers}=useToaster(),location=useLocation();
+  useSyncExternalStore(subscribeMeta,()=>metaRevision,()=>0);
+  const [hoveredIds,setHoveredIds]=useState<Record<string,boolean>>({});
+  const [focusedIds,setFocusedIds]=useState<Record<string,boolean>>({});
   useEffect(()=>{if(!toasts.length)handlers.endPause();},[toasts.length,handlers.endPause]);
   useEffect(()=>{for(const item of overflowToasts(toasts))toast.dismiss(item.id);},[toasts]);
+  useEffect(()=>{
+    const activeIds=new Set(toasts.map(item=>item.id));
+    for(const item of toasts){
+      if(!item.visible)unregisterUndoId(item.id);
+    }
+    for(const id of Array.from(toastMetaMap.keys())){
+      if(!activeIds.has(id))removeToastMeta(id);
+    }
+  },[toasts]);
   const [target,setTarget]=useState<HTMLElement>(document.body),priorFocus=useRef<HTMLElement|null>(null),[viewport,setViewport]=useState<HTMLDivElement|null>(null);
   // Card 34A: chip mode while a modal leaves no room beside it.
   const [mode,setMode]=useState<ToastMode>('docked'),[expanded,setExpanded]=useState(false),[chip,setChip]=useState<HTMLSpanElement|null>(null),listId=useId();
@@ -279,16 +573,42 @@ export function WorkbenchToasts(){
     const observer=new MutationObserver(onMutation);observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-hidden','data-exiting']});document.addEventListener('focusin',update);
     return()=>{observer.disconnect();document.removeEventListener('focusin',update);};
   },[]);
-  useEffect(()=>{clearWorkbenchToasts();},[location.pathname,location.search]);
+  const previousRoute=useRef<{pathname:string;search:string}|null>(null);
+  useLayoutEffect(()=>{
+    const {pathname,search}=location,previous=previousRoute.current;
+    if(previous?.pathname===pathname&&previous.search===search)return;
+    previousRoute.current={pathname,search};
+    if(previous&&isDetailNavigation(previous,location)){
+      for(const item of toasts){
+        const meta=toastMetaMap.get(item.id);
+        if(item.visible&&meta?.kind==='undo'&&!meta.triggered&&!meta.expired&&!undoWindowEnded(meta))continue;
+        removeToastMeta(item.id);
+        toast.remove(item.id);
+      }
+    }else clearWorkbenchToasts();
+  },[location,toasts]);
   const dismiss=(id:string,button:HTMLElement)=>{
     if(document.activeElement===button){const previous=priorFocus.current;if(previous?.isConnected&&previous.checkVisibility()&&!previous.matches(':disabled'))previous.focus({preventScroll:true});else target.querySelector<HTMLElement>('h2[tabindex]')?.focus({preventScroll:true});}
     toast.dismiss(id);
   };
   return createPortal(<><div ref={setViewport} id={listId} className="workbench-toast-viewport" aria-label="操作提示" data-workbench-toasts hidden={chipped&&!open} onMouseEnter={handlers.startPause} onMouseLeave={handlers.endPause} onFocusCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget)){priorFocus.current=event.relatedTarget instanceof HTMLElement?event.relatedTarget:null;}handlers.startPause();}} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))handlers.endPause();}}>
-    {[...toasts].reverse().map(item=>{const tone=toastTone(item.type,item.className),[Icon,icon]=toneIcons[tone];return <div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-tone={tone} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}>
+    {[...toasts].reverse().map(item=>{
+      const tone=toastTone(item.type,item.className),[Icon,icon]=toneIcons[tone];
+      const meta=toastMetaMap.get(item.id);
+      const showAction=Boolean(meta&&!meta.expired&&!meta.triggered);
+      const isPaused=Boolean(hoveredIds[item.id]||focusedIds[item.id]);
+      return <div key={item.id} className={'workbench-toast '+item.type+' '+(item.className??'')} data-tone={tone} data-toast-id={item.id} data-visible={item.visible} aria-hidden={!item.visible} {...item.ariaProps}
+        onMouseEnter={()=>{if(meta?.kind==='undo')setHoveredIds(prev=>prev[item.id]?prev:{...prev,[item.id]:true});}}
+        onMouseLeave={()=>{if(meta?.kind==='undo')setHoveredIds(prev=>{if(!prev[item.id])return prev;const next={...prev};delete next[item.id];return next;});}}
+        onFocusCapture={()=>{if(meta?.kind==='undo')setFocusedIds(prev=>prev[item.id]?prev:{...prev,[item.id]:true});}}
+        onBlurCapture={event=>{if(meta?.kind==='undo'&&!event.currentTarget.contains(event.relatedTarget))setFocusedIds(prev=>{if(!prev[item.id])return prev;const next={...prev};delete next[item.id];return next;});}}>
       <span className="workbench-toast-tone" aria-hidden="true"><span className="workbench-toast-icon" data-icon={icon}><Icon size={20} strokeWidth={1.75}/></span></span>
       {resolveValue(item.message,item)}
+      {showAction&&meta?<div className="workbench-toast-actions"><HButton type="button" className="workbench-toast-action" data-toast-action={meta.kind} tabIndex={item.visible?0:-1} onClick={()=>{
+        if(meta.kind==='undo'){triggerUndoMeta(meta);}else{toast.dismiss(item.id);void Promise.resolve(meta.onAction());}
+      }} variant="secondary">{meta.kind==='undo'?<><Undo2 size={14} strokeWidth={1.75} aria-hidden="true"/><span>{meta.actionLabel}</span></>:meta.actionLabel}</HButton></div>:null}
       {tone==='loading'?<span className="workbench-toast-close-space" aria-hidden="true"/>:<HButton type="button" className="workbench-toast-close" aria-label="关闭提示" tabIndex={item.visible?0:-1} onMouseDown={event=>event.preventDefault()} onClick={event=>{if(event.currentTarget instanceof HTMLElement)dismiss(item.id,event.currentTarget);}} variant="secondary"><X size={16}/></HButton>}
+      {meta?.kind==='undo'?<UndoToastCountdown meta={meta} visible={item.visible} paused={isPaused}/>:null}
     </div>;})}
   </div>{chipped?<span ref={setChip} className="workbench-toast-chip-anchor"><HButton type="button" className="workbench-toast-chip" data-action="toggle-toast-chip" aria-expanded={open} aria-controls={listId} onClick={()=>setExpanded(value=>!value)} variant="secondary"><Bell size={14} aria-hidden="true"/><span aria-live="polite"><span className="workbench-toast-chip-count">{visibleCount}</span><span className="workbench-toast-chip-label"> 条提示</span></span></HButton></span>:null}</>,target);
 }

@@ -41,6 +41,24 @@ function releaseFlipHosts(hosts:HTMLElement[]){
   }
 }
 
+/** A child may request the cue before the board registers its FLIP in the same layout pass. */
+export function afterFlip(el:HTMLElement,onSettled:()=>void):()=>void{
+  let cancelled=false;
+  const check=()=>{
+    if(cancelled)return;
+    const entry=running.get(el);
+    if(entry&&entry.animation.playState!=='finished'&&entry.animation.playState!=='idle'){
+      // A replacement FLIP cancels its predecessor. Follow the current motion in either case.
+      void entry.animation.finished.then(check,check);
+      return;
+    }
+    entry?.release();
+    onSettled();
+  };
+  queueMicrotask(check);
+  return ()=>{cancelled=true;};
+}
+
 export function getFlipLayout(el:HTMLElement):MotionRect|null{
   const entry=running.get(el);
   if(!entry)return null;

@@ -10,6 +10,8 @@ import {ConversationControlError} from './p2-005-conversation-control.mjs';
 import type {createConversationControlService} from './p2-005-conversation-control.mjs';
 import {lockP2016Realtime} from './p2-016-realtime-appender.mjs';
 import {exactP2016,uuidP2016,versionP2016,codeP2016,failP2016,guardP2016,publicP2016,transactionP2016,P2016_ERROR_CODES} from './p2-016-domain-contracts.mjs';
+import {cancelUnattemptedDeliveryInTransaction} from './p2-004-communication-delivery-worker.mjs';
+import {CLAIM_RETURN_WINDOW_SQL,CLAIM_UNDONE_BEFORE_NOTIFICATION_REASON,DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS,normalizeNotificationUndoWindowMs} from './notification-undo-window.mjs';
 import {returnToDispatchMigrationReady} from '../scripts/ticket-return-to-dispatch-migrate.mjs';
 
 const startedStates=['IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR'];
@@ -78,7 +80,8 @@ export async function returnToDispatchEligible(tx:PostgresTransaction,principal:
  const cycle=await assignmentCycle(tx,ticket.id);
  return !(cycle?.first_responsibility_event_id===null||!cycle&&(await tx.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE ticket_id=$1::uuid LIMIT 1',[ticket.id])).rowCount);
 }
-export function createTicketReturnToDispatchService({pool,query,controlService=null,enabled=false,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
+export function createTicketReturnToDispatchService({pool,query,controlService=null,enabled=false,claimNotificationUndoWindowMs,...hooks}:{pool:PostgresPool;query:P2016TicketQuery;controlService?:Pick<ReturnType<typeof createConversationControlService>,'takeoverSessionInTransaction'|'transferAssignmentInTransaction'>|null;enabled?:boolean;claimNotificationUndoWindowMs?:number}&Pick<SelfHandlingHooks,'realtimeProjector'>) {
+ const claimWindowMs=normalizeNotificationUndoWindowMs(claimNotificationUndoWindowMs,DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS);
  const ledger=createP2016CommandLedger({pool});
  return Object.freeze({async acknowledgement({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}):Promise<P2016ReturnToDispatchAcknowledgement> {
   const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
@@ -152,7 +155,27 @@ export function createTicketReturnToDispatchService({pool,query,controlService=n
    const result={ticket:{...ticket,...changed,assignee_id:null},event:await appendTicketEvent({transaction,ticket:changed,eventType:'ticket.returned_to_dispatch',oldStatus:ticket.status,
      actor:{type:'PILOT_USER',id:principal.principal_id},reasonCode:command.reason_code,internalNote:'停止原因：'+command.reason+'\n未完成工作：'+command.unfinished_work,traceId:'t09:'+command.client_command_id,
      assignmentMetadata:{old_assignee_id:ticket.assignee_id,new_assignee_id:null,old_team_id:ticket.resolver_team_id,new_team_id:ticket.resolver_team_id}})};
-   if(cycle)await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
+   if(cycle){
+    await transaction.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
+    if(claimWindowMs>0&&(await transaction.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='041_ticket_round_notifications'")).rowCount===1){
+     // Keep global lock order: ticket (already held) -> ticket_handling_cycle -> communication.delivery.
+     await transaction.query('SELECT 1 FROM pilot_ticket.ticket_handling_cycle WHERE id=$1::uuid FOR UPDATE',[cycle.id]);
+     const pendingNotices=await transaction.query<{id:string;status:string;side_effect_state:string;lease_token:string|null}>(`SELECT d.id::text,d.status,d.side_effect_state,d.lease_token::text
+       FROM communication.ticket_round_notification_binding r
+       JOIN communication.ticket_notification_binding b ON b.id=r.notification_binding_id
+       JOIN communication.delivery d ON d.id=b.delivery_id
+       JOIN pilot_ticket.ticket_event claimed ON claimed.event_id=b.ticket_event_id AND claimed.ticket_id=r.ticket_id
+       JOIN pilot_ticket.ticket_event returned ON returned.event_id=$4::uuid AND returned.ticket_id=r.ticket_id
+       WHERE ${CLAIM_RETURN_WINDOW_SQL} AND r.ticket_id=$1::uuid AND r.cycle_id=$2::uuid AND r.node='FIRST_HANDLING' AND r.destination_type='PERSON'
+         AND d.provider IN ('WECOM_AIBOT','WECOM_APP') AND d.side_effect_state='NOT_ATTEMPTED' AND d.status IN ('PENDING','LEASED','DEAD_LETTER')
+       ORDER BY d.id FOR UPDATE OF d`,[ticket.id,cycle.id,claimWindowMs,result.event.event_id]);
+     for(const notice of pendingNotices.rows){
+      const expected:{status:'LEASED';leaseToken:string}|{status:'PENDING'|'DEAD_LETTER'}|null=
+        notice.status==='LEASED'&&notice.lease_token?{status:'LEASED',leaseToken:notice.lease_token}:notice.status==='PENDING'||notice.status==='DEAD_LETTER'?{status:notice.status}:null;
+      if(expected)await cancelUnattemptedDeliveryInTransaction({transaction,deliveryId:notice.id,expected,reasonCode:CLAIM_UNDONE_BEFORE_NOTIFICATION_REASON,occurredEpochMs:String(Date.now())});
+     }
+    }
+   }
    await hooks.realtimeProjector?.({transaction,...result,command});
    return {ok:true as const,ticket_id:ticket.id,ticket_version:changed.version,ticket_event_id:result.event.event_id,control_event_id:null,handling_cycle:cycle,communication_choice:command.communication_choice,conversations};
   }});

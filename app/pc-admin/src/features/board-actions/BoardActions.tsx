@@ -15,6 +15,7 @@ import {reviewApi} from '../manual-review/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import type {WorkbenchBoardActionIntent} from '../../../../../contracts/workbench_board_action_intent_contracts';
 import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './intent';
+import {isItemActionPending} from '../optimistic/store';
 import './board-actions.css';
 
 interface CardDragMeta {
@@ -111,32 +112,63 @@ const DISABLED_DRAG_PROPS={sensors:[],plugins:[],modifiers:[]};
 const DRAG_INSTRUCTIONS_TEXT='To pick up a draggable item, press the space bar. While dragging, use the arrow keys to move the item in a given direction. Press space again to drop the item in its new position, or press escape to cancel.';
 
 type Entry={intent:WorkbenchBoardActionIntent;selector:string};
-type Claim={principalId:string;mode:'self'|'form';item:Pick<WorkbenchCard,'kind'|'id'|'column'>;target:HTMLElement|null};
+type Claim={principalId:string;mode:'self'|'form';item:WorkbenchCard;target:HTMLElement|null};
 const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;navigationBlocked:boolean;instructionsId:string;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,navigationBlocked:false,instructionsId:'',open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
 export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlocked,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;onClaimBlocked:(blocked:boolean)=>void;children:ReactNode}){
   const client=useQueryClient(),enabled=principal.board_actions_enabled===true,instructionsId=useId(),request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
   const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
-  const [claim,setClaim]=useState<Claim|null>(null),[claimBlocked,setClaimBlocked]=useState(false);
+  const [claim,setClaim]=useState<Claim|null>(null);
+  const [pendingClaims,setPendingClaims]=useState<Record<string,Claim>>({});
+  const [blockedByClaim,setBlockedByClaim]=useState<Record<string,boolean>>({});
   const claimScope=principal.principal_id+':'+principal.authorization_revision;
   const [preparedScope,setPreparedScope]=useState(claimScope);
   // Entry capabilities may close or refresh. They never own an unresolved command.
   const activeClaim=claim?.principalId===principal.principal_id?claim:null;
+  const claimBlocked=Object.values(blockedByClaim).some(Boolean);
+  useEffect(()=>{onClaimBlocked(claimBlocked);return()=>onClaimBlocked(false);},[claimBlocked,onClaimBlocked]);
   const claimEntryEnabled=enabled&&preparedScope===claimScope&&(activeClaim?.mode!=='self'||principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled);
-  const changeClaimBlocked=useCallback((value:boolean)=>{setClaimBlocked(value);onClaimBlocked(value);},[onClaimBlocked]);
+  const changeClaimBlocked=useCallback((ticketId:string,value:boolean)=>{
+    setBlockedByClaim(prev=>{
+      if(Boolean(prev[ticketId])===value)return prev;
+      if(!value){
+        const next={...prev};
+        delete next[ticketId];
+        return next;
+      }
+      return {...prev,[ticketId]:true};
+    });
+  },[]);
+  const changePendingClaim=useCallback((busy:boolean,item:WorkbenchCard)=>{
+    setPendingClaims(prev=>{
+      if(!busy){
+        if(!prev[item.id])return prev;
+        const next={...prev};
+        delete next[item.id];
+        return next;
+      }
+      if(prev[item.id]?.principalId===principal.principal_id&&prev[item.id]?.item===item)return prev;
+      return {...prev,[item.id]:{principalId:principal.principal_id,mode:'self',item,target:null}};
+    });
+  },[principal.principal_id]);
   const releaseClaim=useCallback((target:HTMLElement)=>{setClaim(current=>current?.target===target?{...current,target:null}:current);},[]);
+  const trackedClaimIds=[activeClaim?.item.id,...Object.keys(pendingClaims)].filter((v):v is string=>Boolean(v)).sort().join(',');
   useEffect(()=>{
-    const owner=activeClaim?.principalId,ticketId=activeClaim?.item.id;
-    if(!owner||!ticketId)return;
+    const owner=principal.principal_id;
+    const ids=new Set(trackedClaimIds?trackedClaimIds.split(','):[]);
+    if(!owner||ids.size===0)return;
     return client.getQueryCache().subscribe(event=>{
       if(event.type!=='updated')return;
       const key=event.query.queryKey,error=event.action.type==='error'?event.action.error:event.action.type==='setState'?event.action.state.error:undefined;
       // Accept fresh READ failures and the existing unified object-clear notice.
       // Resets, entry flags, revision refreshes and transient failures do not qualify.
-      if(key[0]==='ticket-command-context'&&key[1]===owner&&key[2]===ticketId&&error instanceof ApiError&&[401,403,404].includes(error.status)){
+      if(key[0]==='ticket-command-context'&&key[1]===owner&&typeof key[2]==='string'&&ids.has(key[2])&&error instanceof ApiError&&[401,403,404].includes(error.status)){
+        const ticketId=key[2];
         setClaim(current=>current?.principalId===owner&&current.item.id===ticketId?null:current);
+        setPendingClaims(prev=>{if(!prev[ticketId])return prev;const next={...prev};delete next[ticketId];return next;});
+        setBlockedByClaim(prev=>{if(!prev[ticketId])return prev;const next={...prev};delete next[ticketId];return next;});
       }
     });
-  },[client,activeClaim?.principalId,activeClaim?.item.id]);
+  },[client,principal.principal_id,trackedClaimIds]);
   useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
   const open=async(intent:WorkbenchBoardActionIntent)=>{
     if(!enabled||blocked||claimBlocked||request.current)return;
@@ -192,16 +224,18 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
   const openRef=useRef(open);openRef.current=open;
   const stableOpen=useCallback((intent:WorkbenchBoardActionIntent)=>{void openRef.current(intent);},[]);
   const prepareClaimRef=useRef((item:WorkbenchCard,target:HTMLElement)=>{
-    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
+    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||isItemActionPending(principal.principal_id,'ticket',item.id,'movement')||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
     const mode=principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?'form':'self';
-    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item:{kind:item.kind,id:item.id,column:item.column},target});
+    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item,target});
   });
   prepareClaimRef.current=(item:WorkbenchCard,target:HTMLElement)=>{
-    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
+    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||isItemActionPending(principal.principal_id,'ticket',item.id,'movement')||!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return;
     const mode=principal.ticket_conversation_self_handling_enabled||principal.ticket_takeover_enabled?'form':'self';
-    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item:{kind:item.kind,id:item.id,column:item.column},target});
+    setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item,target});
   };
   const stablePrepareClaim=useCallback((item:WorkbenchCard,target:HTMLElement)=>{prepareClaimRef.current(item,target);},[]);
+  const claims=Object.values(pendingClaims).filter(entry=>entry.principalId===principal.principal_id&&entry.item.id!==activeClaim?.item.id);
+  if(activeClaim)claims.push({...activeClaim,target:claimEntryEnabled?activeClaim.target:null});
   const contextValue=useMemo(()=>({enabled,blocked:disabled,navigationBlocked,instructionsId,open:stableOpen,releaseClaim,prepareClaim:stablePrepareClaim}),[enabled,disabled,navigationBlocked,instructionsId,stableOpen,releaseClaim,stablePrepareClaim]);
   const liveRegion=useRef<HTMLDivElement|null>(null);
   const announce=(text:string)=>{if(liveRegion.current&&liveRegion.current.textContent!==text)liveRegion.current.textContent=text;};
@@ -250,10 +284,21 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
         const intent=readBoardIntent({kind:original.kind,id:original.id,source_column:original.column,target_column:target});if(intent)void open(intent);
       }}>{children}</DragDropProvider>
     {enabled?<><div id={instructionsId} hidden>{DRAG_INSTRUCTIONS_TEXT}</div><div ref={liveRegion} className="sr-only" role="status" aria-live="polite" aria-atomic="true"/></>:null}
-    {activeClaim?<div className="board-claim-controller" key={activeClaim.principalId+':'+activeClaim.item.id}>{activeClaim.mode==='form'?<BoardClaimForm principal={principal} claim={{...activeClaim,target:claimEntryEnabled?activeClaim.target:null}} blocked={disabled} open={intent=>{void open(intent);}}/>:<TicketSelfHandling ticketId={activeClaim.item.id} principal={principal} boardMode otherBlocked={checking} onBlockedChange={changeClaimBlocked} cardActionTarget={claimEntryEnabled?activeClaim.target:null}/>}</div>:null}
+    {claims.map(entry=><div className="board-claim-controller" key={entry.principalId+':'+entry.item.id}>
+      {entry.mode==='form'?<BoardClaimForm principal={principal} claim={entry} blocked={disabled} open={stableOpen}/>:
+        <BoardSelfClaim principal={principal} claim={entry} checking={checking} changeBlocked={changeClaimBlocked} changePending={changePendingClaim}/>}
+    </div>)}
     {enabled&&message?<ToastFeedback revision={messageRevision} source="board-actions" state={checking?'checking':undefined} className="board-action-status" role="status" aria-live="polite" data-board-action-status>{message}</ToastFeedback>:null}
   </BoardActionsContext.Provider>;
 }
+function BoardSelfClaim({principal,claim,checking,changeBlocked,changePending}:{principal:Principal;claim:Claim;checking:boolean;
+  changeBlocked:(id:string,value:boolean)=>void;changePending:(busy:boolean,item:WorkbenchCard)=>void}){
+  const id=claim.item.id;
+  const reportBlocked=useCallback((value:boolean)=>changeBlocked(id,value),[id,changeBlocked]);
+  return <TicketSelfHandling ticketId={id} item={claim.item} principal={principal} boardMode otherBlocked={checking}
+    onBlockedChange={reportBlocked} onPendingChange={changePending} cardActionTarget={claim.target}/>;
+}
+
 function BoardClaimForm({principal,claim,blocked,open}:{principal:Principal;claim:Claim;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void}){
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,claim.item.id],queryFn:({signal})=>api.ticketCommandContext(claim.item.id,signal)});
   const allowed=context.data?.allowed_actions??[],available=context.isSuccess&&!context.isFetching&&!context.isError&&(principal.ticket_conversation_self_handling_enabled&&allowed.includes('take-and-start-with-conversations')||principal.ticket_self_handling_enabled&&allowed.includes('take-and-start')||principal.ticket_takeover_enabled&&allowed.includes('takeover-and-start'));

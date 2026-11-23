@@ -1,3 +1,4 @@
+import {useItemUndoRecovery} from '../features/optimistic/command-recovery';
 import {CloseItemButton,RestoreClosedItem} from '../features/ticket-waiting/ClosureActions';
 import {ClosureHistory} from '../features/ticket-waiting/ClosureHistory';
 import type {StepReadState} from '../design/components/Drawer/NextStep';
@@ -88,7 +89,7 @@ function DetailProperties({detail,principal}:{detail:WorkbenchDetail;principal:P
 }
 type DetailProps={principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open?:boolean;itemKind?:string;itemId?:string;onNavigationBlocked:(blocked:boolean)=>void};
 type HeaderMeta={targetKey:string;kind?:string;number?:string;title?:string;denied:boolean};
-type SwitchState={seq:number;targetKey:string;direction:DetailSwitchDirection;byButton:boolean};
+type SwitchState={seq:number;targetKey:string;direction:DetailSwitchDirection;byButton:boolean;menuShown:boolean};
 
 function escapeAttr(value:string):string{
   return typeof CSS!=='undefined'&&typeof CSS.escape==='function'?CSS.escape(value):value.replace(/["\\]/gu,'\\$&');
@@ -201,7 +202,9 @@ function WorkbenchDetailSurface(props:DetailProps){
     activeEnterRef.current?.();activeEnterRef.current=null;
     if(!props.fullPage&&stageRef.current&&liveRef.current)activeExitRef.current=startDetailBodyExit(stageRef.current,liveRef.current,direction);
     const seq=++switchSeqRef.current;
-    setSwitchState({seq,targetKey:nextKey,direction,byButton:true});
+    // The toolbar keeps the menu's place while the next item mounts its actions, so prev/next stay under the pointer.
+    const menuShown=Boolean(navRef.current?.querySelector('.ds-drawer-more')?.checkVisibility());
+    setSwitchState({seq,targetKey:nextKey,direction,byButton:true,menuShown});
     void navigate(itemLink(item,location.search),{replace:true,state:location.state});
   };
   if(!target)return null;
@@ -227,14 +230,14 @@ function WorkbenchDetailSurface(props:DetailProps){
     </div>
     <div className="ds-detail-body-stage" ref={stageRef}>
       <div className="ds-detail-body-live" ref={liveRef}>
-        <WorkbenchDetailContent key={props.principal.principal_id+':'+target.kind+':'+target.id} principal={props.principal} items={props.items} now={props.now} fullPage={props.fullPage} open={isOpen} kind={target.kind} id={target.id} onNavigationBlocked={reportBlocked} onHeaderMeta={setHeaderMeta} breadcrumbSlot={breadcrumbSlot} presenceTarget={presenceTarget} toolbarActionsSlot={toolbarActionsSlot} activeSwitch={activeSwitch} switchPending={switchPending} navRef={navRef} liveRef={liveRef} registerEnterCancel={registerEnterCancel}/>
+        <WorkbenchDetailContent key={props.principal.principal_id+':'+target.kind+':'+target.id} principal={props.principal} items={props.items} now={props.now} fullPage={props.fullPage} open={isOpen} kind={target.kind} id={target.id} onNavigationBlocked={reportBlocked} onHeaderMeta={setHeaderMeta} breadcrumbSlot={breadcrumbSlot} presenceTarget={presenceTarget} toolbarActionsSlot={toolbarActionsSlot} activeSwitch={activeSwitch} switchPending={switchPending} holdMenuPlace={Boolean(switchState?.menuShown)} navRef={navRef} liveRef={liveRef} registerEnterCancel={registerEnterCancel}/>
       </div>
     </div>
   </DisabledReasonContext.Provider>;
   return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-label="事项详情" aria-labelledby="detail-title">{surface}</article>:<Drawer isOpen={isOpen} dismissBlocked={dismissBlocked} onClose={close} onExited={handleDrawerExited}>{surface}</Drawer>;
 }
 
-function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNavigationBlocked,onHeaderMeta,breadcrumbSlot,presenceTarget,toolbarActionsSlot,activeSwitch,switchPending,navRef,liveRef,registerEnterCancel}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open:boolean;kind:string;id:string;onNavigationBlocked:(blocked:boolean)=>void;onHeaderMeta:(meta:HeaderMeta)=>void;breadcrumbSlot:HTMLElement|null;presenceTarget:HTMLElement|null;toolbarActionsSlot:HTMLElement|null;activeSwitch:SwitchState|null;switchPending:boolean;navRef:RefObject<HTMLDivElement|null>;liveRef:RefObject<HTMLDivElement|null>;registerEnterCancel:(cancel:()=>void)=>void}){
+function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNavigationBlocked,onHeaderMeta,breadcrumbSlot,presenceTarget,toolbarActionsSlot,activeSwitch,switchPending,holdMenuPlace,navRef,liveRef,registerEnterCancel}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open:boolean;kind:string;id:string;onNavigationBlocked:(blocked:boolean)=>void;onHeaderMeta:(meta:HeaderMeta)=>void;breadcrumbSlot:HTMLElement|null;presenceTarget:HTMLElement|null;toolbarActionsSlot:HTMLElement|null;activeSwitch:SwitchState|null;switchPending:boolean;holdMenuPlace:boolean;navRef:RefObject<HTMLDivElement|null>;liveRef:RefObject<HTMLDivElement|null>;registerEnterCancel:(cancel:()=>void)=>void}){
   const pendingOperation=useReadOnlyOperation();
   const [readOnlyActionTarget,setReadOnlyActionTarget]=useState<HTMLDivElement|null>(null);
   const [tab,setTab]=useState('activity'),[copied,setCopied]=useState(false),[attachmentCount,setAttachmentCount]=useState<number|null>(null),[conversationCount,setConversationCount]=useState<number|null>(null),[reviewReadState,setReviewReadState]=useState<StepReadState>('pending');
@@ -312,6 +315,15 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
   // Reset scroll to top once per item and play the C2 body enter transition once content is ready for a switched item.
   const switchSeq=activeSwitch?.seq??-1,switchDir=activeSwitch?.direction;
   const errorWithoutDetail=Boolean(result.isError&&!detail),scrolledTopRef=useRef(false);
+  // A switched-to item keeps the 「更多工单操作」 box (invisible while empty) until its own reads settle and its
+  // portalled actions have had a frame to mount; an item whose settled menu is empty then drops it as on a direct open.
+  const actionsReady=(detailPresent&&!loading.visible&&stepReadState!=='pending')||errorWithoutDetail;
+  const [menuPlaceReleased,setMenuPlaceReleased]=useState(false);
+  useEffect(()=>{
+    if(!holdMenuPlace||!actionsReady||menuPlaceReleased)return;
+    const frame=requestAnimationFrame(()=>setMenuPlaceReleased(true));
+    return()=>cancelAnimationFrame(frame);
+  },[holdMenuPlace,actionsReady,menuPlaceReleased]);
   useLayoutEffect(()=>{
     if(!open||fullPage||loading.visible)return;
     if(!scrolledTopRef.current){
@@ -329,6 +341,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
   const heat=detail?cardHeat(detail.item,now):null;
   // Card 29 D1/D2: a dismissed item is gray 「已关闭」, not the completed stage, and its next step is the neutral restore card.
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
+  const restoreRecovery=useItemUndoRecovery(principal.principal_id,'restore',detail?.item,detail?.requested_item);
   const actions=commandRead.data?.allowed_actions??[];
   // These are the existing caller-only HANDLING fact and original action admission, never a display-name identity comparison.
   const assignedName=detail?.item.column==='active'&&detail.item.attention&&!detail.item.attention.related_reasons.includes('HANDLING')&&commandRead.isSuccess&&!actions.includes('complete')?detail.item.assignee_name??undefined:undefined;
@@ -344,7 +357,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
   },[pendingOperation]);
   const confirmOriginal=()=>confirmation?.click();
   const breadcrumbExtras=<>{readonly?<ReadOnlyBadge/>:null}<HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void navigator.clipboard.writeText(number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></>;
-  const toolbarExtras=<>{detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={open&&result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}<DrawerMoreActions><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>{result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}</>;
+  const toolbarExtras=<>{detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={open&&result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}<DrawerMoreActions holdPlace={holdMenuPlace&&!menuPlaceReleased}><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>{result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}</>;
   const content=<DetailDialogProvider>
     {breadcrumbSlot?createPortal(breadcrumbExtras,breadcrumbSlot):null}
     {toolbarActionsSlot?createPortal(toolbarExtras,toolbarActionsSlot):null}
@@ -354,7 +367,7 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
       <ActivityPeople principal={principal} target={{kind:detail.item.kind,id:detail.item.id}} root={activityRoot} readReady={open&&result.isSuccess&&!result.isError} capsuleTarget={presenceTarget}/>
       {boardIntent&&boardSelector&&cancelledBoardIntent!==boardIntentKey?<BoardActionNotice intent={boardIntent} selector={boardSelector} currentColumn={result.isSuccess&&!result.isError?detail.item.column:undefined} onCancel={()=>setCancelledBoardIntent(boardIntentKey)}/>:null}
       <NextStep key={principal.principal_id+':steps:'+kind+':'+id} status={detail.item.status} stage={detail.item.column} dismissed={Boolean(dismissed)} summary={dismissed?<><span className="ds-next-step-kicker">已关闭 · 不计入完成数</span><span className="ds-next-step-message" data-closure-summary>{closureReasonText(dismissed)+(dismissedOriginal?' · '+dismissedOriginal:'')}</span></>:<><span className="ds-next-step-message">{nextSummary(detail.item,heat?.label,detail.item.attention?.related_reasons.includes('HANDLING')===true,commandRead.data?.allowed_actions)}</span>{detail.item.follow_up_schedule?<span className="ds-next-step-follow-up"><span className="ds-next-step-separator"> · </span>下次跟进 <BeijingTime value={detail.item.follow_up_schedule.due_at} now={now}/></span>:null}</>} readState={stepReadState} reopenTarget={readonly==='completed'?readOnlyActionTarget:null} takeoverTarget={readonly==='assigned'?readOnlyActionTarget:null} unavailableAction={readonly==='assigned'&&!actions.includes('complete')?<ReadOnlyButton tone="primary" reason={(assignedName??'处理人')+'已接手，只有处理人可以登记完工'}>登记完工</ReadOnlyButton>:undefined}>
-      {dismissed?<StepEntry action="restore" label="恢复">{()=> <RestoreClosedItem item={detail.item} principal={principal} inline/>}</StepEntry>:null}
+      {dismissed||restoreRecovery?.unknown?<StepEntry action="restore" label="恢复">{()=> <RestoreClosedItem item={detail.item} principal={principal} requested={detail.requested_item} inline/>}</StepEntry>:null}
         {detail.item.kind==='ticket'?<>          {principal.ticket_assignment_enabled?<TicketAssignment key={principal.principal_id+':assignment:'+detail.item.id} ticketId={detail.item.id} principal={principal} itemLabel={detail.item.number+' · '+detail.item.title} otherBlocked={blockedByOther('assignment')} onBlockedChange={setAssignmentBlocked}/>:null}
           {principal.ticket_conversation_self_handling_enabled?<TicketConversationHandling boardMode={boardMode} key={principal.principal_id+':conversation-handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:principal.ticket_self_handling_enabled?<TicketSelfHandling boardMode={boardMode} key={principal.principal_id+':handling:'+detail.item.id} ticketId={detail.item.id} principal={principal} otherBlocked={blockedByOther('handling')} onBlockedChange={setHandlingBlocked}/>:null}
           {detail.item.kind==='ticket'&&principal.ticket_staff_completion_enabled&&!boardMode?<TicketCompletion presentation="dialog" onOpenChange={setCompletionOpen} key={principal.principal_id+':completion:'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setCompletionBlocked}/>:null}

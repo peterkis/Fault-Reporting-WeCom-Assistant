@@ -74,7 +74,7 @@ export async function capture(
   );
   for (const s of selected) {
     console.log('Capturing ' + s.name);
-    await withVisualFixture(async (f) => {
+    await withVisualFixture(s.prepare, async (f) => {
       const cookie = f.browserCookies[0];
       assert.ok(cookie);
       const b = await launchSystemBrowser({

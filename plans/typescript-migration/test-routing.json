@@ -23,6 +23,60 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card37a-store.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37a-optimistic.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37a-motion.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37a-recovery.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/card37a-notification-undo-window.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/card37a-notification-undo-window.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-motion-policy.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9159,6 +9213,8 @@
       "tests/t11-completion.integration.test.mts"
     ],
     "pr-notification": [
+      "tests/card37a-notification-undo-window.test.mts",
+      "tests/card37a-notification-undo-window.integration.test.mts",
       "tests/mvp-notification-policy.integration.test.mts",
       "tests/mvp-group-replies.integration.test.mts",
       "tests/mvp-application-members.integration.test.mts",
@@ -9199,6 +9255,10 @@
     ],
     "pc-admin-motion": [
       "tests/pc-admin-card37c-hovercard.browser.test.mts",
+      "tests/pc-admin-card37a-store.test.mts",
+      "tests/pc-admin-card37a-optimistic.browser.test.mts",
+      "tests/pc-admin-card37a-motion.browser.test.mts",
+      "tests/pc-admin-card37a-recovery.browser.test.mts",
       "tests/pc-admin-motion-policy.test.mts",
       "tests/pc-admin-motion-tools.test.mts",
       "tests/pc-admin-card36a-motion.browser.test.mts",

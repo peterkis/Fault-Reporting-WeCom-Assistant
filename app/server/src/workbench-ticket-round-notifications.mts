@@ -5,16 +5,17 @@ import {FIRST_HANDLING_EVENT_SQL,groupNotificationTargetKey} from './mvp-notific
 import type {GroupNotificationTarget} from './mvp-notification-policy.mjs';
 import {appendCommunication} from './p2-004-communication-core.mjs';
 import {failP2016,transactionP2016,textHashP2016,localP2016,versionP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
-import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
+import {addEpochMilliseconds,formatEpochMsToShanghaiLocal,shanghaiLocalToEpochMs} from './platform/time-contract.mjs';
 import type {TicketAppNotificationOptions} from '../../../contracts/workbench_app_notification_contracts.js';
 import {normalizeAppNotificationOptions,resolveOriginalAppTarget} from './workbench-app-notification-target.mjs';
 import {cancelUnattemptedDeliveryInTransaction} from './p2-004-communication-delivery-worker.mjs';
+import {CLAIM_RETURN_WINDOW_SQL,DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS,delayDeliveryInTransaction,normalizeNotificationUndoWindowMs} from './notification-undo-window.mjs';
 
 export const ROUND_NOTIFICATION_MIGRATION_ID='041_ticket_round_notifications';
 export type RoundNotificationNode='FIRST_RESPONSIBILITY'|'FIRST_HANDLING'|'STAFF_COMPLETED';
 export interface OriginalBotSource {bot_id:string;reporter_user_id:string;group_id:string|null;retention_epoch:string;journey_id:string|null}
 interface Candidate {cycle_id:string;ticket_id:string;source_intake_id:string;event_id:string;node:RoundNotificationNode;cycle_no:number;ticket_no:string;event_status:'QUEUED'|'ACCEPTED'|'IN_PROGRESS'|'COMPLETED';created_at:string;aggregate_version:number}
-interface RoundOptions {mvpPolicy?:boolean;groupNotificationTargets?:readonly GroupNotificationTarget[];pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined;appNotifications?:TicketAppNotificationOptions|null}
+interface RoundOptions {mvpPolicy?:boolean;groupNotificationTargets?:readonly GroupNotificationTarget[];pool:PostgresPool;enabled?:boolean;botId:string;reporterAccess:Pick<ReporterAccess,'ensurePublicRefInTransaction'>;templateVersion?:string;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;communicationAppend?:typeof appendCommunication|undefined;appNotifications?:TicketAppNotificationOptions|null;claimNotificationUndoWindowMs?:number}
 
 export async function roundNotificationSchemaReady(tx:PostgresTransaction){
   try{return (await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('031_p2_016_ticket_lifecycle_workbench_notifications','039_ticket_self_handling_cycles','040_ticket_staff_completion','041_ticket_round_notifications','052_ticket_group_round_notifications')")).rowCount===5;}catch{return false;}
@@ -40,10 +41,11 @@ export async function readOriginalSingleBotSource(tx:PostgresTransaction,intakeI
   const source=await readOriginalBotSource(tx,intakeId,botId);return source?.group_id===null?source:null;
 }
 
-export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,mvpPolicy=false,groupNotificationTargets=[],templateVersion=mvpPolicy?'mvp-round-notification/1':'wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication,appNotifications=null}:RoundOptions){
+export function createTicketRoundNotifications({pool,enabled=false,botId,reporterAccess,mvpPolicy=false,groupNotificationTargets=[],templateVersion=mvpPolicy?'mvp-round-notification/1':'wbint-round-notification/1',personDestinationAuthorizer=null,communicationAppend=appendCommunication,appNotifications=null,claimNotificationUndoWindowMs}:RoundOptions){
   if(typeof enabled!=='boolean'||typeof botId!=='string'||!botId||botId.length>128||typeof templateVersion!=='string'||! /^[A-Za-z0-9_/-]{1,64}$/u.test(templateVersion)
     ||personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('FLAG_INVALID',503);
   if(typeof mvpPolicy!=='boolean'||!Array.isArray(groupNotificationTargets)||groupNotificationTargets.length>32)failP2016('FLAG_INVALID',503);
+  const claimWindowMs=normalizeNotificationUndoWindowMs(claimNotificationUndoWindowMs,DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS);
   const groupTargets=new Set(groupNotificationTargets.map(v=>groupNotificationTargetKey(v.botId,v.groupId)));
   const app=normalizeAppNotificationOptions(appNotifications);
   let after:{cycleId:string;node:RoundNotificationNode}|null=null,busy=false;
@@ -103,6 +105,13 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
               WHERE r.cycle_id=$1::uuid AND r.node='FIRST_RESPONSIBILITY' AND r.destination_type='PERSON'
                 AND NOT(d.status='CANCELLED' AND d.side_effect_state='NOT_ATTEMPTED')`,[candidate.cycle_id])).rowCount)return false;
             }
+            const claimDeadline=candidate.node==='FIRST_HANDLING'&&claimWindowMs>0
+              ?addEpochMilliseconds(shanghaiLocalToEpochMs(localP2016(candidate.created_at)),claimWindowMs):null;
+            if(claimDeadline&&(await tx.query(`SELECT 1 FROM pilot_ticket.ticket_handling_cycle_event rce
+              JOIN pilot_ticket.ticket_event returned ON returned.event_id=rce.ticket_event_id AND returned.ticket_id=rce.ticket_id
+              JOIN pilot_ticket.ticket_event claimed ON claimed.event_id=$2::uuid AND claimed.ticket_id=rce.ticket_id
+              WHERE rce.cycle_id=$1::uuid AND returned.event_type='ticket.returned_to_dispatch'
+                AND ${CLAIM_RETURN_WINDOW_SQL} LIMIT 1`,[candidate.cycle_id,candidate.event_id,claimWindowMs])).rowCount)return false;
             const source=await readOriginalBotSource(tx,candidate.source_intake_id,botId);
             if(!source){
               if((await tx.query("SELECT 1 FROM communication.ticket_round_notification_binding WHERE cycle_id=$1::uuid AND node=$2 AND destination_type='PERSON'",[candidate.cycle_id,candidate.node])).rowCount)return false;
@@ -116,6 +125,7 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                   occurred_at:localP2016(candidate.created_at),version:versionP2016(candidate.aggregate_version),notification_type:notificationType},
                 retention_until:formatEpochMsToShanghaiLocal(target.source.retention_epoch),retention_until_epoch_ms:target.source.retention_epoch},resolvedDestinations:[target.target]});
               if(!message||!('message_id' in message)||!message.outbox_id||message.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
+              if(claimDeadline)await delayDeliveryInTransaction({transaction:tx,deliveryId:message.delivery_ids[0] as string,nextAttemptEpochMs:claimDeadline});
               const notificationId=(await tx.query<{id:string}>(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
                 VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5,$6::uuid,$7::uuid,$8::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,templateVersion,message.message_id,message.outbox_id,message.delivery_ids[0]])).rows[0]?.id;
               if(!notificationId)failP2016('NOTIFICATION_FAILED',503);
@@ -145,8 +155,10 @@ export function createTicketRoundNotifications({pool,enabled=false,botId,reporte
                 retention_until:formatEpochMsToShanghaiLocal(source.retention_epoch),retention_until_epoch_ms:source.retention_epoch},
                 resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.bot_id,target_type:route,target_id:route==='GROUP'?source.group_id??'':source.reporter_user_id}]});
               if(!message||!('message_id' in message)||!message.outbox_id||message.delivery_ids.length!==1)failP2016('NOTIFICATION_FAILED',503);
+              const createdDeliveryId=message.delivery_ids[0] as string;
+              if(claimDeadline&&route==='PERSON')await delayDeliveryInTransaction({transaction:tx,deliveryId:createdDeliveryId,nextAttemptEpochMs:claimDeadline});
               notificationId=(await tx.query<{id:string}>(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
-                VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7::uuid,$8::uuid,$9::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,route,templateVersion,message.message_id,message.outbox_id,message.delivery_ids[0]])).rows[0]?.id;
+                VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7::uuid,$8::uuid,$9::uuid) RETURNING id::text`,[candidate.event_id,candidate.ticket_id,notificationType,binding,route,templateVersion,message.message_id,message.outbox_id,createdDeliveryId])).rows[0]?.id;
               if(!notificationId)failP2016('NOTIFICATION_FAILED',503);
             }
             await tx.query(`INSERT INTO communication.ticket_round_notification_binding(ticket_id,cycle_id,node,recipient_binding_hash,destination_type,notification_binding_id)

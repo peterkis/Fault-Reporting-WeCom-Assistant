@@ -1,6 +1,6 @@
 # Card 37C final review
 
-**Disposition: changes required.** The reviewer’s current-tree Chrome runs passed all 28 hover-card checks and all 30 Card 30B/31/36A/36C regression checks. The department endpoint passed 7/7 in isolated PostgreSQL integration. One high-priority privacy issue remains in the ticket-number search cache. The passing suites do not exercise reuse of that cache after a permission change. [Capture inventory and full-manifest comparison](README.md)
+**Disposition: changes required.** The reviewer’s current-tree Chrome runs passed all 28 hover-card checks and all 30 Card 30B/31/36A/36C regression checks. The department endpoint passed 7/7 in isolated PostgreSQL integration. One high-priority privacy issue remains in the ticket-number search cache. The passing suites do not exercise reuse of that cache after a permission change. [Capture inventory and full-manifest comparison](card37c-hover.md)
 
 ## Remaining findings
 
@@ -30,4 +30,4 @@
 
 **Round 5 visual check.** The refreshed ticket capture shows the full number beside the 28 px category tile. The denied card uses the same width. The person capture shows centred statistics and a full-width single filter button. Header and row spacing, typography, action height and hairline use design tokens. [Ticket header and row, line 140](../../../../app/pc-admin/src/features/hover-cards/hover-cards.css#L140) · [person actions, line 121](../../../../app/pc-admin/src/features/hover-cards/hover-cards.css#L121)
 
-**Execution.** The reviewer captured the browser evidence on macOS 26.6.2 with Chrome 158.0.8127.37. This review inspected source and receipts, decoded all evidence PNGs, and ran the compiled department and copy suites against the existing artifact. They passed 7/7 and 8/8 respectively. A separate isolated HTTP read confirmed the 404 code above. Production code, tests, captures and baselines were left to their owners. [Evidence and comparison results](README.md)
+**Execution.** The reviewer captured the browser evidence on macOS 26.6.2 with Chrome 158.0.8127.37. This review inspected source and receipts, decoded all evidence PNGs, and ran the compiled department and copy suites against the existing artifact. They passed 7/7 and 8/8 respectively. A separate isolated HTTP read confirmed the 404 code above. Production code, tests, captures and baselines were left to their owners. [Evidence and comparison results](card37c-hover.md)

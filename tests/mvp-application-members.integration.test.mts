@@ -55,7 +55,8 @@ test('MVP H5 admits unlisted visible members through real OAuth and HTTP; durabl
   const token=async()=> 'MVP_SYNTHETIC_APP_TOKEN',verify=createApplicationMemberVerifier({accessTokenProvider:token,fetchImpl});
   const mapping=await createYxxDelegatedIdentityMapping({config,accessTokenProvider:token,fetchImpl});assert.equal(paths.length,0);
   const options={memberEntry:config,appChannelAccountId:'mvp-app',notificationBindingsFile:'D:/synthetic-missing-not-used.json'};
-  const appNotifications=createWorkbenchNotificationOptions(options,entryKey),round=createTicketRoundNotifications({pool:context.pool,enabled:true,mvpPolicy:true,botId:'bot-test',reporterAccess:context.runtime.reporterAccess,appNotifications});
+  // This independent projector drives immediate delivery attempts during member-verifier outages.
+  const appNotifications=createWorkbenchNotificationOptions(options,entryKey),round=createTicketRoundNotifications({pool:context.pool,enabled:true,mvpPolicy:true,claimNotificationUndoWindowMs:0,botId:'bot-test',reporterAccess:context.runtime.reporterAccess,appNotifications});
   const makeApp=()=>{
    const oauth=createWeComWebOAuth({enabled:true,corpId:config.corpId,agentId:config.agentId,publicOrigin:origin,resolveCode:async code=>({userid:code==='A'?'open-new-a':'open-new-b'})});assert.ok(oauth.enabled);
    const extension=createYxxSelfServiceExtension({pool:context.pool,oauth,publicOrigin:origin,reporterMemberEntry:config,identityMapping:mapping,reporterHmacSecret:entryKey,

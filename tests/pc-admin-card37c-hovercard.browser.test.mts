@@ -355,7 +355,7 @@ test('37C hover-card C4 browser acceptance',{timeout:600000},t=>withWeb01Fixture
       assert.deepEqual(await browser.evaluate('probe37.mounts'),[]);assert.deepEqual(await browser.evaluate('probe37.requests'),[]);
     });
     const expectedFiles=[...names.map(n=>n+'.png'),'filmstrip/hovercard-enter.png','filmstrip/hovercard-enter.json'];
-    await writeFile(join(evidence,'README.md'),[
+    await writeFile(join(evidence,'card37c-hover.md'),[
       '# Card 37C hover evidence','','| File | Capture | OS and browser |','| --- | --- | --- |',
       ...expectedFiles.map(name=>'| '+name+' | '+(saved.has(name)?'Captured':'Missing in this run')+' | '+system+' |'),'',
       '## Popover motion','','| Phase | 36A duration and curve | Measured |','| --- | --- | --- |',
