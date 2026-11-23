@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
-import {platform,release} from 'node:os';
+import {mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
+import {platform,release,tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {waitForAnimationsSettled} from './browser-animations.mjs';
 import {type Browser,type Scene,visible,follow,heading,toast,withScene} from './card37a-optimistic-fixture.mjs';
@@ -126,17 +127,24 @@ export async function capture(b:Browser,name:string,selector:string){
   const png=Buffer.from(await b.screenshot(),'base64');
   assert.equal(await b.evaluate(painted),true,name+' remained visible during capture');
   assert.equal(png.subarray(1,4).toString(),'PNG');
-  const dir=join(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),'docs/ui/evidence/v230-card37');
+  // Like the other card suites, ordinary runs (CI included) write evidence to a run-owned temp
+  // directory so tracked files never change; set CARD37B_EVIDENCE_DIR=docs/ui/evidence/v230-card37
+  // (relative to the source root) to regenerate the committed screenshots and README rows.
+  const dir=evidenceDir??=process.env.CARD37B_EVIDENCE_DIR
+    ?join(process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd(),process.env.CARD37B_EVIDENCE_DIR)
+    :await mkdtemp(join(tmpdir(),'card37b-evidence-'));
   await mkdir(dir,{recursive:true});
   const version:unknown=await b.command('Browser.getVersion');
   assert.ok(version&&typeof version==='object'&&'product' in version&&typeof version.product==='string');
-  const readme=join(dir,'README.md'),before=await readFile(readme,'utf8');
-  const prefix='| `'+name+'.png` |';
-  assert.equal(before.split('\n').filter(line=>line.startsWith(prefix)).length,1);
   await writeFile(join(dir,name+'.png'),png);
+  const readme=join(dir,'README.md');
+  if(!existsSync(readme)){console.log('CARD37B_EVIDENCE '+JSON.stringify({name,file:join(dir,name+'.png')}));return;}
+  const before=await readFile(readme,'utf8'),prefix='| `'+name+'.png` |';
+  assert.equal(before.split('\n').filter(line=>line.startsWith(prefix)).length,1);
   const line=prefix+' '+platform()+' '+release()+' | '+version.product+' |';
   await writeFile(readme,before.split('\n').map(old=>old.startsWith(prefix)?line:old).join('\n'));
 }
+let evidenceDir:string|undefined;
 
 // Use the DOM clock for lifetime, independent of CDP polling or screenshot I/O.
 // The end is removal (includes the 36A exit transition).

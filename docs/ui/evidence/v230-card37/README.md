@@ -111,10 +111,11 @@ The B5 browser suite records the host OS release and Chrome product version besi
 
 All seven captures wait for the whole viewport to settle. The dialog and capsule captures also check opacity through their ancestors. `menu-kbd.png` shows the real menu on a single-result active board, with every item hit-tested. The separate R3 last-pending-card test exercises the unfiltered board where the disclosure clips the menu.
 
-Run from the worktree after `npm run migration:build`.
+Run from the worktree after `npm run migration:build`. Ordinary runs (CI included) write the screenshots to a temporary directory; set `CARD37B_EVIDENCE_DIR=docs/ui/evidence/v230-card37` to regenerate the committed files and the rows above.
 
 ```sh
 export TS_MIGRATION_TEST_SOURCE_ROOT="$PWD"
+export CARD37B_EVIDENCE_DIR=docs/ui/evidence/v230-card37
 export PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres
 node --test --test-concurrency=1 \
   .build/runtime/tests/pc-admin-card37b-keys.browser.test.mjs \
