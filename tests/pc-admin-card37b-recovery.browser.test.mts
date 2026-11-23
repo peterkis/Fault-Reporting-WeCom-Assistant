@@ -15,6 +15,7 @@ import {
   seen,
   undoFor,
   drawerFollow,
+  followDrawerReady,
   checkFollow,
   withTimedOutFollowPreparation,
   takeoverSection,
@@ -187,7 +188,7 @@ test('37B R9 releasing a preparation preserves the first F on a different open t
     const other = await seedMotionTicket(f.pool, '独立草稿版本验收');
     const peer = await yxxTab(b, f.origin + '/workbench/app/items/ticket/' + other + '?range=all');
     try {
-      await peer.waitFor(query(drawerFollow) + '?.disabled === false');
+      await peer.waitFor(followDrawerReady);
       await peer.evaluate(`(() => {
         const original = window.fetch;
         window.peerWrites = [];
@@ -201,23 +202,24 @@ test('37B R9 releasing a preparation preserves the first F on a different open t
         };
         const channel = new BroadcastChannel('wecom-workbench-drafts-v1');
         channel.onmessage = ({data}) => {
-          if (data.reason === 'released' && data.id === ${JSON.stringify(id)} && data.purpose === 'item-follow') {
+          if (data.reason === 'released' && data.epochChanged === true && data.id === ${JSON.stringify(id)} && data.purpose === 'item-follow') {
             window.otherFollowReleased = true;
             channel.close();
           }
         };
       })()`);
-      await b.evaluate('releaseFollowPreparation()');
-      await b.waitFor(query(drawerFollow) + '?.disabled === false');
-      await peer.waitFor('window.otherFollowReleased === true');
       await peer.command('Page.bringToFront');
       await peer.evaluate(query('.detail-dialog [aria-label=复制编号]') + '.focus()');
+      await b.evaluate('releaseFollowPreparation()');
+      // Preparation and cleanup both broadcast "released". Only cleanup rotates the epoch.
+      await peer.waitFor('window.otherFollowReleased === true');
       for (const type of ['keyDown', 'keyUp']) {
         await peer.command('Input.dispatchKeyEvent', {type, key: 'f', code: 'KeyF', windowsVirtualKeyCode: 70});
       }
       await peer.waitFor(visible(undoFor('item-follow')) + ' || ' + heading('item-follow') + ' === "关注没有提交"');
       assert.deepEqual(await peer.evaluate('peerWrites'), [['POST', '/api/workbench/items/ticket/' + other + '/follow', 200]]);
       assert.equal(await peer.evaluate(visible(undoFor('item-follow'))), true);
+      await b.waitFor(query(drawerFollow) + '?.disabled === false');
       assert.deepEqual(await b.evaluate(writeLog), [], 'the released preparation sent no command');
       const response = await http.get('/api/workbench/items/ticket/' + other);
       assert.equal(response.status, 200);
@@ -265,7 +267,7 @@ test('37B R9 original drawer can retry an aborted cleanup with its original UUID
     assert.deepEqual(await b.evaluate(savedIds), [originalId]);
     assert.equal(await b.evaluate(query(drawerFollow) + '.disabled'), true);
     await clickWorkbenchControl(b, checkFollow);
-    await b.waitFor('!' + seen(checkFollow) + ' && ' + query(drawerFollow) + '?.disabled === false');
+    await b.waitFor('!' + seen(checkFollow) + ' && ' + followDrawerReady);
     assert.deepEqual(await b.evaluate(savedIds), [], 'the retry retired the original unsent UUID');
     assert.deepEqual(await b.evaluate(writeLog), [], 'checking an unsent preparation never posts a follow');
     assert.equal(await b.evaluate(seen(undoFor('item-follow'))), false);
@@ -289,11 +291,11 @@ const draftEpoch = `new Promise((resolve, reject) => {
 async function withOtherFollowDrawer(run: (s: Scene, sender: Awaited<ReturnType<typeof yxxTab>>, senderId: string) => Promise<void>) {
   await withScene(async s => {
     await target(s, 'drawer');
-    await s.b.waitFor(query(drawerFollow) + '?.disabled === false');
+    await s.b.waitFor(followDrawerReady);
     const senderId = await seedMotionTicket(s.f.pool, '另一个窗口的关注操作');
     const sender = await yxxTab(s.b, s.f.origin + '/workbench/app/items/ticket/' + senderId + '?range=all');
     try {
-      await sender.waitFor(query(drawerFollow) + '?.disabled === false');
+      await sender.waitFor(followDrawerReady);
       await s.b.command('Page.bringToFront');
       await waitForAnimationsSettled(s.b);
       await s.b.evaluate(query('.detail-dialog [aria-label=复制编号]') + '.focus()');

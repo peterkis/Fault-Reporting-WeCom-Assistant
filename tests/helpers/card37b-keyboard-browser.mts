@@ -177,11 +177,17 @@ export async function number(s:Scene,id:string,kind:string){
 export const drawerFollow = '.detail-dialog ' + follow;
 export const checkFollow = '.detail-dialog [data-action=follow-ack]';
 
+// In these fresh pending-ticket fixtures Follow is enabled on the toolbar
+// before the body mounts. Assignment draft restoration briefly pauses shortcuts.
+export const followDrawerReady =
+  query('.detail-dialog[data-dismiss-blocked=false] [data-action=open-assignment]') + '?.disabled === false && ' +
+  query(drawerFollow) + '?.disabled === false';
+
 export async function withTimedOutFollowPreparation(run: (s: Scene, originalId: string) => Promise<void>) {
   await withScene(async s => {
     const {b, id} = s;
     await target(s, 'drawer');
-    await b.waitFor(query(drawerFollow) + '?.disabled === false');
+    await b.waitFor(followDrawerReady);
     await record(b);
     // IndexedDB commits normally in the shared profile. Delay only the original
     // controller's notification, so a second tab can read the genuine saved command.

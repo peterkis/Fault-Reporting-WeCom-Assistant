@@ -18,6 +18,7 @@ import {
   seen,
   undoFor,
   drawerFollow,
+  followDrawerReady,
   checkFollow,
   withTimedOutFollowPreparation,
 } from './helpers/card37b-keyboard-browser.mjs';
@@ -260,7 +261,7 @@ for (const stage of ['session read', 'encrypted preparation'] as const) {
     await target(s, 'drawer');
     const toggle = '.detail-dialog ' + follow;
     const check = '.detail-dialog [data-action=follow-ack]';
-    await b.waitFor(query(toggle) + '?.disabled === false');
+    await b.waitFor(followDrawerReady);
     await record(b);
     await b.evaluate(`(() => {
       const state = window.r5Preflight = {};
@@ -317,6 +318,7 @@ for (const stage of ['session read', 'encrypted preparation'] as const) {
     await b.waitFor(query(toggle) + '?.disabled === false || (' + visible(check) + ' && ' + query(check) + '?.disabled === false)');
     assert.equal(await b.evaluate(visible(check)), false, 'an unsent follow has no receipt to check');
     assert.equal(await b.evaluate(query(toggle) + '.disabled'), false, 'fresh follow is available');
+    await b.waitFor(followDrawerReady);
     await record(b);
     await key(b, 'f');
     await b.waitFor(visible(undoFor('item-follow')));
@@ -331,7 +333,7 @@ test('37B R8 follow retry stays disabled until the unsent preparation releases',
     await b.waitFor(title(hint) + ' === "这张工单现在不能关注"');
     assert.deepEqual(await b.evaluate(writeLog), [], 'F cannot start a second command during preparation');
     await b.evaluate('releaseFollowPreparation()');
-    await b.waitFor(query(drawerFollow) + '?.disabled === false');
+    await b.waitFor(followDrawerReady);
     assert.equal(await b.evaluate(seen(checkFollow)), false, 'the unsent UUID has retired');
     await key(b, 'f');
     await b.waitFor(visible(undoFor('item-follow')));
