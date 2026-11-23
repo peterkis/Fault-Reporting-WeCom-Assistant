@@ -9,7 +9,7 @@ export interface KeyboardItemRef {
   id: string;
 }
 
-export type DetailPendingAction = 'transfer' | 'complete' | 'note';
+export type DetailPendingAction = 'claim' | 'transfer' | 'complete' | 'note';
 
 export interface PendingDetailIntent {
   principalId: string;
@@ -21,6 +21,17 @@ export interface PendingDetailIntent {
 
 export type TicketCommandAction = 'claim' | 'transfer' | 'complete' | 'note' | 'close';
 export type TicketActionAdmission = 'allowed' | 'denied' | 'pending' | 'error';
+
+export function hasSelfHandlingClaimAdmission(
+  principal: Principal,
+  allowed: readonly string[],
+): boolean {
+  return Boolean(
+    (principal.ticket_self_handling_enabled && allowed.includes('take-and-start')) ||
+      (principal.ticket_conversation_self_handling_enabled &&
+        allowed.includes('take-and-start-with-conversations')),
+  );
+}
 
 export function evaluateTicketCommandAdmission(
   principal: Principal,
@@ -139,6 +150,11 @@ export interface DetailFollowController {
   trigger: () => boolean;
 }
 
+export interface DetailTakeoverController {
+  status: 'available' | 'pending' | 'error' | 'unavailable';
+  open: () => boolean;
+}
+
 let currentTarget: KeyboardItemRef | null = null;
 const targetListeners = new Set<() => void>();
 
@@ -233,6 +249,7 @@ export function getDetailKeyboardBridge(): DetailKeyboardBridge | null {
 const detailTransferHandlers = new Map<string, () => boolean>();
 const detailCompleteHandlers = new Map<string, () => boolean>();
 const detailFollowHandlers = new Map<string, DetailFollowController>();
+const detailTakeoverHandlers = new Map<string, DetailTakeoverController>();
 const detailNoteHandlers = new Map<string, () => boolean>();
 
 export function registerDetailTransfer(ticketId: string, fn: (() => boolean) | null) {
@@ -278,6 +295,26 @@ export function getDetailFollowController(itemKey: string): DetailFollowControll
   return detailFollowHandlers.get(itemKey) ?? null;
 }
 
+export function registerDetailTakeover(
+  ticketId: string,
+  controller: DetailTakeoverController | null,
+) {
+  const prev = detailTakeoverHandlers.get(ticketId);
+  if (controller) {
+    detailTakeoverHandlers.set(ticketId, controller);
+    if (!prev || prev.status !== controller.status) {
+      notifyBridgeListeners();
+    }
+  } else if (prev) {
+    detailTakeoverHandlers.delete(ticketId);
+    notifyBridgeListeners();
+  }
+}
+
+export function getDetailTakeoverController(ticketId: string): DetailTakeoverController | null {
+  return detailTakeoverHandlers.get(ticketId) ?? null;
+}
+
 export function registerDetailNoteFocus(ticketId: string, fn: (() => boolean) | null) {
   if (fn) detailNoteHandlers.set(ticketId, fn);
   else detailNoteHandlers.delete(ticketId);
@@ -319,6 +356,13 @@ export function getPendingDetailIntent(): PendingDetailIntent | null {
 
 export function clearPendingDetailIntent(expectedSeq?: number) {
   if (!pendingIntent) return;
+  if (expectedSeq !== undefined && pendingIntent.seq !== expectedSeq) return;
+  pendingIntent = null;
+  notifyIntentListeners();
+}
+
+export function clearPendingClaimIntent(expectedSeq?: number) {
+  if (!pendingIntent || pendingIntent.action !== 'claim') return;
   if (expectedSeq !== undefined && pendingIntent.seq !== expectedSeq) return;
   pendingIntent = null;
   notifyIntentListeners();
@@ -424,6 +468,13 @@ export async function copyItemNumber(number: string): Promise<boolean> {
     emitShortcutHint('无法复制工单编号，请选中编号后手动复制');
   }
   return copied;
+}
+
+export const EDITABLE_ELEMENT_SELECTOR =
+  'input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox],[role=combobox],[role=spinbutton]';
+
+export function isEditableElement(el: Element | null): boolean {
+  return Boolean(el && el.closest(EDITABLE_ELEMENT_SELECTOR));
 }
 
 export const BLOCKING_OVERLAYS =

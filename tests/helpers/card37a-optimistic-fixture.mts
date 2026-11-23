@@ -51,7 +51,7 @@ export const badge=(card:string)=>card+' [data-optimistic-badge]';
 export const moving=(selector:string)=>query(selector)+`?.getAnimations().some(a=>a.effect.getKeyframes()
   .some(f=>typeof f.transform==='string'&&f.transform.startsWith('translate(')))`;
 
-export async function withScene(run:(s:Scene)=>Promise<void>, options:{keyboard?:boolean;followEnabled?:boolean;canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean}={}) {
+export async function withScene(run:(s:Scene)=>Promise<void>, options:{keyboard?:boolean;followEnabled?:boolean;canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean;takeover?:boolean}={}) {
   await withWeb01Fixture(async (base:T11Fixture)=>{
     await base.runtime.stop();
     const [actor,peer]=base.principals;assert.ok(actor&&peer);
@@ -60,6 +60,7 @@ export async function withScene(run:(s:Scene)=>Promise<void>, options:{keyboard?
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}, externalSendEnabled:false,
       principalIds:[actor.id,base.outsider.id,peer.id],
       ticketSelfHandlingEnabled:true, ticketReturnToDispatchEnabled:options.canReturn!==false,
+      ticketTakeoverEnabled:options.takeover===true,
       ticketConversationSelfHandlingEnabled:options.conversationClaim===true,
       workbenchDraftRecoveryEnabled:options.draftRecovery===true,
       ticketWaitingActionsEnabled:true, workbenchInternalNotesEnabled:true,

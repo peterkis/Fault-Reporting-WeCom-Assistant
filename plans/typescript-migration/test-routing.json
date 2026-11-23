@@ -5,7 +5,34 @@
   "legacy_entry_count": 207,
   "entries": [
     {
-      "path": "tests/pc-admin-card37b-keyboard.browser.test.mts",
+      "path": "tests/pc-admin-card37b-keys.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37b-surfaces.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37b-pauses.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card37b-recovery.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
       "requires_database": true,
@@ -9272,7 +9299,10 @@
       "tests/visual-regression.test.mts"
     ],
     "pc-admin-motion": [
-      "tests/pc-admin-card37b-keyboard.browser.test.mts",
+      "tests/pc-admin-card37b-keys.browser.test.mts",
+      "tests/pc-admin-card37b-surfaces.browser.test.mts",
+      "tests/pc-admin-card37b-pauses.browser.test.mts",
+      "tests/pc-admin-card37b-recovery.browser.test.mts",
       "tests/pc-admin-card37b-shortcuts.test.mts",
       "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "tests/pc-admin-card37a-store.test.mts",

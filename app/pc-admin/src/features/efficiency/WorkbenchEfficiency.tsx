@@ -55,7 +55,9 @@ import {
 } from './shortcuts';
 import type {ShortcutId} from './shortcuts';
 import {
+  EDITABLE_ELEMENT_SELECTOR,
   cancelQueuedBoardFollows,
+  clearPendingClaimIntent,
   clearPendingDetailIntent,
   copyItemNumber,
   emitShortcutHint,
@@ -63,8 +65,11 @@ import {
   getBoardKeyboardBridge,
   getDetailFollowController,
   getDetailKeyboardBridge,
+  getDetailTakeoverController,
   getKeyboardCurrentTarget,
+  getPendingDetailIntent,
   hasBlockingOverlayOpen,
+  hasSelfHandlingClaimAdmission,
   invokeDetailComplete,
   invokeDetailNoteFocus,
   invokeDetailTransfer,
@@ -85,8 +90,6 @@ import './efficiency.css';
 type CapturedCommandTarget = {surface: 'detail' | 'board'; ref: KeyboardItemRef};
 
 const EfficiencyContext = createContext<{open: () => void; blocked: boolean} | null>(null);
-const EDITABLE_SELECTOR =
-  'input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox],[role=combobox],[role=spinbutton]';
 const BOARD_CLIPS = '.ds-collapse-inner,.ds-board-group > .disclosure__content > .disclosure__body';
 const STAGE_TBODY_IDS = ['list-pending', 'list-active', 'list-handled'] as const;
 
@@ -321,6 +324,7 @@ export function WorkbenchEfficiency({
     (kind: 'commands' | 'shortcuts') => {
       if (blocked) return;
       cancelPendingBoardRead();
+      clearPendingClaimIntent();
       clearGoto();
       returnFocus.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -369,6 +373,7 @@ export function WorkbenchEfficiency({
     (path: string) => {
       if (blocked) return;
       cancelPendingBoardRead();
+      clearPendingClaimIntent();
       clearGoto();
       setPanel(null);
       setCommandTarget(null);
@@ -395,6 +400,7 @@ export function WorkbenchEfficiency({
   const executeItemShortcut = useCallback(
     (actionId: ShortcutId, expectedTarget?: CapturedCommandTarget | null): boolean => {
       cancelPendingBoardRead();
+      if (actionId !== 'claim') clearPendingClaimIntent();
       const detail = getDetailKeyboardBridge();
       const board = getBoardKeyboardBridge();
       const inDetail = Boolean(detail?.open || isDetailOpenInDom());
@@ -537,6 +543,38 @@ export function WorkbenchEfficiency({
             if (button && !button.disabled && button.getAttribute('aria-disabled') !== 'true') {
               button.click();
               return true;
+            }
+            const selfHandlingAdmitted =
+              Boolean(button) ||
+              (detail.allowedActions !== null &&
+                hasSelfHandlingClaimAdmission(principal, detail.allowedActions));
+            if (!selfHandlingAdmitted && principal.ticket_takeover_enabled) {
+              const takeover = getDetailTakeoverController(item.id);
+              if (takeover?.status === 'available' && takeover.open()) {
+                return true;
+              }
+              if (takeover?.status === 'pending') {
+                if (
+                  detail.commandReady ||
+                  (!principal.ticket_self_handling_enabled &&
+                    !principal.ticket_conversation_self_handling_enabled)
+                ) {
+                  const existing = getPendingDetailIntent();
+                  if (
+                    existing?.principalId !== principal.principal_id ||
+                    existing.kind !== item.kind ||
+                    existing.id !== item.id ||
+                    existing.action !== 'claim'
+                  ) {
+                    setPendingDetailIntent(principal.principal_id, item.kind, item.id, 'claim');
+                  }
+                }
+                return true;
+              }
+              if (takeover?.status === 'error') {
+                showHint('暂时无法确认工单操作，请稍后再试');
+                return true;
+              }
             }
             if (detail.commandReady) {
               showHint('这张工单现在不能领取');
@@ -862,14 +900,16 @@ export function WorkbenchEfficiency({
       ) {
         return;
       }
-      if (target.closest(EDITABLE_SELECTOR)) {
+      if (target.closest(EDITABLE_ELEMENT_SELECTOR)) {
         cancelPendingBoardRead();
+        clearPendingClaimIntent();
         if (gotoOpen) clearGoto();
         return;
       }
 
       if (hasBlockingOverlayOpen()) {
         cancelPendingBoardRead();
+        clearPendingClaimIntent();
         clearGoto();
         return;
       }
@@ -877,6 +917,7 @@ export function WorkbenchEfficiency({
       if (gotoOpen) {
         if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
         cancelPendingBoardRead();
+        clearPendingClaimIntent();
         clearGoto();
         event.preventDefault();
         event.stopPropagation();
@@ -893,6 +934,7 @@ export function WorkbenchEfficiency({
 
       if (matchesShortcut(event, 'undo')) {
         cancelPendingBoardRead();
+        clearPendingClaimIntent();
         if (triggerNewestUndoToast()) {
           event.preventDefault();
           event.stopPropagation();
@@ -904,6 +946,7 @@ export function WorkbenchEfficiency({
 
       if (matchesShortcut(event, 'command-panel')) {
         cancelPendingBoardRead();
+        clearPendingClaimIntent();
         if (detailOpen) return;
         event.preventDefault();
         open('commands');
@@ -914,6 +957,7 @@ export function WorkbenchEfficiency({
       if (event.shiftKey && event.key !== '?') return;
       if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
         cancelPendingBoardRead();
+        if (!matchesShortcut(event, 'claim')) clearPendingClaimIntent();
       }
 
       if (matchesShortcut(event, 'help')) {
@@ -1494,12 +1538,26 @@ function CommandPanel({
       currentItem.kind === 'ticket'
         ? evaluateTicketCommandQueryAdmission(principal, contextSnapshot, 'close')
         : undefined;
+    const detailSelfClaimAllowed =
+      inDetail &&
+      contextSnapshot?.status === 'success' &&
+      contextSnapshot.fetchStatus !== 'fetching' &&
+      Boolean(contextSnapshot.data) &&
+      hasSelfHandlingClaimAdmission(principal, contextSnapshot.data.allowed_actions);
+    const detailTakeoverAvailable =
+      inDetail &&
+      Boolean(principal.ticket_takeover_enabled) &&
+      currentItem.kind === 'ticket' &&
+      getDetailTakeoverController(currentItem.id)?.status === 'available';
     const canClaimTarget =
       isShortcutAvailableForPrincipal('claim', principal, canCreate) &&
       currentItem.kind === 'ticket' &&
       !isItemActionPending(principal.principal_id, 'ticket', currentItem.id, 'movement') &&
-      claimAdmission === 'allowed' &&
-      (inDetail || (currentItem.column === 'pending' && !currentItem.assignee_name));
+      (inDetail
+        ? detailSelfClaimAllowed || detailTakeoverAvailable
+        : claimAdmission === 'allowed' &&
+          currentItem.column === 'pending' &&
+          !currentItem.assignee_name);
     if (canClaimTarget) {
       targetCommands.push({
         key: 'item:claim',

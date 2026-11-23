@@ -116,5 +116,9 @@ Run from the worktree after `npm run migration:build`.
 ```sh
 export TS_MIGRATION_TEST_SOURCE_ROOT="$PWD"
 export PILOT_DATABASE_URL=postgresql://petervans@127.0.0.1:5432/postgres
-node --test --test-concurrency=1 .build/runtime/tests/pc-admin-card37b-keyboard.browser.test.mjs
+node --test --test-concurrency=1 \
+  .build/runtime/tests/pc-admin-card37b-keys.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37b-surfaces.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37b-pauses.browser.test.mjs \
+  .build/runtime/tests/pc-admin-card37b-recovery.browser.test.mjs
 ```

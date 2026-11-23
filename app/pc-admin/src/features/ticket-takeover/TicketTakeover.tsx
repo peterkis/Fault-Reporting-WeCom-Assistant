@@ -6,12 +6,14 @@ import {Checkbox as HCheckbox,Fieldset as HFieldset,Label as HLabel,ListBox} fro
 import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,useFeedbackState} from '../../app/ToastFeedback';
 import {BoardConflictIntent} from '../board-actions/BoardConflictIntent';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016TakeoverAction,P2016TakeoverCommand} from '../../api/client';
 import type {P2016TakeoverSession} from '../../../../../contracts/p2_016_takeover_contracts';
 import {clearSessionAuthorization,clearTicketAuthorization} from '../../app/authorization';
+import {BLOCKING_OVERLAYS,clearPendingClaimIntent,consumePendingDetailIntent,emitShortcutHint,getDetailKeyboardBridge,hasBlockingOverlayOpen,hasSelfHandlingClaimAdmission,isEditableElement,registerDetailTakeover,usePendingDetailIntent} from '../efficiency/keyboard-store';
+import type {DetailTakeoverController} from '../efficiency/keyboard-store';
 import {useTakeoverDraft} from './use-takeover-draft';
 import type {TakeoverIntent,TakeoverInput} from './use-takeover-draft';
 import {shortCodes} from '../../app/short-code';
@@ -29,6 +31,10 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
  const targets=useQuery({queryKey:['ticket-takeover-targets',principal.principal_id,ticketId,team],queryFn:({signal})=>api.takeoverTargets(ticketId,team||null,signal),gcTime:0});
  const related=useQuery({queryKey:['ticket-related-conversations',principal.principal_id,ticketId,cursor],queryFn:({signal})=>api.relatedConversations(ticketId,cursor,signal),gcTime:0});
  const [settlementBlocked,setSettlementBlocked]=useState(false);
+ const [open,setOpen]=useState(false);
+ const [focusSeq,setFocusSeq]=useState(0);
+ const sectionRef=useRef<HTMLElement|null>(null);
+ const focusFrameRef=useRef(0);
  const clearInput=()=>{setTeam('');setChoice('TAKE_SELECTED');setSelected([]);setPending(null);};
  const restoreInput=(value:TakeoverInput)=>{setTeam(value.team);setChoice(value.choice);setSelected(value.sessions);};
  const draft=useTakeoverDraft({ticketId,principal,value:{team,choice,sessions:selected},pending,onRestore:copy=>{knownResult.current=null;restoreInput(copy.value);setPending(copy.pending);if(copy.pending){setState('unknown');setMessage((principal.ticket_takeover_draft_recovery_enabled?'结果未确认：网络中断，暂不确定是否已提交。点击「核对结果」，不要重复提交。':'结果未确认：网络中断，暂不确定是否已提交。点击「重新提交」，会按原操作编号提交，已提交的不会重复办理。'));}},onOperation:id=>{setPending(null);if(keepSettlement(id))return;knownResult.current=null;setState('unknown');setMessage('结果未知：敏感恢复内容不可用，只能只读核对原操作。');},onOperationCleared:()=>{generation.current++;request.current?.controller.abort();request.current=null;knownResult.current=null;setPending(null);setSettlementBlocked(false);setState('idle');setMessage('');},onSensitiveClear:()=>{generation.current++;request.current?.controller.abort();request.current=null;clearInput();setSettlementBlocked(false);if(!knownResult.current){setState('idle');setMessage('');}}});
@@ -65,6 +71,86 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
  const send=async(intent:Intent)=>{if(request.current||!workbenchTransportWritable())return;const controller=new AbortController(),entry={controller,token:generation.current,requireRead:captureWorkbenchRead(controller.signal)};request.current=entry;knownResult.current=null;setSettlementBlocked(false);setPending(intent);setState('submitting');setMessage('正在提交接管…');try{await draft.prepare(intent);}catch{if(current(entry)){request.current=null;setState('denied');setMessage('恢复存储尚未准备，本次未发送新的操作。');}return;}if(current(entry))mutation.mutate({intent,entry});};
  const check=()=>{const id=pending?.command.client_command_id??draft.operationId;if(!id||request.current)return;if(!principal.ticket_takeover_draft_recovery_enabled&&pending){void send(pending);return;}const controller=new AbortController(),entry={controller,token:generation.current,requireRead:captureWorkbenchRead(controller.signal)};request.current=entry;setState('submitting');setMessage('正在只读核对原操作…');acknowledgement.mutate({id,entry});};
  const permitted=(action:P2016TakeoverAction)=>context.data?.allowed_actions.includes(action)===true&&targets.data?.allowed_actions.includes(action)===true;
+ const available=permitted('takeover')||permitted('takeover-and-start');
+ const takeoverStatus:DetailTakeoverController['status']=available?'available':context.isError||targets.isError?'error':context.isPending||targets.isPending?'pending':'unavailable';
+ const openWorkflow=useCallback(()=>{setOpen(true);setFocusSeq(seq=>seq+1);return true;},[]);
+ const canOwnTakeoverClaim=useCallback(():boolean=>{
+  const detail=getDetailKeyboardBridge();
+  if(!detail?.open||detail.kind!=='ticket'||detail.id!==ticketId||detail.blocked){
+   return false;
+  }
+  if(hasBlockingOverlayOpen())return false;
+  const root=sectionRef.current;
+  if(root?.closest('[inert],[aria-hidden="true"]'))return false;
+  const active=document.activeElement;
+  if(isEditableElement(active))return false;
+  if(active instanceof Element&&active.closest(BLOCKING_OVERLAYS))return false;
+  return true;
+ },[ticketId]);
+ useEffect(()=>{
+  registerDetailTakeover(ticketId,{status:takeoverStatus,open:openWorkflow});
+  return()=>registerDetailTakeover(ticketId,null);
+ },[ticketId,takeoverStatus,openWorkflow]);
+ const pendingDetailIntent=usePendingDetailIntent();
+ const pendingClaimSeq=pendingDetailIntent&&pendingDetailIntent.principalId===principal.principal_id&&pendingDetailIntent.kind==='ticket'&&pendingDetailIntent.id===ticketId&&pendingDetailIntent.action==='claim'?pendingDetailIntent.seq:null;
+ useEffect(()=>{
+  if(pendingClaimSeq===null)return;
+  const cancel=()=>clearPendingClaimIntent(pendingClaimSeq);
+  const onFocusIn=(event:FocusEvent)=>{
+   if(event.target instanceof Element&&sectionRef.current?.contains(event.target))return;
+   cancel();
+  };
+  document.addEventListener('focusin',onFocusIn,true);
+  document.addEventListener('pointerdown',cancel,true);
+  document.addEventListener('click',cancel,true);
+  return()=>{
+   document.removeEventListener('focusin',onFocusIn,true);
+   document.removeEventListener('pointerdown',cancel,true);
+   document.removeEventListener('click',cancel,true);
+  };
+ },[pendingClaimSeq]);
+ useEffect(()=>{
+  if(pendingClaimSeq===null||takeoverStatus==='pending')return;
+  consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'claim');
+  const selfAllowed=context.isSuccess&&!context.isError&&hasSelfHandlingClaimAdmission(principal,context.data.allowed_actions);
+  if(selfAllowed)return;
+  if(!canOwnTakeoverClaim())return;
+  if(takeoverStatus==='available'){openWorkflow();}
+  else if(takeoverStatus==='error'){emitShortcutHint('暂时无法确认工单操作，请稍后再试');}
+  else{emitShortcutHint('这张工单现在不能领取');}
+ },[pendingClaimSeq,principal,ticketId,takeoverStatus,context.isSuccess,context.isError,context.data,canOwnTakeoverClaim,openWorkflow]);
+ useEffect(()=>{
+  if(focusSeq===0)return;
+  if(!canOwnTakeoverClaim())return;
+  const focusFirstField=()=>{
+   const root=sectionRef.current;
+   if(!root)return false;
+   root.scrollIntoView({block:'nearest',behavior:'auto'});
+   const trigger=root.querySelector<HTMLElement>('.workbench-select [data-slot="select-trigger"]');
+   if(trigger&&!(trigger instanceof HTMLButtonElement&&trigger.disabled)&&trigger.getAttribute('aria-disabled')!=='true'){
+    trigger.focus({preventScroll:true});
+    return document.activeElement===trigger;
+   }
+   const fallback=root.querySelector<HTMLElement>('button:not(:disabled):not([aria-disabled="true"]), input:not(:disabled), [tabindex]:not([tabindex="-1"])');
+   if(fallback){
+    fallback.focus({preventScroll:true});
+    return document.activeElement===fallback;
+   }
+   root.tabIndex=-1;
+   root.focus({preventScroll:true});
+   return document.activeElement===root;
+  };
+  focusFirstField();
+  cancelAnimationFrame(focusFrameRef.current);
+  focusFrameRef.current=requestAnimationFrame(()=>{
+   if(!canOwnTakeoverClaim())return;
+   const root=sectionRef.current;
+   if(root&&(!document.activeElement||!root.contains(document.activeElement))){
+    focusFirstField();
+   }
+  });
+  return()=>cancelAnimationFrame(focusFrameRef.current);
+ },[focusSeq,canOwnTakeoverClaim]);
  const selectedCurrent=selected.every(item=>!related.data?.items.some(row=>row.session_id===item.session_id&&(row.session_row_version!==String(item.expected_row_version)||!row.take_allowed)));
  const canSend=(action:P2016TakeoverAction)=>!blocked&&draft.canSubmit&&!request.current&&Boolean(team&&choice)&&!context.isPending&&!context.isError&&!targets.isPending&&!targets.isError&&permitted(action)&&workbenchTransportWritable()&&(choice==='RETAIN_CURRENT'||selected.length>0&&!related.isPending&&!related.isError&&selectedCurrent);
  const submit=(action:P2016TakeoverAction)=>{if(!canSend(action)||!context.data||!choice)return;const base={client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:'WORKBENCH_TAKEOVER',resolver_team_id:team};let command:P2016TakeoverCommand;if(choice==='RETAIN_CURRENT')command={...base,communication_choice:choice,sessions:[]};else{const [first,...rest]=selected;if(!first)return;command={...base,communication_choice:choice,sessions:[first,...rest]};}send(Object.freeze({action,command:Object.freeze(command)}));};
@@ -72,7 +158,7 @@ export function TicketTakeover({ticketId,principal,onBlockedChange,boardMode=fal
   // Codex review: one short-code map per render, shared by the candidate rows and the selected list.
   const sessionCodes=shortCodes([...(related.data?.items??[]).map(item=>item.session_id),...selected.map(item=>item.session_id),...sessionsSeen.seen.current.keys()]);
  sessionsSeen.remember(related.data?.items);
- return <StepWorkflow readState={context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready'} action="takeover" label="接管处理" available={permitted('takeover')||permitted('takeover-and-start')} attention={Boolean(boardMode||pending||draft.operationId||draft.restorationBlocked||draft.needsReload||related.isError||team||choice==='RETAIN_CURRENT'||selected.length||message)}><section className="ticket-notes ticket-takeover" aria-label="本人接管工单"><h3>接管处理责任</h3><p>处理责任由{principal.display_name}承接，沟通责任按下方明确选择处理。</p>
+ return <StepWorkflow readState={context.isError||targets.isError?'unknown':context.isLoading||targets.isLoading?'pending':'ready'} action="takeover" label="接管处理" available={available} open={open} onOpenChange={setOpen} attention={Boolean(boardMode||pending||draft.operationId||draft.restorationBlocked||draft.needsReload||related.isError||team||choice==='RETAIN_CURRENT'||selected.length||message)}><section ref={sectionRef} className="ticket-notes ticket-takeover" aria-label="本人接管工单"><h3>接管处理责任</h3><p>处理责任由{principal.display_name}承接，沟通责任按下方明确选择处理。</p>
     {context.isError||targets.isError?<><p role="alert">{errorMessage(context.error??targets.error)}</p><HButton type="button" data-action="refresh-takeover" isDisabled={busy} onClick={refresh} tone="secondary">重试读取接管选项</HButton></>:null}
   <WorkbenchSelect label={<>接管处理组</>} value={team} isDisabled={blocked||(targets.isPending||targets.isError)} onChange={event=>setTeam(event)}><ListBox.Item id="" textValue={"请选择本人的处理组"}>请选择本人的处理组<ListBox.ItemIndicator/></ListBox.Item>{targets.data?.resolver_teams.map(group=><ListBox.Item key={group.team_id} id={group.team_id} textValue={String(group.display_name)}>{group.display_name}<ListBox.ItemIndicator/></ListBox.Item>)}</WorkbenchSelect>
   <HRadioGroup className="workbench-radio-group" name={'takeover-communication-'+ticketId} value={choice??''} onChange={next=>{if(next==="RETAIN_CURRENT"){setChoice('RETAIN_CURRENT');setSelected([]);}if(next==="TAKE_SELECTED"){setChoice('TAKE_SELECTED');}}} isDisabled={blocked}><HLabel>本次接管的沟通责任</HLabel><HRadio value={"RETAIN_CURRENT"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>保留当前沟通责任</HRadio.Content></HRadio><HRadio value={"TAKE_SELECTED"}><HRadio.Content><HRadio.Control><HRadio.Indicator/></HRadio.Control>同时接管下方明确选择的沟通会话</HRadio.Content></HRadio></HRadioGroup>

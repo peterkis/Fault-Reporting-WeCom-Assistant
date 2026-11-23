@@ -52,13 +52,15 @@ export function StepEntry({action,label,children,fallbackTone='secondary'}:{acti
 }
 
 /** Discloses an existing inline form without unmounting its protected state. */
-export function StepWorkflow({action,label,available,attention=false,readState='ready',children}:{action:string;label:string;available:boolean;attention?:boolean;readState?:StepReadState;children:ReactNode}){
-  const scope=useContext(Context),[open,setOpen]=useState(false),id=useId();
+export function StepWorkflow({action,label,available,attention=false,readState='ready',open:controlledOpen,onOpenChange,children}:{action:string;label:string;available:boolean;attention?:boolean;readState?:StepReadState;open?:boolean;onOpenChange?:(open:boolean)=>void;children:ReactNode}){
+  const scope=useContext(Context),[uncontrolledOpen,setUncontrolledOpen]=useState(false),id=useId();
+  const open=controlledOpen??uncontrolledOpen;
+  const setOpen=(next:boolean)=>{if(controlledOpen===undefined)setUncontrolledOpen(next);onOpenChange?.(next);};
   const reportRead=scope?.reportRead,visible=open||attention||readState==='unknown';
   useLayoutEffect(()=>reportRead?.(id,readState),[reportRead,id,readState]);
   if(!scope)return children;
   return <>
-    {available?<StepEntry action={action} label={label}>{(tone,text)=>{const button=<Button tone={tone} data-step-action={action} data-step-open={open?'true':'false'} aria-expanded={visible} aria-controls={id} aria-keyshortcuts={action==='complete'?ariaKeyshortcuts('complete'):undefined} onPress={()=>setOpen(value=>!value)}>{text}{action==='complete'?<Kbd keys={shortcutKeys('complete')} className="ds-menu-item-kbd"/>:null}</Button>;return action==='complete'?<ShortcutTooltip label={text} keys={shortcutKeys('complete')} placement="top">{button}</ShortcutTooltip>:button;}}</StepEntry>:null}
+    {available?<StepEntry action={action} label={label}>{(tone,text)=>{const button=<Button tone={tone} data-step-action={action} data-step-open={open?'true':'false'} aria-expanded={visible} aria-controls={id} aria-keyshortcuts={action==='complete'?ariaKeyshortcuts('complete'):undefined} onPress={()=>setOpen(!open)}>{text}{action==='complete'?<Kbd keys={shortcutKeys('complete')} className="ds-menu-item-kbd"/>:null}</Button>;return action==='complete'?<ShortcutTooltip label={text} keys={shortcutKeys('complete')} placement="top">{button}</ShortcutTooltip>:button;}}</StepEntry>:null}
     <div id={id} className="ds-step-workflow" data-step-read-state={readState} hidden={!visible}>{children}</div>
   </>;
 }
