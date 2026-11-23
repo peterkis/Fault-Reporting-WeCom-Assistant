@@ -3,6 +3,20 @@ import {test} from 'node:test';
 import {withT42BoardBrowser,object} from './helpers/t42-board-browser-fixture.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
+// The claim moves its card. A neighboring card can acquire its own idle
+// controller under the stationary pointer while the original command is UNKNOWN.
+const observeUnknownClaim=`(() => {
+  const host = document.querySelector('.board-claim-controller:has([data-board-claim-state=unknown])');
+  if (!host) return false;
+  globalThis.__card12ClaimHost = host;
+  globalThis.__card12Controller = host.querySelector('[data-board-claim-state=unknown]');
+  globalThis.__card12IdlePeers = new Set(document.querySelectorAll('.board-claim-controller:has([data-board-claim-state=idle])'));
+  return true;
+})()`;
+const deniedClaimRetired=`!globalThis.__card12ClaimHost.isConnected &&
+  [...document.querySelectorAll('.board-claim-controller')].every(host =>
+    globalThis.__card12IdlePeers.has(host) && host.querySelector('[data-board-claim-state=idle]'))`;
+
 for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN survives '+change+' for the same authorized principal',{timeout:120000},()=>withT42BoardBrowser(async(f,browser,card,get)=>{
   const first=f.tickets[0],actor=f.principals[0];assert.ok(first&&actor);
   await browser.command('Page.bringToFront');
@@ -15,10 +29,9 @@ for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN sur
   await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
-  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
+  await browser.waitFor(observeUnknownClaim);
   const writes=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(writes));assert.equal(writes.length,1);
   const committed=await get('/api/tickets/'+first.ticket.id);assert.equal(committed.status,'IN_PROGRESS');
-  await browser.evaluate("(()=>{globalThis.__card12Controller=document.querySelector('.board-claim-controller .ticket-self-handling');return true;})()");
   if(change==='board-flag'){
     await browser.evaluate('globalThis.__card12BoardOff=true');
     await browser.waitFor("globalThis.__card12Seen?.board===true&&!document.querySelector('[data-action=board-drag-handle]')");
@@ -31,7 +44,7 @@ for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN sur
     const fresh=await get('/api/lifecycle/bootstrap');assert.equal(fresh.principal_id,beforeBootstrap.principal_id);assert.notEqual(fresh.authorization_revision,beforeBootstrap.authorization_revision);
     await browser.waitFor(`globalThis.__card12Seen?.revision===${JSON.stringify(fresh.authorization_revision)}`);
   }
-  assert.equal(await browser.evaluate("globalThis.__card12Controller.isConnected&&document.querySelector('.board-claim-controller .ticket-self-handling')===globalThis.__card12Controller"),true,'the original pending controller must remain mounted');
+  assert.equal(await browser.evaluate("globalThis.__card12Controller.isConnected&&globalThis.__card12ClaimHost.querySelector('[data-board-claim-state=unknown]')===globalThis.__card12Controller"),true,'the original pending controller must remain mounted');
   assert.equal(await browser.evaluate("document.querySelector('.board-claim-controller [data-action=check-self-handling]')?.checkVisibility()"),true);
   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-board-claim-action]'))"),false,'new entrances are removed while the old operation is unresolved');
   assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),writes,'a capability/revision change cannot automatically replay');
@@ -41,7 +54,8 @@ for(const change of ['board-flag','revision'] as const)test('Card 12 UNKNOWN sur
   assert.equal(await browser.evaluate('location.href'),location,'pending claim keeps the navigation fence even after the optional board capability closes');
   f.restoreSelfHandlingResponses();
   await clickWorkbenchControl(browser,'.board-claim-controller [data-action=check-self-handling]');
-  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='succeeded'");
+  // A successful replay can retire this node before the next CDP poll.
+  await browser.waitFor("globalThis.__card12Controller.dataset.boardClaimState==='succeeded'");
   const after=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(after));assert.equal(after.length,2);assert.deepEqual(after[1],writes[0]);
   assert.equal((await get('/api/tickets/'+first.ticket.id)).version,committed.version,'explicit original replay does not create a new responsibility cycle');
 },{dropSelfHandlingResponses:true,realtime:true}));
@@ -73,13 +87,13 @@ for(const status of [403,404])test('Card 12 credible Ticket READ '+status+' clea
   await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
-  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
+  await browser.waitFor(observeUnknownClaim);
   const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
   const committed=await get(path);assert.equal(committed.status,'IN_PROGRESS');
   // Controlled credible HTTP denial after a real read; command responses and server facts stay unchanged.
-  await browser.evaluate(`(()=>{globalThis.__card12DeniedReads=0;globalThis.__card12DeniedController=document.querySelector('.board-claim-controller .ticket-self-handling');const original=globalThis.fetch;globalThis.fetch=async(url,options)=>{const response=await original(url,options);if(String(url)===${JSON.stringify(path)}&&(!options?.method||options.method==='GET')){await response.text();globalThis.__card12DeniedReads++;return new Response('{"error":{"code":"P2_016_NOT_FOUND"}}',{status:${status},headers:{'content-type':'application/json','cache-control':'no-store'}});}return response;};})()`);
-  await browser.waitFor("globalThis.__card12DeniedReads>0&&!document.querySelector('.board-claim-controller')");
-  assert.equal(await browser.evaluate('globalThis.__card12DeniedController.isConnected'),false);
+  await browser.evaluate(`(()=>{globalThis.__card12DeniedReads=0;const original=globalThis.fetch;globalThis.fetch=async(url,options)=>{const response=await original(url,options);if(String(url)===${JSON.stringify(path)}&&(!options?.method||options.method==='GET')){await response.text();globalThis.__card12DeniedReads++;return new Response('{"error":{"code":"P2_016_NOT_FOUND"}}',{status:${status},headers:{'content-type':'application/json','cache-control':'no-store'}});}return response;};})()`);
+  await browser.waitFor('globalThis.__card12DeniedReads>0&&'+deniedClaimRetired);
+  assert.equal(await browser.evaluate('globalThis.__card12Controller.isConnected'),false);
   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-self-handling]'))"),false);
   assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'a credible READ denial must not replay the old command');
   assert.equal((await get(path)).version,committed.version);
@@ -96,14 +110,14 @@ for(const status of [403,404])test('Card 12 related profile READ '+status+' clea
   await browser.evaluate(`document.querySelector(${JSON.stringify(card+' .card-open')}).focus()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
-  await browser.waitFor("document.querySelector('.board-claim-controller [data-board-claim-state]')?.dataset.boardClaimState==='unknown'");
+  await browser.waitFor(observeUnknownClaim);
   const before=await browser.evaluate('globalThis.__t42Writes');assert.ok(Array.isArray(before));assert.equal(before.length,1);
   const committed=await get(ticketPath);assert.equal(committed.status,'IN_PROGRESS');
   // The board refresh can put a different claimable card under the stationary pointer.
   await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:1,y:1});
-  await browser.evaluate("(()=>{globalThis.__card12DeniedController=document.querySelector('.board-claim-controller .ticket-self-handling');globalThis.__card12ReleaseProfile();return true;})()");
-  await browser.waitFor("!document.querySelector('.board-claim-controller')");
-  assert.equal(await browser.evaluate('globalThis.__card12DeniedController.isConnected'),false);
+  await browser.evaluate('globalThis.__card12ReleaseProfile()');
+  await browser.waitFor(deniedClaimRetired);
+  assert.equal(await browser.evaluate('globalThis.__card12Controller.isConnected'),false);
   assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-action=check-self-handling]'))"),false);
   assert.deepEqual(await browser.evaluate('globalThis.__t42Writes'),before,'related READ rejection must not replay the old command');
   assert.equal((await get(ticketPath)).version,committed.version);
