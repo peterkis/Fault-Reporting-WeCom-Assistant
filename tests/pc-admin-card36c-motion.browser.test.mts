@@ -720,6 +720,8 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
           await waitForAnimationsSettled(b);
           const [first,second]=await visibleActive();
           const card=boardCard(second),marked=card+cue;
+          const secondTitle=await b.evaluate(q(card+' h3')+'.textContent.trim()');
+          assert.ok(typeof secondTitle==='string'&&secondTitle.length>0);
           const baseColour=await b.evaluate('getComputedStyle('+q(card)+').backgroundColor');
           await freeze(b,async()=>{
             await clickWorkbenchControl(b,openControl(first));await waitEffect(panel);
@@ -728,24 +730,36 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
           await b.waitFor('Boolean('+q(heading)+')');await settleOverlay();
           await freeze(b,async()=>{
             await click(next);
-            await b.waitFor('location.pathname.endsWith('+JSON.stringify('/'+second)+')&&Boolean('+q(heading)+')');
+            // History updates before React commits the new selection and drawer body.
+            await b.waitFor('location.pathname.endsWith('+JSON.stringify('/'+second)+')&&'+
+              q(card)+'?.classList.contains("is-selected")&&'+textIs(heading,secondTitle));
             await b.evaluate(frames);
             await assertNoTransformAnimations(b,stage);
             assert.equal(await b.evaluate(q(stage)+'.getAnimations({subtree:true}).length'),0);
             assert.equal(await b.evaluate("document.querySelectorAll('[data-detail-body-exit],[data-detail-body-enter]').length"),0);
           });
+          // Sample the finite hold in the page so a delayed CDP poll cannot miss it.
+          await b.evaluate(`(() => {
+            const probe=document.createElement('span');
+            probe.style.backgroundColor='var(--brand-subtle)';document.body.append(probe);
+            const expected=getComputedStyle(probe).backgroundColor;probe.remove();
+            const observer=new MutationObserver(() => {
+              const node=${q(marked)};
+              if (!node || ${q(panel)}) return;
+              observer.disconnect();
+              const read=()=>({colour:getComputedStyle(node).backgroundColor,count:node.getAnimations().length,marked:${q(marked)}===node});
+              const first=read();
+              ${frames}.then(()=>{window.__card36cHeldCue={expected,first,second:read()};});
+            });
+            window.__card36cHeldCue=null;
+            observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-return-cue']});
+          })()`);
           await freeze(b,async()=>{
             await escape(b);await waitEffect(panel);await opacityOnly(panel);await opacityOnly(backdrop);
           });
           await overlayClosed();
-          await b.waitFor('Boolean('+q(marked)+')',{intervalMs:8});
-          const held=await b.evaluate(`(async()=>{
-            const node=${q(marked)},probe=document.createElement('span');
-            probe.style.backgroundColor='var(--brand-subtle)';document.body.append(probe);
-            const expected=getComputedStyle(probe).backgroundColor;probe.remove();
-            const read=()=>({colour:getComputedStyle(node).backgroundColor,count:node.getAnimations().length,marked:node.hasAttribute('data-return-cue')});
-            const first=read();await ${frames};return {expected,first,second:read()};
-          })()`) as {expected:string;first:unknown;second:unknown};
+          await b.waitFor('Boolean(window.__card36cHeldCue)');
+          const held=await b.evaluate('window.__card36cHeldCue') as {expected:string;first:unknown;second:unknown};
           const expected={colour:held.expected,count:0,marked:true};
           assert.deepEqual(held.first,expected);assert.deepEqual(held.second,expected);
           assert.notEqual(held.expected,baseColour);
