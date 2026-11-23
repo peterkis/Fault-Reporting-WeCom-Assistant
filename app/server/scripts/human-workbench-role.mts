@@ -84,7 +84,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
     try{await auth.initialize();return auth;}catch(error){await auth.close();throw error;}
    },
    runtimeFactory:options=>{
-    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,workbenchMediaEmployeeReadEnabled:s.workbenchMediaEmployeeReadEnabled,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled,workbenchRemindersEnabled:s.workbenchRemindersEnabled===true,workbenchFollowEnabled:s.workbenchFollowEnabled===true,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled===true,...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
+    const runtime=createP2016Runtime({...options,...HUMAN_WORKBENCH_OPTIONS,workbenchMediaEmployeeReadEnabled:s.workbenchMediaEmployeeReadEnabled,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled,workbenchRemindersEnabled:s.workbenchRemindersEnabled===true,workbenchFollowEnabled:s.workbenchFollowEnabled===true,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled===true,...(s.closureNotificationUndoWindowMs!==undefined?{closureNotificationUndoWindowMs:s.closureNotificationUndoWindowMs}:{}),...(s.claimNotificationUndoWindowMs!==undefined?{claimNotificationUndoWindowMs:s.claimNotificationUndoWindowMs}:{}),...(!mapping?{yxxSelfService:null,botReporterFeedbackEnabled:false}:{}),identityHmacKey,workbenchAuthentication:options.authentication,
     flags,
     applicationMemberVerifier,h5EntryMemberVerifier:h5EntryReadEnabled?applicationMemberVerifier.h5EntryRead:null,yxxH5:{...h5Options,accessTokenProvider:tokenProvider,fetchImpl},groupNotificationTargets:s.groupNotificationTargets??[],reporterOrigin:s.reporterOrigin,reporterHmacSecret,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:s.memberEntry,identityMapping:mapping,appNotifications,allowedHosts,
     wecomWebOAuth:{enabled:true,corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider,fetchImpl})}});
@@ -149,7 +149,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   await requireNotificationVocabularySchema({pool});await requireSystemClosureRestoreSchema({pool});
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;
-  const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId});
+  const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId,...(s.closureNotificationUndoWindowMs!==undefined?{closureNotificationUndoWindowMs:s.closureNotificationUndoWindowMs}:{})});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
   const h5=createYxxH5Runtime({pool,scopeSecret:reporterHmacSecret,options:h5Options,role:'WORKER'});
   const profiles=directory&&s.reporterProfiles?createTicketReporterProfileWorker({pool,botId:s.botId,identityHmacKey,directoryPort:directory,enabled:true,

@@ -252,3 +252,33 @@ test('T34 a generated following column cannot certify a cancelled personal fact 
   await assert.rejects(migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'status'}),{code:'P2_016_ACTION_FAILED'});
  },{workbenchFollowEnabled:true,manualProjection:true,chronologicalTicketEvents:true});
 });
+
+test('37A PR4 a converted Ticket can recover its Review unfollow and Intake restore on the original endpoints',async()=>{
+ await withWeb01Fixture(async(f:Fixture)=>{
+  const http=client(f,0),intake=await seedPersistedIntake({pool:f.pool,text:'PR4 复核转工单（合成）'});
+  await f.processReviewIntake(intake.intakeId);
+  const intakePath='/api/intakes/'+intake.intakeId,context=await http.read(intakePath+'/closure-context'),reviewId=text(object(context.pending_review).id);
+  const reviewPath='/api/manual-reviews/'+reviewId,alias='/api/workbench/items/review/'+reviewId,csrf=text((await http.read('/api/lifecycle/bootstrap')).csrf_token);
+  const write=async(path:string,body:Record<string,unknown>)=>{
+   const response=await fetch(f.origin+path,{method:'POST',headers:{cookie:f.cookies[0],origin:f.origin,'content-type':'application/json','x-csrf-token':csrf,
+    'idempotency-key':text(body.client_command_id),'if-match':'"'+String(body.expected_version??body.expected_row_version)+'"'},body:JSON.stringify(body)});
+   assert.equal(response.status,200,await response.clone().text());return object(await response.json());
+  };
+  const review=await http.read(reviewPath);
+  assert.equal((await http.post(alias,command(await http.read(alias),true),csrf)).status,200);
+  const unfollow=command(await http.read(alias),false);assert.equal((await http.post(alias,unfollow,csrf)).status,200);
+  const closed=await write(intakePath+'/close',{client_command_id:randomUUID(),expected_version:context.version,reason_code:'FALSE_REPORT_OR_TEST',
+   notify_reporter:false,expected_review_version:review.row_version,expected_material_basis:object(review.material_basis).current_hash});
+  const restoreId=randomUUID(),restored=await write(intakePath+'/restore',{client_command_id:restoreId,expected_version:closed.version,reason_code:'RESTORE_CLOSED'});
+  const fresh=await http.read(reviewPath);
+  await write(reviewPath+'/resolve',{client_command_id:randomUUID(),expected_row_version:fresh.row_version,expected_material_basis:object(fresh.material_basis).current_hash,
+   resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'EXPLICIT_HUMAN_CHOICE'});
+  const converted=await http.read(alias),item=object(converted.item);
+  assert.equal(item.kind,'ticket');assert.equal(item.intake_id,intake.intakeId);assert.deepEqual(converted.requested_item,{kind:'review',id:reviewId});
+  const followReceipt=await http.read(alias+'/follow/commands/'+unfollow.client_command_id);
+  assert.equal(followReceipt.state,'COMMITTED');assert.equal(object(followReceipt.result).following,false);assert.equal(followReceipt.client_command_id,unfollow.client_command_id);
+  const replay=await http.post(alias,unfollow,csrf);assert.equal(replay.status,200);assert.equal(object(await replay.json()).replayed,true);
+  const restoreReceipt=await http.read(intakePath+'/restore/commands/'+restoreId);assert.equal(restoreReceipt.state,'COMMITTED');
+  assert.equal(object(restoreReceipt.result).subject_id,intake.intakeId);assert.equal(object(restoreReceipt.result).event_id,restored.event_id);
+ },{workbenchManualReviewEnabled:true,workbenchFollowEnabled:true,manualProjection:true});
+});

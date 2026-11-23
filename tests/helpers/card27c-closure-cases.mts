@@ -50,7 +50,8 @@ async function responseJson(r:Response,status=200):Promise<Record<string,unknown
 async function withClosureFixture(run:(f:Fixture)=>Promise<void>){
  await withWeb01Fixture(async(f:Fixture)=>{
   await f.runtime.stop();
-  const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketWaitingActionsEnabled:true,workbenchManualReviewEnabled:true,workbenchFollowUpSchedulesEnabled:true,workbenchSupplementFollowUpEnabled:true});
+  // Pre-37A closure delivery mechanics cases assert immediate delivery on direct worker runs; configure window=0 here.
+  const runtime=createP2016Runtime({pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketWaitingActionsEnabled:true,workbenchManualReviewEnabled:true,workbenchFollowUpSchedulesEnabled:true,workbenchSupplementFollowUpEnabled:true,closureNotificationUndoWindowMs:0});
   // Use the existing explicit-consumption host: these cases drive every command,
   // decision and delivery themselves, without a competing Session projector.
   try{await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(f.origin).port)});const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);await run({...f,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});}

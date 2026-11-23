@@ -6,7 +6,7 @@ interface NotificationEvent { event_id: string; event_type: string; new_status: 
 interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string;trace_id:string;reason_code:string|null; handling_cycle_id:string|null }
 interface NotificationProjectionResult {created:boolean;replayed?:boolean;reason?:string;message_id?:string|null;outbox_id?:string|null;delivery_id?:string;group_receipt_created?:boolean}
 type AppendObservation = (CommunicationSuccess & { error?: never }) | { error: { code: string }; message_id?: never; outbox_id?: never; delivery_ids?: never };
-interface NotificationOptions {mvpPolicy?:boolean; roundNotificationBotId?:string|null;enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
+interface NotificationOptions {mvpPolicy?:boolean; roundNotificationBotId?:string|null;enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined; closureNotificationUndoWindowMs?: number }
 
 import { randomUUID } from 'node:crypto';
 import { appendCommunication } from './p2-004-communication-core.mjs';
@@ -15,10 +15,12 @@ import { failP2016,guardP2016,textHashP2016,stampP2016,transactionP2016 } from '
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import {readOriginalBotSource} from './workbench-ticket-round-notifications.mjs';
 import {projectServiceClosureNotification} from './service-closure-notifications.mjs';
+import {DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,normalizeNotificationUndoWindowMs} from './notification-undo-window.mjs';
 
 export function createP2016TicketNotificationProjector({enabled=false,cardEnabled=false,reporterAccess,mvpPolicy=false,explicitReferenceEnabled=false,
-  personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication,roundNotificationBotId=null}: NotificationOptions) {
+  personDestinationAuthorizer=null,additionalEventTypes=[],now=()=>String(Date.now()),communicationAppend=appendCommunication,roundNotificationBotId=null,closureNotificationUndoWindowMs}: NotificationOptions) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016('INPUT_INVALID');
+  const closureWindowMs=normalizeNotificationUndoWindowMs(closureNotificationUndoWindowMs,DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS);
   ticketNotificationP2016({event_type:'ticket.accepted',new_status:'ACCEPTED'},{additionalEventTypes});
   const configuredEvents=Object.freeze([...additionalEventTypes]);
   return Object.freeze({
@@ -30,12 +32,12 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         ORDER BY id,restoring LIMIT 20`)).rows;
       for(const record of pending)await transactionP2016(pool,async transaction=>{
         if(record.ticket_id)await transaction.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1::uuid FOR KEY SHARE',[record.ticket_id]);
-        return projectServiceClosureNotification({transaction,recordId:record.id,restoring:record.restoring,communicationAppend,personDestinationAuthorizer});
+        return projectServiceClosureNotification({transaction,recordId:record.id,restoring:record.restoring,communicationAppend,personDestinationAuthorizer,closureNotificationUndoWindowMs:closureWindowMs,now});
       });
       return {scanned:pending.length};
     },
     async projectClosure({transaction,recordId,restoring=false}:{transaction:PostgresTransaction;recordId:string;restoring?:boolean}){
-      guardP2016(enabled);return projectServiceClosureNotification({transaction,recordId,restoring,communicationAppend,personDestinationAuthorizer});
+      guardP2016(enabled);return projectServiceClosureNotification({transaction,recordId,restoring,communicationAppend,personDestinationAuthorizer,closureNotificationUndoWindowMs:closureWindowMs,now});
     },
     async project({transaction:tx,ticket,event}: { transaction: PostgresTransaction; ticket: { id: string; ticket_no?: string; intake_id?: string }; event: NotificationEvent | Pick<NotificationEvent, 'event_id'> }):Promise<NotificationProjectionResult> {
       guardP2016(enabled);
@@ -46,7 +48,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       const nodeEvent=fact.rows[0];if(!nodeEvent)failP2016('NOTIFICATION_EVENT_INVALID');
       if(nodeEvent.event_type==='ticket.dismissed'||nodeEvent.event_type==='ticket.restored'){
         const restoring=nodeEvent.event_type==='ticket.restored',record=(await tx.query<{id:string}>(`SELECT id::text FROM pilot_ticket.closure_record WHERE ticket_id=$1::uuid AND ${restoring?'restoration_event_id':'closure_ticket_event_id'}=$2::uuid`,[ticket.id,event.event_id])).rows[0];
-        if(!record)failP2016('NOTIFICATION_EVENT_INVALID');return projectServiceClosureNotification({transaction:tx,recordId:record.id,restoring,communicationAppend,personDestinationAuthorizer});
+        if(!record)failP2016('NOTIFICATION_EVENT_INVALID');return projectServiceClosureNotification({transaction:tx,recordId:record.id,restoring,communicationAppend,personDestinationAuthorizer,closureNotificationUndoWindowMs:closureWindowMs,now});
       }
       event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
       if(roundNotificationBotId!==null&&(nodeEvent.event_type==='ticket.accepted'||nodeEvent.event_type==='ticket.completed')

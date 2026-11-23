@@ -20,7 +20,7 @@ import type {LocalDateTime} from '../../contracts/time_contracts.js';
 // Review R4/R5. All provider calls below terminate in this file's synthetic SDK.
 // The existing fixture owns its UUID database and installs 071 after its other
 // migrations. Explicit consumption avoids racing an automatic projector.
-const fixtureOptions={mvpNotificationsEnabled:true,manualRoundConsumption:true,roundNotificationsOff:true};
+const fixtureOptions={mvpNotificationsEnabled:true,manualRoundConsumption:true,roundNotificationsOff:true,closureNotificationUndoWindowMs:0};
 const INTERNAL='关闭通知审查内部说明（合成）';
 const CLOSE_TEXT='已按您的要求撤销本次报修。';
 const RESTORE_TEXT='您的报修已重新受理，我们会继续处理。';

@@ -8,6 +8,7 @@ import {createWorkbenchGroupNotificationSender} from './workbench-group-notifica
 import {createP2016InboundScope} from './p2-016-inbound-scope.mjs';
 import {applicationRecipientProof,boundApplicationRecipient} from './yxx-application-member-auth.mjs';
 import {assertEpochMsString,formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
+import {DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS,DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,MAX_NOTIFICATION_UNDO_WINDOW_MS} from './notification-undo-window.mjs';
 import type {TicketAppNotificationOptions} from '../../../contracts/workbench_app_notification_contracts.js';
 import type {YxxH5RuntimeOptions} from './yxx-h5-runtime.mjs';
 
@@ -17,13 +18,14 @@ export type WorkbenchRole='APP'|'WORKER'|'GATEWAY';
 export type MemberEntry=Extract<YxxEntryConfig,{enabled:true}>;
 export interface WorkbenchSettings {
  schemaVersion:1;publicOrigin:string;reporterOrigin:string;listenPort:number;transportEnabled:boolean;botInboundEnabled?:boolean;workbenchRemindersEnabled?:boolean;workbenchFollowEnabled?:boolean;
+ closureNotificationUndoWindowMs?:number;claimNotificationUndoWindowMs?:number;
  memberEntry:MemberEntry;bot:{id:string;wsUrl:string;personTargetHashes:string[];groupTargetHashes:string[]};
  appChannelAccountId:string;notificationBindingsFile:string;
  groupRoutes:{botId:string;groupId:string;url:string}[];
 }
 export interface WorkbenchConfiguration {enabled:true;settings:WorkbenchSettings;databaseUrl:string;identityHashKey:string;reporterHmacSecret:string;appSecret:string;botSecret:string;ioApprovalRef:string;inboundApprovalRef:string;h5Environment?:NodeJS.ProcessEnv;actorAvatarProviderKey?:string}
-export interface RoleSettings {groupNotificationTargets?:{botId:string;groupId:string}[];role:WorkbenchRole;reporterOrigin:string;transportEnabled:boolean;botInboundEnabled?:boolean;workbenchRemindersEnabled?:boolean;botId:string;appChannelAccountId:string;notificationBindingsFile:string;memberEntry:MemberEntry;publicOrigin?:string;listenPort?:number;groupRoutes?:WorkbenchSettings['groupRoutes'];personTargetHashes?:string[];groupTargetHashes?:string[]}
-export interface WorkerRoleSettings {workbenchMediaEmployeeReadEnabled?:boolean;role:'WORKER';transportEnabled:boolean;botId:string;reporterProfiles?:WorkbenchReporterProfileScope;actorAvatars?:{rootRef:string;validationProfile:'DEPLOYMENT'|'ISOLATED_TEST'}}
+export interface RoleSettings {groupNotificationTargets?:{botId:string;groupId:string}[];role:WorkbenchRole;reporterOrigin:string;transportEnabled:boolean;botInboundEnabled?:boolean;workbenchRemindersEnabled?:boolean;closureNotificationUndoWindowMs?:number;claimNotificationUndoWindowMs?:number;botId:string;appChannelAccountId:string;notificationBindingsFile:string;memberEntry:MemberEntry;publicOrigin?:string;listenPort?:number;groupRoutes?:WorkbenchSettings['groupRoutes'];personTargetHashes?:string[];groupTargetHashes?:string[]}
+export interface WorkerRoleSettings {workbenchMediaEmployeeReadEnabled?:boolean;role:'WORKER';transportEnabled:boolean;botId:string;closureNotificationUndoWindowMs?:number;reporterProfiles?:WorkbenchReporterProfileScope;actorAvatars?:{rootRef:string;validationProfile:'DEPLOYMENT'|'ISOLATED_TEST'}}
 export interface WorkbenchSettings {workbenchReporterProfilesEnabled?:boolean;workbenchMediaEmployeeReadEnabled?:boolean;workbenchActorAvatarsEnabled?:boolean;workbenchActorAvatarRootRef?:string|null}
 export interface RoleSettings {workbenchReporterProfilesEnabled?:boolean;workbenchFollowEnabled?:boolean;workbenchMediaEmployeeReadEnabled?:boolean;workbenchActorAvatarsEnabled?:boolean}
 export function configurationError(field:string):never{throw new Error('HUMAN_WORKBENCH_CONFIG_INVALID:'+field);}
@@ -57,9 +59,10 @@ function member(value:unknown,receiveOnly=false):MemberEntry{
  if(!Number.isSafeInteger(Number(c.agentId))||Number(c.agentId)<1)configurationError('memberEntry.agentId');
  return c;
 }
+function undoWindowMs(value:unknown,field:string):number{if(typeof value!=='number'||!Number.isInteger(value)||value<0||value>MAX_NOTIFICATION_UNDO_WINDOW_MS)configurationError(field);return value;}
 export function parseWorkbenchSettings(value:unknown):WorkbenchSettings{
  const raw=record(value,'settings');
- const r=exact({botInboundEnabled:false,workbenchRemindersEnabled:false,workbenchFollowEnabled:false,workbenchReporterProfilesEnabled:false,workbenchMediaEmployeeReadEnabled:false,workbenchActorAvatarsEnabled:false,workbenchActorAvatarRootRef:null,...raw},['schemaVersion','publicOrigin','reporterOrigin','listenPort','transportEnabled','botInboundEnabled','workbenchRemindersEnabled','workbenchFollowEnabled','workbenchReporterProfilesEnabled','workbenchActorAvatarsEnabled','workbenchMediaEmployeeReadEnabled','workbenchActorAvatarRootRef','memberEntry','bot','appChannelAccountId','notificationBindingsFile','groupRoutes'],'settings');
+ const r=exact({botInboundEnabled:false,workbenchRemindersEnabled:false,workbenchFollowEnabled:false,workbenchReporterProfilesEnabled:false,workbenchMediaEmployeeReadEnabled:false,workbenchActorAvatarsEnabled:false,workbenchActorAvatarRootRef:null,closureNotificationUndoWindowMs:DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,claimNotificationUndoWindowMs:DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS,...raw},['schemaVersion','publicOrigin','reporterOrigin','listenPort','transportEnabled','botInboundEnabled','workbenchRemindersEnabled','workbenchFollowEnabled','workbenchReporterProfilesEnabled','workbenchActorAvatarsEnabled','workbenchMediaEmployeeReadEnabled','workbenchActorAvatarRootRef','closureNotificationUndoWindowMs','claimNotificationUndoWindowMs','memberEntry','bot','appChannelAccountId','notificationBindingsFile','groupRoutes'],'settings');
  if(r.schemaVersion!==1)configurationError('schemaVersion');
  if(typeof r.transportEnabled!=='boolean')configurationError('transportEnabled');
  if(typeof r.botInboundEnabled!=='boolean')configurationError('botInboundEnabled');
@@ -69,6 +72,8 @@ export function parseWorkbenchSettings(value:unknown):WorkbenchSettings{
  if(typeof r.workbenchRemindersEnabled!=='boolean')configurationError('workbenchRemindersEnabled');
  if(typeof r.workbenchFollowEnabled!=='boolean')configurationError('workbenchFollowEnabled');
  if(typeof r.workbenchReporterProfilesEnabled!=='boolean')configurationError('workbenchReporterProfilesEnabled');
+ const closureWindow=undoWindowMs(r.closureNotificationUndoWindowMs,'closureNotificationUndoWindowMs');
+ const claimWindow=undoWindowMs(r.claimNotificationUndoWindowMs,'claimNotificationUndoWindowMs');
  if(typeof r.listenPort!=='number'||!Number.isInteger(r.listenPort)||r.listenPort<1024||r.listenPort>65535)configurationError('listenPort');
  const m=member(r.memberEntry,r.botInboundEnabled&&!r.transportEnabled),b=exact(r.bot,['id','wsUrl','personTargetHashes','groupTargetHashes'],'bot');
  const id=text(b.id,'bot.id',128),wsUrl=text(b.wsUrl,'bot.wsUrl');if(id!==m.botId||!/^wss:\/\//u.test(wsUrl))configurationError('bot');
@@ -81,7 +86,7 @@ export function parseWorkbenchSettings(value:unknown):WorkbenchSettings{
  try{createWorkbenchGroupNotificationSender({pool:{query:async()=>{throw Error('CONFIG_CHECK_DATABASE_FORBIDDEN');}},routes});}catch{configurationError('groupRoutes');}
  if(routes.some(route=>route.botId!==id))configurationError('groupRoutes');
  if(routes.some(route=>!groups.includes(createHash('sha256').update(route.groupId).digest('hex'))))configurationError('groupRoutes.scope');
- return {schemaVersion:1,publicOrigin:origin(r.publicOrigin,'publicOrigin'),reporterOrigin:origin(r.reporterOrigin,'reporterOrigin'),listenPort:r.listenPort,transportEnabled:r.transportEnabled,botInboundEnabled:r.botInboundEnabled,workbenchRemindersEnabled:r.workbenchRemindersEnabled,workbenchFollowEnabled:r.workbenchFollowEnabled,workbenchReporterProfilesEnabled:r.workbenchReporterProfilesEnabled,workbenchMediaEmployeeReadEnabled:r.workbenchMediaEmployeeReadEnabled,workbenchActorAvatarsEnabled:r.workbenchActorAvatarsEnabled,workbenchActorAvatarRootRef:r.workbenchActorAvatarsEnabled?String(r.workbenchActorAvatarRootRef):null,memberEntry:m,
+ return {schemaVersion:1,publicOrigin:origin(r.publicOrigin,'publicOrigin'),reporterOrigin:origin(r.reporterOrigin,'reporterOrigin'),listenPort:r.listenPort,transportEnabled:r.transportEnabled,botInboundEnabled:r.botInboundEnabled,workbenchRemindersEnabled:r.workbenchRemindersEnabled,workbenchFollowEnabled:r.workbenchFollowEnabled,workbenchReporterProfilesEnabled:r.workbenchReporterProfilesEnabled,workbenchMediaEmployeeReadEnabled:r.workbenchMediaEmployeeReadEnabled,workbenchActorAvatarsEnabled:r.workbenchActorAvatarsEnabled,workbenchActorAvatarRootRef:r.workbenchActorAvatarsEnabled?String(r.workbenchActorAvatarRootRef):null,closureNotificationUndoWindowMs:closureWindow,claimNotificationUndoWindowMs:claimWindow,memberEntry:m,
   bot:{id,wsUrl,personTargetHashes:people,groupTargetHashes:groups},appChannelAccountId:text(r.appChannelAccountId,'appChannelAccountId',128),notificationBindingsFile:file,groupRoutes:routes};
 }
 export function readHumanWorkbenchConfiguration(env:NodeJS.ProcessEnv=process.env,{isolatedBoundaries=false}={}):WorkbenchConfiguration|{enabled:false}{
@@ -149,9 +154,9 @@ export function resolveWorkbenchMention(settings:RoleSettings,input:{botId:strin
 }
 export function workbenchRoleEnvironment(c:WorkbenchConfiguration,role:WorkbenchRole):NodeJS.ProcessEnv{
  const s=c.settings;
- if(role==='WORKER')return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify({role,transportEnabled:s.transportEnabled,botId:s.bot.id,...(s.workbenchMediaEmployeeReadEnabled?{workbenchMediaEmployeeReadEnabled:true}:{}),...(s.workbenchActorAvatarsEnabled?{actorAvatars:{rootRef:s.workbenchActorAvatarRootRef,validationProfile:s.memberEntry.validationProfile}}:{}),...(s.workbenchReporterProfilesEnabled?{reporterProfiles:{corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,validationProfile:s.memberEntry.validationProfile}}:{})}),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,...c.h5Environment,...(s.workbenchActorAvatarsEnabled?{THIRD_STAFF_INFO_SYNC_KEY:c.actorAvatarProviderKey}:{}),...(s.workbenchReporterProfilesEnabled?{APP_SECRET:c.appSecret}:{})};
+ if(role==='WORKER')return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify({role,transportEnabled:s.transportEnabled,botId:s.bot.id,closureNotificationUndoWindowMs:s.closureNotificationUndoWindowMs??DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,...(s.workbenchMediaEmployeeReadEnabled?{workbenchMediaEmployeeReadEnabled:true}:{}),...(s.workbenchActorAvatarsEnabled?{actorAvatars:{rootRef:s.workbenchActorAvatarRootRef,validationProfile:s.memberEntry.validationProfile}}:{}),...(s.workbenchReporterProfilesEnabled?{reporterProfiles:{corpId:s.memberEntry.corpId,agentId:s.memberEntry.agentId,validationProfile:s.memberEntry.validationProfile}}:{})}),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,...c.h5Environment,...(s.workbenchActorAvatarsEnabled?{THIRD_STAFF_INFO_SYNC_KEY:c.actorAvatarProviderKey}:{}),...(s.workbenchReporterProfilesEnabled?{APP_SECRET:c.appSecret}:{})};
  const settings:RoleSettings={role,reporterOrigin:s.reporterOrigin,transportEnabled:s.transportEnabled,botInboundEnabled:s.botInboundEnabled??false,botId:s.bot.id,memberEntry:s.memberEntry,appChannelAccountId:s.appChannelAccountId,notificationBindingsFile:s.notificationBindingsFile,
-  ...(role==='APP'?{publicOrigin:s.publicOrigin,listenPort:s.listenPort,workbenchRemindersEnabled:s.workbenchRemindersEnabled??false,workbenchFollowEnabled:s.workbenchFollowEnabled??false,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled??false,workbenchMediaEmployeeReadEnabled:s.workbenchMediaEmployeeReadEnabled??false,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled??false,groupNotificationTargets:s.groupRoutes.map(({botId,groupId})=>({botId,groupId}))}:{}),...(role==='GATEWAY'?{groupRoutes:s.groupRoutes,personTargetHashes:s.bot.personTargetHashes,groupTargetHashes:s.bot.groupTargetHashes}:{})};
+  ...(role==='APP'?{publicOrigin:s.publicOrigin,listenPort:s.listenPort,workbenchRemindersEnabled:s.workbenchRemindersEnabled??false,workbenchFollowEnabled:s.workbenchFollowEnabled??false,workbenchReporterProfilesEnabled:s.workbenchReporterProfilesEnabled??false,workbenchMediaEmployeeReadEnabled:s.workbenchMediaEmployeeReadEnabled??false,workbenchActorAvatarsEnabled:s.workbenchActorAvatarsEnabled??false,closureNotificationUndoWindowMs:s.closureNotificationUndoWindowMs??DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,claimNotificationUndoWindowMs:s.claimNotificationUndoWindowMs??DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS,groupNotificationTargets:s.groupRoutes.map(({botId,groupId})=>({botId,groupId}))}:{}),...(role==='GATEWAY'?{groupRoutes:s.groupRoutes,personTargetHashes:s.bot.personTargetHashes,groupTargetHashes:s.bot.groupTargetHashes}:{})};
  return {WORKBENCH_RUNTIME_PROFILE:HUMAN_WORKBENCH_PROFILE,WORKBENCH_ROLE_SETTINGS:JSON.stringify(settings),PILOT_LOG_IDENTITY_HASH_KEY:c.identityHashKey,P2_016_REPORTER_HMAC_SECRET:c.reporterHmacSecret,
   ...(role==='APP'&&c.h5Environment?Object.fromEntries(Object.entries(c.h5Environment).filter(([key])=>!['YIXIAOXIU_H5_FFMPEG_PATH','YIXIAOXIU_H5_FFPROBE_PATH'].includes(key))):{}),
   ...(role==='APP'||role==='GATEWAY'&&(s.transportEnabled||s.botInboundEnabled)?{APP_SECRET:c.appSecret}:{}),...(role==='GATEWAY'&&s.transportEnabled?{WORKBENCH_EXTERNAL_IO_APPROVED:'true',WORKBENCH_EXTERNAL_IO_APPROVAL_REF:c.ioApprovalRef}:{}),
@@ -168,6 +173,8 @@ export function readWorkbenchRoleSettings(role:WorkbenchRole,env:NodeJS.ProcessE
  if(r.workbenchReporterProfilesEnabled!==undefined&&(role!=='APP'||typeof r.workbenchReporterProfilesEnabled!=='boolean'))configurationError('workbenchReporterProfilesEnabled');
  if(r.workbenchMediaEmployeeReadEnabled!==undefined&&(role!=='APP'||typeof r.workbenchMediaEmployeeReadEnabled!=='boolean'))configurationError('workbenchMediaEmployeeReadEnabled');
  if(r.workbenchActorAvatarsEnabled!==undefined&&(role!=='APP'||typeof r.workbenchActorAvatarsEnabled!=='boolean'))configurationError('workbenchActorAvatarsEnabled');
+ if(r.closureNotificationUndoWindowMs!==undefined&&(role!=='APP'||typeof r.closureNotificationUndoWindowMs!=='number'))configurationError('closureNotificationUndoWindowMs');
+ if(r.claimNotificationUndoWindowMs!==undefined&&(role!=='APP'||typeof r.claimNotificationUndoWindowMs!=='number'))configurationError('claimNotificationUndoWindowMs');
  const m=member(r.memberEntry,r.botInboundEnabled===true&&!r.transportEnabled);origin(r.reporterOrigin,'reporterOrigin');text(r.botId,'botId');text(r.appChannelAccountId,'appChannelAccountId');
  if(m.botId!==r.botId)configurationError('botId');
  const file=text(r.notificationBindingsFile,'notificationBindingsFile');if(m.identityMode==='VERIFIED_DELEGATED_MAPPING')validateNotificationBindings(file,m);
@@ -184,6 +191,8 @@ export function readWorkbenchRoleSettings(role:WorkbenchRole,env:NodeJS.ProcessE
   result.workbenchMediaEmployeeReadEnabled=r.workbenchMediaEmployeeReadEnabled===true;
   result.workbenchActorAvatarsEnabled=r.workbenchActorAvatarsEnabled===true;
   result.workbenchReporterProfilesEnabled=r.workbenchReporterProfilesEnabled===true;
+  result.closureNotificationUndoWindowMs=r.closureNotificationUndoWindowMs===undefined?DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS:undoWindowMs(r.closureNotificationUndoWindowMs,'closureNotificationUndoWindowMs');
+  result.claimNotificationUndoWindowMs=r.claimNotificationUndoWindowMs===undefined?DEFAULT_CLAIM_NOTIFICATION_UNDO_WINDOW_MS:undoWindowMs(r.claimNotificationUndoWindowMs,'claimNotificationUndoWindowMs');
   if(!Array.isArray(r.groupNotificationTargets)||r.groupNotificationTargets.length>32)configurationError('groupNotificationTargets');
   result.groupNotificationTargets=r.groupNotificationTargets.map(v=>{const a=exact(v,['botId','groupId'],'groupNotificationTargets');return {botId:text(a.botId,'botId'),groupId:text(a.groupId,'groupId')};});
   result.publicOrigin=origin(r.publicOrigin,'publicOrigin');result.listenPort=Number(r.listenPort);}
@@ -197,8 +206,9 @@ export function readWorkbenchRoleSettings(role:WorkbenchRole,env:NodeJS.ProcessE
 export function readWorkbenchWorkerSettings(env:NodeJS.ProcessEnv=process.env):WorkerRoleSettings{
  if(env.WORKBENCH_RUNTIME_PROFILE!==HUMAN_WORKBENCH_PROFILE)configurationError('WORKBENCH_RUNTIME_PROFILE');
  let raw:unknown;try{raw=JSON.parse(env.WORKBENCH_ROLE_SETTINGS??'');}catch{configurationError('WORKBENCH_ROLE_SETTINGS');}
- const r=exact({reporterProfiles:null,actorAvatars:null,workbenchMediaEmployeeReadEnabled:false,...record(raw,'WORKBENCH_ROLE_SETTINGS')},['role','transportEnabled','botId','reporterProfiles','actorAvatars','workbenchMediaEmployeeReadEnabled'],'WORKBENCH_ROLE_SETTINGS');
+ const r=exact({reporterProfiles:null,actorAvatars:null,workbenchMediaEmployeeReadEnabled:false,closureNotificationUndoWindowMs:DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,...record(raw,'WORKBENCH_ROLE_SETTINGS')},['role','transportEnabled','botId','closureNotificationUndoWindowMs','reporterProfiles','actorAvatars','workbenchMediaEmployeeReadEnabled'],'WORKBENCH_ROLE_SETTINGS');
  if(r.role!=='WORKER'||typeof r.transportEnabled!=='boolean'||typeof r.workbenchMediaEmployeeReadEnabled!=='boolean')configurationError('role');
+ const closureWindow=undoWindowMs(r.closureNotificationUndoWindowMs,'closureNotificationUndoWindowMs');
  if(text(env.PILOT_LOG_IDENTITY_HASH_KEY,'PILOT_LOG_IDENTITY_HASH_KEY').length<16)configurationError('PILOT_LOG_IDENTITY_HASH_KEY');
  if(Buffer.byteLength(text(env.P2_016_REPORTER_HMAC_SECRET,'P2_016_REPORTER_HMAC_SECRET'))<32||env.P2_016_REPORTER_HMAC_SECRET===env.PILOT_LOG_IDENTITY_HASH_KEY)configurationError('P2_016_REPORTER_HMAC_SECRET');
  let reporterProfiles:WorkbenchReporterProfileScope|undefined;
@@ -209,5 +219,5 @@ export function readWorkbenchWorkerSettings(env:NodeJS.ProcessEnv=process.env):W
   text(env.APP_SECRET,'APP_SECRET');reporterProfiles={corpId:text(p.corpId,'reporterProfiles.corpId',128),agentId:String(p.agentId),validationProfile:p.validationProfile as WorkbenchReporterProfileScope['validationProfile']};
  }
  let actorAvatars:WorkerRoleSettings['actorAvatars'];if(r.actorAvatars!==null){const a=exact(r.actorAvatars,['rootRef','validationProfile'],'actorAvatars');if(a.validationProfile!=='DEPLOYMENT'&&a.validationProfile!=='ISOLATED_TEST')configurationError('actorAvatars.validationProfile');actorAvatars={rootRef:text(a.rootRef,'actorAvatars.rootRef',256),validationProfile:a.validationProfile};text(env.THIRD_STAFF_INFO_SYNC_KEY,'THIRD_STAFF_INFO_SYNC_KEY',4096);}
- return {...(r.workbenchMediaEmployeeReadEnabled?{workbenchMediaEmployeeReadEnabled:true}:{}),role:'WORKER',transportEnabled:r.transportEnabled,botId:text(r.botId,'botId'),...(reporterProfiles?{reporterProfiles}:{}),...(actorAvatars?{actorAvatars}:{})};
+ return {...(r.workbenchMediaEmployeeReadEnabled?{workbenchMediaEmployeeReadEnabled:true}:{}),role:'WORKER',transportEnabled:r.transportEnabled,botId:text(r.botId,'botId'),closureNotificationUndoWindowMs:closureWindow,...(reporterProfiles?{reporterProfiles}:{}),...(actorAvatars?{actorAvatars}:{})};
 }

@@ -10,7 +10,7 @@ const WARM_TOKENS:readonly string[]=[
   '--ease-standard','--ease-soft','--ease-exit',
   '--delay-tooltip','--press-scale','--scale-popover',
   '--shift-xs','--shift-sm','--shift-md','--shift-lg','--space-12',
-  '--brand-subtle','--stage-intake-bg','--stage-active-bg','--stage-done-bg',
+  '--brand-subtle','--stage-intake-bg','--stage-active-bg','--stage-done-bg','--tone-danger-dot',
 ];
 let media:MediaQueryList|undefined,override=false,revision=0;
 

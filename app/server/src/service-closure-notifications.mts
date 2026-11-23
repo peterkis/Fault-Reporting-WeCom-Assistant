@@ -4,10 +4,11 @@ import {appendCommunication,computeCommunicationContentHash} from './p2-004-comm
 import {isDeepStrictEqual} from 'node:util';
 import type {ClosureRecord} from './service-closure-records.mjs';
 import {CLOSURE_REASONS,CLOSURE_NOTIFICATION_TEMPLATES,reporterClosureText} from './service-closure-records.mjs';
-import {failP2016,textHashP2016} from './p2-016-domain-contracts.mjs';
-import {formatEpochMsToShanghaiLocal} from './platform/time-contract.mjs';
+import {failP2016,localP2016,textHashP2016} from './p2-016-domain-contracts.mjs';
+import {addEpochMilliseconds,assertEpochMsString,formatEpochMsToShanghaiLocal,shanghaiLocalToEpochMs} from './platform/time-contract.mjs';
 import {cancelUnattemptedDeliveryInTransaction} from './p2-004-communication-delivery-worker.mjs';
-export interface ClosureNotificationOptions {communicationAppend?:typeof appendCommunication;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null}
+import {DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS,delayDeliveryInTransaction,normalizeNotificationUndoWindowMs} from './notification-undo-window.mjs';
+export interface ClosureNotificationOptions {communicationAppend?:typeof appendCommunication;personDestinationAuthorizer?:((input:{transaction:PostgresTransaction;bot_id:string;reporter_user_id:string})=>boolean|Promise<boolean>)|null;closureNotificationUndoWindowMs?:number;now?:()=>string}
 export const SERVICE_CLOSURE_TRANSPORT='SERVICE_CLOSURE_TEXT';
 const SOURCE_JOIN_SQL=`LEFT JOIN pilot_ticket.ticket t ON t.id=c.ticket_id
  JOIN intake.service_intake i ON i.id=COALESCE(c.intake_id,t.source_intake_id)`;
@@ -51,8 +52,11 @@ export async function readServiceClosureDeliveryBinding(tx:PostgresTransaction,d
   idempotency_key:row.idempotency_key,content_hash:row.content_hash,text,retention_epoch:row.retention_epoch};
 }
 /** Called only by the current runtime notification projector, in its caller's Tx. */
-export async function projectServiceClosureNotification({transaction:tx,recordId,restoring=false,communicationAppend=appendCommunication,personDestinationAuthorizer=null}:{transaction:PostgresTransaction;recordId:string;restoring?:boolean}&ClosureNotificationOptions){
- const record=(await tx.query<ClosureRecord>('SELECT * FROM pilot_ticket.closure_record WHERE id=$1::uuid FOR UPDATE',[recordId])).rows[0];if(!record)failP2016('NOTIFICATION_EVENT_INVALID');
+export async function projectServiceClosureNotification({transaction:tx,recordId,restoring=false,communicationAppend=appendCommunication,personDestinationAuthorizer=null,closureNotificationUndoWindowMs,now=()=>String(Date.now())}:{transaction:PostgresTransaction;recordId:string;restoring?:boolean}&ClosureNotificationOptions){
+ const undoWindowMs=normalizeNotificationUndoWindowMs(closureNotificationUndoWindowMs,DEFAULT_CLOSURE_NOTIFICATION_UNDO_WINDOW_MS);
+ const record=(await tx.query<ClosureRecord&{event_time:string}>(`SELECT c.*,COALESCE(te.created_at,ie.occurred_at) AS event_time
+   FROM pilot_ticket.closure_record c LEFT JOIN pilot_ticket.ticket_event te ON te.event_id=c.closure_ticket_event_id
+   LEFT JOIN intake.service_intake_event ie ON ie.event_id=c.closure_intake_event_id WHERE c.id=$1::uuid FOR UPDATE OF c`,[recordId])).rows[0];if(!record)failP2016('NOTIFICATION_EVENT_INVALID');
  const messageColumn=restoring?'restoration_notification_message_id':'notification_message_id',processedColumn=restoring?'restoration_notification_processed_at':'notification_processed_at';
  const processed=(await tx.query<{processed:boolean;message:string|null}>(`SELECT ${processedColumn} IS NOT NULL AS processed,${messageColumn}::text AS message FROM pilot_ticket.closure_record WHERE id=$1::uuid`,[recordId])).rows[0];
  if(processed?.processed)return {created:false,replayed:true,message_id:processed.message};
@@ -81,11 +85,12 @@ export async function projectServiceClosureNotification({transaction:tx,recordId
  if(source.source_channel==='MANUAL'&&source.source_provider==='STAFF_MANUAL_REPORT')reason='MANUAL_APP_ONLY';
  if(!reason&&personDestinationAuthorizer&&await personDestinationAuthorizer({transaction:tx,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})!==true)reason='DIRECT_DESTINATION_NOT_ESTABLISHED';
  if(reason){await tx.query(`UPDATE pilot_ticket.closure_record SET ${processedColumn}=platform.local_now() WHERE id=$1::uuid`,[record.id]);return {created:false,reason};}
- const expiry=String(Date.now()+2592000000),message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',message_type:'text',visibility:'EXTERNAL',
+ const nowEpochMs=assertEpochMsString(now()),expiry=addEpochMilliseconds(nowEpochMs,2592000000),message=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',sender_system_code:'TICKET_LIFECYCLE',purpose:'SYSTEM_NOTIFICATION',message_type:'text',visibility:'EXTERNAL',
   client_command_id:randomUUID(),content:{text:restoring?CLOSURE_NOTIFICATION_TEMPLATES.RESTORED:reporterClosureText(record),transport:SERVICE_CLOSURE_TRANSPORT},destination_policy:'P2_016_REPORTER',privacy_class:'INTERNAL',retention_until:formatEpochMsToShanghaiLocal(expiry),retention_until_epoch_ms:expiry},
   resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,target_type:'PERSON',target_id:source.reporter_wecom_userid}]});
  if(!message||'error' in message)failP2016('NOTIFICATION_FAILED',503);
  const deliveryId=message.delivery_ids[0];if(message.outbox_id===null||!deliveryId)failP2016('NOTIFICATION_FAILED',503);
+ if(!restoring&&undoWindowMs>0)await delayDeliveryInTransaction({transaction:tx,deliveryId,nextAttemptEpochMs:addEpochMilliseconds(shanghaiLocalToEpochMs(localP2016(record.event_time)),undoWindowMs)});
  await tx.query(`UPDATE pilot_ticket.closure_record SET ${messageColumn}=$2::uuid,${processedColumn}=platform.local_now() WHERE id=$1::uuid`,[record.id,message.message_id]);
  if(record.ticket_id)await tx.query(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,destination_type,template_version,message_id,outbox_id,delivery_id)
   VALUES($1::uuid,$2::uuid,$3,$4,'PERSON','service-closure/1',$5::uuid,$6::uuid,$7::uuid)`,[restoring?record.restoration_event_id:record.closure_ticket_event_id,record.ticket_id,restoring?'TICKET_RESTORED':'TICKET_DISMISSED',textHashP2016(JSON.stringify(['WECOM_AIBOT',source.source_bot_id,source.reporter_wecom_userid])),message.message_id,message.outbox_id,deliveryId]);

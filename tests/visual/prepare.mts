@@ -86,7 +86,7 @@ export function fixtureScript(presence: boolean, principalId?: string): string {
       return response({ schema_version: 1, people });
     if (
       method === 'POST' &&
-      url.pathname.endsWith('/follow') &&
+      url.pathname.endsWith('/follow-up-schedule') &&
       window.__visualToastMode === 'loading'
     )
       return new Promise(() => {});
@@ -160,23 +160,47 @@ async function expand(b: Browser, selector: string, prepared = false): Promise<v
   }
   await waitForAnimationsSettled(b);
 }
-async function toastCopies(b: Browser): Promise<Record<string, string>> {
+async function toastCopies(b: Browser, stack: boolean): Promise<Record<string, string>> {
   const copies: Record<string, string> = {};
-  const take = async (tone: string) => {
-    const s = `.workbench-toast[data-visible=true][data-tone=${tone}]`;
+  const take = async (tone: string, source?: string) => {
+    const s = `.workbench-toast[data-visible=true][data-tone=${tone}]` +
+      (source ? `:has([data-toast-source=${source}])` : '');
     await b.waitFor(`Boolean(document.querySelector(${q(s)}))`);
     await waitForAnimationsSettled(b, s);
     copies[tone] = String(await b.evaluate(`document.querySelector(${q(s)}).outerHTML`));
   };
-  const follow = async () => {
-    await b.waitFor("document.querySelector('[data-action=toggle-item-follow]')?.disabled===false");
-    await b.evaluate("document.querySelector('[data-action=toggle-item-follow]').click()");
+  const setSharedTime = async (due: string) => {
+    const field = '.shared-follow-up input[name=due_at]';
+    const submit = '.shared-follow-up button[type=submit]';
+    await b.waitFor(`document.querySelector(${q(field)})?.disabled===false`);
+    await b.evaluate(`(() => {
+      const input = document.querySelector(${q(field)});
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${q(due)});
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`);
+    await b.waitFor(`document.querySelector(${q(submit)})?.disabled===false`);
+    await b.evaluate(`document.querySelector(${q(submit)}).click()`);
   };
-  await follow();
-  await b.waitFor(`[...document.querySelectorAll('.workbench-toast[data-tone=success]')].some(
-  (n) => !n.textContent.includes('正在读取'),
-);`);
-  await take('success');
+  if (stack) {
+    const follow = '[data-action=toggle-item-follow][aria-pressed=false]:not(:disabled)';
+    await b.waitFor(`Boolean(document.querySelector(${q(follow)}))`);
+    // Preserve the real toast at first render, before its countdown advances or the draft steps navigate away.
+    copies.success = String(await b.evaluate(`new Promise(resolve => {
+      const observer = new MutationObserver(() => {
+        const toast = document.querySelector('.workbench-toast[data-visible=true][data-tone=success]:has([data-toast-source=item-follow]):has([data-toast-action=undo]):has([data-toast-countdown])');
+        if (!toast) return;
+        observer.disconnect();
+        toast.querySelector('[data-toast-action=undo]').focus({preventScroll: true});
+        resolve(toast.outerHTML);
+      });
+      observer.observe(document.body, {subtree: true, childList: true, attributes: true});
+      document.querySelector(${q(follow)}).click();
+    })`));
+  } else {
+    await setSharedTime('2026-11-14 10:00:00');
+    await b.waitFor(`Boolean(document.querySelector('.shared-follow-up p time[datetime="2026-11-14T10:00:00+08:00"]'))`);
+    await take('success', 'follow-up');
+  }
   await b.evaluate("window.__visualToastMode='conflict'");
   await fill(b, '.ds-detail-footer textarea', '打印故障排查记录（合成）。');
   await b.waitFor(`[...document.querySelectorAll('.ds-detail-footer button')].some(
@@ -200,9 +224,11 @@ crypto.subtle.encrypt = () => Promise.reject(new DOMException('synthetic', 'Oper
   await b.command('Page.navigate', { url });
   await b.waitFor("Boolean(document.querySelector('#detail-title'))");
   await take('info');
-  await b.evaluate("window.__visualToastMode='loading'");
-  await follow();
-  await take('loading');
+  if (!stack) {
+    await b.evaluate("window.__visualToastMode='loading'");
+    await setSharedTime('2026-11-14 11:00:00');
+    await take('loading', 'follow-up');
+  }
   return copies;
 }
 export async function prepareScreen(b: Browser, f: VisualFixture, s: Screen): Promise<void> {
@@ -326,8 +352,8 @@ export async function prepareScreen(b: Browser, f: VisualFixture, s: Screen): Pr
         break;
       case 'toast-exhibit':
       case 'toast-stack': {
-        const copies = await toastCopies(b),
-          stack = step === 'toast-stack';
+        const stack = step === 'toast-stack';
+        const copies = await toastCopies(b, stack);
         // Return to a settled drawer after collecting transient notices; keep the real placement viewport.
         await b.command('Storage.clearDataForOrigin', {
           origin: f.origin,
@@ -337,6 +363,7 @@ export async function prepareScreen(b: Browser, f: VisualFixture, s: Screen): Pr
           url: f.origin + '/workbench/app/items/ticket/' + f.ids.processing + '?range=all',
         });
         await b.waitFor("Boolean(document.querySelector('.ds-detail-footer textarea'))");
+        if (stack) await b.waitFor("Boolean(document.querySelector('[data-action=toggle-item-follow][aria-pressed=true]'))");
         await b.evaluate(`(() => {
   const a = document.querySelector('.ds-detail-footer textarea');
   Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(a, '');

@@ -46,7 +46,7 @@ test('MVP actual handling and completion use independent private notices and onl
   }
   const json=JSON.stringify(cards);assert.equal(json.includes('主动单聊'),false);assert.equal(json.includes('群聊报修'),false);assert.equal(json.includes('工程师正在处理你的工单'),true);
   assert.equal(JSON.stringify([...cards,...payloads]).includes('MVP_PRIVATE_MATERIAL'),false);assert.equal(JSON.stringify([...cards,...payloads]).includes('INTERNAL_T11_CANARY'),false);
- },{mvpNotificationsEnabled:true,groupNotificationTargets:targets,manualRoundConsumption:true});
+ },{mvpNotificationsEnabled:true,groupNotificationTargets:targets,manualRoundConsumption:true,claimNotificationUndoWindowMs:0});
 });
 
 test('MVP original Bot private and group completion notices recover from temporary member lookup outages without duplicate sends',{timeout:240000},async()=>{
@@ -79,7 +79,7 @@ test('MVP original Bot private and group completion notices recover from tempora
    await context.pool.query('WITH stamp AS(SELECT platform.physical_epoch_ms()-1000 AS epoch) UPDATE communication.delivery SET next_attempt_epoch_ms=epoch,next_attempt_at=platform.local_from_epoch_ms(epoch) FROM stamp WHERE id=$1::uuid',[row.id]);
    const result=await worker.deliver({deliveryId:row.id});assert.ok(result&&'status'in result);assert.equal(result.status,'SENT');assert.equal(await worker.deliver({deliveryId:row.id}),null);}
   assert.equal(privateSends,2);assert.equal(groupSends,1);
- },{mvpNotificationsEnabled:true,groupNotificationTargets:[{botId:'bot-test',groupId}],manualRoundConsumption:true});
+ },{mvpNotificationsEnabled:true,groupNotificationTargets:[{botId:'bot-test',groupId}],manualRoundConsumption:true,claimNotificationUndoWindowMs:0});
 });
 
 for(const priorState of ['DEAD_LETTER','SENT','RECONCILIATION_REQUIRED','CANCELLED_UNKNOWN'] as const)test('MVP upgrade respects the original side-effect evidence of '+priorState,{timeout:240000},async()=>{
@@ -124,7 +124,7 @@ test('MVP Bot member qualification rechecks the retained original inbox after it
   const worker=createCommunicationDeliveryWorker({pool:context.pool,enabled:true,sender,attemptAdmission:composeConversationRuleAdmission(createMvpNotificationAdmission())});
   const result=await worker.deliver({deliveryId:delivery.id});assert.ok(result&&'status'in result);assert.equal(result.status,'DEAD_LETTER');assert.equal(result.side_effect_state,'NOT_ATTEMPTED');
   assert.equal(expired,true);assert.equal(result.last_error_code,'P2_016_CARD_BINDING_INVALID');assert.equal(qualified,1);assert.equal(sdk,0);
- },{mvpNotificationsEnabled:true,manualRoundConsumption:true});
+ },{mvpNotificationsEnabled:true,manualRoundConsumption:true,claimNotificationUndoWindowMs:0});
 });
 
 test('MVP queued assignment stays silent and cancels an obsolete unattempted notice; real handling and reopened rounds preserve original responsibility facts',{timeout:240000},async()=>{

@@ -5,10 +5,14 @@ import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 import {closeDesktopSession,desktopHost} from '../desktop/host';
 import {clearWorkbenchToasts} from './ToastFeedback';
 import {clearSelfWrites} from '../design/motion/self-write';
+import {clearItemOptimisticState,clearOptimisticState} from '../features/optimistic/store';
+import {clearCommandRecovery,clearItemCommandRecovery} from '../features/optimistic/command-recovery';
 
 let expiredDesktopCleanup:Promise<void>|undefined;
 
 export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
+  clearItemCommandRecovery(principal,kind,id);
+  clearItemOptimisticState(principal,kind,id);
   const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='actor-avatar'||key[0]==='reporter-profile'||key[0]==='reporter-contact'||key[0]==='web-report'||key[0]==='reminder-locate'||key[0]==='detail'||key[0]==='attachments'||key[0]==='item-conversations'||key[0]==='personal-read-position'||key[0]==='personal-read-command')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&['ticket-assignment-history','ticket-round-notifications','ticket-command-context','ticket-related-conversations','ticket-unassign-targets','ticket-takeover-targets','ticket-takeover-completion-targets','ticket-takeover-completion-selection','ticket-return-to-dispatch-targets','ticket-follow-up-schedule','ticket-follow-up-ack','ticket-supplement-follow-up'].includes(String(key[0]))&&key[2]===id)||(key[0]==='manual-review'&&(key[2]===kind&&key[3]===id||kind==='review'&&key[4]===id))||(kind==='conversation'&&['conversation-view','conversation-eligible','conversation-chat','conversation-related'].includes(String(key[0]))&&key[2]===id));
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
@@ -69,6 +73,8 @@ export async function clearReviewAuthorization(client:QueryClient,principal:stri
 }
 export function clearTicketAuthorization(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemAuthorization(client,principal,'ticket',ticketId,error);}
 export function clearSessionView(client:QueryClient,status:401|403|undefined,notice?:string){
+  clearCommandRecovery();
+  clearOptimisticState();
   clearSelfWrites();
   clearWorkbenchToasts();
   closeDesktopSession();

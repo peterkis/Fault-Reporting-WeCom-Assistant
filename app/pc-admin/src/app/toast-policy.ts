@@ -1,7 +1,25 @@
 /** Design system 6.11 (card 32D): success and plain notices close after 4s; unknown, in-progress and error notices stay until closed. */
 export const AUTO_DISMISS_MS=4000;
+/** Card 37A: undo notices stay visible for a 5s unpaused window, capped at 10s total even while paused on hover/focus. */
+export const UNDO_TOAST_MS=5000;
+export const UNDO_TOAST_MAX_VISIBLE_MS=10000;
 /** At most three notices are visible at once. */
 export const MAX_VISIBLE_TOASTS=3;
+
+type ToastRoute={pathname:string;search:string};
+function workbenchView({pathname,search}:ToastRoute){
+  const params=new URLSearchParams(search);
+  if(pathname!=='/'&&(!/^\/items\/(?:ticket|intake|review)\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/?$/iu.test(pathname)||params.get('locate')==='1'))return null;
+  params.delete('detail');
+  params.sort();
+  return params.toString();
+}
+
+export function isDetailNavigation(from:ToastRoute,to:ToastRoute){
+  if(from.pathname==='/'&&to.pathname==='/')return false;
+  const view=workbenchView(from);
+  return view!==null&&view===workbenchView(to);
+}
 
 export function toastDuration({unknown,loading,error,persistent}:{unknown:boolean;loading:boolean;error:boolean;persistent:boolean}):number{
   return unknown||loading||error||persistent?Infinity:AUTO_DISMISS_MS;
