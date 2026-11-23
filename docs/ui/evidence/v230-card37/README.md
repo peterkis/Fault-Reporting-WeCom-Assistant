@@ -1,4 +1,8 @@
-# Card 37A acceptance and visual evidence
+# Card 37 evidence
+
+This folder holds the evidence for Card 37A (optimistic updates and Undo) and Card 37C (hover cards). The 37C hover-card capture inventory is in [card37c-hover.md](card37c-hover.md).
+
+## Card 37A acceptance and visual evidence
 
 **Verified in Chrome after round 4c.** The 37A browser suite passed 42/42 and the store tests 7/7. In the round-2 rollback filmstrip, frame 2 showed the red outline while the card was still at the top of 处理中. From round 3 the outline starts after the return animation, and A5.3 and the A5.11 filmstrip check its position. The stills and filmstrips below come from the round-3 Chrome run. Round 4 changed only when the board reread runs and which card plays the outline, so no still or filmstrip state changed.
 
@@ -85,3 +89,7 @@ node --test --test-concurrency=1 --test-name-pattern='^37A A5[.](3|5|11) ' \
 For the existing move-form conflict and lost-acknowledgement replay checks, run `node --test --test-concurrency=1 .build/runtime/tests/wbint-t42-board-boundaries.browser.test.mjs`.
 
 The related r1 entry points are `node --test .build/runtime/tests/pc-admin-card32d-toast.browser.test.mjs` and `node --test .build/runtime/tests/card37a-notification-undo-window.integration.test.mjs`.
+
+## Card 37C hover evidence
+
+The 37C browser suite writes its capture inventory and measured popover motion to [card37c-hover.md](card37c-hover.md). The review record is [review.md](review.md).

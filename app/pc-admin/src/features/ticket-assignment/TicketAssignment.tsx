@@ -8,13 +8,14 @@ import {WorkbenchSelect} from "../../app/WorkbenchSelect";
 import {ToastFeedback,DraftStatus,DraftFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {DialogAlert,DialogDraftAlert,useDialogToast} from '../../app/DialogFeedback';
 import {DetailDialog} from '../../app/DetailDialog';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {api,ApiError,captureWorkbenchRead,errorMessage,workbenchTransportWritable} from '../../api/client';
 import type {Principal,P2016AssignmentAction,P2016AssignmentCommand} from '../../api/client';
 import {useAssignmentDraft,EMPTY_ASSIGNMENT} from './use-assignment-draft';
 import type {AssignmentIntent,AssignmentInput} from './use-assignment-draft';
 import {markSelfWrite} from '../../design/motion/self-write';
+import {useHoverCardsActions} from '../hover-cards/hover-card-store';
 
 export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='工单',otherBlocked=false}:{ticketId:string;principal:Principal;itemLabel?:string;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const step=useNextStep();
@@ -87,6 +88,56 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   const send=async(intent:AssignmentIntent,checking=false)=>{if(request.current||(!checking&&!workbenchTransportWritable()))return;const controller=new AbortController(),token=generation.current;request.current=controller;setPending(intent);setState('submitting');setMessage(checking?'正在核对原操作结果…':'正在提交责任交接…');try{await draft.prepare(intent);}catch{if(!mine(controller.signal)||token!==generation.current)return;request.current=null;setState(checking?'unknown':'denied');setMessage('恢复存储尚未准备，本次未发送新的操作。');return;}if(!controller.signal.aborted&&generation.current===token)mutation.mutate({intent,signal:controller.signal,token});};
   const check=()=>{const commandId=pending?.command.client_command_id??draft.operationId;if(request.current||!commandId)return;if(!draft.enabled&&pending){void send(pending,true);return;}const controller=new AbortController();request.current=controller;lookup.current={id:commandId,controller};setState('submitting');setMessage('正在核对上次操作…');acknowledgement.mutate({commandId,signal:controller.signal,requireRead:captureWorkbenchRead(controller.signal)});};
   const allowed=context.data?.allowed_actions??[],action:P2016AssignmentAction=allowed.includes('assign')?'assign':'transfer-assignment';
+  const hoverActions=useHoverCardsActions(),transferToken=useRef<symbol>(Symbol('transfer-assignment')),pendingPreselect=useRef<string|null>(null),transferOpener=useRef<(displayName:string)=>void>(()=>{});
+  const openForPerson=useCallback((name:string)=>{transferOpener.current(name);},[]);
+  transferOpener.current=(displayName:string)=>{
+    const desired=displayName.trim();
+    if(!desired)return;
+    pendingPreselect.current=desired;
+    // A new person entry never keeps an earlier choice: the handler stays empty unless exactly one candidate matches.
+    setPerson('');
+    setOpen(true);
+    const data=targets.data;
+    if(data){
+      if(!team&&data.resolver_teams.length===1&&data.resolver_teams[0]){
+        setTeam(data.resolver_teams[0].team_id);
+        return;
+      }
+      if(team&&data.resolver_team_id===team){
+        const matches=data.items.filter(item=>item.display_name.trim()===desired);
+        setPerson(matches.length===1&&matches[0]?matches[0].principal_id:'');
+        pendingPreselect.current=null;
+      }
+    }
+  };
+  const canHoverTransfer=context.isSuccess&&!context.isError&&allowed.includes('transfer-assignment')&&state!=='submitting'&&!draft.restoring&&!otherBlocked&&!pending&&!draft.operationId;
+  useEffect(()=>{
+    if(!hoverActions)return;
+    const token=transferToken.current;
+    if(!canHoverTransfer){
+      hoverActions.unregisterTransfer(token);
+      return;
+    }
+    hoverActions.registerTransfer(token,{ticketId,canTransfer:true,openForPerson});
+    return ()=>{hoverActions.unregisterTransfer(token);};
+  },[canHoverTransfer,hoverActions,openForPerson,ticketId]);
+  useEffect(()=>{
+    if(!open){
+      pendingPreselect.current=null;
+      return;
+    }
+    const desired=pendingPreselect.current;
+    if(!desired||!targets.isSuccess||!targets.data)return;
+    if(!team&&targets.data.resolver_teams.length===1&&targets.data.resolver_teams[0]){
+      setTeam(targets.data.resolver_teams[0].team_id);
+      return;
+    }
+    if(team&&targets.data.resolver_team_id===team){
+      const matches=targets.data.items.filter(item=>item.display_name.trim()===desired);
+      setPerson(matches.length===1&&matches[0]?matches[0].principal_id:'');
+      pendingPreselect.current=null;
+    }
+  },[open,targets.data,targets.isSuccess,team]);
   const submit=()=>{if(blocked||otherBlocked||!draft.canSubmit||request.current||!context.data||!allowed.includes(action)||(context.isPending||context.isError)||(targets.isPending||targets.isError)||!workbenchTransportWritable()||!choice||(choice==='TRANSFER_SELECTED'&&(!selected.length||related.isPending||related.isError))||!team||!targets.data?.items.some(item=>item.principal_id===person))return;
     void send(Object.freeze({action,command:Object.freeze({client_command_id:crypto.randomUUID(),expected_version:context.data.version,reason_code:action==='assign'?'WORKBENCH_ASSIGN':'WORKBENCH_TRANSFER',target_principal_id:person,resolver_team_id:team,communication_choice:choice,sessions:Object.freeze(choice==='RETAIN_CURRENT'?[]:selected.map(row=>Object.freeze({...row})))} )}));};
   // Card 34A: while the form is open as a modal, its own outcome and draft notices show inside it; only later ones become page

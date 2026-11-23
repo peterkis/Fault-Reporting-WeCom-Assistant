@@ -22,22 +22,29 @@
 .ds-ticket-body .card-meta {display: flex; align-items: center; gap: var(--space-1); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-ticket-body .card-meta>.ds-reporter-text {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .ds-ticket-body .ds-source-label {max-width: 45%; flex: none;}
-.ds-ticket-body .card-footer {min-height: var(--avatar-sm); gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-xs);}
+.ds-ticket-body .card-footer,.ds-ticket-card-surface .ds-ticket-card-footer {min-height: var(--avatar-sm); gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-ticket-body .card-tags {flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-1); margin: 0; overflow: hidden;}
 .ds-ticket-body .card-tags .ds-tag {flex-shrink: 1; max-width: 100%; margin: 0;}
 .ds-ticket-owner {min-width: var(--avatar-sm); max-width: 30%; flex: 0 5 auto; overflow: hidden;}
-.ds-ticket-owner .owner {max-width: 100%; gap: var(--space-1);}
+.ds-ticket-owner .owner,.ds-ticket-owner .ds-ticket-owner-placeholder {display: inline-flex; align-items: center; max-width: 100%; gap: var(--space-1);}
+.card-footer .ds-ticket-owner .ds-ticket-owner-placeholder {max-width: 55%; visibility: hidden; pointer-events: none;}
 .ds-ticket-owner .owner-name {font-size: var(--fs-xs);}
-.ds-ticket-body .activity-time {flex: none; margin: 0; font-size: var(--fs-xs); line-height: var(--lh-xs);}
-.ds-ticket-owner[data-has-owner-name]+.activity-time::before {content: '·'; margin-right: var(--space-1);}
+.ds-ticket-body .activity-time,.ds-ticket-card-surface .ds-ticket-owner-time-spacer {flex: none; margin: 0; font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; font-variant-numeric: var(--font-numeric-variant);}
+.ds-ticket-owner[data-has-owner-name]+:is(.activity-time,.ds-ticket-owner-time-spacer)::before {content: '·'; margin-right: var(--space-1);}
 .ds-ticket-heat.ds-tag {display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; font-family: var(--font-sans); white-space: nowrap;}
 .ds-ticket-heat[data-heat-tone=danger] {font-weight: var(--fw-semibold);}
 .ds-ticket-heat>svg,.ds-ticket-completed>svg {width: var(--icon-sm); height: var(--icon-sm);}
 .ds-ticket-completed {display: inline-flex; align-items: center; gap: var(--space-1); color: var(--stage-done-fg); font-family: var(--font-sans); white-space: nowrap;}
 .ds-board-claim-slot {position: absolute; right: var(--space-3); bottom: var(--space-3); display: none;}
-.ds-ticket-card:is(:hover,:focus-within):has(.ds-board-claim-slot button) .ds-board-claim-slot {display: block;}
-.ds-ticket-card:is(:hover,:focus-within):has(.ds-board-claim-slot button) :is(.ds-ticket-owner,.activity-time) {visibility: hidden;}
+.ds-ticket-card:is(:hover,:focus-within):not(:has(.ds-ticket-owner-link[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))):has(.ds-board-claim-slot button) .ds-board-claim-slot {display: block;}
+.ds-ticket-card:is(:hover,:focus-within):not(:has(.ds-ticket-owner-link[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))):has(.ds-board-claim-slot button) :is(.ds-ticket-owner,.activity-time) {visibility: hidden;}
 @media (hover:none) {.ds-ticket-card:has(.ds-board-claim-slot button) .ds-board-claim-slot {display: block;} .ds-ticket-card:has(.ds-board-claim-slot button) :is(.ds-ticket-owner,.activity-time) {visibility: hidden;}}
+.ds-ticket-card-surface {position: relative;}
+.ds-ticket-card-surface .ds-ticket-card-footer {position: absolute; right: var(--space-3); bottom: var(--space-3); left: calc(var(--space-3) + var(--space-6) + var(--space-1) + var(--space-2)); display: flex; justify-content: flex-end; align-items: center; pointer-events: none;}
+.ds-ticket-card-surface .ds-ticket-owner-time-spacer {visibility: hidden; pointer-events: none;}
+.ds-ticket-card-surface .ds-ticket-card-footer :is(.ds-ticket-owner-link,[data-hover-card-trigger]) {pointer-events: auto; position: relative;}
+.ds-ticket-card .ds-ticket-owner-link {text-decoration: none; border-radius: var(--radius-xs);}
+.ds-ticket-card .ds-ticket-owner-link:focus-visible {outline: 2px solid var(--border-focus); outline-offset: 2px;}
 .ds-ticket-deadline {display: inline-flex; align-items: center; gap: var(--space-1); flex: none; color: var(--tone-attention-fg); font-family: var(--font-sans);}
 .ds-ticket-deadline[data-tone=danger] {color: var(--tone-danger-fg); font-weight: var(--fw-semibold);}
 .ds-ticket-deadline>svg {width: var(--icon-sm); height: var(--icon-sm);}
@@ -80,10 +87,10 @@
 .ds-ticket-card .ds-dismissed-open.card-open {display: inline; padding: 0; color: inherit; font: inherit;}
 .ds-dismissed-open::after {position: absolute; inset: 0; content: '';}
 .ds-work-row[data-closure-kind=DISMISSED] .ds-list-owner-cell {position: relative;}
-.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {position: absolute; inset: 0; z-index: var(--z-list-claim); margin: auto; opacity: 0; width: fit-content; height: var(--control-h-sm); min-height: var(--control-h-sm);}
-.ds-work-table .ds-work-row:is(:hover,:focus-within) .ds-list-owner-cell .ds-closure-restore.button {opacity: 1;}
+.ds-work-table .ds-list-owner-cell .ds-closure-restore.button {position: absolute; inset: 0; z-index: var(--z-list-claim); margin: auto; opacity: 0; pointer-events: none; width: fit-content; height: var(--control-h-sm); min-height: var(--control-h-sm);}
+.ds-work-table .ds-work-row:is(:hover,:focus-within):not(:has(.ds-list-owner[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))) .ds-list-owner-cell .ds-closure-restore.button {opacity: 1; pointer-events: auto;}
 .ds-work-table .ds-closure-original.button {z-index: var(--z-list-claim);}
-.ds-work-row:has(.ds-closure-restore):hover .ds-list-owner,.ds-work-row:has(.ds-closure-restore):focus-within .ds-list-owner {visibility: hidden;}
+.ds-work-row:has(.ds-closure-restore):is(:hover,:focus-within):not(:has(.ds-list-owner[data-hover-card-trigger]:is(:hover,:focus,:focus-visible,[aria-expanded="true"]))) .ds-list-owner {visibility: hidden;}
 .ds-ticket-card .ds-closure-restore.button[data-tone] {position: absolute; right: var(--space-2); bottom: var(--space-2); opacity: 0;}
 .ds-ticket-card:is(:hover,:focus-within) .ds-closure-restore.button[data-tone] {opacity: 1;}
 .ds-ticket-card[data-closure-kind=DISMISSED]:has(.ds-closure-restore):hover .ds-ticket-closer,.ds-ticket-card[data-closure-kind=DISMISSED]:has(.ds-closure-restore):focus-within .ds-ticket-closer {visibility: hidden;}

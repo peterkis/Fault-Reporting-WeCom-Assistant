@@ -151,6 +151,16 @@
   },
   "rules": [
     {
+      "pattern": "^tests/(?:pc-admin-card37c-hovercard\\.browser\\.test\\.mts$|fixtures/card37c-(?:hovercard|board-publication)\\.|helpers/card37c-hover-browser\\.mts$)|^app/pc-admin/src/(?:design/components/HoverCard/|features/hover-cards/)",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 37C checks delayed hover reads, placement and focus, real board filtering, disclosure privacy and popover filmstrips."
+    },
+    {
+      "pattern": "^(?:app/server/src/workbench-people-profile\\.mts|tests/pc-admin-card37c-people-profile\\.integration\\.test\\.mts)$",
+      "profiles": ["pc", "core"],
+      "reason": "Card 37C department reads must preserve team visibility, session revocation, response projection and provider cache bounds."
+    },
+    {
       "pattern": "^app/server/src/workbench-ticket-return-to-dispatch\\.mts$",
       "profiles": ["core", "notification"],
       "reason": "Card 37A: preserve return command coverage and verify transactional cancellation at the claim window boundary."

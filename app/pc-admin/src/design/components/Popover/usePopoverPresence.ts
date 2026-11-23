@@ -2,7 +2,7 @@ import {useLayoutEffect,useState} from 'react';
 import {motionToken,useMotionRevision} from '../../motion/tokens';
 
 /** Custom (non-HeroUI) popovers share E4's transition lifecycle without owning focus or business state. */
-export function usePopoverPresence(open:boolean){
+export function usePopoverPresence(open:boolean,options?:{immediateEnter?:boolean}){
   const [retained,setRetained]=useState(open),[entering,setEntering]=useState(open),revision=useMotionRevision();
   useLayoutEffect(()=>{
     if(!open){
@@ -20,5 +20,6 @@ export function usePopoverPresence(open:boolean){
     let nested:number|undefined;
     return()=>{cancelAnimationFrame(frame);if(nested!==undefined)cancelAnimationFrame(nested);};
   },[open,revision]);
-  return {present:open||retained,attributes:{'data-entering':open&&entering?true:undefined,'data-exiting':!open?true:undefined,'aria-hidden':!open?true:undefined,inert:!open}};
+  const initialEntering=Boolean(options?.immediateEnter)&&open&&!retained&&typeof document!=='undefined'&&!document.hidden;
+  return {present:open||retained,attributes:{'data-entering':open&&(entering||initialEntering)?true:undefined,'data-exiting':!open?true:undefined,'aria-hidden':!open?true:undefined,inert:!open}};
 }

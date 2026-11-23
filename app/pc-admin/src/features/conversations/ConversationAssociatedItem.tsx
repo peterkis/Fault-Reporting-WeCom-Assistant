@@ -1,11 +1,9 @@
 import {BlockSkeleton,LoadingStatus,Skeleton} from '../../design/components/Skeleton/Skeleton';
 import {useDelayedLoading} from '../../design/hooks/useDelayedLoading';
-import {useEffect,useState} from 'react';
-import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {useCallback,useState} from 'react';
 import {X,ArrowUpRight} from 'lucide-react';
-import {api,ApiError,errorMessage,statusLabels} from '../../api/client';
+import {ApiError,errorMessage,statusLabels} from '../../api/client';
 import type {Principal} from '../../api/client';
-import {clearItemAuthorization} from '../../app/authorization';
 import {WorkbenchLink as Link} from '../../app/WorkbenchLink';
 import {TicketCard,TicketCardBody,TicketCategoryTile} from '../../design/components/TicketCard/TicketCard';
 import {StageGlyph} from '../../design/components/StageGlyph/StageGlyph';
@@ -18,15 +16,15 @@ import type {MouseEvent} from 'react';
 import {Section} from '../../design/components/Section/Section';
 import {StatusBadge} from '../../design/components/StatusBadge/StatusBadge';
 import {statusTones,stagePresentation} from '../../design/status-map';
+import {useItemSummary} from '../hover-cards/use-item-summary';
 import type {ConversationChatEntry} from './inbox-client';
 import {publicChannelLabel,sourceLabel} from './client';
 
 export function AssociatedItem({entry,principal,blocked}:{entry:ConversationChatEntry;principal:Principal;blocked:boolean}){
-  const item=entry.canonical_item,client=useQueryClient(),[open,setOpen]=useState(false);
-  const detail=useQuery({queryKey:['detail',principal.principal_id,item?.kind,item?.id,'summary'],queryFn:({signal})=>{if(!item)throw Error('NO_CANONICAL_ITEM');return api.detail(item.kind,item.id,null,signal);},enabled:Boolean(item)});
+  const item=entry.canonical_item,[open,setOpen]=useState(false);
+  const closeDrawer=useCallback(()=>setOpen(false),[]);
+  const {query:detail,denied}=useItemSummary({principalId:principal.principal_id,item,onRevoked:closeDrawer});
   const loading=useDelayedLoading(detail.isPending&&Boolean(item));
-  const denied=detail.error instanceof ApiError&&[403,404].includes(detail.error.status);
-  useEffect(()=>{if(item&&detail.error instanceof ApiError&&[403,404].includes(detail.error.status)){setOpen(false);void clearItemAuthorization(client,principal.principal_id,item.kind,item.id,detail.error);}},[client,principal.principal_id,item,denied,detail.error]);
   const current=denied?undefined:detail.data?.item;
   const heatStart=current?cardHeatStart(current):null,heat=current?cardHeat(current,Date.now()):null;
   const openSummary=(event:MouseEvent<HTMLAnchorElement>)=>{event.preventDefault();if(!blocked)setOpen(true);};

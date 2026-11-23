@@ -19,7 +19,8 @@ import {PersonalReadMaterial} from '../features/personal-read/PersonalReadMateri
 import {groupActivityRecords} from './activity-time.mjs';
 import {activityActorName} from './activity-actors.mjs';
 import {DetailDialog,useDetailModalOpen} from './DetailDialog';
-import {AssignmentCommunication,assignmentAction} from '../features/assignment-history/TicketAssignmentHistory';
+import {forwardHoverTriggerPointer,PersonHoverTrigger} from '../design/components/HoverCard/HoverCard';
+import {AssignmentActionContent,AssignmentCommunication,AssignmentRecipient,assignmentAction} from '../features/assignment-history/TicketAssignmentHistory';
 import type {P2016AssignmentHistoryItem} from '../../../../contracts/p2_016_assignment_history_contracts';
 import {animateTimelineEntry,highlightTimelineEntry,scrollAndHighlightEntries} from '../design/motion/timeline-entry';
 import {NewItemsChip} from '../design/components/NewItemsChip/NewItemsChip';
@@ -147,19 +148,33 @@ export function ActivityTimeline({records,firstPageRecordIds,principal,item,acti
   </Section>;
 }
 const closingStatuses=new Set(['DISMISSED']);
+function findRecordAvatarTrigger(target:EventTarget|null):HTMLElement|null{
+  return target instanceof Element
+    ?target.closest('.detail-record')?.querySelector<HTMLElement>('.record-actor-rail [data-hover-card-trigger="person"]')??null
+    :null;
+}
 function ActivityRecord({record,principal,item,active,now,closure=false,assignment}:{record:WorkbenchDetail['records'][number];principal:Principal;item:WorkbenchDetail['item'];active:boolean;now:number;closure?:boolean;assignment?:P2016AssignmentHistoryItem|undefined}){
   // Card 34B: a take-over or hand-over event is an event row even when it carries a reason, never a note bubble.
   const [expanded,setExpanded]=useState(false),name=activityActorName(record),kind=assignment&&recordKind(record)==='note'?'event':recordKind(record);
+  const canHoverActor=Boolean(record.actor_ref)||(kind!=='report'&&Boolean(name)&&name!=='系统'&&name!=='报修人');
+  const nameNode=canHoverActor
+    ?<span
+      className="record-name"
+      onPointerEnter={event=>{forwardHoverTriggerPointer(findRecordAvatarTrigger(event.currentTarget),'enter',event.pointerType);}}
+      onPointerLeave={event=>{forwardHoverTriggerPointer(findRecordAvatarTrigger(event.currentTarget),'leave',event.pointerType);}}
+    >{name}</span>
+    :<span className="record-name">{name}</span>;
   // Card 34B: a take-over or hand-over event reads as its action (「接单」「转交给 周宁」「撤销派工」), followed by the recorded reason.
   const text=assignment?assignmentAction(assignment,record.type)+(record.text?' · '+record.text:''):record.text??(kind==='status'?'更新状态':'已记录处理操作。');
   const bubble=kind==='note'||kind==='report',time=<BeijingTime value={record.at} now={now}/>;
   const audience=kind==='note'&&record.audience==='INTERNAL'?<span className="record-audience" aria-label="内部，仅信息科可见"><Lock size={12}/>内部</span>:kind==='note'&&record.audience==='EXTERNAL'?<span className="record-audience public">报修人可见</span>:null;
-  return <TimelineItem className={'detail-record'+(expanded?' is-expanded':'')} data-record-id={record.id} data-record-kind={kind} data-audience={record.audience} data-assignment-history-row={assignment?assignment.kind:undefined} avatar={<ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name}/>} time={bubble?undefined:time}>
+  return <TimelineItem className={'detail-record'+(expanded?' is-expanded':'')} data-record-id={record.id} data-record-kind={kind} data-audience={record.audience} data-assignment-history-row={assignment?assignment.kind:undefined} avatar={<ActorAvatar principal={principal} item={item} actor={record.actor_ref} name={name} hoverable={canHoverActor}/>} interactiveAvatar={canHoverActor} time={bubble?undefined:time}>
     <HButton tone="ghost" className="record-content" aria-expanded={expanded} title={expanded?'收起记录':'展开完整记录'} onPress={()=>setExpanded(value=>!value)}>
-      {bubble?<span className="record-heading"><span className="record-name">{name}</span>{kind==='report'?<><span className="record-report-separator" aria-hidden="true">·</span>{time}<span className="record-action sr-only">提交报修</span></>:<><span className="record-action">{record.audience==='INTERNAL'?'添加内部备注':'对外说明'}</span>{audience}{time}</>}</span>:<span className="record-name">{name}</span>}
-      {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:<span className="record-text">{text}</span>}
+      {bubble?<span className="record-heading">{nameNode}{kind==='report'?<><span className="record-report-separator" aria-hidden="true">·</span>{time}<span className="record-action sr-only">提交报修</span></>:<><span className="record-action">{record.audience==='INTERNAL'?'添加内部备注':'对外说明'}</span>{audience}{time}</>}</span>:nameNode}
+      {record.read_material?<PersonalReadMaterial inline active={active} principal={principal} item={{kind:item.kind,id:item.id}} sourceRef={record.read_material.source_ref} revision={record.read_material.revision} text={text}/>:assignment?<span className="record-text"><AssignmentActionContent item={assignment} eventType={record.type}/>{record.text?' · '+record.text:''}</span>:<span className="record-text">{text}</span>}
       {kind==='status'?<span className="record-status-change"><StatusBadge showStageGlyph={false} data-status={record.old_status??''} tone={statusTones[record.old_status??'']??'neutral'}>{statusLabels[record.old_status??'']??'新建'}</StatusBadge>{' → '}<StatusBadge showStageGlyph={false} data-status={record.new_status??''} tone={statusTones[record.new_status??'']??'neutral'}>{statusLabels[record.new_status??'']??'状态未记录'}</StatusBadge></span>:null}
     </HButton>
+    {assignment?<AssignmentRecipient item={assignment} eventType={record.type} actorName={name}/>:null}
     {assignment?<AssignmentCommunication item={assignment}/>:null}
     {closure&&item.closure?<div className="record-closure-facts" data-record-closure-reason><ClosureFacts closure={item.closure}/></div>:null}
   </TimelineItem>;

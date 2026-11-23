@@ -1,0 +1,19 @@
+{
+  "selector": "[data-hover-card=\"person\"]",
+  "frames": [
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 300,
+    "top": 94,
+    "right": 632,
+    "bottom": 194
+  },
+  "width": 1660,
+  "height": 100
+}

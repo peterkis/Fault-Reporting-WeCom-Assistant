@@ -5,7 +5,8 @@ import {normalizeTakeoverCompletionCommand,createTicketTakeoverCompletionService
 import {normalizeTicketTakeoverCommand} from './workbench-ticket-takeover.mjs';
 import type {createTicketTakeoverService} from './workbench-ticket-takeover.mjs';
 import type { IncomingMessage } from 'node:http';
-import type { WorkbenchHttpOptions } from './p2-006-workbench-http.mjs';
+import { validateWorkbenchReadRequest, type WorkbenchHttpOptions } from './p2-006-workbench-http.mjs';
+import type { createWorkbenchPeopleProfile } from './workbench-people-profile.mjs';
 import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
 import type { createP2016TicketCommandFacade } from './p2-016-ticket-command-facade.mjs';
 import type { createP2016DeliveryControl } from './p2-016-delivery-control.mjs';
@@ -24,7 +25,7 @@ import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
 import type {WaitingAction} from '../../../contracts/workbench_waiting_contracts.js';
 type HttpContext = Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 interface HttpOptions {
-  currentDisplay?:((auth:unknown)=>Promise<{name:string|null;department:string|null}>)|undefined;workbenchMediaEmployeeReadEnabled?:boolean;webReportsEnabled?:boolean;workbenchRemindersEnabled?:boolean;
+  currentDisplay?:((auth:unknown)=>Promise<{name:string|null;department:string|null}>)|undefined;peopleProfile?:ReturnType<typeof createWorkbenchPeopleProfile>|null|undefined;workbenchMediaEmployeeReadEnabled?:boolean;webReportsEnabled?:boolean;workbenchRemindersEnabled?:boolean;
   workbenchSearchEnabled?:boolean;workbenchActivityEnabled?:boolean;workbenchSupplementFollowUpEnabled?:boolean;workbenchFollowEnabled?:boolean;notificationExceptionsEnabled?:boolean;workbenchAssignmentHistoryEnabled?:boolean;ticketWaitingActionsEnabled?:boolean;workbenchPersonalReadEnabled?:boolean;workbenchFollowUpSchedulesEnabled?:boolean;followUpSchedules?:ReturnType<typeof createWorkbenchFollowUpSchedules>|null}
 // Preserve the original HTTP port for existing consumers. The new dedicated ACK
 // adapter is optional here and fail-closed; the real runtime facade always supplies it.
@@ -41,9 +42,9 @@ function queryKeys(url: URL,allowed: readonly string[]) {if([...url.searchParams
 function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?result.error.code==='P2_016_NOT_FOUND'?404:/FORBIDDEN|PERMITTED|TARGET_INVALID/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
 import {WORKBENCH_ACTIVITY_LIMITS} from './workbench-activity.mjs';
 interface HttpOptions {workbenchBoardActionsEnabled?:boolean;reviewStart?:ReturnType<typeof createWorkbenchReviewStart>|null}
-export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,workbenchMediaEmployeeReadEnabled=false,webReportsEnabled=false,workbenchBoardActionsEnabled=false,workbenchSearchEnabled=false,workbenchRemindersEnabled=false,workbenchActivityEnabled=false,workbenchSupplementFollowUpEnabled=false,workbenchFollowEnabled=false,notificationExceptionsEnabled=false,workbenchAssignmentHistoryEnabled=false,query,tickets,reviews,reviewStart=null,deliveryControl,enabled=false,ticketWaitingActionsEnabled=false,workbenchPersonalReadEnabled=false,workbenchFollowUpSchedulesEnabled=false,followUpSchedules=null,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false,workbenchManualReviewEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,selfHandling=null,conversationHandling=null,takeover=null,takeoverCompletion=null,assignment=null,unassign=null,returnToDispatch=null,returnToDispatchAcknowledgement=null,staffCompletion=null,workbenchDraftRecoveryEnabled=false,workbenchConversationInboxEnabled=false,workbenchConversationsEnabled=false,workbenchRealtimeEnabled=false,realtimeAuthorization,incidentDeliveryControlEnabled=false,incidentDeliveryControlDraftRecoveryEnabled=false,incidentOwnerTransferEnabled=false,incidentOwnerTransferDraftRecoveryEnabled=false,incidentPublicProgressEnabled=false,incidentPublicProgressDraftRecoveryEnabled=false,incidentInternalNotesEnabled=false,incidentInternalNoteDraftRecoveryEnabled=false,incidentCandidateWorkspaceEnabled=false,incidentCandidateDraftRecoveryEnabled=false,logoutReady=()=>false}: HttpOptions) {
+export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,peopleProfile=null,workbenchMediaEmployeeReadEnabled=false,webReportsEnabled=false,workbenchBoardActionsEnabled=false,workbenchSearchEnabled=false,workbenchRemindersEnabled=false,workbenchActivityEnabled=false,workbenchSupplementFollowUpEnabled=false,workbenchFollowEnabled=false,notificationExceptionsEnabled=false,workbenchAssignmentHistoryEnabled=false,query,tickets,reviews,reviewStart=null,deliveryControl,enabled=false,ticketWaitingActionsEnabled=false,workbenchPersonalReadEnabled=false,workbenchFollowUpSchedulesEnabled=false,followUpSchedules=null,ticketRoundNotificationsEnabled=false,ticketReopenRoundsEnabled=false,workbenchManualReviewEnabled=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,selfHandling=null,conversationHandling=null,takeover=null,takeoverCompletion=null,assignment=null,unassign=null,returnToDispatch=null,returnToDispatchAcknowledgement=null,staffCompletion=null,workbenchDraftRecoveryEnabled=false,workbenchConversationInboxEnabled=false,workbenchConversationsEnabled=false,workbenchRealtimeEnabled=false,realtimeAuthorization,incidentDeliveryControlEnabled=false,incidentDeliveryControlDraftRecoveryEnabled=false,incidentOwnerTransferEnabled=false,incidentOwnerTransferDraftRecoveryEnabled=false,incidentPublicProgressEnabled=false,incidentPublicProgressDraftRecoveryEnabled=false,incidentInternalNotesEnabled=false,incidentInternalNoteDraftRecoveryEnabled=false,incidentCandidateWorkspaceEnabled=false,incidentCandidateDraftRecoveryEnabled=false,logoutReady=()=>false}: HttpOptions) {
   return async({request,response,url,authContext,readJson,validateWriteRequest,json}: HttpContext)=>{
-    const matched=/^\/api\/(tickets(?:\/|$)|intakes(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$|workbench\/profile$)/u.test(url.pathname)
+    const matched=/^\/api\/(tickets(?:\/|$)|intakes(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$|workbench\/(?:profile|people\/profile)$)/u.test(url.pathname)
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
     if(request.method==='GET'){
@@ -126,6 +127,13 @@ export function createP2016WorkbenchHttp({intakeClosure=null,currentDisplay,work
     }
     if(request.method==='POST'){
       queryKeys(url,[]);
+      if(url.pathname==='/api/workbench/people/profile'){
+        validateWorkbenchReadRequest(request,authContext);
+        const body=await readJson(request);
+        if(!peopleProfile)failP2016('DISABLED',503);
+        json(response,200,await peopleProfile.lookup({authContext,body}));
+        return true;
+      }
       const body=await readJson(request);validateWriteRequest(request,authContext,body,{sessionMutation:false});
       const followUpCommand=/^\/api\/tickets\/([0-9a-f-]{36})\/follow-up-schedule$/iu.exec(url.pathname);
       if(followUpCommand){if(!followUpSchedules)failP2016('DISABLED',503);checkVersion(request,body.expected_version);const result=await followUpSchedules.perform({authContext,ticketId:followUpCommand[1],input:body});json(response,status(result),result);return true;}

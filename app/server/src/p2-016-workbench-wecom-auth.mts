@@ -440,8 +440,21 @@ export function createWeComWorkbenchAuthentication({
     return {name:member.displayName,department:member.departmentName??null};
   }
 
+  async function colleagueDepartment(principalId:string):Promise<string|null>{
+    ensureReady();
+    if(!profileReader)fail('P2_016_DISABLED',503);
+    const entry=[...principalByUserId].find(([,id])=>id===principalId);
+    const rawUserId=rawUserIdByPrincipal.get(principalId);
+    if(!entry||!rawUserId)fail(WORKBENCH_ERROR_CODES.notFound,404);
+    const member=await profileReader(entry[0]).catch(()=>fail('P2_016_PROVIDER_UNAVAILABLE',503));
+    ensureReady();
+    if(principalByUserId.get(entry[0])!==principalId||rawUserIdByPrincipal.get(principalId)!==rawUserId)fail(WORKBENCH_ERROR_CODES.notFound,404);
+    if(!member||member.openUserId!==entry[0])fail('P2_016_PROVIDER_UNAVAILABLE',503);
+    return member.departmentName??null;
+  }
+
   return Object.freeze({
-    ...(profileReader?{currentDisplay}:{}),
+    ...(profileReader?{currentDisplay,colleagueDepartment}:{}),
     supportsLogout:true,
     initialize: refreshIdentityMapping,
     mappingDigest: () => mappingDigest,

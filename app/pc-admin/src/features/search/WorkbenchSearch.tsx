@@ -11,6 +11,7 @@ import type {Principal,WorkbenchCard,BoardCompletionRange} from '../../api/clien
 import {readBoardPage} from '../optimistic/store';
 import {parseSearchRequest,searchCriteriaKey,searchParameters,SEARCH_STATUSES,SEARCH_SOURCES,hasSearchCriteria} from '../../../../../shared/workbench-search-contracts.mjs';
 import type {WorkbenchSearchCriteria} from '../../../../../contracts/workbench_search_contracts';
+import {clearHoverItemsBatch} from '../hover-cards/denied-items';
 import './search.css';
 
 const viewKeys=['range','scope','handled_from','handled_to','closure_kind'] as const;
@@ -30,7 +31,7 @@ export function useWorkbenchSearch(principal:Principal,criteria:WorkbenchSearchC
  const client=useQueryClient(),key=criteria?searchCriteriaKey(criteria):'invalid';
  const roles=[...principal.roles].sort().join(','),queryKey=['board',principal.principal_id,'search',key,principal.authorization_revision,principal.expires_epoch_ms,roles] as const;
  const query=useInfiniteQuery({queryKey,initialPageParam:null as string|null,enabled:enabled&&criteria!==null,
-   queryFn:({pageParam,signal})=>{if(!criteria)throw new TypeError('SEARCH_CRITERIA_REQUIRED');return readBoardPage(principal.principal_id,signal,()=>api.search(criteria,pageParam,signal,principal.csrf_token));},
+    queryFn:async({pageParam,signal})=>{if(!criteria)throw new TypeError('SEARCH_CRITERIA_REQUIRED');const page=await readBoardPage(principal.principal_id,signal,()=>api.search(criteria,pageParam,signal,principal.csrf_token));clearHoverItemsBatch(principal.principal_id,page.items);return page;},
   getNextPageParam:page=>page.next_cursor??undefined,retry:false,gcTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false,maxPages:5});
  useEffect(()=>{
   let current=true;

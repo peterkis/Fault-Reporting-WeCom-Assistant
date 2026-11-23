@@ -1,6 +1,6 @@
 import {RestoreClosedItem,useClosureHighlight} from '../../../features/ticket-waiting/ClosureActions';
 import {useCallback,useLayoutEffect,useRef,useState} from 'react';
-import type {ReactNode} from 'react';
+import type {ReactElement,ReactNode,RefAttributes} from 'react';
 import {Bell,Bot,Check,CircleX,Pause,User} from 'lucide-react';
 import type {BoardColumn,WorkbenchCard} from '../../../api/client';
 import {cardHeat,cardHeatStart} from '../../heat';
@@ -18,6 +18,7 @@ import {SourceLabel} from '../SourceLabel/SourceLabel';
 import {StatusBadge} from '../StatusBadge/StatusBadge';
 import {Tag} from '../Tag/Tag';
 import {ClosureReason,TicketCategoryTile,TicketHeat} from '../TicketCard/TicketCard';
+import {PersonHoverTrigger} from '../HoverCard/HoverCard';
 import {PresenceTags} from '../PresenceTags/PresenceTags';
 import {usePresence} from '../../../features/activity/presence-store';
 import {Skeleton,LoadingStatus} from '../Skeleton/Skeleton';
@@ -35,6 +36,7 @@ interface Props {
   searchError?:boolean;refreshing?:boolean;stale?:boolean;headerFeedback?:ReactNode;groups:WorkTableGroup[];principalId:string;selected:string|undefined;now:number;closureKind:string;animateCount?:boolean;
   newChip?:{count:number;direction:'up'|'down';onActivate:()=>void};
   renderLink:(item:WorkbenchCard,content:ReactNode)=>ReactNode;
+  renderOwnerLink?:(item:WorkbenchCard,owner:string,content:ReactNode)=>ReactElement<Record<string,unknown>&RefAttributes<HTMLElement>>;
   renderFollowUp:(item:WorkbenchCard)=>ReactNode;relativeTime:(value:string,now:number)=>string;
 }
 export const workTableHeaders=['类别 · 编号','问题','状态','时效','报修人 · 位置','负责人','最新活动'];
@@ -65,7 +67,7 @@ function ListTime({item,now}:{item:WorkbenchCard;now:number}){
   const heat=cardHeat(item,now),start=cardHeatStart(item),duration=formatWaitingTime(start,now);
   return heat?<TicketHeat heat={heat} heatStart={start}/>:duration?<span className="ds-list-time">{duration.label}</span>:<span className="ds-list-missing">—</span>;
 }
-function WorkRow({principalId,item,hidden,selected,now,renderLink,renderFollowUp,relativeTime}:Pick<Props,'principalId'|'selected'|'now'|'renderLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
+function WorkRow({principalId,item,hidden,selected,now,renderLink,renderOwnerLink,renderFollowUp,relativeTime}:Pick<Props,'principalId'|'selected'|'now'|'renderLink'|'renderOwnerLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
   const highlighted=useClosureHighlight(item),rowRef=useRef<HTMLTableRowElement>(null);
   const opt=useItemOptimisticState(principalId,item.kind,item.id,item.intake_id);
   const rollback=useItemRollbackCue(principalId,item,!hidden);
@@ -83,7 +85,7 @@ function WorkRow({principalId,item,hidden,selected,now,renderLink,renderFollowUp
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
     <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name}{name&&location?<span className="ds-list-separator"> · </span>:null}{location}</span></>:<span className="ds-list-missing">—</span>}</span></td>
-    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
+    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<PersonHoverTrigger name={owner}>{renderOwnerLink?renderOwnerLink(item,owner,<><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></>):<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>}</PersonHoverTrigger>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
     <td><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time></td>
   </tr>;
 }

@@ -1,0 +1,290 @@
+.ds-person-hover-card,
+.ds-ticket-hover-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-person-hover-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ds-person-hover-identity {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ds-person-hover-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-sm);
+}
+
+.ds-person-hover-dept {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: var(--space-0-5);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-person-hover-online {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: calc(var(--space-1) + var(--space-0-5) / 2);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-person-hover-online[data-person-online="online"] {
+  color: var(--tone-success-fg);
+}
+
+.ds-person-hover-online-dot {
+  width: calc(var(--space-2) - var(--space-0-5) / 2);
+  height: calc(var(--space-2) - var(--space-0-5) / 2);
+  border-radius: var(--radius-full);
+  background: var(--tone-neutral-dot);
+}
+
+.ds-person-hover-online[data-person-online="online"] .ds-person-hover-online-dot {
+  background: var(--tone-success-dot);
+}
+
+.ds-person-hover-presence {
+  margin-top: var(--space-3);
+  padding: var(--space-2) calc(var(--space-2) + var(--space-0-5));
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-person-hover-presence-link {
+  color: var(--text-link);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.ds-person-hover-presence-link:hover,
+.ds-person-hover-presence-link:focus-visible {
+  text-decoration: underline;
+}
+
+.ds-person-hover-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
+.ds-person-hover-stats[data-cols="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ds-person-hover-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ds-person-hover-stat-value {
+  color: var(--text-primary);
+  font-family: var(--font-num);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: var(--font-numeric-variant);
+  line-height: var(--lh-md);
+}
+
+.ds-person-hover-stat-label {
+  margin-top: var(--space-0-5);
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-person-hover-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: calc(var(--space-2) + var(--space-0-5));
+  border-top: 1px solid var(--border-hair);
+}
+
+.ds-person-hover-action,
+.ds-person-hover-actions .ds-person-hover-action.ds-button.button[data-tone] {
+  flex: 1 1 0%;
+  min-width: 0;
+  height: var(--control-h-sm);
+  min-height: var(--control-h-sm);
+  padding: 0 calc(var(--space-2) + var(--space-0-5));
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+.ds-ticket-hover-head {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--space-2) + var(--space-0-5));
+}
+
+.ds-ticket-hover-head .ds-ticket-category {
+  position: static;
+  flex: none;
+  width: calc(var(--space-6) + var(--space-1));
+  height: calc(var(--space-6) + var(--space-1));
+  border-radius: var(--radius-md);
+}
+
+.ds-ticket-hover-head .ds-ticket-category > svg {
+  width: var(--state-bar-icon);
+  height: var(--state-bar-icon);
+  flex: none;
+}
+
+.ds-ticket-hover-heading {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ds-ticket-hover-number {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: var(--space-0-5);
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-sm);
+}
+
+.ds-ticket-hover-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: calc(var(--space-2) + var(--space-0-5));
+}
+
+.ds-ticket-hover-status-row .ds-status-badge.ds-status-badge[data-stage] {
+  height: var(--space-6);
+  padding: 0 calc(var(--space-2) + var(--space-0-5) / 2) 0 calc(var(--space-2) - var(--space-0-5) / 2);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-1) + var(--space-0-5) / 2);
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-unassigned {
+  color: var(--text-secondary);
+}
+
+.ds-ticket-hover-time {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-variant-numeric: var(--font-numeric-variant);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-time[data-tone="attention"] {
+  color: var(--tone-attention-fg);
+}
+
+.ds-ticket-hover-time[data-tone="danger"] {
+  color: var(--tone-danger-fg);
+}
+
+.ds-ticket-hover-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: calc(var(--space-2) + var(--space-0-5));
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-3);
+  padding-top: calc(var(--space-2) + var(--space-0-5));
+  border-top: 1px solid var(--border-hair);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-hover-card-keycap {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: var(--space-5);
+  height: var(--space-5);
+  padding: 0 calc(var(--space-1) + var(--space-0-5) / 2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  background: var(--bg-subtle);
+  color: var(--tone-neutral-fg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+}
+
+.ds-ticket-hover-denied {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ds-ticket-hover-denied-number {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.ds-ticket-hover-denied-text,
+.ds-ticket-hover-error {
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-sm);
+}

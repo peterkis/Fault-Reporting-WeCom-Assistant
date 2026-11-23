@@ -402,6 +402,7 @@ WBINT-T37以下三条已完成本地定向验证；新view/write默认关闭，�
 | 方法 | 完整路径 | 宿主 | 当前状态／用途 | 契约文档 |
 | --- | --- | --- | --- | --- |
 | GET | /api/workbench/profile | W | 当前登录人员姓名、部门；只读、当前会话及角色终检 | [身份](platform/auth-health.md) |
+| POST | /api/workbench/people/profile | W | 按 `display_name` 查询同处理组在岗同事（或本人）姓名、部门；只读 POST、Cookie/CSRF 及双侧可见性终检 | [身份](platform/auth-health.md) |
 | GET | /api/workbench/items/{kind}/{id}/reporter-profile | W | 当前获权 H5 报修人展示资料；历史快照优先 | [H5资料](workbench/web-reports.md) |
 
 

@@ -70,3 +70,12 @@ export interface WorkbenchDetail {
   review_refs?:import('./workbench_review_contracts.js').ReviewReference[];
   requested_item?:import('./workbench_review_contracts.js').CanonicalItem;
 }
+
+export interface WorkbenchPeopleProfileRequest {
+  display_name: string;
+}
+
+export interface WorkbenchPeopleProfileResponse {
+  name: string;
+  department: string | null;
+}
