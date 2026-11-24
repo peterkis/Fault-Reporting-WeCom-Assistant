@@ -156,6 +156,11 @@
       "reason": "Card 37B covers keyboard actions, UI surfaces, input pauses and command recovery in four independently timed browser suites."
     },
     {
+      "pattern": "^tests/(?:pc-admin-card39c-(?:owner\\.browser|bridge)\\.test\\.mts$|fixtures/card39c-bridge-probe\\.tsx$)",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 39C checks board owner truncation, tag shrinking, search-mode hover-bridge stability, presence tag tooltip recovery and online-panel Escape routing."
+    },
+    {
       "pattern": "^tests/(?:pc-admin-card37c-hovercard\\.browser\\.test\\.mts$|fixtures/card37c-(?:hovercard|board-publication)\\.|helpers/card37c-hover-browser\\.mts$)|^app/pc-admin/src/(?:design/components/HoverCard/|features/hover-cards/)",
       "profiles": ["pc", "motion"],
       "reason": "Card 37C checks delayed hover reads, placement and focus, real board filtering, disclosure privacy and popover filmstrips."

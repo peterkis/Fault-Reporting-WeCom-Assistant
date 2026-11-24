@@ -7,5 +7,5 @@
     "verbatimModuleSyntax": true, "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts", "vite.login.config.ts", "shaders.config.ts", "motion-token-rule.mts", "../../tests/fixtures/motion-app.tsx", "../../tests/fixtures/card36c-presence.tsx"]
+  "include": ["src", "vite.config.ts", "vite.login.config.ts", "shaders.config.ts", "motion-token-rule.mts", "../../tests/fixtures/motion-app.tsx", "../../tests/fixtures/card36c-presence.tsx", "../../tests/fixtures/card39c-bridge-probe.tsx"]
 }

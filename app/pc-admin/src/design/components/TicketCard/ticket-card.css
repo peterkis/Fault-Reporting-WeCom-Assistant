@@ -24,11 +24,14 @@
 .ds-ticket-body .ds-source-label {max-width: 45%; flex: none;}
 .ds-ticket-body .card-footer,.ds-ticket-card-surface .ds-ticket-card-footer {min-height: var(--avatar-sm); gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-ticket-body .card-tags {flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-1); margin: 0; overflow: hidden;}
-.ds-ticket-body .card-tags .ds-tag {flex-shrink: 1; max-width: 100%; margin: 0;}
-.ds-ticket-owner {min-width: var(--avatar-sm); max-width: 30%; flex: 0 5 auto; overflow: hidden;}
+.ds-ticket-body .card-tags .ds-tag {flex-shrink: 1; min-width: 0; max-width: 100%; margin: 0; overflow: hidden;}
+/* Card 39C C1: keep owner intact (flex:none, no percentage cap); cap name width to 4 CJK chars while .card-tags absorbs shrinking. */
+.ds-ticket-owner {display: inline-flex; align-items: center; min-width: var(--avatar-sm); max-width: none; flex: none; overflow: hidden;}
 .ds-ticket-owner .owner,.ds-ticket-owner .ds-ticket-owner-placeholder {display: inline-flex; align-items: center; max-width: 100%; gap: var(--space-1);}
+.card-footer .ds-ticket-owner .owner {max-width: none;}
 .card-footer .ds-ticket-owner .ds-ticket-owner-placeholder {max-width: 55%; visibility: hidden; pointer-events: none;}
-.ds-ticket-owner .owner-name {font-size: var(--fs-xs);}
+.ds-ticket-owner .owner-name {min-width: 0; font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-ticket-owner:not(.ds-ticket-closer) .owner-name:not(.sr-only) {max-width: var(--owner-name-max-w);}
 .ds-ticket-body .activity-time,.ds-ticket-card-surface .ds-ticket-owner-time-spacer {flex: none; margin: 0; font-size: var(--fs-xs); line-height: var(--lh-xs); white-space: nowrap; font-variant-numeric: var(--font-numeric-variant);}
 .ds-ticket-owner[data-has-owner-name]+:is(.activity-time,.ds-ticket-owner-time-spacer)::before {content: '·'; margin-right: var(--space-1);}
 .ds-ticket-heat.ds-tag {display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; font-family: var(--font-sans); white-space: nowrap;}
