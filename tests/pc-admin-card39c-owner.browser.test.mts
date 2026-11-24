@@ -23,6 +23,28 @@ const root=process.env.TS_MIGRATION_TEST_SOURCE_ROOT??process.cwd();
 const delay=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
 const away={x:2,y:2};
 
+async function waitForChecks(b:Browser,step:string,checks:Record<string,string>,options?:Parameters<Browser['waitFor']>[1]){
+  const entries=Object.entries(checks);
+  const expression=entries.map(([,check])=>'('+check+')').join('&&');
+  try{
+    return await b.waitFor(expression,options);
+  }catch(cause){
+    // Evaluate each predicate separately so an absent element cannot hide the other results.
+    const conditions=Object.fromEntries(await Promise.all(entries.map(async([name,check])=>[
+      name,await b.evaluate(check).then(Boolean).catch((error:Error)=>error.message),
+    ])));
+    const state=await b.evaluate(`({
+      path:location.pathname,visibility:document.visibilityState,tabFocused:document.hasFocus(),
+      realtime:${q('.app')}?.dataset.realtimeStatus,sidebarCollapsed:!!${q('.app.sidebar-collapsed')},
+      onlineCount:${q('.ds-online-count,.ds-online-none,.ds-online-badge')}?.textContent??null,
+      activeElement:document.activeElement?.className,expanded:document.activeElement?.getAttribute('aria-expanded'),
+      hoverCards:[...document.querySelectorAll('[data-hover-card]')].map(el=>[el.dataset.hoverCard,el.hasAttribute('data-exiting')]),
+      boardPages:Object.keys(window.probe37?.pages??{}),columnCounts:[...document.querySelectorAll('.ds-stage-count,.ds-list-stage-count')].map(el=>el.textContent)
+    })`).catch(()=>null);
+    throw new Error(step+' failed: '+JSON.stringify({conditions,state}),{cause});
+  }
+}
+
 async function beginPresence(f:T11Fixture,id:string,cookieIndex:number,mode:'VIEWING'|'EDITING'){
   const cookie=f.cookies[cookieIndex];
   assert.ok(cookie);
@@ -40,17 +62,31 @@ async function beginPresence(f:T11Fixture,id:string,cookieIndex:number,mode:'VIE
     });
     assert.equal(response.status,200,await response.text());
   };
+  let drained:Promise<void>|undefined,failure:unknown;
   try{
     const stream=await fetch(f.origin+'/api/realtime/events?scope=workbench',{signal:controller.signal,headers:{cookie,accept:'text/event-stream'}});
     assert.equal(stream.status,200);
+    assert.ok(stream.body);
+    // An unread fetch response can be garbage-collected, removing this peer from the online roster.
+    const reader=stream.body.getReader();
+    drained=(async()=>{
+      try{
+        while(!(await reader.read()).done){/* consume peer SSE frames until teardown */}
+        if(!controller.signal.aborted)throw Error('Presence peer '+cookieIndex+' SSE stream ended early');
+      }catch(error){
+        if(!controller.signal.aborted)failure=error;
+      }finally{
+        reader.releaseLock();
+      }
+    })();
     await renew();
   }catch(error){
     controller.abort();
+    await drained;
     throw error;
   }
-  let failure:unknown;
   const timer=setInterval(()=>{void renew().catch(error=>{failure=error;});},4000);
-  return ()=>{clearInterval(timer);controller.abort();if(failure)throw failure;};
+  return async()=>{clearInterval(timer);controller.abort();await drained;if(failure)throw failure;};
 }
 
 test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>withWeb01Fixture(async(f:T11Fixture)=>{
@@ -67,6 +103,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
   const ticket4=await seedMotionTicket(f.pool,'Card39C 四字处理人');
   const ticket5=await seedMotionTicket(f.pool,'Card39C 五字处理人');
   const ticketManyTags=await seedMotionTicket(f.pool,'Card39C 多标签挤压测试');
+  const ticketManyTagsFollowUp=await seedMotionTicket(f.pool,'Card39C 多标签含跟进预约');
   const ticketSelf=await seedMotionTicket(f.pool,'Card39C 本人姓名隐藏');
   const nestedOwnerTicket=await seedMotionTicket(f.pool,'Card39C 嵌套悬停处理人');
   const presenceCrowd=f.tickets[6]?.ticket.id;
@@ -81,6 +118,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
     [ticket4,owner4.id,'IN_PROGRESS','门诊三楼（合成）'],
     [ticket5,owner5.id,'IN_PROGRESS','门诊四楼（合成）'],
     [ticketManyTags,owner4.id,'WAITING_VENDOR',null],
+    [ticketManyTagsFollowUp,owner4.id,'WAITING_VENDOR',null],
     [ticketSelf,selfPrincipal,'IN_PROGRESS','门诊五楼（合成）'],
     [nestedOwnerTicket,zhouPrincipal,'IN_PROGRESS','门诊六楼（合成）'],
   ] as const){
@@ -103,6 +141,20 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
             if(item.id===ticketSelf)return {...item,reporter_name:'林舟（合成）'};
             if(item.id===ticketManyTags){
               return {...item,web_report_urge:{active:true,count:2,last_urged_at:item.updated_at},review_reason:'人工复核材料（合成）'};
+            }
+            if(item.id===ticketManyTagsFollowUp){
+              const dueAt='2026-11-25 14:00:00';
+              return {
+                ...item,
+                web_report_urge:{active:true,count:2,last_urged_at:item.updated_at},
+                review_reason:'人工复核材料（合成）',
+                follow_up_schedule:{
+                  schedule_version:'1',
+                  due_at:dueAt,
+                  due_epoch_ms:String(Date.parse(dueAt.replace(' ','T')+'+08:00')),
+                  is_due:false,
+                },
+              };
             }
             return item;
           });
@@ -152,7 +204,10 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
     });
     assert.ok(browser);
     closers.push(async()=>{await browser?.close();});
-    const b=browser;
+    const rawBrowser=browser;
+    const wait=(step:string,checks:Record<string,string>)=>waitForChecks(rawBrowser,step,checks);
+    // Shared navigation, pointer and workbench helpers also use this browser's waitFor.
+    const b:Browser={...rawBrowser,waitFor:(expression,options)=>waitForChecks(rawBrowser,'Browser wait',{[expression]:expression},options)};
     await b.command('Page.bringToFront');
     const evidence=process.env.CARD39C_EVIDENCE_DIR||await mkdtemp(join(tmpdir(),'card39c-evidence-'));
     await mkdir(evidence,{recursive:true});
@@ -207,7 +262,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       await waitForAnimationsSettled(b,'.board');
     };
 
-    await t.test('C1 owner name fits 2-4 CJK chars across 260/300/360px, ellipsises 5-char name with hover, and shrinks crowded tags first',async()=>{
+    await t.test('C1 owner name fits 2-4 CJK chars across 260/300/360px, ellipsises 5-char name with hover, and folds crowded tags first',async()=>{
       await openAllBoard();
       await b.waitFor(exists(`.ticket-card[data-item-id="${ticketSelf}"] .ds-ticket-owner-link`));
       await b.evaluate('document.fonts.ready.then(()=>true)');
@@ -218,10 +273,22 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
         const card=column.querySelector('.ticket-card[data-item-id="${ticket2}"]');
         return column.getBoundingClientRect().width-card.getBoundingClientRect().width;
       })()`));
+      const expectedCrowdedTags=['已催单','待复核','等待中','待补位置'] as const;
+      const titlesFor=async(id:string)=>{
+        const urgedAt=await b.evaluate(`probe37.pages.active.find(item=>item.id===${JSON.stringify(id)})?.web_report_urge?.last_urged_at`);
+        assert.ok(typeof urgedAt==='string'&&urgedAt.length>0,'crowded-card fixture must supply last_urged_at');
+        return ['本轮已催单 · 2 次；最近催单：'+urgedAt+'（北京时间）','待复核','等待厂商','待补位置'];
+      };
+      const crowdedTitles=await titlesFor(ticketManyTags),followUpTitles=await titlesFor(ticketManyTagsFollowUp);
+      const foldedByWidth=new Map<number,number>();
+      const sizeCard=async(width:number)=>{
+        await b.evaluate(`document.querySelector('.board').style.gridTemplateColumns='minmax(0,1fr) ${width+columnInset}px minmax(0,1fr)'`);
+        await waitForAnimationsSettled(b,'.board-column.active');
+        await b.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      };
       try{
         for(const width of [260,300,360]){
-          await b.evaluate(`document.querySelector('.board').style.gridTemplateColumns='minmax(0,1fr) ${width+columnInset}px minmax(0,1fr)'`);
-          await waitForAnimationsSettled(b,'.board-column.active');
+          await sizeCard(width);
           for(const [id,name] of [[ticket2,'林舟'],[ticket3,'陈明远'],[ticket4,'欧阳明远']] as const){
             const metrics=object(await b.evaluate(`(()=>{
               const cardEl=document.querySelector('.ticket-card[data-item-id="${id}"]');
@@ -282,25 +349,171 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
           const manyTags=object(await b.evaluate(`(()=>{
             const cardEl=document.querySelector('.ticket-card[data-item-id="${ticketManyTags}"]');
             const tagsEl=cardEl.querySelector('.card-tags');
-            const tagContents=[...tagsEl.querySelectorAll('.ds-tag-content')];
+            const shownTags=[...tagsEl.querySelectorAll('.ds-tag:not([data-card-tag-overflow])')].map(tag=>{
+              const content=tag.querySelector('.ds-tag-content')??tag;
+              return {
+                label:content.textContent??'',
+                scrollWidth:content.scrollWidth,
+                clientWidth:content.clientWidth,
+                textOverflow:getComputedStyle(content).textOverflow,
+              };
+            });
+            const overflowEl=tagsEl.querySelector('[data-card-tag-overflow="true"]');
+            const overflowContent=overflowEl?.querySelector('.ds-tag-content')??overflowEl;
             const ownerWrap=cardEl.querySelector('.ds-ticket-card-footer .ds-ticket-owner');
             const nameEl=ownerWrap.querySelector('.owner-name');
             return {
               cardWidth:Math.round(cardEl.getBoundingClientRect().width),
               ownerScroll:nameEl.scrollWidth,
               ownerClient:nameEl.clientWidth,
-              tagsShrunk:tagsEl.scrollWidth>tagsEl.clientWidth||tagContents.some(n=>n.scrollWidth>n.clientWidth),
+              foldedCount:Number(tagsEl.getAttribute('data-folded-tag-count')??'0'),
+              singleTag:tagsEl.getAttribute('data-single-tag')==='true',
+              shownTags,
+              overflow:overflowEl?{
+                text:overflowEl.textContent??'',
+                ariaLabel:overflowEl.getAttribute('aria-label')??'',
+                title:overflowEl.getAttribute('title')??'',
+                scrollWidth:overflowContent.scrollWidth,
+                clientWidth:overflowContent.clientWidth,
+                right:overflowEl.getBoundingClientRect().right,
+              }:null,
               tagsRight:tagsEl.getBoundingClientRect().right,
               ownerLeft:ownerWrap.getBoundingClientRect().left,
             };
           })()`));
           assert.equal(manyTags.cardWidth,width);
           assert.ok(Number(manyTags.ownerScroll)<=Number(manyTags.ownerClient),`width=${width} 4-char owner must stay complete beside crowded tags: ${JSON.stringify(manyTags)}`);
-          assert.equal(manyTags.tagsShrunk,true,`width=${width} crowded tags must absorb shrinking: ${JSON.stringify(manyTags)}`);
-          assert.ok(Number(manyTags.tagsRight)<=Number(manyTags.ownerLeft)+1);
+          assert.ok(Number(manyTags.tagsRight)<=Number(manyTags.ownerLeft)+1,`width=${width} crowded tags overlap owner: ${JSON.stringify(manyTags)}`);
+          const foldedCount=Number(manyTags.foldedCount);
+          const singleTag=manyTags.singleTag===true;
+          assert.ok(Array.isArray(manyTags.shownTags)&&manyTags.shownTags.length>=1,`width=${width} must keep at least one shown tag`);
+          const shownTags=manyTags.shownTags.map(entry=>{
+            const tag=object(entry);
+            return {
+              label:String(tag.label),
+              scrollWidth:Number(tag.scrollWidth),
+              clientWidth:Number(tag.clientWidth),
+              textOverflow:String(tag.textOverflow),
+            };
+          });
+          assert.equal(shownTags.length+foldedCount,expectedCrowdedTags.length,`width=${width} shown + folded must equal total tags`);
+          assert.deepEqual(shownTags.map(tag=>tag.label),expectedCrowdedTags.slice(0,shownTags.length),`width=${width} must fold lowest-priority tags first`);
+          for(const tag of shownTags){
+            if(shownTags.length>1||!singleTag){
+              assert.ok(tag.clientWidth>0&&tag.scrollWidth<=tag.clientWidth,`width=${width} visible tag ${tag.label} must not be squeezed: ${JSON.stringify(tag)}`);
+            }else{
+              assert.ok(tag.clientWidth>0&&(tag.scrollWidth<=tag.clientWidth||tag.textOverflow==='ellipsis'),`width=${width} single remaining tag must keep min width or ellipsis: ${JSON.stringify(tag)}`);
+            }
+          }
+          if(foldedCount>0){
+            const overflow=object(manyTags.overflow);
+            assert.equal(overflow.text,'+'+foldedCount);
+            const hiddenLabels=expectedCrowdedTags.slice(shownTags.length);
+            assert.equal(overflow.ariaLabel,'另有 '+foldedCount+' 项：'+hiddenLabels.join('、'));
+            assert.equal(overflow.title,crowdedTitles.slice(shownTags.length).join('；'));
+            assert.ok(Number(overflow.scrollWidth)<=Number(overflow.clientWidth),`width=${width} +N tag must not overflow: ${JSON.stringify(overflow)}`);
+            assert.ok(Number(overflow.right)<=Number(manyTags.tagsRight)+1,`width=${width} tag row clips +N: ${JSON.stringify(manyTags)}`);
+          }else{
+            assert.equal(manyTags.overflow,null,`width=${width} unexpected +N tag when foldedCount=0`);
+          }
+          if(width<=300)assert.ok(foldedCount>0,`width=${width} crowded tags must fold into +N instead of slivers: ${JSON.stringify(manyTags)}`);
+          foldedByWidth.set(width,foldedCount);
+
+          if(width===260){
+            const crowdedFollowUp=object(await b.evaluate(`(()=>{
+              const cardEl=document.querySelector('.ticket-card[data-item-id="${ticketManyTagsFollowUp}"]');
+              const tagsEl=cardEl.querySelector('.card-tags');
+              const shownTags=[...tagsEl.querySelectorAll('.ds-tag:not([data-card-tag-overflow])')].map(tag=>{
+                const content=tag.querySelector('.ds-tag-content')??tag;
+                const labelSpan=content.querySelector('span');
+                return {
+                  label:content.textContent??'',
+                  scrollWidth:content.scrollWidth,
+                  clientWidth:content.clientWidth,
+                  labelWidth:labelSpan?labelSpan.getBoundingClientRect().width:content.getBoundingClientRect().width,
+                  textOverflow:getComputedStyle(content).textOverflow,
+                };
+              });
+              const overflowEl=tagsEl.querySelector('[data-card-tag-overflow="true"]');
+              const overflowContent=overflowEl?.querySelector('.ds-tag-content')??overflowEl;
+              const followUpEl=tagsEl.querySelector('.shared-follow-up-summary');
+              const ownerWrap=cardEl.querySelector('.ds-ticket-card-footer .ds-ticket-owner');
+              const nameEl=ownerWrap.querySelector('.owner-name');
+              return {
+                cardWidth:Math.round(cardEl.getBoundingClientRect().width),
+                ownerScroll:nameEl.scrollWidth,
+                ownerClient:nameEl.clientWidth,
+                foldedCount:Number(tagsEl.getAttribute('data-folded-tag-count')??'0'),
+                singleTag:tagsEl.getAttribute('data-single-tag')==='true',
+                shownTags,
+                overflow:overflowEl?{
+                  text:overflowEl.textContent??'',
+                  ariaLabel:overflowEl.getAttribute('aria-label')??'',
+                  title:overflowEl.getAttribute('title')??'',
+                  scrollWidth:overflowContent.scrollWidth,
+                  clientWidth:overflowContent.clientWidth,
+                  right:overflowEl.getBoundingClientRect().right,
+                }:null,
+                followUp:followUpEl?{
+                  width:followUpEl.getBoundingClientRect().width,
+                  right:followUpEl.getBoundingClientRect().right,
+                }:null,
+                tagsRight:tagsEl.getBoundingClientRect().right,
+                ownerLeft:ownerWrap.getBoundingClientRect().left,
+              };
+            })()`));
+            assert.equal(crowdedFollowUp.cardWidth,260);
+            assert.ok(Number(crowdedFollowUp.ownerScroll)<=Number(crowdedFollowUp.ownerClient),`follow-up 260px 4-char owner must stay complete: ${JSON.stringify(crowdedFollowUp)}`);
+            assert.ok(Number(crowdedFollowUp.tagsRight)<=Number(crowdedFollowUp.ownerLeft)+1,`follow-up 260px tags overlap owner: ${JSON.stringify(crowdedFollowUp)}`);
+            const followUpRect=object(crowdedFollowUp.followUp);
+            assert.ok(Number(followUpRect.width)>0&&Number(followUpRect.right)<=Number(crowdedFollowUp.tagsRight)+1,`follow-up must remain visible without overflowing: ${JSON.stringify(crowdedFollowUp)}`);
+            const followUpFolded=Number(crowdedFollowUp.foldedCount);
+            const followUpSingle=crowdedFollowUp.singleTag===true;
+            assert.ok(followUpFolded>0,`follow-up 260px crowded card must fold tags: ${JSON.stringify(crowdedFollowUp)}`);
+            assert.ok(Array.isArray(crowdedFollowUp.shownTags));
+            const followUpShown=crowdedFollowUp.shownTags.map(entry=>{
+              const tag=object(entry);
+              return {
+                label:String(tag.label),
+                scrollWidth:Number(tag.scrollWidth),
+                clientWidth:Number(tag.clientWidth),
+                labelWidth:Number(tag.labelWidth),
+                textOverflow:String(tag.textOverflow),
+              };
+            });
+            assert.equal(followUpShown.length+followUpFolded,expectedCrowdedTags.length);
+            assert.deepEqual(followUpShown.map(tag=>tag.label),expectedCrowdedTags.slice(0,followUpShown.length));
+            for(const tag of followUpShown){
+              assert.ok(tag.clientWidth>0&&tag.labelWidth>0,`260px follow-up card must never render a zero-width tag label: ${JSON.stringify(tag)}`);
+              if(followUpShown.length>1||!followUpSingle){
+                assert.ok(tag.scrollWidth<=tag.clientWidth,`260px follow-up tag ${tag.label} must not be squeezed: ${JSON.stringify(tag)}`);
+              }else{
+                assert.ok(tag.scrollWidth<=tag.clientWidth||tag.textOverflow==='ellipsis',`260px follow-up single tag must ellipsise cleanly: ${JSON.stringify(tag)}`);
+              }
+            }
+            const followUpOverflow=object(crowdedFollowUp.overflow);
+            assert.equal(followUpOverflow.text,'+'+followUpFolded);
+            const hiddenLabels=expectedCrowdedTags.slice(followUpShown.length);
+            assert.equal(followUpOverflow.ariaLabel,'另有 '+followUpFolded+' 项：'+hiddenLabels.join('、'));
+            assert.equal(followUpOverflow.title,followUpTitles.slice(followUpShown.length).join('；'));
+            assert.ok(Number(followUpOverflow.scrollWidth)<=Number(followUpOverflow.clientWidth));
+            assert.ok(Number(followUpOverflow.right)<=Number(crowdedFollowUp.tagsRight)+1);
+          }
+
           await b.evaluate("window.scrollTo({top:0,behavior:'instant'})");
           await shot(`owner-${width}.png`,ownerCards,true);
         }
+        assert.ok((foldedByWidth.get(360)??99)<=(foldedByWidth.get(300)??99));
+        assert.ok((foldedByWidth.get(300)??99)<=(foldedByWidth.get(260)??99));
+
+        // A permanently folded row also satisfies the monotonic checks above.
+        // Make room for every tag on the same mounted card and check the actual labels.
+        await sizeCard(600);
+        const crowdedRow=q(cardSelector(ticketManyTags)+' .card-tags');
+        assert.deepEqual(await b.evaluate(`Array.from(${crowdedRow}.querySelectorAll('.ds-tag-content'),tag=>tag.textContent)`),expectedCrowdedTags,'widening the card to 600px must restore all four tags');
+        const followUpCrowdedRow=q(cardSelector(ticketManyTagsFollowUp)+' .card-tags');
+        assert.deepEqual(await b.evaluate(`Array.from(${followUpCrowdedRow}.querySelectorAll('.ds-tag-content'),tag=>tag.textContent)`),expectedCrowdedTags,'widening the follow-up card to 600px must restore all four tags');
+        assert.ok(Number(await b.evaluate(`${followUpCrowdedRow}.querySelector('.shared-follow-up-summary')?.getBoundingClientRect().width??0`))>0);
 
         const selfHidden=await b.evaluate(`Boolean(document.querySelector('.ticket-card[data-item-id="${ticketSelf}"] .ds-ticket-card-footer .owner-name.sr-only'))`);
         assert.equal(selfHidden,true,'self-name sr-only rule remains intact');
@@ -354,7 +567,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
 
       await clickWorkbenchControl(b,`.board-column.active .ticket-card[data-item-id="${ticket2}"] .card-open`);
       const detailReady="Boolean(document.querySelector('.detail-dialog .ds-detail-body-live .ds-detail-hero #detail-title'))";
-      await b.waitFor(`location.pathname.endsWith('/items/ticket/${ticket2}')&&${detailReady}`);
+      await wait('C2.1 open search result',{selectedTicket:`location.pathname.endsWith('/items/ticket/${ticket2}')`,detailReady});
       await waitForAnimationsSettled(b,'.detail-dialog');
 
       const before=Number(await b.evaluate('window.__hoverBridgeProbe.comparisons'));
@@ -366,7 +579,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
         const selector=nextDisabled?'.detail-previous':'.detail-next';
         assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(selector)})?.disabled`),false,`step ${i} requires enabled ${selector}`);
         await clickWorkbenchControl(b,selector);
-        await b.waitFor(`location.pathname!==${JSON.stringify(currentPath)}&&${detailReady}`);
+        await wait('C2.1 detail switch '+i,{pathChanged:`location.pathname!==${JSON.stringify(currentPath)}`,detailReady});
         await waitForAnimationsSettled(b,'.detail-dialog');
         visited.add(String(await b.evaluate('location.pathname')));
       }
@@ -377,19 +590,21 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       await b.waitFor("!document.querySelector('.detail-dialog')");
     });
 
-    // 周宁 (peer 2) owns the in-progress ticket and can edit its internal note.
-    for(const [id,cookieIndex,mode] of [
-      [presenceCrowd,1,'VIEWING'],[presenceCrowd,2,'VIEWING'],[presenceCrowd,3,'VIEWING'],
-      [presenceTwo,1,'VIEWING'],[presenceTwo,2,'EDITING'],
-    ] as const){
-      closers.push(await beginPresence(f,id,cookieIndex,mode));
-    }
-
-    await t.test('C2.2 open presence name tag to +N or midpoint gap shows warm aggregate tooltip only after exit completes',async()=>{
+    await t.test('C2.2 open presence name tag to +N or midpoint gap shows warm aggregate tooltip only after exit completes',async subtest=>{
+      for(const [id,cookieIndex,mode] of [
+        [presenceCrowd,1,'VIEWING'],[presenceCrowd,2,'VIEWING'],[presenceCrowd,3,'VIEWING'],
+        [presenceTwo,1,'VIEWING'],[presenceTwo,2,'EDITING'],
+      ] as const){
+        subtest.after(await beginPresence(f,id,cookieIndex,mode));
+      }
       await openAllBoard();
-      const crowdTags=`.ticket-card[data-item-id="${presenceCrowd}"] .ds-presence-tags`;
+      const crowdCard=`.ticket-card[data-item-id="${presenceCrowd}"]`;
+      const crowdTags=crowdCard+' .ds-presence-tags';
+      const crowdName=crowdTags+' .ds-presence-tag:not([data-mode="more"])';
       const twoTags=`.ticket-card[data-item-id="${presenceTwo}"] .ds-presence-tags`;
-      await b.waitFor(`document.querySelectorAll('${crowdTags} .ds-presence-tag').length===2&&document.querySelectorAll('${twoTags} .ds-presence-tag').length===2`);
+      await wait('C2.2 presence groups',{crowdReady:`document.querySelectorAll('${crowdTags} .ds-presence-tag').length===2`,twoReady:`document.querySelectorAll('${twoTags} .ds-presence-tag').length===2`});
+      const aggregateOpen=(group:string)=>`${q(group)}?.dataset.tooltipOpen==='true'`;
+      const personGone='!'+q(person);
 
       const watchGroup=async(groupSelector:string)=>{
         await b.evaluate(`(()=>{
@@ -416,11 +631,11 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       // Subcase A (cold -> +N)
       await b.evaluate(`document.querySelector(${JSON.stringify(crowdTags)}).scrollIntoView({block:'center'})`);
       await waitForAnimationsSettled(b,crowdTags);
-      await hover(b,`${crowdTags} .ds-presence-tag:not([data-mode="more"])`);
-      await b.waitFor(`document.querySelector(${JSON.stringify(crowdTags+' .ds-presence-tag[aria-expanded="true"]')})!==null&&Boolean(${q(person)})`);
+      await hover(b,crowdName);
+      await wait('C2.2 cold name hover',{nameExpanded:exists(crowdName+'[aria-expanded="true"]'),personMounted:exists(person)});
       await watchGroup(crowdTags);
       await move(b,await point(b,`${crowdTags} .ds-presence-tag[data-mode="more"]`));
-      await b.waitFor(`!document.querySelector(${JSON.stringify(person)})&&document.querySelector(${JSON.stringify(crowdTags)})?.dataset.tooltipOpen==='true'`);
+      await wait('C2.2 cold aggregate after exit',{personGone,aggregateOpen:aggregateOpen(crowdTags)});
       const coldResult=object(await b.evaluate('window.__card39cOverlap.stop()'));
       assert.equal(coldResult.overlaps,0,'cold +N transition must never overlap exiting person card');
       assert.equal(coldResult.sawExiting,true,'watcher must observe the 80ms exit phase');
@@ -448,28 +663,34 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       })()`));
       const gapPoint={x:Number(midpoint.x),y:Number(midpoint.y)};
       await move(b,gapPoint);
-      await b.waitFor(`!${q(person)}&&${q(twoTags)}.dataset.tooltipOpen==='true'`);
+      await wait('C2.2 warm the gap',{personGone,aggregateOpen:aggregateOpen(twoTags)});
       await watchGroup(twoTags);
       await move(b,namePoint);
       await b.evaluate(`${q(firstName)}.focus({preventScroll:true})`);
-      await b.waitFor(`${q(firstName)}.matches(':hover:focus[aria-expanded="true"]')&&Boolean(${q(person)})`);
+      await wait('C2.2 warm name focus',{hovered:exists(firstName+':hover'),focused:exists(firstName+':focus'),expanded:exists(firstName+'[aria-expanded="true"]'),personMounted:exists(person)});
       await b.evaluate(`${q(firstName)}.blur()`);
       await move(b,gapPoint);
-      await b.waitFor(`!document.querySelector(${JSON.stringify(person)})&&document.querySelector(${JSON.stringify(twoTags)})?.dataset.tooltipOpen==='true'`);
+      await wait('C2.2 warm aggregate after exit',{personGone,aggregateOpen:aggregateOpen(twoTags)});
       const warmResult=object(await b.evaluate('window.__card39cOverlap.stop()'));
       assert.equal(warmResult.overlaps,0,'warm tooltip must stay suppressed through both 150ms leave and 80ms exit');
       assert.equal(warmResult.sawExiting,true,'warm watcher must observe the 80ms exit phase before tooltip opens');
 
-      // Subcase C (keyboard focus suppression)
-      await b.evaluate(`document.querySelector(${JSON.stringify(crowdTags)}).scrollIntoView({block:'center'})`);
-      await b.evaluate(`document.querySelector(${JSON.stringify(crowdTags+' .ds-presence-tag:not([data-mode="more"])')}).focus()`);
-      await b.waitFor(`document.activeElement?.matches(${JSON.stringify(crowdTags+' .ds-presence-tag[aria-expanded="true"]')})&&Boolean(${q(person)})`);
+      // HoverCard dismisses on scroll. Settle the scroll before using Shift+Tab from the
+      // card link, the next tab stop after the presence name (+N is not focusable).
+      await move(b,away);
+      await b.evaluate(`${q(crowdName)}.scrollIntoView({block:'center',behavior:'instant'})`);
+      await waitForAnimationsSettled(b,crowdTags);
+      await b.evaluate(`${q(crowdCard+' .card-open')}.focus({preventScroll:true})`);
+      for(const type of ['rawKeyDown','keyUp'] as const){
+        await b.command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',modifiers:8,windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
+      }
+      await wait('C2.2 keyboard opens crowd name',{nameFocused:exists(crowdName+':focus'),nameExpanded:exists(crowdName+'[aria-expanded="true"]'),personMounted:exists(person)});
       await move(b,await point(b,`${crowdTags} .ds-presence-tag[data-mode="more"]`));
       await escape(b);
       await delay(500);
       assert.notEqual(await b.evaluate(`document.querySelector(${JSON.stringify(crowdTags)}).dataset.tooltipOpen`),'true');
       await b.evaluate('document.activeElement?.blur()');
-      await b.waitFor(`document.querySelector(${JSON.stringify(crowdTags)})?.dataset.tooltipOpen==='true'`);
+      await wait('C2.2 aggregate after blur',{aggregateOpen:aggregateOpen(crowdTags)});
       await move(b,away);
 
       // Replay for evidence after the three real-time checks. Resolve coordinates
@@ -483,7 +704,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
         const strip=createFilmstripCapture(b,join(evidence,'filmstrip'));
         await strip(stripName,async()=>{
           await move(b,morePoint);
-          await b.waitFor(`!${q(person)}&&${q(crowdTags)}.dataset.tooltipOpen==='true'&&${q(aggregate)}.getAnimations().some(a=>a.transitionProperty==='opacity')`);
+          await wait('C2.2 filmstrip transition',{personGone,aggregateOpen:aggregateOpen(crowdTags),opacityTransition:`${q(aggregate)}?.getAnimations().some(a=>a.transitionProperty==='opacity')`});
         },[person,crowdTags,aggregate].join(','),{initialFrame:'person-card-open'});
       }finally{
         await b.command('Emulation.setEmulatedMedia',{features:[]});
@@ -492,39 +713,44 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       saved.add(`filmstrip/${stripName}.json`);
     });
 
-    await t.test('C2.3 online-colleagues Escape handles unrelated parent+child stack and parent-focused child-first Escape',async()=>{
+    await t.test('C2.3 online-colleagues Escape handles unrelated parent+child stack and parent-focused child-first Escape',async subtest=>{
+      // 周宁 owns the nested owner's presence link and must also be online for this subtest.
+      subtest.after(await beginPresence(f,presenceTwo,2,'EDITING'));
       await openAllBoard();
-      await b.waitFor("Boolean(document.querySelector('[data-online-colleagues] button'))");
+      const onlineButton='[data-online-colleagues] button';
+      const panelOpen=exists('.ds-online-panel'),panelClosed='!'+q('.ds-online-panel');
+      const parentReady={personMounted:exists(person),presenceLink:exists('.ds-person-hover-presence-link')};
+      await wait('C2.3 online roster',{realtimeLive:exists('.app[data-realtime-status="live"]'),rosterMounted:exists('[data-online-colleagues]'),sidebarExpanded:'!'+q('.app.sidebar-collapsed'),peerCountPositive:`Number(${q('.ds-online-count')}?.textContent)>0`,buttonReady:exists(onlineButton)});
       const openOnlinePanel=async()=>{
         await b.evaluate("document.querySelector('[data-online-colleagues] button').focus()");
         for(const type of ['keyDown','keyUp'] as const){
           await b.command('Input.dispatchKeyEvent',{type,key:'Enter',code:'Enter',...(type==='keyDown'?{text:'\r'}:{})});
         }
-        await b.waitFor("document.querySelector('.ds-online-panel:not([data-entering])')!==null");
+        await wait('C2.3 panel entered',{panelOpen,entryCompleted:exists('.ds-online-panel:not([data-entering])')});
         await waitForAnimationsSettled(b,'.ds-online-panel');
       };
 
       // Subcase A: unrelated parent PersonHoverCard + nested TicketHoverCard while focus stays on online panel trigger.
       await openOnlinePanel();
       await hover(b,`.ticket-card[data-item-id="${nestedOwnerTicket}"] .ds-ticket-owner-link`);
-      await b.waitFor(exists(person)+'&&'+exists('.ds-person-hover-presence-link'));
+      await wait('C2.3 unrelated parent',parentReady);
       await hover(b,'.ds-person-hover-presence-link');
       await b.waitFor(exists(ticket));
       await escape(b);
-      await b.waitFor("document.querySelector('.ds-online-panel')===null&&!document.querySelector('[data-hover-card]')");
+      await wait('C2.3 unrelated stack Escape',{panelClosed,hoverStackClosed:'!'+q(card)});
       assert.equal(await b.evaluate("document.activeElement===document.querySelector('[data-online-colleagues] button')"),true,'one Escape dismisses unrelated parent+child stack and online panel');
 
       // Subcase B: unrelated parent+child stack with focus inside the parent PersonHoverCard -> Escape closes child first, keeps parent & online panel open.
       await openOnlinePanel();
       await hover(b,`.ticket-card[data-item-id="${nestedOwnerTicket}"] .ds-ticket-owner-link`);
-      await b.waitFor(exists(person)+'&&'+exists('.ds-person-hover-presence-link'));
+      await wait('C2.3 parent before focus',parentReady);
       const parentAction='[data-hover-card="person"] [data-action="filter-person-tickets"]';
       await b.evaluate(`${q(parentAction)}.focus({preventScroll:true})`);
       await hover(b,'.ds-person-hover-presence-link');
       await b.waitFor(exists(ticket));
       assert.equal(await b.evaluate(`document.activeElement===${q(parentAction)}`),true,'parent action must hold focus when Escape is pressed');
       await escape(b);
-      await b.waitFor(`!document.querySelector(${JSON.stringify(ticket)})&&Boolean(${q(person)})&&document.querySelector('.ds-online-panel')!==null`);
+      await wait('C2.3 parent-focused Escape',{childGone:'!'+q(ticket),parentOpen:exists(person),panelOpen});
       assert.equal(await b.evaluate("document.activeElement===document.querySelector('.ds-person-hover-presence-link')"),true,'child-first Escape restores focus to nested trigger inside parent');
       await escape(b);
       await b.waitFor('!'+q(person));
@@ -537,9 +763,9 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
       await hover(b,'.ds-online-panel .ds-online-person');
       await b.waitFor(exists(person));
       await escape(b);
-      await b.waitFor(`!document.querySelector(${JSON.stringify(person)})&&document.querySelector('.ds-online-panel')!==null`);
+      await wait('C2.3 panel-row Escape',{personGone:'!'+q(person),panelOpen});
       await escape(b);
-      await b.waitFor("document.querySelector('.ds-online-panel')===null&&document.activeElement===document.querySelector('[data-online-colleagues] button')");
+      await wait('C2.3 second panel Escape',{panelClosed,focusRestored:exists(onlineButton+':focus')});
     });
   }catch(error){
     failed=error;

@@ -35,6 +35,26 @@ test('Card 39C C2.1 hover-bridge avoids scans on stable refs and compares once w
       changedLastCalls:number[];
       changedLastPublishes:boolean[];
     }>;
+    verifyCardTagFolding:()=>Promise<{
+      wide:{folded:number;shown:string[];hidden:string[]};
+      medium:{folded:number;shown:string[];hidden:string[]};
+      tight:{folded:number;shown:string[];hidden:string[]};
+      zeroRoom:{folded:number;shown:string[];hidden:string[]};
+      widenedBack:{folded:number;shown:string[];hidden:string[]};
+      followUp:{folded:number;shown:string[];hidden:string[]};
+      supplement:{folded:number;shown:string[];hidden:string[];hasPendingSupplement:boolean};
+    }>;
+    probeTicketCardFooterLifecycle:()=>Promise<{
+      initialFolded:number;
+      rerenderReads:number;
+      rerenderObsDelta:number;
+      rerenderDiscDelta:number;
+      unfoldedAfterFont:number;
+      zeroGapFolded:number;
+      measuredBadgeFolded:number;
+      observerCleanedUp:boolean;
+      fontListenerCleanedUp:boolean;
+    }>;
   };
   const result=await mod.measureHoverBridgeStability();
   assert.deepEqual(result.mountCompares,[0]);
@@ -43,6 +63,26 @@ test('Card 39C C2.1 hover-bridge avoids scans on stable refs and compares once w
   assert.deepEqual(result.stablePublishes,Array(10).fill(true));
   assert.deepEqual(result.changedLastCalls,[3],'publishBoard scans once instead of twice when the last item changes at fixed now');
   assert.deepEqual(result.changedLastPublishes,[true]);
+
+  const folded=await mod.verifyCardTagFolding();
+  assert.deepEqual(folded.wide,{folded:0,shown:['已催单','待复核','等待中','待补位置'],hidden:[]});
+  assert.deepEqual(folded.medium,{folded:2,shown:['已催单','待复核'],hidden:['等待中','待补位置']});
+  assert.deepEqual(folded.tight,{folded:3,shown:['已催单'],hidden:['待复核','等待中','待补位置']});
+  assert.deepEqual(folded.zeroRoom,{folded:4,shown:[],hidden:['已催单','待复核','等待中','待补位置']});
+  assert.deepEqual(folded.widenedBack,{folded:0,shown:['已催单','待复核','等待中','待补位置'],hidden:[]});
+  assert.deepEqual(folded.followUp,{folded:2,shown:['已催单','待复核'],hidden:['等待中','待补位置']});
+  assert.deepEqual(folded.supplement,{folded:1,shown:['已催单'],hidden:['待补充','待复核','我负责'],hasPendingSupplement:true});
+
+  const lifecycle=await mod.probeTicketCardFooterLifecycle();
+  assert.equal(lifecycle.initialFolded,3,'initial wide glyphs fold down to one tag');
+  assert.equal(lifecycle.rerenderReads,0,'10 identical parent rerenders perform zero extra layout reads');
+  assert.equal(lifecycle.rerenderObsDelta,0,'observer does not re-subscribe across unchanged tag content');
+  assert.equal(lifecycle.rerenderDiscDelta,0);
+  assert.equal(lifecycle.unfoldedAfterFont,0,'post-mount loadingdone invalidates cached widths and unfolds');
+  assert.equal(lifecycle.zeroGapFolded,0,'valid 0px gap is preserved without adding 4px fallback');
+  assert.equal(lifecycle.measuredBadgeFolded,3,'rendered +N badge width refolds when actual badge exceeds initial token estimate');
+  assert.equal(lifecycle.observerCleanedUp,true);
+  assert.equal(lifecycle.fontListenerCleanedUp,true);
 });
 
 test('Card 39C production assets exclude the hover-bridge test probe',async()=>{
@@ -63,6 +103,9 @@ test('Card 39C C1 & C2.4/C2.5 tokens, CSS ownership boundaries and documentation
   assert.doesNotMatch(tokensCss,/--owner-name-max-w:[^;]*(?:em|rem)/u);
 
   const ticketCss=await readFile(resolve(root,'app/pc-admin/src/design/components/TicketCard/ticket-card.css'),'utf8');
+  assert.match(ticketCss,/\.ds-ticket-body\s+\.card-tags\s+\.ds-tag\s*\{\s*flex:\s*none;\s*max-width:\s*none;\s*margin:\s*0;\s*\}/u);
+  assert.match(ticketCss,/\.ds-ticket-body\s+\.card-tags\[data-single-tag="true"\]\s+\.ds-tag:not\(\[data-card-tag-overflow\]\)\s*\{\s*flex:\s*0\s+1\s+auto;\s*min-width:\s*0;\s*max-width:\s*100%;\s*overflow:\s*hidden;\s*\}/u);
+  assert.match(ticketCss,/\.ds-ticket-body\s+\.shared-follow-up-summary\s*\{[^}]*flex:\s*1\s+1\s+0;\s*min-width:\s*var\(--space-10\);/u);
   assert.match(ticketCss,/\.ds-ticket-owner\s*\{[^}]*max-width:\s*none;\s*flex:\s*none;/u);
   assert.match(ticketCss,/\.ds-ticket-owner:not\(\.ds-ticket-closer\)\s+\.owner-name:not\(\.sr-only\)\s*\{\s*max-width:\s*var\(--owner-name-max-w\);\s*\}/u);
   assert.match(ticketCss,/\.card-footer\s+\.ds-ticket-owner\s+\.ds-ticket-owner-placeholder\s*\{\s*max-width:\s*55%;\s*visibility:\s*hidden;\s*pointer-events:\s*none;\s*\}/u);
@@ -77,4 +120,5 @@ test('Card 39C C1 & C2.4/C2.5 tokens, CSS ownership boundaries and documentation
   const designDoc=await readFile(resolve(root,'docs/ui/design-system.md'),'utf8');
   assert.match(designDoc,/统一内边距 `calc\(var\(--space-3\) \+ var\(--space-0-5\)\)`（14px）/u);
   assert.match(designDoc,/工单及拒访\/缺失状态统一 `calc\(var\(--space-16\) \* 5\)` \/ 320px/u);
+  assert.match(designDoc,/超出可用宽度的 Tag 按优先级从低到高折叠进既有 `\+N`/u);
 });

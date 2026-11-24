@@ -1,5 +1,5 @@
 {
-  "selector": "[data-hover-card=\"person\"],.ticket-card[data-item-id=\"01a20b77-5a74-79e5-8037-fb4f935d8e39\"] .ds-presence-tags,.ticket-card[data-item-id=\"01a20b77-5a74-79e5-8037-fb4f935d8e39\"] .ds-presence-tags .ds-presence-tooltip",
+  "selector": "[data-hover-card=\"person\"],.ticket-card[data-item-id=\"01a20bbc-d10f-70b7-952d-63bcdbed835d\"] .ds-presence-tags,.ticket-card[data-item-id=\"01a20bbc-d10f-70b7-952d-63bcdbed835d\"] .ds-presence-tags .ds-presence-tooltip",
   "frames": [
     "person-card-open",
     0,

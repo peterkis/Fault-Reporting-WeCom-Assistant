@@ -155,7 +155,7 @@ const CardBase=memo(function CardBase({item,principal,search,selected,now,blocke
   const presenceTransition=usePresenceModeTransition(presenceMode);
   const relativeUpdated=relativeTime(item.updated_at,now);
   const activityNode=<time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>{relativeUpdated}</time>;
-  const followUpNode=<SharedFollowUpSummary value={item.follow_up_schedule} compact/>;
+  const followUpNode=item.follow_up_schedule?<SharedFollowUpSummary value={item.follow_up_schedule} compact/>:null;
   const inBodyOwnerNode=item.assignee_name
     ?<span className="ds-ticket-owner-placeholder" aria-hidden="true"><Avatar name={item.assignee_name} size={20} aria-hidden="true"/><span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span></span>
     :<span className="owner" title="等待领取"><Avatar name={null} size={20} aria-hidden="true"/></span>;

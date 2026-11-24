@@ -24,8 +24,9 @@
 .ds-ticket-body .ds-source-label {max-width: 45%; flex: none;}
 .ds-ticket-body .card-footer,.ds-ticket-card-surface .ds-ticket-card-footer {min-height: var(--avatar-sm); gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-xs);}
 .ds-ticket-body .card-tags {flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-1); margin: 0; overflow: hidden;}
-.ds-ticket-body .card-tags .ds-tag {flex-shrink: 1; min-width: 0; max-width: 100%; margin: 0; overflow: hidden;}
-/* Card 39C C1: keep owner intact (flex:none, no percentage cap); cap name width to 4 CJK chars while .card-tags absorbs shrinking. */
+.ds-ticket-body .card-tags .ds-tag {flex: none; max-width: none; margin: 0;}
+.ds-ticket-dismissed-body .card-tags .ds-tag,.ds-ticket-body .card-tags[data-single-tag="true"] .ds-tag:not([data-card-tag-overflow]) {flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden;}
+/* Card 39C C1: keep owner intact (flex:none, no percentage cap); cap name width to 4 CJK chars while .card-tags folds excess tags into +N. */
 .ds-ticket-owner {display: inline-flex; align-items: center; min-width: var(--avatar-sm); max-width: none; flex: none; overflow: hidden;}
 .ds-ticket-owner .owner,.ds-ticket-owner .ds-ticket-owner-placeholder {display: inline-flex; align-items: center; max-width: 100%; gap: var(--space-1);}
 .card-footer .ds-ticket-owner .owner {max-width: none;}
@@ -53,9 +54,9 @@
 .ds-ticket-deadline>svg {width: var(--icon-sm); height: var(--icon-sm);}
 @media (prefers-reduced-motion: reduce) {.ds-ticket-card.ticket-card {transition: none;} .ds-ticket-card.ticket-card:hover {transform:none;}}
 
-.ds-ticket-body .shared-follow-up-summary {display: flex; align-items: center; gap: var(--space-1); flex: 1; min-width: calc(var(--space-16) + var(--space-4)); margin: 0; overflow: hidden; font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-secondary);}
-.ds-ticket-body .shared-follow-up-summary time {order: 0; min-width: var(--space-10); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-.ds-ticket-body .shared-follow-up-summary strong {order: 1; flex: none; font-weight: var(--fw-medium);}
+.ds-ticket-body .shared-follow-up-summary {display: flex; align-items: center; gap: var(--space-1); flex: 1 1 0; min-width: var(--space-10); margin: 0; overflow: hidden; font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--text-secondary);}
+.ds-ticket-body .shared-follow-up-summary time {order: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ds-ticket-body .shared-follow-up-summary strong {order: 1; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-medium);}
 .ds-ticket-body .shared-follow-up-summary.is-due strong {color: var(--tone-attention-fg);}
 .ds-ticket-deadline>svg {stroke-width: 1.75;}
 
