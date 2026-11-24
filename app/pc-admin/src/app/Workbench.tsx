@@ -41,7 +41,7 @@ import { cardTags,stagePresentation } from '../design/status-map';
 import { columnHighlightTone,useBoardCardMotion,useClosureElementHighlight,useMotionScopeReady } from '../design/motion/board-motion';
 import { useOptimisticRollbackCue } from '../design/motion/rollback-cue';
 import { OptimisticBadge } from '../design/components/OptimisticBadge/OptimisticBadge';
-import { applyOptimisticOverlay,applyOptimisticPositions,computeHandledDismissedDelta,reconcileConfirmedOverlays } from '../features/optimistic/overlay';
+import { applyOptimisticOverlay,applyOptimisticPositions,computeHandledDismissedDelta,createConfirmedHandoffRetention,reconcileConfirmedOverlays,retainConfirmedHandoffs } from '../features/optimistic/overlay';
 import { readBoardPage,setDisplayedBoardSnapshot,useItemOptimisticState,useItemRollbackCue,useOptimisticSnapshot } from '../features/optimistic/store';
 import { WorkbenchEfficiency,EfficiencyEntry } from '../features/efficiency/WorkbenchEfficiency';
 import { useBoardArrivals } from '../features/efficiency/use-board-arrivals';
@@ -371,7 +371,11 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     return [...map.values()];
   },[pendingData,activeData,handledData]);
   const optimisticSnapshot=useOptimisticSnapshot(principal.principal_id);
-  const fresh=useMemo(()=>applyOptimisticOverlay(serverFresh,optimisticSnapshot),[serverFresh,optimisticSnapshot]);
+  // Column pages refresh independently; keep a confirmed move's shown card until its destination page includes it.
+  const handoffRetention=useRef(createConfirmedHandoffRetention());
+  const handoffScope=JSON.stringify([principal.principal_id,principal.authorization_revision,principal.expires_epoch_ms,rangeKey,scope,searchMode,searchKey]);
+  const boardReadsOutstanding=searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching;
+  const fresh=useMemo(()=>retainConfirmedHandoffs(applyOptimisticOverlay(serverFresh,optimisticSnapshot),optimisticSnapshot,handoffRetention.current,handoffScope,boardReadsOutstanding),[serverFresh,optimisticSnapshot,handoffScope,boardReadsOutstanding]);
   useEffect(()=>{reconcileConfirmedOverlays(principal.principal_id,serverFresh,optimisticSnapshot);},[principal.principal_id,serverFresh,optimisticSnapshot]);
   const handledDismissedDelta=useMemo(()=>computeHandledDismissedDelta(serverFresh,fresh),[serverFresh,fresh]);
   const summaryScope=JSON.stringify([rangeKey,scope,searchMode,searchKey,principal.authorization_revision]);
@@ -423,7 +427,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const pageLengths=(pendingData?.pages.length??0)+','+(activeData?.pages.length??0)+','+(handledData?.pages.length??0);
   const motionScope=orderingScope+':'+pageLengths;
   const allReady=queries.every(query=>!query.isPending&&!query.isError);
-  const anyFetching=searchMode?searched.isFetching:basePending.isFetching||baseActive.isFetching||baseHandled.isFetching;
+  const anyFetching=boardReadsOutstanding;
   const positionedUnique=useMemo(()=>applyOptimisticPositions(unique,optimisticSnapshot),[unique,optimisticSnapshot]);
   const arrivals=useBoardArrivals(positionedUnique,motionScope,allReady&&!anyFetching,!searchMode&&!fullPage&&!locationMode,view==='board'&&!holdOrder);
   unique=arrivals.items;

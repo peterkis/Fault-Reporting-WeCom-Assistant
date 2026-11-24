@@ -67,6 +67,47 @@ export function applyOptimisticOverlay(items:readonly WorkbenchCard[],snapshot:O
   });
 }
 
+/** Last projected card per confirmed movement, kept only inside one authorized board scope. */
+export interface ConfirmedHandoffRetention {
+  scope:string;
+  cards:Map<string,{clientCommandId:string;card:WorkbenchCard}>;
+}
+
+export function createConfirmedHandoffRetention():ConfirmedHandoffRetention{
+  return {scope:'',cards:new Map()};
+}
+
+function projectedMovementCard(projected:readonly WorkbenchCard[],key:string,intakeId:string|undefined):WorkbenchCard|undefined{
+  return projected.find(item=>optimisticItemKey(item.kind,item.id)===key||Boolean(intakeId)&&item.intake_id===intakeId);
+}
+
+/**
+ * Column pages refresh independently. After a confirmed inter-column move, the source page can
+ * drop the card before the destination page includes it. Keep the card the board already showed
+ * only while a board read is still outstanding: once every read has settled without the card, the
+ * server no longer shows it here and it is not kept. A new scope (principal, authorization
+ * revision, range, server-side filters, search) or a released overlay also ends the retention.
+ */
+export function retainConfirmedHandoffs(projected:readonly WorkbenchCard[],snapshot:OptimisticPrincipalState,retention:ConfirmedHandoffRetention,scope:string,readsOutstanding:boolean):WorkbenchCard[]{
+  if(retention.scope!==scope){retention.scope=scope;retention.cards=new Map();}
+  if(snapshot.overlays.size===0&&retention.cards.size===0)return projected as WorkbenchCard[];
+  const next=new Map<string,{clientCommandId:string;card:WorkbenchCard}>();
+  const missing:WorkbenchCard[]=[];
+  for(const [key,record] of snapshot.overlays){
+    const movement=record.movement;
+    if(!movement)continue;
+    const shown=projectedMovementCard(projected,key,movement.intakeId);
+    if(shown){next.set(key,{clientCommandId:movement.clientCommandId,card:shown});continue;}
+    const kept=retention.cards.get(key);
+    if(readsOutstanding&&movement.status==='confirmed'&&kept?.clientCommandId===movement.clientCommandId){
+      next.set(key,kept);
+      missing.push(kept.card);
+    }
+  }
+  retention.cards=next;
+  return missing.length?[...projected,...missing]:projected as WorkbenchCard[];
+}
+
 function insertWithAnchor(slice:WorkbenchCard[],target:WorkbenchCard,anchor:CardPositionAnchor):WorkbenchCard[]{
   const others=slice.filter(item=>optimisticItemKey(item.kind,item.id)!==optimisticItemKey(target.kind,target.id));
   if(anchor.beforeKey){

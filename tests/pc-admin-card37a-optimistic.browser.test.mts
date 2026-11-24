@@ -363,3 +363,47 @@ test('37A A5.6 Windows Control+Z routes only the newest Undo and preserves nativ
     assert.equal(await b.evaluate('document.querySelectorAll('+JSON.stringify(undo)+').length'),1);
   }));
 });
+
+test('37A confirmed claim keeps the moving card visible while the 处理中 refresh lags the 待受理 refresh',options,()=>withScene(async({b,card})=>{
+  const lagMs=460;
+  // Delay only the 处理中 page after the real claim. The 待受理 page then lands first without the card.
+  await b.evaluate(`(()=>{
+    const fetch=window.fetch,card=${JSON.stringify('.board '+card)},lag=${lagMs};
+    const trace=window.handoffTrace={armed:true,stop:false,frames:0,missingFrames:0,missingMutations:0,pendingAt:[],activeAt:[],activeStarted:0};
+    window.fetch=async(input,init)=>{
+      const url=new URL(input instanceof Request?input.url:input,location.href);
+      if(!trace.stop&&card37Route.ack>0&&url.pathname==='/api/workbench/board'){
+        const column=url.searchParams.get('column');
+        if(column==='active'){
+          trace.activeStarted++;
+          const [response]=await Promise.all([fetch(input,init),new Promise(resolve=>setTimeout(resolve,lag))]);
+          trace.activeAt.push(performance.now());return response;
+        }
+        if(column==='pending'){const response=await fetch(input,init);trace.pendingAt.push(performance.now());return response;}
+      }
+      return fetch(input,init);
+    };
+    const present=()=>document.querySelector(card)?.isConnected===true;
+    new MutationObserver(()=>{if(!trace.stop&&card37Route.ack>0&&!present())trace.missingMutations++;})
+      .observe(document.querySelector('.board'),{childList:true,subtree:true});
+    const tick=()=>{if(trace.stop)return;if(card37Route.ack>0){trace.frames++;if(!present())trace.missingFrames++;}requestAnimationFrame(tick);};
+    requestAnimationFrame(tick);
+  })()`);
+  await routeWrite(b,claimPath,0);
+  await claim(b,card);
+  await b.waitFor(heading('ticket-self-handling')+'==="已领取"');
+  await b.waitFor('handoffTrace.pendingAt.length>0&&handoffTrace.activeAt.length>0');
+  await b.waitFor(visible(active(card))+'&&!'+query(card+'[data-optimistic-state]'));
+  await waitForAnimationsSettled(b,'.board');
+  await b.evaluate(twoFrames);
+  const trace=await b.evaluate('handoffTrace.stop=true;handoffTrace') as {frames:number;missingFrames:number;missingMutations:number;pendingAt:number[];activeAt:number[]};
+  assert.equal(await b.evaluate('card37Route.status'),200);
+  const [firstPending]=trace.pendingAt,[firstActive]=trace.activeAt;
+  assert.ok(firstPending!==undefined&&firstActive!==undefined&&firstActive-firstPending>=lagMs/2,
+    'the 待受理 refresh landed well before the delayed 处理中 refresh: '+JSON.stringify(trace));
+  assert.ok(trace.frames>0);
+  assert.equal(trace.missingFrames,0,'card absent for '+trace.missingFrames+' of '+trace.frames+' frames');
+  assert.equal(trace.missingMutations,0,'card removed by a committed board update');
+  assert.equal(await b.evaluate(query(pending(card))),null);
+  assert.ok(String(await b.evaluate(query(active(card)+' .owner-name')+'?.textContent??""')).trim(),'the 处理中 card shows its claimant');
+}));
