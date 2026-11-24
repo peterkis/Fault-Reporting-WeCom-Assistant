@@ -1,16 +1,18 @@
 import {useSyncExternalStore} from 'react';
 
-export type DurationToken='--dur-instant'|'--dur-fast'|'--dur-base'|'--dur-slow'|'--dur-move'|'--dur-highlight'|'--dur-return';
-export type EasingToken='--ease-standard'|'--ease-soft'|'--ease-exit';
+export type DurationToken='--dur-instant'|'--dur-fast'|'--dur-base'|'--dur-slow'|'--dur-move'|'--dur-highlight-hold'|'--dur-highlight'|'--dur-return';
+export type EasingToken='--ease-standard'|'--ease-soft'|'--ease-exit'|'--ease-ambient';
 type NumericToken=DurationToken|'--delay-tooltip'|'--delay-hover-card-close'|'--delay-hover-card-warm'|'--delay-goto-sequence'|'--delay-shortcut-hint'|'--press-scale'|'--scale-popover'|'--shift-xs'|'--shift-sm'|'--shift-md'|'--shift-lg'|'--space-12';
 const cache=new Map<string,string>();
 const listeners=new Set<()=>void>();
 const WARM_TOKENS:readonly string[]=[
-  '--dur-instant','--dur-fast','--dur-base','--dur-slow','--dur-move','--dur-highlight','--dur-return',
-  '--ease-standard','--ease-soft','--ease-exit',
+  '--dur-instant','--dur-fast','--dur-base','--dur-slow','--dur-move','--dur-highlight-hold','--dur-highlight','--dur-return',
+  '--ease-standard','--ease-soft','--ease-exit','--ease-ambient',
   '--delay-tooltip','--delay-hover-card-close','--delay-hover-card-warm','--delay-goto-sequence','--delay-shortcut-hint','--press-scale','--scale-popover',
   '--shift-xs','--shift-sm','--shift-md','--shift-lg','--space-12',
-  '--brand-subtle','--stage-intake-bg','--stage-active-bg','--stage-done-bg','--tone-danger-dot',
+  '--brand-subtle','--stage-intake-bg','--stage-active-bg','--stage-done-bg',
+  '--highlight-ring-intake','--highlight-ring-active','--highlight-ring-done','--highlight-ring-brand',
+  '--tone-danger-dot',
 ];
 let media:MediaQueryList|undefined,override=false,revision=0;
 

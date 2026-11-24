@@ -3,10 +3,10 @@ import type {RefObject} from 'react';
 import {canStartLiftFlip,flip,getFlipLayout,getFlipPosition,hasFreeFlipSlot,recordFlipLayout} from './flip';
 import type {MotionRect} from './flip';
 import {highlight} from './highlight';
-import type {HighlightTone} from './highlight';
+import type {HighlightHandle,HighlightTone} from './highlight';
 import {finishedAnimation,trackAnimation} from './lifecycle';
 import {consumeSelfWrite} from './self-write';
-import {highlightToneColor,motionToken,prefersReducedMotion,subscribeMotion,warmMotionTokens} from './tokens';
+import {motionToken,prefersReducedMotion,subscribeMotion,warmMotionTokens} from './tokens';
 
 export type MotionColumn='pending'|'active'|'handled';
 export interface MotionItem {
@@ -236,6 +236,7 @@ function createFlightGhost(source:HTMLElement,width:number,target:MotionRect):HT
   clone.removeAttribute('data-item-id');
   clone.removeAttribute('data-kind');
   clone.removeAttribute('data-closure-highlight');
+  clone.removeAttribute('data-highlight-tone');
   clone.removeAttribute('data-presence');
   for(const node of clone.querySelectorAll('[id],[data-item-id],[data-kind]')){
     node.removeAttribute('id');
@@ -310,8 +311,15 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
   const revealedKeys=useRef(new Set<string>());
   const pendingSettled=useRef(new Map<string,HTMLElement>());
   const settledFrame=useRef(0);
-  const deferredHighlightBatches=useRef(new Map<ReturnType<typeof setTimeout>,Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>>());
-  const followUpHighlights=useRef(new Map<Animation,{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>());
+  const deferredHighlightBatches=useRef(new Map<ReturnType<typeof setTimeout>,Array<{el:HTMLElement;tone:HighlightTone}>>());
+  const followUpHighlights=useRef(new Map<Animation,{el:HTMLElement;tone:HighlightTone}>());
+  const activeHighlights=useRef(new Set<HighlightHandle>());
+  const startHighlight=useCallback((el:HTMLElement,tone:HighlightTone)=>{
+    const handle=highlight(el,{tone});
+    activeHighlights.current.add(handle);
+    void handle.finished.then(()=>{activeHighlights.current.delete(handle);});
+    return handle;
+  },[]);
 
   const scheduleSettledRectRefresh=useCallback((key:string,el:HTMLElement)=>{
     pendingSettled.current.set(key,el);
@@ -345,7 +353,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
   },[]);
 
   const drainPendingHighlights=useCallback(()=>{
-    const pending:Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>=[];
+    const pending:Array<{el:HTMLElement;tone:HighlightTone}>=[];
     if(deferredHighlightBatches.current.size>0){
       const entries=[...deferredHighlightBatches.current.entries()];
       deferredHighlightBatches.current.clear();
@@ -361,12 +369,17 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     return pending;
   },[]);
 
-  const clearTransientEffects=useCallback(()=>{
+  const clearTransientEffects=useCallback((cancelHighlights=true)=>{
     if(settledFrame.current){cancelAnimationFrame(settledFrame.current);settledFrame.current=0;}
     pendingSettled.current.clear();
     for(const timer of deferredHighlightBatches.current.keys())clearTimeout(timer);
     deferredHighlightBatches.current.clear();
     followUpHighlights.current.clear();
+    if(cancelHighlights&&activeHighlights.current.size>0){
+      const handles=[...activeHighlights.current];
+      activeHighlights.current.clear();
+      for(const handle of handles)handle.cancel();
+    }
     for(const flight of inFlight.current.values())flight.animation.cancel();
     inFlight.current.clear();
     for(const ghost of flightGhosts.current)ghost.remove();
@@ -415,12 +428,12 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     };
     const unsubscribe=subscribeMotion(()=>{
       if(document.hidden){
-        clearTransientEffects();
+        clearTransientEffects(true);
       }else if(prefersReducedMotion()){
         const pendingHighlights=drainPendingHighlights();
-        clearTransientEffects();
-        for(const {el,tone,bg} of pendingHighlights){
-          if(el.isConnected)highlight(el,{tone,...(bg?{background:bg}:{})});
+        clearTransientEffects(false);
+        for(const {el,tone} of pendingHighlights){
+          if(el.isConnected)startHighlight(el,tone);
         }
       }
     });
@@ -439,9 +452,9 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       document.removeEventListener('transitionend',onTransitionEnd,true);
       document.removeEventListener('click',onClick,true);
       unsubscribe();
-      clearTransientEffects();
+      clearTransientEffects(true);
     };
-  },[clearTransientEffects,drainPendingHighlights]);
+  },[clearTransientEffects,drainPendingHighlights,startHighlight]);
 
   const arrivalSignature=arrivalKeys.join('|');
   useLayoutEffect(()=>{
@@ -634,36 +647,16 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         if(isOutsideVerticalBounds(curr,0,viewportHeight)===null)visuallyAffectedColumns.add(curr.column);
       }
 
-      // Complete all remaining DOM & computed-style reads before any writes / animate() calls.
+      // Complete all remaining DOM reads before any writes / animate() calls.
       const columnRects=new Map<HTMLElement,DOMRect>();
       const headerRects=new Map<HTMLElement,DOMRect>();
-      const cardBackgrounds=new Map<HTMLElement,string>();
-      let sharedUnselectedCardBg:string|null=null;
-      const sampleCardBackground=(el:HTMLElement)=>{
-        if(cardBackgrounds.has(el))return;
-        if(!el.style.backgroundColor&&!el.classList.contains('is-selected')&&!el.dataset.reminderLocated){
-          if(sharedUnselectedCardBg===null)sharedUnselectedCardBg=getComputedStyle(el).backgroundColor;
-          cardBackgrounds.set(el,sharedUnselectedCardBg);
-        }else{
-          cardBackgrounds.set(el,getComputedStyle(el).backgroundColor);
-        }
-      };
       for(const move of moves){
-        const {curr,selfCaused}=move;
+        const {curr}=move;
         if(curr.collapsedHeader){
           if(!headerRects.has(curr.collapsedHeader))headerRects.set(curr.collapsedHeader,curr.collapsedHeader.getBoundingClientRect());
           if(curr.columnEl&&!columnRects.has(curr.columnEl))columnRects.set(curr.columnEl,curr.columnEl.getBoundingClientRect());
         }else if(isOutsideVerticalBounds(curr,0,viewportHeight)!==null){
           if(curr.columnEl&&!columnRects.has(curr.columnEl))columnRects.set(curr.columnEl,curr.columnEl.getBoundingClientRect());
-        }else if(!selfCaused){
-          sampleCardBackground(curr.el);
-          highlightToneColor(columnHighlightTone(curr.column));
-        }
-      }
-      for(const {curr,selfCaused} of arrivalsToProcess){
-        if(!selfCaused&&isOutsideVerticalBounds(curr,0,viewportHeight)===null){
-          sampleCardBackground(curr.el);
-          highlightToneColor(columnHighlightTone(curr.column));
         }
       }
 
@@ -671,7 +664,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       const currentScroll={x:scrollOrigin.current.x,y:scrollOrigin.current.y};
       const motionDisabled=document.hidden||prefersReducedMotion();
       let liftSlotsExhausted=motionDisabled;
-      const snappedHighlights:Array<{el:HTMLElement;tone:HighlightTone;bg:string|undefined}>=[];
+      const snappedHighlights:Array<{el:HTMLElement;tone:HighlightTone}>=[];
       // Priority 1: Moving cards first so they claim the 6 FLIP slots.
       for(const move of moves){
         const {key,curr,old,fromVisual,selfCaused}=move;
@@ -717,15 +710,10 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
 
         if(liftSlotsExhausted&&curr.el.dataset.motionFlipping!=='true'){
           if(!selfCaused){
-            const bg=cardBackgrounds.get(curr.el);
             if(motionDisabled){
-              if(!document.hidden){
-                void Promise.resolve().then(()=>{
-                  if(curr.el.isConnected&&!document.hidden)highlight(curr.el,{tone,...(bg?{background:bg}:{})});
-                });
-              }
+              if(curr.el.isConnected&&!document.hidden)startHighlight(curr.el,tone);
             }else{
-              snappedHighlights.push({el:curr.el,tone,bg});
+              snappedHighlights.push({el:curr.el,tone});
             }
           }
           continue;
@@ -747,12 +735,11 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
           liftSlotsExhausted=true;
         }
         if(!selfCaused){
-          const bg=cardBackgrounds.get(curr.el);
-          const entry={el:curr.el,tone,bg};
+          const entry={el:curr.el,tone};
           followUpHighlights.current.set(animation,entry);
           void animation.finished.then(()=>{
             if(!followUpHighlights.current.delete(animation))return;
-            if(entry.el.isConnected&&!document.hidden)highlight(entry.el,{tone:entry.tone,...(entry.bg?{background:entry.bg}:{})});
+            if(entry.el.isConnected&&!document.hidden)startHighlight(entry.el,entry.tone);
           },()=>{
             followUpHighlights.current.delete(animation);
           });
@@ -763,8 +750,8 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
         const batch=snappedHighlights;
         const timer=setTimeout(()=>{
           deferredHighlightBatches.current.delete(timer);
-          for(const {el,tone,bg} of batch){
-            if(el.isConnected)highlight(el,{tone,...(bg?{background:bg}:{})});
+          for(const {el,tone} of batch){
+            if(el.isConnected)startHighlight(el,tone);
           }
         },0);
         deferredHighlightBatches.current.set(timer,batch);
@@ -809,16 +796,8 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
           const release=()=>arrivalAnimations.current.delete(animation);
           void animation.finished.then(release,release);
         }
-        if(!selfCaused){
-          const bg=cardBackgrounds.get(curr.el);
-          const entry={el:curr.el,tone,bg};
-          followUpHighlights.current.set(animation,entry);
-          void animation.finished.then(()=>{
-            if(!followUpHighlights.current.delete(animation))return;
-            if(entry.el.isConnected&&!document.hidden)highlight(entry.el,{tone:entry.tone,...(entry.bg?{background:entry.bg}:{})});
-          },()=>{
-            followUpHighlights.current.delete(animation);
-          });
+        if(!selfCaused&&curr.el.isConnected&&!document.hidden){
+          startHighlight(curr.el,tone);
         }
       }
 
@@ -894,28 +873,20 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       // Single batched read phase for list rows before any highlight() animate calls.
       const bounds=tableVisibleBounds();
       const shiftSm=motionToken('--shift-sm');
-      let sharedRowBg:string|null=null;
-      const measured:Array<{key:string;row:HTMLTableRowElement;offDir:'up'|'down'|null;bg:string}>=[];
+      const measured:Array<{key:string;row:HTMLTableRowElement;offDir:'up'|'down'|null}>=[];
       for(const {key,row} of candidates){
         const rect=row.getBoundingClientRect();
         if(rect.width<=0||rect.height<=0)continue;
-        let bg:string;
-        if(!row.style.backgroundColor&&!row.classList.contains('is-selected')){
-          if(sharedRowBg===null)sharedRowBg=getComputedStyle(row).backgroundColor;
-          bg=sharedRowBg;
-        }else{
-          bg=getComputedStyle(row).backgroundColor;
-        }
-        measured.push({key,row,offDir:isOutsideVerticalBounds(rect,bounds.top,bounds.bottom,shiftSm),bg});
+        measured.push({key,row,offDir:isOutsideVerticalBounds(rect,bounds.top,bounds.bottom,shiftSm)});
       }
-      for(const {key,row,offDir,bg} of measured){
+      for(const {key,row,offDir} of measured){
         if(offDir){
           if(!nextOffscreen.some(entry=>entry.key===key)){
             revealedKeys.current.delete(key);
             nextOffscreen.push({key,direction:offDir,tone:'brand'});
           }
         }else{
-          highlight(row,{tone:'brand',background:bg});
+          startHighlight(row,'brand');
         }
       }
     }
@@ -923,7 +894,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     setListOffscreen(current=>sameEntries(current,nextOffscreen)?current:nextOffscreen);
     seenArrivals.current=new Set(newArrivals);
     previousList.current=refreshing?new Map([...prevList,...nextList]):nextList;
-  },[view,principalId,sequence,refreshing,ready,scope,arrivalSignature,clearTransientEffects,scheduleSettledRectRefresh]);
+  },[view,principalId,sequence,refreshing,ready,scope,arrivalSignature,clearTransientEffects,scheduleSettledRectRefresh,startHighlight]);
 
   // IntersectionObserver for board off-screen arrivals: scrolling them into view dismisses chip and highlights once.
   const boardOffscreenKey=COLUMNS.map(col=>col+':'+boardOffscreen[col].map(entry=>entry.key).join(',')).join('|');
@@ -961,12 +932,12 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       });
       for(const item of revealed){
         observer.unobserve(item.el);
-        if(item.el.isConnected)highlight(item.el,{tone:item.entry.tone});
+        if(item.el.isConnected)startHighlight(item.el,item.entry.tone);
       }
     },{threshold:0.1});
     for(const el of targets.keys())observer.observe(el);
     return()=>observer.disconnect();
-  },[view,boardOffscreenKey]);
+  },[view,boardOffscreenKey,startHighlight]);
 
   // IntersectionObserver for list off-screen arrivals: observes both internal table scroll and window viewport.
   const listOffscreenKey=listOffscreen.map(entry=>entry.key).join(',');
@@ -999,7 +970,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
       });
       for(const item of revealed){
         for(const obs of observers)obs.unobserve(item.el);
-        if(item.el.isConnected)highlight(item.el,{tone:item.entry.tone});
+        if(item.el.isConnected)startHighlight(item.el,item.entry.tone);
       }
     };
     const observers:IntersectionObserver[]=[new IntersectionObserver(handleEntries,{threshold:0.1})];
@@ -1008,7 +979,7 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     }
     for(const obs of observers)for(const el of targets.keys())obs.observe(el);
     return()=>{for(const obs of observers)obs.disconnect();};
-  },[view,listOffscreenKey]);
+  },[view,listOffscreenKey,startHighlight]);
 
   const activateBoardColumn=useCallback((column:MotionColumn)=>{
     const pending=boardOffscreenRef.current[column];
@@ -1018,8 +989,8 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     const elements=pending.map(entry=>({entry,el:findCardElement(entry.key)})).filter((item):item is {entry:OffscreenEntry;el:HTMLElement}=>item.el!==null);
     const earliest=elements[0]?.el;
     if(earliest)earliest.scrollIntoView({behavior:prefersReducedMotion()?'auto':'smooth',block:'center'});
-    for(const {entry,el} of elements)highlight(el,{tone:entry.tone});
-  },[]);
+    for(const {entry,el} of elements)startHighlight(el,entry.tone);
+  },[startHighlight]);
 
   const activateList=useCallback(()=>{
     const pending=listOffscreenRef.current;
@@ -1029,8 +1000,8 @@ export function useBoardCardMotion({view,principalId,items,sequence,refreshing,r
     const elements=pending.map(entry=>({entry,el:findRowElement(entry.key)})).filter((item):item is {entry:OffscreenEntry;el:HTMLTableRowElement}=>item.el!==null&&!item.el.hidden);
     const earliest=elements[0]?.el;
     if(earliest)earliest.scrollIntoView({behavior:prefersReducedMotion()?'auto':'smooth',block:'center'});
-    for(const {entry,el} of elements)highlight(el,{tone:entry.tone});
-  },[]);
+    for(const {entry,el} of elements)startHighlight(el,entry.tone);
+  },[startHighlight]);
 
   const activatePending=useCallback(()=>activateBoardColumn('pending'),[activateBoardColumn]);
   const activateActive=useCallback(()=>activateBoardColumn('active'),[activateBoardColumn]);

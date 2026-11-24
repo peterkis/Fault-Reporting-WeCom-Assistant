@@ -11,6 +11,8 @@
 .work-table.ds-work-table thead th {height:calc(var(--space-8) + var(--space-1));background:var(--bg-canvas);color:var(--text-secondary);font-size:var(--fs-xs);font-weight:var(--fw-medium);box-shadow:inset 0 -1px 0 var(--border-hair);}
 .ds-work-table .ds-work-row {height:calc(var(--space-8) + var(--space-3));background:var(--bg-canvas);}
 .work-table.ds-work-table .ds-work-row>:is(th,td) {height:calc(var(--space-8) + var(--space-3));box-shadow:var(--shadow-list-row);}
+/* Keep the WAAPI target alive across the breakpoint. Only a sticky cell needs to paint its own tint and ring. */
+.work-table.ds-work-table .ds-work-row[data-highlight-tone]>th::after {content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:1;}
 .work-table.ds-work-table .ds-work-row:is(:hover,:focus-within) {background:var(--bg-subtle);}
 .work-table.ds-work-table .ds-work-row.is-selected {background:var(--brand-subtle);}
 .work-table.ds-work-table .ds-work-row.is-selected>th {box-shadow:var(--shadow-list-selected);}
@@ -51,7 +53,7 @@
 .ds-list-owner.is-unassigned {color:var(--text-secondary);}
 .ds-list-owner.is-system {color:var(--text-tertiary);}
 .ds-list-owner.is-system>svg {width:var(--icon-md);height:var(--icon-md);flex:none;}
-.ds-list-unassigned {width:calc(var(--space-4) + var(--space-0-5));height:calc(var(--space-4) + var(--space-0-5));border:1px dashed var(--border-strong);border-radius:var(--radius-full);}
+.ds-list-unassigned {box-sizing:border-box;width:var(--avatar-sm);height:var(--avatar-sm);border:1.5px dashed var(--text-tertiary);border-radius:var(--radius-full);background:transparent;}
 .work-table.ds-work-table .ds-work-row>td:last-child {text-align:right;}
 .ds-work-table .activity-time {font-size:var(--fs-xs);color:var(--text-secondary);}
 .ds-work-table .ds-work-row[data-closure-kind=DISMISSED] .ds-ticket-category {filter:grayscale(1);opacity:.55;}
@@ -84,7 +86,10 @@
 .work-table.ds-work-table .ds-list-note>td {height:var(--space-8);font-size:var(--fs-xs);color:var(--text-tertiary);text-align:left;}
 @container work-table (max-width:1080px) {
   .work-table.ds-work-table .ds-work-row>th,.work-table.ds-work-table thead th:first-child {position:sticky;left:0;z-index:var(--z-sticky);background:var(--bg-canvas);box-shadow:var(--shadow-list-sticky);}
-  .work-table.ds-work-table .ds-work-row>th {background-color:inherit;}
+  .work-table.ds-work-table .ds-work-row>th {background-color:inherit;isolation:isolate;}
+  .work-table.ds-work-table .ds-work-row[data-highlight-tone]>th::after {background:var(--brand-subtle);box-shadow:var(--shadow-list-highlight-sticky);}
+  .work-table.ds-work-table .ds-work-row[data-highlight-tone]:is(:active,[data-closure-kind="DISMISSED"])>th::after {background:transparent;}
+  .work-table.ds-work-table .ds-work-row[data-highlight-tone]:is(.is-selected,[data-keyboard-current="true"],[data-optimistic-rollback="true"])>th::after {background:transparent;box-shadow:none;}
   .work-table.ds-work-table .ds-work-row:is(:hover,:focus-within)>th {background:var(--bg-subtle);}
   .work-table.ds-work-table .ds-work-row.is-selected>th {background:var(--brand-subtle);box-shadow:var(--shadow-list-selected-sticky);}
   .work-table.ds-work-table .ds-work-row[data-keyboard-current="true"]>th {background:var(--brand-subtle);box-shadow:var(--shadow-list-keyboard-sticky);}

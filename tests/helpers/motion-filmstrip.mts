@@ -7,7 +7,7 @@ import type {MotionBrowser} from './motion-assert.mjs';
 interface ScreenshotBrowser extends MotionBrowser {screenshot():Promise<string>}
 /** Bind once. Prepare scrolling/hover before capture; trigger only starts the desired effect. */
 export function createFilmstripCapture(browser:ScreenshotBrowser,directory:string){
-  return async function captureFilmstrip(name:string,trigger:()=>Promise<unknown>,selector:string,{finishAtLastFrame=false,initialFrame}:{finishAtLastFrame?:boolean;initialFrame?:string}={}){
+  return async function captureFilmstrip(name:string,trigger:()=>Promise<unknown>,selector:string,{finishAtLastFrame=false,initialFrame,sampleTimesMs,frameLabels,onSample,companionFlips}:{finishAtLastFrame?:boolean;initialFrame?:string;sampleTimesMs?:readonly number[];frameLabels?:readonly number[];onSample?:(index:number,timeMs:number)=>Promise<void>;companionFlips?:string}={}){
     assert.match(name,/^[a-z0-9-]+$/);await mkdir(directory,{recursive:true});
     const key='__motionFilmstrip_'+name.replaceAll('-','_');
     await browser.command('Animation.enable');
@@ -27,7 +27,11 @@ export function createFilmstripCapture(browser:ScreenshotBrowser,directory:strin
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
         const nodes=[...document.querySelectorAll(${JSON.stringify(selector)})];
         const all=[...new Set(nodes.flatMap(node=>node.getAnimations({subtree:true})))],animations=all.filter(animation=>Number.isFinite(animation.effect?.getComputedTiming().duration));
-        for(const animation of animations)animation.pause();window[${JSON.stringify(key)}]=animations;
+        const companionSelector=${JSON.stringify(companionFlips??'')};
+        const companions=companionSelector?[...document.querySelectorAll(companionSelector)].flatMap(n=>n.getAnimations())
+          .filter(a=>a.effect.getKeyframes().some(k=>k.transform?.startsWith('translate('))):[];
+        const scene=[...new Set([...animations,...companions])];
+        for(const animation of scene)animation.pause();window[${JSON.stringify(key)}]=scene;
         return {count:animations.length,documentAnimations:document.getAnimations().length,selectorNodeCount:nodes.length,nodeAnimations:all.length,
           targets:nodes.map(node=>{const style=getComputedStyle(node);return {id:node.id,transform:style.transform,transitionProperty:style.transitionProperty,transitionDuration:style.transitionDuration,active:node.matches(':active'),dataPressed:node.getAttribute('data-pressed')};}),
           motionAttributes:Object.fromEntries([...document.documentElement.attributes].filter(attribute=>attribute.name.startsWith('data-motion')).map(attribute=>[attribute.name,attribute.value])),
@@ -37,11 +41,13 @@ export function createFilmstripCapture(browser:ScreenshotBrowser,directory:strin
       const count=observation.count;
       if(!count)await writeFile(join(directory,name+'-failure.json'),JSON.stringify(observation,null,2)+'\n');
       assert.ok(count>0,'filmstrip must pause real animations: '+name+' '+JSON.stringify(observation));
-      const seek=async(fraction:number)=>browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.currentTime=Number(animation.effect.getComputedTiming().duration)*${fraction};await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+      const seekFraction=async(fraction:number)=>browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}]){const timing=animation.effect.getComputedTiming();const end=Number(timing.endTime);animation.currentTime=(Number.isFinite(end)?end:Number(timing.duration))*${fraction};}await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+      const seekTime=async(timeMs:number)=>browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.currentTime=${timeMs};await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
       // Use the union over all samples, so the expanding E3 container never changes crop mid-strip.
-      for(const fraction of [0,.25,.5,.75,1]){
-        await seek(fraction);
-        await measureBounds();
+      if(sampleTimesMs){
+        for(const timeMs of sampleTimesMs){await seekTime(timeMs);await measureBounds();}
+      }else{
+        for(const fraction of [0,.25,.5,.75,1]){await seekFraction(fraction);await measureBounds();}
       }
       const viewport=bounds[0];assert.ok(viewport);const viewportWidth=viewport[4],viewportHeight=viewport[5];assert.ok(viewportWidth&&viewportHeight);
       const margin=16,left=Math.max(0,Math.floor(Math.min(...bounds.map(rect=>rect[0]??0))-margin)),top=Math.max(0,Math.floor(Math.min(...bounds.map(rect=>rect[1]??0))-margin));
@@ -54,19 +60,31 @@ export function createFilmstripCapture(browser:ScreenshotBrowser,directory:strin
         frames.push(await sharp(screenshot).extract({left:x,top:y,width:Math.min(metadata.width-x,Math.ceil((right-left)*sx)),height:Math.min(metadata.height-y,Math.ceil((bottom-top)*sy))}).png().toBuffer());
       };
       if(initialScreenshot)await appendFrame(initialScreenshot);
-      for(const fraction of [0,.25,.5,.75,1]){
-        await seek(fraction);
-        if(fraction===1&&finishAtLastFrame){
-          // Seeking a paused FLIP to 100% can leave its finished promise pending. Capture the chained cue at onset.
-          await browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.finish();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+      if(sampleTimesMs){
+        for(const [index,timeMs] of sampleTimesMs.entries()){
+          await seekTime(timeMs);
+          if(index===sampleTimesMs.length-1&&finishAtLastFrame){
+            await browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.finish();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+          }
+          if(onSample)await onSample(index,timeMs);
+          await appendFrame(await browser.screenshot());
         }
-        await appendFrame(await browser.screenshot());
+      }else{
+        for(const [index,fraction] of [0,.25,.5,.75,1].entries()){
+          await seekFraction(fraction);
+          if(fraction===1&&finishAtLastFrame){
+            // Seeking a paused FLIP to 100% can leave its finished promise pending. Capture the chained cue at onset.
+            await browser.evaluate(`(async()=>{for(const animation of window[${JSON.stringify(key)}])animation.finish();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));})()`);
+          }
+          if(onSample)await onSample(index,fraction);
+          await appendFrame(await browser.screenshot());
+        }
       }
       const metadata=await sharp(frames[0]).metadata();assert.ok(metadata.width&&metadata.height);
       const width=metadata.width,height=metadata.height;
       const file=join(directory,name+'.png');
       await sharp({create:{width:width*frames.length,height,channels:4,background:{r:255,g:255,b:255,alpha:1}}}).composite(frames.map((input,index)=>({input,left:index*width,top:0}))).png().toFile(file);
-      const samples=[0,25,50,75,100];
+      const samples=frameLabels?[...frameLabels]:sampleTimesMs?[...sampleTimesMs]:[0,25,50,75,100];
       await writeFile(join(directory,name+'.json'),JSON.stringify({selector,frames:initialFrame?[initialFrame,...samples]:samples,animations:count,clip:{left,top,right,bottom},width:width*frames.length,height},null,2)+'\n');
       return file;
     }finally{

@@ -14,6 +14,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card39b-arrival.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card37b-keys.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9327,6 +9336,7 @@
     ],
     "pc-admin-motion": [
       "tests/pc-admin-card39a-ring-room.browser.test.mts",
+      "tests/pc-admin-card39b-arrival.browser.test.mts",
       "tests/pc-admin-card37b-keys.browser.test.mts",
       "tests/pc-admin-card37b-surfaces.browser.test.mts",
       "tests/pc-admin-card37b-pauses.browser.test.mts",

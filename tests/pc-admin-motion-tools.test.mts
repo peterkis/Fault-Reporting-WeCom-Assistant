@@ -28,19 +28,23 @@ type Frames=Record<string,string|number>[];
 class FakeAnimation {
   playState='running';currentTime:number|null=0;
   finished:Promise<void>;resolve:()=>void=()=>{};reject:()=>void=()=>{};
-  effect:{frames:Frames;timing:{duration:number;easing?:string}};
-  constructor(effect:{frames:Frames;timing:{duration:number;easing?:string}}){this.effect=effect;this.finished=new Promise<void>((yes,no)=>{this.resolve=yes;this.reject=()=>no(new Error('cancelled'));});void this.finished.catch(()=>{});}
+  effect:{frames:Frames;timing:{duration:number;delay?:number;easing?:string;fill?:string;pseudoElement?:string}};
+  constructor(effect:{frames:Frames;timing:{duration:number;delay?:number;easing?:string;fill?:string;pseudoElement?:string}}){this.effect=effect;this.finished=new Promise<void>((yes,no)=>{this.resolve=yes;this.reject=()=>no(new Error('cancelled'));});void this.finished.catch(()=>{});}
   finish(){this.playState='finished';this.resolve();}
   cancel(){this.playState='idle';this.currentTime=null;this.reject();}
 }
 class FakeElement {
   style={backgroundColor:'',boxShadow:'',zIndex:''};left=0;top=0;
+  attributes=new Map<string,string>();
   translation={left:0,top:0};
   animations:FakeAnimation[]=[];
+  setAttribute(name:string,value:string){this.attributes.set(name,value);}
+  removeAttribute(name:string){this.attributes.delete(name);}
+  getAttribute(name:string){return this.attributes.get(name)??null;}
   getBoundingClientRect(){const moving=this.animations.some(animation=>animation.playState==='running');return {left:this.left+(moving?this.translation.left:0),top:this.top+(moving?this.translation.top:0)};}
-  animate(frames:Frames,timing:{duration:number;easing?:string}){const animation=new FakeAnimation({frames,timing});this.animations.push(animation);return animation;}
+  animate(frames:Frames,timing:{duration:number;delay?:number;easing?:string;fill?:string;pseudoElement?:string}){const animation=new FakeAnimation({frames,timing});this.animations.push(animation);return animation;}
 }
-const values=new Map([['--dur-base','180ms'],['--dur-highlight','1200ms'],['--dur-move','320ms'],['--ease-standard','cubic-bezier(.2, 0, 0, 1)'],['--stage-intake-bg','yellow'],['--stage-active-bg','blue'],['--stage-done-bg','green'],['--brand-subtle','brand']]);
+const values=new Map([['--dur-base','180ms'],['--dur-highlight-hold','240ms'],['--dur-highlight','1200ms'],['--dur-move','320ms'],['--ease-standard','cubic-bezier(.2, 0, 0, 1)'],['--ease-ambient','ease-in-out'],['--stage-intake-bg','yellow'],['--stage-active-bg','blue'],['--stage-done-bg','green'],['--brand-subtle','brand']]);
 const mediaListeners=new Set<()=>void>(),visibilityListeners=new Set<()=>void>();
 const preference={matches:false,addEventListener:(_name:string,fn:()=>void)=>mediaListeners.add(fn)},documentStub={hidden:false,timeline:{},documentElement:{toggleAttribute:()=>{}},addEventListener:(_name:string,fn:()=>void)=>visibilityListeners.add(fn)};
 const globals=['window','document','getComputedStyle','Animation','KeyframeEffect'] as const;
@@ -145,18 +149,27 @@ test('Card36A tools enforce cached CSS timing, reduced/hidden end states, contin
       await Promise.resolve();assert.deepEqual(shadows,['','static']);
       preference.matches=false;for(const listener of mediaListeners)listener();
     });
-    await t.test('all highlight tones use one token and repeated updates restart without a stale cleanup',async()=>{
+    await t.test('all highlight tones use overlay attributes/tokens and repeated updates restart without mutating backgroundColor',async()=>{
       const el=new FakeElement();el.style.backgroundColor='original';
-      for(const [tone,color] of [['intake','yellow'],['active','blue'],['done','green'],['brand','brand']] as const){
-        const handle=highlight(el,{tone}),first=el.animations.at(-1);assert.ok(first);assert.equal(first.effect.timing.duration,1200);assert.deepEqual(first.effect.frames,[{backgroundColor:color},{backgroundColor:'white'}]);
-        const next=highlight(el,{tone}),animation=el.animations.at(-1);assert.ok(animation);await handle.finished;assert.equal(first.playState,'idle');assert.equal(animation.playState,'running');animation.finish();await next.finished;assert.equal(el.style.backgroundColor,'original');
+      for(const tone of ['intake','active','done','brand'] as const){
+        const handle=highlight(el,{tone}),first=el.animations.at(-1);assert.ok(first);
+        assert.equal(el.getAttribute('data-highlight-tone'),tone);
+        assert.equal(el.style.backgroundColor,'original');
+        assert.equal(first.effect.timing.duration,1200);
+        assert.equal(first.effect.timing.delay,240);
+        assert.equal(first.effect.timing.easing,'ease-in-out');
+        assert.equal(first.effect.timing.fill,'both');
+        assert.equal(first.effect.timing.pseudoElement,'::after');
+        assert.deepEqual(first.effect.frames,[{opacity:1},{opacity:0}]);
+        const next=highlight(el,{tone}),animation=el.animations.at(-1);assert.ok(animation);await handle.finished;assert.equal(first.playState,'idle');assert.equal(animation.playState,'running');animation.finish();await next.finished;assert.equal(el.getAttribute('data-highlight-tone'),null);assert.equal(el.style.backgroundColor,'original');
       }
     });
-    await t.test('reduced highlight holds then restores; hidden/reduced flip starts no effect and visibility finishes active effects',async()=>{
+    await t.test('reduced highlight holds overlay then removes attribute; hidden/reduced flip starts no effect and visibility finishes active effects',async()=>{
       preference.matches=true;for(const listener of mediaListeners)listener();assert.equal(tokens.prefersReducedMotion(),true);
       const el=new FakeElement();assert.equal(flip(el,{left:0,top:0},{left:10,top:10}).playState,'finished');assert.equal(el.animations.length,0);
-      values.set('--dur-highlight','10ms');tokens.invalidateMotionTokens();const hold=highlight(el,{tone:'active'});await Promise.resolve();assert.equal(el.style.backgroundColor,'blue');hold.cancel();await hold.finished;assert.equal(el.style.backgroundColor,'');
-      await highlight(el,{tone:'done'}).finished;assert.equal(el.style.backgroundColor,'');
+      values.set('--dur-highlight-hold','10ms');values.set('--dur-highlight','10ms');tokens.invalidateMotionTokens();const hold=highlight(el,{tone:'active'});await Promise.resolve();assert.equal(el.getAttribute('data-highlight-tone'),'active');assert.equal(el.style.backgroundColor,'');hold.cancel();await hold.finished;assert.equal(el.getAttribute('data-highlight-tone'),null);assert.equal(el.style.backgroundColor,'');
+      await highlight(el,{tone:'done'}).finished;assert.equal(el.getAttribute('data-highlight-tone'),null);assert.equal(el.style.backgroundColor,'');
+      values.set('--dur-highlight-hold','240ms');values.set('--dur-highlight','1200ms');tokens.invalidateMotionTokens();
       preference.matches=false;for(const listener of mediaListeners)listener();const animation=flip(el,{left:0,top:0},{left:10,top:10});documentStub.hidden=true;for(const listener of visibilityListeners)listener();assert.equal(animation.playState,'finished');
       const hidden=new FakeElement();flip(hidden,{left:0,top:0},{left:10,top:10});highlight(hidden,{tone:'done'});assert.equal(hidden.animations.length,0);documentStub.hidden=false;tokens.invalidateMotionTokens();
     });

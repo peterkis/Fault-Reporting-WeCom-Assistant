@@ -178,7 +178,7 @@ function TicketHoverCardBody({
     <div className="ds-ticket-hover-status-row">
       <StatusBadge tone={stage.tone} className="ds-ticket-hover-stage">{stage.label}</StatusBadge>
       <span className="ds-ticket-hover-assignee">
-        {card.assignee_name?<><Avatar name={card.assignee_name} size={18} aria-hidden="true"/><span>{card.assignee_name}</span></>:<span className="ds-ticket-hover-unassigned">等待领取</span>}
+        {card.assignee_name?<><Avatar name={card.assignee_name} size={18} aria-hidden="true"/><span>{card.assignee_name}</span></>:<><Avatar name={null} size={20} aria-hidden="true"/><span className="ds-ticket-hover-unassigned">等待领取</span></>}
       </span>
       {wait?<span className="ds-ticket-hover-time" data-tone={wait.tone}>{wait.label==='刚刚'?'刚刚':'等待 '+wait.label}</span>:endedLabel?<span className="ds-ticket-hover-time">{endedLabel}</span>:null}
     </div>

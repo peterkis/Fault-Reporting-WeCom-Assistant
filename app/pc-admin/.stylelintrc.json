@@ -27,7 +27,8 @@
       ],
       "border-radius": [
         "/^var\\(--radius-/",
-        "0"
+        "0",
+        "inherit"
       ],
       "box-shadow": [
         "/^var\\(--shadow-/",

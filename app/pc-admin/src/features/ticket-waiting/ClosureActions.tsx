@@ -217,7 +217,7 @@ export function ClosureActionsProvider({principal,otherBlocked,onBlockedChange,c
  },[principal.principal_id,runCloseDraftProbe]);
  const blocked=blockers.length>0,visible=targets.filter(t=>t.open).at(-1);
  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
- useEffect(()=>{if(!highlighted)return;const timer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));return()=>clearTimeout(timer);},[highlighted]);
+ useEffect(()=>{if(!highlighted)return;let fadeTimer:ReturnType<typeof setTimeout>|undefined;const holdTimer=setTimeout(()=>{fadeTimer=setTimeout(()=>setHighlighted(null),motionToken('--dur-highlight'));},motionToken('--dur-highlight-hold'));return()=>{clearTimeout(holdTimer);clearTimeout(fadeTimer);};},[highlighted]);
  const canOpen=useCallback((item:WorkbenchCard,action:Action,s=subject(item))=>{
   const same=targets.find(t=>t.subject.kind===s.kind&&t.subject.id===s.id&&t.action===action);
   return !otherBlocked&&!targets.some(t=>t.background&&t.subject.kind===s.kind&&t.subject.id===s.id)

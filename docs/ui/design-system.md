@@ -23,7 +23,9 @@ v2.2.9 / 卡36A、卡36B。
 | `--dur-base` | 180ms | 折叠、滑块、数字、内容替换 |
 | `--dur-slow` | 240ms | 弹窗、抽屉进入 |
 | `--dur-move` | 320ms | 跨列位移 |
-| `--dur-highlight` | 1200ms | 新动态高亮 |
+| `--dur-highlight-hold` | 240ms | 新动态高亮停留（卡39B） |
+| `--dur-highlight` | 1200ms | 新动态高亮淡出 |
+| `--highlight-ring-intake / active / done / brand` | 阶段色 / 品牌色 55% | 高亮叠加层 `1px` 内描边（卡39B） |
 | `--dur-return` | 600ms | 关闭详情后的来源提示（36C接线） |
 | `--ease-standard` | cubic-bezier(.2, 0, 0, 1) | 默认 |
 | `--ease-soft` | cubic-bezier(.16, 1, .3, 1) | 长位移、弹窗进入 |
@@ -44,10 +46,10 @@ v2.2.9 / 卡36A、卡36B。
 
 1. **有因才动**：只有数据变化、层级切换和操作反馈触发动效。首次加载、换视图、改筛选时内容直接到位。
 2. **自己的操作不等动画**：界面立即响应；下一次操作从当前视觉状态接续，不排队。
-3. **别人的变化要看得见**：他人或系统触发的移动/新增追加1.2秒阶段浅色高亮；自己操作只位移。该业务判定由36B展示层写入登记接线。
+3. **别人的变化要看得见**：他人或系统触发的移动/新增追加240ms停留+1.2秒淡出的阶段浅色高亮叠加层；自己操作只位移。该业务判定由36B展示层写入登记接线。
 4. **时长按距离分档**：原地≤180ms、浮层≤240ms、跨列320ms；退出更快。高亮和来源提示使用各自专用时长。
 5. **只动合成属性**：公共WAAPI工具只允许transform、opacity、background-color。E2用transform改变滑块的视觉宽度；E3常规布局例外为grid的0fr→1fr，内层overflow:hidden，绝不插值height/top/left；卡39A范围限定CSS例外（2026-11-24 用户决定，方案A）：仅当看板分组`.ds-board-group`后紧跟另一`.ds-board-group`且含卡片时，其`.disclosure__content`同步以相同的`--dur-base` / `--ease-standard`过渡`margin-bottom`（为最后一张卡片底环留出`--card-ring-room`同时保持下组标题`y`在展开与折叠态均与主线一致；减少动态效果下与`grid-template-rows`一并关闭）。E2文字颜色、E6既有阴影属于卡片明确指定的CSS例外。原生details用content-visibility离散切换维持退出期间的可见性，该属性不做插值。
-6. **减少动态效果**：取消位移与缩放，保留≤120ms淡入淡出；折叠直接展开，数字直接替换；高亮保留1.2秒后直接移除。
+6. **减少动态效果**：取消位移与缩放，保留≤120ms淡入淡出；折叠直接展开，数字直接替换；高亮叠加层静态保留1.44秒（240ms停留+1.2秒淡出总时长）后直接移除。
 
 ### 规格、减少动态效果与打断
 
@@ -62,11 +64,11 @@ v2.2.9 / 卡36A、卡36B。
 | E7 tooltip | 首次悬停delay-tooltip，opacity instant / standard；相邻提示不再等待 | 仅opacity | 离开即取消等待，进入相邻提示复用热身状态 |
 | Toast | 卡33原轨迹，base进入、fast退出，ease-toast | 原卡33静态表现 | 原卡33行为 |
 | FLIP工具（36B已接线） | transform（支持可选 `fadeOut`/`end` 供飞向折叠分组头或列可视边缘在末30%淡出）；传入duration/easing Token；最多同时6个，可静态抬高阴影与层级 | 已完成占位，无位移 | 同元素或跨列重挂均从当前视觉位置继续 |
-| highlight工具（36B已接线 / 36C复用） | intake/active/done/brand浅色→原背景，highlight / standard | 底色保持highlight后移除 | 重复调用重新计时 |
+| highlight工具（36B已接线 / 36C复用 / 39B叠加层） | `::after` 叠加层（阶段浅色底 + 1px 55% 阶段色内描边）仅动 `opacity`：停留 `--dur-highlight-hold`（240ms）后用 `--dur-highlight` / `--ease-ambient` 淡到 0（总 1.44s），不改卡片底色或内联样式 | 叠加层立即显示并在 `--dur-highlight-hold + --dur-highlight` 后直接移除，无淡出 | 重复调用重新计时 |
 | NumberRoll工具（36B已接线） | 增加向上、减少向下，整值滚动一行高，base / standard，等宽数字、预留较宽值 | 直接替换 | 只取最新值；`animate={false}`禁止滚动 |
 | useExitPresence工具（36B胶囊已接线 / 36C复用） | 消失后按传入duration Token保留，再卸载 | 保留时间0 | 再次出现取消卸载；页面隐藏直接结束 |
 | C1 跨列与让位 | 服务端确认后，移动卡move / soft + lift；让位/收拢base / standard；飞入折叠分组（已完成/已关闭）飞向分组头并在末30%淡出；目标在可视区外飞向列可视边缘并淡出，不自动滚动；最多6张（移动卡优先） | 不位移；他人触发保留高亮 | 跨列或同列打断均从当前视觉位置接续 |
-| C2 到达、高亮与胶囊 | 新卡直接落位（保留待接单置顶与详情打开时的顺序冻结，不再隐藏延迟）；可视区内上移 `--shift-md` + opacity，base / standard，随后按所在列阶段色 `highlight`；恢复高亮 `closure-restored` 并入 `highlight`（看板取列阶段色、列表取 `brand`）；落点在可视区外时显示 `NewItemsChip` 胶囊（`--shift-sm` + opacity，进fast / standard，出fast / exit） | 不滑入；底色保留highlight后直接移除；胶囊仅opacity；点击滚动用auto | 同卡更新重计时；连续到达合并计数，不弹出第二枚胶囊 |
+| C2 到达、高亮与胶囊 | 新卡直接落位（保留待接单置顶与详情打开时的顺序冻结，不再隐藏延迟）；可视区内上移 `--shift-md` + opacity，base / standard，同时从帧 0 起叠加层完全显示并执行 `highlight`（停留 240ms + 淡出 1.2s）；恢复高亮 `closure-restored` 并入 `highlight`（看板取列阶段色、列表取 `brand`）；落点在可视区外时显示 `NewItemsChip` 胶囊（`--shift-sm` + opacity，进fast / standard，出fast / exit） | 不滑入；叠加层保留 `--dur-highlight-hold + --dur-highlight` 后直接移除；胶囊仅opacity；点击滚动用auto | 同卡更新重计时；连续到达合并计数，不弹出第二枚胶囊 |
 | C3 列表行与计数 | 表格行不做位移，换组或新行直接出现在新位置并 `brand` 高亮（仅他人/系统触发）；新行在可视区外时在表头下方复用 `NewItemsChip`；看板列头、分组（已完成/已关闭等）、列表分组、顶部摘要 `BoardSummary` 及侧栏在线同事人数接入 `NumberRoll`（仅数值滚动，「…」「—」保持静态） | 行保留静态高亮，数字直接替换 | 数字只取最新值；首次渲染与筛选/搜索/切视图/切范围不滚动 |
 
 公共工具在页面隐藏时直接到终态；系统偏好变化会清缓存并结束在途动画。`NumberRoll`首渲染静止，`aria-live="off"`，动画层aria-hidden且通过伪元素呈现，视觉隐藏文本只暴露最终值（父级计数的 `textContent` 恒等于最终数字）。自己 / 他人判定使用展示层短时写入登记（仅记录当前账号最近成功提交的事项键并按首次确认消费、带超时上限），无新增接口字段；无法确认时按他人处理。
@@ -89,7 +91,7 @@ v2.2.9 / 卡36A、卡36B。
 | --- | --- | --- | --- |
 | D1 抽屉与返回提示 | 进入lg + opacity，slow / soft；退出16px（既有space-4）+ opacity，base / exit；遮罩同步；返回brand浅色return | 仅opacity，≤fast；返回色保留后直接移除 | 打开途中Esc从当前状态退出 |
 | D2 上一张/下一张 | 正文md，出fast / exit、进base / standard；工具栏不动，方向相反 | 直接替换 | 连续按键只播最后一次 |
-| D3 时间线新条目 | 他人条目同C2：md + base + highlight；阅读不在顶部时复用共享 `NewItemsChip`（`noun="记录"`，「↑ N 条新记录」） | 不滑入，底色静态保留highlight；胶囊仅opacity | 同条目更新重计时，不改变阅读位置 |
+| D3 时间线新条目 | 他人条目同C2：md + base，同时叠加 `highlight`（`intake` 停留 240ms + 淡出 1.2s）；阅读不在顶部时复用共享 `NewItemsChip`（`noun="记录"`，「↑ N 条新记录」） | 不滑入，叠加层静态保留后移除；胶囊仅opacity | 同条目更新重计时，不改变阅读位置 |
 | D4 在场名牌 | 进xs + scale(.9)，fast；出opacity fast，离开后保留fast；模式颜色base | 仅opacity | 同人300ms内重复进出不重播 |
 
 ### 技术与检查
@@ -610,7 +612,7 @@ MUST NOT：9/15/18/22/26px 等任何其它字号；700 字重；rem 字号。头
 ```
 
 - 第 ① 行右侧只在接近/已超时时出现：剩 < 25% 用 attention，已超时用 danger 并写「超时 3 小时」。
-- 第 ④ 行：Tag 在左，处理人头像 + 相对时间在右；未派单时显示虚线头像 + 「未派单」。报修人与处理人是同一人时仍分别显示，但处理人只用头像，不重复姓名。
+- 第 ④ 行：Tag 在左，处理人头像 + 相对时间在右；未分类瓷砖使用 `--bg-canvas` 底、`--text-secondary` 图标与 `1px dashed var(--border-default)` 虚线描边（同尺寸）；未分配占位统一使用 20px 空心虚线圆（`1.5px dashed var(--text-tertiary)`，内部无符号、`aria-label="未分配"`、`title="未分配"`，看板/列表/悬停卡片共用）。报修人与处理人是同一人时仍分别显示，但处理人只用头像，不重复姓名。
 - 第 ④ 行 `.card-tags` 中的 Tag 保持自然宽度不挤压成残字；窄卡宽下处理人区域保持 `flex: none` 完整显示，共享跟进摘要更早省略，超出可用宽度的 Tag 按优先级从低到高折叠进既有 `+N`（`title`、`aria-label` 与 `data-supplement-follow-up-pending` 随之合并），仅当单个 Tag 与 `+N` 仍可显示文字时保留该单标签省略，否则全部折入 `+N`（不渲染零宽标签）。
 - MUST NOT：卡片内重复列的阶段（待受理列不显示「待接单」）；整卡变色作为状态。
 - 2026-11-01 卡 4 确认：已有共享跟进预约放在第④行标签区，原日期/时间使用中性文字，已到期使用 attention 文字；单行省略，以悬停标题保留完整内容。处理人与相对时间仍在右侧。共享预约不作为 SLA。

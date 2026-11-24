@@ -1,0 +1,20 @@
+{
+  "selector": ".board-column.active .ticket-card[data-kind=ticket][data-item-id=\"01a20d2f-a365-7089-b006-ca01ba5bf3d2\"]",
+  "frames": [
+    0,
+    240,
+    480,
+    840,
+    1200,
+    1440
+  ],
+  "animations": 1,
+  "clip": {
+    "left": 648,
+    "top": 241,
+    "right": 1032,
+    "bottom": 403
+  },
+  "width": 2304,
+  "height": 162
+}
