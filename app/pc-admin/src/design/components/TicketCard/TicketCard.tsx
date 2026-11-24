@@ -1,5 +1,5 @@
 import type {ComponentPropsWithRef,ReactNode} from 'react';
-import {Fragment,useId} from 'react';
+import {Fragment,useId,useLayoutEffect,useRef,useState} from 'react';
 import {Bell,Bot,Check,CircleX,Clock3,Undo2} from 'lucide-react';
 import {categoryOf} from '../../category-map';
 import type {WorkbenchCard} from '../../../api/client';
@@ -26,10 +26,163 @@ export function TicketHeat({heat,heatStart}:{heat:Heat;heatStart?:string|null|un
   return <Tag className="ds-ticket-heat" data-heat-tone={heat.tone} title={heatStart?'自 '+heatStart.slice(5,16)+' 起计时':undefined} tone={heat.tone}><Clock3 aria-hidden="true"/>{heat.label}</Tag>;
 }
 
+function parseCssPx(value:string):number|null{
+  const parsed=Number.parseFloat(value);
+  return Number.isFinite(parsed)?parsed:null;
+}
+
+type FoldParams={availableWidth:number;tagWidths:readonly number[];hasBaseHidden:boolean;overflowWidth:number;gap:number;extraWidth:number;extraCount:number;minSingleTagWidth?:number};
+/** Fold lowest-priority card tags into +N until the row fits; never leave a zero-width tag. */
+export function computeFoldedTagCount({availableWidth,tagWidths,hasBaseHidden,overflowWidth,gap,extraWidth,extraCount,minSingleTagWidth=0}:FoldParams):number{
+  const count=tagWidths.length;
+  if(count<=1||availableWidth<=0)return 0;
+  const limit=availableWidth+0.5;
+  const totalFor=(keep:number)=>{
+    let sum=extraWidth;
+    for(let i=0;i<keep;i++)sum+=tagWidths[i]??0;
+    const hasOverflow=hasBaseHidden||keep<count;
+    if(hasOverflow)sum+=overflowWidth;
+    const itemCount=keep+(hasOverflow?1:0)+extraCount;
+    return sum+gap*Math.max(0,itemCount-1);
+  };
+  if(totalFor(count)<=limit)return 0;
+  for(let keep=count-1;keep>=1;keep--)if(totalFor(keep)<=limit)return count-keep;
+  const singleTagRoom=availableWidth-overflowWidth-extraWidth-gap*(1+extraCount);
+  const requiredMin=Math.min(tagWidths[0]??0,minSingleTagWidth);
+  if(requiredMin>0&&singleTagRoom+0.5<requiredMin)return count;
+  return count-1;
+}
+
+/** Slice the lowest-priority shown tags from the tail into the hidden overflow group. */
+export function applyCardTagFold(baseShown:readonly CardTag[],baseHidden:readonly CardTag[],foldedCount:number){
+  const clamped=baseShown.length<=1?0:Math.max(0,Math.min(foldedCount,baseShown.length));
+  const keep=baseShown.length-clamped;
+  return {
+    shown:baseShown.slice(0,keep),
+    hidden:clamped>0?[...baseShown.slice(keep),...baseHidden]:[...baseHidden],
+    foldedCount:clamped,
+  };
+}
+
 type FooterProps={tags:readonly CardTag[];owner:ReactNode;hasOwnerName?:boolean;activity:ReactNode;followUp?:ReactNode;className?:string};
 export function TicketCardFooter({tags,owner,hasOwnerName,activity,followUp,className=''}:FooterProps){
-  const {shown,hidden}=visibleCardTags(tags);
-  return <footer className={'card-footer'+(className?' '+className:'')}><div className="card-tags">{shown.map(tag=><Tag key={tag.key} tone={tag.tone} className={'status-chip '+(tag.className??'')} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} title={tag.title??tag.label}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:tag.icon==='clock'?<Clock3 aria-hidden="true"/>:null}<span>{tag.label}</span></Tag>)}{hidden.length?<Tag className={hidden.map(tag=>tag.className??'').join(' ')} {...(hidden.some(tag=>tag.key==='supplement')?{'data-supplement-follow-up-pending':'true'}:{})} title={hidden.map(tag=>tag.title??tag.label).join('；')} aria-label={'另有 '+hidden.length+' 项：'+hidden.map(tag=>tag.label).join('、')}>+{hidden.length}</Tag>:null}{followUp}</div><span className="ds-ticket-owner" data-has-owner-name={hasOwnerName?'true':undefined}>{owner}</span>{activity}</footer>;
+  const {shown:baseShown,hidden:baseHidden}=visibleCardTags(tags);
+  const tagSignature=baseShown.map(tag=>`${tag.key}\0${tag.label}\0${tag.icon??''}`).join('\n');
+  const [fontVersion,setFontVersion]=useState(0);
+  const measureKey=`${tagSignature}#${fontVersion}`;
+  const [state,setState]=useState<{key:string;foldedCount:number}>(()=>({key:measureKey,foldedCount:0}));
+  const activeFolded=state.key===measureKey?state.foldedCount:0;
+  const {shown,hidden,foldedCount}=applyCardTagFold(baseShown,baseHidden,activeFolded);
+  const singleTag=shown.length===1;
+  const canFold=baseShown.length>1;
+  const baseShownCount=baseShown.length;
+  const firstShownKey=baseShown[0]?.key??'';
+  const hasBaseHidden=baseHidden.length>0;
+  const hasFollowUp=Boolean(followUp);
+
+  const tagsRef=useRef<HTMLDivElement>(null);
+  const widthsRef=useRef<Map<string,number>>(new Map());
+  const overflowWidthRef=useRef<number|null>(null);
+  const estimatedOverflowRef=useRef<number>(0);
+  const minSingleTagWidthRef=useRef<number>(0);
+  const measuredKeyRef=useRef<string>(measureKey);
+  const measureRef=useRef<()=>void>(()=>{});
+
+  useLayoutEffect(()=>{
+    const fonts=typeof document==='undefined'?undefined:document.fonts;
+    if(!fonts)return;
+    let cancelled=false,bumped=false;
+    const onLoadingDone=()=>{bumped=true;if(!cancelled)setFontVersion(version=>version+1);};
+    if(typeof fonts.addEventListener==='function')fonts.addEventListener('loadingdone',onLoadingDone);
+    if(fonts.status==='loading')void fonts.ready.then(()=>{if(!cancelled&&!bumped)setFontVersion(version=>version+1);});
+    return ()=>{
+      cancelled=true;
+      if(typeof fonts.removeEventListener==='function')fonts.removeEventListener('loadingdone',onLoadingDone);
+    };
+  },[]);
+
+  useLayoutEffect(()=>{
+    if(measuredKeyRef.current!==measureKey){
+      widthsRef.current.clear();
+      overflowWidthRef.current=null;
+      estimatedOverflowRef.current=0;
+      minSingleTagWidthRef.current=0;
+      measuredKeyRef.current=measureKey;
+    }
+    const el=tagsRef.current;
+    if(!el||!canFold){measureRef.current=()=>{};return;}
+    const baseKeys=baseShown.map(tag=>tag.key);
+    const measure=()=>{
+      const availableWidth=el.clientWidth;
+      if(availableWidth<=0)return;
+      const style=getComputedStyle(el);
+      const gap=parseCssPx(style.columnGap)??parseCssPx(style.gap)??0;
+      let extraWidth=0,extraCount=0;
+      for(const child of el.children){
+        if(child.getAttribute('data-card-tag-overflow')==='true'){
+          const width=child.getBoundingClientRect().width;
+          if(width>0)overflowWidthRef.current=overflowWidthRef.current===null?width:Math.max(overflowWidthRef.current,width);
+          continue;
+        }
+        const key=child.getAttribute('data-card-tag-key');
+        if(key){
+          if(key===firstShownKey){
+            const tagStyle=getComputedStyle(child);
+            const padX=(parseCssPx(tagStyle.paddingLeft)??0)+(parseCssPx(tagStyle.paddingRight)??0);
+            const fontSize=parseCssPx(tagStyle.fontSize)??0;
+            const svg=child.querySelector('svg');
+            const svgWidth=svg?svg.getBoundingClientRect().width:0;
+            const svgMargin=svg&&svgWidth>0?parseCssPx(getComputedStyle(svg).marginRight)??0:0;
+            estimatedOverflowRef.current=padX+fontSize*1.25;
+            minSingleTagWidthRef.current=padX+(svgWidth>0?svgWidth+svgMargin:0)+fontSize;
+          }
+          const rectWidth=child.getBoundingClientRect().width;
+          if(!singleTag){widthsRef.current.set(key,rectWidth);continue;}
+          const content=child.querySelector('.ds-tag-content');
+          if(content&&content.scrollWidth>content.clientWidth){
+            if(!widthsRef.current.has(key))widthsRef.current.set(key,rectWidth+(content.scrollWidth-content.clientWidth));
+          }else widthsRef.current.set(key,rectWidth);
+          continue;
+        }
+        const childStyle=getComputedStyle(child);
+        const flexGrow=parseCssPx(childStyle.flexGrow)??0;
+        const minW=parseCssPx(childStyle.minWidth)??0;
+        extraWidth+=flexGrow>0?minW:child.getBoundingClientRect().width;
+        extraCount+=1;
+      }
+      const tagWidths=baseKeys.map(key=>widthsRef.current.get(key)??0);
+      if(tagWidths.some(width=>width<=0))return;
+      const nextFolded=computeFoldedTagCount({
+        availableWidth,
+        tagWidths,
+        hasBaseHidden,
+        overflowWidth:overflowWidthRef.current??estimatedOverflowRef.current,
+        gap,
+        extraWidth,
+        extraCount,
+        minSingleTagWidth:minSingleTagWidthRef.current,
+      });
+      setState(prev=>(prev.key===measureKey&&prev.foldedCount===nextFolded?prev:{key:measureKey,foldedCount:nextFolded}));
+    };
+    measureRef.current=measure;
+    measure();
+  },[measureKey,canFold,baseShownCount,firstShownKey,hasBaseHidden,foldedCount,singleTag,hasFollowUp]);
+
+  useLayoutEffect(()=>{
+    const el=tagsRef.current;
+    if(!el||!canFold||typeof ResizeObserver==='undefined')return;
+    let lastWidth=Math.round(el.clientWidth);
+    const observer=new ResizeObserver(()=>{
+      const nextWidth=Math.round(el.clientWidth);
+      if(nextWidth===lastWidth)return;
+      lastWidth=nextWidth;
+      measureRef.current();
+    });
+    observer.observe(el);
+    return ()=>observer.disconnect();
+  },[canFold]);
+
+  return <footer className={'card-footer'+(className?' '+className:'')}><div ref={tagsRef} className="card-tags" data-folded-tag-count={foldedCount} data-single-tag={singleTag?'true':undefined}>{shown.map(tag=><Tag key={tag.key} tone={tag.tone} className={'status-chip '+(tag.className??'')} data-card-tag-key={tag.key} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} title={tag.title??tag.label}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:tag.icon==='clock'?<Clock3 aria-hidden="true"/>:null}<span>{tag.label}</span></Tag>)}{hidden.length?<Tag data-card-tag-overflow="true" className={hidden.map(tag=>tag.className??'').join(' ')} {...(hidden.some(tag=>tag.key==='supplement')?{'data-supplement-follow-up-pending':'true'}:{})} title={hidden.map(tag=>tag.title??tag.label).join('；')} aria-label={'另有 '+hidden.length+' 项：'+hidden.map(tag=>tag.label).join('、')}>+{hidden.length}</Tag>:null}{followUp}</div><span className="ds-ticket-owner" data-has-owner-name={hasOwnerName?'true':undefined}>{owner}</span>{activity}</footer>;
 }
 type BodyProps={number:string;title:string;metadata:ReactNode;tags:readonly CardTag[];owner:ReactNode;hasOwnerName?:boolean;activity:ReactNode;followUp?:ReactNode;deadline?:{tone:'attention'|'danger';label:string};category?:ReactNode;heat?:Heat|null;heatStart?:string|null;completedAt?:string|null};
 export function TicketCardBody({number,title,metadata,tags,owner,hasOwnerName,activity,followUp,deadline,category,heat,heatStart,completedAt}:BodyProps){

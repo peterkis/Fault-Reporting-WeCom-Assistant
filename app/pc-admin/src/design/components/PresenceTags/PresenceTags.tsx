@@ -1,4 +1,4 @@
-import {memo,useCallback,useLayoutEffect,useRef,useState} from 'react';
+import {memo,useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import type {KeyboardEvent,RefObject} from 'react';
 import {Pencil} from 'lucide-react';
 import type {WorkbenchActivityField,WorkbenchActivityPerson} from '../../../../../../contracts/workbench_activity_contracts';
@@ -87,6 +87,10 @@ function hasFocusedPresenceNameTag(container:Element):boolean{
   return false;
 }
 
+function hasActivePresenceHoverCard(container:Element):boolean{
+  return Boolean(container.querySelector('.ds-presence-tag:not([data-mode="more"]):is([aria-expanded="true"],[data-hover-card-present="true"])'));
+}
+
 const PresencePersonTag=memo(function PresencePersonTag({personKey,person,active,onExited}:{personKey:string;person:WorkbenchActivityPerson;active:boolean;onExited:(key:string)=>void}){
   const ref=useRef<HTMLSpanElement|null>(null);
   const handleExited=useCallback(()=>onExited(personKey),[onExited,personKey]);
@@ -140,9 +144,24 @@ export function PresenceTags({people,debounced,className=''}:{people:readonly Wo
   const tooltip=useTooltipTrigger();
   const groupRef=useRef<HTMLSpanElement|null>(null);
   const pointerOnAggregateRef=useRef(false);
+  const tooltipEnterRef=useRef(tooltip.onPointerEnter);
+  tooltipEnterRef.current=tooltip.onPointerEnter;
   const internalDebounced=useDebouncedPresence(debounced?EMPTY_PEOPLE:people);
   const current=debounced??internalDebounced;
   const containerRetained=useExitPresence(current.length>0,'--dur-fast');
+  useEffect(()=>{
+    const container=groupRef.current;
+    if(!containerRetained||!container||typeof MutationObserver!=='function')return;
+    const observer=new MutationObserver(()=>{
+      const live=groupRef.current;
+      if(!live||!pointerOnAggregateRef.current)return;
+      if(!hasFocusedPresenceNameTag(live)&&!hasActivePresenceHoverCard(live)){
+        tooltipEnterRef.current();
+      }
+    });
+    observer.observe(container,{subtree:true,attributes:true,attributeFilter:['aria-expanded','data-hover-card-present']});
+    return()=>{observer.disconnect();};
+  },[containerRetained]);
   const shown=current.length<=2?current:current.slice(0,1);
   const keyedShown=withPresentationKeys(shown);
   const rest=current.length-shown.length;
@@ -169,7 +188,7 @@ export function PresenceTags({people,debounced,className=''}:{people:readonly Wo
       return;
     }
     pointerOnAggregateRef.current=true;
-    if(hasFocusedPresenceNameTag(container)){
+    if(hasFocusedPresenceNameTag(container)||hasActivePresenceHoverCard(container)){
       closeTooltip();
       return;
     }
@@ -185,7 +204,7 @@ export function PresenceTags({people,debounced,className=''}:{people:readonly Wo
     onFocusCapture={event=>{if(isInsidePresenceNameTag(event.target))closeTooltip();}}
     onBlurCapture={()=>{
       queueMicrotask(()=>{
-        if(pointerOnAggregateRef.current&&groupRef.current&&!hasFocusedPresenceNameTag(groupRef.current)){
+        if(pointerOnAggregateRef.current&&groupRef.current&&!hasFocusedPresenceNameTag(groupRef.current)&&!hasActivePresenceHoverCard(groupRef.current)){
           tooltip.onPointerEnter();
         }
       });

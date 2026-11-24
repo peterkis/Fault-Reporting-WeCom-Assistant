@@ -432,12 +432,21 @@ export function HoverCard({kind,width,state,disabled:propDisabled=false,children
     };
     const onKeyDown=(event:globalThis.KeyboardEvent)=>{
       if(event.key==='Escape'&&topmostActiveLevel()===level){
-        const rootTrigger=activeByLevel.get(0)?.triggerEl??triggerRef.current;
+        const rootEntry=activeByLevel.get(0);
+        const rootTrigger=rootEntry?.triggerEl??triggerRef.current;
         const onlineRoot=document.querySelector<HTMLElement>('[data-online-colleagues]:has(.ds-online-panel:not([data-exiting]))');
         const active=document.activeElement;
-        const hoverOwnsFocus=Boolean(active&&((cardRef.current&&cardRef.current.contains(active))||(triggerRef.current&&triggerRef.current.contains(active))||(rootTrigger&&rootTrigger.contains(active))));
+        const hoverOwnsFocus=Boolean(
+          active&&(
+            [...activeByLevel.values()].some(entry=>entry.containsNode(active))
+            ||(cardRef.current&&cardRef.current.contains(active))
+            ||(triggerRef.current&&triggerRef.current.contains(active))
+            ||(rootTrigger&&rootTrigger.contains(active))
+          ),
+        );
         if(onlineRoot&&(!rootTrigger||!onlineRoot.contains(rootTrigger))&&!hoverOwnsFocus){
-          closeImmediately(false);
+          if(rootEntry)rootEntry.closeNow(false);
+          else closeImmediately(false);
           return;
         }
         event.preventDefault();
@@ -534,6 +543,7 @@ export function HoverCard({kind,width,state,disabled:propDisabled=false,children
   const triggerClone=cloneElement(children,{
     ref:mergedTriggerRef,
     'data-hover-card-trigger':kind,
+    ...(present?{'data-hover-card-present':'true'}:{}),
     'aria-haspopup':'dialog',
     'aria-expanded':open?'true':'false',
     ...(open?{'aria-controls':cardId}:{}),

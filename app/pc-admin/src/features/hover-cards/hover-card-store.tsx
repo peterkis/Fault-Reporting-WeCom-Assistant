@@ -68,12 +68,36 @@ function handledDatesEqual(
   return a.from===b.from&&a.to===b.to;
 }
 
+export interface HoverBridgeProbe {
+  onItemsCompare?:(elementComparisons:number,sameRef:boolean)=>void;
+  onPublish?:(changed:boolean)=>void;
+}
+
+const reportItemsCompare=import.meta.env.DEV?(elementComparisons:number,sameRef:boolean):void=>{
+  (globalThis as {__hoverBridgeProbe?:HoverBridgeProbe}).__hoverBridgeProbe?.onItemsCompare?.(elementComparisons,sameRef);
+}:undefined;
+
+function reportPublish(changed:boolean):void{
+  if(!import.meta.env.DEV)return;
+  (globalThis as {__hoverBridgeProbe?:HoverBridgeProbe}).__hoverBridgeProbe?.onPublish?.(changed);
+}
+
 function itemsEqual(a:readonly WorkbenchCard[],b:readonly WorkbenchCard[]):boolean{
-  if(a===b)return true;
-  if(a.length!==b.length)return false;
-  for(let index=0;index<a.length;index++){
-    if(a[index]!==b[index])return false;
+  if(a===b){
+    reportItemsCompare?.(0,true);
+    return true;
   }
+  if(a.length!==b.length){
+    reportItemsCompare?.(0,false);
+    return false;
+  }
+  for(let index=0;index<a.length;index++){
+    if(a[index]!==b[index]){
+      reportItemsCompare?.(index+1,false);
+      return false;
+    }
+  }
+  reportItemsCompare?.(a.length,false);
   return true;
 }
 
@@ -114,6 +138,7 @@ export function HoverCardsStoreProvider({principal,children}:{principal:Principa
 
   const publishBoard=useCallback((next:BoardHoverCardsInput)=>{
     const current=stateRef.current.board;
+    const sameItems=itemsEqual(current.items,next.items);
     if(
       current.hasBoard===next.hasBoard
       &&current.range===next.range
@@ -121,15 +146,17 @@ export function HoverCardsStoreProvider({principal,children}:{principal:Principa
       &&current.now===next.now
       &&handledDatesEqual(current.handledDates,next.handledDates)
       &&current.onFilterByPerson===next.onFilterByPerson
-      &&itemsEqual(current.items,next.items)
+      &&sameItems
     ){
+      reportPublish(false);
       return;
     }
     const nextBoard:BoardHoverCardsState={
       ...next,
-      index:itemsEqual(current.items,next.items)?current.index:buildBoardIndex(next.items),
+      index:sameItems?current.index:buildBoardIndex(next.items),
     };
     stateRef.current={board:nextBoard,transfer:stateRef.current.transfer};
+    reportPublish(true);
     notifyState();
   },[notifyState]);
 

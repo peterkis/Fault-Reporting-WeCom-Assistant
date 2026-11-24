@@ -1,0 +1,20 @@
+{
+  "selector": "[data-hover-card=\"person\"],.ticket-card[data-item-id=\"01a20bbc-d10f-70b7-952d-63bcdbed835d\"] .ds-presence-tags,.ticket-card[data-item-id=\"01a20bbc-d10f-70b7-952d-63bcdbed835d\"] .ds-presence-tags .ds-presence-tooltip",
+  "frames": [
+    "person-card-open",
+    0,
+    25,
+    50,
+    75,
+    100
+  ],
+  "animations": 1,
+  "clip": {
+    "left": 897,
+    "top": 474,
+    "right": 1336,
+    "bottom": 749
+  },
+  "width": 2634,
+  "height": 275
+}

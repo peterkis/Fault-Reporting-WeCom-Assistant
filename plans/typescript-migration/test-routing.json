@@ -59,6 +59,24 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/pc-admin-card39c-owner.browser.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/pc-admin-card39c-bridge.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -9314,6 +9332,8 @@
       "tests/pc-admin-card37b-pauses.browser.test.mts",
       "tests/pc-admin-card37b-recovery.browser.test.mts",
       "tests/pc-admin-card37b-shortcuts.test.mts",
+      "tests/pc-admin-card39c-owner.browser.test.mts",
+      "tests/pc-admin-card39c-bridge.test.mts",
       "tests/pc-admin-card37c-hovercard.browser.test.mts",
       "tests/pc-admin-card37a-store.test.mts",
       "tests/pc-admin-card37a-optimistic.browser.test.mts",

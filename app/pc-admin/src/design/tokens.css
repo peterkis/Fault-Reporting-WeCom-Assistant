@@ -216,6 +216,7 @@
   --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px;
   --avatar-xs: 18px; --avatar-sm: 20px; --avatar-md: 24px; --avatar-msg: 28px; --avatar-lg: 32px; --avatar-xl: 36px; /* --avatar-xs / --avatar-xl: Card 37C */
   --fs-avatar-sm: calc(var(--avatar-sm) / 2); /* §6.13: avatar glyph = 50% of size. */
+  --owner-name-max-w: calc(var(--fs-xs) * 4 + var(--space-0-5)); /* Card 39C C1: 4 CJK chars at --fs-xs + 2px tolerance; ellipsis beyond 4 chars */
 
   /* 布局 */
   --sidebar-w: 240px;
