@@ -142,6 +142,7 @@ strong {font-weight: var(--fw-semibold); }
 .compact-follow {position:relative;display:flex;align-items:center}
 .compact-follow .icon-button[aria-pressed="true"] {color:var(--tone-attention-fg);background:var(--tone-attention-bg)}
 .compact-follow .follow-tooltip {display:block;opacity:0;visibility:hidden;transition:opacity var(--dur-instant) var(--ease-standard);position:absolute;right:-50px;top:42px;z-index:var(--z-tooltip);width:224px;padding:var(--space-3) var(--space-3);border:1px solid var(--border-default);border-radius:var(--radius-sm);background:var(--bg-canvas);box-shadow:var(--shadow-3);color:var(--text-primary);font-size:var(--fs-sm);white-space:normal;pointer-events:none}
+.follow-tooltip-head {display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);}
 .follow-tooltip small {display:block;font-size:var(--fs-xs);line-height:1.5;color:var(--text-secondary);margin-top:var(--space-1)}
 .compact-follow [data-tooltip-open=true] .follow-tooltip {display:block;opacity:1;visibility:visible;}
 .compact-follow>.follow-feedback {position:absolute;right:0;top:46px;width:280px;padding:var(--space-3);background:var(--bg-canvas);border:1px solid var(--border-hair);border-radius:var(--radius-sm);z-index:var(--z-tooltip);font-size:var(--fs-sm);white-space:normal}

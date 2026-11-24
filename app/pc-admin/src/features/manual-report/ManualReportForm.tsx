@@ -28,12 +28,15 @@ import {hasExistingDraft} from '../drafts/encrypted-drafts';
 import {MANUAL_REPORT_DRAFT_ID} from '../../contracts/workbench-manual-report-browser-contracts.mjs';
 import {ManualSelfHandlingForm} from './ManualSelfHandlingForm';
 import {markSelfWrite} from '../../design/motion/self-write';
+import {Kbd,ShortcutTooltip} from '../../design/components/Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../efficiency/shortcuts';
 import './manual-report.css';
 export function ManualReportEntry({principal,blocked}:{principal:Principal;blocked:boolean}){
   const navigate=useNavigate();
   const context=useQuery({queryKey:manualReportCapabilitiesKey(principal.principal_id),queryFn:({signal})=>api.manualReportCapabilities(signal),enabled:principal.manual_reports_enabled});
   if(!principal.manual_reports_enabled||context.isError||!context.data?.can_create)return null;
-  return <Button tone="primary" className="manual-report-entry" data-action="new-report" isDisabled={blocked} onPress={()=>{if(!blocked)void navigate("/reports/new");}}><Plus aria-hidden="true"/>新报修<kbd className="ds-button-shortcut" aria-hidden="true" title="快捷键由效率层提供">N</kbd></Button>;
+  const keys=shortcutKeys('new-report');
+  return <ShortcutTooltip label="新报修" keys={keys} placement="bottom-end" enabled={!blocked}><Button tone="primary" className="manual-report-entry" data-action="new-report" aria-keyshortcuts={ariaKeyshortcuts('new-report')} isDisabled={blocked} onPress={()=>{if(!blocked)void navigate("/reports/new");}}><Plus aria-hidden="true"/>新报修<Kbd keys={keys} tone="dark" disabled={blocked} className="ds-button-shortcut"/></Button></ShortcutTooltip>;
 }
 type State='idle'|'submitting'|'checking'|'unknown'|'succeeded'|'denied';
 export function ManualReportForm({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(value:boolean)=>void}){

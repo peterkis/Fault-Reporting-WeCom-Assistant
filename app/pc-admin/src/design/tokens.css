@@ -87,6 +87,9 @@
   --bg-active:   var(--gray-200);  /* 按下、导航当前项 */
   --bg-selected: var(--blue-50);   /* 选中行 / 选中卡片 */
   --bg-overlay:  rgba(55, 53, 47, .16);
+  --bg-kbd-dark: rgba(255, 255, 255, .16);
+  --text-kbd-dark-muted: rgba(255, 255, 255, .72);
+  --text-kbd-dark-sep: rgba(255, 255, 255, .40);
 
   /* 线 */
   --border-hair:    rgba(55, 53, 47, .09);  /* 分隔线 */
@@ -169,8 +172,9 @@
   --space-2: 8px;   --space-3: 12px;  --space-4: 16px; --space-5: 20px;
   --space-6: 24px;  --space-8: 32px;  --space-10: 40px; --space-12: 48px; --space-16: 64px;
 
-  /* 圆角：5 档 + 全圆 */
+  /* 圆角：5 档 + 全圆 + 键帽 */
   --radius-xs: 4px;    /* 标签、徽标、小芯片 */
+  --radius-kbd: 5px;   /* 键帽 Kbd（卡37B） */
   --radius-sm: 6px;    /* 按钮、输入、导航项、表格行、分段控件 */
   --radius-md: 8px;    /* 卡片、媒体缩略图、提示条 */
   --radius-lg: 12px;   /* 看板列、下拉/日期弹层、浮动抽屉 */
@@ -194,6 +198,9 @@
   --shadow-3: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.12);          /* 下拉、日期、菜单 */
   --shadow-4: 0 0 0 1px rgba(15,15,15,.05), 0 16px 48px rgba(15,15,15,.18);         /* 抽屉、弹窗 */
   --shadow-toast: 0 0 0 1px rgba(15,15,15,.05), 0 8px 24px rgba(15,15,15,.10);     /* 卡33 操作提示 Toast */
+  --shadow-kbd-light: inset 0 0 0 1px rgba(55,53,47,.14), inset 0 -1px 0 rgba(55,53,47,.10); /* 卡37B 浅色键帽 */
+  --shadow-keyboard-current: 0 0 0 2px var(--brand), 0 0 0 5px var(--brand-subtle); /* 卡37B 键盘当前卡片 */
+  --shadow-shortcut-capsule: 0 4px 12px rgba(15,15,15,.20);                        /* 卡37B 底部提示胶囊 */
 
   /* 全局细滚动条 */
   --scrollbar-size: 8px;
@@ -239,6 +246,8 @@
   --delay-tooltip: 400ms; /* Beyond A1: express E7's cold-open delay; confirmed by the owner (2026-11-19). */
   --delay-hover-card-close: 150ms; /* Card 37C C1 */
   --delay-hover-card-warm: 300ms; /* Card 37C C1 */
+  --delay-goto-sequence: 1500ms; /* Card 37B B3 */
+  --delay-shortcut-hint: 2000ms; /* Card 37B B2 */
 
   font-family: var(--font-sans);
   font-size: var(--fs-md);

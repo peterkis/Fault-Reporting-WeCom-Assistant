@@ -18,9 +18,18 @@ type RecoveryScope={principal:string;kind:string;itemId:string;intakeId?:string}
 type CommandRecord={scope:RecoveryScope;intent:RecoveryIntent;unknown:boolean;expiry?:ReturnType<typeof setTimeout>};
 const records=new Map<string,CommandRecord>();
 const listeners=new Set<()=>void>();
+let recoveryRevision=0;
 const key=(scope:RecoveryScope,purpose:Purpose)=>JSON.stringify([scope.principal,scope.kind,scope.itemId.toLowerCase(),purpose]);
-const notify=()=>{for(const listener of listeners)listener();};
+const notify=()=>{recoveryRevision++;for(const listener of listeners)listener();};
 function subscribe(listener:()=>void){listeners.add(listener);return ()=>{listeners.delete(listener);};}
+
+export function hasUnknownCommandRecovery(scope:RecoveryScope,purpose:Purpose):boolean{
+  return Boolean(records.get(key(scope,purpose))?.unknown);
+}
+
+export function useCommandRecoveryRevision():number{
+  return useSyncExternalStore(subscribe,()=>recoveryRevision,()=>0);
+}
 
 export function useCommandRecovery(scope:RecoveryScope,purpose:Purpose){
   const id=key(scope,purpose);

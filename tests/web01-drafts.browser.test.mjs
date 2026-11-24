@@ -40,7 +40,11 @@ test('expired unknown payload and key are purged while the original opaque opera
       await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:"(()=>{const now=Date.now;Date.now=()=>now()+86400001;globalThis.__t03Commands=[];const original=globalThis.fetch;globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t03Commands.push(JSON.parse(options.body));return original(path,options);};})()"});
       await reload(browser);
       await browser.waitFor("Boolean(document.querySelector('[data-action=check-expired-note]'))&&document.body.innerText.includes('草稿已过期')");
-      assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'');assert.equal(await browser.evaluate("document.querySelector('[data-action=save-internal-note]').disabled"),true);
+      assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'');
+      // Card 35A / PR #192 keeps the read-only save action focusable.
+      const saveButton = "document.querySelector('[data-action=save-internal-note]')";
+      assert.equal(await browser.evaluate(saveButton + ".getAttribute('aria-disabled')"), 'true');
+      await browser.evaluate(saveButton + '.click()');
       const retained=await browser.evaluate("new Promise((resolve,reject)=>{const open=indexedDB.open('wecom-workbench-drafts-v1');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction(['drafts','operations']),drafts=tx.objectStore('drafts').getAll(),operations=tx.objectStore('operations').getAll();tx.oncomplete=()=>{db.close();resolve({draftCount:drafts.result.length,operations:operations.result});};};})");
       assert.equal(retained.draftCount,0);assert.equal(retained.operations.length,1);assert.equal(retained.operations[0].commandId,original.client_command_id);assert.equal(JSON.stringify(retained).includes(original.note),false);
       await browser.evaluate("document.querySelector('[data-action=check-expired-note]').click()");

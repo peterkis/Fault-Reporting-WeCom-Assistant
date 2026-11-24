@@ -15,6 +15,7 @@ import type {CompletionInput} from './use-completion-draft';
 import {subscribeDrafts} from '../drafts/encrypted-drafts';
 import {StepWorkflow,useNextStep} from '../../design/components/Drawer/NextStep';
 import {markSelfWrite} from '../../design/motion/self-write';
+import {consumePendingDetailIntent,emitShortcutHint,usePendingDetailIntent} from '../efficiency/keyboard-store';
 
 type State='idle'|'submitting'|'checking'|'succeeded'|'denied'|'conflict'|'unknown';
 export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=false,presentation='inline',onOpenChange}:{ticketId:string;principal:Principal;boardMode?:boolean;presentation?:'inline'|'dialog';onOpenChange?:(open:boolean)=>void;onBlockedChange:(value:boolean)=>void}){
@@ -67,6 +68,17 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
   }
   const cycle=context.data?.handling_cycle,allowed=Boolean(context.data?.allowed_actions.includes('complete')&&cycle?.first_responsibility_event_id&&cycle.staff_completion_event_id===null);
   const canSubmit=allowed&&!blocked&&!(context.isPending||context.isError)&&draft.canSubmit&&value.process.trim()&&value.summary.trim()&&value.confirmed&&value.process.length<=2000&&value.summary.length<=500;
+  const pendingDetailIntent=usePendingDetailIntent();
+  useEffect(()=>{
+    if(!pendingDetailIntent||pendingDetailIntent.principalId!==principal.principal_id||pendingDetailIntent.kind!=='ticket'||pendingDetailIntent.id!==ticketId||pendingDetailIntent.action!=='complete')return;
+    if(context.isSuccess&&!context.isError&&!allowed&&!pending&&!draft.operationId){
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'complete');
+      emitShortcutHint('这张工单现在不能登记完工');
+    }else if(context.isError){
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'complete');
+      emitShortcutHint('暂时无法确认工单操作，请稍后再试');
+    }
+  },[pendingDetailIntent,principal.principal_id,ticketId,context.isSuccess,context.isError,allowed,pending,draft.operationId]);
   if(!allowed&&!pending&&!draft.operationId&&!hasInput&&state==='idle'&&context.isSuccess&&!context.isError)return null;
   if(!allowed&&!pending&&!draft.operationId&&!hasInput&&state==='succeeded'&&cycle?.staff_completion_event_id===null)return null;
   if(!allowed&&!pending&&!draft.operationId&&!hasInput&&state==='succeeded')return <section className="ticket-notes ticket-completion workflow-result"><ToastFeedback revision={messageRevision} source="ticket-completion" state={state} className="ticket-completion-state" role="status">{message}</ToastFeedback><p hidden className="ticket-completion-version">工单版本 {context.data?.version}</p></section>;
@@ -83,5 +95,5 @@ export function TicketCompletion({ticketId,principal,onBlockedChange,boardMode=f
 
     {boardMode&&state==='conflict'&&pending?<BoardConflictIntent original={pending} onAdopt={current=>{return draft.knownFailure(pending.client_command_id).then(cleaned=>{if(!current())return;if(!cleaned){setMessage('草稿未能清空：为避免重复提交，暂时只能查看。点击重试。');return;}setPending(null);setState('idle');setMessage('已保留填写内容，请按工单信息明确新的操作。');refresh();}).catch(()=>{if(current())setMessage('原冲突意图的本地终态清理未确认，您的输入已保留。');});}}/>:null}
   </section>;
-  return <>{presentation==='dialog'?<DetailActionDialog readError={context.isError} available={allowed} blocked={navigationBlocked} attention={state==='unknown'||state==='conflict'||Boolean(draft.operationId)} onOpenChange={onOpenChange}>{form}</DetailActionDialog>:<StepWorkflow action="complete" label="登记完工" available={allowed} attention={Boolean(boardMode||pending||draft.operationId||hasInput)}>{form}</StepWorkflow>}{feedback}<DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback></>;
+  return <>{presentation==='dialog'?<DetailActionDialog ticketId={ticketId} principalId={principal.principal_id} commandReady={context.isSuccess&&!context.isError} readError={context.isError} available={allowed} blocked={navigationBlocked} attention={state==='unknown'||state==='conflict'||Boolean(draft.operationId)} onOpenChange={onOpenChange}>{form}</DetailActionDialog>:<StepWorkflow action="complete" label="登记完工" available={allowed} attention={Boolean(boardMode||pending||draft.operationId||hasInput)}>{form}</StepWorkflow>}{feedback}<DraftFeedback enabled={draft.enabled}>{draft.message}</DraftFeedback></>;
 }

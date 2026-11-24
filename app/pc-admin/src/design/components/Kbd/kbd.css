@@ -1,0 +1,130 @@
+.ds-kbd-group {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: calc(var(--space-1) - 1px);
+  vertical-align: middle;
+}
+
+.ds-kbd-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-1) - 1px);
+}
+
+/* Override global :root body kbd styles in fonts.css with higher specificity. */
+:root body kbd.ds-kbd {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: var(--space-5);
+  height: var(--space-5);
+  padding: 0 calc(var(--space-1) + 1px);
+  border: 0;
+  border-radius: var(--radius-kbd);
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+:root body kbd.ds-kbd[data-tone="light"] {
+  background: var(--bg-subtle);
+  box-shadow: var(--shadow-kbd-light);
+  color: var(--tone-neutral-fg);
+}
+
+:root body kbd.ds-kbd[data-tone="dark"] {
+  background: var(--bg-kbd-dark);
+  box-shadow: none;
+  color: var(--text-inverse);
+}
+
+.ds-kbd-sep {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-regular);
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+:root body .ds-kbd-group[data-disabled="true"],
+:root body :is(button, a, [role="menuitem"]):is(:disabled, [aria-disabled="true"], [data-disabled="true"]) .ds-kbd-group {
+  opacity: var(--state-disabled-opacity);
+}
+
+.ds-shortcut-tooltip-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-toolbar .ds-shortcut-tooltip-anchor:has(> .view-tabs) {
+  margin-left: auto;
+  flex: none;
+}
+
+.ds-shortcut-tooltip {
+  position: absolute;
+  z-index: var(--z-tooltip);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: calc(var(--space-1) + 1px) var(--space-2) calc(var(--space-1) + 1px) calc(var(--space-2) + var(--space-0-5));
+  border-radius: var(--radius-sm);
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-instant) var(--ease-standard);
+}
+
+.ds-shortcut-tooltip-top > .ds-shortcut-tooltip {
+  bottom: calc(100% + var(--space-1-5));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ds-shortcut-tooltip-top-end > .ds-shortcut-tooltip {
+  bottom: calc(100% + var(--space-1-5));
+  right: 0;
+}
+
+.ds-shortcut-tooltip-bottom > .ds-shortcut-tooltip {
+  top: calc(100% + var(--space-1-5));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ds-shortcut-tooltip-bottom-end > .ds-shortcut-tooltip {
+  top: calc(100% + var(--space-1-5));
+  right: 0;
+}
+
+.ds-shortcut-tooltip-bottom-start > .ds-shortcut-tooltip {
+  top: calc(100% + var(--space-1-5));
+  left: 0;
+}
+
+.ds-shortcut-tooltip-anchor[data-tooltip-open="true"] > .ds-shortcut-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Read-only disabled reason tooltip wins so two tooltips never stack. */
+.ds-shortcut-tooltip-anchor:has(.ds-read-only-control) > .ds-shortcut-tooltip {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-shortcut-tooltip {
+    transition: none;
+  }
+}

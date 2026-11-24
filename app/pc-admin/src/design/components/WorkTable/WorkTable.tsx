@@ -13,6 +13,9 @@ import {NumberRoll} from '../../motion/number-roll';
 import {cardTags,stagePresentation} from '../../status-map';
 import {Avatar} from '../Avatar/Avatar';
 import {Button} from '../Button/Button';
+import {Kbd} from '../Kbd/Kbd';
+import {shortcutKeys} from '../../../features/efficiency/shortcuts';
+import {useIsKeyboardCurrent} from '../../../features/efficiency/keyboard-store';
 import {NewItemsChip} from '../NewItemsChip/NewItemsChip';
 import {SourceLabel} from '../SourceLabel/SourceLabel';
 import {StatusBadge} from '../StatusBadge/StatusBadge';
@@ -69,6 +72,7 @@ function ListTime({item,now}:{item:WorkbenchCard;now:number}){
 }
 function WorkRow({principalId,item,hidden,selected,now,renderLink,renderOwnerLink,renderFollowUp,relativeTime}:Pick<Props,'principalId'|'selected'|'now'|'renderLink'|'renderOwnerLink'|'renderFollowUp'|'relativeTime'>&{item:WorkbenchCard;hidden:boolean}){
   const highlighted=useClosureHighlight(item),rowRef=useRef<HTMLTableRowElement>(null);
+  const keyboardCurrent=useIsKeyboardCurrent(item.kind,item.id);
   const opt=useItemOptimisticState(principalId,item.kind,item.id,item.intake_id);
   const rollback=useItemRollbackCue(principalId,item,!hidden);
   useClosureElementHighlight(rowRef,highlighted&&!hidden,'brand');
@@ -79,13 +83,13 @@ function WorkRow({principalId,item,hidden,selected,now,renderLink,renderOwnerLin
   const tags=cardTags(item).filter(tag=>['urge','review','supplement'].includes(tag.key));
   // Card 30B B3: only a shown, not-dismissed row reads presence; collapsed rows are not requested.
   const presence=usePresence({kind:item.kind,id:item.id},!hidden&&!dismissed);
-  return <tr ref={rowRef} hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined} data-optimistic-pending={opt.pendingKind??undefined} data-optimistic-state={opt.state??undefined}>
+  return <tr ref={rowRef} hidden={hidden} id={'list-item-'+item.kind+'-'+item.id} className={'ds-work-row'+(item.id===selected?' is-selected':'')} data-keyboard-current={keyboardCurrent?'true':undefined} aria-current={keyboardCurrent?'true':undefined} data-column={item.column} data-kind={item.kind} data-item-id={item.id} data-closure-kind={item.closure?.kind} data-closure-highlight={highlighted?'true':undefined} data-optimistic-pending={opt.pendingKind??undefined} data-optimistic-state={opt.state??undefined}>
     <th scope="row"><span className="ds-list-identity"><TicketCategoryTile service={item.service}/><span className="ds-list-number" title={item.number}>{item.number}</span></span></th>
-    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})}>{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}<OptimisticBadge pending={opt.pending} kind={opt.pendingKind??undefined}/></span><PresenceTags people={presence} className="ds-list-presence"/></div></td>
+    <td className="ds-list-problem"><div className="ds-list-issue-content">{renderLink(item,<><span className="ds-list-title" title={item.title}>{present(item.title)??'—'}</span><span className="sr-only">查看详情</span></>)}<span className="ds-list-tags">{tags.map(tag=><Tag key={tag.key} tone={tag.tone} className={tag.className} title={tag.title??tag.label} {...(tag.key==='supplement'?{'data-supplement-follow-up-pending':'true'}:{})} >{tag.icon==='bell'?<Bell aria-hidden="true"/>:null}{tag.key==='urge'?'催 '+item.web_report_urge?.count+' 次':tag.label}</Tag>)}{renderFollowUp(item)}<OptimisticBadge pending={opt.pending} kind={opt.pendingKind??undefined}/></span><PresenceTags people={presence} className="ds-list-presence"/></div></td>
     <td className="ds-list-status"><ListStatus item={item}/></td>
     <td><ListTime item={item} now={now}/></td>
     <td><span className="ds-list-reporter" title={sourceTitle}>{name||location?<>{item.source==='WECOM_DIRECT'?<User className="ds-list-source-icon" aria-hidden="true"/>:<SourceLabel source={item.source} label={item.source_label}/>}<span className="ds-list-person-location">{name}{name&&location?<span className="ds-list-separator"> · </span>:null}{location}</span></>:<span className="ds-list-missing">—</span>}</span></td>
-    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<PersonHoverTrigger name={owner}>{renderOwnerLink?renderOwnerLink(item,owner,<><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></>):<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>}</PersonHoverTrigger>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<kbd className="ds-list-claim-key" aria-hidden="true">E</kbd></td>
+    <td className="ds-list-owner-cell">{dismissed&&item.closure?.source==='SYSTEM'?<span className="ds-list-owner is-system"><Bot aria-hidden="true"/>系统判定</span>:owner?<PersonHoverTrigger name={owner}>{renderOwnerLink?renderOwnerLink(item,owner,<><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></>):<span className="ds-list-owner" title={owner}><Avatar name={owner} size={20} aria-hidden="true"/><span className="ds-list-owner-name">{ownerName}</span></span>}</PersonHoverTrigger>:<span className="ds-list-owner is-unassigned"><span className="ds-list-unassigned" aria-hidden="true"/>未领取</span>}{dismissed?<RestoreClosedItem item={item}/>:null}<Kbd keys={shortcutKeys('claim')} className="ds-list-claim-key"/></td>
     <td><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={item.updated_at+'（北京时间）'}>{relativeTime(item.updated_at,now)}</time></td>
   </tr>;
 }

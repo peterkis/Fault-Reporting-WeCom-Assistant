@@ -38,14 +38,14 @@
 .ds-date-custom .ds-toolbar-filter-content {left: auto; right: 0; width: min(640px,100%);}
 .ds-board-search {position: relative; flex: none; width: calc(var(--space-16) * 4 + var(--space-1) + var(--space-8)); min-height: var(--control-h-md);}
 .ds-board-search>svg {position: absolute; left: var(--space-2); top: var(--space-2); width: var(--icon-md); height: var(--icon-md); z-index: 1; color: var(--text-secondary); pointer-events: none;}
-.ds-board-search>kbd {position: absolute; right: calc(var(--space-8) + var(--space-2)); top: var(--space-1-5); color: var(--text-secondary); font-size: var(--fs-xs); pointer-events: none;}
+.ds-board-search>:is(kbd,.ds-kbd-group) {position: absolute; right: calc(var(--space-8) + var(--space-2)); top: var(--space-1-5); color: var(--text-secondary); font-size: var(--fs-xs); pointer-events: none; z-index: 1;}
 .ds-board-search .workbench-search,.ds-board-search fieldset {display: contents;}
 .ds-board-search .search-main {display: flex; flex-wrap: wrap; gap: var(--space-1); width: calc(var(--space-16) * 4 + var(--space-1)); margin: 0;}
 .ds-board-search .search-main label {position: relative; display: block; width: 100%; height: var(--control-h-md); overflow: hidden; color: transparent;}
 .ds-board-search .search-main input {position: absolute; inset: 0; width: 100%; height: var(--control-h-md); min-height: var(--control-h-md); padding: 0 var(--space-6) 0 var(--space-8); border: 0; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); box-shadow: none; font-size: var(--fs-sm);}
 .ds-board-search .search-main button[type=submit] {position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; clip-path: inset(50%); overflow: hidden;}
 .ds-board-search .search-main button[type=submit]:focus-visible,.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true]) .search-main button[type=submit] {position: absolute; top: var(--space-1); right: calc(var(--space-8) + var(--space-1)); width: auto; height: var(--space-6); min-height: var(--space-6); clip-path: none; padding: 0 var(--space-2); font-size: var(--fs-xs);}
-.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true],button[type=submit]:focus-visible)>kbd {display: none;}
+.ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true],button[type=submit]:focus-visible)>:is(kbd,.ds-kbd-group) {display: none;}
 .ds-board-search:has(.workbench-disclosure-trigger[aria-expanded=true],button[type=submit]:focus-visible) .search-main input {padding-right: calc(var(--space-16) + var(--space-4));}
 .ds-board-search .workbench-disclosure {position: static; margin: 0;}
 .ds-board-search .workbench-disclosure>[data-slot=disclosure-heading] {position: absolute; right: 0; top: 0;}
@@ -58,7 +58,7 @@
 @media(max-width:900px) {
   .ds-board-toolbar-top {gap: var(--space-3); flex-wrap: wrap;}
   .ds-board-summary.scope-tabs {gap: var(--space-6); flex: 1;}
-  .ds-board-toolbar .view-tabs {margin-left: 0;}
+  .ds-board-toolbar .view-tabs,.ds-board-toolbar .ds-shortcut-tooltip-anchor:has(>.view-tabs) {margin-left: 0;}
   .ds-board-dates {justify-content: flex-start;}
   .ds-board-date-label,.ds-date-segments>.ds-button.button[data-date-preset],.ds-date-wide {display: none;}
   .ds-date-compact {display: inline-flex; align-items: center; gap: var(--space-1);}
@@ -67,7 +67,7 @@
   .ds-board-search .search-filters {grid-template-columns: minmax(0,1fr);}
 }
 
-.ds-board-search>kbd {z-index: 1;}
+.ds-board-search>:is(kbd,.ds-kbd-group) {z-index: 1;}
 .ds-board-search .workbench-disclosure-trigger {color: transparent;}
 .ds-board-search .workbench-disclosure-trigger svg {color: var(--text-secondary);}
 .ds-board-filter-icon {position: absolute; left: var(--space-2); display: flex; pointer-events: none; color: var(--text-secondary);}
@@ -94,7 +94,7 @@
 .workspace.ds-page>.ds-toolbar.ds-board-toolbar {margin-top:var(--space-3);}
 .ds-board-search {width:calc(var(--space-16) * 4 + var(--space-1));}
 .ds-board-search .search-main input {padding-right:calc(var(--space-8) + var(--space-6));}
-.ds-board-search>kbd {right:calc(var(--space-8) + var(--space-1));}
+.ds-board-search>:is(kbd,.ds-kbd-group) {right:calc(var(--space-8) + var(--space-1));}
 .ds-board-search .workbench-disclosure>[data-slot=disclosure-heading] {right:var(--space-0-5);top:var(--space-0-5);}
 .ds-board-search .workbench-disclosure-trigger {height:var(--control-h-sm);min-height:var(--control-h-sm);border-radius:var(--radius-sm);}
 .ds-board-search .workbench-disclosure-trigger>[data-slot=disclosure-indicator] {display:none;}

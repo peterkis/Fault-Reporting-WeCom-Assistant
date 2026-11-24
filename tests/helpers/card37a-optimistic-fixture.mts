@@ -6,6 +6,9 @@ import {createServer} from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
 import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
+import {migrateTicketStaffCompletion} from '../../app/server/scripts/ticket-staff-completion-migrate.mjs';
+import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
+import {migrateBotReporterFeedback} from '../../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-migrate.mjs';
 import {migrateTicketReturnToDispatch} from '../../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
@@ -48,7 +51,7 @@ export const badge=(card:string)=>card+' [data-optimistic-badge]';
 export const moving=(selector:string)=>query(selector)+`?.getAnimations().some(a=>a.effect.getKeyframes()
   .some(f=>typeof f.transform==='string'&&f.transform.startsWith('translate(')))`;
 
-export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean}={}) {
+export async function withScene(run:(s:Scene)=>Promise<void>, options:{keyboard?:boolean;followEnabled?:boolean;canReturn?:boolean; motion?:'reduce'|'off'; conversationClaim?:boolean;draftRecovery?:boolean;remindersEnabled?:boolean;takeover?:boolean}={}) {
   await withWeb01Fixture(async (base:T11Fixture)=>{
     await base.runtime.stop();
     const [actor,peer]=base.principals;assert.ok(actor&&peer);
@@ -57,10 +60,14 @@ export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}, externalSendEnabled:false,
       principalIds:[actor.id,base.outsider.id,peer.id],
       ticketSelfHandlingEnabled:true, ticketReturnToDispatchEnabled:options.canReturn!==false,
+      ticketTakeoverEnabled:options.takeover===true,
       ticketConversationSelfHandlingEnabled:options.conversationClaim===true,
       workbenchDraftRecoveryEnabled:options.draftRecovery===true,
       ticketWaitingActionsEnabled:true, workbenchInternalNotesEnabled:true,
-      workbenchBoardActionsEnabled:true, workbenchFollowEnabled:true,
+      ticketAssignmentEnabled:options.keyboard===true, ticketStaffCompletionEnabled:options.keyboard===true,
+      workbenchConversationsEnabled:options.keyboard===true, notificationExceptionsEnabled:options.keyboard===true,
+      workbenchSearchEnabled:options.keyboard===true, workbenchManualReportsEnabled:options.keyboard===true,
+      workbenchBoardActionsEnabled:true, workbenchFollowEnabled:options.followEnabled!==false,
       workbenchRemindersEnabled:options.remindersEnabled===true,
     });
     let b:Browser|undefined, dev:Awaited<ReturnType<typeof createServer>>|undefined, cache:string|undefined, failure:unknown;
@@ -95,6 +102,11 @@ export async function withScene(run:(s:Scene)=>Promise<void>, options:{canReturn
     } catch(error){failure=error;}
     finally{await closeBrowserTestResources([()=>b?.close(),()=>dev?.close(),()=>cache&&rm(cache,{recursive:true,force:true}),()=>runtime.stop()],failure);}
   },{ticketSelfHandlingEnabled:true,workbenchFollowEnabled:true,precisionV212:true,beforeClosureMigration:async({databaseUrl})=>{
+    if(options.keyboard){
+      await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});
+      await migrateTicketReopenRounds({databaseUrl,mode:'apply'});
+      await migrateBotReporterFeedback({databaseUrl,mode:'apply'});
+    }
     await migrateTicketUnassign({databaseUrl,mode:'apply'});
     await migrateTicketReturnToDispatch({databaseUrl,mode:'apply'});
   }});

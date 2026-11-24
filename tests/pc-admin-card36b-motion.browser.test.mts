@@ -11,6 +11,7 @@ import type {T42Fixture} from './helpers/t42-board-browser-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {chooseWorkbenchSelect,clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
+import {boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
 import {assertMotion,assertNoTransformAnimations} from './helpers/motion-assert.mjs';
 import {createFilmstripCapture} from './helpers/motion-filmstrip.mjs';
 import {calibrateCard36bCpu} from './helpers/motion-cpu-calibration-36b.mjs';
@@ -118,7 +119,10 @@ test('36B B5.1–3 board claim: move, make-room, endpoints and actor-specific hi
   try{
     await actor.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1440,deviceScaleFactor:1,mobile:false});
     await navigate(actor,fixture.origin);await ready(peer);
-    for(const browser of [actor,peer]){await expandPendingBoard(browser);await expandActiveBoard(browser);}
+    for(const browser of [actor,peer]){
+      await browser.waitFor(boardColumnsReady);
+      await expandPendingBoard(browser);await expandActiveBoard(browser);
+    }
     await peer.waitFor(visible(pending(card)));
     await actor.evaluate(probe);await peer.evaluate(probe);
     await actor.evaluate(`${query(card+' .card-open')}.focus({preventScroll:true})`);
@@ -129,6 +133,25 @@ test('36B B5.1–3 board claim: move, make-room, endpoints and actor-specific hi
     assert.ok(Number((await position(actor,makeup)).top)>Number(old.top),'fixture card must follow the moving card');
     let layout:Record<string,unknown>={};
     await frozen(actor,async()=>{
+      // Sample the first active card on its first rendering opportunity. A later
+      // column response can remount the same ticket while CDP's motion clock is frozen.
+      await actor.evaluate(`(() => {
+        const observer = new MutationObserver(() => {
+          const node = ${query(active(card))};
+          if (!node) return;
+          observer.disconnect();
+          requestAnimationFrame(() => {
+            const rect = node.getBoundingClientRect();
+            const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+            window.claimFirstFrame = {
+              current: ${query(active(card))} === node,
+              visual: {left: rect.left, top: rect.top},
+              layout: {left: rect.left - matrix.m41, top: rect.top - matrix.m42},
+            };
+          });
+        });
+        observer.observe(document.querySelector('.board'), {childList:true, subtree:true});
+      })()`);
       await claim(actor,card);
       await waitEffect(actor,active(card),moveFrame);
       await actor.evaluate(frames);
@@ -141,8 +164,11 @@ test('36B B5.1–3 board claim: move, make-room, endpoints and actor-specific hi
       measurements.e6LiftShadow=shadow;
       measurements.makeRoom=await assertMotion(actor,makeup,'--dur-base','--ease-standard');
       measurements.numberRoll=await assertMotion(actor,'.board-column.active .ds-stage-count','--dur-base','--ease-standard',{subtree:true});
-      within(await position(actor,active(card)),old,1,'first rendered frame');
-      layout=object(await actor.evaluate(`(()=>{const node=${query(active(card))},rect=node.getBoundingClientRect(),matrix=new DOMMatrixReadOnly(getComputedStyle(node).transform);return {left:rect.left-matrix.m41,top:rect.top-matrix.m42};})()`));
+      await actor.waitFor('Boolean(window.claimFirstFrame)');
+      const firstFrame=object(await actor.evaluate('window.claimFirstFrame'));
+      assert.equal(firstFrame.current,true,'the moving card is still mounted on its first frame');
+      within(object(firstFrame.visual),old,1,'first rendered frame');
+      layout=object(firstFrame.layout);
     });
     await waitForAnimationsSettled(actor);
     assert.equal(await actor.evaluate(`getComputedStyle(${query(active(card))}).transform`),'none');

@@ -1,11 +1,17 @@
 import {Button as HButton,CardActionButton} from '../../design/components/Button/Button';
 import {ToastFeedback,useFeedbackState} from '../../app/ToastFeedback';
 import {createContext,useCallback,useContext,useEffect,useId,useMemo,useRef,useState} from 'react';
-import type {ReactNode} from 'react';
+import type {ReactNode,RefObject} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {createPortal} from 'react-dom';
 import {TicketSelfHandling} from '../ticket-handling/TicketSelfHandling';
-import {Ellipsis} from 'lucide-react';
+import {CircleX,Copy,Ellipsis,Star,UserRound} from 'lucide-react';
+import {Kbd,ShortcutTooltip} from '../../design/components/Kbd/Kbd';
+import {AnchoredPopover} from '../../design/components/Popover/AnchoredPopover';
+import {usePopoverPresence} from '../../design/components/Popover/usePopoverPresence';
+import {ariaKeyshortcuts,isWorkerAccount,shortcutKeys} from '../efficiency/shortcuts';
+import {copyItemNumber,evaluateTicketCommandQueryAdmission,getBoardKeyboardBridge,readTicketCommandAdmission,useBoardFollowHostState,useDemandFollowHost,useIsKeyboardCurrent,useKeyboardBridgeRevision} from '../efficiency/keyboard-store';
+import {useCommandRecoveryRevision} from '../optimistic/command-recovery';
 import {DragDropProvider,useDroppable} from '@dnd-kit/react';
 import {AutoScroller,Cursor,Draggable,Feedback,KeyboardSensor,PointerSensor,PointerActivationConstraints,PreventSelection} from '@dnd-kit/dom';
 import type {DragDropManager} from '@dnd-kit/dom';
@@ -15,7 +21,7 @@ import {reviewApi} from '../manual-review/client';
 import {clearItemAuthorization,clearSessionAuthorization} from '../../app/authorization';
 import type {WorkbenchBoardActionIntent} from '../../../../../contracts/workbench_board_action_intent_contracts';
 import {boardColumnNames,boardColumns,planBoardAction,readBoardIntent} from './intent';
-import {isItemActionPending} from '../optimistic/store';
+import {isItemActionPending,useItemOptimisticState} from '../optimistic/store';
 import './board-actions.css';
 
 interface CardDragMeta {
@@ -113,13 +119,16 @@ const DRAG_INSTRUCTIONS_TEXT='To pick up a draggable item, press the space bar. 
 
 type Entry={intent:WorkbenchBoardActionIntent;selector:string};
 type Claim={principalId:string;mode:'self'|'form';item:WorkbenchCard;target:HTMLElement|null};
-const BoardActionsContext=createContext<{enabled:boolean;blocked:boolean;navigationBlocked:boolean;instructionsId:string;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void}>({enabled:false,blocked:true,navigationBlocked:false,instructionsId:'',open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{}});
+type ClaimTriggerResult='triggered'|'pending'|'unavailable'|'error';
+const BoardActionsContext=createContext<{principal:Principal|null;enabled:boolean;blocked:boolean;navigationBlocked:boolean;instructionsId:string;open:(intent:WorkbenchBoardActionIntent)=>void;prepareClaim:(item:WorkbenchCard,target:HTMLElement)=>void;releaseClaim:(target:HTMLElement)=>void;triggerBoardClaim:(item:WorkbenchCard)=>ClaimTriggerResult}>({principal:null,enabled:false,blocked:true,navigationBlocked:false,instructionsId:'',open:()=>{},prepareClaim:()=>{},releaseClaim:()=>{},triggerBoardClaim:()=>'unavailable'});
+export function useBoardClaimBridge(){return useContext(BoardActionsContext).triggerBoardClaim;}
 export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlocked,children}:{principal:Principal;blocked:boolean;selectionKey:string;onOpen:(entry:Entry)=>void;onClaimBlocked:(blocked:boolean)=>void;children:ReactNode}){
   const client=useQueryClient(),enabled=principal.board_actions_enabled===true,instructionsId=useId(),request=useRef<AbortController|null>(null),generation=useRef(0),captured=useRef<{kind:WorkbenchCard['kind'];id:string;column:BoardColumn}|null>(null),focus=useRef<HTMLElement|null>(null);
   const [checking,setChecking]=useState(false),[message,setMessage,messageRevision]=useFeedbackState('');
   const [claim,setClaim]=useState<Claim|null>(null);
   const [pendingClaims,setPendingClaims]=useState<Record<string,Claim>>({});
   const [blockedByClaim,setBlockedByClaim]=useState<Record<string,boolean>>({});
+  const recoveringClaimIdsRef=useRef<Set<string>>(new Set());
   const claimScope=principal.principal_id+':'+principal.authorization_revision;
   const [preparedScope,setPreparedScope]=useState(claimScope);
   // Entry capabilities may close or refresh. They never own an unresolved command.
@@ -128,6 +137,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
   useEffect(()=>{onClaimBlocked(claimBlocked);return()=>onClaimBlocked(false);},[claimBlocked,onClaimBlocked]);
   const claimEntryEnabled=enabled&&preparedScope===claimScope&&(activeClaim?.mode!=='self'||principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled);
   const changeClaimBlocked=useCallback((ticketId:string,value:boolean)=>{
+    if(value)recoveringClaimIdsRef.current.add(ticketId);
     setBlockedByClaim(prev=>{
       if(Boolean(prev[ticketId])===value)return prev;
       if(!value){
@@ -138,7 +148,14 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
       return {...prev,[ticketId]:true};
     });
   },[]);
-  const changePendingClaim=useCallback((busy:boolean,item:WorkbenchCard)=>{
+  const changePendingClaim=useCallback((busy:boolean,item:WorkbenchCard,reason:'change'|'unmount'='change')=>{
+    if(!busy){
+      const wasRecovering=recoveringClaimIdsRef.current.has(item.id);
+      recoveringClaimIdsRef.current.delete(item.id);
+      if(reason==='change'&&wasRecovering){
+        setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id?current:{principalId:principal.principal_id,mode:'self',item,target:null});
+      }
+    }
     setPendingClaims(prev=>{
       if(!busy){
         if(!prev[item.id])return prev;
@@ -163,13 +180,14 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
       // Resets, entry flags, revision refreshes and transient failures do not qualify.
       if(key[0]==='ticket-command-context'&&key[1]===owner&&typeof key[2]==='string'&&ids.has(key[2])&&error instanceof ApiError&&[401,403,404].includes(error.status)){
         const ticketId=key[2];
+        recoveringClaimIdsRef.current.delete(ticketId);
         setClaim(current=>current?.principalId===owner&&current.item.id===ticketId?null:current);
         setPendingClaims(prev=>{if(!prev[ticketId])return prev;const next={...prev};delete next[ticketId];return next;});
         setBlockedByClaim(prev=>{if(!prev[ticketId])return prev;const next={...prev};delete next[ticketId];return next;});
       }
     });
   },[client,principal.principal_id,trackedClaimIds]);
-  useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
+  useEffect(()=>()=>{generation.current++;request.current?.abort();request.current=null;captured.current=null;recoveringClaimIdsRef.current.clear();setChecking(false);setMessage('');},[principal.principal_id,principal.authorization_revision,enabled,selectionKey]);
   const open=async(intent:WorkbenchBoardActionIntent)=>{
     if(!enabled||blocked||claimBlocked||request.current)return;
     const plan=planBoardAction(intent);
@@ -234,9 +252,30 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
     setPreparedScope(claimScope);setClaim(current=>current?.principalId===principal.principal_id&&current.item.id===item.id&&current.mode===mode&&current.target===target?current:{principalId:principal.principal_id,mode,item,target});
   };
   const stablePrepareClaim=useCallback((item:WorkbenchCard,target:HTMLElement)=>{prepareClaimRef.current(item,target);},[]);
+  const triggerBoardClaimRef=useRef<(item:WorkbenchCard)=>ClaimTriggerResult>(()=>'unavailable');
+  triggerBoardClaimRef.current=(item:WorkbenchCard)=>{
+    if(disabled||item.kind!=='ticket'||item.column!=='pending'||item.assignee_name||isItemActionPending(principal.principal_id,'ticket',item.id,'movement'))return 'unavailable';
+    if(!principal.ticket_self_handling_enabled&&!principal.ticket_conversation_self_handling_enabled&&!principal.ticket_takeover_enabled)return 'unavailable';
+    const cardSelector=`[data-kind="ticket"][data-item-id="${CSS.escape(item.id)}"] .ds-board-claim-slot`;
+    const slot=document.querySelector<HTMLElement>(cardSelector);
+    if(!slot)return 'unavailable';
+    const button=slot.querySelector<HTMLButtonElement>('button');
+    if(button&&!button.disabled&&button.getAttribute('aria-disabled')!=='true'){
+      button.click();
+      return 'triggered';
+    }
+    const admission=readTicketCommandAdmission(client,principal,item.id,'claim');
+    if(admission==='error')return 'error';
+    if(admission==='denied')return 'unavailable';
+    if(activeClaim?.item.id!==item.id||activeClaim.target!==slot){
+      prepareClaimRef.current(item,slot);
+    }
+    return 'pending';
+  };
+  const triggerBoardClaim=useCallback((item:WorkbenchCard)=>triggerBoardClaimRef.current(item),[]);
   const claims=Object.values(pendingClaims).filter(entry=>entry.principalId===principal.principal_id&&entry.item.id!==activeClaim?.item.id);
   if(activeClaim)claims.push({...activeClaim,target:claimEntryEnabled?activeClaim.target:null});
-  const contextValue=useMemo(()=>({enabled,blocked:disabled,navigationBlocked,instructionsId,open:stableOpen,releaseClaim,prepareClaim:stablePrepareClaim}),[enabled,disabled,navigationBlocked,instructionsId,stableOpen,releaseClaim,stablePrepareClaim]);
+  const contextValue=useMemo(()=>({principal,enabled,blocked:disabled,navigationBlocked,instructionsId,open:stableOpen,releaseClaim,prepareClaim:stablePrepareClaim,triggerBoardClaim}),[principal,enabled,disabled,navigationBlocked,instructionsId,stableOpen,releaseClaim,stablePrepareClaim,triggerBoardClaim]);
   const liveRegion=useRef<HTMLDivElement|null>(null);
   const announce=(text:string)=>{if(liveRegion.current&&liveRegion.current.textContent!==text)liveRegion.current.textContent=text;};
   // Keep original business controllers at the same React tree position. Only
@@ -292,7 +331,7 @@ export function BoardActions({principal,blocked,selectionKey,onOpen,onClaimBlock
   </BoardActionsContext.Provider>;
 }
 function BoardSelfClaim({principal,claim,checking,changeBlocked,changePending}:{principal:Principal;claim:Claim;checking:boolean;
-  changeBlocked:(id:string,value:boolean)=>void;changePending:(busy:boolean,item:WorkbenchCard)=>void}){
+  changeBlocked:(id:string,value:boolean)=>void;changePending:(busy:boolean,item:WorkbenchCard,reason?:'change'|'unmount')=>void}){
   const id=claim.item.id;
   const reportBlocked=useCallback((value:boolean)=>changeBlocked(id,value),[id,changeBlocked]);
   return <TicketSelfHandling ticketId={id} item={claim.item} principal={principal} boardMode otherBlocked={checking}
@@ -302,14 +341,14 @@ function BoardSelfClaim({principal,claim,checking,changeBlocked,changePending}:{
 function BoardClaimForm({principal,claim,blocked,open}:{principal:Principal;claim:Claim;blocked:boolean;open:(intent:WorkbenchBoardActionIntent)=>void}){
   const context=useQuery({queryKey:['ticket-command-context',principal.principal_id,claim.item.id],queryFn:({signal})=>api.ticketCommandContext(claim.item.id,signal)});
   const allowed=context.data?.allowed_actions??[],available=context.isSuccess&&!context.isFetching&&!context.isError&&(principal.ticket_conversation_self_handling_enabled&&allowed.includes('take-and-start-with-conversations')||principal.ticket_self_handling_enabled&&allowed.includes('take-and-start')||principal.ticket_takeover_enabled&&allowed.includes('takeover-and-start'));
-  return available&&claim.target?createPortal(<HButton type="button" data-board-claim-action data-action="board-claim-options" size="sm" tone="secondary" isDisabled={blocked||context.isPending} title="打开原领取选项，确认沟通责任或处理组后提交" onClick={()=>open({kind:claim.item.kind,id:claim.item.id,source_column:claim.item.column,target_column:'active'})}>领取 E</HButton>,claim.target):null;
+  return available&&claim.target?createPortal(<ShortcutTooltip label="领取" keys={shortcutKeys('claim')} placement="top-end"><HButton type="button" data-board-claim-action data-action="board-claim-options" aria-keyshortcuts={ariaKeyshortcuts('claim')} size="sm" tone="secondary" isDisabled={blocked||context.isPending} onClick={()=>open({kind:claim.item.kind,id:claim.item.id,source_column:claim.item.column,target_column:'active'})}>领取</HButton></ShortcutTooltip>,claim.target):null;
 }
 export function BoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
   const context=useContext(BoardActionsContext);
   return context.enabled?<EnabledBoardActionCard item={item}>{children}</EnabledBoardActionCard>:context.navigationBlocked?<div className="board-action-passive" onClickCapture={event=>{if(event.target instanceof Element&&event.target.closest('.card-open')){event.preventDefault();event.stopPropagation();}}}>{children}</div>:<>{children}</>;
 }
 function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:ReactNode}){
-  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),[isDragging,setIsDragging]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),claimTarget=useRef<HTMLSpanElement|null>(null),cardNode=useRef<HTMLDivElement|null>(null);
+  const context=useContext(BoardActionsContext),[menu,setMenu]=useState(false),[menuFocusFirst,setMenuFocusFirst]=useState(false),[isDragging,setIsDragging]=useState(false),menuButton=useRef<HTMLButtonElement|null>(null),menuOpenIntentRef=useRef<'pointer'|'keyboard'>('pointer'),claimTarget=useRef<HTMLSpanElement|null>(null),cardNode=useRef<HTMLDivElement|null>(null);
   const releaseClaim=context.releaseClaim;
   useEffect(()=>{const target=claimTarget.current;return()=>{if(target)releaseClaim(target);};},[releaseClaim]);
   const instructionsId=context.instructionsId;
@@ -347,11 +386,12 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
       cardDragRegistry.set(node,{id:metaRef.current.id,element:node,handle:link,data:metaRef.current.data,disabled:metaRef.current.disabled,setDragging:setIsDragging});
     }
   },[instructionsId]);
-  const prepareClaim=()=>{if(claimTarget.current)context.prepareClaim(item,claimTarget.current);};
-  return <div ref={bindCardRef} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onKeyDown={event=>{
-    if(event.key.toLowerCase()!=='e'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!(event.target instanceof Element)||!event.target.closest('.card-open')||event.target.closest('input,textarea,[contenteditable=true]'))return;
-    const button=claimTarget.current?.querySelector<HTMLButtonElement>('button:not(:disabled)');if(button&&!context.blocked){event.preventDefault();event.stopPropagation();button.click();}
-  }} onClickCapture={event=>{
+  const {prepareClaim:prepareBoardClaim}=context;
+  const prepareClaim=()=>{if(claimTarget.current)prepareBoardClaim(item,claimTarget.current);};
+  const isKeyboardCurrent=useIsKeyboardCurrent(item.kind,item.id);
+  useEffect(()=>{if(isKeyboardCurrent&&claimTarget.current)prepareBoardClaim(item,claimTarget.current);},[isKeyboardCurrent,item,prepareBoardClaim]);
+  const menuPresence=usePopoverPresence(menu&&Boolean(context.principal),{immediateEnter:true});
+  return <div ref={bindCardRef} data-menu-open={menu?'true':undefined} className={'board-action-card'+(isDragging?' is-dragging':'')} onPointerEnter={prepareClaim} onFocusCapture={prepareClaim} onClickCapture={event=>{
     const link=event.target instanceof Element?event.target.closest('.card-open'):null,selection=window.getSelection();
     if(link&&context.blocked){event.preventDefault();event.stopPropagation();return;}
     if(event.detail>0&&link&&selection&&!selection.isCollapsed&&link.contains(selection.anchorNode)&&link.contains(selection.focusNode))event.preventDefault();
@@ -359,13 +399,116 @@ function EnabledBoardActionCard({item,children}:{item:WorkbenchCard;children:Rea
     {children}
     <span ref={claimTarget} className="ds-board-claim-slot"/>
     {context.enabled?<div className="board-action-tools">
-      <CardActionButton type="button" ref={menuButton} data-action="board-action-menu" data-drag-excluded isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} onClick={()=>setMenu(value=>!value)} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></CardActionButton>
-      {menu?<div className="board-action-options" role="group" aria-label={item.number+' 的业务列'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setMenu(false);menuButton.current?.focus();}}}>
-        {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" isDisabled={context.blocked} data-board-action-target={target} onClick={()=>{setMenu(false);menuButton.current?.focus();context.open({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}} tone="secondary">移至{boardColumnNames[target]}：打开合法表单</HButton>)}
-        <HButton type="button" onClick={()=>{setMenu(false);menuButton.current?.focus();}} tone="secondary">取消</HButton>
-      </div>:null}
+      <CardActionButton type="button" ref={menuButton} data-action="board-action-menu" data-drag-excluded isIconOnly size="sm" aria-label="业务动作" isDisabled={context.blocked} aria-expanded={menu} aria-haspopup="menu" onPointerDown={()=>{menuOpenIntentRef.current='pointer';}} onKeyDown={event=>{if(['Enter',' ','ArrowDown','ArrowUp'].includes(event.key))menuOpenIntentRef.current='keyboard';}} onClick={event=>{setMenuFocusFirst(menuOpenIntentRef.current==='keyboard'||event.detail===0);menuOpenIntentRef.current='pointer';setMenu(value=>!value);}} tone="ghost"><Ellipsis aria-hidden="true"/><span className="sr-only">业务动作</span></CardActionButton>
+      {menuPresence.present&&context.principal?<BoardCardOptionsMenu open={menu} presenceAttributes={menuPresence.attributes} anchorRef={menuButton} principal={context.principal} item={item} blocked={context.blocked} focusFirstOnOpen={menuFocusFirst} openColumn={context.open} onClose={(restoreFocus)=>{setMenu(false);setMenuFocusFirst(false);if(restoreFocus)menuButton.current?.focus();}}/>:null}
     </div>:null}
   </div>;
+}
+
+function focusMenuItem(menuEl:HTMLElement|null,itemEl:HTMLButtonElement|undefined){
+  if(!itemEl)return;
+  itemEl.focus({preventScroll:true});
+  if(!menuEl||menuEl.scrollHeight<=menuEl.clientHeight)return;
+  const menuRect=menuEl.getBoundingClientRect();
+  const itemRect=itemEl.getBoundingClientRect();
+  if(itemRect.top<menuRect.top){
+    menuEl.scrollTop-=menuRect.top-itemRect.top;
+  }else if(itemRect.bottom>menuRect.bottom){
+    menuEl.scrollTop+=itemRect.bottom-menuRect.bottom;
+  }
+}
+
+function BoardCardOptionsMenu({open,presenceAttributes,anchorRef,principal,item,blocked,focusFirstOnOpen,openColumn,onClose}:{open:boolean;presenceAttributes:Record<string,unknown>;anchorRef:RefObject<HTMLButtonElement|null>;principal:Principal;item:WorkbenchCard;blocked:boolean;focusFirstOnOpen:boolean;openColumn:(intent:WorkbenchBoardActionIntent)=>void;onClose:(restoreFocus:boolean)=>void}){
+  const container=useRef<HTMLDivElement|null>(null);
+  const opt=useItemOptimisticState(principal.principal_id,item.kind,item.id,item.intake_id);
+  useKeyboardBridgeRevision();
+  useCommandRecoveryRevision();
+  const bridge=getBoardKeyboardBridge();
+  const probeCloseDraft=bridge?.probeCloseDraft;
+  useEffect(()=>{
+    if(open&&probeCloseDraft)void probeCloseDraft(item,true);
+  },[open,item.kind,item.id,probeCloseDraft]);
+  const ticketContext=useQuery({
+    queryKey:['ticket-command-context',principal.principal_id,item.id],
+    queryFn:({signal})=>api.ticketCommandContext(item.id,signal),
+    enabled:open&&isWorkerAccount(principal)&&item.kind==='ticket'&&!blocked,
+  });
+  const followShown=principal.workbench_follow_enabled===true&&item.attention!==undefined;
+  useDemandFollowHost('board-menu:'+item.kind+':'+item.id,item,open&&followShown&&!blocked);
+  const followState=useBoardFollowHostState(principal.principal_id,followShown?item.kind+':'+item.id:null);
+  useEffect(()=>{
+    if(!open||!focusFirstOnOpen||!container.current)return;
+    const firstEnabled=[...container.current.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find(btn=>!btn.disabled&&btn.getAttribute('aria-disabled')!=='true');
+    focusMenuItem(container.current,firstEnabled);
+  },[open,focusFirstOnOpen]);
+  useEffect(()=>{
+    if(!open)return;
+    const onPointerDown=(event:PointerEvent)=>{
+      if(
+        container.current&&
+        event.target instanceof Node&&
+        !container.current.contains(event.target)&&
+        !anchorRef.current?.contains(event.target)
+      ){
+        onClose(false);
+      }
+    };
+    const onDocumentKeyDown=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'){
+        event.preventDefault();
+        event.stopPropagation();
+        onClose(true);
+      }
+    };
+    document.addEventListener('pointerdown',onPointerDown);
+    document.addEventListener('keydown',onDocumentKeyDown,true);
+    return()=>{
+      document.removeEventListener('pointerdown',onPointerDown);
+      document.removeEventListener('keydown',onDocumentKeyDown,true);
+    };
+  },[open,onClose,anchorRef]);
+  const following=opt.followTarget??item.attention?.following??false;
+  const followDisabled=blocked||!bridge||!followState?.canStart;
+  const transferShown=isWorkerAccount(principal)&&principal.ticket_assignment_enabled===true&&item.kind==='ticket';
+  const transferAdmission=item.kind==='ticket'?evaluateTicketCommandQueryAdmission(principal,ticketContext,'transfer'):'denied';
+  const transferDisabled=blocked||!bridge||item.column==='handled'||item.closure?.kind==='DISMISSED'||transferAdmission!=='allowed';
+  const closeAdmission=item.kind==='ticket'?evaluateTicketCommandQueryAdmission(principal,ticketContext,'close'):undefined;
+  const closeDecision=bridge?bridge.canCloseItem(item,{inDetail:false,detailReady:false,ticketAdmission:closeAdmission}):'denied';
+  const closeRecovering=bridge?.hasCloseRecovery(item)??false;
+  const closeShown=isWorkerAccount(principal)||closeRecovering||closeDecision==='allowed';
+  const closeDisabled=blocked||!bridge||closeDecision!=='allowed';
+  const handleMenuKeyDown=(event:React.KeyboardEvent<HTMLDivElement>)=>{
+    if(event.key==='Escape'){
+      event.preventDefault();
+      event.stopPropagation();
+      onClose(true);
+      return;
+    }
+    if(event.key==='Tab'){
+      onClose(false);
+      return;
+    }
+    if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+    const items=container.current?[...container.current.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].filter(btn=>!btn.disabled&&btn.getAttribute('aria-disabled')!=='true'):[];
+    if(!items.length)return;
+    event.preventDefault();
+    event.stopPropagation();
+    const currentIndex=document.activeElement instanceof HTMLButtonElement?items.indexOf(document.activeElement):-1;
+    let nextIndex=0;
+    if(event.key==='ArrowDown')nextIndex=currentIndex<0?0:(currentIndex+1)%items.length;
+    else if(event.key==='ArrowUp')nextIndex=currentIndex<0?items.length-1:(currentIndex-1+items.length)%items.length;
+    else if(event.key==='End')nextIndex=items.length-1;
+    focusMenuItem(container.current,items[nextIndex]);
+  };
+  return <AnchoredPopover open={open} present={true} presenceAttributes={presenceAttributes} anchorRef={anchorRef} popoverRef={container} align="end" portal={false} onAnchorHidden={()=>onClose(false)} className="board-action-options" role="menu" ariaLabel={item.number+' 的快捷操作与业务列'} onKeyDown={handleMenuKeyDown}>
+    <HButton type="button" role="menuitem" tone="ghost" data-action="board-copy-number" aria-keyshortcuts={ariaKeyshortcuts('copy-number')} onPress={()=>{onClose(true);void copyItemNumber(item.number);}}><Copy aria-hidden="true"/><span>复制编号</span><Kbd keys={shortcutKeys('copy-number')} className="board-menu-kbd"/></HButton>
+    {followShown?<HButton type="button" role="menuitem" tone="ghost" data-action="board-toggle-follow" aria-keyshortcuts={ariaKeyshortcuts('follow')} isDisabled={followDisabled} onPress={()=>{onClose(true);bridge?.triggerBoardFollow(item,{requireKeyboardTarget:false});}}><Star aria-hidden="true"/><span>{following?'取消关注':'关注'}</span><Kbd keys={shortcutKeys('follow')} disabled={followDisabled} className="board-menu-kbd"/></HButton>:null}
+    {transferShown?<HButton type="button" role="menuitem" tone="ghost" data-action="board-transfer" aria-keyshortcuts={ariaKeyshortcuts('transfer')} isDisabled={transferDisabled} onPress={()=>{onClose(true);bridge?.triggerBoardTransfer(item);}}><UserRound aria-hidden="true"/><span>转交…</span><Kbd keys={shortcutKeys('transfer')} disabled={transferDisabled} className="board-menu-kbd"/></HButton>:null}
+    {closeShown?<><div className="board-menu-divider" role="separator"/><HButton type="button" role="menuitem" tone="ghost" className="board-menu-danger" data-action="board-close-item" aria-keyshortcuts={ariaKeyshortcuts('close')} isDisabled={closeDisabled} onPress={()=>{onClose(true);bridge?.openCloseDialog(item);}}><CircleX aria-hidden="true"/><span>关闭事项…</span><Kbd keys={shortcutKeys('close')} disabled={closeDisabled} className="board-menu-kbd"/></HButton></>:null}
+    <div className="board-menu-divider" role="separator"/>
+    {boardColumns.filter(target=>target!==item.column).map(target=><HButton key={target} type="button" role="menuitem" tone="ghost" className="board-menu-secondary" isDisabled={!open||blocked} data-board-action-target={open?target:undefined} onClick={()=>{onClose(true);openColumn({kind:item.kind,id:item.id,source_column:item.column,target_column:target});}}>移至{boardColumnNames[target]}：打开合法表单</HButton>)}
+    <HButton type="button" role="menuitem" tone="ghost" className="board-menu-secondary" onClick={()=>{onClose(true);}}>取消</HButton>
+  </AnchoredPopover>;
 }
 export function BoardDropColumn({column,children}:{column:BoardColumn;children:ReactNode}){
   const context=useContext(BoardActionsContext);

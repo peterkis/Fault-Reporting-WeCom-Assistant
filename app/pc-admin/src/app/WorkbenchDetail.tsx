@@ -56,6 +56,9 @@ import { TicketWaitingActions } from '../features/ticket-waiting/TicketWaitingAc
 import { DetailDialogProvider } from './DetailDialog';
 import { ActivityTimeline } from './DetailPresentation';
 import { WorkbenchLink as Link } from './WorkbenchLink';
+import { ShortcutTooltip } from '../design/components/Kbd/Kbd';
+import { ariaKeyshortcuts,shortcutKeys } from '../features/efficiency/shortcuts';
+import { clearPendingDetailIntent,clearPendingDetailIntentFor,copyItemNumber,getPendingDetailIntent,setDetailKeyboardBridge } from '../features/efficiency/keyboard-store';
 
 
 import {DetailSkeleton} from '../design/components/Skeleton/Skeleton';
@@ -184,6 +187,8 @@ function WorkbenchDetailSurface(props:DetailProps){
     returnCueRef.current=scrollIntoViewAndReturnCue(candidate);
   },[]);
   const close=()=>{if(blocked.current||!isOpen)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!props.fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:''),{replace:true});};
+  const closeRef=useRef(close);closeRef.current=close;
+  const stableClose=useCallback(()=>{closeRef.current();},[]);
   const index=target?props.items.findIndex(item=>item.kind===target.kind&&item.id===target.id):-1;
   const previous=index>0?props.items[index-1]:undefined,next=index>=0?props.items[index+1]:undefined;
   const move=(direction:DetailSwitchDirection)=>{
@@ -207,6 +212,20 @@ function WorkbenchDetailSurface(props:DetailProps){
     setSwitchState({seq,targetKey:nextKey,direction,byButton:true,menuShown});
     void navigate(itemLink(item,location.search),{replace:true,state:location.state});
   };
+  const moveRef=useRef(move);moveRef.current=move;
+  const stableMove=useCallback((direction:DetailSwitchDirection)=>{moveRef.current(direction);},[]);
+  useEffect(()=>{if(!isOpen)setDetailKeyboardBridge(null);return()=>setDetailKeyboardBridge(null);},[isOpen]);
+  const targetKind=target?.kind,targetId=target?.id;
+  useEffect(()=>{
+    const pending=getPendingDetailIntent();
+    if(!pending)return;
+    const matchesTarget=pending.requestedKind!==undefined&&pending.requestedId!==undefined
+      ?pending.requestedKind===targetKind&&pending.requestedId===targetId
+      :pending.kind===targetKind&&pending.id===targetId;
+    if(!isOpen||!targetKind||!targetId||pending.principalId!==props.principal.principal_id||!matchesTarget){
+      clearPendingDetailIntent(pending.seq);
+    }
+  },[isOpen,targetKind,targetId,props.principal.principal_id]);
   if(!target)return null;
   const matchedHeader=headerMeta&&headerMeta.targetKey===targetKey?headerMeta:null;
   const denied=matchedHeader?.denied===true;
@@ -230,14 +249,14 @@ function WorkbenchDetailSurface(props:DetailProps){
     </div>
     <div className="ds-detail-body-stage" ref={stageRef}>
       <div className="ds-detail-body-live" ref={liveRef}>
-        <WorkbenchDetailContent key={props.principal.principal_id+':'+target.kind+':'+target.id} principal={props.principal} items={props.items} now={props.now} fullPage={props.fullPage} open={isOpen} kind={target.kind} id={target.id} onNavigationBlocked={reportBlocked} onHeaderMeta={setHeaderMeta} breadcrumbSlot={breadcrumbSlot} presenceTarget={presenceTarget} toolbarActionsSlot={toolbarActionsSlot} activeSwitch={activeSwitch} switchPending={switchPending} holdMenuPlace={Boolean(switchState?.menuShown)} navRef={navRef} liveRef={liveRef} registerEnterCancel={registerEnterCancel}/>
+        <WorkbenchDetailContent key={props.principal.principal_id+':'+target.kind+':'+target.id} principal={props.principal} items={props.items} now={props.now} fullPage={props.fullPage} open={isOpen} kind={target.kind} id={target.id} onNavigationBlocked={reportBlocked} onHeaderMeta={setHeaderMeta} breadcrumbSlot={breadcrumbSlot} presenceTarget={presenceTarget} toolbarActionsSlot={toolbarActionsSlot} activeSwitch={activeSwitch} switchPending={switchPending} holdMenuPlace={Boolean(switchState?.menuShown)} navRef={navRef} liveRef={liveRef} registerEnterCancel={registerEnterCancel} onDetailMove={stableMove} onDetailClose={stableClose} detailBlocked={dismissBlocked}/>
       </div>
     </div>
   </DisabledReasonContext.Provider>;
   return props.fullPage?<article className="detail-page ds-detail" data-toast-host aria-label="事项详情" aria-labelledby="detail-title">{surface}</article>:<Drawer isOpen={isOpen} dismissBlocked={dismissBlocked} onClose={close} onExited={handleDrawerExited}>{surface}</Drawer>;
 }
 
-function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNavigationBlocked,onHeaderMeta,breadcrumbSlot,presenceTarget,toolbarActionsSlot,activeSwitch,switchPending,holdMenuPlace,navRef,liveRef,registerEnterCancel}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open:boolean;kind:string;id:string;onNavigationBlocked:(blocked:boolean)=>void;onHeaderMeta:(meta:HeaderMeta)=>void;breadcrumbSlot:HTMLElement|null;presenceTarget:HTMLElement|null;toolbarActionsSlot:HTMLElement|null;activeSwitch:SwitchState|null;switchPending:boolean;holdMenuPlace:boolean;navRef:RefObject<HTMLDivElement|null>;liveRef:RefObject<HTMLDivElement|null>;registerEnterCancel:(cancel:()=>void)=>void}){
+function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNavigationBlocked,onHeaderMeta,breadcrumbSlot,presenceTarget,toolbarActionsSlot,activeSwitch,switchPending,holdMenuPlace,navRef,liveRef,registerEnterCancel,onDetailMove,onDetailClose,detailBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;open:boolean;kind:string;id:string;onNavigationBlocked:(blocked:boolean)=>void;onHeaderMeta:(meta:HeaderMeta)=>void;breadcrumbSlot:HTMLElement|null;presenceTarget:HTMLElement|null;toolbarActionsSlot:HTMLElement|null;activeSwitch:SwitchState|null;switchPending:boolean;holdMenuPlace:boolean;navRef:RefObject<HTMLDivElement|null>;liveRef:RefObject<HTMLDivElement|null>;registerEnterCancel:(cancel:()=>void)=>void;onDetailMove:(direction:'prev'|'next')=>void;onDetailClose:()=>void;detailBlocked:boolean}){
   const pendingOperation=useReadOnlyOperation();
   const [readOnlyActionTarget,setReadOnlyActionTarget]=useState<HTMLDivElement|null>(null);
   const [tab,setTab]=useState('activity'),[copied,setCopied]=useState(false),[attachmentCount,setAttachmentCount]=useState<number|null>(null),[conversationCount,setConversationCount]=useState<number|null>(null),[reviewReadState,setReviewReadState]=useState<StepReadState>('pending');
@@ -343,6 +362,36 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
   const dismissed=detail?.item.closure?.kind==='DISMISSED'?detail.item.closure:null,dismissedOriginal=externalTicketNumber(dismissed?.duplicate_of?.display_no);
   const restoreRecovery=useItemUndoRecovery(principal.principal_id,'restore',detail?.item,detail?.requested_item);
   const actions=commandRead.data?.allowed_actions??[];
+  const detailItem=denied?undefined:(detail?.item??openedItem);
+  const resolvedDetailReady=Boolean(detail&&result.isSuccess&&!result.isError);
+  const resolvedCommandReady=detail?.item.kind==='ticket'
+    ?commandRead.status==='success'&&commandRead.fetchStatus==='idle'&&Boolean(commandRead.data)
+    :Boolean(detail);
+  const resolvedCommandError=detail?.item.kind==='ticket'
+    ?(commandRead.status==='error'&&commandRead.fetchStatus!=='fetching')||(result.status==='error'&&result.fetchStatus!=='fetching')
+    :result.status==='error'&&result.fetchStatus!=='fetching';
+  useEffect(()=>{
+    if(!open){setDetailKeyboardBridge(null);return;}
+    setDetailKeyboardBridge({
+      open:true,
+      fullPage,
+      kind,
+      id,
+      item:detailItem??null,
+      detailReady:resolvedDetailReady,
+      allowedActions:commandRead.data?.allowed_actions??null,
+      commandReady:resolvedCommandReady,
+      commandError:resolvedCommandError,
+      blocked:detailBlocked||commandsBlocked,
+      move:onDetailMove,
+      close:onDetailClose,
+    });
+  },[open,fullPage,kind,id,detailItem,resolvedDetailReady,commandRead.data?.allowed_actions,resolvedCommandReady,resolvedCommandError,detailBlocked,commandsBlocked,onDetailMove,onDetailClose]);
+  useEffect(()=>()=>{setDetailKeyboardBridge(null);},[]);
+  useEffect(()=>{
+    if(result.isError||(detail&&detail.item.kind!=='ticket'))clearPendingDetailIntentFor(kind,id);
+  },[result.isError,detail,kind,id]);
+  useEffect(()=>()=>clearPendingDetailIntentFor(kind,id),[kind,id]);
   // These are the existing caller-only HANDLING fact and original action admission, never a display-name identity comparison.
   const assignedName=detail?.item.column==='active'&&detail.item.attention&&!detail.item.attention.related_reasons.includes('HANDLING')&&commandRead.isSuccess&&!actions.includes('complete')?detail.item.assignee_name??undefined:undefined;
   const readonly=readOnlyReason({denied,assignedName,completed:detail?.item.status==='COMPLETED',dismissed:Boolean(dismissed),pending:pendingOperation});
@@ -356,7 +405,8 @@ function WorkbenchDetailContent({principal,items,now,fullPage,open,kind,id,onNav
     update();const observer=new MutationObserver(update);observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','disabled','aria-disabled']});return()=>observer.disconnect();
   },[pendingOperation]);
   const confirmOriginal=()=>confirmation?.click();
-  const breadcrumbExtras=<>{readonly?<ReadOnlyBadge/>:null}<HButton tone="ghost" isIconOnly aria-label={copied?'已复制编号':'复制编号'} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void navigator.clipboard.writeText(number).then(()=>setCopied(true)).catch(()=>setCopied(false));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></>;
+  const copyKeys=shortcutKeys('copy-number');
+  const breadcrumbExtras=<>{readonly?<ReadOnlyBadge/>:null}<ShortcutTooltip label={copied?'已复制编号':'复制编号'} keys={copyKeys} placement="bottom" enabled={Boolean(detail||openedItem)}><HButton tone="ghost" isIconOnly title="" aria-label={copied?'已复制编号':'复制编号'} aria-keyshortcuts={ariaKeyshortcuts('copy-number')} isDisabled={!detail&&!openedItem} onPress={()=>{const number=detail?.item.number??openedItem?.number;if(number)void copyItemNumber(number).then(ok=>setCopied(ok));}}>{copied?<Check size={16}/>:<Copy size={16}/>}</HButton></ShortcutTooltip></>;
   const toolbarExtras=<>{detail?<ItemFollow key={principal.principal_id+':item-follow:'+kind+':'+id} requested={detail.requested_item??{kind:detail.item.kind,id:detail.item.id}} item={detail.item} principal={principal} readReady={open&&result.isSuccess&&!result.isError} onBlockedChange={setItemFollowBlocked}/>:null}<DrawerMoreActions holdPlace={holdMenuPlace&&!menuPlaceReleased}><div className="ticket-notes detail-note-composer ds-note-actions" ref={setNoteActionsTarget}/><div className="detail-menu-actions" ref={setMenuActionsTarget}/>{detail?<CloseItemButton item={detail.item} principal={principal}/>:null}{principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail?.item.source_group?<GroupNameEditor tone="secondary" key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}</DrawerMoreActions>{result.isError&&detail?<StaleRetry onRetry={()=>{void result.refetch();}}/>:null}</>;
   const content=<DetailDialogProvider>
     {breadcrumbSlot?createPortal(breadcrumbExtras,breadcrumbSlot):null}

@@ -13,6 +13,7 @@ import type {T11Fixture} from './helpers/t11-completion-fixture.mjs';
 import type {PostgresPoolClient} from '../app/server/src/platform/postgres-pool.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {boardColumnReady,boardColumnsReady} from './helpers/workbench-board-readiness.mjs';
+import {waitForAnimationsSettled} from './helpers/browser-animations.mjs';
 
 const handledListLoaded="!document.querySelector('.list-group[aria-label=已处理] [data-loading-status]')";
 
@@ -511,11 +512,27 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   const first=f.tickets[0],actor=f.principals[0];assert.ok(first&&actor);
   const original=await get('/api/tickets/'+first.ticket.id);
   await browser.command('Page.bringToFront');
+  // Board motion takes its initial position snapshot only after all three columns resolve.
+  const sourceCard = '.board-column.pending ' + card, destinationCard = '.board-column.active ' + card;
+  await browser.waitFor(boardColumnsReady + ' && document.querySelector(' + JSON.stringify(sourceCard) + ')?.checkVisibility() === true');
+  await waitForAnimationsSettled(browser, '.board');
   if(trigger==='pointer')await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__card12ActiveHeld=false;globalThis.fetch=async(path,options)=>{const response=await original(path,options);if(String(path).startsWith('/api/workbench/board?column=active')&&globalThis.__t42Writes.length){globalThis.__card12ActiveHeld=true;await new Promise(resolve=>{globalThis.__card12ReleaseActive=resolve;});}return response;};})()`);
-  await browser.evaluate(`(()=>{globalThis.__card12Motions=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){const animation=animate.call(this,frames,options);if(this.matches('.ticket-card')){const {duration,easing}=animation.effect.getTiming();globalThis.__card12Motions.push({id:this.dataset.itemId,duration,easing,frames});}return animation;};const link=document.querySelector(${JSON.stringify(card+' .card-open')});link.focus();})()`);
+  await browser.evaluate(`(() => {
+    globalThis.__card12Motions = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function(frames, options) {
+      const animation = animate.call(this, frames, options);
+      if (this.matches(${JSON.stringify(destinationCard)}) && this.dataset.motionFlipping === 'true') {
+        const {duration, easing} = animation.effect.getTiming();
+        globalThis.__card12Motions.push({id:this.dataset.itemId, duration, easing});
+      }
+      return animation;
+    };
+    document.querySelector(${JSON.stringify(card+' .card-open')}).focus();
+  })()`);
   await browser.waitFor(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')})?.disabled===false`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(card+' [data-board-claim-action]')}).dataset.tone`),'secondary');
-  if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'e',code:'KeyE',windowsVirtualKeyCode:69});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'e',code:'KeyE',windowsVirtualKeyCode:69});}
+  if(trigger==='keyboard'){await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65});await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65});}
   else await clickWorkbenchControl(browser,card+' [data-board-claim-action]');
   if(trigger==='pointer'){
     await browser.waitFor(`globalThis.__card12ActiveHeld===true&&!document.querySelector(${JSON.stringify('.board-column.pending '+card)})`);
@@ -527,7 +544,12 @@ for(const trigger of ['pointer','keyboard'] as const)test('Card 12 '+trigger+' c
   assert.match(String(body.client_command_id),/^[0-9a-f-]{36}$/u);
   assert.equal(sent.path,'/api/tickets/'+first.ticket.id+'/take-and-start');
   assert.deepEqual(body,{client_command_id:body.client_command_id,expected_version:original.version,reason_code:'WORKBENCH_SELF_HANDLING',resolver_team_id:original.resolver_team_id});
+  // The 37A projection moves before the server commits. Check the recorded
+  // response to this exact POST before reading the authoritative ticket.
+  await browser.waitFor(`globalThis.__t42Responses.some(response=>response.path===${JSON.stringify(sent.path)})`);
+  assert.deepEqual(await browser.evaluate('globalThis.__t42Responses'),[{path:sent.path,status:200}]);
   const result=await get('/api/tickets/'+first.ticket.id);assert.equal(result.status,'IN_PROGRESS');assert.equal(result.assignee_id,actor.id);
+  await browser.waitFor('globalThis.__card12Motions.length > 0');
   const motions:unknown=await browser.evaluate('globalThis.__card12Motions');assert.ok(Array.isArray(motions));
   const timing=object(await browser.evaluate(`(()=>{
     const styles=getComputedStyle(document.documentElement),raw=styles.getPropertyValue('--dur-move').trim();

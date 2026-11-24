@@ -7,7 +7,7 @@ import {TooltipAnchor} from '../Tooltip/Tooltip';
 import {cancelPointerButtonPress,endButtonPressFor,enterPointerButtonPress,isKeyboardPressActive,leavePointerButtonPress,startKeyboardButtonPress,startPointerButtonPress} from './press-feedback';
 
 type HeroProps=ComponentProps<typeof HeroButton>;
-export type ButtonProps=Omit<HeroProps,'variant'|'className'|'ref'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & Pick<ButtonHTMLAttributes<HTMLButtonElement>,'title'|'role'|'tabIndex'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & {
+export type ButtonProps=Omit<HeroProps,'variant'|'className'|'ref'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & Pick<ButtonHTMLAttributes<HTMLButtonElement>,'title'|'role'|'tabIndex'|'aria-keyshortcuts'|'onPointerEnter'|'onPointerLeave'|'onPointerDown'|'onFocus'|'onBlur'|'onKeyDown'> & {
   ref?:Ref<HTMLButtonElement>;
   disabledReason?:string;
   tone?:'primary'|'secondary'|'ghost'|'danger';
@@ -24,7 +24,7 @@ function mergeButtonRefs(first:Ref<HTMLButtonElement>|undefined,second:Ref<HTMLB
 }
 
 /** Presentation only: the caller retains every command, pending and disabled decision. */
-export function Button({ref,tone='secondary',size='md',title,role,tabIndex,className='',children,disabledReason,onPointerEnter,onPointerLeave,onPointerDown,onFocus,onBlur,onKeyDown,...props}:ButtonProps){
+export function Button({ref,tone='secondary',size='md',title,role,tabIndex,'aria-keyshortcuts':ariaKeyshortcuts,className='',children,disabledReason,onPointerEnter,onPointerLeave,onPointerDown,onFocus,onBlur,onKeyDown,...props}:ButtonProps){
   const inheritedReason=useContext(DisabledReasonContext),tooltip=useId();
   const reason=props.isDisabled?(disabledReason??inheritedReason):null;
   const content=<HeroButton {...props} {...(reason?{isDisabled:false,'aria-disabled':true,'aria-describedby':[props['aria-describedby'],tooltip].filter(Boolean).join(' '),onPress:()=>{}}:{})} size={size} variant={tone==='secondary'||tone==='danger'?'outline':tone} data-tone={tone} data-size={size} data-icon-only={props.isIconOnly?'true':undefined} className={'ds-button '+className}
@@ -36,6 +36,7 @@ export function Button({ref,tone='secondary',size='md',title,role,tabIndex,class
         title={title??(props.isIconOnly?props['aria-label']:undefined)}
         role={role}
         tabIndex={tabIndex??buttonProps.tabIndex}
+        aria-keyshortcuts={ariaKeyshortcuts}
         onPointerEnter={event=>{buttonProps.onPointerEnter?.(event);onPointerEnter?.(event);}}
         onPointerLeave={event=>{buttonProps.onPointerLeave?.(event);onPointerLeave?.(event);}}
         onPointerDown={event=>{buttonProps.onPointerDown?.(event);onPointerDown?.(event);}}

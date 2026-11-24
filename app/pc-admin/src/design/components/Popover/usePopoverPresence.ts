@@ -2,7 +2,7 @@ import {useLayoutEffect,useState} from 'react';
 import {motionToken,useMotionRevision} from '../../motion/tokens';
 
 /** Custom (non-HeroUI) popovers share E4's transition lifecycle without owning focus or business state. */
-export function usePopoverPresence(open:boolean,options?:{immediateEnter?:boolean}){
+export function usePopoverPresence(open:boolean,options?:{immediateEnter?:boolean|undefined}){
   const [retained,setRetained]=useState(open),[entering,setEntering]=useState(open),revision=useMotionRevision();
   useLayoutEffect(()=>{
     if(!open){

@@ -325,21 +325,6 @@
     {
       "file": "features/efficiency/WorkbenchEfficiency.tsx",
       "kind": "jsx-p",
-      "sha256": "76777f680115f564e11e9b3de51c19bfabd6273ae7fc654112faafc89acc80e8",
-      "fragment": "<p>领取沿用当前工单的可用操作；没有领取权限时不执行。</p>",
-      "maxCount": 1,
-      "inventory": [
-        "O58",
-        "O59",
-        "O61",
-        "W06",
-        "W07"
-      ],
-      "reason": "Command palette one-line loading/validation/result; not a page content block."
-    },
-    {
-      "file": "features/efficiency/WorkbenchEfficiency.tsx",
-      "kind": "jsx-p",
       "sha256": "76220cff267bf790a67873001a33c92c1ee63b692c8310d5a25a73eb10a055eb",
       "fragment": "<p className=\"efficiency-status\" role=\"status\">{blocked?'请先完成当前操作。':criteria===null?'搜索文字包含不支持的字符，请修改后重试。':principal.workbench_search_enabled&&(query&&!current||query&&searched.isPending)?'正在搜索…':query&&searched.isError?errorMessage(searched.error):query&&!options.length?'没有找到当前可查看的事项或操作。':searched.data?.next_cursor?'仅显示首批结果；缩小搜索范围可找到更多事项。':'↑ ↓ 选择 · Enter 打开 · Esc 关闭'}</p>",
       "maxCount": 1,

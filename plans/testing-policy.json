@@ -151,6 +151,11 @@
   },
   "rules": [
     {
+      "pattern": "^tests/(?:pc-admin-card37b-(?:(?:keys|surfaces|pauses|recovery)\\.browser|shortcuts)\\.test\\.mts|helpers/card37b-(?:keyboard-browser|shortcut-module)\\.mts)$|^app/pc-admin/src/(?:features/efficiency/(?:shortcuts\\.ts|keyboard-store\\.ts|WorkbenchEfficiency\\.tsx|efficiency\\.css)|design/components/Kbd/)",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 37B covers keyboard actions, UI surfaces, input pauses and command recovery in four independently timed browser suites."
+    },
+    {
       "pattern": "^tests/(?:pc-admin-card37c-hovercard\\.browser\\.test\\.mts$|fixtures/card37c-(?:hovercard|board-publication)\\.|helpers/card37c-hover-browser\\.mts$)|^app/pc-admin/src/(?:design/components/HoverCard/|features/hover-cards/)",
       "profiles": ["pc", "motion"],
       "reason": "Card 37C checks delayed hover reads, placement and focus, real board filtering, disclosure privacy and popover filmstrips."

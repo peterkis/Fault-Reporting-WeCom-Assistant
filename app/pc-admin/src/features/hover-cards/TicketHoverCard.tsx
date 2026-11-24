@@ -17,6 +17,8 @@ import {closureSearchCriteria} from '../ticket-waiting/ClosureLinks';
 import {clearHoverItemDenied,getHoverItemDeniedStatus,useDeniedItemsRevision} from './denied-items';
 import {findBoardItemInIndex,useHoverCardsActions,useHoverCardsState} from './hover-card-store';
 import {useItemSummary} from './use-item-summary';
+import {Kbd} from '../../design/components/Kbd/Kbd';
+import {shortcutKeys} from '../efficiency/shortcuts';
 import './hover-cards.css';
 
 export interface TicketHoverCardProps {
@@ -183,7 +185,7 @@ function TicketHoverCardBody({
     {metaParts.length?<div className="ds-ticket-hover-meta">{metaParts.join(' · ')}</div>:null}
     <div className="ds-ticket-hover-footer">
       <span>点击打开详情</span>
-      <kbd className="ds-hover-card-keycap">Enter</kbd>
+      <Kbd keys={shortcutKeys('open-close-detail').slice(0, 1)} className="ds-hover-card-keycap" />
     </div>
   </div>;
 }

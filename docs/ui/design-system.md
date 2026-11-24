@@ -785,6 +785,14 @@ PageHeader 的原获权「新报修」primary 内附 `N` 提示；本卡只加�
 - **排查信息**：原操作编号、提交时的版本等只放进「复制诊断信息」按钮（复制成功显示「已复制」；剪贴板不可用或被拒时提示「无法自动复制」，并给出可选中的只读文本）（`DiagnosticCopy`，内容同时写在 `data-diagnostics` 供测试与支持读取），不出现在正文。测试用的版本钩子必须是 `hidden` 元素。下载文件名（如「报修附件.png」）不在正文显示，不受本节约束。
 - **自动检查**：`tests/pc-admin-copy-terms.test.mts` 扫描 `app/pc-admin/src/app` 与 `features` 中含中文的字符串和 JSX 文本（跳过注释和 `hidden` 元素），命中禁用词或英文词即失败。卡 34B 合并后撤销派工、退回待安排两个弹窗的文案已按本节改写，检查不再跳过任何目录。
 
+### 6.16 键盘优先与键帽（v2.3.0 · 卡37B）
+
+- **键帽 `Kbd`**（`design/components/Kbd`）：高 20、最小宽 20、左右内距 5、圆角 `--radius-kbd`（5）、字号 `--fs-2xs`（11）/ 字重 `--fw-medium`（500）、字体 `--font-sans`；浅色态（`tone="light"`：`--bg-subtle` 底 + `--shadow-kbd-light` 内描边与底棱 + `--tone-neutral-fg`）与深色态（`tone="dark"`：`--bg-kbd-dark` + `--text-inverse`，用于深色按钮提示与底部提示胶囊）。组合键间距 3，序列键以「然后」分隔，替代键以「/」分隔；父级禁用时按 `--state-disabled-opacity` 置灰。
+- **单键位来源与按钮/菜单展示**：全局快捷键唯一来源为 `features/efficiency/shortcuts.ts`（mac 上 `Ctrl` 展示为 `⌘`）。主要操作按钮悬停提示沿用 36A Tooltip 显示「名称 + 深色键帽」；⋯ 菜单项右侧对齐显示浅色键帽，禁用项随菜单项置灰并携带 `aria-keyshortcuts`。
+- **键盘当前卡片与列表行**：`J`/`K`/`H`/`L`/`1`/`2`/`3` 移动产生的键盘当前卡片（`data-keyboard-current="true"`）使用 `--shadow-keyboard-current`（2px `--brand` + 3px `--brand-subtle` 外环），优先级为 `键盘当前 > 协作在场外圈 > 抽屉选中`，只绘制一层最外圈，并在 `forced-colors` 下补描边；列表当前行使用 `--brand-subtle` 底色与 2px `--brand` 围框。鼠标移动保留键盘当前态，点击别处清除。
+- **底部提示胶囊（`G` 序列与不可用反馈）**：固定视口底部居中、高 32、圆角 `--radius-xl`、`--text-primary` 底 + `--text-inverse` 白字 + `--shadow-shortcut-capsule`，`role="status"`；进出沿用 36A E4 气泡动效（减少动效下退化为仅透明度过渡）并挂载到非 `inert` 容器。`G` 序列等待 `--delay-goto-sequence`（1.5s），不可用提示展示 `--delay-shortcut-hint`（2s）。
+- **快捷键弹窗**：`?` 打开 `Modal` 宽 560（`--modal-w-md`），顶部搜索过滤，四组（移动 / 对当前工单 / 工作区 / 前往）两栏排列，行高 30 + 发丝线，仅展示当前账号可用操作。
+
 ## 七、状态与标签语义表
 
 颜色在全站只有一个含义。下表是唯一的映射来源，实现为 `src/design/status-map.ts`，组件通过业务状态取 tone，禁止在 feature 里写 `className="status-chip yellow"`。底层 Ticket 状态与 API 参数不改名，只改展示。
@@ -862,7 +870,7 @@ app/pc-admin/src/design/
   tokens.css            第 1–3 层 Token + 旧变量兼容层（本规范附件）
   base.css              reset、排版、焦点规则（替代 heroui-workbench.css 的焦点部分）
   status-map.ts         第七章状态 → tone 映射
-  components/           Button (含 CardActionButton) Link (CardLink) Tag StatusBadge
+  components/           Button (含 CardActionButton) Link (CardLink) Tag StatusBadge Kbd
                         SourceLabel Avatar PageHeader Toolbar FilterSelect FilterChip
                         SearchField Section PropertyList Timeline EmptyState ErrorState
                         InlineAlert Drawer Modal TicketCard BoardColumn BoardSummary

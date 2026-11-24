@@ -16,6 +16,9 @@ import {useAssignmentDraft,EMPTY_ASSIGNMENT} from './use-assignment-draft';
 import type {AssignmentIntent,AssignmentInput} from './use-assignment-draft';
 import {markSelfWrite} from '../../design/motion/self-write';
 import {useHoverCardsActions} from '../hover-cards/hover-card-store';
+import {ShortcutTooltip} from '../../design/components/Kbd/Kbd';
+import {ariaKeyshortcuts,shortcutKeys} from '../efficiency/shortcuts';
+import {consumePendingDetailIntent,emitShortcutHint,registerDetailTransfer,usePendingDetailIntent} from '../efficiency/keyboard-store';
 
 export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='工单',otherBlocked=false}:{ticketId:string;principal:Principal;itemLabel?:string;otherBlocked?:boolean;onBlockedChange:(blocked:boolean)=>void}){
   const step=useNextStep();
@@ -143,10 +146,28 @@ export function TicketAssignment({ticketId,principal,onBlockedChange,itemLabel='
   // Card 34A: while the form is open as a modal, its own outcome and draft notices show inside it; only later ones become page
   // toasts. Inside the next-step card the same form opens inline in the drawer, not as a modal, and keeps its toasts.
   const modalOpen=open&&!step,messageToast=useDialogToast(modalOpen,messageRevision),draftToast=useDialogToast(modalOpen,draft.message);
+  const pendingDetailIntent=usePendingDetailIntent();
+  const canOpenAssignment=(allowed.includes(action)||Boolean(pending||draft.operationId||team||person||choice||selected.length))&&!(state==='submitting'||draft.restoring||(otherBlocked&&!pending&&!draft.operationId));
+  useEffect(()=>{
+    registerDetailTransfer(ticketId,canOpenAssignment?()=>{setOpen(true);return true;}:null);
+    return()=>registerDetailTransfer(ticketId,null);
+  },[ticketId,canOpenAssignment]);
+  useEffect(()=>{
+    if(!pendingDetailIntent||pendingDetailIntent.principalId!==principal.principal_id||pendingDetailIntent.kind!=='ticket'||pendingDetailIntent.id!==ticketId||pendingDetailIntent.action!=='transfer')return;
+    if(context.isSuccess&&!context.isError){
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'transfer');
+      if(canOpenAssignment)setOpen(true);
+      else emitShortcutHint('这张工单现在不能转交');
+    }else if(context.isError){
+      consumePendingDetailIntent(principal.principal_id,'ticket',ticketId,'transfer');
+      emitShortcutHint('暂时无法确认工单操作，请稍后再试');
+    }
+  },[pendingDetailIntent,principal.principal_id,ticketId,context.isSuccess,context.isError,canOpenAssignment]);
   const toggle=(sessionId:string,version:string,permitted:boolean)=>{if(blocked)return;setSelected(previous=>previous.some(row=>row.session_id===sessionId)?previous.filter(row=>row.session_id!==sessionId):permitted&&previous.length<8?[...previous,{session_id:sessionId,expected_row_version:Number(version)}]:previous);};
   if(!allowed.includes(action)&&!pending&&!draft.operationId&&!team&&!person&&!choice&&!selected.length&&state==='idle'&&context.isSuccess&&!context.isError)return null;
+  const assignButtonLabel=pending||draft.operationId?'核对派单':action==='assign'?'派单给…':'转交';
   return <section className="ticket-notes ticket-assignment detail-action-controller" aria-label="工单派单与转派">
-    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<StepEntry action="assign" label={pending||draft.operationId?'核对派单':action==='assign'?'派单给…':'转交'} fallbackTone={'secondary'}>{(tone,text)=><HButton type="button" data-action="open-assignment" isDisabled={state==='submitting'||draft.restoring||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton>}</StepEntry>:null}
+    {allowed.includes(action)||pending||draft.operationId||team||person||choice||selected.length?<StepEntry action="assign" label={assignButtonLabel} fallbackTone={'secondary'}>{(tone,text)=><ShortcutTooltip label={text} keys={shortcutKeys('transfer')} placement="top"><HButton type="button" data-action="open-assignment" aria-keyshortcuts={ariaKeyshortcuts('transfer')} isDisabled={state==='submitting'||draft.restoring||otherBlocked&&!pending&&!draft.operationId} onClick={()=>setOpen(true)} tone={tone}>{text}</HButton></ShortcutTooltip>}</StepEntry>:null}
     {context.isError&&!open?<HButton type="button" onClick={()=>{void context.refetch();}} tone="secondary">重试读取派单权限</HButton>:null}
     <DetailDialog open={open} onClose={()=>setOpen(false)} closeBlocked={state==='submitting'||draft.restoring} title="派单" closeLabel="关闭派单窗口" className="detail-action-dialog detail-assignment-dialog">
     <p className="detail-operation-context">{itemLabel}</p>{context.isPending||targets.isPending?<DetailLoading inline label="正在加载派单选项…"/>:null}
