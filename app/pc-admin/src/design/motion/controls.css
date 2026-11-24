@@ -34,6 +34,11 @@ html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content {
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[data-expanded=true] {grid-template-rows:1fr;}
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content>.disclosure__body {min-height:0;overflow:hidden;}
 html body :is(.ds-board-group,.workbench-disclosure)>.disclosure__content[aria-hidden=true] {pointer-events:none;}
+/* Card 39A: widen the board-group disclosure clip box horizontally by --card-ring-room without shifting card width or x,
+   and keep adjacent-group margin-bottom in lockstep with grid-template-rows during collapse/expand. */
+html body .ds-board-group>.disclosure__content {margin-inline:calc(-1 * var(--card-ring-room));}
+html body .ds-board-group>.disclosure__content>.disclosure__body {padding-inline:var(--card-ring-room);}
+html body .ds-board-group:where(:has(+.ds-board-group):has(.disclosure__body-inner>.ticket-card))>.disclosure__content {transition:grid-template-rows var(--dur-base) var(--ease-standard),margin-bottom var(--dur-base) var(--ease-standard);}
 /* B1: allow cross-column FLIP cards inside expanded groups/remainders to cross column edges unclipped without losing BFC. */
 html body .ds-board-group>.disclosure__content[data-expanded=true][data-motion-flip-host],
 html body .ds-board-group>.disclosure__content[data-expanded=true][data-motion-flip-host]>.disclosure__body,

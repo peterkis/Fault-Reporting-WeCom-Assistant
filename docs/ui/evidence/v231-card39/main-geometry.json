@@ -1,0 +1,105 @@
+{
+  "viewport": {
+    "width": 1920,
+    "height": 1440
+  },
+  "columns": {
+    "pending": {
+      "contentLeft": 280,
+      "contentWidth": 432
+    },
+    "active": {
+      "contentLeft": 744,
+      "contentWidth": 432
+    },
+    "handled": {
+      "contentLeft": 1208,
+      "contentWidth": 432
+    }
+  },
+  "groups": {
+    "intake": {
+      "count": 2,
+      "first": {
+        "x": 280,
+        "width": 432
+      },
+      "last": {
+        "x": 280,
+        "width": 432
+      }
+    },
+    "dispatch": {
+      "count": 4,
+      "first": {
+        "x": 280,
+        "width": 432
+      },
+      "last": {
+        "x": 280,
+        "width": 432
+      }
+    },
+    "active": {
+      "count": 6,
+      "first": {
+        "x": 744,
+        "width": 432
+      },
+      "last": {
+        "x": 744,
+        "width": 432
+      }
+    },
+    "done": {
+      "count": 5,
+      "first": {
+        "x": 1208,
+        "width": 432
+      },
+      "last": {
+        "x": 1208,
+        "width": 432
+      }
+    }
+  },
+  "remainders": {
+    "dispatch": {
+      "count": 3,
+      "first": {
+        "x": 280,
+        "width": 432
+      },
+      "last": {
+        "x": 280,
+        "width": 432
+      }
+    },
+    "active": {
+      "count": 3,
+      "first": {
+        "x": 744,
+        "width": 432
+      },
+      "last": {
+        "x": 744,
+        "width": 432
+      }
+    },
+    "done": {
+      "count": 2,
+      "first": {
+        "x": 1208,
+        "width": 432
+      },
+      "last": {
+        "x": 1208,
+        "width": 432
+      }
+    }
+  },
+  "nextGroupHeadingY": {
+    "expanded": 580,
+    "collapsed": 302
+  }
+}
