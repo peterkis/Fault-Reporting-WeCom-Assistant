@@ -1,9 +1,11 @@
 .ds-collapse {display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--dur-base) var(--ease-standard);}
 .ds-collapse[data-expanded=true] {grid-template-rows:1fr;}
 .ds-collapse-inner {min-height:0;overflow:hidden;}
-/* Preserve the existing 10px room for corner presence tags without changing resting card positions. */
-.ds-column-remainder {margin-top:calc(-1 * (var(--space-2) + var(--space-0-5)));pointer-events:none;}
-.ds-column-remainder>.ds-collapse-inner {padding-top:calc(var(--space-2) + var(--space-0-5));}
+/* Preserve the existing 10px top room for corner presence tags and 6px horizontal ring room without shifting card width/x.
+   Bottom ring room (8px >= --card-ring-room) is retained inside .ds-collapse-inner by .ticket-card's margin-bottom
+   without putting bottom padding on the 0fr grid item (which would expose collapsed card pixels). */
+.ds-column-remainder {margin-top:calc(-1 * (var(--space-2) + var(--space-0-5)));margin-inline:calc(-1 * var(--card-ring-room));pointer-events:none;}
+.ds-column-remainder>.ds-collapse-inner {padding-top:calc(var(--space-2) + var(--space-0-5));padding-inline:var(--card-ring-room);}
 .ds-column-remainder .ticket-card {pointer-events:auto;}
 [data-action=expand-column] svg,.ds-list-stage-toggle svg,.ds-list-subgroup .ds-board-group-trigger svg {transition:transform var(--dur-base) var(--ease-standard);}
 [data-action=expand-column][aria-expanded=true] svg {transform:rotate(180deg);}

@@ -171,6 +171,7 @@
   --space-0: 0;     --space-0-5: 2px; --space-1: 4px;  --space-1-5: 6px;
   --space-2: 8px;   --space-3: 12px;  --space-4: 16px; --space-5: 20px;
   --space-6: 24px;  --space-8: 32px;  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+  --card-ring-room: 6px; /* Card 39A: outer ring room inside clipped containers (--shadow-keyboard-current 5px + 1px). */
 
   /* 圆角：5 档 + 全圆 + 键帽 */
   --radius-xs: 4px;    /* 标签、徽标、小芯片 */

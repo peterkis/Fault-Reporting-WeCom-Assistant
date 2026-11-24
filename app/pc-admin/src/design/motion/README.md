@@ -48,6 +48,12 @@ wiring; these tools hold no business objects.
 
 Controls use CSS transitions. HeroUI's `data-entering` is the starting style and its
 `data-exiting` is the ending style; the existing React Aria lifecycle waits for transitions
-and restores focus. Custom popovers use `usePopoverPresence`. Collapse's only layout
-transition is grid-template-rows (E3). Text colour (E2) and existing hover shadow (E6) are
-explicit CSS exceptions to the public WAAPI tools' property restriction.
+and restores focus. Custom popovers use `usePopoverPresence`. Collapse's standard layout
+transition is `grid-template-rows` (E3), with one scoped CSS exception approved by user
+decision (2026-11-24, card 39A option A): only `.ds-board-group` followed by another
+`.ds-board-group` and containing cards also transitions `margin-bottom` with the same
+`--dur-base` / `--ease-standard` tokens (disabled under `prefers-reduced-motion: reduce`
+and `html[data-motion-reduced]`) so the last card keeps `--card-ring-room` for its bottom
+ring while the next group heading `y` stays equal to main in both expanded and collapsed
+states. Text colour (E2) and existing hover shadow (E6) are explicit CSS exceptions to the
+public WAAPI tools' property restriction.

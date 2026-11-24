@@ -33,6 +33,7 @@ v2.2.9 / 卡36A、卡36B。
 | `--scale-popover` | .97 | 菜单、气泡；added beyond A1, confirmed by the owner (2026-11-19) |
 | `--hover-lift` | -1px | 保留E6既有悬停上浮；added beyond A1, confirmed by the owner (2026-11-19) |
 | `--delay-tooltip` | 400ms | E7首次等待、相邻共享热身；added beyond A1, confirmed by the owner (2026-11-19) |
+| `--card-ring-room` | 6px | 分组与「显示剩余」裁切容器左右外扩留白（`--shadow-keyboard-current` 5px + 1px 余量，卡39A） |
 | `--ease-ambient` | ease-in-out | 保留35A/语音循环节奏；added beyond A1, confirmed by the owner (2026-11-19) |
 | `--ease-linear` | linear | 保留旋转指示器匀速；added beyond A1, confirmed by the owner (2026-11-19) |
 | `--ease-toast` | ease-out | 保留卡33 Toast曲线；added beyond A1, confirmed by the owner (2026-11-19) |
@@ -45,7 +46,7 @@ v2.2.9 / 卡36A、卡36B。
 2. **自己的操作不等动画**：界面立即响应；下一次操作从当前视觉状态接续，不排队。
 3. **别人的变化要看得见**：他人或系统触发的移动/新增追加1.2秒阶段浅色高亮；自己操作只位移。该业务判定由36B展示层写入登记接线。
 4. **时长按距离分档**：原地≤180ms、浮层≤240ms、跨列320ms；退出更快。高亮和来源提示使用各自专用时长。
-5. **只动合成属性**：公共WAAPI工具只允许transform、opacity、background-color。E2用transform改变滑块的视觉宽度；E3唯一布局例外为grid的0fr→1fr，内层overflow:hidden，绝不插值height/top/left。E2文字颜色、E6既有阴影属于卡片明确指定的CSS例外。原生details用content-visibility离散切换维持退出期间的可见性，该属性不做插值。
+5. **只动合成属性**：公共WAAPI工具只允许transform、opacity、background-color。E2用transform改变滑块的视觉宽度；E3常规布局例外为grid的0fr→1fr，内层overflow:hidden，绝不插值height/top/left；卡39A范围限定CSS例外（2026-11-24 用户决定，方案A）：仅当看板分组`.ds-board-group`后紧跟另一`.ds-board-group`且含卡片时，其`.disclosure__content`同步以相同的`--dur-base` / `--ease-standard`过渡`margin-bottom`（为最后一张卡片底环留出`--card-ring-room`同时保持下组标题`y`在展开与折叠态均与主线一致；减少动态效果下与`grid-template-rows`一并关闭）。E2文字颜色、E6既有阴影属于卡片明确指定的CSS例外。原生details用content-visibility离散切换维持退出期间的可见性，该属性不做插值。
 6. **减少动态效果**：取消位移与缩放，保留≤120ms淡入淡出；折叠直接展开，数字直接替换；高亮保留1.2秒后直接移除。
 
 ### 规格、减少动态效果与打断
@@ -54,7 +55,7 @@ v2.2.9 / 卡36A、卡36B。
 | --- | --- | --- | --- |
 | E1 按压 | scale(`--press-scale`)，按下instant、回弹fast，standard；保留背景反馈 | 无缩放、无过渡 | 即时反向 |
 | E2 分段滑块 | 独立背景，translateX与视觉宽度变化，base / standard，文字颜色同步；首次静止 | 直接到位 | 从当前位置接续 |
-| E3 折叠 | 看板分组/显示剩余、抽屉区块：grid 0fr↔1fr，base / standard，内层overflow:hidden，箭头同步；剩余行随整块展开。列表视图分组保持原生单表，不做高度展开，仅箭头旋转（2026-11-19 负责人确认）；箭头仍为base / standard | 内容直接展开/收起；箭头无过渡 | 即时反向；列表内容即时显隐 |
+| E3 折叠 | 看板分组/显示剩余、抽屉区块：grid 0fr↔1fr，base / standard，内层overflow:hidden，箭头同步；剩余行随整块展开。范围限定例外（2026-11-24 用户决定，卡39A方案A）：仅含卡片且后接同列分组的`.ds-board-group`同步过渡`margin-bottom`（同为base / standard），兼顾底环空间与下组标题`y`对齐。列表视图分组保持原生单表，不做高度展开，仅箭头旋转（2026-11-19 负责人确认）；箭头仍为base / standard | 内容直接展开/收起（含相邻分组`margin-bottom`无过渡）；箭头无过渡 | 即时反向；列表内容即时显隐 |
 | E4 菜单/气泡/下拉 | scale(`--scale-popover`) + opacity，进fast / standard，出instant / exit；原点靠近触发器 | 仅opacity，时长不变 | Esc从当前状态退出；结束卸载并归还焦点 |
 | E5 弹窗 | 面板translateY(md) + scale(press) + opacity，进slow / soft；出仅scale(press) + opacity，fast / exit；遮罩同步opacity | 仅opacity，fast / standard或exit | Esc从当前状态退出，结束卸载并归还焦点 |
 | E6 卡片悬停 | 既有上浮1px与阴影一档，fast / standard | 无位移与过渡 | 即时反向 |
@@ -78,7 +79,7 @@ v2.2.9 / 卡36A、卡36B。
 - **内容与外观**：`count === 0` 时经 `useExitPresence(visible, '--dur-fast')` 退出并卸载；可见时渲染可键盘聚焦的 `<button type="button" class="ds-new-items-chip" data-new-items-chip data-direction>`，文案为 `↑ N 条新{noun}` / `↓ N 条新{noun}`（看板与列表为「工单」）。深色底 `--text-primary`、白字 `--text-inverse`、高 `--space-6`（24px）、圆角 `--radius-lg`（12px）、阴影 `--shadow-2`。
 - **交互与动效**：进入为 `translateY(var(--shift-sm))` → `0` + opacity，`--dur-fast` `--ease-standard`；退出为 `--dur-fast` `--ease-exit`；减少动态效果时仅保留 opacity。点击平滑滚动（减少动态效果为 `auto`）至最早一条新项并对全部新项触发 `highlight`，胶囊消失；用户自行滚动使新项进入视口（IntersectionObserver）时胶囊自动消失并触发一次高亮；连续到达合并计数。
 
-列表的阶段、子分组和「显示剩余 N 项 / 收起」均按原生表内行即时显隐，不使用嵌套表、grid容器或退出保留计时；数据单元格与外层`scope=col`列头属于同一张表。原有`hidden`、行ID、`aria-controls`、`aria-expanded`、row-link和键盘E领取语义保留。看板和抽屉的E3仍为grid折叠：待受理的相邻分组在grid item上补偿原block布局向下一组折叠的末卡间距，末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
+列表的阶段、子分组和「显示剩余 N 项 / 收起」均按原生表内行即时显隐，不使用嵌套表、grid容器或退出保留计时；数据单元格与外层`scope=col`列头属于同一张表。原有`hidden`、行ID、`aria-controls`、`aria-expanded`、row-link和键盘E领取语义保留。看板和抽屉的E3仍为grid折叠：待受理的相邻分组在grid容器（`.disclosure__content`）上补偿原block布局向下一组折叠的末卡间距（卡39A：该补偿随折叠同步过渡，见上方作用域例外），末组到「显示剩余」的既有间距保留。卡片本身的间距在展开与收起时保持稳定。滑块的静态顶部、高度和圆角取实际选中按钮，空分段控件保持隐藏。静态外观以当前main为准，不借动效修改标题节奏或列底色。
 
 前向替换记录（卡36B，2026-11-19 负责人确认）：取代卡16「滚动或打开详情时暂存新卡并显示列头幽灵按钮『N 条新报修』」的延迟机制。新卡始终直接落位（保留待接单置顶与打开详情时的 `holdOrder` 顺序冻结），页面不自动跳转（依赖浏览器默认滚动锚定）；落点在视口外时改为列头下方居中的 `NewItemsChip`（「↑ N 条新工单」/「↓ N 条新工单」）。旧 `closure-restored` 关键帧已删除，并入 `highlight()`。
 
@@ -789,7 +790,7 @@ PageHeader 的原获权「新报修」primary 内附 `N` 提示；本卡只加�
 
 - **键帽 `Kbd`**（`design/components/Kbd`）：高 20、最小宽 20、左右内距 5、圆角 `--radius-kbd`（5）、字号 `--fs-2xs`（11）/ 字重 `--fw-medium`（500）、字体 `--font-sans`；浅色态（`tone="light"`：`--bg-subtle` 底 + `--shadow-kbd-light` 内描边与底棱 + `--tone-neutral-fg`）与深色态（`tone="dark"`：`--bg-kbd-dark` + `--text-inverse`，用于深色按钮提示与底部提示胶囊）。组合键间距 3，序列键以「然后」分隔，替代键以「/」分隔；父级禁用时按 `--state-disabled-opacity` 置灰。
 - **单键位来源与按钮/菜单展示**：全局快捷键唯一来源为 `features/efficiency/shortcuts.ts`（mac 上 `Ctrl` 展示为 `⌘`）。主要操作按钮悬停提示沿用 36A Tooltip 显示「名称 + 深色键帽」；⋯ 菜单项右侧对齐显示浅色键帽，禁用项随菜单项置灰并携带 `aria-keyshortcuts`。
-- **键盘当前卡片与列表行**：`J`/`K`/`H`/`L`/`1`/`2`/`3` 移动产生的键盘当前卡片（`data-keyboard-current="true"`）使用 `--shadow-keyboard-current`（2px `--brand` + 3px `--brand-subtle` 外环），优先级为 `键盘当前 > 协作在场外圈 > 抽屉选中`，只绘制一层最外圈，并在 `forced-colors` 下补描边；列表当前行使用 `--brand-subtle` 底色与 2px `--brand` 围框。鼠标移动保留键盘当前态，点击别处清除。
+- **键盘当前卡片与列表行**：`J`/`K`/`H`/`L`/`1`/`2`/`3` 移动产生的键盘当前卡片（`data-keyboard-current="true"`）使用 `--shadow-keyboard-current`（2px `--brand` + 3px `--brand-subtle` 外环），优先级为 `键盘当前 > 协作在场外圈 > 抽屉选中`，只绘制一层最外圈，并在 `forced-colors` 下补描边；列表当前行使用 `--brand-subtle` 底色与 2px `--brand` 围框。鼠标移动保留键盘当前态，点击别处清除。为避免被折叠裁切边（`overflow: clip / hidden`）截断 `--shadow-keyboard-current`、悬停 `--shadow-2` 与 `.card-open:focus-visible` 外描边，看板分组（`.ds-board-group`）与显示剩余容器（`.ds-column-remainder`）水平方向使用负外边距与等量内边距外扩 `--card-ring-room`（6px），保持卡片宽度与 x 坐标不变（列内边距 8px > 6px，不会再次裁切）；相邻分组的 `-8px` 折叠偏移仅在展开态 `[data-expanded=true]` 置于 `.disclosure__content`（随 `--dur-base / --ease-standard` 同步过渡），在保留末卡底部 8px 留白的同时保持收起态与展开态间距一致；顶部沿用 30B 10px 留白；列表分组（原生单表内描边）与抽屉可折叠区块经核查均无需外扩。
 - **底部提示胶囊（`G` 序列与不可用反馈）**：固定视口底部居中、高 32、圆角 `--radius-xl`、`--text-primary` 底 + `--text-inverse` 白字 + `--shadow-shortcut-capsule`，`role="status"`；进出沿用 36A E4 气泡动效（减少动效下退化为仅透明度过渡）并挂载到非 `inert` 容器。`G` 序列等待 `--delay-goto-sequence`（1.5s），不可用提示展示 `--delay-shortcut-hint`（2s）。
 - **快捷键弹窗**：`?` 打开 `Modal` 宽 560（`--modal-w-md`），顶部搜索过滤，四组（移动 / 对当前工单 / 工作区 / 前往）两栏排列，行高 30 + 发丝线，仅展示当前账号可用操作。
 
