@@ -51,6 +51,7 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal(closingNext.items[0].id,tickets[10].ticket.id);
     const resolved=closed.items.find(i=>i.status==='RESOLVED');assert.ok(resolved);assert.equal(resolved.completed_at,null);
     await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=date_trunc('day',platform.local_now())-interval '2 days' WHERE ticket_id=$1::uuid AND event_type='ticket.completed'",[tickets[9].ticket.id]);
+    await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=date_trunc('day',platform.local_now())-interval '2 days' WHERE id=$1::uuid",[tickets[9].ticket.id]);
     assert.equal((await read('/api/workbench/board?column=handled')).items.length,3);
     assert.equal((await read('/api/workbench/board?column=handled&range=all')).items.length,4);
     const commandId=randomUUID();
@@ -406,7 +407,7 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
     assert.equal((await get('/api/workbench/items/ticket/'+cancelledId,1)).status,404);
 
     const duplicateId=tickets[1].ticket.id;
-    const duplicate=(await pool.query("UPDATE pilot_ticket.ticket SET status='DISMISSED',title='重复事项（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateId])).rows[0];
+    const duplicate=(await pool.query("UPDATE pilot_ticket.ticket SET status='DISMISSED',title='重复事项（合成）',version=version+1,terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",[duplicateId])).rows[0];
     const duplicateEvent=await appendTicketEvent({transaction:pool,ticket:duplicate,eventType:'ticket.dismissed',actor:{type:'SYSTEM',id:null},oldStatus:tickets[1].ticket.status,internalNote:null,externalNote:null,traceId:'card27a-duplicate-synthetic'});
     await insertClosureRecord({transaction:pool,subjectType:'TICKET',subjectId:duplicateId,beforeStatus:tickets[1].ticket.status,beforeVersion:tickets[1].ticket.version,beforeAssignee:tickets[1].ticket.assignee_id,beforeTeam:tickets[1].ticket.resolver_team_id,beforeSnapshot:{},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'DUPLICATE'}),ticketEventId:duplicateEvent.event_id});
     const duplicateCard=(await read('/api/workbench/items/ticket/'+duplicateId)).item;
@@ -477,12 +478,15 @@ test('Card 27A closure facts, default groups, date boundaries and list filters s
 
     const day=(await pool.query("SELECT to_char(platform.local_now(),'YYYY-MM-DD') AS today,to_char(date_trunc('day',platform.local_now()),'YYYY-MM-DD HH24:MI:SS') AS start")).rows[0];
     await pool.query("UPDATE pilot_ticket.closure_record SET ended_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL",[cancelledId,day.start]);
+    await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp WHERE id=$1::uuid",[cancelledId,day.start]);
     await pool.query("UPDATE pilot_ticket.closure_record SET ended_at=$2::timestamp-interval '1 second' WHERE ticket_id=$1::uuid AND restored_at IS NULL",[duplicateId,day.start]);
+    await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp-interval '1 second' WHERE id=$1::uuid",[duplicateId,day.start]);
     await pool.query('UPDATE pilot_ticket.ticket SET updated_at=platform.local_now() WHERE id=ANY($1::uuid[])',[[cancelledId,duplicateId]]);
     const custom=await read('/api/workbench/board?column=handled&range=custom&handled_from='+day.today+'&handled_to='+day.today);
     assert.ok(custom.items.some(item=>item.id===cancelledId),'inclusive start uses the real cancellation event');assert.ok(custom.items.every(item=>item.id!==duplicateId),'later metadata updates cannot move yesterday\'s closure into today');
     assert.deepEqual(custom.group_counts,{completed:custom.items.filter(item=>item.closure.kind==='COMPLETED').length,dismissed:custom.items.filter(item=>item.closure.kind==='DISMISSED').length});
     await pool.query("UPDATE pilot_ticket.closure_record SET ended_at=$2::timestamp+interval '1 day' WHERE ticket_id=$1::uuid AND restored_at IS NULL",[cancelledId,day.start]);
+    await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp+interval '1 day' WHERE id=$1::uuid",[cancelledId,day.start]);
     const upper=await read('/api/workbench/board?column=handled&range=custom&handled_from='+day.today+'&handled_to='+day.today);assert.ok(upper.items.every(item=>item.id!==cancelledId),'exclusive upper day boundary');
 
     const completedList=await read('/api/workbench/search?column=handled&range=all&closure_kind=completed');

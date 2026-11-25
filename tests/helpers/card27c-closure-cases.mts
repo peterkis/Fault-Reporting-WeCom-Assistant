@@ -73,7 +73,7 @@ async function freshTicket(f:Fixture,status='QUEUED'){
  await appendTicketEvent({transaction:f.pool,ticket:created.ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:'card27c-created'});
  const admin=await t11Http(f,0,{closeConnections:true}),handler=await t11Http(f,2,{closeConnections:true});
  if(status==='NEW'){
-  const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='NEW',version=version+1 WHERE id=$1::uuid RETURNING version",[created.ticket.id])).rows[0];assert.ok(changed);
+  const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='NEW',version=version+1,terminal_at=NULL,terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING version",[created.ticket.id])).rows[0];assert.ok(changed);
   await appendTicketEvent({transaction:f.pool,ticket:{...created.ticket,status:'NEW',version:changed.version},eventType:'ticket.created',oldStatus:created.ticket.status,actor:{type:'SYSTEM',id:null},traceId:'card27c-new-state-input'});
  }else if(status==='ACCEPTED'){
   await responseJson(await admin.post(created.ticket.id,'accept',{client_command_id:randomUUID(),expected_version:created.ticket.version,reason_code:'SYNTHETIC_ACCEPT'}));
@@ -82,7 +82,7 @@ async function freshTicket(f:Fixture,status='QUEUED'){
   if(status==='WAITING_REQUESTER'||status==='WAITING_VENDOR')await responseJson(await handler.post(created.ticket.id,status==='WAITING_REQUESTER'?'request-information':'wait-vendor',{client_command_id:randomUUID(),expected_version:started.version,reason_code:'SYNTHETIC_WAIT',note:'等待补充（合成）',external_visible:false}));
   else if(status==='REOPENED'){
    // State-input fixture uses the same existing synthetic writer/event helper as WEB01.
-   const ticket=(await f.pool.query("UPDATE pilot_ticket.ticket SET status='REOPENED',version=version+1 WHERE id=$1::uuid RETURNING *",[created.ticket.id])).rows[0];assert.ok(ticket);
+   const ticket=(await f.pool.query("UPDATE pilot_ticket.ticket SET status='REOPENED',version=version+1,terminal_at=NULL,terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",[created.ticket.id])).rows[0];assert.ok(ticket);
    await appendTicketEvent({transaction:f.pool,ticket:{...created.ticket,status:'REOPENED',version:Number(ticket.version)},eventType:'ticket.reopened',oldStatus:'COMPLETED',actor:{type:'SYSTEM',id:null},traceId:'card27c-reopened-input'});
   }
  }

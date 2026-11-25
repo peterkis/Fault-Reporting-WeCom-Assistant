@@ -33,6 +33,7 @@ import {migrateServiceClosure} from '../app/server/scripts/service-closure-migra
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
+import {migrateTicketTerminalAt} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
@@ -161,7 +162,7 @@ test('H5 real HTTP, Core, media Worker and current workbench READ share one isol
       const number=Number(file.slice(0,3));if(number===52)continue; // The formal 041 migrator owns its 052 successor.
       const migrate=formal.get(number);if(migrate)await migrate();else await pool.query(await readFile(join(migrationRoot,file),'utf8'));
     }
-    await migrateServiceClosure(migrationOptions);await migrateCompletionDismissal(migrationOptions);await migrateNotificationVocabulary(migrationOptions);await migrateSystemClosureRestore(migrationOptions);
+    await migrateServiceClosure(migrationOptions);await migrateCompletionDismissal(migrationOptions);await migrateNotificationVocabulary(migrationOptions);await migrateSystemClosureRestore(migrationOptions);await migrateTicketTerminalAt(migrationOptions);
     const access=createPilotAccessService({pool});
     const admin=await access.upsertPrincipal({wecomUserId:'h5-flow-admin',displayName:'合成跨层管理员',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const outsider=await access.upsertPrincipal({wecomUserId:'h5-flow-outsider',displayName:'合成跨层越权人员',roles:['HANDLER'],resolverTeamIds:[]});

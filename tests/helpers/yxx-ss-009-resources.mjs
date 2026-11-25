@@ -10,12 +10,13 @@ import {migrateServiceClosure} from '../../app/server/scripts/service-closure-mi
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import {migrateTicketTerminalAt} from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
 export const closeSS009Resources=closeBrowserTestResources;
 
 // Current runtime queries require these successors even when the tested flow is
 // an older SS-009 scenario. Catalog-only tests keep their explicit historical chain.
 export async function migrateSS009RuntimeSuccessors({databaseUrl}){
-  for(const migrate of [migrateServiceClosure,migrateCompletionDismissal,migrateNotificationVocabulary,migrateSystemClosureRestore]){
+  for(const migrate of [migrateServiceClosure,migrateCompletionDismissal,migrateNotificationVocabulary,migrateSystemClosureRestore,migrateTicketTerminalAt]){
     await migrate({databaseUrl,mode:'apply'});
   }
 }

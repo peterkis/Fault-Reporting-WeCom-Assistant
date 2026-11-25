@@ -106,7 +106,7 @@ async function seedMany(fixture:T42Fixture,count:number,label:string){
 }
 async function stageFixture(fixture:T42Fixture,ids:string[],stage:'IN_PROGRESS'|'QUEUED'){
   const principal=fixture.principals[0];assert.ok(principal);
-  const result=await fixture.pool.query("UPDATE pilot_ticket.ticket SET status=$2,assignee_id=$3::uuid,version=version+1,updated_at=platform.local_now() WHERE id=ANY($1::uuid[])",[ids,stage,stage==='IN_PROGRESS'?principal.id:null]);
+  const result=await fixture.pool.query("UPDATE pilot_ticket.ticket SET status=$2,assignee_id=$3::uuid,version=version+1,updated_at=platform.local_now(),terminal_at=NULL,terminal_epoch_ms=NULL WHERE id=ANY($1::uuid[])",[ids,stage,stage==='IN_PROGRESS'?principal.id:null]);
   assert.equal(result.rowCount,ids.length);
 }
 async function writeEvidence(name:string,value:unknown){

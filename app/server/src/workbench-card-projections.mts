@@ -122,13 +122,17 @@ export function projectWorkbenchService(evidence: readonly ServiceEvidence[], ca
 }
 
 interface ProjectionRow {kind:string;id:string;status:string;evidence:ServiceEvidence[];safety_signature:string}
+export interface WorkbenchClock {nowEpoch:string;nowLocal:string}
 export interface WorkbenchReadAuthority {values:unknown[];roles:readonly string[];teams:readonly string[];principal?:WorkbenchPrincipal}
 export interface WorkbenchReadAccess {
   authority:()=>Promise<WorkbenchReadAuthority>;
   session?:(start:number)=>WorkbenchSessionPredicate;
   finalRouteCheck?:()=>Promise<void>;
-  /** Same final snapshot as card READ; parameters after the canonical first three. */
-  groupCounts?:{predicate:string;pageSql:string;values:unknown[];expectedPage:{kind:string;id:string;order_group:number;order_at:string}[];value:{completed:number;dismissed:number}|null};
+  clock?:WorkbenchClock;
+  /** PK-targeted card CTE (uses $1..$3 authority, $4 nowEpoch, $5 nowLocal, $6 requested jsonb). */
+  targetedCardsSql?:string;
+  /** Same final snapshot as card READ; parameters after authority ($1..$3) and clock ($4..$5). */
+  groupCounts?:{countsSql:string;pageKeysSql:string;values:unknown[];expectedPage:{kind:string;id:string;order_group:number;order_at:string}[];value:{completed:number;dismissed:number}|null};
 }
 interface ReadProof {principal_valid:boolean;scope_valid:boolean;session_valid:boolean}
 function proofColumns(roles:number,teams:number,session:string,principal=2):string {
@@ -154,18 +158,41 @@ export async function verifyWorkbenchReadAccess(pool:PostgresTransaction,access:
   const proof=(await pool.query<ReadProof>('SELECT '+proofColumns(2,3,session.sql,1),[scope.values[1],[...scope.roles],[...scope.teams],...session.values])).rows[0];
   checkReadProof(proof);
 }
+const REQUEST_EPOCH_PARAM='$4::bigint',REQUEST_LOCAL_PARAM='$5::timestamp without time zone';
+/**
+ * Final-proof freshness. Selection and enrichment bind the request-start clock ($4/$5), so a page is
+ * selected against one stable instant. The last READ statement must instead judge retention at the
+ * moment it runs, exactly like the session expiry predicate. One materialized single-row CTE takes
+ * that instant; every $4/$5 reference in the statement is redirected to it. $4/$5 stay bound (as
+ * the lower bound the fresh instant can never precede) so the parameter list is unchanged.
+ */
+export function withFinalStatementClock(sql:string):string{
+  if(!sql.startsWith('WITH '))failP2016('ACTION_FAILED',503);
+  const body=sql.slice('WITH '.length).split(REQUEST_EPOCH_PARAM).join('(SELECT now_epoch FROM final_clock)')
+    .split(REQUEST_LOCAL_PARAM).join('(SELECT now_local FROM final_clock)');
+  if(/\$[45](?![0-9])/u.test(body))failP2016('ACTION_FAILED',503);
+  return `WITH final_clock AS MATERIALIZED (SELECT GREATEST(platform.physical_epoch_ms(),${REQUEST_EPOCH_PARAM}) AS now_epoch,
+    GREATEST(platform.local_now(),${REQUEST_LOCAL_PARAM}) AS now_local), `+body;
+}
 /** One page-wide source read, joined to the current authorized canonical relation. */
 export async function readWorkbenchCardProjections(pool:PostgresTransaction,authorizedCardsSql:string,access:WorkbenchReadAccess,items:WorkbenchCard[],catalog:ServiceCatalog|null,manualReportsEnabled:boolean,finalRouteCheck?:()=>Promise<void>):Promise<WorkbenchCard[]> {
   if(!items.length&&!access.groupCounts){await verifyWorkbenchReadAccess(pool,access);return items;}
-  const schema=await pool.query<{web:boolean}>("SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web");
-  const web=schema.rows[0]?.web===true;
-  const webJoins=web?`LEFT JOIN intake.web_request_binding b ON b.intake_id=i.id AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
+  const schema=(await pool.query<{web:boolean;now_epoch?:string;now_local?:string}>(
+    access.clock
+      ?"SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web"
+      :"SELECT to_regclass('intake.web_submission') IS NOT NULL AND to_regclass('intake.web_request_binding') IS NOT NULL AS web,platform.physical_epoch_ms()::text AS now_epoch,to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS now_local"
+  )).rows[0];
+  const web=schema?.web===true;
+  const clock:WorkbenchClock=access.clock??{nowEpoch:schema?.now_epoch??'0',nowLocal:schema?.now_local??'1970-01-01 00:00:00'};
+  const nowEpoch='$4::bigint',nowLocal='$5::timestamp without time zone';
+  const webJoins=web?`LEFT JOIN intake.web_request_binding b ON b.intake_id=i.id AND b.revoked_at IS NULL AND b.retention_until>${nowLocal}
     LEFT JOIN LATERAL (SELECT s.id::text AS submission_id,s.safe_content->>'service_code' AS code FROM intake.web_submission s
-      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE`:'';
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>${nowLocal} ORDER BY s.input_revision LIMIT 1) initial ON TRUE`:'';
   const webCurrent=web?`b.intake_id IS NOT NULL AND to_jsonb(d)->>'basis_input_revision'=b.input_revision::text`:'false';
   const currentAuthority=await access.authority();
-  const projectionSql=authorizedCardsSql+`, selected AS (
-    SELECT c.* FROM cards c JOIN jsonb_to_recordset($4::jsonb) AS requested(kind text,id text,intake_id text)
+  const baseCardsSql=access.targetedCardsSql??authorizedCardsSql;
+  const projectionSql=baseCardsSql+`, selected AS (
+    SELECT c.* FROM cards c JOIN jsonb_to_recordset($6::jsonb) AS requested(kind text,id text,intake_id text)
       ON c.kind=requested.kind AND c.id=requested.id AND c.intake_id=requested.intake_id
   ), projected_sources AS (SELECT c.kind,c.id,c.status,
     COALESCE(material.evidence,'[]'::jsonb) AS evidence,encode(sha256(convert_to(COALESCE(material.evidence,'[]'::jsonb)::text,'UTF8')),'hex') AS safety_signature
@@ -187,62 +214,61 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
               WHERE jsonb_typeof(conflict->'field_path') IS DISTINCT FROM 'string' OR conflict->>'field_path' LIKE 'service.%') THEN '[{}]'::jsonb ELSE '[]'::jsonb END
         ) END AS safe_result,d.status AS decision_status,r.resolved_by_principal_id::text AS resolved_by,
         COALESCE(d.journey_id::text,(SELECT CASE WHEN count(DISTINCT j.id)=1 THEN min(j.id::text) END
-          FROM intake.contact_journey j WHERE j.retention_until_epoch_ms>platform.physical_epoch_ms()
+          FROM intake.contact_journey j WHERE j.retention_until_epoch_ms>${nowEpoch}
             AND (j.origin_intake_id=i.id OR EXISTS(SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=i.id)))) AS journey_id,
         CASE WHEN d.id IS NULL THEN true
           WHEN to_jsonb(d)->>'source_kind'='WEB' THEN ${webCurrent}
-          WHEN to_jsonb(d)->>'source_kind'='MANUAL' THEN $5::boolean
+          WHEN to_jsonb(d)->>'source_kind'='MANUAL' THEN $7::boolean
           ELSE d.source_window_start_sequence=message_window.first AND d.source_window_end_sequence=message_window.last
             AND d.source_message_count=message_window.count AND message_window.retained END AS current
       FROM intake.service_intake i
       ${webJoins}
       LEFT JOIN LATERAL (SELECT DISTINCT ON (decision.journey_id) decision.* FROM intake.deterministic_decision decision
         JOIN intake.contact_journey j ON j.id=decision.journey_id
-        WHERE decision.service_intake_id=i.id AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+        WHERE decision.service_intake_id=i.id AND j.retention_until_epoch_ms>${nowEpoch}
           AND NOT EXISTS(SELECT 1 FROM intake.deterministic_decision newer
             WHERE newer.journey_id=decision.journey_id AND newer.decision_ordinal>decision.decision_ordinal)
         ORDER BY decision.journey_id,decision.decision_ordinal DESC) d ON TRUE
       LEFT JOIN intake.manual_review_item r ON r.resolution_decision_id=d.id AND r.status='RESOLVED'
       LEFT JOIN LATERAL (SELECT min(rel.sequence_no) AS first,max(rel.sequence_no) AS last,count(*)::integer AS count,
-        bool_and(m.retention_until>platform.local_now()) AS retained
+        bool_and(m.retention_until>${nowLocal}) AS retained
         FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id
         WHERE rel.intake_id=i.id) message_window ON TRUE
-      WHERE i.retention_until>platform.local_now() AND (i.source_provider<>'YIXIAOXIU_WEB' OR ${web?'b.intake_id IS NOT NULL':'false'})
-        AND (i.source_provider<>'STAFF_MANUAL_REPORT' OR $5::boolean)
+      WHERE i.retention_until>${nowLocal} AND (i.source_provider<>'YIXIAOXIU_WEB' OR ${web?'b.intake_id IS NOT NULL':'false'})
+        AND (i.source_provider<>'STAFF_MANUAL_REPORT' OR $7::boolean)
         AND i.id IN (SELECT c.intake_id::uuid UNION
           SELECT l.source_intake_id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
           WHERE c.kind='ticket' AND j.linked_ticket_id=c.id::uuid
-            AND l.reporter_identity_hash=j.reporter_identity_hash AND j.retention_until_epoch_ms>platform.physical_epoch_ms())
+            AND l.reporter_identity_hash=j.reporter_identity_hash AND j.retention_until_epoch_ms>${nowEpoch})
         AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket other WHERE other.source_intake_id=i.id AND (c.kind<>'ticket' OR other.id<>c.id::uuid))
       ORDER BY i.id,d.journey_id,d.id LIMIT 101
     ) source
   ) material ON TRUE)`;
   const requested=JSON.stringify(items.map(({kind,id,intake_id})=>({kind,id,intake_id})));
-  const result=await pool.query<ProjectionRow>(projectionSql+' SELECT * FROM projected_sources',[...currentAuthority.values,requested,manualReportsEnabled]);
+  const result=await pool.query<ProjectionRow>(projectionSql+' SELECT * FROM projected_sources',[...currentAuthority.values,clock.nowEpoch,clock.nowLocal,requested,manualReportsEnabled]);
   await access.finalRouteCheck?.();
-  const current=await access.authority(),session=access.session?.(8)??{sql:'TRUE',values:[]};
+  await finalRouteCheck?.();
+  const current=await access.authority(),session=access.session?.(10)??{sql:'TRUE',values:[]};
   const counts=access.groupCounts;
-  const pageParameters=(sql:string)=>sql.replace(/\$(\d+)/gu,(token,index:string)=>Number(index)<=3?token:'$'+(8+session.values.length+Number(index)-4));
-  const countsPredicate=counts?pageParameters(counts.predicate):null;
-  const expectedPageParameter=8+session.values.length+(counts?.values.length??0);
-  const countsSql=counts&&countsPredicate?`,(SELECT jsonb_build_object(
-    'completed',count(*) FILTER(WHERE status IN ('RESOLVED','COMPLETED'))::integer,
-    'dismissed',count(*) FILTER(WHERE status IN ('DISMISSED'))::integer)
-    FROM cards WHERE ${countsPredicate}) AS group_counts,
+  const shiftPageParameters=(sql:string)=>sql.replace(/\$(\d+)/gu,(token,index:string)=>Number(index)<=5?token:'$'+(10+session.values.length+Number(index)-6));
+  const expectedPageParameter=10+session.values.length+(counts?.values.length??0);
+  const countsSql=counts?`,(${shiftPageParameters(counts.countsSql)}) AS group_counts,
     COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',page.kind,'id',page.id,'order_group',page.order_group,'order_at',page.order_at)
       ORDER BY page.order_group DESC,page.order_at DESC,page.kind DESC,page.id DESC)
-      FROM (${pageParameters(counts.pageSql)}) page),'[]'::jsonb)=$${expectedPageParameter}::jsonb AS page_matches`:'';
+      FROM (${shiftPageParameters(counts.pageKeysSql)}) page),'[]'::jsonb)=$${expectedPageParameter}::jsonb AS page_matches`:'';
   // Current session, role/team snapshot and canonical item READ share the last
   // statement, after all source and detail-route waits. Nothing async follows.
-  const proof=(await pool.query<ReadProof&{group_counts?:{completed:number;dismissed:number};page_matches?:boolean;items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string;closure_evidence:ClosureEvidence|null}[]}>(projectionSql+`
-    SELECT ${proofColumns(6,7,session.sql)},COALESCE((SELECT jsonb_agg(jsonb_build_object(
+  // Retention in this final READ uses a fresh instant taken inside the statement
+  // (Codex 42A r1 H1), not the request-start clock used for selection.
+  const proof=(await pool.query<ReadProof&{group_counts?:{completed:number;dismissed:number};page_matches?:boolean;items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string;closure_evidence:ClosureEvidence|null}[]}>(withFinalStatementClock(projectionSql+`
+    SELECT ${proofColumns(8,9,session.sql)},COALESCE((SELECT jsonb_agg(jsonb_build_object(
       'kind',c.kind,'id',c.id,'status',c.status,'safety_signature',c.safety_signature,'closure_evidence',selected.closure_evidence,'stage_entered_at',
       CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END))
       FROM projected_sources c JOIN selected ON selected.kind=c.kind AND selected.id=c.id
       LEFT JOIN LATERAL(SELECT e.new_status,e.created_at FROM pilot_ticket.ticket_event e
         WHERE c.kind='ticket' AND e.ticket_id=c.id::uuid AND e.old_status IS DISTINCT FROM e.new_status
-        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items${countsSql}`,
-  [...current.values,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values,...(counts?.values??[]),...(counts?[JSON.stringify(counts.expectedPage)]:[])])).rows[0];
+        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items${countsSql}`),
+  [...current.values,clock.nowEpoch,clock.nowLocal,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values,...(counts?.values??[]),...(counts?[JSON.stringify(counts.expectedPage)]:[])])).rows[0];
   checkReadProof(proof);
   const visible=new Map(proof.items.map(row=>[row.kind+':'+row.id,row]));
   const byId=new Map(result.rows.map(row=>[row.kind+':'+row.id,row]));

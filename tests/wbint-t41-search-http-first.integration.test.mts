@@ -52,6 +52,7 @@ test('B5 custom closure dates use inclusive Shanghai days before READ-safe pagin
   await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1::uuid AND event_type IN ('ticket.completed','ticket.dismissed')",[id,at]);
   // Since card 27C a dismissal's closing instant is its current closure record, not the event row.
   await f.pool.query('UPDATE pilot_ticket.closure_record SET ended_at=$2::timestamp WHERE ticket_id=$1::uuid AND restored_at IS NULL',[id,at]);
+  await f.pool.query('UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp WHERE id=$1::uuid',[id,at]);
  }
  await f.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES('B5_DATES_HIDDEN','B5日期不可读组（合成）')");
  await f.pool.query("UPDATE pilot_ticket.ticket SET resolver_team_id='B5_DATES_HIDDEN',assignee_id=NULL WHERE id=$1::uuid",[lower.ticket.id]);

@@ -69,7 +69,7 @@ test('H5 signed reporter material survives source expiry and closed Ticket aging
   await profiles.runOnce();assert.equal(calls,2);
   const retained=(await readTicketReporterProfiles(f.pool,[ticket.id])).get(ticket.id);assert.equal(retained?.name,'永久H5合成报修人');assert.equal(retained?.department,'永久H5合成科室');assert.equal(retained?.source,'LATER_LOOKUP');
   assert.deepEqual((await f.pool.query('SELECT profile_snapshot,profile_snapshot_hash FROM intake.contact_journey WHERE origin_intake_id=$1',[ticket.intake_id])).rows[0],original);
-  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED' WHERE id=$1",[ticket.id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED',terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1",[ticket.id]);
   await f.pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1',[ticket.intake_id]);
   await profiles.runOnce();assert.equal(calls,2);
   const query=createWeb01WorkbenchQuery({pool:f.pool,query:f.runtime.query,reporterProfilesEnabled:true}),authContext={principal_id:f.principals[0]?.id??'',auth_method:'COOKIE' as const,expires_epoch_ms:String(future+600000)};
@@ -210,7 +210,7 @@ test('H5 V2 real PostgreSQL intake, original UUID, lifecycle rounds, public prog
       if(status==='RESOLVED')assert.equal((await http.post(t.id,'resolve',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'SYNTHETIC_RESOLVED',note:'处理结果（合成）',external_visible:true})).status,200);
       if(path==='HTTP')assert.equal((await http.post(t.id,'dismiss',{client_command_id:randomUUID(),expected_version:current.version,reason_code:'OTHER',note:'H5_INTERNAL_CLOSURE_CANARY（合成）'})).status,200);
       if(path==='SYSTEM_DUPLICATE'){
-        const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='DISMISSED',version=version+1 WHERE id=$1::uuid RETURNING version",[t.id])).rows[0];assert.ok(changed);
+        const changed=(await f.pool.query<{version:number}>("UPDATE pilot_ticket.ticket SET status='DISMISSED',version=version+1,terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING version",[t.id])).rows[0];assert.ok(changed);
         const event=await appendTicketEvent({transaction:f.pool,ticket:{...current,status:'DISMISSED',version:changed.version},eventType:'ticket.dismissed',oldStatus:current.status,actor:{type:'SYSTEM',id:null},traceId:'card27c-h5-duplicate-input'});
         await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:t.id,beforeStatus:current.status,beforeAssignee:current.assignee_id,beforeTeam:current.resolver_team_id,beforeVersion:current.version,beforeSnapshot:{},actor:null,source:'SYSTEM',input:normalizeClosureInput({reason_code:'DUPLICATE'}),ticketEventId:event.event_id});
       }

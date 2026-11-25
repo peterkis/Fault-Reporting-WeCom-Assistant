@@ -10,7 +10,7 @@ import {uuidP2016,failP2016} from './p2-016-domain-contracts.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
-import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
+import {buildSingleItemReadableSql,readWorkbenchClock} from './web01-workbench-query.mjs';
 
 const digest=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex');
 const hosts=new Set(['wx.qlogo.cn','wework.qlogo.cn','p.qlogo.cn','shp.qpic.cn','wework.qpic.cn']);
@@ -108,24 +108,25 @@ export function createWorkbenchActorAvatarHttp({pool,query,enabled=false,current
     const final=await query.authorizedItem(authContext,kind,id,false);
     if(final.kind!==item.kind||final.id!==item.id||final.intake_id!==item.intake_id)failP2016('NOT_FOUND',404);
     const principal=await authorization.resolvePrincipal(authContext);if(!principal)failP2016('NOT_FOUND',404);
+    const clock=await readWorkbenchClock(pool);
     const scope=ticketPredicateP2016(principal),guard=currentSessionPredicate?.(authContext,authContext.principal_id,11);
     if(!guard&&(!localTestProfile||'session_id' in authContext))failP2016('ACTION_FAILED',503);
     // The final statement checks current READ, the same original item, current
     // session and current avatar identity together. No projection wait follows it.
-    const result=await pool.query<{identity_hash:string|null;wecom_user_id:string|null;avatar_bytes:Buffer|null;avatar_sha256:string|null;readable:boolean;session_current:boolean}>(workbenchSearchCardsSql(true)+` SELECT
-      EXISTS(SELECT 1 FROM cards WHERE kind=$4 AND id=$5::text AND intake_id=$6) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal reader
+    const result=await pool.query<{identity_hash:string|null;wecom_user_id:string|null;avatar_bytes:Buffer|null;avatar_sha256:string|null;readable:boolean;session_current:boolean}>(`SELECT
+      EXISTS(${buildSingleItemReadableSql('ticket','$4::uuid','$5::uuid','$10::bigint','$10::timestamp without time zone')}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal reader
         WHERE reader.id=$2::uuid AND reader.is_active
-          AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=reader.id ORDER BY role COLLATE "C")=$7::text[]
-          AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=reader.id ORDER BY team_id COLLATE "C")=$8::text[]) AS readable,
-      ($9::bigint>platform.physical_epoch_ms() AND ${guard?.sql??'TRUE'}) AS session_current,
+          AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=reader.id ORDER BY role COLLATE "C")=$6::text[]
+          AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=reader.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
+      ($8::bigint>platform.physical_epoch_ms() AND ${guard?.sql??'TRUE'}) AS session_current,
       cached.identity_hash,cached.wecom_user_id,cached.avatar_bytes,cached.avatar_sha256
       FROM (SELECT 1) one LEFT JOIN LATERAL(
         SELECT c.identity_hash,p.wecom_user_id,c.avatar_bytes,c.avatar_sha256 FROM pilot_ticket.pilot_principal p
-        JOIN workbench.actor_avatar_cache c ON c.principal_id=p.id AND c.status='READY' AND c.expires_epoch_ms>platform.physical_epoch_ms()
-        WHERE p.id=$10::uuid AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r
+        JOIN workbench.actor_avatar_cache c ON c.principal_id=p.id AND c.status='READY' AND c.expires_epoch_ms>$10::bigint
+        WHERE p.id=$9::uuid AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r
           WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))
-          AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_event e WHERE e.ticket_id=$5::uuid AND e.operator_id=p.id::text)
-      ) cached ON TRUE`,[...scope.values,item.kind,item.id,item.intake_id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,actor,...(guard?.values??[])]);
+          AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_event e WHERE e.ticket_id=$4::uuid AND e.operator_id=p.id::text)
+      ) cached ON TRUE`,[...scope.values,item.id,item.intake_id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,actor,clock.nowEpoch,...(guard?.values??[])]);
     const cached=result.rows[0];
     if(cached?.session_current!==true)throw new WorkbenchError('WORKBENCH_UNAUTHENTICATED',401);
     if(!cached.readable)failP2016('NOT_FOUND',404);

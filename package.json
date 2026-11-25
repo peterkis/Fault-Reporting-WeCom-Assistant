@@ -172,6 +172,8 @@
     "docs:agents:check": "node .build/tools/check-agent-docs.mjs",
     "mvp:notifications:migrate:check": "node .build/tools/verify-artifact.mjs && node .build/runtime/app/server/scripts/mvp-notifications-migrate.mjs --check",
     "mvp:notifications:migrate:apply": "node .build/tools/verify-artifact.mjs && node .build/runtime/app/server/scripts/mvp-notifications-migrate.mjs --apply",
+    "db:role:settings": "node .build/tools/verify-artifact.mjs && node .build/runtime/app/server/scripts/db-role-settings.mjs",
+    "perf:board": "npm run migration:build && node .build/tools/verify-artifact.mjs && node .build/runtime/app/server/scripts/perf-board.mjs",
     "desktop:setup": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Setup",
     "desktop:check": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Check",
     "desktop:build": "pwsh -NoProfile -File app/pc-admin/desktop/desktop.ps1 -Action Build",

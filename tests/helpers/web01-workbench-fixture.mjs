@@ -4,6 +4,7 @@ import {migrateServiceClosure} from '../../app/server/scripts/service-closure-mi
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import {migrateTicketTerminalAt} from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {insertClosureRecord,normalizeClosureInput,appendIntakeClosureEvent} from '../../app/server/src/service-closure-records.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
@@ -64,7 +65,7 @@ export async function seedCard27Board(f){
     ['historical',3,'DISMISSED','PILOT_USER',true],
   ]){
     const original=f.tickets[index],id=original.ticket.id;ids[key]=id;
-    const ticket=(await f.pool.query('UPDATE pilot_ticket.ticket SET status=$2,title=$3,version=version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *',
+    const ticket=(await f.pool.query('UPDATE pilot_ticket.ticket SET status=$2,title=$3,version=version+1,updated_at=platform.local_now(),terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *',
       [id,status,{manual:'测试误报，人工核对关闭（合成）',duplicate:'打印故障重复报修（合成）',unknown:'其他原因人工关闭（合成）',historical:'昨日人工取消事项（合成）'}[key]])).rows[0];
     {
       const actualSource=source??'PILOT_USER';
@@ -74,11 +75,12 @@ export async function seedCard27Board(f){
       await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at="+(old?"date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours'":"platform.local_now()")+' WHERE event_id=$1::uuid',[event.event_id]);
       const input=normalizeClosureInput({reason_code:key==='duplicate'?'DUPLICATE':key==='manual'?'FALSE_REPORT_OR_TEST':key==='historical'?'REPORTER_WITHDREW':'OTHER',note:key==='unknown'?'其他关闭原因（合成）':key==='manual'?'与报修人核对为测试误报，保留内部关闭说明（合成）':null});
       const record=await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:id,beforeStatus:original.ticket.status,beforeAssignee:original.ticket.assignee_id??null,beforeTeam:original.ticket.resolver_team_id??'PILOT_IT',beforeVersion:original.ticket.version,beforeSnapshot:{},actor:actualSource==='PILOT_USER'?f.principals[0].id:null,source:actualSource==='PILOT_USER'?'MANUAL':'SYSTEM',input,ticketEventId:event.event_id});
-      if(old)await f.pool.query("UPDATE pilot_ticket.closure_record SET ended_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[record.id]);
+      if(old){await f.pool.query("UPDATE pilot_ticket.closure_record SET ended_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[record.id]);await f.pool.query("UPDATE pilot_ticket.ticket SET terminal_at=date_trunc('day',platform.local_now())-interval '1 day'+interval '11 hours' WHERE id=$1::uuid",[id]);}
     }
   }
   for(const original of f.tickets.slice(9,13)){
     await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now() WHERE ticket_id=$1::uuid AND event_type IN ('ticket.completed','ticket.resolved')",[original.ticket.id]);
+    await f.pool.query("UPDATE pilot_ticket.ticket SET terminal_at=platform.local_now() WHERE id=$1::uuid AND status IN ('RESOLVED','COMPLETED','DISMISSED')",[original.ticket.id]);
   }
   const ignored=await seedPersistedIntake({pool:f.pool,text:'感谢消息经系统判定不受理（合成）',requestType:'CHATTER',status:'WAITING_DESCRIPTION'});ids.system=ignored.intakeId;
   const ignoredRow=(await f.pool.query("UPDATE intake.service_intake SET status='DISMISSED',version=version+1 WHERE id=$1::uuid RETURNING version",[ignored.intakeId])).rows[0];
@@ -96,7 +98,9 @@ export async function seedCard28Board(f){
   await f.pool.query('UPDATE pilot_ticket.pilot_principal SET display_name=$2 WHERE id=$1::uuid',[f.principals[2].id,longOwnerName]);
   // Deterministic interleaving: a newer dismissal must follow completed rows in presentation.
   await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-interval '10 minutes' WHERE ticket_id=$1::uuid AND event_type='ticket.completed'",[f.tickets[9].ticket.id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET terminal_at=platform.local_now()-interval '10 minutes' WHERE id=$1::uuid AND status='COMPLETED'",[f.tickets[9].ticket.id]);
   await f.pool.query("UPDATE pilot_ticket.closure_record SET ended_at=platform.local_now()-interval '5 minutes' WHERE ticket_id=$1::uuid AND restored_at IS NULL",[closed.manual]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET terminal_at=platform.local_now()-interval '5 minutes' WHERE id=$1::uuid AND status='DISMISSED'",[closed.manual]);
 
   const core=createPilotTicketCore({pool:f.pool});
   for(const [index,minutes,service] of [[0,360,'NETWORK.ENDPOINT_ACCESS'],[1,90,'CLINICAL.INPATIENT_WORKSTATION'],[2,12,'DIAG.IMAGING_VIEWER'],[3,3,'PRINT.PRINTER_DEVICE']]){
@@ -110,7 +114,7 @@ export async function seedCard28Board(f){
   const duplicateWith=f.tickets[4].ticket.id;
   const original=f.tickets[4].ticket;
   const duplicateOfRef=f.tickets[9].ticket.ticket_no;assert.equal(typeof duplicateOfRef,'string');
-  const ticket=(await f.pool.query("UPDATE pilot_ticket.ticket SET status='DISMISSED',title='已关联原单的重复材料（合成）',version=version+1 WHERE id=$1::uuid RETURNING *",[duplicateWith])).rows[0];
+  const ticket=(await f.pool.query("UPDATE pilot_ticket.ticket SET status='DISMISSED',title='已关联原单的重复材料（合成）',version=version+1,terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",[duplicateWith])).rows[0];
   const event=await appendTicketEvent({transaction:f.pool,ticket,eventType:'ticket.dismissed',actor:{type:'SYSTEM',id:null},oldStatus:original.status,internalNote:null,externalNote:null,traceId:'card28-duplicate-synthetic'});
   await insertClosureRecord({transaction:f.pool,subjectType:'TICKET',subjectId:duplicateWith,beforeStatus:original.status,
     beforeAssignee:original.assignee_id??null,beforeTeam:original.resolver_team_id,beforeVersion:original.version,beforeSnapshot:{},actor:null,source:'SYSTEM',
@@ -178,7 +182,7 @@ export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((
     await beforeClosureMigration?.({pool,databaseUrl});
     await migrateServiceClosure({databaseUrl,mode:'apply'});
     // ADR-0058: 072 applies after every other migration of this chain (it rewrites the closure vocabulary in place).
-    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
+    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});
@@ -193,8 +197,10 @@ export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((
       const intake=((ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled)&&ticketSelfHandlingWebSource||syntheticServiceCodes)?await seedWeb01NoConversationIntake({pool,text,location,serviceCode}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;
       const row=(await pool.query(`UPDATE pilot_ticket.ticket SET title=$2,status=$3,reported_location_text=$4,version=2,
-        assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval
-        WHERE id=$1::uuid RETURNING *`,[ticket.id,title,status,location,['NEW','QUEUED'].includes(status)?null:principals[precisionV212?([1,2,3].includes(index)?0:2):index%4].id,index])).rows[0];
+        assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval,
+        terminal_at=CASE WHEN $3 IN ('RESOLVED','COMPLETED','DISMISSED') THEN platform.local_now()-($7::text||' hours')::interval ELSE NULL END,
+        terminal_epoch_ms=NULL
+        WHERE id=$1::uuid RETURNING *`,[ticket.id,title,status,location,['NEW','QUEUED'].includes(status)?null:principals[precisionV212?([1,2,3].includes(index)?0:2):index%4].id,index,status==='RESOLVED'?240:index>=9?(index-9)*4:0])).rows[0];
       ticket={...ticket,...row};
       const event=await appendTicketEvent({transaction:pool,ticket,eventType:eventTypes[status],actor:{type:'PILOT_USER',id:principals[index%4].id},oldStatus:'NEW',internalNote:'仅供内部的合成处理记录',externalNote:status==='COMPLETED'?'本次处置已完成。':null,traceId:'web01-synthetic'});
       if(!(chronologicalTicketEvents||workbenchReviewResolveAndStartEnabled))await pool.query(`UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' hours')::interval WHERE event_id=$1::uuid`,[event.event_id,status==='RESOLVED'?240:index>=9?(index-9)*4:0]);
@@ -203,6 +209,7 @@ export async function withWeb01Fixture(run,{beforeClosureMigration=/** @type {((
         await pool.query("UPDATE pilot_ticket.ticket SET created_at=platform.local_now()-($2::text||' minutes')::interval WHERE id=$1::uuid",[ticket.id,Math.max(minutes+10,180)]);
         if(index===0)await pool.query("UPDATE pilot_ticket.ticket SET created_at=platform.local_now()-interval '26 hours' WHERE id=$1::uuid",[ticket.id]);
         await pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now()-($2::text||' minutes')::interval WHERE event_id=$1::uuid",[event.event_id,minutes]);
+        await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=platform.local_now()-($2::text||' minutes')::interval WHERE id=$1::uuid AND status IN ('RESOLVED','COMPLETED','DISMISSED')",[ticket.id,minutes]);
         if(index===0){
           await appendTicketEvent({transaction:pool,ticket,eventType:'ticket.note_added',actor:{type:'PILOT_USER',id:principals[0].id},oldStatus:status,internalNote:'正在核对打印队列（合成）；状态保持待接单。',externalNote:null,traceId:'v212-synthetic-note'});
           await appendTicketEvent({transaction:pool,ticket,eventType:'ticket.note_added',actor:{type:'PILOT_USER',id:principals[0].id},oldStatus:status,internalNote:null,externalNote:'请保留待打印的文件（合成）。',traceId:'v212-synthetic-external-note'});

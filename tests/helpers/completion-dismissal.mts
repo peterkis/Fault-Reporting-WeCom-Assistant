@@ -1,6 +1,7 @@
 import {applyCompletionDismissalSql,restoreCompletionDismissalBaseline,COMPLETION_DISMISSAL_MIGRATION_ID,completionDismissalNewValuesPresent} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {applyNotificationVocabularySql,restoreNotificationVocabularyBaseline,NOTIFICATION_VOCABULARY_MIGRATION_ID,notificationVocabularyNewValuesPresent} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {applySystemClosureRestoreSql,restoreSystemClosureRestoreBaseline,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,systemClosureRestoresPresent} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import {applyTicketTerminalAtSql,restoreTicketTerminalAtBaseline,TICKET_TERMINAL_AT_MIGRATION_ID} from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {createPostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {transactionP2016} from '../../app/server/src/p2-016-domain-contracts.mjs';
@@ -14,18 +15,19 @@ type Queryable={query<T=Record<string,unknown>>(sql:string,values?:unknown[]):Pr
  * Accepts the fixture's pool or its isolated database URL.
  */
 export async function ensureCompletionDismissal(target:Queryable|string):Promise<void>{
- if(typeof target!=='string'){await applyCompletionDismissalSql(target as never);await applyNotificationVocabularySql(target as never);await applySystemClosureRestoreSql(target as never);return;}
+ if(typeof target!=='string'){await applyCompletionDismissalSql(target as never);await applyNotificationVocabularySql(target as never);await applySystemClosureRestoreSql(target as never);await applyTicketTerminalAtSql(target);return;}
  const pool=createPostgresPool({connectionString:target,max:1,application_name:'completion_dismissal_fixture'});
- try{await applyCompletionDismissalSql(pool as never);await applyNotificationVocabularySql(pool as never);await applySystemClosureRestoreSql(pool as never);}finally{await pool.end();}
+ try{await applyCompletionDismissalSql(pool as never);await applyNotificationVocabularySql(pool as never);await applySystemClosureRestoreSql(pool as never);await applyTicketTerminalAtSql(pool);}finally{await pool.end();}
 }
 
 /**
- * For the P1 tests that migrate the shared PILOT_DATABASE_URL in place (not an isolated copy): undoes an unregistered 074, 073 and
+ * For the P1 tests that migrate the shared PILOT_DATABASE_URL in place (not an isolated copy): undoes an unregistered 075, 074, 073 and
  * then an unregistered 072 applied by {@link ensureCompletionDismissal}, so the next run's historical catalog checks see the original schema.
  * Call it before setup (recovers an interrupted run) and in `after` once the test's own rows are deleted.
- * A registered 072 / 073 (a real migration) is never touched; leftover new-vocabulary rows fail instead of being rewritten.
+ * A registered 072 / 073 / 074 / 075 (a real migration) is never touched; leftover new-vocabulary rows fail instead of being rewritten.
  */
 export async function releaseCompletionDismissal(pool:Queryable&Pick<PostgresPool,'connect'>):Promise<void>{
+ await releaseTicketTerminalAt(pool);
  await releaseSystemClosureRestore(pool);
  await releaseNotificationVocabulary(pool);
  const state=(await pool.query<{baseline:boolean;registry:boolean}>("SELECT to_regclass('pilot_ticket.completion_dismissal_baseline') IS NOT NULL AS baseline,to_regclass('platform.schema_migration') IS NOT NULL AS registry")).rows[0];
@@ -47,4 +49,10 @@ async function releaseSystemClosureRestore(pool:Queryable&Pick<PostgresPool,'con
  if(state.registry&&(await pool.query('SELECT 1 FROM platform.schema_migration WHERE migration_id=$1',[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID])).rowCount)return;
  if(await systemClosureRestoresPresent(pool as never))throw Error('SYSTEM_CLOSURE_RESTORE_SHARED_FIXTURE_ROWS_REMAIN');
  await transactionP2016(pool,tx=>restoreSystemClosureRestoreBaseline(tx));
+}
+async function releaseTicketTerminalAt(pool:Queryable&Pick<PostgresPool,'connect'>):Promise<void>{
+ const state=(await pool.query<{column:boolean;registry:boolean}>("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket' AND column_name='terminal_at') AS column,to_regclass('platform.schema_migration') IS NOT NULL AS registry")).rows[0];
+ if(!state?.column)return;
+ if(state.registry&&(await pool.query('SELECT 1 FROM platform.schema_migration WHERE migration_id=$1',[TICKET_TERMINAL_AT_MIGRATION_ID])).rowCount)return;
+ await transactionP2016(pool,tx=>restoreTicketTerminalAtBaseline(tx));
 }

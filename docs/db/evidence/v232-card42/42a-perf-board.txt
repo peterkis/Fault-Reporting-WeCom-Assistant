@@ -1,0 +1,20 @@
+PostgreSQL Version: PostgreSQL 18.6 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+Dataset (synthetic 「（合成）」, actual row counts): service_intake=56000, ticket=50400 (COMPLETED=46667, DISMISSED=3356, IN_PROGRESS=25, QUEUED=35, RESOLVED=317), ticket_event=302235, closure_record=3356, seed_ms=12677.9
+Warmup=3, Iterations=30, jit=off (database setting, verified on the timed connections), search principals rotated=6
+
+Scenario                     Rows   Min(ms)   P50(ms)   P95(ms)   Max(ms)
+pending_p1                     50      19.5     20.13     23.31     23.88
+active_p1                      25     10.83     11.25     12.34     15.46
+handled_recent_p1              50     17.73     18.52     23.07     40.42
+handled_all_p1                 50     64.91     69.25     75.43     76.76
+handled_all_p2                 50     65.96     72.39     88.31     90.39
+item_ticket                     1      0.75      0.85      1.08      1.24
+search_handled_recent          50     32.69     33.57     38.95     43.46
+search_text_recent             50     43.61     44.44     47.31      56.2
+Informational (not asserted):
+search_text_all                50    210.88    224.78    248.16    272.54
+
+Informational plan findings (not asserted): PERF_BOARD_HIGH_LOOPS:search-text-all:Aggregate::loops=56000
+Single-pass ticket scans (1 loop; allowed): handled-all:examined=50400, handled-page2:examined=50400, search-text-all:examined=50400, search-text-all:examined=50400
+EXPLAIN Execution Times (ms): pending=7.33, active=0.34, handled=0.99, handled-all=21.66, handled-page2=22.21, item=0.07, search=1.17, search-text=9.63, search-text-all=201.94
+Assertions: every asserted P95 < 100ms; no repeated ticket Seq Scan; no ticket node with >= 1000 loops; no node with >= 50000 loops; ZERO JIT functions.

@@ -19,23 +19,26 @@ export function supplementDispositionCommand(value:unknown):SupplementFollowUpCo
 export function supplementDispositionAllowed(principal:{is_active:boolean;roles:readonly string[]}){return principal.is_active&&principal.roles.some(role=>['ADMIN','DISPATCHER','HANDLER'].includes(role));}
 function dispositionResult(value:unknown):SupplementFollowUpResult{const v=exactP2016(value,['ok','client_command_id','ticket_id','source_ref','revision','follow_up_state','resolution_id','basis','replayed']);if(v.ok!==true||v.follow_up_state!=='FOLLOWED_UP'||v.basis!=='RECORDED_DISPOSITION'||typeof v.replayed!=='boolean')failP2016('ACTION_FAILED',503);return {ok:true,client_command_id:uuidP2016(v.client_command_id),ticket_id:uuidP2016(v.ticket_id),...supplementTarget({source_ref:v.source_ref,revision:v.revision}),follow_up_state:'FOLLOWED_UP',resolution_id:uuidP2016(v.resolution_id),basis:'RECORDED_DISPOSITION',replayed:v.replayed};}
 interface Input {authContext:unknown;ticketId:unknown}
-export const SUPPLEMENT_MATERIALS_SQL=`WITH readable AS (
-  SELECT i.id FROM intake.service_intake i WHERE i.retention_until_epoch_ms>platform.physical_epoch_ms() AND (i.id=$1::uuid OR EXISTS(
-   SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=$2::uuid
-    AND j.retention_until_epoch_ms>platform.physical_epoch_ms()))
+export function supplementMaterialsSql(intakeExpr='$1::uuid',ticketExpr='$2::uuid',nowEpochParam='platform.physical_epoch_ms()'):string{
+  return `WITH readable AS (
+  SELECT i.id FROM intake.service_intake i WHERE i.retention_until_epoch_ms>${nowEpochParam} AND (i.id=${intakeExpr} OR EXISTS(
+   SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=${ticketExpr}
+    AND j.retention_until_epoch_ms>${nowEpochParam}))
  ), materials AS (
   SELECT i.id AS source_intake_id,'WEB'::text AS source_kind,'web:'||s.id::text AS source_ref,s.input_revision AS revision,s.received_at AS at,s.input_revision AS ordinal,s.id::text AS source_id
    FROM readable r JOIN intake.service_intake i ON i.id=r.id JOIN intake.web_request_binding b ON b.intake_id=i.id JOIN intake.web_submission s ON s.intake_id=i.id
-   WHERE i.source_provider='YIXIAOXIU_WEB' AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms() AND s.kind='SUPPLEMENT' AND s.retention_until_epoch_ms>platform.physical_epoch_ms()
-    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=$2::uuid AND ended.source_intake_id=i.id AND ended.source_ref='web:'||s.id::text AND ended.revision=s.input_revision)
+   WHERE i.source_provider='YIXIAOXIU_WEB' AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>${nowEpochParam} AND s.kind='SUPPLEMENT' AND s.retention_until_epoch_ms>${nowEpochParam}
+    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=${ticketExpr} AND ended.source_intake_id=i.id AND ended.source_ref='web:'||s.id::text AND ended.revision=s.input_revision)
   UNION ALL
   SELECT i.id,'BOT','channel:'||m.id::text,rel.sequence_no,rel.linked_at,rel.sequence_no,m.id::text
    FROM readable r JOIN intake.service_intake i ON i.id=r.id JOIN intake.service_intake_message rel ON rel.intake_id=i.id JOIN channel.message_inbox m ON m.id=rel.channel_message_id
-   WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until_epoch_ms>platform.physical_epoch_ms() AND (rel.relation_type='SUPPLEMENT' OR (rel.relation_type='PRIMARY' AND EXISTS(
+   WHERE i.source_provider='WECOM_AIBOT' AND m.retention_until_epoch_ms>${nowEpochParam} AND (rel.relation_type='SUPPLEMENT' OR (rel.relation_type='PRIMARY' AND EXISTS(
     SELECT 1 FROM intake.channel_leg later JOIN intake.channel_leg basis ON basis.journey_id=later.journey_id JOIN intake.contact_journey j ON j.id=later.journey_id
-     WHERE later.source_intake_id=i.id AND basis.source_intake_id=$1::uuid AND later.leg_ordinal>basis.leg_ordinal AND j.linked_ticket_id=$2::uuid AND j.retention_until_epoch_ms>platform.physical_epoch_ms())))
-    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=$2::uuid AND ended.source_intake_id=i.id AND ended.source_ref='channel:'||m.id::text AND ended.revision=rel.sequence_no)
+     WHERE later.source_intake_id=i.id AND basis.source_intake_id=${intakeExpr} AND later.leg_ordinal>basis.leg_ordinal AND j.linked_ticket_id=${ticketExpr} AND j.retention_until_epoch_ms>${nowEpochParam})))
+    AND NOT EXISTS(SELECT 1 FROM pilot_ticket.closure_supplement_termination ended WHERE ended.ticket_id=${ticketExpr} AND ended.source_intake_id=i.id AND ended.source_ref='channel:'||m.id::text AND ended.revision=rel.sequence_no)
  )`;
+}
+export const SUPPLEMENT_MATERIALS_SQL=supplementMaterialsSql();
 export const SUPPLEMENT_RESOLUTION_SQL=`SELECT proof.id,proof.occurred_at,proof.basis FROM (
   SELECT d.id,d.occurred_at,'RECORDED_DISPOSITION'::text AS basis FROM pilot_ticket.workbench_supplement_disposition d JOIN pilot_ticket.ticket_command_receipt l ON l.id=d.command_receipt_id
    WHERE d.ticket_id=$2::uuid AND d.source_intake_id=m.source_intake_id AND d.source_kind=m.source_kind AND d.source_ref=m.source_ref AND d.revision=m.revision

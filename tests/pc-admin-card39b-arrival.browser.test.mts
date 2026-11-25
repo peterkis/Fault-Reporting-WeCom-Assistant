@@ -1108,7 +1108,7 @@ test('Card 39B new card arrival highlight overlay, placeholders and reduced moti
       const victim=f.tickets[5]?.ticket;
       assert.ok(victim,'dismissal fixture must provide an active ticket');
       const dismissedRow=(await f.pool.query(
-        "UPDATE pilot_ticket.ticket SET status='DISMISSED',title='已关闭高亮样式冲突测试（合成）',version=version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *",
+        "UPDATE pilot_ticket.ticket SET status='DISMISSED',title='已关闭高亮样式冲突测试（合成）',version=version+1,updated_at=platform.local_now(),terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",
         [victim.id],
       )).rows[0] as Ticket;
       const dismissEvent=await appendTicketEvent({
@@ -1179,7 +1179,7 @@ test('Card 39B new card arrival highlight overlay, placeholders and reduced moti
       const dupTicket=f.tickets[6]?.ticket;
       assert.ok(dupTicket&&targetNoRow?.ticket_no,'duplicate closure fixture requires a ticket and original number');
       const dupRow=(await f.pool.query(
-        "UPDATE pilot_ticket.ticket SET status='DISMISSED',title='重复关联未分类原单（合成）',version=version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING *",
+        "UPDATE pilot_ticket.ticket SET status='DISMISSED',title='重复关联未分类原单（合成）',version=version+1,updated_at=platform.local_now(),terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",
         [dupTicket.id],
       )).rows[0] as Ticket;
       const dupEvent=await appendTicketEvent({

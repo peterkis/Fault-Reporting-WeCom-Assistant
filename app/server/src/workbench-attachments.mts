@@ -8,7 +8,7 @@ import {once} from 'node:events';
 import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
-import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
+import {buildSingleItemReadableSql,readWorkbenchClock} from './web01-workbench-query.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
 const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[],truncated:false};
@@ -21,19 +21,32 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null,
   async function requireSession(authContext:Context['authContext'],kind:string,id:string){
     const item=await query.authorizedItem(authContext,kind,id),principal=await authorization.resolvePrincipal(authContext);
     if(!principal)failP2016('NOT_FOUND',404);
-    const scope=ticketPredicateP2016(principal);let predicate:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
+    const clock=await readWorkbenchClock(pool);
+    const scope=ticketPredicateP2016(principal);
+    const values:unknown[]=[];
+    const param=(value:unknown,cast:string)=>{values.push(value);return `$${values.length}::${cast}`;};
+    const isAdminParam=param(scope.values[0],'boolean'),principalParam=param(scope.values[1],'uuid');
+    const teamIdsParam=item.kind==='intake'?'ARRAY[]::text[]':param(scope.values[2],'text[]');
+    const idParam=param(item.id,'uuid');
+    const nowEpochParam=item.kind==='review'?param(clock.nowEpoch,'bigint'):'$0::bigint';
+    const nowLocalParam=item.kind==='review'||item.kind==='intake'?param(clock.nowLocal,'timestamp without time zone'):'$0::timestamp without time zone';
+    const rolesParam=param([...principal.roles],'text[]'),teamsParam=param([...principal.team_ids],'text[]');
+    const expiresParam=param(authContext.expires_epoch_ms,'bigint');
+    let predicate:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
     if(!currentSessionPredicate){
       if(!localTestProfile||'session_id' in authContext)throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
-    }else predicate=currentSessionPredicate(authContext,authContext.principal_id,9);
+    }else predicate=currentSessionPredicate(authContext,authContext.principal_id,values.length+1);
+    values.push(...predicate.values);
     // Reuse the exact card READ predicate; its current role/team basis and the
     // official Session are consumed in the same last statement after all waits.
-    const current=await pool.query<{readable:boolean;current:boolean}>(workbenchSearchCardsSql(true)+` SELECT
-      EXISTS(SELECT 1 FROM cards WHERE kind=$4 AND id=$5) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
-        WHERE actor.id=$2::uuid AND actor.is_active
-        AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=$6::text[]
-        AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
-      ($8::bigint>platform.physical_epoch_ms() AND ${predicate.sql}) AS current`,
-    [...scope.values,item.kind,item.id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,...predicate.values]);
+    const readableSql=buildSingleItemReadableSql(item.kind,idParam,null,nowEpochParam,nowLocalParam,{isAdmin:isAdminParam,principalId:principalParam,teamIds:teamIdsParam});
+    const current=await pool.query<{readable:boolean;current:boolean}>(`SELECT
+      EXISTS(${readableSql}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
+        WHERE actor.id=${principalParam} AND actor.is_active
+        AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=${rolesParam}
+        AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=${teamsParam}) AS readable,
+      (${expiresParam}>platform.physical_epoch_ms() AND ${predicate.sql}) AS current`,
+    values);
     if(current.rows[0]?.current!==true)throw new AttachmentError('ATTACHMENT_AUTH_REVOKED',401);
     if(current.rows[0]?.readable!==true)failP2016('NOT_FOUND',404);
   }
