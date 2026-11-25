@@ -140,11 +140,13 @@ async function captureShadowPair(b:Browser){
  finally{await b.evaluate(restoreShadowViewports);}
 }
 
-// A schedule save also refetches detail behind the modal. Its report properties can move between
+// A schedule save also refetches the detail. Its report properties can move between
 // screenshots even after finite animations finish. Only compare frames with the same idle backdrop.
-async function captureClosingDialogShadow(b:Browser){
+type DetailShadowScenario='drawer'|'fullpage'|'dialog';
+async function captureDetailShadowPair(b:Browser,scenario:DetailShadowScenario){
  const detail='.ds-detail-view .detail-body',properties=detail+' .detail-properties';
- const stack=".ds-closure-dialog .workbench-toast[data-visible=true]";
+ const stack=(scenario==='dialog'?'.ds-closure-dialog ':'')+'.workbench-toast-viewport .workbench-toast[data-visible=true]';
+ const label=scenario+' shadow capture';
  for(let attempt=0;attempt<3;attempt++){
   await waitForAnimationsSettled(b);
   // Check readiness and arm in one browser task so a refresh cannot start between them.
@@ -172,20 +174,20 @@ async function captureClosingDialogShadow(b:Browser){
     finally{delete globalThis.__finishShadowBackdrop;${restoreShadowViewports};}})()`) as typeof backdrop;
   }
   if(backdrop.refreshed)continue;
-  assert.ok(backdrop.sameList,'dialog shadow capture: the same property list remains in the detail');
-  assert.equal(backdrop.finalTop,backdrop.initialTop,'dialog shadow capture: the property list keeps its vertical position');
-  assert.equal(pair.box.toasts.length,3,'dialog shadow capture: three notice rectangles were sampled');
-  assert.equal(backdrop.noticeCount,3,'dialog shadow capture: three notices remain at the end of the pair');
+  assert.ok(backdrop.sameList,label+': the same property list remains in the detail');
+  assert.equal(backdrop.finalTop,backdrop.initialTop,label+': the property list keeps its vertical position');
+  assert.equal(pair.box.toasts.length,3,label+': three notice rectangles were sampled');
+  assert.equal(backdrop.noticeCount,3,label+': three notices remain at the end of the pair');
   return pair;
  }
- assert.fail('dialog shadow capture: detail refresh or stale state changed during all three screenshot pairs');
+ assert.fail(label+': detail refresh or stale state changed during all three screenshot pairs');
 }
-async function assertUnclippedShadow(b:Browser,label:string,directory?:string,capturePair=captureShadowPair){
- const {box,clip,shown,hidden}=await capturePair(b);
+async function assertUnclippedShadow(b:Browser,label:string,directory?:string,scenario?:DetailShadowScenario){
+ const {box,clip,shown,hidden}=scenario?await captureDetailShadowPair(b,scenario):await captureShadowPair(b);
  if(directory){
   const name='shadow-sample-'+label.replace(/\W+/gu,'-');
   await writeFile(join(directory,name+'.png'),shown);
-  if(capturePair===captureClosingDialogShadow)await writeFile(join(directory,name+'-hidden.png'),hidden);
+  if(scenario==='dialog')await writeFile(join(directory,name+'-hidden.png'),hidden);
  }
  // The shadow's opacity at each pixel, in 0–255 steps: on = off·(1−a) + 15·a for the shadow colour rgb(15,15,15). Pixels whose
  // background is darker than 60 (text, icons) say little about the opacity and are skipped.
@@ -277,7 +279,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await open(path);
    await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1`);await draftWarning(b,'（续）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
    let fullHeights:number[]=[];
-   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});}
+   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory,scenario)});}
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
    // Short windows: at 1440×560 (32D-T) the three notices fit between the toolbar and the composer; at 1440×440 they do not, so
    // the stack stops below the toolbar (data-toast-avoid="top") and scrolls inside its shadow gutter (card 33), and the
@@ -328,7 +330,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   // pc-admin-card34a-toast-modal. Here the stack beside the modal is held to the same 32D-T and card 33 checks.
   for(const width of [1920,1440] as const){await measure('dialog',width,dialogControls);
    assert.equal(await b.evaluate("(()=>{const d=document.querySelector('.ds-closure-dialog').getBoundingClientRect();return [...document.querySelectorAll('.workbench-toast[data-visible=true]')].every(n=>{const r=n.getBoundingClientRect();return r.right<=d.left||r.left>=d.right||r.bottom<=d.top||r.top>=d.bottom;});})()"),true,'dialog '+width+': no notice intersects the modal');
-   if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory,captureClosingDialogShadow)});if(width===1440)await shot('toast-dialog-1440.png');}
+   if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory,'dialog')});if(width===1440)await shot('toast-dialog-1440.png');}
 
   // Hover and timing (T1): a hovered success notice waits; once the pointer leaves it closes after 4s. An error notice waits for
   // its close button, however long it stays on screen.
