@@ -64,7 +64,7 @@ export async function withT22Fixture(run:(fixture:T22Fixture)=>Promise<void>,{en
     try{const started=await runtime.start(),[first,other,handler]=started.cookies??[];if(!first||!other||!handler)throw Error('T22_AUTH_REQUIRED');
       await run({...f,runtime,sessions,cookie:first.name+'='+first.value,outsiderCookie:other.name+'='+other.value,handlerCookie:handler.name+'='+handler.value,browserCookie:first,restoreResponses:()=>{dropping=false;},...(bootstrapAuthenticationBoundary?{bootstrapAuthenticationBoundary}:{})});
     }finally{nextBootstrapCallback=null;await runtime.stop();if(runtime.server.listening)throw Error('T22_SERVER_NOT_CLOSED');}
-  },{beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{const input={databaseUrl,mode:'apply' as const};if(personalRead){await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
+  },{partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{const input={databaseUrl,mode:'apply' as const};if(personalRead){await migrateP2012(input);await migrateYxxSelfService(input);await migrateWorkbenchManualReports(input);await migrateWorkbenchPersonalRead(input);}
     // ADR-0058: schemas a test needs are applied here, before 072 rewrites the closure vocabulary; applying them afterwards fails the
     // P2-016 catalog check (P2_016_SCHEMA_DRIFT).
     else if(selfServiceSchema){await migrateP2012(input);await migrateYxxSelfService(input);}}});

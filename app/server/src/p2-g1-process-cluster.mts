@@ -9,6 +9,7 @@ export interface G1ClusterConfiguration {
   roleEnvironment?: (role: 'APP'|'WORKER'|'GATEWAY') => NodeJS.ProcessEnv; baseEnvironment?: Record<string, string>;
   controlledMessageTypes?: readonly string[]; roleScriptUrl?: URL; allowRoleRestart?: boolean; workerHealthEvents?: boolean;
   externalAuthentication?: boolean;
+  appSchemaErrorPrefix?: string;
 }
 type ReadyMessage = { type: 'role-ready'; role: string; cookies?: BrowserCookie[]; worker_ready?: boolean; authenticated?: boolean };
 type ClusterMessage = G1ProviderResponse
@@ -234,10 +235,10 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
   async function start() {
     if (started || stopping) throw new Error('P2_G1_PROCESS_CLUSTER_STATE_INVALID');
     started = true;
-    const waits = Object.fromEntries(ROLES.map((currentRole) => [currentRole, waitForRole(currentRole)]));
+    const waits = ROLES.map((role) => waitForRole(role));
     for (const currentRole of ['GATEWAY', 'APP', 'WORKER']) spawnRole(currentRole);
     try {
-      await Promise.all(ROLES.map((currentRole) => waits[currentRole]));
+      await Promise.all(waits);
       relayPeerStatus();
       const readiness = await waitForCombinedReady();
       const distinctProcesses = new Set(ROLES.map((currentRole) => children.get(currentRole)?.pid)).size;
@@ -248,8 +249,20 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
       }
       return Object.freeze({ origin, cookies: Object.freeze(appCookies), process_count: distinctProcesses, readiness });
     } catch (error) {
+      let failure = error;
+      const prefix = configuration.appSchemaErrorPrefix;
+      if (prefix && error instanceof Error && error.message.startsWith(prefix)) {
+        // The bounded waits retain APP, WORKER, GATEWAY order regardless of IPC arrival.
+        const checks = new Set<string>();
+        for (const outcome of await Promise.allSettled(waits)) {
+          if (outcome.status === 'rejected' && outcome.reason instanceof Error && outcome.reason.message.startsWith(prefix)) {
+            for (const check of outcome.reason.message.slice(prefix.length).split(',')) checks.add(check);
+          }
+        }
+        failure = new Error(prefix + [...checks].join(','));
+      }
       await stop();
-      throw error;
+      throw failure;
     }
   }
 

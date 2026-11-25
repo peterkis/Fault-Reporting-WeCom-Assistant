@@ -37,14 +37,37 @@ test('readonly and OAuth-only profiles retain no feedback route; zero-write memb
 
 test('043 readiness is conditional on enabled W rounds while original W defaults keep their current readiness',async()=>{
  await withT20FeedbackFixture(async f=>{
-  await f.app.stop();await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_t20_missing' WHERE migration_id='043_ticket_reopen_rounds'");
-  try{
-   for(const enabled of [false,true]){
-    const runtime=createP2016Runtime({pool:f.context.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.context.origin,principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,...(enabled?{ticketReopenRoundsEnabled:true}:{})});
-    if('disabled' in runtime)throw Error('T20_DEFAULT_READY_DISABLED');
-    try{await runtime.start();const projected=await runtime.coordinator.runOnce();if(projected.disabled)throw Error('T20_PROJECTION_DISABLED');assert.equal(projected.failures,0,JSON.stringify(projected));const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);}
-    finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-   }
-  }finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_ticket_reopen_rounds' WHERE migration_id='043_t20_missing'");}
- });
+  await f.app.stop();
+  for(const enabled of [false,true]){
+   const runtime=createP2016Runtime({pool:f.context.pool,limitedRequestGuard:async()=>false,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:f.context.origin,principalIds:[f.context.principals[0]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,...(enabled?{ticketReopenRoundsEnabled:true}:{})});
+   if('disabled' in runtime)throw Error('T20_DEFAULT_READY_DISABLED');
+   const health=()=>browser(runtime.server).request('/health/ready');
+   try{
+    await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_t20_missing' WHERE migration_id='043_ticket_reopen_rounds'");
+    try{
+     await runtime.start();
+     const projected=await runtime.coordinator.runOnce();
+     if(projected.disabled)throw Error('T20_PROJECTION_DISABLED');
+     assert.equal(projected.failures,0,JSON.stringify(projected));
+     const ready=await health();
+     assert.equal(ready.status,enabled?503:200,ready.text);
+     if(enabled)assert.equal(t20Object(t20Object(ready.json()).checks).ticket_reopen_rounds_schema,false);
+    }finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='043_ticket_reopen_rounds' WHERE migration_id='043_t20_missing'");}
+    const full=await health();
+    assert.equal(full.status,200,full.text);
+    if(!enabled){
+     for(const [id,check] of [['076_fk_indexes','fk_indexes_schema'],['077_retention_and_time_contract','retention_time_contract_schema']] as const){
+      const missingId=`${id}_t20_missing_release`;
+      await f.context.pool.query('UPDATE platform.schema_migration SET migration_id=$2 WHERE migration_id=$1',[id,missingId]);
+      try{
+       const degraded=await health();
+       assert.equal(degraded.status,503,degraded.text);
+       const checks=t20Object(t20Object(degraded.json()).checks);
+       assert.deepEqual(Object.keys(checks).filter(name=>checks[name]===false),[check]);
+      }finally{await f.context.pool.query('UPDATE platform.schema_migration SET migration_id=$1 WHERE migration_id=$2',[id,missingId]);}
+     }
+    }
+   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
+  }
+ },{fullSchema:true});
 });

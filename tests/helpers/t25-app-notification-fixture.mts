@@ -27,7 +27,7 @@ export async function withT25ManualFixture(run:(context:T11Fixture)=>Promise<voi
    const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);
    await run({...f,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{ticketSelfHandlingEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+ },{ticketSelfHandlingEnabled:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:true,manualReporterDirectory:directory,manualProjection:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
   await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});
   await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
   if(memberOptions.botReporterFeedbackEnabled){await migrateTicketReopenRounds({databaseUrl:databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl:databaseUrl,mode:'apply'});}await ensureCompletionDismissal(databaseUrl);

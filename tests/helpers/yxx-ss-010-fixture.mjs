@@ -3,6 +3,7 @@ import {createServer} from 'node:net';
 import {limitedTemplate,databaseIdentity,digest} from '../../app/server/src/yxx-limited-write-contract.mjs';
 import {formatEpochMsToShanghaiLocal} from '../../app/server/src/platform/time-contract.mjs';
 import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access-workbench.mjs';
+import {applyFullSchemaThrough077} from './full-schema-migrations.mjs';
 import {migrateCurrentBaselineWithYxx} from '../../app/server/scripts/migrate-current-baseline.mjs';
 import {migrateServiceClosure} from '../../app/server/scripts/service-closure-migrate.mjs';
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
@@ -25,10 +26,13 @@ export function manifestFixture({databaseUrl='postgres://synthetic@127.0.0.1/p2_
     owner:'synthetic-owner',approver:'synthetic-approver',approval_record_ref:'tests/synthetic-approval',approval_record_sha256:'e'.repeat(64),
     backup_ref:'synthetic-backup',rollback_ref:'synthetic-readonly',public_origin:'https://127.0.0.1',listen_port:port};
 }
-export async function runtimeFixture({pool,databaseUrl,reporterAliases=['A','B']}){
-  await migrateCurrentBaselineWithYxx({databaseUrl});
-  // The limited runtime starts the current roles, which require 071 and the 072 completion / dismissal vocabulary.
-  await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
+export async function runtimeFixture({pool,databaseUrl,reporterAliases=['A','B'],fullSchema=false}){
+  if(fullSchema)await applyFullSchemaThrough077(databaseUrl);
+  else{
+    await migrateCurrentBaselineWithYxx({databaseUrl});
+    // The limited runtime starts the current roles, which require 071 and the 072 completion / dismissal vocabulary.
+    await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
+  }
   const manifest=manifestFixture({databaseUrl,oid:(await pool.query('SELECT oid::text FROM pg_database WHERE datname=current_database()')).rows[0].oid,port:await freePort()});
   manifest.reporter_aliases=[...reporterAliases];
   const access=createPilotAccessService({pool});manifest.principal_ids=[];

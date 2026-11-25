@@ -18,7 +18,7 @@ export interface T20FeedbackFixture{
  send(body?:YxxFeedbackInput,headers?:Record<string,string>):ReturnType<ReturnType<typeof browser>['request']>;
 }
 // Single App at every stage; synthetic identity adapters, actual admission/Core/T04/T11 and native HTTP.
-export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>Promise<void>,{beforeCompletion}:{beforeCompletion?:(input:{member:ReturnType<typeof browser>;path:string;csrf:string})=>Promise<void>}={}){
+export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>Promise<void>,{beforeCompletion,fullSchema=false}:{fullSchema?:boolean;beforeCompletion?:(input:{member:ReturnType<typeof browser>;path:string;csrf:string})=>Promise<void>}={}){
  await withT11Fixture(async context=>{
   await context.runtime.stop();const options=await t20MemberOptions(context),admission=t20MemberApp(options);
   let requestRef:string,ticketId:string;
@@ -49,5 +49,5 @@ export async function withT20FeedbackFixture(run:(fixture:T20FeedbackFixture)=>P
    const send=(body=command,headers:Record<string,string>={})=>member.request(path+'/feedback',{...post(body,csrf),headers:{...post(body,csrf).headers,'if-match':'"'+body.expected_ticket_version+'"',...headers}});
    await run({context,options,app,member,path,requestRef,ticketId,completed,csrf,command,send});
   }finally{await app.stop();assert.equal(app.server.listening,false);}
- });
+ },{fullSchema});
 }

@@ -7,6 +7,8 @@ import path from 'node:path';
 import {createServer} from 'node:net';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {runtimeFixture,scopedBrowser} from './helpers/yxx-ss-010-fixture.mjs';
+import {migrateFkIndexes} from '../app/server/scripts/fk-indexes-migrate.mjs';
+import {migrateRetentionTimeContract} from '../app/server/scripts/retention-and-time-contract-migrate.mjs';
 import {startLimitedRuntime} from '../app/server/src/yxx-limited-write-runner.mjs';
 import {createLimitedGuard} from '../app/server/src/yxx-limited-write-guard.mjs';
 import {createYxxSelfServiceStore} from '../app/server/src/yxx-self-service-store.mjs';
@@ -217,5 +219,46 @@ test('SS010 AC094 lost controller IPC stops roles without starting a Gateway or 
       assert.ok([...runtime.children.values()].every(child=>child.exitCode!==null||child.signalCode!==null));
       assert.deepEqual(runtime.status().counts,{intakes:0,supplements:0,tickets:0});
     }finally{await runtime?.stop();}
+  }});
+});
+
+test('SS010 current PG18 catalog starts the limited roles and rejects index, constraint and receipt drift',{timeout:180000},async t=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
+    const setup=await runtimeFixture({...context,fullSchema:true});
+    const directory=mkdtempSync(path.join(tmpdir(),'ss010-current-'));
+    const start=()=>startLimitedRuntime({...setup,stateDirectory:path.join(directory,randomUUID()),synthetic:true});
+    const {pool}=context;
+    try{
+      const runtime=await start();
+      try{
+        const staff=scopedBrowser({address:()=>({port:runtime.port})},'http://127.0.0.1:'+runtime.port,runtime.cookies[0]);
+        const health=await staff.request('/health/ready');
+        assert.equal(health.status,200,health.text);
+        assert.equal(health.json().checks.ss010_catalog,true);
+      }finally{assert.equal((await runtime.stop()).cleanup_passed,true);}
+      for(const migrate of [migrateFkIndexes,migrateRetentionTimeContract]){
+        assert.equal((await migrate({databaseUrl:context.databaseUrl,mode:'rollback'})).status,'ROLLED_BACK');
+        const single=await start();
+        try{assert.equal(single.status().status,'RUNNING');}
+        finally{assert.equal((await single.stop()).cleanup_passed,true);}
+        assert.equal((await migrate({databaseUrl:context.databaseUrl,mode:'apply'})).status,'APPLIED');
+      }
+      const index='intake.service_intake_retention_epoch_idx';
+      const [{ddl}]=(await pool.query('SELECT pg_get_indexdef($1::regclass) AS ddl',[index])).rows;
+      const constraint='web_command_receipt_schema_check';
+      const [{original}]=(await pool.query("SELECT pg_get_constraintdef(oid) AS original FROM pg_constraint WHERE conrelid='intake.web_command_receipt'::regclass AND conname=$1",[constraint])).rows;
+      for(const [change,restore] of [
+        ['CREATE INDEX ss010_extra_idx ON intake.service_intake (id)','DROP INDEX intake.ss010_extra_idx'],
+        ['DROP INDEX '+index,ddl],
+        ['ALTER TABLE intake.web_command_receipt DROP CONSTRAINT '+constraint+', ADD CONSTRAINT '+constraint+' CHECK (true)',
+          'ALTER TABLE intake.web_command_receipt DROP CONSTRAINT '+constraint+', ADD CONSTRAINT '+constraint+' '+original],
+      ]){
+        await pool.query(change);
+        try{await assert.rejects(start,{code:'YXX_SELF_SERVICE_CATALOG_DRIFT'});}
+        finally{await pool.query(restore);}
+      }
+      await pool.query("UPDATE platform.schema_migration SET checksum_sha256=repeat('0',64) WHERE migration_id='064_yixiaoxiu_h5_member_service'");
+      await assert.rejects(start,{code:'SS010_MIGRATION_NOT_READY'});
+    }finally{rmSync(directory,{recursive:true,force:true});}
   }});
 });

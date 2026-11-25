@@ -6,6 +6,7 @@ import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {failP2016} from '../src/p2-016-domain-contracts.mjs';
+import {FK_PREDECESSOR_COUNT_SQL,fkPredecessorParameters} from './fk-indexes-migrate.mjs';
 
 export const FOLLOW_MIGRATION_ID='044_workbench_item_follow';
 const SQL_URL=new URL('../../../database/migrations/'+FOLLOW_MIGRATION_ID+'.sql',import.meta.url);
@@ -22,16 +23,20 @@ export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<b
   if(RECEIPT_PREDECESSORS.some(id=>!markers.some(row=>row.migration_id===id)))return false;
   const checksum=async(name:string)=>createHash('sha256').update(await readFile(new URL('../../../database/migrations/'+name+'.sql',import.meta.url))).digest('hex');
   for(const marker of markers)if(marker.checksum_sha256!==await checksum(marker.migration_id))return false;
- const receipt=await normalizeServiceClosureReceiptCatalog(tx,await conversationDeliveryReceiptCatalog(tx));
+ let receipt;
+ try{receipt=await normalizeServiceClosureReceiptCatalog(tx,await conversationDeliveryReceiptCatalog(tx));}
+ catch(error){if(error instanceof Error&&error.message==='SERVICE_CLOSURE_SCHEMA_DRIFT')return false;throw error;}
+ if(!receipt)return false;
  const digest=createHash('sha256').update(JSON.stringify(receipt)).digest('hex');
   return digest===(bot?RECEIPT_047_050:RECEIPT_047)||await conversationDeliveryReceiptSchemaShape(tx)===(bot?'BOT':'INTAKE');
 }
 /** Exact feature inventory. No weakening of the existing receipt resource/purpose guards. */
 export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>{
   if(!await followReceiptSchemaReady(tx))return false;
+  const fk=await fkPredecessorParameters(['pilot_ticket.workbench_item_follow']);
   const sql=await readFile(SQL_URL,'utf8'),checksum=createHash('sha256').update(sql).digest('hex');
   const row=(await tx.query<{ready:boolean}>(`SELECT
-    EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id=$1 AND checksum_sha256=$2)
+    EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id=$4 AND checksum_sha256=$5)
     AND EXISTS(SELECT 1 FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read')
     AND EXISTS(SELECT 1 FROM pg_class WHERE oid=to_regclass('pilot_ticket.workbench_item_follow') AND relkind='r' AND relpersistence='p' AND NOT relispartition AND NOT relrowsecurity AND NOT relforcerowsecurity)
     AND NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('pilot_ticket.workbench_item_follow') AND NOT tgisinternal)
@@ -48,12 +53,13 @@ export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>
     AND EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('pilot_ticket.workbench_item_follow') AND contype='c' AND convalidated AND pg_get_constraintdef(oid)='CHECK ((row_version >= 1))')
     AND EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('pilot_ticket.workbench_item_follow') AND contype='f' AND convalidated AND pg_get_constraintdef(oid)='FOREIGN KEY (principal_id) REFERENCES pilot_ticket.pilot_principal(id) ON DELETE RESTRICT')
     AND EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('pilot_ticket.workbench_item_follow') AND contype='f' AND convalidated AND pg_get_constraintdef(oid)='FOREIGN KEY (source_intake_id) REFERENCES intake.service_intake(id) ON DELETE RESTRICT')
-    AND (SELECT count(*)=2 FROM pg_index WHERE indrelid=to_regclass('pilot_ticket.workbench_item_follow'))
+    AND (SELECT count(*)=2+${FK_PREDECESSOR_COUNT_SQL} FROM pg_index i
+      WHERE i.indrelid=to_regclass('pilot_ticket.workbench_item_follow'))
     AND EXISTS(SELECT 1 FROM pg_index WHERE indrelid=to_regclass('pilot_ticket.workbench_item_follow') AND indisvalid AND indisready AND indisunique AND indisprimary)
     AND EXISTS(SELECT 1 FROM pg_index i JOIN pg_class ix ON ix.oid=i.indexrelid
       WHERE i.indrelid=to_regclass('pilot_ticket.workbench_item_follow') AND ix.relname='workbench_item_follow_active_idx'
         AND i.indisvalid AND i.indisready AND NOT i.indisunique AND NOT i.indisprimary
-        AND pg_get_indexdef(i.indexrelid)='CREATE INDEX workbench_item_follow_active_idx ON pilot_ticket.workbench_item_follow USING btree (principal_id, source_intake_id) WHERE following') AS ready`,[FOLLOW_MIGRATION_ID,checksum])).rows[0];
+        AND pg_get_indexdef(i.indexrelid)='CREATE INDEX workbench_item_follow_active_idx ON pilot_ticket.workbench_item_follow USING btree (principal_id, source_intake_id) WHERE following') AS ready`,[...fk.values,FOLLOW_MIGRATION_ID,checksum])).rows[0];
   return row?.ready===true;
 }
 export async function migrateWorkbenchFollow({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){

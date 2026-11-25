@@ -75,7 +75,9 @@ App 内 `gatewayEnabled/senderEnabled=false`，不是发信角色。原轮次消
 
 通知目标文件是本入口消费的受控配置，不是业务表或身份系统。维护方必须提供当前 ACTIVE／VERIFIED／REACHABLE 的 InternalMemberId 资格及独立 Webhook 提及对应证明；OAuth 转换、旧报修快照、姓名或第三方目录标签不构成该资格。每次资格解析重读文件，删除目标／修改映射／到期立即拒绝新资格；不改投、不盲重发 UNKNOWN。文件整体映射摘要由已有 `yxxIdentityConfigHash(memberEntry)` 计算；既有成员配置原值和 proofRef 必须一致。更换已有身份密钥会改变既有身份，不能作为修复办法。
 
-配置检查不连接数据库或 Provider；实际启动沿 Runtime schema readiness 拒绝缺少迁移。先用仓库已有 `migrate-current-baseline`／各工作包 migrate 的 check/status 核对，再在获得数据库授权时使用其 apply。所需扩展包括 063_mvp_notifications_app_members、workbench-auth、ticket-self-handling、staff-completion、round-notifications（包含052）、manual-reports、reopen-rounds、bot-feedback、personal-read、follow（既有回执依赖，关注功能仍关闭）、supplement-follow-up、source-groups、conversation-delivery-commands。启动命令不会补写迁移账本。
+配置检查不连接数据库或 Provider；实际启动沿 Runtime schema readiness 拒绝缺少迁移。先用仓库已有 `migrate-current-baseline`／各工作包 migrate 的 check/status 核对，再在获得数据库授权时使用其 apply。所需扩展包括 063_mvp_notifications_app_members、workbench-auth、ticket-self-handling、staff-completion、round-notifications（包含052）、manual-reports、reopen-rounds、bot-feedback、personal-read、follow（既有回执依赖，关注功能仍关闭）、supplement-follow-up、source-groups、conversation-delivery-commands，以及当前发布基线要求的外键与留存时间契约增量 [076 外键索引](../../database/migrations/076_fk_indexes.sql) 和 [077 留存索引与时间契约](../../database/migrations/077_retention_and_time_contract.sql)（两者均不依赖 075，在前置表迁移全部就绪后按 `node .build/runtime/app/server/scripts/fk-indexes-migrate.mjs --check` → `--apply` → `--check` 与 `node .build/runtime/app/server/scripts/retention-and-time-contract-migrate.mjs --check` → `--apply` → `--check` 顺序对授权全量库执行并校验 checksum 与索引/函数结构）。启动命令保留只读 readiness 核验，不会补写迁移账本。
+
+Peter 于 2026-11-25 决定永久保留生产工单及全部关联数据行，未建单的业务数据行目前也保留，均不删除或匿名化。H5 媒体文件是全量保留的例外，已绑定到工单的文件仍由 H5 Worker 到期清理。独立的 42C 清理器默认禁用，不注册到任何调度器。手动干跑使用 077 的索引计数到期候选。清理器的 `--apply` 或可执行策略插件均以既有错误码 `RETENTION_CLEANUP_POLICY_UNDECIDED` 拒绝执行。今后如需扩大删除范围或引入匿名化，须另立 ADR 并单独建任务。[ADR-0060 留存决策](../../adr/0060_data_retention_and_cleanup_policy.md)
 
 ## MVP 通知切换
 
@@ -114,7 +116,7 @@ App 保存私有原件；Worker 在既有有限 `runOnce` 周期内串行处理�
 
 启用前核对 [064 成员服务迁移](../../database/migrations/064_yixiaoxiu_h5_member_service.sql) 与 [065 Web 媒体迁移](../../database/migrations/065_yixiaoxiu_h5_web_media.sql) 的当前编译候选、checksum 和适用库。只有在具名数据库授权范围内才显式 apply；配置 `--check` 和 App／Worker 启动不会自动执行迁移 SQL，不得为通过 readiness 自动写迁移账本。H5 开启但迁移缺失时按 `yxx_h5_schema` 失败关闭。064／065 的本地合成应用不能改写旧迁移或视为现场批准。
 
-材料未绑定保留最多 24 小时；绑定后不得超过原 Web Request／Submission／Intake 的最早截止。转码失败、停止或关闭新写不提前删除原件。到期 Worker 删除原件／副本的密文并记录清理状态，保留历史事实。停止时沿原父进程关闭顺序取消并等待 H5 流、私有存储和转码任务；不清空工单、UUID 回执或未到期材料。
+H5 媒体上传的 `expires_epoch_ms` 初始为预留时间加 24 小时。绑定时，系统取传入的留存截止时间与 Web Request Binding、Submission、Intake 三条记录留存截止时间中的最早值。数据库物理时间达到或超过该时间后，已启用的 H5 Worker 会清理尚未标记清理的原件、播放副本和缩略图，包括已绑定到工单的文件。Worker 在上传记录写入 `purged_epoch_ms`，工单和全部关联数据行继续保留。转码失败、停止或关闭新写不提前删除原件。停止时沿原父进程关闭顺序取消并等待 H5 流、私有存储和转码任务。
 
 只停公开进度写入时设置 `YIXIAOXIU_H5_PROGRESS_ENABLED=false`；只停成员新写沿原 `write_flag`／成员写开关，保留 H5 当前获权历史 READ 和原用途核对。`YIXIAOXIU_H5_ENABLED=false` 则退出新版页面／新路由，保留原 V1 读取、数据库和私有文件；它不是删除、回滚迁移或轮换密钥的命令。
 

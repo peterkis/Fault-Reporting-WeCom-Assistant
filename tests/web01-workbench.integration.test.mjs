@@ -19,7 +19,7 @@ import {createDecisionStore} from '../app/server/src/p2-015-decision-store.mjs';
 import {createServiceIntakeDecisionPort} from '../app/server/src/p2-015-service-intake-decision-port.mjs';
 import {safeHash} from '../app/server/src/p2-015-domain-contracts.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
-  await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals,databaseUrl})=>{
+  for(const partialSchemaOnly of [true,false])await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals,databaseUrl})=>{
     const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
     assert.equal((await fetch(origin+'/api/workbench/board')).status,401);
     assert.equal((await fetch(origin+'/workbench/app/')).status,401);
@@ -28,8 +28,8 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     const bootstrap=await read('/api/lifecycle/bootstrap');assert.equal(bootstrap.principal_id,principals[0].id);
     assert.equal(bootstrap.source_group_directory_enabled,false);
     assert.equal((await get('/api/workbench/source-groups')).status,503);
-    assert.equal((await migrateWorkbenchSourceGroups({databaseUrl,mode:'check'})).status,'PENDING');
-    assert.equal((await pool.query("SELECT to_regclass('workbench.source_group_name')::text AS name")).rows[0].name,null);
+    assert.equal((await migrateWorkbenchSourceGroups({databaseUrl,mode:'check'})).status,partialSchemaOnly?'PENDING':'NOOP_ALREADY_APPLIED');
+    assert.equal((await pool.query("SELECT to_regclass('workbench.source_group_name')::text AS name")).rows[0].name,partialSchemaOnly?null:'workbench.source_group_name');
     const pending=await read('/api/workbench/board?column=pending');
     assert.equal(pending.items.length,7);assert.equal(pending.items.filter(i=>i.intake_id===tickets[0].intake.intakeId).length,1);
     assert.ok(pending.items.some(i=>i.kind==='intake'&&i.id===waiting.intakeId&&i.status==='WAITING_DESCRIPTION'));
@@ -96,7 +96,7 @@ test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, ke
     assert.equal((await get('/api/reporter/bootstrap')).status,503); // Existing member closed flag is unchanged.
     await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
     assert.equal((await get(path)).status,401);assert.equal((await get('/workbench/app/')).status,401);
-  });
+  },{partialSchemaOnly});
 });
 
 test('WEB01 current communication responsibility excludes a retained assignment after a real topic boundary',async()=>{

@@ -23,16 +23,22 @@ test('Bot feedback defaults closed and readonly/OAuth profiles cannot gain write
 });
 test('current Bot schema readiness is conditional and the default runtime keeps its original readiness without 050',async()=>{
  await withT21DraftFixture(async f=>{
-  await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_t21_missing' WHERE migration_id='050_bot_reporter_feedback'");
-  try{for(const enabled of [false,true]){
+  for(const enabled of [false,true]){
    const runtime=createP2016Runtime({pool:f.context.pool,publicOrigin:f.context.origin,reporterOrigin:origin,principalIds:[f.context.principals[0]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},externalSendEnabled:false,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:t21Config,identityMapping:await t21Mapping(),reporterHmacSecret:secret,wecomWebOAuth:t21OAuthOptions(),botReporterFeedbackEnabled:enabled,yxxSelfService:{featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true}}});
    if('disabled' in runtime)assert.fail('T21_ENABLED_RUNTIME_REQUIRED');
-   try{await runtime.start();const result=await runtime.coordinator.runOnce();if(result.disabled)assert.fail('T21_COORDINATOR_REQUIRED');assert.equal(result.failures,0);
-    const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);const checks=t21Object(t21Object(ready.json()).checks);
-    if(enabled)assert.equal(checks.bot_reporter_feedback_schema,false);else assert.equal(Object.hasOwn(checks,'bot_reporter_feedback_schema'),false);
+   try{
+    await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_t21_missing' WHERE migration_id='050_bot_reporter_feedback'");
+    try{
+     await runtime.start();
+     const result=await runtime.coordinator.runOnce();if(result.disabled)assert.fail('T21_COORDINATOR_REQUIRED');assert.equal(result.failures,0);
+     const ready=await browser(runtime.server).request('/health/ready');assert.equal(ready.status,enabled?503:200,ready.text);const checks=t21Object(t21Object(ready.json()).checks);
+     if(enabled)assert.equal(checks.bot_reporter_feedback_schema,false);else assert.equal(Object.hasOwn(checks,'bot_reporter_feedback_schema'),false);
+    }finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_bot_reporter_feedback' WHERE migration_id='050_t21_missing'");}
+    const full=await browser(runtime.server).request('/health/ready');
+    assert.equal(full.status,200,full.text);
    }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  }}finally{await f.context.pool.query("UPDATE platform.schema_migration SET migration_id='050_bot_reporter_feedback' WHERE migration_id='050_t21_missing'");}
- });
+  }
+ },{fullSchema:true});
 });
 test('Bot closed public HTTP contracts reject incidental text, spoofed identity and malformed version while exposing only safe committed fields',async()=>{
  await withT21DraftFixture(async f=>{

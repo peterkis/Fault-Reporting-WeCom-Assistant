@@ -6,6 +6,7 @@ import {createPostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {PilotPrincipal} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import type {ManualReportCommand} from '../contracts/workbench_manual_report_contracts.js';
+import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;databaseUrl:string;principals:PilotPrincipal[];cookies:string[];sessionId:string}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -150,15 +151,28 @@ test('manual receipt rechecks creation authority across its final Session query 
 });
 
 test('default-off manual entry rejects its purpose without 033/042 storage and preserves ordinary authorized workbench reads',async()=>{
-  await withWeb01Fixture(async(fixture:Fixture)=>{
+  for(const partialSchemaOnly of [true,false])await withWeb01Fixture(async(fixture:Fixture & {runtime:P2016EnabledRuntime})=>{
     const token=await csrf(fixture),authority=object(await(await get(fixture,'/api/lifecycle/bootstrap')).json());assert.equal(authority.manual_reports_enabled,false);assert.equal(authority.manual_report_draft_recovery_enabled,false);
-    assert.equal((await fixture.pool.query("SELECT count(*)::integer AS n FROM platform.schema_migration WHERE migration_id='042_workbench_manual_reports'")).rows[0]?.n,0);
-    assert.equal((await fixture.pool.query("SELECT count(*)::integer AS n FROM information_schema.columns WHERE table_schema='intake' AND table_name='service_intake' AND column_name='manual_report_snapshot'")).rows[0]?.n,0);
+    const migrations=['033_yxx_self_service_intake','042_workbench_manual_reports','076_fk_indexes','077_retention_and_time_contract'];
+    const installed=await fixture.pool.query<{migration_id:string}>('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[]) ORDER BY migration_id',[migrations]);
+    assert.deepEqual(installed.rows.map(row=>row.migration_id),partialSchemaOnly?[]:migrations);
+    assert.equal((await fixture.pool.query("SELECT to_regclass('intake.web_submission') IS NOT NULL AS present")).rows[0]?.present,!partialSchemaOnly);
+    assert.equal((await fixture.pool.query("SELECT count(*)::integer AS n FROM information_schema.columns WHERE table_schema='intake' AND table_name='service_intake' AND column_name='manual_report_snapshot'")).rows[0]?.n,partialSchemaOnly?0:1);
     for(const response of [await get(fixture,'/api/workbench/reports/capabilities'),await post(fixture,token,command()),await get(fixture,'/api/workbench/reports/commands/'+randomUUID())]){assert.equal(response.status,503);assert.equal(object(object(await response.json()).error).code,'P2_016_DISABLED');}
     assert.equal((await get(fixture,'/api/workbench/board?column=pending&range=recent&limit=50')).status,200);
     assert.equal((await fixture.pool.query("SELECT count(*)::integer AS n FROM intake.service_intake WHERE source_channel='MANUAL'")).rows[0]?.n,0);
     assert.equal((await fixture.pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_MANUAL_REPORT'")).rows[0]?.n,0);
-  },{realWorkbenchAuthentication:true});
+    const projected=await fixture.runtime.coordinator.runOnce();
+    assert.equal(projected.disabled,false);
+    assert.equal(projected.failures,0);
+    assert.equal((await fixture.runtime.coordinator.backlog()).total,0);
+    const ready=await get(fixture,'/health/ready'),checks=object(object(await ready.json()).checks);
+    assert.equal(Object.hasOwn(checks,'workbench_manual_reports_schema'),false);
+    assert.equal(checks.fk_indexes_schema,!partialSchemaOnly);
+    assert.equal(checks.retention_time_contract_schema,!partialSchemaOnly);
+    assert.deepEqual(Object.keys(checks).filter(name=>checks[name]!==true),partialSchemaOnly?['fk_indexes_schema','retention_time_contract_schema']:[]);
+    assert.equal(ready.status,partialSchemaOnly?503:200);
+  },{realWorkbenchAuthentication:true,chronologicalTicketEvents:true,partialSchemaOnly});
 });
 
 test('current staff creation permission and closed input reject actor, member, receipt and request-forgery shortcuts before a manual admission',async()=>{

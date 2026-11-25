@@ -33,6 +33,7 @@ import {migrateServiceClosure} from '../app/server/scripts/service-closure-migra
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
+import {applyFullSchemaThrough077} from './helpers/full-schema-migrations.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl} from './helpers/heroui-workbench-controls.mjs';
 
@@ -148,20 +149,7 @@ test('H5 real HTTP, Core, media Worker and current workbench READ share one isol
   const root=await mkdtemp(join(tmpdir(),'yxx-h5-flow-')),key=randomBytes(32);
   try{await withP2015IsolatedDatabase({databaseUrl,purpose:'h5flow',max:2,run:async({pool,databaseUrl:isolated}:{pool:PostgresPool;databaseUrl:string})=>{
     assert.ok(Number((await pool.query<{server_version_num:string}>('SHOW server_version_num')).rows[0]?.server_version_num)>=180000);
-    const migrationRoot=dirname(sourceFile('database/migrations/001_p1_003_channel_message_inbox.sql'));
-    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
-    const migrationOptions={databaseUrl:isolated,mode:'apply' as const};
-    const formal=new Map<number,()=>Promise<unknown>>([
-      [35,()=>migrateWorkbenchAuth(migrationOptions)],[36,()=>migrateThirdPartyStaffDirectory(migrationOptions)],
-      [39,()=>migrateTicketSelfHandling({databaseUrl:isolated,mode:'apply'})],[40,()=>migrateTicketStaffCompletion({databaseUrl:isolated,mode:'apply'})],
-      [41,()=>migrateTicketRoundNotifications({databaseUrl:isolated,mode:'apply'})],[43,()=>migrateTicketReopenRounds({databaseUrl:isolated,mode:'apply'})],
-      [63,()=>migrateMvpNotifications({databaseUrl:isolated,mode:'apply'})],
-    ]);
-    for(const file of (await readdir(migrationRoot)).filter(file=>/^\d{3}_.+\.sql$/u.test(file)&&Number(file.slice(0,3))>34&&Number(file.slice(0,3))<=65).sort()){
-      const number=Number(file.slice(0,3));if(number===52)continue; // The formal 041 migrator owns its 052 successor.
-      const migrate=formal.get(number);if(migrate)await migrate();else await pool.query(await readFile(join(migrationRoot,file),'utf8'));
-    }
-    await migrateServiceClosure(migrationOptions);await migrateCompletionDismissal(migrationOptions);await migrateNotificationVocabulary(migrationOptions);await migrateSystemClosureRestore(migrationOptions);
+    await applyFullSchemaThrough077(isolated);
     const access=createPilotAccessService({pool});
     const admin=await access.upsertPrincipal({wecomUserId:'h5-flow-admin',displayName:'合成跨层管理员',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const outsider=await access.upsertPrincipal({wecomUserId:'h5-flow-outsider',displayName:'合成跨层越权人员',roles:['HANDLER'],resolverTeamIds:[]});

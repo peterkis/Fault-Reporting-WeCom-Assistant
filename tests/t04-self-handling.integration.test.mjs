@@ -147,15 +147,15 @@ test('DB failures after accept, cycle, event association and committed receipt r
 });
 
 test('default false never reads migration039 and missing039 enabled fails closed',async()=>{
-  await withWeb01Fixture(async context=>{
+  for(const partialSchemaOnly of [true,false])await withWeb01Fixture(async context=>{
     const a=await httpCommands(context),id=context.tickets[0].ticket.id;
     assert.equal((await a.get('/api/lifecycle/bootstrap')).value.ticket_self_handling_enabled,false);
-    assert.equal((await context.pool.query("SELECT to_regclass('pilot_ticket.ticket_handling_cycle') AS t")).rows[0].t,null);
+    assert.equal((await context.pool.query("SELECT to_regclass('pilot_ticket.ticket_handling_cycle') AS t")).rows[0].t,partialSchemaOnly?null:'pilot_ticket.ticket_handling_cycle');
     assert.equal(Object.hasOwn((await a.get('/api/tickets/'+id)).value,'handling_cycle'),false);
     assert.equal((await a.post(id,'take-and-start',a.command())).status,503);
     assert.equal((await a.post(id,'accept',{client_command_id:randomUUID(),expected_version:2,reason_code:'WORKBENCH_LEGACY'})).status,200);
     assert.equal((await a.post(id,'start',{client_command_id:randomUUID(),expected_version:3,reason_code:'WORKBENCH_LEGACY'})).status,200);
-  });
+  },{partialSchemaOnly});
   await withWeb01Fixture(async context=>{
     const a=await httpCommands(context),id=context.tickets[0].ticket.id;
     const readiness=await a.get('/health/ready');assert.equal(readiness.status,503);assert.equal(readiness.value.checks.ticket_self_handling_schema,false);

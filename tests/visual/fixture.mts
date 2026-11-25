@@ -239,6 +239,7 @@ LOOP EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I SET DEFAULT uuidv7()',col
         workbenchDraftRecoveryEnabled: true,
         workbenchFollowEnabled: true,
         workbenchSearchEnabled: true,
+        partialSchemaOnly: true,
         beforeClosureMigration: async (context) => {
           await fixedClock(context);
           if (captureScheduleToasts) {
