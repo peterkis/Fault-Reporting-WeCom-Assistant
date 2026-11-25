@@ -14,6 +14,7 @@
 | wbint-t17-manual-risks（默认关闭、无 033/042 用例） | 夹具装上了 042 | 前置夹具恢复为部分 schema，另加全量 schema 覆盖 |
 | t20-feedback-defaults、yxx-ss-010-runtime（42C 新增用例） | 占位迁移号不符合 ID 约束；健康检查请求的 Host 未带端口 | 修正占位 ID；改用带端口的 scopedBrowser |
 | pc-admin-card32d-toast（分支上 7 次中 3 次失败） | 两次对话框截图之间详情在后台刷新 | 截图前先等详情空闲、三条提示可见；仅在截图窗口内发生刷新时重试（最多 3 次）；阈值不变。修复后 7/7 通过 |
+| t36-team-and-recovery（CI 选中） | main 上同样失败：看板待受理列折叠后目标卡未挂载；丢响应提示文案已改为「结果未确认…核对结果」 | 测试先点击「显示剩余 N 项」，并等待当前文案；断言全部保留。修复后本机 Chrome 两次 3/3 通过 |
 
 `workbench-detail-media` 在全量并发运行中失败一次，单独复跑 3/3 通过，main 上也通过，判定为负载抖动。
 
@@ -39,7 +40,6 @@
 | `t20-staff-post200-context503.browser.test.mts` | FAIL pass=0 fail=1 | FAIL pass=0 fail=1 |
 | `t20-staff-unknown.browser.test.mts` | FAIL pass=1 fail=1 | FAIL pass=1 fail=1 |
 | `t25-manual-bot-feedback-boundary.integration.test.mts` | FAIL pass=0 fail=1 | FAIL pass=0 fail=1 |
-| `t36-team-and-recovery.browser.test.mts` | FAIL pass=0 fail=3 | FAIL pass=0 fail=3 |
 | `t41-search-acceptance.integration.test.mts` | FAIL pass=3 fail=1 | FAIL pass=1 fail=3 |
 | `t41-search-final-scope.integration.test.mts` | FAIL pass=0 fail=1 | FAIL pass=0 fail=1 |
 | `t41-search-pending-hint.browser.test.mts` | FAIL pass=0 fail=2 | FAIL pass=0 fail=2 |

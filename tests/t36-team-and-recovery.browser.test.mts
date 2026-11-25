@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import {withT36BoundReplyFixture} from './helpers/t36-bound-reply-fixture.mjs';
 import {withT36Browser,input,openReply} from './helpers/t36-browser-risk-journey.mjs';
 
+const lostAckToast = `/结果未确认.*核对结果/u.test(document.querySelector('[data-toast-source="conversations"][data-reply-outcome]')?.textContent ?? '')`;
+
 test('T36 unassigned team board and list both show pending supplements without changing personal read or responsibility',{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
  const before=await f.independentFacts();const ticket=await f.read<{assignee_id:string|null}>("/api/tickets/"+f.ticketId);assert.equal(ticket.assignee_id,null);
  await withT36Browser(f,async(browser,capture)=>{
   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/?view=board'});
+  const showRemaining = `Array.from(document.querySelectorAll('section[aria-label="待受理"] button')).find(button => /^显示剩余 [0-9]+ 项/u.test(button.textContent.trim()))`;
+  await browser.waitFor(`Boolean(${showRemaining})`);
+  await browser.evaluate(`${showRemaining}.click()`);
   const card=`article[data-kind="ticket"][data-item-id="${f.ticketId}"]`;
   await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(card)})?.querySelector('[data-supplement-follow-up-pending="true"]'))`);
   assert.match(await browser.evaluate(`document.querySelector(${JSON.stringify(card)}).textContent`),/待补充/u);await capture('new-board-1920.png');
@@ -25,7 +30,7 @@ test('T36 a real bound Message committed before lost ACK recovers the same encry
   await openReply(browser,f.r2);const text='T36原精确补充回复丢响应后的敏感正文';await input(browser,'[data-supplement-bound-reply] textarea',text);
   await browser.waitFor('Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]:not(:disabled)"))');
   await browser.evaluate('document.querySelector("[data-supplement-bound-reply] [data-action=send-conversation-reply]").click()');
-  await browser.waitFor('document.querySelector("[data-toast-source=conversations][data-reply-outcome]")?.textContent.includes("结果未知")&&Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))');
+  await browser.waitFor(`${lostAckToast}&&Boolean(document.querySelector("[data-supplement-bound-reply] [data-action=check-messages]:not(:disabled)"))`);
   const observed=await browser.evaluate('globalThis.__t36Recovery') as {method:string;status:number;id:string;version:number;target:unknown}[];
   assert.equal(observed.length,1);const accepted=observed[0];assert.ok(accepted);assert.equal(accepted.status,202);assert.deepEqual(accepted.target,{ticket_id:f.ticketId,...f.r2});
   console.log('T36_COMMITTED_LOST_ACK '+JSON.stringify({status:accepted.status,uuid:accepted.id,version:accepted.version,exact_target:accepted.target,restore:'EXPLICIT_RELOAD_NOT_PANEL_LEAVE'}));await capture('new-detail-1920.png');
@@ -51,7 +56,7 @@ test('MVP keeps an unknown bound reply mounted when retention makes the suppleme
   await openReply(browser,f.r2);const body='合成未确认回复：请补充原设备的错误提示。';await input(browser,'[data-supplement-bound-reply] textarea',body);
   await browser.waitFor("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]')?.disabled===false");
   await browser.evaluate("document.querySelector('[data-supplement-bound-reply] [data-action=send-conversation-reply]').click()");
-  await browser.waitFor("document.querySelector('[data-toast-source=conversations][data-reply-outcome]')?.textContent.includes('结果未知')");
+  await browser.waitFor(lostAckToast);
   const posts=await browser.evaluate('globalThis.__emptyReplyPosts') as {body:{client_command_id:string;follow_up_target:unknown;text:string};status:number}[];
   assert.equal(posts.length,1);const original=posts[0];assert.ok(original);assert.equal(original.status,202);assert.deepEqual(original.body.follow_up_target,{ticket_id:f.ticketId,...f.r2});
   const materials=(await f.page()).items;assert.ok(materials.length);
