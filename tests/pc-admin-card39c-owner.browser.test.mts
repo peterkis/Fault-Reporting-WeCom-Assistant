@@ -575,6 +575,8 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
 
       for(let i=0;i<10;i++){
         const currentPath=String(await b.evaluate('location.pathname'));
+        // Next/Previous stay disabled until the previous switch fully commits (PR #202); wait for readiness, then assert as before.
+        await b.waitFor("document.querySelector('.detail-next')?.disabled===false||document.querySelector('.detail-previous')?.disabled===false");
         const nextDisabled=Boolean(await b.evaluate("document.querySelector('.detail-next')?.disabled!==false"));
         const selector=nextDisabled?'.detail-previous':'.detail-next';
         assert.equal(await b.evaluate(`document.querySelector(${JSON.stringify(selector)})?.disabled`),false,`step ${i} requires enabled ${selector}`);

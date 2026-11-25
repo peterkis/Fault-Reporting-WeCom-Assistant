@@ -43,7 +43,7 @@ const {categoryOf, categoryMap, unclassifiedCategory}: {
 } = await import(await designModule('category-map'));
 
 const now = Date.parse('2026-11-02T10:00:00+08:00');
-const {formatListTime,shanghaiDays,formatWaitingTime,observeVisibleMinute}:{formatListTime:(local:string,nowMs:number)=>string;shanghaiDays:(nowMs:number)=>{today:string;yesterday:string};formatWaitingTime:(local:string|null|undefined,now:number)=>{label:string;tone:string}|null;observeVisibleMinute:(update:(now:number)=>void)=>()=>void}=await import(await designModule('format-time'));
+const {formatListTime,shanghaiDays,formatWaitingTime,observeVisibleMinute,resolveDisplayNow,formatRelativeTime}:{formatListTime:(local:string,nowMs:number)=>string;shanghaiDays:(nowMs:number)=>{today:string;yesterday:string};formatWaitingTime:(local:string|null|undefined,now:number)=>{label:string;tone:string}|null;observeVisibleMinute:(update:(now:number)=>void)=>()=>void;resolveDisplayNow:(clockNow:number,...dataUpdatedAt:readonly number[])=>number;formatRelativeTime:(value:string,now:number)=>string}=await import(await designModule('format-time'));
 for(const [name,local,clock,expected] of [
   ['today','2026-11-05 09:35:00','2026-11-05T12:00:00+08:00','09:35'],
   ['yesterday','2026-11-04 16:52:00','2026-11-05T12:00:00+08:00','昨天'],
@@ -303,4 +303,19 @@ test('Card 27B dismissed sort uses proven closed_at and keeps unknown time last'
   const unknown=boardCard({id:'unknown',column:'handled',completed_at:'2026-11-06 10:00:00',closure:{...completedClosure,kind:'DISMISSED',ended_at:null}});
   assert.deepEqual(sortBoardItems([unknown,system,manual],'handled','newest').map(item=>item.id),['manual','system','unknown']);
   assert.deepEqual(sortBoardItems([unknown,manual,system],'handled','oldest').map(item=>item.id),['system','manual','unknown']);
+});
+
+test('Card 39B relativeTime resamples display clock on newly arrived pages before next minute tick',()=>{
+  const clockNow=Date.parse('2026-11-24T14:51:00+08:00');
+  const updatedAt='2026-11-24 14:51:15';
+  const dataUpdatedAt=Date.parse('2026-11-24T14:51:16+08:00');
+  assert.equal(formatRelativeTime(updatedAt,clockNow),'11-24 14:51');
+  const displayNow=resolveDisplayNow(clockNow,dataUpdatedAt,0,NaN);
+  assert.equal(displayNow,dataUpdatedAt);
+  assert.equal(formatRelativeTime(updatedAt,displayNow),'刚刚');
+  assert.equal(formatRelativeTime('2026-11-24 14:52:00',displayNow),'11-24 14:52');
+  assert.equal(formatRelativeTime('invalid-timestamp',displayNow),'id-timestam');
+  assert.equal(formatRelativeTime('2026-11-24 14:46:00',displayNow),'5 分钟前');
+  assert.equal(formatRelativeTime('2026-11-24 13:21:00',displayNow),'1 小时 30 分前');
+  assert.equal(formatRelativeTime('2026-11-22 14:51:00',displayNow),'2 天前');
 });

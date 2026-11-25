@@ -20,7 +20,7 @@ export function TeamAvatar({name}:{name:string}){
 }
 
 export function Owner({name,compact=false,className='',...props}:{name:string|null;compact?:boolean}&Omit<ComponentPropsWithRef<'span'>,'children'|'style'|'color'>){
-  return <span {...props} className={className?'owner '+className:'owner'}>{name?<TeamAvatar name={name}/>:<Avatar aria-hidden="true"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
+  return <span {...props} className={className?'owner '+className:'owner'}>{name?<TeamAvatar name={name}/>:<Avatar size={20} aria-hidden="true"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
 }
 
 export function useReporterProfile(item:WorkbenchCard,principal:Principal){

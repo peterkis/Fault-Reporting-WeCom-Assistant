@@ -156,6 +156,11 @@
       "reason": "Card 39A checks board group and remainder ring-room pixel visibility, 5-frame collapse clipping and zero card width/x drift."
     },
     {
+      "pattern": "^tests/pc-admin-card39b-arrival\\.browser\\.test\\.mts$",
+      "profiles": ["pc", "motion"],
+      "reason": "Card 39B checks new-card arrival highlight overlay timing/filmstrips, selection/dismissed conflicts, intake edge contrast, unclassified/unassigned placeholders and reduced motion."
+    },
+    {
       "pattern": "^tests/(?:pc-admin-card37b-(?:(?:keys|surfaces|pauses|recovery)\\.browser|shortcuts)\\.test\\.mts|helpers/card37b-(?:keyboard-browser|shortcut-module)\\.mts)$|^app/pc-admin/src/(?:features/efficiency/(?:shortcuts\\.ts|keyboard-store\\.ts|WorkbenchEfficiency\\.tsx|efficiency\\.css)|design/components/Kbd/)",
       "profiles": ["pc", "motion"],
       "reason": "Card 37B covers keyboard actions, UI surfaces, input pauses and command recovery in four independently timed browser suites."

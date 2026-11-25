@@ -601,14 +601,15 @@ test('Card 36C C5 browser acceptance and filmstrips',{timeout:600_000},t=>withWe
       await freeze(b,async()=>{
         await note(zhou,incoming);node=await noteSelector(incoming);
         await waitEffect(node+timelineEnter);
-        assert.equal(await b.evaluate('Boolean('+q(node+timelineHighlight)+')'),false,'highlight starts after entry');
-        await measure('timeline-entry',node+timelineEnter,'--dur-base','--ease-standard',['transform','opacity']);
+        await waitEffect(node+timelineHighlight,true);
+        assert.equal(await b.evaluate('Boolean('+q(node+timelineHighlight)+')'),true,'highlight overlay starts at entry');
+        await measure('timeline-entry',node+timelineEnter,'--dur-base','--ease-standard',['transform','opacity'],{pseudoElement:null});
+        await measure('timeline-highlight',node+timelineHighlight,'--dur-highlight','--ease-ambient',['opacity'],{pseudoElement:'::after',delayToken:'--dur-highlight-hold'});
+        const intake=await b.evaluate(`(()=>{const element=${q(node)},after=getComputedStyle(element,'::after'),probe=document.createElement('i');probe.style.backgroundColor='var(--stage-intake-bg)';probe.style.boxShadow='inset 0 0 0 1px var(--highlight-ring-intake)';document.body.append(probe);const p=getComputedStyle(probe);const ok=element.dataset.highlightTone==='intake'&&element.style.backgroundColor===''&&after.backgroundColor===p.backgroundColor&&after.boxShadow===p.boxShadow&&after.opacity==='1';probe.remove();return ok;})()`);
+        assert.equal(intake,true,'highlight ::after overlay starts at full intake tint and ring without mutating element backgroundColor');
       });
-      await waitEffect(node+timelineHighlight);
-      await measure('timeline-highlight',node+timelineHighlight,'--dur-highlight','--ease-standard',['background-color']);
-      const intake=await b.evaluate(`(()=>{const element=${q(node)},probe=document.createElement('i');probe.style.backgroundColor='var(--stage-intake-bg)';document.body.append(probe);const value=getComputedStyle(probe).backgroundColor;probe.remove();return element.getAnimations().some(a=>a.effect.getKeyframes()[0]?.backgroundColor===value);})()`);
-      assert.equal(intake,true,'highlight starts at the intake background token');
       await settleOverlay();
+      await waitForAnimationsSettled(b,node);
       await watchTimeline(b);
       const own='我的内部备注（合成）';
       await clickWorkbenchControl(b,'#internal-note');

@@ -13,7 +13,7 @@
 .ds-ticket-body {display: grid; grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto auto auto; gap: var(--space-1-5); min-width: 0;}
 .ds-ticket-body.has-category {position: relative; padding-left: calc(var(--space-6) + var(--space-1) + var(--space-2));}
 .ds-ticket-body.has-category .card-top {position: static;}
-.ds-ticket-category {position: absolute; top: 0; left: 0; display: inline-flex; align-items: center; justify-content: center; width: calc(var(--space-6) + var(--space-1)); height: calc(var(--space-6) + var(--space-1)); border-radius: var(--radius-sm);}
+.ds-ticket-category {position: absolute; top: 0; left: 0; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: calc(var(--space-6) + var(--space-1)); height: calc(var(--space-6) + var(--space-1)); border-radius: var(--radius-sm);}
 .ds-ticket-category>svg {width: var(--icon-md); height: var(--icon-md); stroke-width: 1.75;}
 .ds-ticket-body .card-top {gap: var(--space-2); min-height: var(--lh-xs); line-height: var(--lh-xs); font-size: var(--fs-xs);}
 .ds-ticket-body .card-top>span:first-child {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
@@ -239,3 +239,16 @@
     outline-offset: 2px;
   }
 }
+
+/* Card 39B: highlight overlay sits above host background and below content without mutating card background-color. */
+[data-highlight-tone] {position: relative; isolation: isolate;}
+[data-highlight-tone]::after {content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: 1;}
+[data-highlight-tone="intake"]::after {background: var(--stage-intake-bg); box-shadow: var(--shadow-highlight-intake);}
+[data-highlight-tone="active"]::after {background: var(--stage-active-bg); box-shadow: var(--shadow-highlight-active);}
+[data-highlight-tone="done"]::after {background: var(--stage-done-bg); box-shadow: var(--shadow-highlight-done);}
+[data-highlight-tone="brand"]::after {background: var(--brand-subtle); box-shadow: var(--shadow-highlight-brand);}
+/* Card 39B R2: preserve host state fill and inset rings during highlight hold/fade. */
+[data-highlight-tone]:is(.is-selected,[data-closure-kind="DISMISSED"],:active,[data-presence],[data-keyboard-current="true"],[data-optimistic-rollback="true"])::after {background: transparent;}
+[data-highlight-tone]:is(.is-selected,[data-presence],[data-optimistic-rollback="true"])::after {inset: var(--space-0-5);}
+.ds-ticket-card[data-highlight-tone]:is(.is-selected,[data-presence],[data-optimistic-rollback="true"])::after {border-radius: var(--radius-sm);}
+.ds-work-row[data-highlight-tone][data-keyboard-current="true"]::after {inset: var(--space-0-5);}

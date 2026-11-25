@@ -1,0 +1,381 @@
+{
+  "status": "PASS",
+  "os": {
+    "platform": "darwin",
+    "release": "25.6.0"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/158.0.8127.37",
+    "revision": "@b8c2be851f62f6a394ec57955d7f31335d7cb6d4",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+    "jsVersion": "15.8.62.31"
+  },
+  "receipts": {
+    "intake": {
+      "file": "/Users/petervans/Projects/ticket/.claude/worktrees/v231-card39b-490e59/docs/ui/evidence/v231-card39/filmstrip/arrival-intake.png",
+      "sampleOpacities": [
+        1,
+        1,
+        0.91834,
+        0.5,
+        0.0816599,
+        0
+      ],
+      "entryMetrics": [
+        {
+          "duration": 900,
+          "easing": "cubic-bezier(0.2, 0, 0, 1)",
+          "properties": [
+            "transform",
+            "opacity"
+          ],
+          "name": "WAAPI",
+          "delay": 0,
+          "pseudoElement": null
+        }
+      ],
+      "highlightMetrics": [
+        {
+          "duration": 6000,
+          "easing": "ease-in-out",
+          "properties": [
+            "opacity"
+          ],
+          "name": "WAAPI",
+          "delay": 1200,
+          "pseudoElement": "::after"
+        }
+      ],
+      "relativeTime": {
+        "fontSize": "12px",
+        "color": "rgb(107, 105, 101)",
+        "fsToken": "12px"
+      },
+      "scopeResetCancelled": {
+        "present": true,
+        "oldState": "idle",
+        "tone": null,
+        "hlCount": 0
+      }
+    },
+    "active": {
+      "file": "/Users/petervans/Projects/ticket/.claude/worktrees/v231-card39b-490e59/docs/ui/evidence/v231-card39/filmstrip/arrival-active.png",
+      "moveObserved": true,
+      "sampleOpacities": [
+        1,
+        1,
+        0.91834,
+        0.5,
+        0.0816599,
+        0
+      ],
+      "highlightMetrics": [
+        {
+          "duration": 6000,
+          "easing": "ease-in-out",
+          "properties": [
+            "opacity"
+          ],
+          "name": "WAAPI",
+          "delay": 1200,
+          "pseudoElement": "::after"
+        }
+      ]
+    },
+    "narrowStickyList": {
+      "wrapCheck": {
+        "wrapWidth": 664,
+        "scrollLeft": 140,
+        "thPosition": "sticky",
+        "thLeft": 0
+      },
+      "wide": {
+        "sticky": false,
+        "opacity": [
+          0.84626,
+          0.84626
+        ],
+        "effects": [
+          [
+            {
+              "time": 2833.246999989731,
+              "start": 547.8510000102688,
+              "state": "running"
+            }
+          ],
+          [
+            {
+              "time": 2833.246999989731,
+              "start": 547.8510000102688,
+              "state": "running"
+            }
+          ]
+        ]
+      },
+      "resized": {
+        "sticky": true,
+        "opacity": [
+          0.84626,
+          0.84626
+        ],
+        "effects": [
+          [
+            {
+              "time": 2833.246999989731,
+              "start": 547.8510000102688,
+              "state": "running"
+            }
+          ],
+          [
+            {
+              "time": 2833.246999989731,
+              "start": 547.8510000102688,
+              "state": "running"
+            }
+          ]
+        ]
+      },
+      "scrollLeft": 63,
+      "overlap": 63,
+      "exposed": 63,
+      "thBgPx": [
+        424,
+        545
+      ],
+      "tdBgPx": [
+        487,
+        545
+      ],
+      "thLeftEdge": [
+        264,
+        561
+      ],
+      "thHold": [
+        238,
+        244,
+        253
+      ],
+      "tdHold": [
+        238,
+        244,
+        253
+      ],
+      "ringHold": [
+        127,
+        164,
+        224
+      ],
+      "midSamples": [
+        {
+          "label": "sticky fill",
+          "x": 424,
+          "y": 545,
+          "rgb": [
+            246,
+            249,
+            254
+          ],
+          "expected": [
+            246.5,
+            249.5,
+            254
+          ]
+        },
+        {
+          "label": "row fill",
+          "x": 487,
+          "y": 545,
+          "rgb": [
+            247,
+            250,
+            254
+          ],
+          "expected": [
+            246.5,
+            249.5,
+            254
+          ]
+        },
+        {
+          "label": "sticky left ring",
+          "x": 264,
+          "y": 561,
+          "rgb": [
+            191,
+            209,
+            239
+          ],
+          "expected": [
+            191,
+            209.5,
+            239.5
+          ]
+        },
+        {
+          "label": "row top ring",
+          "x": 487,
+          "y": 539,
+          "rgb": [
+            191,
+            210,
+            240
+          ],
+          "expected": [
+            191,
+            209.5,
+            239.5
+          ]
+        }
+      ],
+      "thSettled": [
+        255,
+        255,
+        255
+      ],
+      "tdSettled": [
+        255,
+        255,
+        255
+      ]
+    },
+    "edgeContrast": {
+      "lane": [
+        252,
+        250,
+        244
+      ],
+      "expectedRing": [
+        232,
+        200,
+        99
+      ],
+      "sampled": {
+        "top": {
+          "rgb": [
+            232,
+            200,
+            99
+          ],
+          "diffVsRing": 0,
+          "diffVsLane": 154.6770829825802
+        },
+        "bottom": {
+          "rgb": [
+            232,
+            200,
+            99
+          ],
+          "diffVsRing": 0,
+          "diffVsLane": 154.6770829825802
+        },
+        "left": {
+          "rgb": [
+            232,
+            200,
+            99
+          ],
+          "diffVsRing": 0,
+          "diffVsLane": 154.6770829825802
+        },
+        "right": {
+          "rgb": [
+            232,
+            200,
+            99
+          ],
+          "diffVsRing": 0,
+          "diffVsLane": 154.6770829825802
+        }
+      }
+    },
+    "conflicts": {
+      "clickDelta": 0.19999998807907104,
+      "duringSelect": {
+        "tone": "intake",
+        "selected": true,
+        "afterOpacity": 1,
+        "bg": "rgb(238, 244, 253)",
+        "backdrop": [
+          55,
+          53,
+          47,
+          0.16
+        ],
+        "backdropOpacity": 1,
+        "panelLeft": 712,
+        "inlineBg": "",
+        "rect": {
+          "left": 280,
+          "top": 300,
+          "right": 632,
+          "vw": 1440,
+          "vh": 1600
+        }
+      },
+      "afterSelect": {
+        "tone": null,
+        "selected": true,
+        "bg": "rgb(238, 244, 253)",
+        "outlineColor": "rgb(37, 99, 201)",
+        "outlineWidth": "2px",
+        "inlineBg": ""
+      },
+      "duringClosed": {
+        "inlineBg": "",
+        "closureKind": "DISMISSED",
+        "afterOpacity": 1,
+        "rect": {
+          "left": 1048,
+          "top": 805,
+          "right": 1400,
+          "vw": 1440,
+          "vh": 1600
+        }
+      },
+      "afterClosed": {
+        "tone": null,
+        "bg": "rgb(247, 247, 245)",
+        "boxShadow": "rgba(15, 15, 15, 0.06) 0px 0px 0px 1px",
+        "inlineBg": ""
+      }
+    },
+    "unassignedBorder": {
+      "dpr": 2,
+      "colour": "rgb(140, 138, 132)",
+      "avatarInk": 0.5819507398367135,
+      "controlInk": 0.12340883089878166,
+      "avatarGapRuns": 4
+    },
+    "placeholders": {
+      "board": true,
+      "list": true,
+      "hover": true,
+      "ax": {
+        "board": {
+          "ignored": false,
+          "role": "image",
+          "name": "未分配"
+        },
+        "list": {
+          "ignored": true,
+          "role": "none",
+          "name": ""
+        },
+        "hover": {
+          "ignored": true,
+          "role": "none",
+          "name": ""
+        }
+      }
+    },
+    "reduced": {
+      "expectedDuration": 1440,
+      "elapsed": 1440.4000000059605,
+      "animationCount": 0,
+      "afterOpacity": "1",
+      "inlineBg": "",
+      "clearedAfterContent": "none"
+    }
+  }
+}

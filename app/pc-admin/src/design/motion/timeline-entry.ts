@@ -19,14 +19,14 @@ export function highlightTimelineEntry(el:HTMLElement):TimelineEntryHandle{
   return {cancel:()=>{handle.cancel();clear();},finished};
 }
 
-/** D3 arrival: slides down from -shift-md with opacity over --dur-base / --ease-standard, then highlights (intake). */
+/** D3 arrival: slides down from -shift-md with opacity over --dur-base / --ease-standard while highlighting (intake) from frame 0. */
 export function animateTimelineEntry(el:HTMLElement):TimelineEntryHandle{
   if(document.hidden)return {cancel:()=>{},finished:Promise.resolve()};
   if(prefersReducedMotion())return highlightTimelineEntry(el);
-  let cancelled=false,phaseHighlight:TimelineEntryHandle|null=null;
-  let resolveDone=()=>{};const finished=new Promise<void>(resolve=>{resolveDone=resolve;});
+  let cancelled=false;
   el.setAttribute('data-timeline-entry-enter','true');
   const shift=motionToken('--shift-md');
+  const phaseHighlight=highlightTimelineEntry(el);
   const animation=trackAnimation(
     el.animate(
       [{transform:`translateY(${-shift}px)`,opacity:0},{transform:'translateY(0)',opacity:1}],
@@ -34,16 +34,15 @@ export function animateTimelineEntry(el:HTMLElement):TimelineEntryHandle{
     ),
     ()=>{el.removeAttribute('data-timeline-entry-enter');},
   );
-  void animation.finished.then(()=>{
-    if(cancelled||!el.isConnected||document.hidden){resolveDone();return;}
-    phaseHighlight=highlightTimelineEntry(el);
-    void phaseHighlight.finished.then(resolveDone);
-  },()=>{resolveDone();});
+  const finished=Promise.all([
+    animation.finished.catch(()=>{}),
+    phaseHighlight.finished,
+  ]).then(()=>{});
   return {
     cancel:()=>{
       if(cancelled)return;cancelled=true;
       animation.cancel();el.removeAttribute('data-timeline-entry-enter');
-      phaseHighlight?.cancel();resolveDone();
+      phaseHighlight.cancel();
     },
     finished,
   };

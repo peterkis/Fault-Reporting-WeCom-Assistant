@@ -56,7 +56,7 @@ import { BoardActionCard,BoardActions,BoardDropColumn,useBoardClaimBridge } from
 import { readServiceCatalog } from '../features/board-filters/client';
 import { Conversations } from '../features/conversations/Conversations';
 import { conversationSummaryQuery } from '../features/conversations/inbox-client';
-import { observeVisibleMinute } from '../design/format-time';
+import { formatRelativeTime,observeVisibleMinute,resolveDisplayNow } from '../design/format-time';
 import { Tag } from '../design/components/Tag/Tag';
 import { subscribeDrafts } from '../features/drafts/encrypted-drafts';
 import { CandidateDetailPage } from '../features/incident-candidates/CandidateDetail';
@@ -95,17 +95,6 @@ function useClock(){
   const [now,setNow]=useState(Date.now);
   useEffect(()=>observeVisibleMinute(setNow),[]);
   return now;
-}
-function relativeTime(value:string,now:number){
-  // API timestamps are Asia/Shanghai local time; never parse in the browser's local timezone.
-  const elapsed=now-Date.parse(value.replace(' ','T')+'+08:00');
-  if(!Number.isFinite(elapsed)||elapsed<0)return value.slice(5,16);
-  const minutes=Math.floor(elapsed/60_000);
-  if(minutes===0)return '刚刚';
-  if(minutes<60)return minutes+' 分钟前';
-  const hours=Math.floor(minutes/60),rest=minutes%60;
-  if(hours<24)return hours+' 小时'+(rest?' '+rest+' 分':'')+'前';
-  return Math.floor(hours/24)+' 天前';
 }
 function Message({text,retry}:{text:string;retry?:()=>void}){
   return <div className="state-message" role="status"><TriangleAlert size={18}/><p>{text}</p>{retry?<Button tone="secondary" onPress={retry}>重新读取</Button>:null}</div>;
@@ -153,12 +142,12 @@ const CardBase=memo(function CardBase({item,principal,search,selected,now,blocke
   const debouncedPresence=useDebouncedPresence(presence);
   const presenceMode=presenceEnabled?presenceTone(debouncedPresence):undefined;
   const presenceTransition=usePresenceModeTransition(presenceMode);
-  const relativeUpdated=relativeTime(item.updated_at,now);
+  const relativeUpdated=formatRelativeTime(item.updated_at,now);
   const activityNode=<time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>{relativeUpdated}</time>;
   const followUpNode=item.follow_up_schedule?<SharedFollowUpSummary value={item.follow_up_schedule} compact/>:null;
   const inBodyOwnerNode=item.assignee_name
     ?<span className="ds-ticket-owner-placeholder" aria-hidden="true"><Avatar name={item.assignee_name} size={20} aria-hidden="true"/><span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span></span>
-    :<span className="owner" title="等待领取"><Avatar name={null} size={20} aria-hidden="true"/></span>;
+    :<span className="owner"><Avatar name={null} size={20}/></span>;
   const siblingOwnerNode=item.assignee_name
     ?<PersonHoverCard name={item.assignee_name}><CardLink draggable={false} className="owner ds-ticket-owner-link" to={itemLink(item,search)} state={FROM_BOARD_STATE} title={item.assignee_name} aria-label={'处理人：'+item.assignee_name} aria-disabled={blocked||undefined} onClick={event=>{guardCardOwnerClick(event,blocked);}}><Avatar name={item.assignee_name} size={20} aria-hidden="true"/><span className={'owner-name'+(item.assignee_name===name?' sr-only':'')}>{item.assignee_name}</span></CardLink></PersonHoverCard>
     :null;
@@ -245,7 +234,7 @@ function Shell({principal,children,navigationBlocked=false,realtime}:{principal:
     <main><ShellTopbar teamLabel={teamLabel} collapsed={collapsed} toggle={toggle} settings={settings} conversationPage={conversationPage} exceptionPage={exceptionPage} newReport={newReport} realtimeStatus={realtime.status} navigationBlocked={navigationBlocked} openSettings={openSettings} displayName={displayName} department={department} collaboration={collaboration} logoutEnabled={principal.logout_enabled===true} logoutPending={logout.isPending} onLogout={onLogout}/><ConnectionBar realtime={realtime}/><WorkbenchReminders principal={principal} realtime={realtime} navigationBlocked={navigationBlocked} desktopEpoch={desktopEpoch}/>{children}</main></div></WorkbenchEfficiency></HoverCardsProvider>;
 }
 interface ColumnQuery {
- isPending:boolean;isError:boolean;isFetching:boolean;error:unknown;isFetchingNextPage:boolean;hasNextPage:boolean;
+ isPending:boolean;isError:boolean;isFetching:boolean;error:unknown;isFetchingNextPage:boolean;hasNextPage:boolean;dataUpdatedAt:number;
  data:{pages:{items:WorkbenchCard[];range:{mode:BoardCompletionRange;from:string;until:string;timezone:'Asia/Shanghai'};group_counts?:{completed:number;dismissed:number}}[]}|undefined;
  refetch:()=>Promise<unknown>;fetchNextPage:()=>Promise<unknown>;
 }
@@ -322,7 +311,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
   const [boardFilters,setBoardFilters]=useState({scope:'',category:'all',handler:'all'});
   const [conditionsTransition,setConditionsTransition]=useState(false),pendingConditionsRef=useRef<URLSearchParams|null>(null);
   const order=useRef<{scope:string;keys:string[]}>({scope:'',keys:[]});
-  const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock(),navigate=useNavigate();
+  const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),clockNow=useClock(),navigate=useNavigate();
   const locationMode=Boolean(selected.id&&params.get('locate')==='1');
   const validLocation=Boolean(principal.workbench_reminders_enabled&&locationMode&&['ticket','review','intake'].includes(selected.kind??'')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(selected.id??''));
   const view=params.get('view')==='list'?'list':'board',range:BoardCompletionRange=params.get('range')==='custom'?'custom':params.get('range')==='all'?'all':principal.workbench_search_enabled&&params.get('search')==='1'&&!params.has('range')?'all':'recent',fullPage=Boolean(!locationMode&&selected.id&&params.get('detail')==='page');
@@ -368,6 +357,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
     data:searchedDataByColumn[column],
     refetch:searched.restart,fetchNextPage:()=>searched.isFetching?Promise.resolve():searched.fetchNextPage()});
   const pending:ColumnQuery=searchMode?searchedColumn('pending'):basePending,active:ColumnQuery=searchMode?searchedColumn('active'):baseActive,handled:ColumnQuery=searchMode?searchedColumn('handled'):baseHandled;
+  const now=resolveDisplayNow(clockNow,pending.dataUpdatedAt,active.dataUpdatedAt,handled.dataUpdatedAt,located.dataUpdatedAt);
   const queries=[pending,active,handled];
   const pendingData=pending.data,activeData=active.data,handledData=handled.data;
   const serverFresh=useMemo(()=>{
@@ -569,7 +559,7 @@ function Workbench({principal,realtime}:{principal:Principal;realtime:RealtimeVi
       <WorkTable principalId={principal.principal_id} selected={selected.id} now={now} closureKind={closureKind} animateCount={animateCounts} newChip={{count:motion.listChip.count,direction:motion.listChip.direction,onActivate:motion.listChip.activate}} searchError={searchMode&&searched.isError} refreshing={queries.some(query=>Boolean(query.data)&&query.isFetching&&!query.isFetchingNextPage)} stale={queries.some(query=>Boolean(query.data)&&query.isError)} headerFeedback={queries.some(query=>Boolean(query.data)&&query.isError)?<StaleRetry onRetry={refresh}/>:null}
         renderLink={(item,content)=><BoardActionCard item={item}><Link draggable={false} className="row-link card-open" to={itemLink(item,location.search)} state={{fromBoard:true}} title={item.title}>{content}</Link></BoardActionCard>}
         renderOwnerLink={(item,owner,content)=><CardLink draggable={false} className="ds-list-owner ds-list-owner-link" to={itemLink(item,location.search)} state={FROM_BOARD_STATE} title={owner} aria-disabled={navigationBlocked||undefined} onClick={event=>{guardCardOwnerClick(event,navigationBlocked);}}>{content}</CardLink>}
-        renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={relativeTime}
+        renderFollowUp={item=><SharedFollowUpSummary value={item.follow_up_schedule} compact/>} relativeTime={formatRelativeTime}
         groups={columns.flatMap((column,index)=>{const query=queries[index];if(!query||closureKind!=='all'&&column!=='handled')return [];const loaded=visibleItems(unique.filter(item=>item.column===column));return [{column,label:label(column),items:loaded,count:query.isPending?'…':query.isError&&!query.data?'—':loaded.length,loading:query.isPending&&!query.data,onRetry:()=>{void query.refetch();},
           feedback:query.isError&&!query.data?<ErrorState title={label(column)+'没有读出来'} onRetry={()=>{void query.refetch();}}/>:!loaded.length&&!query.isPending&&column==='pending'&&!filtered?<EmptyState size="block" title="待受理已清空" tone="success" description="新报修进来会出现在这里"/>:null,
           nextPage:query.hasNextPage?<Button className="load-more" tone="ghost" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}];})}/></>}

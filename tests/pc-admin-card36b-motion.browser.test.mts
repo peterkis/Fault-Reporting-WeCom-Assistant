@@ -31,7 +31,7 @@ const listWrap='.ds-work-table-wrap';
 const pendingRowsMore='#list-subgroup-ticket-more [data-action=expand-column][aria-expanded=false]';
 const visible=(selector:string)=>`Boolean(${query(selector)}?.checkVisibility())`;
 const frames='new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))';
-const backgroundFrame="animation.effect.getKeyframes().some(frame=>'backgroundColor' in frame)";
+const highlightFrame="animation.effect?.pseudoElement==='::after'&&animation.effect.getKeyframes().some(frame=>'opacity' in frame)";
 const moveFrame="animation.effect.getKeyframes().some(frame=>typeof frame.transform==='string'&&frame.transform.startsWith('translate('))";
 const relevantAnimations=`document.getAnimations().filter(animation=>{const target=animation.effect?.target;return target?.closest('.ds-number-roll')||((target?.matches('.ticket-card,.ds-work-row'))&&animation.effect.getKeyframes().some(frame=>typeof frame.transform==='string'&&frame.transform.startsWith('translate')));})`;
 const probe=`(()=>{
@@ -40,7 +40,8 @@ const probe=`(()=>{
   Element.prototype.animate=function(keyframes,options){
     const animation=original.call(this,keyframes,options);
     if(this.matches('.ticket-card,.ds-work-row')&&this.dataset.itemId){
-      const kind=keyframes.some(frame=>'backgroundColor' in frame)?'highlight':keyframes.some(frame=>frame.transform?.startsWith('translate('))?'move':'entry';
+      const pseudo=options&&typeof options==='object'?options.pseudoElement:undefined;
+      const kind=pseudo==='::after'?'highlight':keyframes.some(frame=>frame.transform?.startsWith('translate('))?'move':'entry';
       const event={id:this.dataset.itemId,kind,at:performance.now(),finished:null};
       window.motionCalls.push(event);
       animation.finished.then(()=>{event.finished=performance.now();},()=>{});
@@ -67,7 +68,7 @@ async function expandActiveBoard(browser:Browser){
   await waitForAnimationsSettled(browser);
 }
 async function waitEffect(browser:Browser,selector:string,condition:string){
-  await browser.waitFor(`${query(selector)}?.getAnimations().some(animation=>${condition})===true`);
+  await browser.waitFor(`(()=>{const node=${query(selector)};return Boolean(node&&node.getAnimations({subtree:true}).some(animation=>animation.effect?.target===node&&(${condition})));})()`);
 }
 async function frozen(browser:Browser,run:()=>Promise<void>){
   await browser.command('Animation.enable');
@@ -85,14 +86,18 @@ async function position(browser:Browser,selector:string){
 function within(actual:Record<string,unknown>,expected:Record<string,unknown>,px:number,message:string){
   for(const axis of ['left','top'])assert.ok(Math.abs(Number(actual[axis])-Number(expected[axis]))<=px,`${message}: ${JSON.stringify({actual,expected,px})}`);
 }
-async function assertHighlightTone(browser:Browser,selector:string,token:string){
+async function assertHighlightTone(browser:Browser,selector:string,token:string,ringToken:string){
   assert.equal(await browser.evaluate(`(()=>{
-    const animation=${query(selector)}.getAnimations().find(animation=>${backgroundFrame});
+    const node=${query(selector)};
+    const animation=node.getAnimations({subtree:true}).find(animation=>animation.effect?.target===node&&${highlightFrame});
+    const keyframes=animation?.effect.getKeyframes()??[];
     const css=document.createElement('span');document.body.append(css);
-    css.style.backgroundColor='var(${token})';const expected=getComputedStyle(css).backgroundColor;
-    css.style.backgroundColor=animation.effect.getKeyframes()[0].backgroundColor;
-    const actual=getComputedStyle(css).backgroundColor;css.remove();return actual===expected;
-  })()`),true,`${selector} first highlight frame resolves to ${token}`);
+    css.style.backgroundColor='var(${token})';const expectedBg=getComputedStyle(css).backgroundColor;
+    css.style.boxShadow='inset 0 0 0 1px var(${ringToken})';const expectedShadow=getComputedStyle(css).boxShadow;
+    css.remove();
+    const after=getComputedStyle(node,'::after');
+    return Boolean(animation)&&keyframes[0]?.opacity==='1'&&keyframes.at(-1)?.opacity==='0'&&after.backgroundColor===expectedBg&&after.boxShadow===expectedShadow;
+  })()`),true,`${selector} ::after overlay resolves to ${token} + ${ringToken}`);
 }
 async function seedMany(fixture:T42Fixture,count:number,label:string){
   const ids:string[]=[];
@@ -182,9 +187,11 @@ test('36B B5.1–3 board claim: move, make-room, endpoints and actor-specific hi
       await peer.evaluate(refreshBoard);await waitEffect(peer,active(card),moveFrame);
       assert.deepEqual(await peer.evaluate(loggedHighlights),[],'peer highlight must wait for the move');
       await peer.evaluate(`${query(active(card))}.getAnimations().find(animation=>${moveFrame}).finish()`);
-      await waitEffect(peer,active(card),backgroundFrame);
-      measurements.highlight=await assertMotion(peer,active(card),'--dur-highlight','--ease-standard',{animationName:'WAAPI'});
-      await assertHighlightTone(peer,active(card),'--stage-active-bg');
+      await waitEffect(peer,active(card),highlightFrame);
+      const hl=await assertMotion(peer,active(card),'--dur-highlight','--ease-ambient',{animationName:'WAAPI',pseudoElement:'::after',delayToken:'--dur-highlight-hold'});
+      assert.deepEqual(hl.map(a=>a.properties),[['opacity']]);
+      measurements.highlight=hl;
+      await assertHighlightTone(peer,active(card),'--stage-active-bg','--highlight-ring-active');
     });
     await waitForAnimationsSettled(peer);
     await writeEvidence('motion-spec-36b.json',{os:{platform:platform(),release:release()},browser:await peer.command('Browser.getVersion'),measurements});
@@ -441,41 +448,61 @@ test('36B B5.8 list row group changes and arrivals highlight brand only for othe
     await assertNoTransformAnimations(actor,row);
     await frozen(peer,async()=>{
       await peer.evaluate(refreshBoard);await peer.waitFor(`${query(row)}?.dataset.column==='active'`);
-      await waitEffect(peer,row,backgroundFrame);
-      await assertNoTransformAnimations(peer,row);await assertHighlightTone(peer,row,'--brand-subtle');
+      await waitEffect(peer,row,highlightFrame);
+      await assertNoTransformAnimations(peer,row);
+      const rowMoveHighlight=await assertMotion(peer,row,'--dur-highlight','--ease-ambient',{animationName:'WAAPI',pseudoElement:'::after',delayToken:'--dur-highlight-hold'});
+      assert.deepEqual(rowMoveHighlight.map(a=>a.properties),[['opacity']]);
+      await assertHighlightTone(peer,row,'--brand-subtle','--highlight-ring-brand');
     });
     await waitForAnimationsSettled(peer);
     const arrival=ticketRow(await seedMotionTicket(fixture.pool,'列表新增行'));
     await frozen(peer,async()=>{
-      await peer.evaluate(refreshBoard);await waitEffect(peer,arrival,backgroundFrame);
-      await assertNoTransformAnimations(peer,arrival);await assertHighlightTone(peer,arrival,'--brand-subtle');
+      await peer.evaluate(refreshBoard);await waitEffect(peer,arrival,highlightFrame);
+      await assertNoTransformAnimations(peer,arrival);
+      const rowArrivalHighlight=await assertMotion(peer,arrival,'--dur-highlight','--ease-ambient',{animationName:'WAAPI',pseudoElement:'::after',delayToken:'--dur-highlight-hold'});
+      assert.deepEqual(rowArrivalHighlight.map(a=>a.properties),[['opacity']]);
+      await assertHighlightTone(peer,arrival,'--brand-subtle','--highlight-ring-brand');
     });
     await waitForAnimationsSettled(peer);
     assert.equal(await peer.evaluate("motionCalls.every(event=>event.kind==='highlight')"),true,'list never uses WAAPI entry/translation');
   }catch(error){failure=error;}finally{await closeBrowserTestResources([()=>peer.close()],failure);}
 }));
 
-async function assertReducedHighlight(browser:Browser,selector:string,token:string){
+async function assertReducedHighlight(browser:Browser,selector:string,token:string,ringToken:string){
   const result=object(await browser.evaluate(`(async()=>{
-    const root=document.documentElement,styles=getComputedStyle(root),raw=styles.getPropertyValue('--dur-highlight').trim(),duration=Number.parseFloat(raw)*(raw.endsWith('ms')?1:1000);
-    const color=document.createElement('span');document.body.append(color);color.style.backgroundColor='var(${token})';const expected=getComputedStyle(color).backgroundColor;color.remove();
-    let start=null,end=null,effects=0,backgroundEffects=0,mismatch=false;
+    const root=document.documentElement,styles=getComputedStyle(root);
+    const parseTime=name=>{const raw=styles.getPropertyValue(name).trim();return Number.parseFloat(raw)*(raw.endsWith('ms')?1:1000);};
+    const holdDuration=parseTime('--dur-highlight-hold'),fadeDuration=parseTime('--dur-highlight'),duration=holdDuration+fadeDuration;
+    const color=document.createElement('span');document.body.append(color);
+    color.style.backgroundColor='var(${token})';const expectedBg=getComputedStyle(color).backgroundColor;
+    color.style.boxShadow='inset 0 0 0 1px var(${ringToken})';const expectedShadow=getComputedStyle(color).boxShadow;
+    color.style.backgroundColor='var(--bg-canvas)';const baseBg=getComputedStyle(color).backgroundColor;
+    color.remove();
+    let start=null,end=null,effects=0,highlightEffects=0,mismatch=false,inlineMutated=false,cardBgChanged=false;
     const deadline=performance.now()+5000;
     ${refreshBoard};
     while(performance.now()<deadline){
       await new Promise(resolve=>requestAnimationFrame(resolve));
       const node=${query(selector)},current=performance.now();
       effects+=${relevantAnimations}.length;
-      backgroundEffects+=node?.getAnimations().filter(animation=>${backgroundFrame}).length??0;
-      if(node?.style.backgroundColor){start??=current;mismatch||=getComputedStyle(node).backgroundColor!==expected;}
-      else if(start!==null){end=current;break;}
+      highlightEffects+=node?.getAnimations({subtree:true}).filter(animation=>animation.effect?.target===node&&
+        ((${highlightFrame})||animation.effect.getKeyframes().some(frame=>'backgroundColor' in frame||'background-color' in frame))).length??0;
+      if(node?.dataset.highlightTone){
+        start??=current;
+        if(node.style.backgroundColor)inlineMutated=true;
+        if(getComputedStyle(node).backgroundColor!==baseBg)cardBgChanged=true;
+        const after=getComputedStyle(node,'::after');
+        mismatch||=after.backgroundColor!==expectedBg||after.boxShadow!==expectedShadow||after.opacity!=='1';
+      }else if(start!==null){end=current;break;}
     }
-    return {duration,start,end,elapsed:start!==null&&end!==null?end-start:null,effects,backgroundEffects,mismatch};
+    return {holdDuration,fadeDuration,duration,start,end,elapsed:start!==null&&end!==null?end-start:null,effects,highlightEffects,mismatch,inlineMutated,cardBgChanged};
   })()`));
-  assert.deepEqual({effects:result.effects,backgroundEffects:result.backgroundEffects,mismatch:result.mismatch},{effects:0,backgroundEffects:0,mismatch:false});
-  assert.equal(result.duration,1200);
-  assert.equal(typeof result.elapsed,'number',`expected a sampled, finite color hold: ${JSON.stringify(result)}`);
-  assert.ok(Math.abs(Number(result.elapsed)-Number(result.duration))<=50,`color hold differs from token by more than three nominal frames: ${JSON.stringify(result)}`);
+  assert.deepEqual({effects:result.effects,highlightEffects:result.highlightEffects,mismatch:result.mismatch,inlineMutated:result.inlineMutated,cardBgChanged:result.cardBgChanged},{effects:0,highlightEffects:0,mismatch:false,inlineMutated:false,cardBgChanged:false});
+  assert.equal(result.holdDuration,240);
+  assert.equal(result.fadeDuration,1200);
+  assert.equal(result.duration,1440);
+  assert.equal(typeof result.elapsed,'number',`expected a sampled, finite overlay hold: ${JSON.stringify(result)}`);
+  assert.ok(Math.abs(Number(result.elapsed)-Number(result.duration))<=50,`overlay hold differs from token by more than three nominal frames: ${JSON.stringify(result)}`);
   await assertNoTransformAnimations(browser,'.board');
   await waitForAnimationsSettled(browser);
 }
@@ -486,10 +513,10 @@ test('36B B5.9 reduced-motion arrivals and moves hold stage colors without trans
   await browser.waitFor("matchMedia('(prefers-reduced-motion: reduce)').matches");
   await expandPendingBoard(browser);await expandActiveBoard(browser);
   const arrival=ticketCard(await seedMotionTicket(fixture.pool,'减少动态效果'));
-  await assertReducedHighlight(browser,pending(arrival),'--stage-intake-bg');
+  await assertReducedHighlight(browser,pending(arrival),'--stage-intake-bg','--highlight-ring-intake');
   const id=fixture.tickets[0]?.ticket.id;assert.ok(id);
   await stageFixture(fixture,[id],'IN_PROGRESS');
-  await assertReducedHighlight(browser,active(card),'--stage-active-bg');
+  await assertReducedHighlight(browser,active(card),'--stage-active-bg','--highlight-ring-active');
 }));
 
 for(const name of ['board-move','board-arrival','board-chip','list-row-highlight','count-roll'] as const)test(`36B B5.10 filmstrip ${name}`,{timeout},()=>withT42BoardBrowser(async(fixture,browser,card)=>{

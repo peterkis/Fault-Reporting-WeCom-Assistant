@@ -9,6 +9,28 @@ export function shanghaiDays(nowMs: number): {today: string; yesterday: string} 
   return {today: shanghaiDate.format(nowMs), yesterday: shanghaiDate.format(nowMs - 86_400_000)};
 }
 
+/** Advance display time when newer data arrives between 60s ticks without adding timers or requests. */
+export function resolveDisplayNow(clockNow: number, ...dataUpdatedAt: readonly number[]): number {
+  let latest = Number.isFinite(clockNow) ? clockNow : 0;
+  for (const timestamp of dataUpdatedAt) {
+    if (Number.isFinite(timestamp) && timestamp > latest) latest = timestamp;
+  }
+  return latest;
+}
+
+/** Relative update time formatted against Asia/Shanghai local API timestamps. */
+export function formatRelativeTime(value: string, now: number): string {
+  // API timestamps are Asia/Shanghai local time; never parse in the browser's local timezone.
+  const elapsed = now - Date.parse(value.replace(' ', 'T') + '+08:00');
+  if (!Number.isFinite(elapsed) || elapsed < 0) return value.slice(5, 16);
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes === 0) return '刚刚';
+  if (minutes < 60) return minutes + ' 分钟前';
+  const hours = Math.floor(minutes / 60), rest = minutes % 60;
+  if (hours < 24) return hours + ' 小时' + (rest ? ' ' + rest + ' 分' : '') + '前';
+  return Math.floor(hours / 24) + ' 天前';
+}
+
 /** The API supplies YYYY-MM-DD HH:mm:ss in Asia/Shanghai. */
 export function formatListTime(local: string, nowMs: number): string {
   const day = local.slice(0, 10), {today, yesterday} = shanghaiDays(nowMs);

@@ -67,8 +67,8 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
-/** @param {{url:string,width:number,height:number,graphics?:boolean,fullRaster?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
-export async function launchSystemBrowser({url,width,height,graphics=false,fullRaster=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
+/** @param {{url:string,width:number,height:number,nativeDpr2?:boolean,graphics?:boolean,fullRaster?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
+export async function launchSystemBrowser({url,width,height,nativeDpr2=false,graphics=false,fullRaster=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
   signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
@@ -77,6 +77,8 @@ export async function launchSystemBrowser({url,width,height,graphics=false,fullR
   const args=[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-background-networking',
+    // Fractional native borders must be laid out at the target device scale from process startup.
+    ...(nativeDpr2?['--force-device-scale-factor=2']:[]),
     // Screenshot-only opt-in: avoid reusing partially rasterized text/overlay tiles.
     ...(fullRaster?['--disable-partial-raster']:[]),
     // Hosted Windows uses WARP for WebGL and SwiftShader for WebGPU.
@@ -205,7 +207,7 @@ export async function launchSystemBrowser({url,width,height,graphics=false,fullR
       assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
       await command('Network.enable');await command('Network.setCookies',{cookies});
     }
-    await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
+    await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:nativeDpr2?2:1,mobile:width<600});
     // Navigate only after the owned blank target is connected and cookies are set.
     const navigation=await command('Page.navigate',{url});
     if(typeof navigation?.errorText==='string'&&navigation.errorText)throw new Error('P2_006_BROWSER_NAVIGATION_FAILED');

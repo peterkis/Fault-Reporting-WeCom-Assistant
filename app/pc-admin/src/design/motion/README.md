@@ -18,11 +18,24 @@ the same source. Importing tokens has no DOM side effect until first use / initi
   running, `data-motion-flipping` is set on `el` and ref-counted `data-motion-flip-host` is set on
   enclosing `.ds-collapse`/`.disclosure__content` ancestors so expanded containers unclip
   temporarily without `:has()` subtree invalidation.
-- `highlight(el, {tone: 'intake'|'active'|'done'|'brand', background?})` fades the cached phase
-  background (`highlightToneColor`) to the original computed (or pre-batched) background. Repeating
-  restarts 1200ms. Reduced motion holds the solid colour for that duration, then restores the
-  original inline background. Returns `{cancel(), finished}`; `cancel` restores immediately, and
-  `finished` resolves on either completion or cancellation, including a reduced-motion hold.
+- `highlight(el, {tone: 'intake'|'active'|'done'|'brand', background?})` activates a `::after`
+  overlay (`inset:0; border-radius:inherit; pointer-events:none`, above host background and below
+  content) carrying the phase tint (`--stage-*-bg` / `--brand-subtle`) and `1px` inset ring
+  (`--highlight-ring-*` via `--shadow-highlight-*`) via `data-highlight-tone`. When the host is in
+  a persistent/transient state (`.is-selected`, `[data-closure-kind="DISMISSED"]`, `:active`,
+  `[data-presence]`, `[data-keyboard-current="true"]`, `[data-optimistic-rollback="true"]`), the
+  overlay keeps `background: transparent` and clears inset state rings so host fill and outer/inner
+  rings stay visible; on narrow list rows (`max-width: 1080px`), the sticky first column `th::after`
+  runs the same synchronized `opacity` hold/fade so brand highlight remains visible above scrolled
+  columns. Animates ONLY `::after`'s `opacity`: holds at `1` for `--dur-highlight-hold` (240ms),
+  then fades to `0` over `--dur-highlight` (1200ms) with `--ease-ambient` (total 1.44s), without
+  mutating `el`'s own `background-color` or inline styles. Repeating restarts timing; reduced
+  motion holds the overlay statically for `--dur-highlight-hold + --dur-highlight` and removes
+  `data-highlight-tone` with no fade. Returns `{cancel(), finished}`; `cancel` removes the overlay
+  immediately, and `finished` resolves on either completion or cancellation. (`board-motion.ts` tracks
+  all active highlight handles and cancels them on scope reset or unmount.)
+- Arrival slide (`enterSlide`, `animateTimelineEntry`) still runs `--shift-md` + `opacity` over
+  `--dur-base` / `--ease-standard`, while starting `highlight()` concurrently from frame 0.
 - `useExitPresence(present, durationToken)` returns whether to render. Reopening cancels
   pending removal; reduced motion and hidden documents retain for zero time.
 - `<NumberRoll value={number} animate={boolean}/>` rolls the entire number up/down, reserves

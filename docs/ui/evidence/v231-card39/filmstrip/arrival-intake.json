@@ -1,0 +1,20 @@
+{
+  "selector": ".board-column.pending .ticket-card[data-kind=intake][data-item-id=\"0039d454-9353-4874-b531-0b155fa95c16\"]",
+  "frames": [
+    0,
+    240,
+    480,
+    840,
+    1200,
+    1440
+  ],
+  "animations": 2,
+  "clip": {
+    "left": 264,
+    "top": 276,
+    "right": 648,
+    "bottom": 446
+  },
+  "width": 2304,
+  "height": 170
+}
