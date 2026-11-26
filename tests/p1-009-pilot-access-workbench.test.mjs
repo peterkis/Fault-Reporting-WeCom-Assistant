@@ -1,33 +1,27 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import {isolatedTicketTests} from './helpers/p1-ticket-database.mjs';
+import {isolatedTicketTests,prepareCurrentTicketSchema} from './helpers/p1-ticket-database.mjs';
 import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
-  applyChannelMessageInboxMigration,
   createChannelMessageInbox,
 } from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
-  applyServiceIntakeMigration,
   createServiceIntakeProcessor,
 } from '../app/server/src/p1-004-service-intake.mjs';
 import {
-  applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
 } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
-  applyTicketStateActionMigration,
   createTicketActionService,
 } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
-  applyPilotAccessMigration,
   closePilotWorkbenchServer,
   createPilotAccessService,
   createPilotWorkbenchServer,
   listenPilotWorkbenchServer,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 function createMessage(msgId) {
   const reporterWeComUserId = `reporter-${msgId}`;
@@ -66,14 +60,7 @@ async function seedTicket(pool) {
   return { ticket: result.result.ticket, reporterWeComUserId: source.reporterWeComUserId };
 }
 
-const integrationTest=isolatedTicketTests('p1009',async pool=>{
-  await applyChannelMessageInboxMigration({ pool });
-  await applyServiceIntakeMigration({ pool });
-  await applyPilotTicketCoreMigration({ pool });
-  await applyTicketStateActionMigration({ pool });
-  await applyPilotAccessMigration({ pool });
-  await ensureCompletionDismissal(pool);
-});
+const integrationTest=isolatedTicketTests('p1009',prepareCurrentTicketSchema);
 
 integrationTest('Pilot roles isolate teams, enable audited handling, and keep internal notes out of reporter views', async (pool) => {
   const { ticket, reporterWeComUserId } = await seedTicket(pool);

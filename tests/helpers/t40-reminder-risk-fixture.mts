@@ -62,10 +62,6 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
     if(typeof ownerUrl!=='string')throw Error('T40_OWNED_DATABASE_REQUIRED');
     const databaseUrl=new URL(ownerUrl);databaseUrl.pathname='/'+databaseName;
     const migration={databaseUrl:String(databaseUrl),mode:'apply' as const};
-    await migrateWorkbenchManualReports(migration);
-    await migrateWorkbenchPersonalRead(migration);
-    await migrateWorkbenchFollow(migration);
-    await migrateWorkbenchSupplementFollowUp(migration);
     const authOrigin='https://127.0.0.1:'+new URL(base.origin).port;
     const identityHashKey='t40-isolated-auth-identity-hash-key',corpId='ww-t40-source-fixture',agentId='1000001';
     let official:ReturnType<typeof createWeComWorkbenchAuthentication>|undefined;
@@ -239,5 +235,15 @@ export async function withT40ReminderRiskFixture(run:(fixture:T40ReminderRiskFix
       assert.equal(runtime.server.listening,false);
       assert.equal((await runtime.observability.metrics()).sse_clients,0);
     }
-  },{workbenchFollowUpSchedulesEnabled:true,ticketAssignmentEnabled:true,lifecycleEnabled:true});
+  },{
+    workbenchFollowUpSchedulesEnabled:true,ticketAssignmentEnabled:true,lifecycleEnabled:true,
+    // 071 captures the receipt constraints installed by these earlier migrations.
+    beforeClosureMigration:async databaseUrl=>{
+      const migration={databaseUrl,mode:'apply' as const};
+      await migrateWorkbenchManualReports(migration);
+      await migrateWorkbenchPersonalRead(migration);
+      await migrateWorkbenchFollow(migration);
+      await migrateWorkbenchSupplementFollowUp(migration);
+    },
+  });
 }

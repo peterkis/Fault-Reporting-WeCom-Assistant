@@ -1,40 +1,32 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import {test} from 'node:test';
-import {isolatedTicketTests} from './helpers/p1-ticket-database.mjs';
+import {isolatedTicketTests,prepareCurrentTicketSchema} from './helpers/p1-ticket-database.mjs';
 import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
-  applyChannelMessageInboxMigration,
   createChannelMessageInbox,
 } from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
-  applyServiceIntakeMigration,
   createServiceIntakeProcessor,
 } from '../app/server/src/p1-004-service-intake.mjs';
 import {
-  applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
 } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
-  applyTicketStateActionMigration,
   createTicketActionService,
 } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
-  applyNotificationOutboxMigration,
   createNotificationOutbox,
 } from '../app/server/src/p1-007-notification-outbox.mjs';
 import {
-  applyPilotAccessMigration,
   createPilotAccessService,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {
-  applyTicketClosureMigration,
   createTicketClosureService,
   createTicketLifecycleProcessor,
 } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
-import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 function normalizedMessage(msgId, {
   text = 'HIS 登录失败，提示权限错误',
@@ -96,16 +88,7 @@ async function createActors(pool, reporterWeComUserId) {
   return { access, reporter, handler };
 }
 
-const integrationTest=isolatedTicketTests('p1010',async pool=>{
-  await applyChannelMessageInboxMigration({ pool });
-  await applyServiceIntakeMigration({ pool });
-  await applyPilotTicketCoreMigration({ pool });
-  await applyTicketStateActionMigration({ pool });
-  await applyNotificationOutboxMigration({ pool });
-  await applyPilotAccessMigration({ pool });
-  await applyTicketClosureMigration({ pool });
-  await ensureCompletionDismissal(pool);
-});
+const integrationTest=isolatedTicketTests('p1010',prepareCurrentTicketSchema);
 
 test('runAutoComplete without input preserves the explicit action-service validation error', async () => {
   const closure = createTicketClosureService({ resolveReporterActor: () => null });
