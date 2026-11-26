@@ -2,6 +2,7 @@ import {assertLoopbackDatabaseUrl,loopbackFixtureUrl} from '../app/server/src/pl
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 
 import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
@@ -50,7 +51,8 @@ integrationTest('existing 001-021 database passes 022 check rollback, apply, for
   const target = await createDatabase('existing');
   const pool = createPostgresPool({ ...assertLoopbackDatabaseUrl(target.url), max: 1, connectionTimeoutMillis: 5_000, allowExitOnIdle: true });
   try {
-    for (const file of legacyFiles) await pool.query(await readFile(`database/migrations/${file}`, 'utf8'));
+    const migrationDir = join(process.env.TS_MIGRATION_TEST_SOURCE_ROOT ?? process.cwd(), 'database', 'migrations');
+    for (const file of legacyFiles) await pool.query(await readFile(join(migrationDir, file), 'utf8'));
     const beforeCount = await pool.query(`SELECT count(*)::integer AS count FROM information_schema.columns WHERE table_schema=ANY($1::text[]) AND data_type='timestamp with time zone'`, [['channel','intake','pilot_ticket','notification','operations','conversation','communication']]);
     assert.equal(beforeCount.rows[0].count, 77);
 

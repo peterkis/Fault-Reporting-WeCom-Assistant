@@ -58,7 +58,7 @@ import {createP2016TicketQuery,type P2016TicketRow} from '../app/server/src/p2-0
 import type {BoardColumn} from '../contracts/web01_workbench_contracts.js';
 import type {WorkbenchSearchCriteria} from '../contracts/workbench_search_contracts.js';
 
-const ROOT = process.cwd();
+const ROOT = process.env.TS_MIGRATION_TEST_SOURCE_ROOT ?? process.cwd();
 const PRINCIPAL_ID = '11111111-1111-4111-8111-111111111111';
 const SAMPLE_ID = '22222222-2222-4222-8222-222222222222';
 const SAMPLE_INTAKE_ID = '33333333-3333-4333-8333-333333333333';
