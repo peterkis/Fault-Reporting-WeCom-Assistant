@@ -8,6 +8,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import type {T22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney,seedCard25bConversation,seedCard26Conversation} from './helpers/conversation-inbox-fixture.mjs';
+import {TopicCursorDiagnostics} from './helpers/topic-cursor-diagnostics.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
@@ -226,17 +227,21 @@ test('ended inbox preserves historical neutral labels and the selected Session r
 });
 
 test('topic history and same-topic direct navigation remain separate, readable and reachable together',()=>withInboxDiagnostics('CONVERSATION_TOPIC_HISTORY',async trace=>{
+  const cursorTrace=new TopicCursorDiagnostics();
+  trace.topicCursor=cursorTrace;
   await withT22Fixture(async f=>{
-    for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
-    const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
-    const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
-    const related=await trace.topicPreflight(()=>fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})) as ConversationRelatedPage;
-    assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
+    const stopObserving=cursorTrace.attach(f);
     const writes:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};
-    f.runtime.server.on('request',observe);let browser:Browser|undefined,failure:unknown;
+    let browser:Browser|undefined,failure:unknown;
     try{
+      for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
+      const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
+      const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
+      const related=await trace.topicPreflight(()=>fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})) as ConversationRelatedPage;
+      assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
+      f.runtime.server.on('request',observe);
       browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[group.id,direct.id])});assert.ok(browser);
-      await trace.bind(browser);
+      trace.topicBrowser=browser;await trace.bind(browser);
       await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))&&Boolean(document.querySelector('.inbox-topic-pages button'))");
       await clickWorkbenchControl(browser,'.inbox-more-actions [data-action=open-detail-actions]');
       trace.topicPhase('layout-widths');
@@ -253,14 +258,18 @@ test('topic history and same-topic direct navigation remain separate, readable a
       trace.topicPhase('wait-history');
       await trace.waitForHistory(browser,"document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+group.id,'history paging keeps the current Session');
-      trace.topicPhase('back');
+      trace.topicPhase('back');cursorTrace.samplePage(browser,'back-start',sampleBinding);
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))");
       trace.topicPhase('direct-nav');
       await clickWorkbenchControl(browser,'.inbox-new-direct');await browser.waitFor(`location.pathname==='/workbench/app/conversations/${direct.id}'&&Boolean(document.querySelector('[data-conversation-ready]'))`);
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+direct.id);
       assert.deepEqual(writes,[],'topic history and direct-window navigation remain read-only');
-    }catch(error){failure=error;trace.report('failed');}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
-  },{inbox:true,personalRead:false,recovery:false});
+    }catch(error){failure=error;}finally{
+      f.runtime.server.off('request',observe);await stopObserving();
+      if(failure)trace.report('failed');
+      await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+    }
+  },{inbox:true,personalRead:false,recovery:false,observeRuntimePool:p=>cursorTrace.runtimePool(p)});
 }));
 
 test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{
@@ -491,6 +500,8 @@ class InboxBrowserDiagnostics {
   private readonly historySamples:{ms:number;lastMs:number;polls:number;state:ReturnType<typeof historyState>}[]=[];
   private historyPolls=0;
   historyClickSucceeded:boolean|null=null;
+  topicCursor?:TopicCursorDiagnostics;
+  topicBrowser?:Browser;
   private clickTarget:{ms:number;trusted:boolean;onButton:boolean;hit:ReturnType<typeof hitElement>}|null=null;
   phase='setup';
   proof:Record<string,unknown>={};
@@ -534,6 +545,7 @@ class InboxBrowserDiagnostics {
         if(isRecord(response)&&typeof response.status==='number')existing[1]=response.status;
         if(event==='Network.loadingFinished'||event==='Network.loadingFailed'||event==='Network.requestWillBeSent'){
           existing[2]=this.networkMs(params);if(event==='Network.loadingFailed')existing[3]=true;
+          if(event==='Network.loadingFinished'&&existing[1]===400&&this.topicBrowser)this.topicCursor?.samplePage(this.topicBrowser,'after-400');
           this.pending.delete(id);
         }
       }
@@ -577,6 +589,7 @@ class InboxBrowserDiagnostics {
     try{value=JSON.parse(payload);}catch{return;}
     if(!isRecord(value))return;
     if(this.label==='CONVERSATION_TOPIC_HISTORY'){
+      if(value.kind==='back-click'){this.topicCursor?.recordPager('back-click',value);return;}
       if(value.kind==='click'){
         if(this.phase!=='click-history'&&this.phase!=='wait-history')return;
         this.clickTarget={ms:this.ms(),trusted:value.trusted===true,onButton:value.onButton===true,hit:hitElement(value.tag,value.classes)};return;
@@ -642,7 +655,7 @@ class InboxBrowserDiagnostics {
     if(this.logged)return;this.logged=true;
     if(this.label==='CONVERSATION_TOPIC_HISTORY'){
       console.log(this.label+' '+JSON.stringify({outcome,phase:this.phase,phases:this.topicPhases,elapsedMs:this.ms(),
-        clickSucceeded:this.historyClickSucceeded,clickTarget:this.clickTarget,signals:this.signals,console:this.consoleMessages,unavailable:this.unavailable,
+        ...this.topicCursor?.receipt(),clickSucceeded:this.historyClickSucceeded,clickTarget:this.clickTarget,signals:this.signals,console:this.consoleMessages,unavailable:this.unavailable,
         requestColumns:['startMs','status','finishMs','failed','hasCursor'],requests:Object.fromEntries(this.requests),
         polls:this.historyPolls,samples:this.historySamples}));return;
     }
