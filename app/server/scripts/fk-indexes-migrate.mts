@@ -121,11 +121,17 @@ export async function applyFkIndexesSql(tx: Pick<PostgresTransaction, 'query'>):
   await tx.query(body);
 }
 
+// There is exactly one record per array element. The bound exposes the small
+// predecessor cardinality when PostgreSQL plans with the parameter value.
 export const FK_STRUCTURE_COUNT_SQL = `
   (SELECT count(*)::integer
-     FROM jsonb_to_recordset($1::jsonb) AS expected(schema text, "table" text, name text, columns text[])
+     FROM (
+       SELECT * FROM jsonb_to_recordset($1::jsonb) AS spec(schema text, "table" text, name text, columns text[])
+       LIMIT jsonb_array_length($1::jsonb)
+     ) AS expected
      JOIN pg_namespace AS nsp ON nsp.nspname = expected.schema
-     JOIN pg_class AS cls ON cls.relnamespace = nsp.oid AND cls.relname = expected.name
+     JOIN pg_class AS cls ON cls.relnamespace = nsp.oid AND cls.relname = expected.name::name
+                         AND cls.relname = expected.name
      JOIN pg_am AS am ON am.oid = cls.relam
      JOIN pg_index AS idx ON idx.indexrelid = cls.oid
      JOIN pg_class AS tbl ON tbl.oid = idx.indrelid
@@ -187,25 +193,62 @@ export async function fkPredecessorParameters(relations:readonly string[]){
 
 export const FK_PREDECESSOR_COUNT_SQL = `(SELECT CASE
   WHEN marker IS NULL THEN 0
-  WHEN marker=$3::text AND matches=jsonb_array_length($1::jsonb) THEN matches
+  WHEN marker=$3::text AND matches=jsonb_array_length($1::jsonb) THEN jsonb_array_length($1::jsonb)
   ELSE NULL END
   FROM (SELECT (SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$2::text) AS marker,
     ${FK_STRUCTURE_COUNT_SQL} AS matches) AS state)`;
+
+export type WorkbenchIndexRow = {
+  relation: string; name: string; valid: boolean; ready: boolean; unique: boolean; primary: boolean; definition: string;
+  fk: {eligible: boolean; key_count: number; columns: string[]} | null;
+};
+
+function indexDefinition(target: ExpectedFkIndexTarget) {
+  return 'CREATE INDEX '+target.name+' ON '+target.schema+'.'+target.table+' USING btree ('+target.columns.join(', ')+')';
+}
+
+function workbenchFkTargets(relations: readonly string[]) {
+  return FK_INDEX_TARGETS.filter(t => relations.includes(t.schema+'.'+t.table));
+}
+
+function workbenchFkMatchCount(relations: readonly string[], indexes: readonly WorkbenchIndexRow[]) {
+  const targets = workbenchFkTargets(relations);
+  const valid = targets.every(target => indexes.some(row => {
+    const facts = row.fk;
+    return row.relation === target.schema+'.'+target.table && row.name === target.name
+      && row.valid && row.ready && facts?.eligible && row.definition === indexDefinition(target)
+      && facts.key_count === target.columns.length && facts.columns.length === target.columns.length
+      && target.columns.every((column, ordinal) => facts.columns[ordinal] === column);
+  }));
+  return valid ? targets.length : null;
+}
+
+/** This scalar is read only when normalization reaches the predecessor check. */
+export async function readWorkbenchFkPredecessors(tx: PostgresTransaction, indexes: readonly WorkbenchIndexRow[]) {
+  const state = (await tx.query<{registered: boolean | null}>(`
+    SELECT (SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$2::text)=$1::text AS registered
+  `, [(await source()).checksum, FK_INDEXES_MIGRATION_ID])).rows[0];
+  if (!state) throw Error('FK_INDEX_STATE_MISSING');
+  return (relations: readonly string[], rows: Record<string,unknown>[]) => {
+    const count = state.registered === null ? 0 : state.registered ? workbenchFkMatchCount(relations, indexes) : null;
+    return projectPredecessorIndexes(workbenchFkTargets(relations), count, rows);
+  };
+}
 
 /** Compare each actual inventoried row before projecting it out of an earlier digest. */
 export async function predecessorIndexRows(tx:PostgresTransaction,relations:readonly string[],rows:Record<string,unknown>[]){
   const {targets,values}=await fkPredecessorParameters(relations);
   const count=(await tx.query<{registered:number|null}>(`SELECT ${FK_PREDECESSOR_COUNT_SQL} AS registered`,values)).rows[0]?.registered;
-  return projectPredecessorIndexRows(targets,count,rows);
+  return projectPredecessorIndexes(targets,count,rows);
 }
 
-export function projectPredecessorIndexRows(targets:readonly ExpectedFkIndexTarget[],count:number|null|undefined,rows:Record<string,unknown>[]){
+function projectPredecessorIndexes(targets: readonly ExpectedFkIndexTarget[], count: number | null | undefined, rows: Record<string,unknown>[]) {
   if(count===0)return rows;
   if(count!==targets.length)return null;
   const removable=new Set<Record<string,unknown>>();
   for(const target of targets){
     const relation=target.schema+'.'+target.table;
-    const definition='CREATE INDEX '+target.name+' ON '+relation+' USING btree ('+target.columns.join(', ')+')';
+    const definition=indexDefinition(target);
     const matches=rows.filter(row=>row.relation===relation&&row.name===target.name);
     const row=matches[0];
     if(matches.length!==1||!row||row.valid!==true||row.ready!==true||row.definition!==definition)return null;
@@ -338,3 +381,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exitCode = 1;
   }
 }
+
+export {projectPredecessorIndexes as projectPredecessorIndexRows};

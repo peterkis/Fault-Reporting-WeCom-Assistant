@@ -9,16 +9,15 @@ import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {transactionP2016,failP2016} from '../src/p2-016-domain-contracts.mjs';
 export const SERVICE_CLOSURE_MIGRATION_ID='071_unified_service_closure';
 const file=new URL('../../../database/migrations/071_unified_service_closure.sql',import.meta.url);
-export async function serviceClosureSchemaStatus(tx:PostgresTransaction):Promise<'absent'|'ready'|'drift'>{
- const row=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
-  to_regclass('pilot_ticket.closure_record') IS NOT NULL AS record,to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL AS termination
-  FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
- if(!row)return 'absent';
- const checksum=createHash('sha256').update(await readFile(file)).digest('hex');
- return row.checksum_sha256===checksum&&row.record&&row.termination?'ready':'drift';
+export async function serviceClosureChecksum():Promise<string>{
+ return createHash('sha256').update(await readFile(file)).digest('hex');
 }
 export async function serviceClosureSchemaReady(tx:PostgresTransaction):Promise<boolean>{
- return await serviceClosureSchemaStatus(tx)==='ready';
+ const checksum=await serviceClosureChecksum();
+ const rows=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
+  to_regclass('pilot_ticket.closure_record') IS NOT NULL AS record,to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL AS termination
+  FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows;
+ return rows.length>0 && rows.every(row => row.checksum_sha256===checksum && row.record && row.termination);
 }
 /** Current closure-enabled roles must fail before timers, intake or network startup. */
 export async function requireServiceClosureSchema({pool}:{pool:PostgresTransaction}):Promise<void>{
@@ -71,4 +70,13 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const databaseUrl=process.env.PILOT_DATABASE_URL;if(!databaseUrl)throw Error('SERVICE_CLOSURE_DATABASE_URL_REQUIRED');
  try{console.log(JSON.stringify(await migrateServiceClosure({databaseUrl,mode:args[0]==='--apply'?'apply':args[0]==='--rollback'?'rollback':'check'})));}
  catch{console.error(JSON.stringify({ok:false,error_code:'SERVICE_CLOSURE_MIGRATION_FAILED'}));process.exitCode=1;}
+}
+
+export async function serviceClosureSchemaStatus(tx:PostgresTransaction):Promise<'absent'|'ready'|'drift'>{
+ const row=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
+  to_regclass('pilot_ticket.closure_record') IS NOT NULL AS record,to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL AS termination
+  FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
+ if(!row)return 'absent';
+ const checksum=createHash('sha256').update(await readFile(file)).digest('hex');
+ return row.checksum_sha256===checksum&&row.record&&row.termination?'ready':'drift';
 }

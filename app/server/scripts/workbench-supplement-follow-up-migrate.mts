@@ -1,8 +1,7 @@
 import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
-import {followReceiptSchemaReady,readWorkbenchRelationCatalog} from '../src/p2-006-delivery-command-schema.mjs';
-import {readCatalogRow} from '../src/platform/postgres-catalog.mjs';
-import {FK_PREDECESSOR_COUNT_SQL,fkPredecessorParameters,projectPredecessorIndexRows} from './fk-indexes-migrate.mjs';
+import {readReadyFollowReceipt} from './workbench-follow-migrate.mjs';
+import {projectWorkbenchCatalog,workbenchReadinessCatalog} from './workbench-readiness-catalog.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
@@ -15,18 +14,18 @@ const RELATIONS=['pilot_ticket.workbench_supplement_disposition','pilot_ticket.w
 // Frozen after the actual isolated PG18 catalog-only preparation; never a business PASS.
 export const SUPPLEMENT_CATALOG_SHA256='b97aa3cf902bf60307de2500e0d1c3e547ca2ea4f142cf8def07f635a9a50c97';
 export async function supplementFollowUpCatalog(tx:PostgresTransaction){
- return readWorkbenchRelationCatalog(tx,RELATIONS);
+ return workbenchReadinessCatalog(tx, RELATIONS, 'supplement');
 }
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
 export async function supplementFollowUpSchemaReady(tx:PostgresTransaction):Promise<boolean>{
  const present=(await tx.query<{present:boolean}>("SELECT to_regclass('platform.schema_migration') IS NOT NULL AS present")).rows[0];if(!present?.present)return false;
- const fk=await fkPredecessorParameters(RELATIONS);
- const row=await readCatalogRow<{checksum_sha256:string;registered:number|null}>(tx,
-   `SELECT checksum_sha256,${FK_PREDECESSOR_COUNT_SQL} AS registered FROM platform.schema_migration WHERE migration_id=$4`,
-   [...fk.values,SUPPLEMENT_FOLLOW_UP_MIGRATION_ID]);
- if(row?.checksum_sha256!==sha(await readFile(FILE,'utf8'))||!await followReceiptSchemaReady(tx))return false;
- const catalog=await supplementFollowUpCatalog(tx);
- const indexes=projectPredecessorIndexRows(fk.targets,row.registered,catalog.indexes);
+ const receipt=await readReadyFollowReceipt(tx, {
+   prerequisite: {migrationId: SUPPLEMENT_FOLLOW_UP_MIGRATION_ID, checksum: async () => sha(await readFile(FILE,'utf8'))},
+   catalogRelations: RELATIONS,
+ });
+ if(!receipt)return false;
+ const catalog=projectWorkbenchCatalog(receipt.catalog, RELATIONS, 'supplement');
+ const indexes=await receipt.priorIndexes(RELATIONS,catalog.indexes);
  return indexes!==null&&sha(JSON.stringify({...catalog,indexes}))===SUPPLEMENT_CATALOG_SHA256;
 }
 export async function migrateWorkbenchSupplementFollowUp({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'status'}){

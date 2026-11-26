@@ -1,9 +1,9 @@
-import {readCatalogRow} from './platform/postgres-catalog.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
-import {serviceClosureSchemaStatus} from '../scripts/service-closure-migrate.mjs';
-import {FK_PREDECESSOR_COUNT_SQL,fkPredecessorParameters,projectPredecessorIndexRows} from '../scripts/fk-indexes-migrate.mjs';
+import {SERVICE_CLOSURE_MIGRATION_ID,serviceClosureSchemaReady} from '../scripts/service-closure-migrate.mjs';
+import {RECEIPT_RELATION,workbenchReadinessCatalog} from '../scripts/workbench-readiness-catalog.mjs';
+import {predecessorIndexRows} from '../scripts/fk-indexes-migrate.mjs';
 
 export const CONVERSATION_DELIVERY_MIGRATION_ID='061_workbench_conversation_delivery_commands';
 const RECEIPT_SHAPES={
@@ -24,6 +24,58 @@ const CLOSURE_RESOURCE_PREDECESSORS:Readonly<Record<string,string>>={
 const PARENTS=['031_p2_016_ticket_lifecycle_workbench_notifications','042_workbench_manual_reports','047_workbench_personal_read','050_bot_reporter_feedback'] as const;
 function record(value:unknown):value is Record<string,unknown>{return typeof value==='object'&&value!==null&&!Array.isArray(value);}
 function sha(value:string|Uint8Array){return createHash('sha256').update(value).digest('hex');}
+export async function conversationDeliveryReceiptCatalog(tx:PostgresTransaction):Promise<Record<string,unknown>>{
+ return workbenchReadinessCatalog(tx, [RECEIPT_RELATION], 'receipt');
+}
+
+export function matchesReceiptShape(digest:string, shape:keyof typeof RECEIPT_SHAPES, phase:'before'|'after'):boolean{
+ return digest===RECEIPT_SHAPES[shape][phase];
+}
+/** Compare the exact receipt predecessor after verifying the registered 071 and 076 additions. */
+export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>,closureRegistered?:boolean, live?: {
+ closureReady: () => Promise<boolean>;
+ priorIndexes: (rows: Record<string, unknown>[]) => Promise<Record<string, unknown>[] | null>;
+}):Promise<Record<string,unknown>|null>{
+ const registered=closureRegistered ?? Boolean((await tx.query('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[SERVICE_CLOSURE_MIGRATION_ID])).rows[0]);
+ if(!registered)return catalog;
+ if(!await (live ? live.closureReady() : serviceClosureSchemaReady(tx)))throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
+ const columns=catalog.columns,constraints=catalog.constraints;
+ if(!Array.isArray(columns)||!columns.every(record)||!Array.isArray(constraints)||!constraints.every(record))throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
+ const own=columns.filter(r=>r.name==='closure_intake_id'),fk=constraints.filter(r=>r.name==='ticket_command_receipt_closure_intake_id_fkey'),resource=constraints.filter(r=>r.name==='p2016_command_resource');
+ const c=own[0],f=fk[0],guard=resource[0];
+ if(own.length!==1||!c||c.type!=='uuid'||c.not_null!==false||c.identity!==''||c.generated!==''||c.default_expression!==null
+  ||fk.length!==1||!f||f.type!=='f'||f.validated!==true||f.deferrable!==false||f.deferred!==false
+  ||f.definition!=='FOREIGN KEY (closure_intake_id) REFERENCES intake.service_intake(id) ON DELETE RESTRICT'
+  ||resource.length!==1||!guard||guard.type!=='c'||guard.validated!==true||typeof guard.definition!=='string')throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
+ const expected=CLOSURE_RESOURCE_PREDECESSORS[sha(guard.definition)];
+ const baseline=(await tx.query<{command_resource_check:string}>('SELECT command_resource_check FROM pilot_ticket.closure_migration_baseline WHERE singleton')).rows[0];
+ if(!expected||!baseline||sha(baseline.command_resource_check)!==expected)throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
+ const indexes=catalog.indexes;
+ if(!Array.isArray(indexes)||!indexes.every(record))return null;
+ const priorIndexes=await (live ? live.priorIndexes(indexes) : predecessorIndexRows(tx,[RECEIPT_RELATION],indexes));
+ if(!priorIndexes)return null;
+ return {...catalog,indexes:priorIndexes,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
+}
+/** Complete inventories observed on actual PostgreSQL 18, with unchanged old SQL checksums. */
+export async function conversationDeliveryReceiptSchemaShape(tx:PostgresTransaction,phase:'before'|'after'='after'):Promise<keyof typeof RECEIPT_SHAPES|null>{
+ const table=(await tx.query<{present:boolean}>("SELECT to_regclass('platform.schema_migration') IS NOT NULL AS present")).rows[0];if(!table?.present)return null;
+ const markers=(await tx.query<{migration_id:string;checksum_sha256:string}>('SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[]) ORDER BY migration_id',[[...PARENTS,CONVERSATION_DELIVERY_MIGRATION_ID]])).rows;
+ const ids=new Set(markers.map(row=>row.migration_id));if(!ids.has(PARENTS[0])||ids.has(PARENTS[2])&&!ids.has(PARENTS[1])||ids.has(PARENTS[3])&&!ids.has(PARENTS[2]))return null;
+ if(ids.has(CONVERSATION_DELIVERY_MIGRATION_ID)!==(phase==='after'))return null;
+ for(const marker of markers)if(marker.checksum_sha256!==sha(await readFile(new URL('../../../database/migrations/'+marker.migration_id+'.sql',import.meta.url))))return null;
+ const shape: keyof typeof RECEIPT_SHAPES=ids.has(PARENTS[3])?'BOT':ids.has(PARENTS[2])?'INTAKE':ids.has(PARENTS[1])?'MANUAL':'BASE';
+ const digest=sha(JSON.stringify(await normalizeServiceClosureReceiptCatalog(tx,await conversationDeliveryReceiptCatalog(tx))));
+ return matchesReceiptShape(digest,shape,phase)?shape:null;
+}
+export async function conversationDeliveryReceiptSchemaReady(tx:PostgresTransaction):Promise<boolean>{return await conversationDeliveryReceiptSchemaShape(tx)!==null;}
+/** Only the exact complete original 031/032 inventories plus 061 are accepted. */
+export async function conversationDeliveryBaseCatalogReady(tx:PostgresTransaction,inventory:unknown,kind:'031'|'032'):Promise<boolean>{
+ const expected=kind==='031'?'3e4fba12dec754ac16b2ea551e610020a69b4d45823cf99f66481cea66cabf87':'39afb4e28e84e2d2e26531a13c312117fc721dcf9ac029a82436c64c1764de83';
+ return sha(JSON.stringify(inventory))===expected&&await conversationDeliveryReceiptSchemaShape(tx)==='BASE';
+}
+
+import {readCatalogRow} from './platform/postgres-catalog.mjs';
+export {followReceiptSchemaReady} from '../scripts/workbench-follow-migrate.mjs';
 type CatalogRow=Record<string,unknown>;
 type Catalog=Record<'relations'|'columns'|'constraints'|'indexes'|'triggers',CatalogRow[]>;
 
@@ -59,67 +111,4 @@ export async function readWorkbenchRelationCatalog(tx:PostgresTransaction,names:
    const rows:unknown=catalog[key];return Array.isArray(rows)&&rows.every(record);
  }))throw Error('CONVERSATION_DELIVERY_CATALOG_INVALID');
  return catalog;
-}
-export async function conversationDeliveryReceiptCatalog(tx:PostgresTransaction):Promise<Record<string,unknown>>{
- const catalog=await readWorkbenchRelationCatalog(tx,['pilot_ticket.ticket_command_receipt']);
- return {...catalog,relations:catalog.relations.map(({relispartition,...row})=>row),
-   indexes:catalog.indexes.map(({unique,primary,...row})=>row)};
-}
-/** Compare the exact receipt predecessor after verifying the registered 071 and 076 additions. */
-export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>):Promise<Record<string,unknown>|null>{
- const closure=await serviceClosureSchemaStatus(tx);
- if(closure==='absent')return catalog;
- if(closure!=='ready')throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- const columns=catalog.columns,constraints=catalog.constraints;
- if(!Array.isArray(columns)||!columns.every(record)||!Array.isArray(constraints)||!constraints.every(record))throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- const own=columns.filter(r=>r.name==='closure_intake_id'),fk=constraints.filter(r=>r.name==='ticket_command_receipt_closure_intake_id_fkey'),resource=constraints.filter(r=>r.name==='p2016_command_resource');
- const c=own[0],f=fk[0],guard=resource[0];
- if(own.length!==1||!c||c.type!=='uuid'||c.not_null!==false||c.identity!==''||c.generated!==''||c.default_expression!==null
-  ||fk.length!==1||!f||f.type!=='f'||f.validated!==true||f.deferrable!==false||f.deferred!==false
-  ||f.definition!=='FOREIGN KEY (closure_intake_id) REFERENCES intake.service_intake(id) ON DELETE RESTRICT'
-  ||resource.length!==1||!guard||guard.type!=='c'||guard.validated!==true||typeof guard.definition!=='string')throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- const expected=CLOSURE_RESOURCE_PREDECESSORS[sha(guard.definition)];
- const fkIndexes=await fkPredecessorParameters(['pilot_ticket.ticket_command_receipt']);
- const baseline=await readCatalogRow<{command_resource_check:string;registered:number|null}>(tx,
-   `SELECT command_resource_check,${FK_PREDECESSOR_COUNT_SQL} AS registered FROM pilot_ticket.closure_migration_baseline WHERE singleton`,fkIndexes.values);
- if(!expected||!baseline||sha(baseline.command_resource_check)!==expected)throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- const indexes=catalog.indexes;
- if(!Array.isArray(indexes)||!indexes.every(record))return null;
- const priorIndexes=projectPredecessorIndexRows(fkIndexes.targets,baseline.registered,indexes);
- if(!priorIndexes)return null;
- return {...catalog,indexes:priorIndexes,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
-}
-/** Complete inventories observed on actual PostgreSQL 18, with unchanged old SQL checksums. */
-async function receiptPredecessors(tx:PostgresTransaction){
- const markers=(await tx.query<{migration_id:string;checksum_sha256:string}>('SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[]) ORDER BY migration_id',[[...PARENTS,CONVERSATION_DELIVERY_MIGRATION_ID]])).rows;
- const ids=new Set(markers.map(row=>row.migration_id));
- if(!ids.has(PARENTS[0])||ids.has(PARENTS[2])&&!ids.has(PARENTS[1])||ids.has(PARENTS[3])&&!ids.has(PARENTS[2]))return null;
- for(const marker of markers)if(marker.migration_id!==CONVERSATION_DELIVERY_MIGRATION_ID&&!await markerMatchesFile(marker))return null;
- const shape:keyof typeof RECEIPT_SHAPES=ids.has(PARENTS[3])?'BOT':ids.has(PARENTS[2])?'INTAKE':ids.has(PARENTS[1])?'MANUAL':'BASE';
- return {shape,delivery:markers.find(row=>row.migration_id===CONVERSATION_DELIVERY_MIGRATION_ID)};
-}
-async function markerMatchesFile(marker:{migration_id:string;checksum_sha256:string}){
- return marker.checksum_sha256===sha(await readFile(new URL('../../../database/migrations/'+marker.migration_id+'.sql',import.meta.url)));
-}
-async function receiptDigest(tx:PostgresTransaction){
- return sha(JSON.stringify(await normalizeServiceClosureReceiptCatalog(tx,await conversationDeliveryReceiptCatalog(tx))));
-}
-export async function followReceiptSchemaReady(tx:PostgresTransaction):Promise<boolean>{
- const state=await receiptPredecessors(tx);
- if(!state||(state.shape!=='BOT'&&state.shape!=='INTAKE'))return false;
- const digest=await receiptDigest(tx),shapes=RECEIPT_SHAPES[state.shape];
- if(digest===shapes.before)return true;
- return digest===shapes.after && state.delivery!==undefined && await markerMatchesFile(state.delivery);
-}
-export async function conversationDeliveryReceiptSchemaShape(tx:PostgresTransaction,phase:'before'|'after'='after'):Promise<keyof typeof RECEIPT_SHAPES|null>{
- const table=(await tx.query<{present:boolean}>("SELECT to_regclass('platform.schema_migration') IS NOT NULL AS present")).rows[0];if(!table?.present)return null;
- const state=await receiptPredecessors(tx);
- if(!state||Boolean(state.delivery)!==(phase==='after')||state.delivery&&!await markerMatchesFile(state.delivery))return null;
- return await receiptDigest(tx)===RECEIPT_SHAPES[state.shape][phase]?state.shape:null;
-}
-export async function conversationDeliveryReceiptSchemaReady(tx:PostgresTransaction):Promise<boolean>{return await conversationDeliveryReceiptSchemaShape(tx)!==null;}
-/** Only the exact complete original 031/032 inventories plus 061 are accepted. */
-export async function conversationDeliveryBaseCatalogReady(tx:PostgresTransaction,inventory:unknown,kind:'031'|'032'):Promise<boolean>{
- const expected=kind==='031'?'3e4fba12dec754ac16b2ea551e610020a69b4d45823cf99f66481cea66cabf87':'39afb4e28e84e2d2e26531a13c312117fc721dcf9ac029a82436c64c1764de83';
- return sha(JSON.stringify(inventory))===expected&&await conversationDeliveryReceiptSchemaShape(tx)==='BASE';
 }

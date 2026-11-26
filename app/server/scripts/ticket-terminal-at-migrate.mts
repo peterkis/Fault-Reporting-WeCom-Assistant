@@ -38,16 +38,20 @@ export async function applyTicketTerminalAtSql(tx: {query(sql: string): Promise<
  */
 export async function ticketTerminalAtSchemaReady(tx: Pick<PostgresTransaction, 'query'>): Promise<boolean> {
   const {checksum} = await source();
+  // Catalog joins also give an empty target for an inaccessible pilot schema.
+  const ticketOid = `(SELECT t.oid FROM pg_catalog.pg_class t
+    JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace
+    WHERE n.nspname='pilot_ticket' AND t.relname='ticket' AND pg_catalog.has_schema_privilege(n.oid,'USAGE'))`;
   const row = await readCatalogRow<TicketTerminalCatalogRow>(tx,
     `WITH cons AS (
        SELECT conname,pg_catalog.pg_get_expr(conbin,conrelid) AS predicate FROM pg_catalog.pg_constraint c
-       WHERE COALESCE((pg_catalog.to_jsonb(c)->>'conenforced')::boolean,true) AND conrelid=pg_catalog.to_regclass('pilot_ticket.ticket') AND contype='c' AND convalidated
+       WHERE COALESCE((pg_catalog.to_jsonb(c)->>'conenforced')::boolean,true) AND conrelid=${ticketOid} AND contype='c' AND convalidated
      ), idx AS (
        SELECT c.relname,pg_catalog.pg_get_expr(i.indpred,i.indrelid) AS predicate,
          ARRAY(SELECT a.attname::text FROM pg_catalog.unnest(i.indkey) WITH ORDINALITY k(num,pos)
            JOIN pg_catalog.pg_attribute a ON a.attrelid=i.indrelid AND a.attnum=k.num ORDER BY k.pos) AS keys
        FROM pg_catalog.pg_index i JOIN pg_catalog.pg_class c ON c.oid=i.indexrelid JOIN pg_catalog.pg_am am ON am.oid=c.relam
-       WHERE i.indrelid=pg_catalog.to_regclass('pilot_ticket.ticket') AND i.indisvalid AND i.indisready
+       WHERE i.indrelid=${ticketOid} AND i.indisvalid AND i.indisready
          AND am.amname='btree' AND NOT i.indisunique AND i.indnkeyatts=2 AND i.indnatts=2
          AND i.indexprs IS NULL AND i.indoption[0]=3 AND i.indoption[1]=3
      )
@@ -61,7 +65,7 @@ export async function ticketTerminalAtSchemaReady(tx: Pick<PostgresTransaction, 
          AND predicate=$expr$((terminal_at IS NULL) OR (terminal_at = date_trunc('second'::text, terminal_at)))$expr$)
        AND EXISTS(SELECT 1 FROM cons WHERE conname='ticket_terminal_epoch_check'
          AND predicate=$expr$(((terminal_at IS NULL) AND (terminal_epoch_ms IS NULL)) OR ((terminal_at IS NOT NULL) AND (terminal_epoch_ms IS NOT NULL) AND (terminal_epoch_ms >= 0) AND (terminal_at = platform.local_from_epoch_ms(terminal_epoch_ms))))$expr$)
-       AND EXISTS(SELECT 1 FROM pg_catalog.pg_trigger t WHERE t.tgrelid=pg_catalog.to_regclass('pilot_ticket.ticket') AND t.tgname=$3
+       AND EXISTS(SELECT 1 FROM pg_catalog.pg_trigger t WHERE t.tgrelid=${ticketOid} AND t.tgname=$3
          AND NOT t.tgisinternal AND t.tgenabled='O' AND t.tgtype=23 AND t.tgqual IS NULL
          AND t.tgfoid=pg_catalog.to_regprocedure('platform.sync_local_epoch_pair()') AND t.tgnargs=2
          AND t.tgargs=(pg_catalog.convert_to('terminal_at','UTF8')||pg_catalog.decode('00','hex')||pg_catalog.convert_to('terminal_epoch_ms','UTF8')||pg_catalog.decode('00','hex'))
