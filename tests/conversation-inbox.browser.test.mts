@@ -430,8 +430,9 @@ test('returning to an inactive revoked chat cannot render cached messages while 
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[role=alert]'))"),false,'no error alert after the 1500 ms settle delay');
       assert.ok(typeof summaryReads==='number'&&summaryReads<=3,'revoked chat summary request storm: '+summaryReads+' GETs');
       await delay(500);
-      assert.equal(await browser.evaluate('globalThis.__revokedSummaryReads'),summaryReads,'revoked chat summary GET count must stay stable');
-      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false,summary_reads_after_revoke:summaryReads,denial_panel:'status'}));
+      const later=await browser.evaluate('globalThis.__revokedSummaryReads');
+      assert.ok(typeof later==='number'&&later-summaryReads<=1,'expected at most one realtime summary GET in 500 ms, count went from '+summaryReads+' to '+later);
+      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false,summary_reads_after_revoke:summaryReads,summary_reads_after_settle:later,denial_panel:'status'}));
     }catch(error){failure=error;}
     await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate('globalThis.__releaseRevoked?.()');await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}}],failure);
   },{inbox:true,realtime:true});

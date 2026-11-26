@@ -52,9 +52,10 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
       continue;
     }
     const {status,data,error:currentError}=query.state;
-    // Keep the error identity: an effect watching it would call clearItemAuthorization again,
-    // and purgeDrafts would notify the subscriber to call clearItemView again.
-    if(status==='error'&&data===undefined&&currentError instanceof ApiError&&(currentError.status===403||currentError.status===404))continue;
+    // Keep an equal denial's identity so effects watching query.error don't repeat
+    // clearItemAuthorization -> purgeDrafts -> subscriber -> clearItemView.
+    // A changed status must reach WorkbenchDetail, whose board-card fallback distinguishes 403 from 404.
+    if(status==='error'&&data===undefined&&currentError instanceof ApiError&&(currentError.status===403||currentError.status===404)&&currentError.status===error.status)continue;
     query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
   }
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{
