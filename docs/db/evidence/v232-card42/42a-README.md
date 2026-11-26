@@ -68,6 +68,8 @@
 
 负责人确认，文本搜索的 100 ms 验收门槛适用于默认 `recent` 范围，精简配置当时的 P95 为 **63.51 ms**。该精简配置的全年子串搜索（`column=all&range=all&q=…`）P95 为 **597.58 ms**，合并目录读取前的完整配置第一次为 **548.99 ms**。两轮计划中的 `Aggregate` 执行了 56,000 次。该场景的延迟和高循环提示单列记录。按已确认的范围，42A 沿用现有索引，trigram / FTS 索引不在本次范围内。[全年文本搜索计划](42a-explain-search-text-all.txt)
 
+**CI 与生产的已知差异。** CI 测试库沿用 PostgreSQL 默认的 `jit=on`，夹具不执行 `db-role-settings`。生产应用连接角色配置为 `jit=off`，`perf:board` 单独在自建压测库设置 `jit=off`。第 29 轮在分支和主线重放会话主题分页，最高计划成本均为 219.12，远低于 `jit_above_cost=100000`。该配置差异可接受的结论限于这组分页计划。
+
 ## 范围边界
 
 - 没有新增 `076_*`；没有改动保留期清理、`realtime_event` 过期索引、`platform.local_now()` 的定义（以上属于 42C）。

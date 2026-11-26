@@ -225,34 +225,43 @@ test('ended inbox preserves historical neutral labels and the selected Session r
   },{inbox:true,personalRead:false,recovery:false});
 });
 
-test('topic history and same-topic direct navigation remain separate, readable and reachable together',async()=>{
+test('topic history and same-topic direct navigation remain separate, readable and reachable together',()=>withInboxDiagnostics('CONVERSATION_TOPIC_HISTORY',async trace=>{
   await withT22Fixture(async f=>{
     for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
     const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
     const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
-    const related=await (await fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})).json() as ConversationRelatedPage;
+    const related=await trace.topicPreflight(()=>fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})) as ConversationRelatedPage;
     assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
     const writes:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};
     f.runtime.server.on('request',observe);let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[group.id,direct.id])});assert.ok(browser);
+      await trace.bind(browser);
       await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))&&Boolean(document.querySelector('.inbox-topic-pages button'))");
       await clickWorkbenchControl(browser,'.inbox-more-actions [data-action=open-detail-actions]');
+      trace.topicPhase('layout-widths');
       for(const width of [1920,1440,1280,900]){
         await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
         const sample=await browser.evaluate("(()=>{const a=document.querySelector('.inbox-topic-pages button'),b=document.querySelector('.inbox-new-direct'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect(),label=b.querySelector('.ds-button-label');const hit=node=>{const r=node.getBoundingClientRect();return node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));};return {overlap:Math.min(x.right,y.right)>Math.max(x.left,y.left)&&Math.min(x.bottom,y.bottom)>Math.max(x.top,y.top),clipped:b.scrollWidth>b.clientWidth||label.scrollWidth>label.clientWidth,reachable:hit(a)&&hit(b)};})()") as {overlap:boolean;clipped:boolean;reachable:boolean};
         assert.equal(sample.overlap,false,'navigation overlap at '+width);assert.equal(sample.clipped,false,'direct navigation text clipping at '+width);assert.equal(sample.reachable,true,'both navigation targets at '+width);
       }
+      trace.topicPhase('click-history');
+      await trace.observeHistoryClick(browser);
+      trace.historyClickSucceeded=false;
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');
-      await browser.waitFor("document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
+      trace.historyClickSucceeded=true;
+      trace.topicPhase('wait-history');
+      await trace.waitForHistory(browser,"document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+group.id,'history paging keeps the current Session');
+      trace.topicPhase('back');
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))");
+      trace.topicPhase('direct-nav');
       await clickWorkbenchControl(browser,'.inbox-new-direct');await browser.waitFor(`location.pathname==='/workbench/app/conversations/${direct.id}'&&Boolean(document.querySelector('[data-conversation-ready]'))`);
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+direct.id);
       assert.deepEqual(writes,[],'topic history and direct-window navigation remain read-only');
-    }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+    }catch(error){failure=error;trace.report('failed');}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
   },{inbox:true,personalRead:false,recovery:false});
-});
+}));
 
 test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{
   await withT22Fixture(async f=>{
@@ -400,7 +409,7 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
   },{inbox:true,realtime:true,personalRead:true});
 });
 
-type RequestTiming=[startMs:number,status:number|null,finishMs:number|null,failed?:boolean];
+type RequestTiming=[startMs:number,status:number|null,finishMs:number|null,failed?:boolean,cursor?:boolean];
 const cdpSignals=new Set(['Page.javascriptDialogOpening','Inspector.targetCrashed','Target.detachedFromTarget','Inspector.detached','Runtime.exceptionThrown']);
 const publicRouteParts=new Set(['summary','items','deliveries','related-sessions','read-cursor','eligible-principals']);
 const isRecord=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
@@ -408,6 +417,62 @@ const sampleBinding='__inboxBrowserTestSample';
 const captureAlert=`(el,poll,matched)=>globalThis.${sampleBinding}?.(JSON.stringify({
   poll,matched,tag:el?.localName??null,classes:el?Array.from(el.classList):[]
 }))`;
+
+// Live regions and console arguments may contain conversation data. Keep UI copy
+// and diagnostic wording, never arbitrary payloads, variable substitutions or object previews.
+const topicUiCopy=/返回最新主题|更多主题与窗口|服务请求失败（[1-5]\d{2}），请重试。|连接失败，暂时无法读取服务端数据。|资料已被其他人修改，请重新读取后再保存。|会话已失效，请重新进入工作台。|当前账号无法执行此操作。|找不到这条事项，或您目前无法查看。|事项资料已变化，请重新提交搜索或点击刷新。|无法查看这段会话|选择其他会话继续处理。|正在加载会话…|比平时慢，仍在读取…|已重新连接，内容已更新|连接已断开，正在重新连接…|显示的是 \d{1,3} 分钟前的内容|手动刷新|正在连接|实时更新中|连接已断开，正在重试|实时暂不可用，定时重读|连接失败，显示最近已确认资料|会话需要重新核验|重试/gu;
+function topicUiText(value:unknown){
+  if(typeof value!=='string')return null;
+  const copy=value.trim().replace(/\s+/gu,' ');if(!copy)return '';
+  let end=0,safe='';
+  for(const match of copy.matchAll(topicUiCopy)){
+    if(copy.slice(end,match.index).trim())safe+='[redacted]';
+    safe+=match[0];end=match.index+match[0].length;
+  }
+  return (safe+(copy.slice(end).trim()?'[redacted]':'')).slice(0,80);
+}
+function topicConsoleText(params:Record<string,unknown>){
+  const first=Array.isArray(params.args)?params.args[0]:null;
+  if(!isRecord(first))return '[redacted]';
+  const text=first.type==='string'?first.value:first.subtype==='error'?first.description:null;
+  if(typeof text!=='string')return '[redacted]';
+  // Keep diagnostic words in the first format string; subsequent arguments, quoted
+  // values, URLs, response bodies, headers and stack lines can carry identifiers.
+  const line=(text.split(/[\r\n]/u,1)[0]??'')
+    .replace(/^\[(Violation|React Aria|TanStack Query)\]/iu,'$1:')
+    .replace(/(?:\b(?:headers?|cookie|set-cookie|authorization|bearer|body|payload|token|cursor|[\w-]*id)\s*[:=]\s*|[<{[]).*$/iu,' [redacted]')
+    .replace(/(?:https?:\/\/|\/)[^\s]+|[“"'`][^“"'`]*[”"'`]|\b[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}\b/giu,' [redacted] ');
+  const words=/^(?:aborted|access|action|added|aria|avoid|button|changing|click|completed|connection|cursor|disconnected|does|event|fetching|focused|invalidated|load|loading|loop|navigation|notifications|observer|out|passive|press|promise|properties|react|recognize|remove|render|rendering|ResizeObserver|retry|route|timed|timeout|uncaught|undelivered|violation|a|an|and|are|as|at|because|before|by|can|cannot|component|console|could|detected|did|disabled|during|element|error|exception|expected|failed|fetch|focus|focused|for|found|from|function|has|hidden|history|in|invalid|is|its|key|listener|missing|network|not|null|of|on|or|page|pending|property|read|reading|request|resource|response|returned|script|server|set|should|state|status|target|the|this|to|type|undefined|unexpected|use|was|while|with|warning|react|aria-hidden|accessibility|ancestor|blocked|descendant|retained|TypeError|ReferenceError|AbortError|NetworkError|WORKBENCH_CURSOR_INVALID|[45]\d{2})$/iu;
+  return line.replace(/\[redacted\]|[\p{L}\p{N}_%-]+/gu,word=>words.test(word)?word:'[redacted]')
+    .replace(/(?:\[redacted\][\s.:/-]*){2,}/gu,'[redacted] ').trim().slice(0,200);
+}
+const safeHitToken=(token:unknown):token is string=>typeof token==='string'&&token.length<=64&&/^[a-z][a-z_-]*$/iu.test(token)&&!/[a-f0-9]{8}-[a-f0-9]{4}/iu.test(token);
+const topicPollSample=`(()=>{
+  const pages=document.querySelector('.inbox-topic-pages'),buttons=Array.from(pages?.querySelectorAll('button')??[]),button=buttons[0];
+  const rect=button?.getBoundingClientRect(),hit=rect?document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2):null;
+  const notice=role=>{
+    const visible=Array.from(document.querySelectorAll('[role='+role+']')).find(node=>node.checkVisibility({visibilityProperty:true,opacityProperty:true}));
+    return visible?(visible.textContent??'').slice(0,80):null;
+  };
+  return {kind:'poll',text:pages?.textContent?.slice(0,80)??null,buttons:buttons.map(b=>({disabled:b.disabled,ariaDisabled:b.getAttribute('aria-disabled'),busy:b.getAttribute('aria-busy')})),
+    alert:notice('alert'),status:notice('status'),visibility:document.visibilityState,focus:document.hasFocus(),
+    box:rect?[rect.x,rect.y,rect.width,rect.height]:null,hitTag:hit?.localName??null,hitClasses:Array.from(hit?.classList??[]),onButton:!!hit&&button.contains(hit)};
+})()`;
+
+function hitElement(tag:unknown,classes:unknown){
+  return {tag:safeHitToken(tag)?tag:null,class:Array.isArray(classes)?classes.filter(safeHitToken).join(' ').slice(0,160):null};
+}
+function historyState(value:Record<string,unknown>){
+  const aria=(v:unknown)=>v==='true'||v==='false'?v:null;
+  const buttons=Array.isArray(value.buttons)?value.buttons.filter(isRecord):[];
+  return {text:topicUiText(value.text),buttonCount:buttons.length,
+    buttons:buttons.map(b=>({disabled:b.disabled===true,ariaDisabled:aria(b.ariaDisabled),ariaBusy:aria(b.busy)})),
+    alertVisible:typeof value.alert==='string',alert:topicUiText(value.alert),statusVisible:typeof value.status==='string',status:topicUiText(value.status),
+    visibilityState:value.visibility==='visible'||value.visibility==='hidden'?value.visibility:null,hasFocus:value.focus===true,
+    box:Array.isArray(value.box)&&value.box.length===4&&value.box.every(n=>typeof n==='number'&&Number.isFinite(n))?value.box.map(n=>Math.round(n*10)/10):null,
+    hit:hitElement(value.hitTag,value.hitClasses),
+    hitOnButton:value.onButton===true};
+}
 
 class InboxBrowserDiagnostics {
   private readonly start=performance.now();
@@ -421,9 +486,29 @@ class InboxBrowserDiagnostics {
   private alertPolls=0;
   private alert:{tag:string;class:string;omittedClasses:number;matched:boolean}|null=null;
   private foreground:{wait:string;ms:number;visibilityState:string;hasFocus:boolean;cursorPosts:number}|null=null;
+  private readonly topicPhases:{phase:string;ms:number}[]=[];
+  private readonly consoleMessages:{phase:string;level:string;message:string;ms:number;count:number}[]=[];
+  private readonly historySamples:{ms:number;lastMs:number;polls:number;state:ReturnType<typeof historyState>}[]=[];
+  private historyPolls=0;
+  historyClickSucceeded:boolean|null=null;
+  private clickTarget:{ms:number;trusted:boolean;onButton:boolean;hit:ReturnType<typeof hitElement>}|null=null;
   phase='setup';
   proof:Record<string,unknown>={};
-  constructor(private readonly label:string){}
+  constructor(private readonly label:string){
+    if(label==='CONVERSATION_TOPIC_HISTORY')this.topicPhase('setup');
+  }
+  topicPhase(phase:string){
+    this.phase=phase;this.topicPhases.push({phase,ms:this.ms()});
+  }
+  async topicPreflight(fetchPage:()=>Promise<Response>):Promise<unknown>{
+    const timing:RequestTiming=[this.ms(),null,null,false,false];
+    this.requests.set('fixture GET /api/workbench/conversations/:a/related-sessions',[timing]);
+    try{
+      const response=await fetchPage();timing[1]=response.status;
+      return await response.json();
+    }catch(error){timing[3]=true;throw error;}
+    finally{timing[2]=this.ms();}
+  }
 
   // CDP request IDs join the lifecycle events in memory. Only route templates,
   // HTTP status and relative times leave the recorder.
@@ -431,6 +516,12 @@ class InboxBrowserDiagnostics {
     return (event:string,params:unknown)=>{
       if(cdpSignals.has(event)){
         this.signals.push({ms:this.ms(),event,phase:this.phase});return;
+      }
+      if(this.label==='CONVERSATION_TOPIC_HISTORY'&&event==='Runtime.consoleAPICalled'&&isRecord(params)&&(params.type==='error'||params.type==='warning')){
+        const message=topicConsoleText(params),last=this.consoleMessages.at(-1);
+        if(last&&last.phase===this.phase&&last.level===params.type&&last.message===message)last.count++;
+        else this.consoleMessages.push({phase:this.phase,level:params.type,message,ms:this.ms(),count:1});
+        return;
       }
       if(event==='Inspector.enableFailed'){this.unavailable.push('Inspector');return;}
       if(event==='Runtime.bindingCalled'&&isRecord(params)&&params.name===sampleBinding&&typeof params.payload==='string'){
@@ -452,12 +543,17 @@ class InboxBrowserDiagnostics {
       const path=url.slice(origin.length).split(/[?#]/u,1)[0]??'';
       const route=/^(\/api\/(?:workbench\/)?conversations)(?:\/(.*))?$/u.exec(path);
       if(!route||!(method==='GET'||method==='POST'&&path.endsWith('/read-cursor')))return;
+      const topic=this.label==='CONVERSATION_TOPIC_HISTORY';
+      if(topic&&(method!=='GET'||!/^\/api\/workbench\/conversations\/[^/]+\/related-sessions$/u.test(path)))return;
       if(method==='POST')this.cursorPosts++;
       const parts=(route[2]??'').split('/').filter(Boolean).map(part=>{
         const session=sessions.indexOf(part);
         return session===0?':a':session===1?':b':publicRouteParts.has(part)?part:':id';
       });
       const key=method+' '+[route[1],...parts].join('/'),timing:RequestTiming=[this.networkMs(params),null,null];
+      if(topic){
+        timing[3]=false;timing[4]=URL.parse(url)?.searchParams.has('cursor')===true;
+      }
       const records=this.requests.get(key)??[];
       records.push(timing);this.requests.set(key,records);this.pending.set(id,timing);
     };
@@ -480,6 +576,21 @@ class InboxBrowserDiagnostics {
     let value:unknown;
     try{value=JSON.parse(payload);}catch{return;}
     if(!isRecord(value))return;
+    if(this.label==='CONVERSATION_TOPIC_HISTORY'){
+      if(value.kind==='click'){
+        if(this.phase!=='click-history'&&this.phase!=='wait-history')return;
+        this.clickTarget={ms:this.ms(),trusted:value.trusted===true,onButton:value.onButton===true,hit:hitElement(value.tag,value.classes)};return;
+      }
+      if(value.kind!=='poll')return;
+      const state=historyState(value),ms=this.ms(),last=this.historySamples.at(-1);this.historyPolls++;
+      if(last&&JSON.stringify(last.state)===JSON.stringify(state)){last.lastMs=ms;last.polls++;}
+      else{
+        // Keep the first state and the most recent changes within a single CI line.
+        if(this.historySamples.length===8)this.historySamples.splice(1,1);
+        this.historySamples.push({ms,lastMs:ms,polls:1,state});
+      }
+      return;
+    }
     if(this.label==='CONVERSATION_SUMMARY_FOREGROUND'){
       if((value.visibilityState==='visible'||value.visibilityState==='hidden')&&typeof value.hasFocus==='boolean'){
         this.foreground={wait:this.phase,ms:this.ms(),visibilityState:value.visibilityState,hasFocus:value.hasFocus,cursorPosts:this.cursorPosts};
@@ -507,6 +618,18 @@ class InboxBrowserDiagnostics {
     await browser.waitFor(`(()=>{const result=(${expression});
       (${captureAlert})(document.querySelector('[role=alert]'),true,Boolean(result));return result;})()`);
   }
+  async observeHistoryClick(browser:Browser){
+    try{
+      await browser.evaluate(`document.addEventListener('click',event=>{
+        const target=event.target,button=document.querySelector('.inbox-topic-pages button');
+        globalThis.${sampleBinding}?.(JSON.stringify({kind:'click',trusted:event.isTrusted,tag:target?.localName,classes:Array.from(target?.classList??[]),onButton:button?.contains(target)===true}));
+      },{once:true,capture:true,passive:true})`);
+    }catch{this.unavailable.push('click target');}
+  }
+  async waitForHistory(browser:Browser,expression:string){
+    await browser.waitFor(`(()=>{try{globalThis.${sampleBinding}?.(JSON.stringify(${topicPollSample}));}
+      catch{/* Optional sampling cannot decide the wait. */}return (${expression});})()`);
+  }
   foregroundBrowser(browser:Browser):Browser{
     return {...browser,waitFor:(expression,options)=>{
       // Emit before the predicate's fetch or animation frame can stall.
@@ -517,12 +640,18 @@ class InboxBrowserDiagnostics {
   }
   report(outcome:'passed'|'failed'){
     if(this.logged)return;this.logged=true;
+    if(this.label==='CONVERSATION_TOPIC_HISTORY'){
+      console.log(this.label+' '+JSON.stringify({outcome,phase:this.phase,phases:this.topicPhases,elapsedMs:this.ms(),
+        clickSucceeded:this.historyClickSucceeded,clickTarget:this.clickTarget,signals:this.signals,console:this.consoleMessages,unavailable:this.unavailable,
+        requestColumns:['startMs','status','finishMs','failed','hasCursor'],requests:Object.fromEntries(this.requests),
+        polls:this.historyPolls,samples:this.historySamples}));return;
+    }
     console.log(this.label+' '+JSON.stringify({...this.proof,outcome,phase:this.phase,elapsedMs:this.ms(),unavailable:this.unavailable,signals:this.signals,
       requestColumns:['startMs','status','finishMs','failed?'],requests:Object.fromEntries(this.requests),cursorPosts:this.cursorPosts,
       ...(this.label==='CONVERSATION_INACTIVE_REVOCATION'?{alertPolls:this.alertPolls,alert:this.alert}:{foreground:this.foreground})}));
   }
 }
-async function withInboxDiagnostics(label:'CONVERSATION_INACTIVE_REVOCATION'|'CONVERSATION_SUMMARY_FOREGROUND',run:(trace:InboxBrowserDiagnostics)=>Promise<void>){
+async function withInboxDiagnostics(label:'CONVERSATION_INACTIVE_REVOCATION'|'CONVERSATION_SUMMARY_FOREGROUND'|'CONVERSATION_TOPIC_HISTORY',run:(trace:InboxBrowserDiagnostics)=>Promise<void>){
   const trace=new InboxBrowserDiagnostics(label);
   try{await run(trace);}catch(error){trace.report('failed');throw error;}
   trace.report('passed');
