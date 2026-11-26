@@ -1,6 +1,13 @@
 {
   "schema_version": 1,
   "profiles": {
+    "schema-readiness": {
+      "selections": ["readiness-cost-drift"],
+      "tools": [],
+      "build": true,
+      "pyyaml": false,
+      "windows": false
+    },
     "docs": {
       "selections": [],
       "tools": [],
@@ -150,6 +157,21 @@
     }
   },
   "rules": [
+    {
+      "pattern": "^app/server/scripts/(?:fk-indexes-migrate|service-closure-migrate|workbench-(?:follow-migrate|supplement-follow-up-migrate|readiness-catalog))\\.mts$",
+      "profiles": ["mvp", "schema-readiness"],
+      "reason": "Check live receipt, follow and supplement inventories and FK predecessor drift on full 077."
+    },
+    {
+      "pattern": "^app/server/src/p2-006-delivery-command-schema\\.mts$",
+      "profiles": ["mvp", "schema-readiness"],
+      "reason": "Cover both delivery-command compatibility and the workbench receipt digest."
+    },
+    {
+      "pattern": "^tests/readiness-cost-drift\\.integration\\.test\\.mts$",
+      "profiles": ["schema-readiness"],
+      "reason": "Exercise the full-schema drift matrix and per-call statement bounds."
+    },
     {
       "pattern": "^tests/pc-admin-card39a-ring-room\\.browser\\.test\\.mts$",
       "profiles": ["pc", "motion"],

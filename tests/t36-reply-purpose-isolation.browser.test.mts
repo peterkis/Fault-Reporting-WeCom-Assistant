@@ -47,13 +47,20 @@ for(const mode of ['late','unavailable','failed'] as const)test('T36 pending dis
   try{
    await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),target=${JSON.stringify(f.r2)},pending={client_command_id:${JSON.stringify(id)},action:'RECORD_DISPOSITION',...target,disposition_note:${JSON.stringify(note)},mark_followed_up:true};await store.saveDraft(copy.handle,JSON.stringify({schema:1,value:{target,note:${JSON.stringify(note)}},pending}),{commandId:pending.client_command_id});globalThis.__t36PendingPeer={store,copy,pending};})()`);
    await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const read=fetch;let used=false;fetch=async(path,options)=>{if(!used&&String(path).includes('/supplement-follow-up/material?')){used=true;${mode==='late'?"const response=await read(path,options);await new Promise(resolve=>{globalThis.__releaseT36Restore=resolve;});return response;":"return new Response('{}',{status:503,headers:{'content-type':'application/json'}});"}}return read(path,options);};})()`});
+   // Mount the detail on the visible tab, then settle from the peer while the material read is held.
+   if(mode==='late')await browser.command('Page.bringToFront');
    const before=await browser.evaluate('performance.timeOrigin');await browser.command('Page.reload');await browser.waitFor(`performance.timeOrigin!==${JSON.stringify(before)}&&document.readyState==='complete'`);
    if(mode==='late'){
     await browser.waitFor('typeof globalThis.__releaseT36Restore==="function"');
-    await tab.evaluate('(async()=>{const {store,copy,pending}=globalThis.__t36PendingPeer;await store.settleDraft(copy.handle,pending.client_command_id,copy.handle.record.revision);})()');
+    await browser.waitFor('Boolean(document.querySelector("[data-action=check-supplement-receipt]"))');
+    await tab.command('Page.bringToFront');
+    const cleared=await tab.evaluate('(async()=>{const {store,copy,pending}=globalThis.__t36PendingPeer;await store.settleDraft(copy.handle,pending.client_command_id,copy.handle.record.revision);return copy.handle.operation===null&&copy.handle.record===null;})()');
+    assert.equal(cleared,true,'the peer settled the seeded disposition');
     await browser.waitFor('!document.querySelector("[data-action=check-supplement-receipt]")');await browser.evaluate('globalThis.__releaseT36Restore()');
     await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
     assert.equal(await browser.evaluate('Boolean(document.querySelector("[data-action=check-supplement-receipt]"))'),false);assert.notEqual(await browser.evaluate('document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+')?.value'),note);
+    // The row itself must survive the cancelled restore, editable and without the stale note.
+    assert.deepEqual(await browser.evaluate('(()=>{const field=document.querySelector('+JSON.stringify(supplementRow(f.r2)+' textarea')+');return field?{disabled:field.disabled,value:field.value}:null;})()'),{disabled:false,value:''});
    }else{
     await browser.waitFor('document.querySelector("[data-supplement-draft-status]")?.textContent.includes("草稿暂未恢复")&&Boolean(document.querySelector("[data-action=check-supplement-receipt]"))');
     await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).includes('/supplement-follow-up/commands/')?Promise.resolve(Response.json(${mode==='failed'?`{ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}}`:`{ticket_id:${JSON.stringify(f.ticketId)},client_command_id:${JSON.stringify(id)},state:'COMMITTED',result:{ok:true,client_command_id:${JSON.stringify(id)},ticket_id:${JSON.stringify(f.ticketId)},source_ref:${JSON.stringify(f.r2.source_ref)},revision:${JSON.stringify(f.r2.revision)},follow_up_state:'FOLLOWED_UP',resolution_id:crypto.randomUUID(),basis:'RECORDED_DISPOSITION',replayed:true}}`})):read(path,options);})()`);

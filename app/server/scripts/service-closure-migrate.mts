@@ -7,12 +7,15 @@ import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {transactionP2016,failP2016} from '../src/p2-016-domain-contracts.mjs';
 export const SERVICE_CLOSURE_MIGRATION_ID='071_unified_service_closure';
 const file=new URL('../../../database/migrations/071_unified_service_closure.sql',import.meta.url);
+export async function serviceClosureChecksum():Promise<string>{
+ return createHash('sha256').update(await readFile(file)).digest('hex');
+}
 export async function serviceClosureSchemaReady(tx:PostgresTransaction):Promise<boolean>{
- const checksum=createHash('sha256').update(await readFile(file)).digest('hex');
- const row=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
+ const checksum=await serviceClosureChecksum();
+ const rows=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
   to_regclass('pilot_ticket.closure_record') IS NOT NULL AS record,to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL AS termination
-  FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
- return row?.checksum_sha256===checksum&&row.record&&row.termination;
+  FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows;
+ return rows.length>0 && rows.every(row => row.checksum_sha256===checksum && row.record && row.termination);
 }
 /** Current closure-enabled roles must fail before timers, intake or network startup. */
 export async function requireServiceClosureSchema({pool}:{pool:PostgresTransaction}):Promise<void>{
