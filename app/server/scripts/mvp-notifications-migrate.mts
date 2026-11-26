@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -13,7 +14,7 @@ export async function migrateMvpNotifications({databaseUrl,mode='check'}:{databa
  const sql=await readFile(new URL('../../../database/migrations/'+MVP_NOTIFICATION_MIGRATION_ID+'.sql',import.meta.url),'utf8');
  const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)fail();
  const checksum=createHash('sha256').update(sql).digest('hex');
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'mvp_notification_migrator'});
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'mvp_notification_migrator'});
  try{return await transactionP2016(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('MVP_NOTIFICATION_MIGRATION'))");
   if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id IN ('033_yxx_self_service_intake','052_ticket_group_round_notifications')")).rowCount!==2)fail();

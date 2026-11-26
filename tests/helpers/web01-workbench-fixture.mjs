@@ -6,6 +6,7 @@ import {migrateCompletionDismissal} from '../../app/server/scripts/completion-di
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
 import {migrateTicketTerminalAt} from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
+import {applyFullSchemaThrough077} from './full-schema-migrations.mjs';
 import {insertClosureRecord,normalizeClosureInput,appendIntakeClosureEvent} from '../../app/server/src/service-closure-records.mjs';
 import assert from 'node:assert/strict';
 import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
@@ -186,21 +187,26 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{namespace='p2_015',beforeClosureMigration=/** @type {((context:{pool:import('../../app/server/src/platform/postgres-pool.mjs').PostgresPool,databaseUrl:string})=>Promise<void>)|null} */(null),precisionV212=false,syntheticServiceCodes=false,serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,presencePeerSessions=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,profileReader=/** @type {import('../../app/server/src/wecom-application-member.mjs').ApplicationMemberVerifier|undefined} */(undefined),dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{namespace='p2_015',beforeClosureMigration=/** @type {((context:{pool:import('../../app/server/src/platform/postgres-pool.mjs').PostgresPool,databaseUrl:string})=>Promise<void>)|null} */(null),partialSchemaOnly=false,precisionV212=false,syntheticServiceCodes=false,serviceCatalog=/** @type {import('../../app/server/src/p2-007-service-catalog.mjs').ServiceCatalog | null | undefined} */(undefined),workbenchBoardActionsEnabled=false,failFollowBootstrapAfterCommit=false,workbenchAssignmentHistoryEnabled=false,workbenchFollowEnabled=false,workbenchSearchEnabled=false,workbenchRealtimeEnabled=false,workbenchActivityEnabled=false,presencePeerSessions=false,workbenchManualReportsEnabled=false,workbenchReporterCandidatesEnabled=false,manualReporterDirectory=/** @type {import('../../contracts/workbench_reporter_candidates_contracts.js').ManualReporterDirectoryOptions | null} */(null),manualProjection=false,chronologicalTicketEvents=false,ticketTakeoverEnabled=false,ticketAssignmentEnabled=false,ticketConversationSelfHandlingEnabled=false,workbenchManualReviewEnabled=false,workbenchReviewResolveAndStartEnabled=false,malformedReviewSuccess=false,malformedReviewDenial=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,workbenchMediaEmployeeReadEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=/** @type {import('../../contracts/workbench_attachment_contracts.js').AttachmentStore | null} */(null),sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,profileReader=/** @type {import('../../app/server/src/wecom-application-member.mjs').ApplicationMemberVerifier|undefined} */(undefined),dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   assert.ok(!manualProjection||!realWorkbenchAuthentication,'manual projection uses only the synthetic API fixture');
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',namespace,run:async context=>{
-    const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
+    const {pool,databaseUrl}=context;
     const handlingSchema=ticketSelfHandlingEnabled||ticketConversationSelfHandlingEnabled||ticketAssignmentEnabled||ticketTakeoverEnabled;
-    if(handlingSchema||workbenchManualReportsEnabled||workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});}
-    if(handlingSchema&&installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});
-    if(workbenchManualReportsEnabled||workbenchFollowEnabled)await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});
-    if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
-    if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
-    if(workbenchFollowEnabled){await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
-    await beforeClosureMigration?.({pool,databaseUrl});
-    await migrateServiceClosure({databaseUrl,mode:'apply'});
-    // ADR-0058: 072 applies after every other migration of this chain (it rewrites the closure vocabulary in place).
-    await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
+    if(installTicketSelfHandlingSchema&&!partialSchemaOnly){
+      await applyFullSchemaThrough077(databaseUrl,beforeClosureMigration?{beforeClosureMigration:()=>beforeClosureMigration({pool,databaseUrl})}:{});
+    }else{
+      await applyThrough030(context);await migrateP2016({databaseUrl});
+      if(handlingSchema||workbenchManualReportsEnabled||workbenchFollowEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});}
+      if(handlingSchema&&installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});
+      if(workbenchManualReportsEnabled||workbenchFollowEnabled)await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});
+      if(workbenchManualReportsEnabled&&workbenchReporterCandidatesEnabled)await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'apply'});
+      if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
+      if(workbenchFollowEnabled){await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});await migrateWorkbenchFollow({databaseUrl,mode:'apply'});}
+      await beforeClosureMigration?.({pool,databaseUrl});
+      await migrateServiceClosure({databaseUrl,mode:'apply'});
+      // ADR-0058: 072 applies after every other migration of this chain (it rewrites the closure vocabulary in place).
+      await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
+    }
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name+(precisionV212?'（合成）':''),roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});

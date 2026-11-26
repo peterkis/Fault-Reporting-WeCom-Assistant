@@ -427,6 +427,8 @@
     "database/migrations/073_notification_vocabulary.sql",
     "database/migrations/074_system_closure_restore.sql",
     "database/migrations/075_ticket_terminal_at.sql",
+    "database/migrations/076_fk_indexes.sql",
+    "database/migrations/077_retention_and_time_contract.sql",
     "contracts/unified_closure_command.schema.json",
     "contracts/unified_restore_command.schema.json",
     "contracts/unified_closure_contracts.d.ts",

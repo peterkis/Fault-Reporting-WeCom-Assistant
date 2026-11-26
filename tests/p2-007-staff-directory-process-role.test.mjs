@@ -9,6 +9,8 @@ const restoreChecksum=createHash('sha256').update(readFileSync(new URL('../datab
 const terminalChecksum=createHash('sha256').update(readFileSync(new URL('../database/migrations/075_ticket_terminal_at.sql',import.meta.url))).digest('hex');
 const completionChecksum=createHash('sha256').update(readFileSync(new URL('../database/migrations/072_ticket_completion_dismissal.sql',import.meta.url))).digest('hex');
 let terminal='ready';
+const fkChecksum=createHash('sha256').update(readFileSync(new URL('../database/migrations/076_fk_indexes.sql',import.meta.url))).digest('hex');
+const retentionChecksum=createHash('sha256').update(readFileSync(new URL('../database/migrations/077_retention_and_time_contract.sql',import.meta.url))).digest('hex');
 const pool = { query: async (_sql,values=[]) => values[0]==='071_unified_service_closure'
   ? {rows:[{checksum_sha256:closureChecksum,record:true,termination:true}],rowCount:1}
   : values[0]==='072_ticket_completion_dismissal'
@@ -19,6 +21,10 @@ const pool = { query: async (_sql,values=[]) => values[0]==='071_unified_service
   ? {rows:[{checksum_sha256:restoreChecksum,column:true}],rowCount:1}
   : values[0]==='075_ticket_terminal_at'
   ? {rows:[{snapshot:terminal==='missing'?null:{checksum_sha256:terminalChecksum,ready:terminal==='ready'}}],rowCount:1}
+  : values[1]==='076_fk_indexes'
+  ? {rows:[{checksum_sha256:fkChecksum,structural_match_count:74}],rowCount:1}
+  : values[2]==='077_retention_and_time_contract'
+  ? {rows:[{checksum_sha256:retentionChecksum,retention_index_count:11,local_now_ok:true,physical_epoch_ok:true,legacy_expiry_absent:true,epoch_expiry_valid:true}],rowCount:1}
   : { rows: [], rowCount: 1 }, connect: async () => { throw new Error('unexpected database call'); } };
 let appOptions, workerOptions;
 mock.module('../app/server/scripts/p2-g1-process-role.mjs', { namedExports: {

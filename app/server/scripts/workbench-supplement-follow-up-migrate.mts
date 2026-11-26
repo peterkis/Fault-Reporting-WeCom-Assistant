@@ -1,6 +1,8 @@
 import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {followReceiptSchemaReady,readWorkbenchRelationCatalog} from '../src/p2-006-delivery-command-schema.mjs';
+import {readCatalogRow} from '../src/platform/postgres-catalog.mjs';
+import {FK_PREDECESSOR_COUNT_SQL,fkPredecessorParameters,projectPredecessorIndexRows} from './fk-indexes-migrate.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
@@ -18,8 +20,14 @@ export async function supplementFollowUpCatalog(tx:PostgresTransaction){
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
 export async function supplementFollowUpSchemaReady(tx:PostgresTransaction):Promise<boolean>{
  const present=(await tx.query<{present:boolean}>("SELECT to_regclass('platform.schema_migration') IS NOT NULL AS present")).rows[0];if(!present?.present)return false;
- const row=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[SUPPLEMENT_FOLLOW_UP_MIGRATION_ID])).rows[0];
- return row?.checksum_sha256===sha(await readFile(FILE,'utf8'))&&await followReceiptSchemaReady(tx)&&sha(JSON.stringify(await supplementFollowUpCatalog(tx)))===SUPPLEMENT_CATALOG_SHA256;
+ const fk=await fkPredecessorParameters(RELATIONS);
+ const row=await readCatalogRow<{checksum_sha256:string;registered:number|null}>(tx,
+   `SELECT checksum_sha256,${FK_PREDECESSOR_COUNT_SQL} AS registered FROM platform.schema_migration WHERE migration_id=$4`,
+   [...fk.values,SUPPLEMENT_FOLLOW_UP_MIGRATION_ID]);
+ if(row?.checksum_sha256!==sha(await readFile(FILE,'utf8'))||!await followReceiptSchemaReady(tx))return false;
+ const catalog=await supplementFollowUpCatalog(tx);
+ const indexes=projectPredecessorIndexRows(fk.targets,row.registered,catalog.indexes);
+ return indexes!==null&&sha(JSON.stringify({...catalog,indexes}))===SUPPLEMENT_CATALOG_SHA256;
 }
 export async function migrateWorkbenchSupplementFollowUp({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'status'}){
  if(!databaseUrl||!['check','apply','status'].includes(mode))failP2016();

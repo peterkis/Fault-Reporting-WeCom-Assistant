@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 // Explicit maintenance for the H5 schema; never enables runtime feature flags.
 // All new DDL and ARCH005 receipts commit together under the existing pool boundary.
 import {createHash} from 'node:crypto';
@@ -77,7 +78,7 @@ export async function migrateYxxH5({databaseUrl,expectedDatabase,mode='check',in
     ||typeof includePreviews!=='boolean'||typeof expectedDatabase!=='string'||!/^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/u.test(expectedDatabase))invalid();
   const inputs=await Promise.all(migrations.map(sqlInput));
   const media=inputs.find(input=>input.id===migrations[1]);if(!media)invalid('H5_MIGRATION_FILE_INVALID');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'yxx_h5_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'yxx_h5_migrator'});
   try{return await transactionP2016(pool,async tx=>{
     await tx.query("SET LOCAL lock_timeout='5s'");
     await tx.query("SET LOCAL statement_timeout='60s'");

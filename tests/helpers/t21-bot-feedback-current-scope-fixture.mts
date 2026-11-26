@@ -55,7 +55,7 @@ export async function withT21DraftFixture(run:(fixture:{context:T11Fixture;ticke
  replaceMember(options?:Parameters<typeof t21OpenMember>[1]):Promise<ReturnType<typeof t21OpenMember> extends Promise<infer A>?A:never>;
  closeMember():Promise<void>;
  verifyStaff<T>(read:(staff:Awaited<ReturnType<typeof t11Http>>)=>Promise<T>):Promise<T>;
-})=>Promise<void>,{associatedJourney=false}:{associatedJourney?:boolean}={}){
+})=>Promise<void>,{associatedJourney=false,fullSchema=false}:{fullSchema?:boolean;associatedJourney?:boolean}={}){
  await withT11Fixture(async context=>{
   const intake=await seedPersistedIntake({pool:context.pool,text:'合成门诊打印故障。',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
   const created=await createPilotTicketCore({pool:context.pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'t21-draft-bot'});
@@ -102,7 +102,7 @@ export async function withT21DraftFixture(run:(fixture:{context:T11Fixture;ticke
   try{await run({context,ticketId,publicRef:original.public_ref,path:'/api/reporter/tickets/'+original.public_ref,
    completed,access,legacySession:legacy.sessionToken,associatedJourneyId:journey?.id??null,replaceMember,closeMember,verifyStaff});}
   finally{await closeMember();}
- });
+ },{fullSchema});
 }
 export async function t21FeedbackCommand(member:ReturnType<typeof browser>,path:string):Promise<{csrf:string;command:BotReporterFeedbackInput}>{
  const detail=await member.request(path);assert.equal(detail.status,200,detail.text);

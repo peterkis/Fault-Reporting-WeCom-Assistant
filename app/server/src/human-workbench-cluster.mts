@@ -9,6 +9,6 @@ export function createHumanWorkbenchCluster(c:WorkbenchConfiguration,{roleScript
  for(const key of ['PATH','Path','SystemRoot','SYSTEMROOT','WINDIR','TEMP','TMP','COMSPEC','PATHEXT','NODE_V8_COVERAGE'])if(process.env[key]!==undefined)baseEnvironment[key]=process.env[key] as string;
  return createP2G1ProcessCluster({databaseUrl:c.databaseUrl,identityHashKey:c.identityHashKey,principalIds:[],externalAuthentication:true,
   listenPort:s.listenPort,gatewayEnabled:s.transportEnabled||s.botInboundEnabled===true,senderEnabled:s.transportEnabled,botId:s.bot.id,secret:c.botSecret,wsUrl:s.bot.wsUrl,
-  allowedTargetHashes:[...s.bot.personTargetHashes,...s.bot.groupTargetHashes],baseEnvironment,workerHealthEvents:true,roleScriptUrl,
+  allowedTargetHashes:[...s.bot.personTargetHashes,...s.bot.groupTargetHashes],baseEnvironment,workerHealthEvents:true,roleScriptUrl,appSchemaErrorPrefix:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:',
   roleEnvironment:role=>workbenchRoleEnvironment(c,role)});
 }

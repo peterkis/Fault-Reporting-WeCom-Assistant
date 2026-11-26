@@ -12,9 +12,9 @@ import {createP2016Runtime} from '../app/server/src/p2-016-runtime.mjs';
 import {listenConversationWorkbenchServer} from '../app/server/src/p2-006-workbench-http.mjs';
 
 test('a genuine hand-entered T17 report without045 stays manual-contact-only and does not block an eligible H5 notification',{timeout:240000},async()=>{
- await withWeb01Fixture(async(f:T11Fixture)=>{
-  await f.runtime.stop();await migrateTicketStaffCompletion({databaseUrl:f.databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:f.databaseUrl,mode:'apply'});
-  assert.equal((await f.pool.query<{absent:boolean}>("SELECT NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='intake' AND table_name='service_intake' AND column_name='manual_reporter_verification') AS absent")).rows[0]?.absent,true);
+ for(const partialSchemaOnly of [true,false])await withWeb01Fixture(async(f:T11Fixture)=>{
+  await f.runtime.stop();
+  assert.equal((await f.pool.query<{absent:boolean}>("SELECT NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='intake' AND table_name='service_intake' AND column_name='manual_reporter_verification') AS absent")).rows[0]?.absent,partialSchemaOnly);
   const runtime=createP2016Runtime({pool:f.pool,publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},externalSendEnabled:false,
    ticketSelfHandlingEnabled:true,ticketStaffCompletionEnabled:true,ticketRoundNotificationsEnabled:true,workbenchManualReportsEnabled:true,reporterOrigin:'https://reporter.example.test',reporterHmacSecret:entryKey,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:entryConfig,wecomWebOAuth:{enabled:true,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode:async()=>{throw Error('NO_REAL_OAUTH');}}});
   if('disabled' in runtime)throw Error('T25_UNVERIFIED_FIXTURE_DISABLED');
@@ -26,5 +26,7 @@ test('a genuine hand-entered T17 report without045 stays manual-contact-only and
    const retained=await t25WebOrigin(context,{memberId:'T25_UNVERIFIED_NEIGHBOUR_H5_MEMBER'});await retained.round.runOnce();assert.deepEqual(await t25Deliveries(http,ticketId),[]);const other=await t25Deliveries(retained.http,retained.ticketId);assert.deepEqual(other.map(row=>({type:row.destination_type,route:row.route_kind,node:row.node,status:row.status})),[{type:'PERSON',route:'YIXIAOXIU_APP',node:'FIRST_RESPONSIBILITY',status:'PENDING'}]);
    await retained.round.runOnce();assert.deepEqual(await t25Deliveries(http,ticketId),[]);assert.deepEqual(await t25Deliveries(retained.http,retained.ticketId),other);assert.deepEqual(await http.detail(ticketId),started);assert.deepEqual(await retained.http.detail(retained.ticketId),retained.started);
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true});
+ },{partialSchemaOnly,workbenchManualReportsEnabled:true,ticketSelfHandlingEnabled:true,beforeClosureMigration:async({databaseUrl})=>{
+  if(partialSchemaOnly){await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl,mode:'apply'});}
+ }});
 });

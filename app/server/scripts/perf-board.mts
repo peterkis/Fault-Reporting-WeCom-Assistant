@@ -1,4 +1,3 @@
-import type {LocalMigrationDatabase} from './migration-database.mjs';
 import {checkEvidenceGeneration,publishPerfEvidence,type PerfEvidencePlan} from './perf-evidence-publication.mjs';
 export {publishPerfEvidence};
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -6,36 +5,11 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {assertLoopbackDatabaseUrl} from '../src/platform/loopback-database.mjs';
+import {assertLoopbackDatabaseUrl,loopbackFixtureTarget,withFixtureMigrations} from '../src/platform/loopback-database.mjs';
 export {assertLoopbackDatabaseUrl};
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
-import {migrateCurrentBaselineWithYxx} from './migrate-current-baseline.mjs';
-import {migrateTicketSelfHandling} from './ticket-self-handling-migrate.mjs';
-import {migrateTicketStaffCompletion} from './ticket-staff-completion-migrate.mjs';
-import {migrateTicketRoundNotifications} from './ticket-round-notifications-migrate.mjs';
-import {migrateWorkbenchManualReports} from './workbench-manual-reports-migrate.mjs';
-import {migrateWorkbenchVerifiedManualReports} from './workbench-verified-manual-reports-migrate.mjs';
-import {migrateTicketUnassign} from './ticket-unassign-migrate.mjs';
-import {migrateTicketReopenRounds} from './ticket-reopen-rounds-migrate.mjs';
-import {migrateWorkbenchPersonalRead} from './workbench-personal-read-migrate.mjs';
-import {migrateBotReporterFeedback} from './bot-reporter-feedback-migrate.mjs';
-import {migrateWorkbenchFollow} from './workbench-follow-migrate.mjs';
-import {migrateWorkbenchSupplementFollowUp} from './workbench-supplement-follow-up-migrate.mjs';
-import {migrateWorkbenchFollowUpSchedules} from './workbench-follow-up-schedules-migrate.mjs';
-import {migrateTicketReturnToDispatch} from './ticket-return-to-dispatch-migrate.mjs';
-import {migrateWorkbenchFollowUpDueSignals} from './workbench-follow-up-due-migrate.mjs';
-import {migrateWorkbenchSourceGroups} from './workbench-source-groups-migrate.mjs';
-import {migrateIncidentInternalNotes} from './incident-internal-notes-migrate.mjs';
-import {migrateIncidentPublicProgress} from './incident-public-progress-migrate.mjs';
-import {migrateIncidentOwnerTransfer} from './incident-owner-transfer-migrate.mjs';
-import {migrateIncidentDeliveryControl} from './incident-delivery-control-migrate.mjs';
-import {migrateConversationDeliveryCommands} from './conversation-delivery-commands-migrate.mjs';
-import {migrateServiceClosure} from './service-closure-migrate.mjs';
-import {migrateCompletionDismissal} from './completion-dismissal-migrate.mjs';
-import {migrateNotificationVocabulary} from './notification-vocabulary-migrate.mjs';
-import {migrateSystemClosureRestore} from './system-closure-restore-migrate.mjs';
-import {migrateTicketTerminalAt} from './ticket-terminal-at-migrate.mjs';
+import {applyFullSchemaThrough077} from '../../../tests/helpers/full-schema-migrations.mjs';
 import {seedCapacityDataset} from '../../../tests/helpers/capacity-dataset.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from '../src/p2-006-workbench-authorization.mjs';
@@ -196,40 +170,6 @@ async function explainQuery(pool:PostgresPool,label:string,statement:RecordedRea
   }
 }
 
-async function applyAllMigrations(databaseUrl: LocalMigrationDatabase): Promise<void> {
-  await migrateCurrentBaselineWithYxx({databaseUrl});
-  const migrators = [
-    migrateTicketSelfHandling,
-    migrateTicketStaffCompletion,
-    migrateTicketRoundNotifications,
-    migrateWorkbenchManualReports,
-    migrateWorkbenchVerifiedManualReports,
-    migrateTicketUnassign,
-    migrateTicketReopenRounds,
-    migrateWorkbenchPersonalRead,
-    migrateBotReporterFeedback,
-    migrateWorkbenchFollow,
-    migrateWorkbenchSupplementFollowUp,
-    migrateWorkbenchFollowUpSchedules,
-    migrateTicketReturnToDispatch,
-    migrateWorkbenchFollowUpDueSignals,
-    migrateWorkbenchSourceGroups,
-    migrateIncidentInternalNotes,
-    migrateIncidentPublicProgress,
-    migrateIncidentOwnerTransfer,
-    migrateIncidentDeliveryControl,
-    migrateConversationDeliveryCommands,
-    migrateServiceClosure,
-    migrateCompletionDismissal,
-    migrateNotificationVocabulary,
-    migrateSystemClosureRestore,
-    migrateTicketTerminalAt,
-  ];
-  for (const migrate of migrators) {
-    await migrate({databaseUrl, mode: 'apply'});
-  }
-}
-
 function parseCliArgs(argv: readonly string[]): {writeEvidenceDir: string | null; diagDir: string | null; warmup: number; iterations: number} {
   let writeEvidenceDir: string | null = null;
   let diagDir: string | null = null;
@@ -336,7 +276,7 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
   }
   const databaseUrl=process.env.PILOT_DATABASE_URL;
   if(!databaseUrl)throw new Error('PERF_BOARD_PILOT_DATABASE_URL_REQUIRED');
-  const adminDatabase=assertLoopbackDatabaseUrl(databaseUrl);
+  const {connection:adminDatabase,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
   const {writeEvidenceDir, diagDir, warmup, iterations} = parseCliArgs(argv);
 
   const dbName = `ticket_card42a_perf_board_${randomUUID().replaceAll('-', '_')}`;
@@ -359,7 +299,8 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
 
     await adminPool.query(`CREATE DATABASE ${quoted} TEMPLATE template0`);
     created = true;
-    await applyAllMigrations(isolatedDatabase);
+    const target=new URL(fixtureUrl);target.pathname='/'+dbName;
+    await withFixtureMigrations(target.href,()=>applyFullSchemaThrough077(target.href));
     // 42A-7 in miniature: the deployment sets jit=off on the application role (db-role-settings). This throwaway
     // database gets the same setting at database level, so no cluster-wide role is touched by a benchmark.
     await adminPool.query(`ALTER DATABASE ${quoted} SET jit = off`);

@@ -1,6 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+import {createHumanWorkbenchCluster} from '../app/server/src/human-workbench-cluster.mjs';
+import {readHumanWorkbenchConfiguration} from '../app/server/src/human-workbench-configuration.mjs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer,request as httpRequest} from 'node:http';
@@ -23,7 +26,7 @@ import {migrateServiceClosure} from '../app/server/scripts/service-closure-migra
 import {migrateCompletionDismissal} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
-import {migrateTicketTerminalAt} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
+import {applyFullSchemaThrough077} from './helpers/full-schema-migrations.mjs';
 import {migrateWorkbenchFollow} from '../app/server/scripts/workbench-follow-migrate.mjs';
 import {migrateWorkbenchSourceGroups} from '../app/server/scripts/workbench-source-groups-migrate.mjs';
 import {migrateConversationDeliveryCommands} from '../app/server/scripts/conversation-delivery-commands-migrate.mjs';
@@ -61,11 +64,7 @@ function client(base:string,origin:string){
 }
 async function until(check:()=>Promise<boolean>){for(let i=0;i<160;i++){if(await check())return;await delay(50);}throw Error('WORKBENCH_TEST_CONVERGENCE_TIMEOUT');}
 async function migrateWorkbenchDatabase(databaseUrl:string){
- await migrateCurrentBaselineWithYxx({databaseUrl});
- for(const migrate of [migrateWorkbenchAuth,migrateTicketSelfHandling,migrateTicketStaffCompletion,migrateTicketRoundNotifications,migrateWorkbenchManualReports,migrateTicketReopenRounds,migrateBotReporterFeedback,migrateWorkbenchPersonalRead,migrateWorkbenchFollow,migrateWorkbenchSupplementFollowUp,migrateWorkbenchSourceGroups,migrateConversationDeliveryCommands,migrateMvpNotifications])await migrate({databaseUrl,mode:'apply'});
- await migrateTicketReporterProfiles({databaseUrl,expectedDatabase:new URL(databaseUrl).pathname.slice(1),mode:'apply'});
- // The current roles require the 071 closure schema, the 072 completion / dismissal vocabulary and the 073 notification vocabulary before readiness.
- await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
+ await applyFullSchemaThrough077(databaseUrl);
 }
 async function unusedPort(){const probe=createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const address=probe.address();assert.ok(address&&typeof address==='object');await new Promise<void>(r=>probe.close(()=>r()));return address.port;}
 
@@ -127,23 +126,93 @@ test('compiled receive-only Bot admits a new visible sender and group, deduplica
  if(outerFailures.length)throw outerFailures.length===1?outerFailures[0]:new AggregateError(outerFailures,'HUMAN_WORKBENCH_RECEIVE_ONLY_OUTER_FAILURE');
 });
 
+test('compiled parent aggregates APP and peer schema failures in role order and stops all children', {timeout:120000}, async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'human-schema-order-'));
+ try{
+  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'schemaorder',run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
+   await migrateWorkbenchDatabase(databaseUrl);
+   await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'runtime-staff',displayName:'运行接线合成坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+   await pool.query("DELETE FROM platform.schema_migration WHERE migration_id='076_fk_indexes'");
+   const f=workbenchTestSettings(directory,await unusedPort());
+   f.settings.workbenchMediaEmployeeReadEnabled=true;
+   f.save();
+   const config=readHumanWorkbenchConfiguration({...f.env,PILOT_DATABASE_URL:databaseUrl,
+    YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:directory,YIXIAOXIU_H5_MEDIA_KEY_HEX:'ab'.repeat(32),
+    YIXIAOXIU_H5_FFMPEG_PATH:join(directory,'absent-ffmpeg'),YIXIAOXIU_H5_FFPROBE_PATH:join(directory,'absent-ffprobe'),
+   },{isolatedBoundaries:true});
+   assert.ok(config.enabled);
+   const workerTrace=join(directory,new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');
+   // With the receipt hidden, 062 also sees the extra, now unregistered 076 indexes.
+   const appChecks='workbench_supplement_follow_up_schema,fk_indexes_schema';
+   const role=new URL('./helpers/human-workbench-boundaries-role.mjs',import.meta.url);
+   for(const first of ['APP','WORKER','GATEWAY']){
+    // Hold the other two at their entry points until the parent has observed the first child's exit.
+    const gate=join(directory,first+'.release'),script=join(directory,first+'.mjs');
+    await writeFile(script,`import {existsSync} from 'node:fs';
+     import {setTimeout as delay} from 'node:timers/promises';
+     process.env.TMPDIR=process.env.TEMP=process.env.TMP=${JSON.stringify(directory)};
+     if(process.env.P2_G1_PROCESS_ROLE!==${JSON.stringify(first)}){
+       while(!existsSync(${JSON.stringify(gate)})) await delay(10);
+     }
+     await import(${JSON.stringify(role.href)});`);
+    const cluster=createHumanWorkbenchCluster(config,{roleScriptUrl:pathToFileURL(script)});
+    const failure=cluster.start().then(()=>null,(error:unknown)=>error);
+    try{
+     try{
+      await until(async()=>cluster.status().process_count===2);
+     }finally{await writeFile(gate,'');}
+     const error=await failure;
+     assert.ok(error instanceof Error);
+     assert.equal(error.message,'HUMAN_WORKBENCH_SCHEMA_REQUIRED:'+appChecks+',employee_media_previews',first+' first');
+     assert.equal(cluster.status().process_count,0,first+' first: parent cleaned up all children');
+    }finally{await failure;await cluster.stop();}
+   }
+   for(const [path,roleName,check] of [
+    [join(directory,'boundaries.jsonl'),'APP',appChecks],
+    [workerTrace,'WORKER','employee_media_previews'],
+    [join(directory,'boundaries.jsonl'),'GATEWAY','fk_indexes_schema'],
+   ] as const){
+    const failures=(await readFile(path,'utf8')).trim().split('\n').map(line=>object(JSON.parse(line))).filter(row=>row.role===roleName&&row.event==='failed');
+    assert.deepEqual(failures.map(row=>row.code),Array(3).fill('HUMAN_WORKBENCH_SCHEMA_REQUIRED:'+check));
+   }
+   assert.equal((await pool.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
+  }});
+ }finally{
+  await rm(directory,{recursive:true,force:true});
+ }
+});
+
 test('compiled parent rejects missing personal-read schema or migration before reporting ready and stops all roles',{timeout:120000},async()=>{
  const directory=await mkdtemp(join(tmpdir(),'human-workbench-schema-'));let workerTraceFile:string|undefined;
  try{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'humanmissing',max:1,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
    await migrateWorkbenchDatabase(databaseUrl);
    await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'runtime-staff',displayName:'运行接线合成坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
-   // Keep later feature schemas intact while removing the isolated database's 047 dependency.
+   workerTraceFile=join(tmpdir(),new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');
+   async function startParent(){
+    const f=workbenchTestSettings(directory,await unusedPort());f.env.PILOT_DATABASE_URL=databaseUrl;
+    return workbenchMain(['--start'],{env:f.env,roleScriptUrl:new URL('./helpers/human-workbench-boundaries-role.mjs',import.meta.url)});
+   }
+   const personalMissing='HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema';
+   // 062 also checks the 047 receipt. Its tables and the 076 index survive a receipt-only change.
+   const receiptMissing=personalMissing+',workbench_supplement_follow_up_schema';
+   await pool.query("UPDATE platform.schema_migration SET migration_id='047_test_hidden' WHERE migration_id='047_workbench_personal_read'");
+   await assert.rejects(startParent(),{message:receiptMissing});
+   await pool.query("UPDATE platform.schema_migration SET migration_id='047_workbench_personal_read' WHERE migration_id='047_test_hidden'");
+   // PostgreSQL drops the 076 source-intake index with its owning 047 table.
+   const index="SELECT to_regclass('pilot_ticket.personal_material_read_source_intake_fk_idx') IS NOT NULL AS present";
+   assert.equal((await pool.query(index)).rows[0]?.present,true);
    await pool.query('DROP TABLE pilot_ticket.personal_material_read_position');
    assert.equal((await pool.query("SELECT to_regclass('pilot_ticket.personal_material_read_position') AS name")).rows[0]?.name,null);
-   workerTraceFile=join(tmpdir(),new URL(databaseUrl).pathname.slice(1)+'-worker-boundaries.jsonl');
+   assert.equal((await pool.query(index)).rows[0]?.present,false);
    for(const removeMarker of [false,true]){
     if(removeMarker)await pool.query("DELETE FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read'");
-    const f=workbenchTestSettings(directory,await unusedPort());f.env.PILOT_DATABASE_URL=databaseUrl;
-    await assert.rejects(workbenchMain(['--start'],{env:f.env,roleScriptUrl:new URL('./helpers/human-workbench-boundaries-role.mjs',import.meta.url)}),/HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema(?:,|$)/u);
+    const starting=startParent();
+    await assert.rejects(starting,/HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema(?:,|$)/u);
+    await assert.rejects(starting,{message:(removeMarker?receiptMissing:personalMissing)+',fk_indexes_schema'});
    }
    const trace=(await readFile(join(directory,'boundaries.jsonl'),'utf8')).trim().split('\n').map(v=>object(JSON.parse(v)));
-   assert.equal(trace.filter(v=>v.role==='APP'&&v.event==='failed'&&String(v.code).startsWith('HUMAN_WORKBENCH_SCHEMA_REQUIRED:workbench_personal_read_schema')).length,2);
+   assert.deepEqual(trace.filter(v=>v.role==='APP'&&v.event==='failed').map(v=>v.code),[receiptMissing,personalMissing+',fk_indexes_schema',receiptMissing+',fk_indexes_schema']);
    assert.equal((await pool.query<{n:number}>("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=current_database() AND application_name IN ('p2_g1_app','p2_g1_worker','p2_g1_gateway')")).rows[0]?.n,0);
   }});
   await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});

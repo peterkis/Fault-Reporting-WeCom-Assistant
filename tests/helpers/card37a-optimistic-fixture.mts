@@ -101,7 +101,7 @@ export async function withScene(run:(s:Scene)=>Promise<void>, options:{keyboard?
       await run({f,b,id,card,http:await t11Http(f,0,{closeConnections:true})});
     } catch(error){failure=error;}
     finally{await closeBrowserTestResources([()=>b?.close(),()=>dev?.close(),()=>cache&&rm(cache,{recursive:true,force:true}),()=>runtime.stop()],failure);}
-  },{ticketSelfHandlingEnabled:true,workbenchFollowEnabled:true,precisionV212:true,beforeClosureMigration:async({databaseUrl})=>{
+  },{ticketSelfHandlingEnabled:true,workbenchFollowEnabled:true,precisionV212:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl})=>{
     if(options.keyboard){
       await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});
       await migrateTicketReopenRounds({databaseUrl,mode:'apply'});

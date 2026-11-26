@@ -121,9 +121,7 @@ async function go(b:Browser,url:string){
  * above, between, below, left and right of the notices the shadow must (a) reach past the notices (it is not clipped to their
  * boxes) and (b) fade smoothly: no step over 3 luminance levels between neighbouring pixels, as a clip edge would leave.
  */
-async function assertUnclippedShadow(b:Browser,label:string,directory?:string){
- // Every notice has finished entering (a notice still sliding in moves between the measurement and the captures).
- await waitForAnimationsSettled(b);
+async function captureShadowFrames(b:Browser){
  const box=await b.evaluate("(()=>{const v=[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()),r=v.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,toasts:[...v.querySelectorAll('.workbench-toast[data-visible=true]')].map(n=>{const t=n.getBoundingClientRect();return {x:t.x,y:t.y,width:t.width,height:t.height};})};})()") as Rect&{toasts:Rect[]};
  // The clip stays 8px inside the window: in the window corner (card 34A, a modal open) the shadow runs off the window's own edge,
  // which is not a clip of the page but would read as a straight edge.
@@ -132,8 +130,65 @@ async function assertUnclippedShadow(b:Browser,label:string,directory?:string){
  const capture=async()=>Buffer.from((await b.command('Page.captureScreenshot',{format:'png',clip}) as {data:string}).data,'base64');
  const shown=await capture();
  await b.evaluate("[...document.querySelectorAll('.workbench-toast-viewport')].find(v=>v.checkVisibility()).style.visibility='hidden'");
- let hidden:Buffer;try{hidden=await capture();}finally{await b.evaluate("document.querySelectorAll('.workbench-toast-viewport').forEach(v=>{v.style.visibility='';})");}
- if(directory)await writeFile(join(directory,'shadow-sample-'+label.replace(/\W+/gu,'-')+'.png'),shown);
+ const hidden=await capture();
+ return {box,clip,shown,hidden};
+}
+const restoreShadowViewports="document.querySelectorAll('.workbench-toast-viewport').forEach(v=>{v.style.visibility='';})";
+async function captureShadowPair(b:Browser){
+ await waitForAnimationsSettled(b);
+ try{return await captureShadowFrames(b);}
+ finally{await b.evaluate(restoreShadowViewports);}
+}
+
+// A schedule save also refetches the detail. Its report properties can move between
+// screenshots even after finite animations finish. Only compare frames with the same idle backdrop.
+type DetailShadowScenario='drawer'|'fullpage'|'dialog';
+async function captureDetailShadowPair(b:Browser,scenario:DetailShadowScenario){
+ const detail='.ds-detail-view .detail-body',properties=detail+' .detail-properties';
+ const stack=(scenario==='dialog'?'.ds-closure-dialog ':'')+'.workbench-toast-viewport .workbench-toast[data-visible=true]';
+ const label=scenario+' shadow capture';
+ for(let attempt=0;attempt<3;attempt++){
+  await waitForAnimationsSettled(b);
+  // Check readiness and arm in one browser task so a refresh cannot start between them.
+  await b.waitFor(`(()=>{
+   const region=document.querySelector('${detail}:not([data-refreshing]):not([data-stale])');
+   const list=region?.querySelector('.detail-properties');
+   if(!list||document.querySelectorAll('${stack}').length!==3)return false;
+   const initialTop=list.getBoundingClientRect().top;
+   let refreshed=false;
+   const observer=new MutationObserver(()=>{refreshed=true;});
+   observer.observe(region,{attributes:true,attributeFilter:['data-refreshing','data-stale']});
+   globalThis.__finishShadowBackdrop=()=>{
+    refreshed ||= observer.takeRecords().length>0;
+    observer.disconnect();
+    return {refreshed,sameList:list===document.querySelector('${properties}'),initialTop,
+     finalTop:list.getBoundingClientRect().top,noticeCount:document.querySelectorAll('${stack}').length};
+   };
+   return true;
+  })()`);
+  let pair:Awaited<ReturnType<typeof captureShadowFrames>>;
+  let backdrop:{refreshed:boolean;sameList:boolean;initialTop:number;finalTop:number;noticeCount:number};
+  try{pair=await captureShadowFrames(b);}
+  finally{
+   backdrop=await b.evaluate(`(()=>{try{return globalThis.__finishShadowBackdrop();}
+    finally{delete globalThis.__finishShadowBackdrop;${restoreShadowViewports};}})()`) as typeof backdrop;
+  }
+  if(backdrop.refreshed)continue;
+  assert.ok(backdrop.sameList,label+': the same property list remains in the detail');
+  assert.equal(backdrop.finalTop,backdrop.initialTop,label+': the property list keeps its vertical position');
+  assert.equal(pair.box.toasts.length,3,label+': three notice rectangles were sampled');
+  assert.equal(backdrop.noticeCount,3,label+': three notices remain at the end of the pair');
+  return pair;
+ }
+ assert.fail(label+': detail refresh or stale state changed during all three screenshot pairs');
+}
+async function assertUnclippedShadow(b:Browser,label:string,directory?:string,scenario?:DetailShadowScenario){
+ const {box,clip,shown,hidden}=scenario?await captureDetailShadowPair(b,scenario):await captureShadowPair(b);
+ if(directory){
+  const name='shadow-sample-'+label.replace(/\W+/gu,'-');
+  await writeFile(join(directory,name+'.png'),shown);
+  if(scenario==='dialog')await writeFile(join(directory,name+'-hidden.png'),hidden);
+ }
  // The shadow's opacity at each pixel, in 0–255 steps: on = off·(1−a) + 15·a for the shadow colour rgb(15,15,15). Pixels whose
  // background is darker than 60 (text, icons) say little about the opacity and are skipped.
  const on=luminance(shown),off=luminance(hidden),shade=(x:number,y:number):number|null=>{const base=off.at(x,y);return base<60?null:Math.max(0,(base-on.at(x,y))/(base-15)*255);};
@@ -224,7 +279,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
    await open(path);
    await note('conflict','卡32D 合成冲突备注（合成）');await b.waitFor(`${kindCount('error')}===1`);await draftWarning(b,'（续）');await b.waitFor(`${kindCount('error')}===1&&${kindCount('is-warning')}===1`);
    let fullHeights:number[]=[];
-   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory)});}
+   for(const width of WIDTHS){await measure(scenario,width,{...detailControls,...extra});if(width===1440){fullHeights=(await b.evaluate(toastRects) as Rect[]).map(item=>Math.round(item.height));shadows.push({scenario,...await assertUnclippedShadow(b,scenario+' 1440',directory,scenario)});}
     if(scenario==='drawer'&&(width===1440||width===900))await shot('toast-drawer-'+width+'.png');if(scenario==='fullpage'&&width===1280)await shot('toast-fullpage-1280.png');}
    // Short windows: at 1440×560 (32D-T) the three notices fit between the toolbar and the composer; at 1440×440 they do not, so
    // the stack stops below the toolbar (data-toast-avoid="top") and scrolls inside its shadow gutter (card 33), and the
@@ -275,7 +330,7 @@ test('Card 32D-T toasts stay clear of detail controls in the drawer, the full pa
   // pc-admin-card34a-toast-modal. Here the stack beside the modal is held to the same 32D-T and card 33 checks.
   for(const width of [1920,1440] as const){await measure('dialog',width,dialogControls);
    assert.equal(await b.evaluate("(()=>{const d=document.querySelector('.ds-closure-dialog').getBoundingClientRect();return [...document.querySelectorAll('.workbench-toast[data-visible=true]')].every(n=>{const r=n.getBoundingClientRect();return r.right<=d.left||r.left>=d.right||r.bottom<=d.top||r.top>=d.bottom;});})()"),true,'dialog '+width+': no notice intersects the modal');
-   if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory)});if(width===1440)await shot('toast-dialog-1440.png');}
+   if(width===1440)shadows.push({scenario:'dialog',...await assertUnclippedShadow(b,'dialog 1440',directory,'dialog')});if(width===1440)await shot('toast-dialog-1440.png');}
 
   // Hover and timing (T1): a hovered success notice waits; once the pointer leaves it closes after 4s. An error notice waits for
   // its close button, however long it stays on screen.

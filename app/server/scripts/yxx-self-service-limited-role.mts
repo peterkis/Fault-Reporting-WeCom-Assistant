@@ -4,7 +4,7 @@ import type {G1RuntimeExtension} from '../src/p2-g1-runtime.mjs';
 export type LimitedRoleMessage = {type:'stop'}|{type:'ss010-activate'};
 import {pathToFileURL} from 'node:url';
 import {runApp,runWorker} from './p2-g1-process-role.mjs';
-import {createP2016Runtime} from '../src/p2-016-runtime.mjs';
+import {createSS010LimitedRuntime} from '../src/p2-016-runtime.mjs';
 import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
 import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createWeComAppTokenProvider} from '../src/p2-g2-wecom-app-token.mjs';
@@ -51,11 +51,11 @@ export async function main(argv=process.argv.slice(2)){
         if(found.rowCount!==1)reject('OBJECT_FORBIDDEN');return false;
       }catch{response.writeHead(403,{'content-type':'application/json','cache-control':'no-store'});response.end(JSON.stringify({error:{code:'YXX_ENTRY_FORBIDDEN',retryable:false}}));return true;}
     };
-    return createP2016Runtime({...options,pool,reporterOrigin:manifest.public_origin,
+    return createSS010LimitedRuntime({...options,reporterOrigin:manifest.public_origin,
       reporterHmacSecret:process.env.P2_G2_REPORTER_HMAC_SECRET as string,reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:member,identityMapping,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:false} as {TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},
       wecomWebOAuth:{enabled:true,corpId:(member as {corpId:unknown;agentId:unknown}).corpId as string,agentId:(member as {corpId:unknown;agentId:unknown}).agentId as string,resolveCode},
-      yxxSelfService:{featureFlags:flags,quota:guard.quota},limitedRequestGuard});
+      yxxSelfService:{featureFlags:flags,quota:guard.quota},limitedRequestGuard},guard.protectPool);
   }});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{process.send?.({type:'role-failed',error_code:'SS010_ROLE_FAILED'});process.exit(1);});

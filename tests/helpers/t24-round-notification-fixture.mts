@@ -35,7 +35,7 @@ export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string}
       assert.ok(started.cookies);await run({...f,runtime,ticketId:created.ticket.id,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});
     }
     finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  },{namespace,ticketSelfHandlingEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  },{namespace,ticketSelfHandlingEnabled:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
     if(mvpNotificationsEnabled)await migrateMvpNotifications({databaseUrl:databaseUrl,mode:'apply'});
     if(ticketUnassignEnabled||ticketReturnToDispatchEnabled)await migrateTicketUnassign({databaseUrl:databaseUrl,mode:'apply'});

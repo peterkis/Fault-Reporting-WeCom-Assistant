@@ -255,7 +255,7 @@ test('default false avoids new schema queries and the original legacy accept rou
     assert.equal(bootstrap.ticket_conversation_self_handling_enabled,false);assert.equal(bootstrap.ticket_conversation_draft_recovery_enabled,false);assert.equal((await a.get('/api/tickets/'+id+'/related-conversations')).status,503);
     assert.equal((await context.pool.query("SELECT to_regclass('pilot_ticket.ticket_handling_cycle') AS t")).rows[0]?.t,null);assert.equal(Object.hasOwn((await a.get('/api/tickets/'+id)).value,'handling_cycle'),false);
     assert.equal((await a.post('/api/tickets/'+id+'/accept',{client_command_id:randomUUID(),expected_version:2,reason_code:'T05_LEGACY_PROFILE'})).status,200);
-  });
+  },{partialSchemaOnly:true});
 });
 
 test('an ended canonical Session disappears from choices and a stale explicit reference changes no business fact',async()=>{

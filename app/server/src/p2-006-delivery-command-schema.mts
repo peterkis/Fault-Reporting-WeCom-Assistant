@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {serviceClosureSchemaStatus} from '../scripts/service-closure-migrate.mjs';
+import {FK_PREDECESSOR_COUNT_SQL,fkPredecessorParameters,projectPredecessorIndexRows} from '../scripts/fk-indexes-migrate.mjs';
 
 export const CONVERSATION_DELIVERY_MIGRATION_ID='061_workbench_conversation_delivery_commands';
 const RECEIPT_SHAPES={
@@ -64,9 +65,8 @@ export async function conversationDeliveryReceiptCatalog(tx:PostgresTransaction)
  return {...catalog,relations:catalog.relations.map(({relispartition,...row})=>row),
    indexes:catalog.indexes.map(({unique,primary,...row})=>row)};
 }
-/** Project only the verified 071 extension out of the existing exact receipt inventory.
- * Unknown columns, guards, FKs, indexes and triggers still participate in the old digest. */
-export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>):Promise<Record<string,unknown>>{
+/** Compare the exact receipt predecessor after verifying the registered 071 and 076 additions. */
+export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>):Promise<Record<string,unknown>|null>{
  const closure=await serviceClosureSchemaStatus(tx);
  if(closure==='absent')return catalog;
  if(closure!=='ready')throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
@@ -79,9 +79,15 @@ export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransacti
   ||f.definition!=='FOREIGN KEY (closure_intake_id) REFERENCES intake.service_intake(id) ON DELETE RESTRICT'
   ||resource.length!==1||!guard||guard.type!=='c'||guard.validated!==true||typeof guard.definition!=='string')throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
  const expected=CLOSURE_RESOURCE_PREDECESSORS[sha(guard.definition)];
- const baseline=(await tx.query<{command_resource_check:string}>('SELECT command_resource_check FROM pilot_ticket.closure_migration_baseline WHERE singleton')).rows[0];
+ const fkIndexes=await fkPredecessorParameters(['pilot_ticket.ticket_command_receipt']);
+ const baseline=await readCatalogRow<{command_resource_check:string;registered:number|null}>(tx,
+   `SELECT command_resource_check,${FK_PREDECESSOR_COUNT_SQL} AS registered FROM pilot_ticket.closure_migration_baseline WHERE singleton`,fkIndexes.values);
  if(!expected||!baseline||sha(baseline.command_resource_check)!==expected)throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- return {...catalog,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
+ const indexes=catalog.indexes;
+ if(!Array.isArray(indexes)||!indexes.every(record))return null;
+ const priorIndexes=projectPredecessorIndexRows(fkIndexes.targets,baseline.registered,indexes);
+ if(!priorIndexes)return null;
+ return {...catalog,indexes:priorIndexes,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
 }
 /** Complete inventories observed on actual PostgreSQL 18, with unchanged old SQL checksums. */
 async function receiptPredecessors(tx:PostgresTransaction){

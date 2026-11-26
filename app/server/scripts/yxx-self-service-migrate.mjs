@@ -53,19 +53,40 @@ export function validateYxxCatalog(inventory,{stage='034'}={}){
   if(!['033','034'].includes(stage)||!isDeepStrictEqual(inventory,EXPECTED_CATALOG[stage]))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
   return inventory;
 }
-// SS-010 limited runtime only. The frozen 034 catalog stays the contract; registered successors 071 (unified closure) and
-// 072 (completion / dismissal, ADR-0058) may replace exactly the constraint entries recorded for them, nothing else.
+// The full prerequisite inventory was captured on PG18 through 066. 067..070, 073 and 074
+// do not change these nine relations. 071/072 replace two constraints on both profiles.
+let currentIntake;
 const SUCCESSOR_CATALOG=JSON.parse(readFileSync(new URL('../../../contracts/yxx_self_service_catalog_successors.json',import.meta.url),'utf8'));
+const ALLOWED_SUCCESSOR_PROFILES=new Set([
+  '[]',
+  '["071"]',
+  '["071","072"]',
+  '["071","072","076"]',
+  '["071","072","077"]',
+  '["071","072","076","077"]',
+]);
+const compareCodepoint=(a,b)=>(a<b?-1:a>b?1:0);
 /** @param {unknown} inventory @param {{successors?: readonly string[]}} [options] */
 export function validateYxxCatalogWithSuccessors(inventory,{successors=[]}={}){
   const profile=JSON.stringify(successors);
-  if(!['[]','["071"]','["071","072"]'].includes(profile))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
-  const expected=structuredClone(EXPECTED_CATALOG['034']);
-  for(const replacement of successors.length?SUCCESSOR_CATALOG[successors.at(-1)]:[]){
+  if(!ALLOWED_SUCCESSOR_PROFILES.has(profile))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
+  const current=successors.includes('076')||successors.includes('077');
+  if(current)currentIntake??=JSON.parse(readFileSync(new URL('../../../contracts/yxx_current_migration_catalog.v2.json',import.meta.url),'utf8')).catalogs.yxx;
+  const expected=structuredClone(current?currentIntake:EXPECTED_CATALOG['034']);
+  const closureSuccessor=successors.includes('072')?'072':successors.includes('071')?'071':null;
+  for(const replacement of closureSuccessor?SUCCESSOR_CATALOG[closureSuccessor]:[]){
     const index=expected.constraints.findIndex(item=>item.relation===replacement.relation&&item.name===replacement.name);
     if(index<0)fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
     expected.constraints[index]=replacement;
   }
+  const indexBatches=[];
+  if(successors.includes('076'))indexBatches.push(...SUCCESSOR_CATALOG['076_indexes']);
+  if(successors.includes('077'))indexBatches.push(...SUCCESSOR_CATALOG['077_indexes']);
+  for(const added of indexBatches){
+    if(expected.indexes.some(item=>item.relation===added.relation&&item.name===added.name))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
+    expected.indexes.push(added);
+  }
+  expected.indexes.sort((a,b)=>compareCodepoint(a.relation,b.relation)||compareCodepoint(a.name,b.name));
   if(!isDeepStrictEqual(inventory,expected))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
   return inventory;
 }

@@ -60,6 +60,10 @@ test('067 checks the exact database and rejects unreceipted or damaged schema',a
   await f.pool.query('DROP TRIGGER ticket_reporter_profile_source_immutable ON intake.ticket_reporter_profile');
   assert.equal(await ticketReporterProfilesSchemaReady(f.pool),false);
   await assert.rejects(migrateTicketReporterProfiles({databaseUrl:f.databaseUrl,expectedDatabase:f.databaseName,mode:'apply'}),/MIGRATION_INVALID/u);
+ },{partialSchemaOnly:true});
+ await withWeb01Fixture(async(f:Fixture)=>{
+  assert.equal(await ticketReporterProfilesSchemaReady(f.pool),true);
+  assert.equal((await migrateTicketReporterProfiles({databaseUrl:f.databaseUrl,expectedDatabase:f.databaseName})).status,'NOOP_ALREADY_APPLIED');
  });
 });
 
