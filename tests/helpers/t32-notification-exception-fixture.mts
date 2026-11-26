@@ -102,7 +102,7 @@ export async function withT32Fixture(run:(f:T32Fixture)=>Promise<void>,options:{
       await run({...context,incident,get,post,confirm});
     }catch(error){primaryError=error;}
     await closeBrowserTestResources([()=>runtime.stop(),()=>assert.equal(runtime.server.listening,false)],primaryError);
-  },{manualProjection:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  },{manualProjection:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     await migrateP2012({databaseUrl});
     if(options.ddl!==false){await migrateIncidentInternalNotes({databaseUrl,mode:'apply'});await migrateIncidentPublicProgress({databaseUrl,mode:'apply'});}await ensureCompletionDismissal(databaseUrl);
   }});

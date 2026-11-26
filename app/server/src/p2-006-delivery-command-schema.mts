@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {SERVICE_CLOSURE_MIGRATION_ID,serviceClosureSchemaReady} from '../scripts/service-closure-migrate.mjs';
 import {p2016CatalogInventory} from '../scripts/p2-016-migrate.mjs';
+import {predecessorIndexRows} from '../scripts/fk-indexes-migrate.mjs';
 
 export const CONVERSATION_DELIVERY_MIGRATION_ID='061_workbench_conversation_delivery_commands';
 const RECEIPT_SHAPES={
@@ -32,9 +33,8 @@ export async function conversationDeliveryReceiptCatalog(tx:PostgresTransaction)
  }
  return receipt;
 }
-/** Project only the verified 071 extension out of the existing exact receipt inventory.
- * Unknown columns, guards, FKs, indexes and triggers still participate in the old digest. */
-export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>):Promise<Record<string,unknown>>{
+/** Compare the exact receipt predecessor after verifying the registered 071 and 076 additions. */
+export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransaction,catalog:Record<string,unknown>):Promise<Record<string,unknown>|null>{
  const marker=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
  if(!marker)return catalog;
  if(!await serviceClosureSchemaReady(tx))throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
@@ -49,7 +49,11 @@ export async function normalizeServiceClosureReceiptCatalog(tx:PostgresTransacti
  const expected=CLOSURE_RESOURCE_PREDECESSORS[sha(guard.definition)];
  const baseline=(await tx.query<{command_resource_check:string}>('SELECT command_resource_check FROM pilot_ticket.closure_migration_baseline WHERE singleton')).rows[0];
  if(!expected||!baseline||sha(baseline.command_resource_check)!==expected)throw Error('SERVICE_CLOSURE_SCHEMA_DRIFT');
- return {...catalog,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
+ const indexes=catalog.indexes;
+ if(!Array.isArray(indexes)||!indexes.every(record))return null;
+ const priorIndexes=await predecessorIndexRows(tx,['pilot_ticket.ticket_command_receipt'],indexes);
+ if(!priorIndexes)return null;
+ return {...catalog,indexes:priorIndexes,columns:columns.filter(r=>r!==c),constraints:constraints.filter(r=>r!==f).map(r=>r===guard?{...r,definition:baseline.command_resource_check}:r)};
 }
 /** Complete inventories observed on actual PostgreSQL 18, with unchanged old SQL checksums. */
 export async function conversationDeliveryReceiptSchemaShape(tx:PostgresTransaction,phase:'before'|'after'='after'):Promise<keyof typeof RECEIPT_SHAPES|null>{

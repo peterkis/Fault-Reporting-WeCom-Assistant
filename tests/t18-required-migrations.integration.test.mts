@@ -46,7 +46,14 @@ test('the public T18 migration entry checks without writes, applies 045 then 051
       finally{await pool.query('UPDATE platform.schema_migration SET checksum_sha256=$2 WHERE migration_id=$1',[id,checksums.get(id)]);}
       assert.deepEqual(await ledger(pool),applied);
     }
-  },{workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:false});
+  },{partialSchemaOnly:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:false});
+  await withWeb01Fixture(async({pool,databaseUrl}:Fixture)=>{
+    const before=await ledger(pool);
+    for(const id of chain)assert.equal(before.find(row=>row.migration_id===id)?.checksum_sha256,checksums.get(id));
+    assert.equal((await verificationColumn(pool)).length,1);
+    assert.equal((await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'check'})).status,'NOOP_ALREADY_APPLIED');
+    assert.deepEqual(await ledger(pool),before);
+  },{workbenchManualReportsEnabled:true});
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t18no042',run:async(context:Database)=>{
     await applyThrough030(context);const before=await ledger(context.pool);
     assert.equal(before.some(row=>row.migration_id==='042_workbench_manual_reports'||chain.includes(row.migration_id)),false);

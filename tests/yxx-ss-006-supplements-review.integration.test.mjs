@@ -13,6 +13,7 @@ import { migrateServiceClosure } from '../app/server/scripts/service-closure-mig
 import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { migrateNotificationVocabulary } from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
+import { applyFullSchemaThrough077 } from './helpers/full-schema-migrations.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
@@ -167,10 +168,8 @@ test('SS-006 preserves review history across both resolution orders and keeps on
 
 test('SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart', { skip: !databaseUrl, timeout: 240_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx006life', run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The lifecycle case dismisses a Ticket: closure records (071) in the 072 vocabulary.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' });
-    await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' });await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const memberScope = scope('lifecycle');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const member = commandFor(store, memberScope);

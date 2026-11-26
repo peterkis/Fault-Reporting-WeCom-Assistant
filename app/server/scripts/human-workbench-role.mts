@@ -34,6 +34,7 @@ import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
 import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
 import {requireSystemClosureRestoreSchema} from './system-closure-restore-migrate.mjs';
+import {requireWorkbenchSchemas,workbenchReleaseSchemaChecks} from '../src/workbench-schema-readiness.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
 export const HUMAN_WORKBENCH_OPTIONS={
@@ -93,8 +94,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
      try{
       const response=await fetch('http://127.0.0.1:'+started.address.port+'/health/ready',{signal:AbortSignal.timeout(5000)});
       const readiness=await response.json() as {checks:Record<string,unknown>};
-      const missing=Object.entries(readiness.checks).filter(([key,value])=>value===false&&(key.includes('schema')||key==='workbench_wecom_auth')).map(([key])=>key);
-      if(missing.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:'+missing.join(','));
+      requireWorkbenchSchemas(readiness.checks,'HUMAN_WORKBENCH');
       return started;
      }catch(error){await runtime.stop();throw error;}
     }};
@@ -104,7 +104,10 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  if(role==='GATEWAY'){
  const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
  return runGateway({
-  beforeReady:async input=>{await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);},
+  beforeReady:async input=>{
+   await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);
+   requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(input.pool),'HUMAN_WORKBENCH');
+  },
   intakeFactory:({pool})=>{
    const scope=memberAdmission?null:createP2016InboundScope({bot_id:s.botId,person_hashes:s.personTargetHashes,group_hashes:s.groupTargetHashes});
    const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({identityHmacKey});
@@ -147,6 +150,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   })();
   await requireCompletionDismissalSchema({pool});
   await requireNotificationVocabularySchema({pool});await requireSystemClosureRestoreSchema({pool});
+  requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(pool),'HUMAN_WORKBENCH');
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;
   const notifications=createP2016TicketNotificationProjector({mvpPolicy:true,enabled:true,cardEnabled:true,reporterAccess:access(pool),explicitReferenceEnabled:true,roundNotificationBotId:s.botId,...(s.closureNotificationUndoWindowMs!==undefined?{closureNotificationUndoWindowMs:s.closureNotificationUndoWindowMs}:{})});

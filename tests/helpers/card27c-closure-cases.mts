@@ -56,7 +56,7 @@ async function withClosureFixture(run:(f:Fixture)=>Promise<void>){
   // decision and delivery themselves, without a competing Session projector.
   try{await listenConversationWorkbenchServer(runtime.server,{port:Number(new URL(f.origin).port)});const cookies=runtime.authenticate.browserCookies?.();assert.ok(cookies);await run({...f,runtime,cookies:cookies.map(c=>c.name+'='+c.value),browserCookies:cookies});}
   finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{precisionV212:true,ticketSelfHandlingEnabled:true,workbenchManualReviewEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+ },{precisionV212:true,ticketSelfHandlingEnabled:true,workbenchManualReviewEnabled:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
   await migrateWorkbenchManualReports({databaseUrl,mode:'apply'});await migrateWorkbenchPersonalRead({databaseUrl,mode:'apply'});
   await migrateWorkbenchFollowUpSchedules({databaseUrl:databaseUrl,mode:'apply'});
   await migrateWorkbenchFollowUpDueSignals({databaseUrl:databaseUrl,mode:'apply'});

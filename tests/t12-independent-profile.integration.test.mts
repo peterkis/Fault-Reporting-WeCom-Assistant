@@ -46,7 +46,7 @@ test('omitted and literal false T12 options avoid both new migrations and expose
    const bootstrap=(await a.get('/api/lifecycle/bootstrap')).value;assert.equal(bootstrap.ticket_takeover_completion_enabled,false);assert.equal(bootstrap.ticket_takeover_completion_draft_recovery_enabled,false);
    assert.deepEqual((await a.get(path)).value,before);assert.equal((await f.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_TICKET_TAKEOVER_COMPLETION'")).rowCount,0);
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- });
+ },{partialSchemaOnly:true});
 });
 
 for(const install039 of [false,true])test('enabled composite fails readiness and public commands before any receipt when '+(install039?'040 is absent':'039 and 040 are absent'),async()=>{
@@ -62,5 +62,5 @@ for(const install039 of [false,true])test('enabled composite fails readiness and
    assert.deepEqual((await f.pool.query('SELECT * FROM pilot_ticket.ticket WHERE id=$1::uuid',[first.ticket.id])).rows,before);
    assert.equal((await f.pool.query("SELECT 1 FROM pilot_ticket.ticket_command_receipt WHERE command_type='WORKBENCH_TICKET_TAKEOVER_COMPLETION'")).rowCount,0);
   }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
- },{ticketSelfHandlingEnabled:install039});
+ },{ticketSelfHandlingEnabled:install039,partialSchemaOnly:true});
 });

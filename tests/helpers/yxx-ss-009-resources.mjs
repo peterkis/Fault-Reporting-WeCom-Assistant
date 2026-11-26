@@ -10,6 +10,7 @@ import {migrateServiceClosure} from '../../app/server/scripts/service-closure-mi
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import {applyFullSchemaThrough077,applyCard42cMigrations} from './full-schema-migrations.mjs';
 export const closeSS009Resources=closeBrowserTestResources;
 
 // Current runtime queries require these successors even when the tested flow is
@@ -21,9 +22,9 @@ export async function migrateSS009RuntimeSuccessors({databaseUrl}){
 }
 
 export async function migrateSS009RuntimeDatabase({databaseUrl}){
-  await migrateCurrentBaselineWithYxx({databaseUrl});
-  await migrateSS009RuntimeSuccessors({databaseUrl});
+  await applyFullSchemaThrough077(databaseUrl);
 }
+export {applyCard42cMigrations};
 
 export async function withSS009Database({testContext,databaseUrl,run,candidateRoot,candidateRepresentation='SOURCE',...options}){
   assert.ok(['SOURCE','STAGED_RUNTIME'].includes(candidateRepresentation));

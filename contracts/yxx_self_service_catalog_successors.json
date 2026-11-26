@@ -1,5 +1,5 @@
 {
-  "description": "SS-010 limited runtime only: the exact Yxx catalog constraint rewrites made by successor migrations 071 and 071+072 on top of the frozen 034 catalog (yxx_self_service_catalog.json, unchanged). Generated on an isolated database: current baseline with Yxx, then 071, then 072.",
+  "description": "SS-010: historical profiles use frozen 034; profiles with 076 or 077 use the PG18 Intake inventory from yxx_current_migration_catalog.v2.json (through 066). Apply the registered 071/072 constraint replacements and the registered 076/077 index definitions to the corresponding inventory.",
   "071": [
     {
       "relation": "intake.service_intake_event",
@@ -29,6 +29,202 @@
       "deferrable": false,
       "deferred": false,
       "definition": "CHECK ((event_type = ANY (ARRAY['intake.received'::text, 'intake.needs_clarification'::text, 'intake.message_added'::text, 'intake.clarification_added'::text, 'intake.ticket_created'::text, 'intake.rule_decision_applied'::text, 'intake.manual_review_required'::text, 'intake.description_requested'::text, 'intake.web_received'::text, 'intake.web_supplement_added'::text])) OR (event_type = ANY (ARRAY['intake.dismissed'::text, 'intake.restored'::text])))"
+    }
+  ],
+  "076_indexes": [
+    {
+      "relation": "intake.channel_leg",
+      "name": "channel_leg_conversation_session_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX channel_leg_conversation_session_fk_idx ON intake.channel_leg USING btree (conversation_session_id)"
+    },
+    {
+      "relation": "intake.channel_leg",
+      "name": "channel_leg_conversation_thread_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX channel_leg_conversation_thread_fk_idx ON intake.channel_leg USING btree (conversation_thread_id)"
+    },
+    {
+      "relation": "intake.channel_leg",
+      "name": "channel_leg_origin_channel_message_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX channel_leg_origin_channel_message_fk_idx ON intake.channel_leg USING btree (origin_channel_message_id)"
+    },
+    {
+      "relation": "intake.channel_leg",
+      "name": "channel_leg_web_submission_intake_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX channel_leg_web_submission_intake_fk_idx ON intake.channel_leg USING btree (web_submission_id, source_intake_id)"
+    },
+    {
+      "relation": "intake.contact_journey",
+      "name": "contact_journey_current_session_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX contact_journey_current_session_fk_idx ON intake.contact_journey USING btree (current_session_id)"
+    },
+    {
+      "relation": "intake.contact_journey",
+      "name": "contact_journey_linked_ticket_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX contact_journey_linked_ticket_fk_idx ON intake.contact_journey USING btree (linked_ticket_id)"
+    },
+    {
+      "relation": "intake.contact_journey",
+      "name": "contact_journey_origin_session_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX contact_journey_origin_session_fk_idx ON intake.contact_journey USING btree (origin_session_id)"
+    },
+    {
+      "relation": "intake.deterministic_decision",
+      "name": "deterministic_decision_leg_intake_sub_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX deterministic_decision_leg_intake_sub_fk_idx ON intake.deterministic_decision USING btree (channel_leg_id, service_intake_id, primary_web_submission_id)"
+    },
+    {
+      "relation": "intake.deterministic_decision",
+      "name": "deterministic_decision_linked_ticket_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX deterministic_decision_linked_ticket_fk_idx ON intake.deterministic_decision USING btree (linked_ticket_id)"
+    },
+    {
+      "relation": "intake.deterministic_decision",
+      "name": "deterministic_decision_primary_web_sub_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX deterministic_decision_primary_web_sub_fk_idx ON intake.deterministic_decision USING btree (primary_web_submission_id)"
+    },
+    {
+      "relation": "intake.deterministic_decision",
+      "name": "deterministic_decision_session_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX deterministic_decision_session_fk_idx ON intake.deterministic_decision USING btree (conversation_session_id)"
+    },
+    {
+      "relation": "intake.manual_review_item",
+      "name": "manual_review_item_decision_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX manual_review_item_decision_fk_idx ON intake.manual_review_item USING btree (decision_id)"
+    },
+    {
+      "relation": "intake.manual_review_item",
+      "name": "manual_review_item_linked_ticket_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX manual_review_item_linked_ticket_fk_idx ON intake.manual_review_item USING btree (linked_ticket_id)"
+    },
+    {
+      "relation": "intake.manual_review_item",
+      "name": "manual_review_item_resolution_decision_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX manual_review_item_resolution_decision_fk_idx ON intake.manual_review_item USING btree (resolution_decision_id)"
+    },
+    {
+      "relation": "intake.manual_review_item",
+      "name": "manual_review_item_resolved_by_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX manual_review_item_resolved_by_fk_idx ON intake.manual_review_item USING btree (resolved_by_principal_id)"
+    },
+    {
+      "relation": "intake.manual_review_item",
+      "name": "manual_review_item_service_intake_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX manual_review_item_service_intake_fk_idx ON intake.manual_review_item USING btree (service_intake_id)"
+    },
+    {
+      "relation": "intake.service_intake",
+      "name": "service_intake_manual_actor_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX service_intake_manual_actor_fk_idx ON intake.service_intake USING btree (manual_actor_principal_id)"
+    },
+    {
+      "relation": "intake.service_intake",
+      "name": "service_intake_primary_web_sub_id_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX service_intake_primary_web_sub_id_fk_idx ON intake.service_intake USING btree (primary_web_submission_id, id)"
+    },
+    {
+      "relation": "intake.web_submission",
+      "name": "web_submission_command_receipt_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX web_submission_command_receipt_fk_idx ON intake.web_submission USING btree (command_receipt_id)"
+    },
+    {
+      "relation": "intake.web_submission",
+      "name": "web_submission_intake_reporter_fk_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX web_submission_intake_reporter_fk_idx ON intake.web_submission USING btree (intake_id, canonical_reporter_binding)"
+    }
+  ],
+  "077_indexes": [
+    {
+      "relation": "intake.contact_journey",
+      "name": "contact_journey_retention_epoch_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX contact_journey_retention_epoch_idx ON intake.contact_journey USING btree (retention_until_epoch_ms, id)"
+    },
+    {
+      "relation": "intake.service_intake",
+      "name": "service_intake_retention_epoch_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX service_intake_retention_epoch_idx ON intake.service_intake USING btree (retention_until_epoch_ms, id)"
+    },
+    {
+      "relation": "intake.web_request_binding",
+      "name": "web_request_binding_retention_epoch_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX web_request_binding_retention_epoch_idx ON intake.web_request_binding USING btree (retention_until_epoch_ms, intake_id)"
+    },
+    {
+      "relation": "intake.web_submission",
+      "name": "web_submission_retention_epoch_idx",
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX web_submission_retention_epoch_idx ON intake.web_submission USING btree (retention_until_epoch_ms, id)"
     }
   ]
 }

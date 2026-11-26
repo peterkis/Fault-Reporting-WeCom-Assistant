@@ -21,7 +21,7 @@ export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=
       const post=(path:string,body:Record<string,unknown>,reader:0|1=0)=>fetch(f.origin+path,{method:'POST',headers:{cookie:reader===0?firstCookie:secondCookie,origin:f.origin,'content-type':'application/json','idempotency-key':String(body.client_command_id),'x-csrf-token':reader===0?csrfA:csrfB},body:JSON.stringify(body)});
       await run({...f,runtime,firstCookie,secondCookie,outsiderCookie,browserCookie:a,get,post});
     }finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  },{workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  },{workbenchManualReportsEnabled:true,workbenchManualReviewEnabled:true,partialSchemaOnly:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     if(waiting)await migrateTicketSelfHandling({databaseUrl:databaseUrl,mode:'apply'});
     if(migrate)await migrateWorkbenchPersonalRead({databaseUrl:databaseUrl,mode:'apply'});await ensureCompletionDismissal(databaseUrl);
   }});

@@ -20,6 +20,7 @@ import { migrateServiceClosure } from '../app/server/scripts/service-closure-mig
 import { migrateCompletionDismissal } from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import { migrateNotificationVocabulary } from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
+import { applyFullSchemaThrough077 } from './helpers/full-schema-migrations.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
@@ -123,9 +124,8 @@ test('SS-005 authorization denies OAUTH_ONLY before touching the database and fe
 
 test('SS-005 accepts catalog service codes with the existing receipt and idempotency contract', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxcatalog', run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const memberScope = scope('catalog');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const input = { ...requestInput('门诊医生工作站打不开'), service_code: 'CLINICAL.OUTPATIENT_WORKSTATION' };
@@ -145,9 +145,8 @@ test('SS-005 accepts catalog service codes with the existing receipt and idempot
 
 test('SS-005 member list previews only retained initial Web descriptions and locations', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxpreview', run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const a = scope('preview-a'), b = scope('preview-b');
     const contexts = { A: authContext(a), B: authContext(b) };
     const { authorization } = localAuthorization(contexts);
@@ -186,9 +185,8 @@ test('SS-005 member list previews only retained initial Web descriptions and loc
 
 test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail', { skip: !databaseUrl, timeout: 180_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005', run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const scopeA = scope('a');
     const scopeB = scope('b');
     const contexts = { A: authContext(scopeA), B: authContext(scopeB) };
@@ -392,9 +390,8 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
 
 test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { skip: !databaseUrl, timeout: 240_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005mix', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const memberScope = scope('mixed');
     const contexts = { A: authContext(memberScope) };
     const { authorization } = localAuthorization(contexts);
@@ -483,9 +480,8 @@ test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { 
 
 test('SS-005 extends aggregate retention for a late accepted supplement', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005ret', run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
     // The current self-service runtime records closures (071) in the ADR-0058 vocabulary (072) and its 073 supplement.
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const memberScope = scope('retention');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET, retentionMs: 60_000 });
     const root = await store.accept({ scope: memberScope, input: requestInput('处方提交不了') });
@@ -527,8 +523,7 @@ test('SS-005 extends aggregate retention for a late accepted supplement', { skip
 
 test('SS-005 restores a system out-of-scope closure once when the reporter supplements it', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005rst', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
-    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
-    await migrateServiceClosure({ databaseUrl: isolated, mode: 'apply' }); await migrateCompletionDismissal({ databaseUrl: isolated, mode: 'apply' }); await migrateNotificationVocabulary({ databaseUrl: isolated, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolated, mode: 'apply' });
+    await applyFullSchemaThrough077(isolated);
     const memberScope = scope('restore');
     const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
     const realtime = createP2016RealtimeProjector({ pool, enabled: true });

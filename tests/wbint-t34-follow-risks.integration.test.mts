@@ -33,18 +33,28 @@ async function facts(f:Fixture){return (await f.pool.query(`SELECT
  (SELECT count(*)::integer FROM notification.outbox) AS notifications`)).rows[0];}
 
 test('T34 default OFF keeps the existing host ready without 044 or follow SQL',async()=>{
- await withWeb01Fixture(async(f:Fixture)=>{
+ for(const partialSchemaOnly of [true,false])await withWeb01Fixture(async(f:Fixture)=>{
   const http=client(f),target=f.tickets[1];assert.ok(target);const path='/api/workbench/items/ticket/'+target.ticket.id;
   const bootstrap=await http.read('/api/lifecycle/bootstrap');assert.equal(bootstrap.workbench_follow_enabled,false);assert.equal(bootstrap.workbench_follow_draft_recovery_enabled,false);
   const detail=await http.read(path);assert.equal(Object.hasOwn(object(detail.item),'attention'),false);
   assert.equal((await http.get('/api/workbench/board?column=pending&scope=related')).status,400);
   assert.equal((await http.get(path+'/follow/commands/'+randomUUID())).status,404);
-  assert.equal((await f.pool.query("SELECT to_regclass('pilot_ticket.workbench_item_follow') AS relation")).rows[0]?.relation,null);
+  const followTable=(await f.pool.query("SELECT to_regclass('pilot_ticket.workbench_item_follow') IS NOT NULL AS present")).rows[0];
+  assert.equal(followTable?.present,!partialSchemaOnly);
   const initial=await f.runtime.coordinator.backlog(),bound=Math.ceil(initial.total/f.runtime.coordinator.batchSize)+3;
   let drained=false;for(let step=0;step<bound;step++){const result=await f.runtime.coordinator.runOnce();assert.ok(result.streams.every(stream=>stream.failures.length===0));const remaining=await f.runtime.coordinator.backlog();if(result.processed===0&&remaining.total===0){drained=true;break;}}
   assert.equal(drained,true,'the existing host requires the actual fixture projection to finish before readiness');
-  const ready=await fetch(f.origin+'/health/ready');assert.equal(ready.status,200);
- },{chronologicalTicketEvents:true});
+  const ready=await fetch(f.origin+'/health/ready'),checks=object(object(await ready.json()).checks);
+  assert.equal(Object.hasOwn(checks,'workbench_follow_schema'),false);
+  const failed=Object.keys(checks).filter(name=>checks[name]!==true).sort();
+  if(partialSchemaOnly){
+   assert.deepEqual(failed,['fk_indexes_schema','retention_time_contract_schema']);
+   assert.equal(ready.status,503);
+  }else{
+   assert.deepEqual(failed,[]);
+   assert.equal(ready.status,200);
+  }
+ },{chronologicalTicketEvents:true,partialSchemaOnly});
 });
 
 test('T34 explicit intent uses exact HTTP fences and concurrent CAS, with caller-only receipts and current READ before replay',async()=>{
@@ -103,7 +113,7 @@ test('T34 exact readiness rejects weakened follow CHECK, changed migration check
   assert.equal((await f.pool.query("SELECT to_regclass('pilot_ticket.workbench_item_follow') AS relation")).rows[0]?.relation,null);
   assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'apply'})).status,'APPLIED');
   assert.equal((await migrateWorkbenchFollow({databaseUrl:f.databaseUrl,mode:'apply'})).status,'NOOP_ALREADY_APPLIED');
- },{workbenchFollowEnabled:true,manualProjection:true});
+ },{workbenchFollowEnabled:true,manualProjection:true,partialSchemaOnly:true});
 });
 
 test('T34 a historical UUID waiting on its actual receipt lock rechecks the current caller READ before replay',async()=>{
