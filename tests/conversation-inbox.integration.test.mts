@@ -254,6 +254,45 @@ test('server grouping precedes pagination even when one reporter has over 200 Se
     }finally{releaseMaterial();request.socket.destroy();}
   },{inbox:true});
 });
+test('related history cursors survive another contact gaining a session and reject changes to their own scope or boundary',async()=>{
+  await withT22Fixture(async({origin,cookie,pool,principals})=>{
+    const admin=principals[0];assert.ok(admin);
+    const reporter='history-cursor-person-a';
+    const route=await addInboxSession(pool,{reporter,group:'history-cursor-group-one'});
+    const latest=await addInboxSession(pool,{reporter,group:'history-cursor-group-two'});
+    await pool.query("UPDATE conversation.session SET last_activity_at=last_activity_at+interval '1 minute' WHERE id=$1::uuid",[latest.id]);
+    const get=(cursor?:string)=>fetch(origin+'/api/workbench/conversations/'+route.id+'/related-sessions?limit=1'+(cursor?'&cursor='+encodeURIComponent(cursor):''),{headers:{cookie}});
+    const firstCursor=async()=>{
+      const response=await get();assert.equal(response.status,200);
+      const page=await response.json() as ConversationRelatedPage;
+      assert.deepEqual(page.items.map(row=>row.session.session_id),[latest.id]);
+      assert.ok(page.next_cursor);return page.next_cursor;
+    };
+    const expectInvalid=async(cursor:string,reason:string)=>{
+      const response=await get(cursor);
+      assert.equal(response.status,400,reason);
+      assert.equal((await response.json() as {error:{code:string}}).error.code,'WORKBENCH_CURSOR_INVALID',reason);
+    };
+
+    const cursor=await firstCursor();
+    const other=await addInboxSession(pool,{reporter:'history-cursor-person-b',group:route.group});
+    assert.equal((await fetch(origin+'/api/workbench/conversations/'+other.id+'?view=chat',{headers:{cookie}})).status,200);
+    const response=await get(cursor);assert.equal(response.status,200);
+    const next=await response.json() as ConversationRelatedPage;
+    assert.deepEqual(next.items.map(row=>row.session.session_id),[route.id]);assert.equal(next.next_cursor,null);
+
+    const tampered=cursor.replace(/\.(.)/u,(_match,first:string)=>first==='A'?'.B':'.A');
+    await expectInvalid(tampered,'modified signature');
+    await pool.query("DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1::uuid AND team_id='PILOT_IT'",[admin.id]);
+    await expectInvalid(cursor,'changed team binding while the admin can still read both sessions');
+    const rebound=await firstCursor();
+    await pool.query("UPDATE conversation.session SET last_activity_at=last_activity_at+interval '1 second' WHERE id=$1::uuid",[latest.id]);
+    await expectInvalid(rebound,'changed activity time at the page boundary');
+    const updated=await firstCursor();
+    await addInboxSession(pool,{reporter,group:'history-cursor-group-three'});
+    await expectInvalid(updated,'new session for the anchor contact');
+  },{inbox:true});
+});
 test('assignment-derived scope changes invalidate inbox and related cursors while their anchors remain readable',async()=>{
   await withT22Fixture(async({origin,handlerCookie,pool,principals})=>{
     const handler=principals[1];assert.ok(handler);

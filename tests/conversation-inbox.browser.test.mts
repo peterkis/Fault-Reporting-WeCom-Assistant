@@ -251,12 +251,37 @@ test('topic history and same-topic direct navigation remain separate, readable a
         assert.equal(sample.overlap,false,'navigation overlap at '+width);assert.equal(sample.clipped,false,'direct navigation text clipping at '+width);assert.equal(sample.reachable,true,'both navigation targets at '+width);
       }
       trace.topicPhase('click-history');
-      await trace.observeHistoryClick(browser);
-      trace.historyClickSucceeded=false;
+      await browser.evaluate(`(()=>{
+        const path=${JSON.stringify('/api/workbench/conversations/'+group.id+'/related-sessions')},original=globalThis.fetch;
+        const state=globalThis.__historyRecovery={rejectedStatus:null,latestCursor:null,historyStatus:null,sawAlert:false,sawBack:false};
+        let armed=true;
+        const observer=new MutationObserver(records=>{
+          for(const record of records)for(const node of record.addedNodes){
+            if(node instanceof Element&&(node.matches('[role=alert]')||node.querySelector('[role=alert]')))state.sawAlert=true;
+          }
+          if(state.rejectedStatus===400&&state.latestCursor===null&&document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题'))state.sawBack=true;
+        });
+        observer.observe(document.querySelector('.inbox-topic-navigation-host'),{childList:true,subtree:true});
+        globalThis.fetch=async(input,options)=>{
+          const url=new URL(input,location.href);
+          if(url.pathname!==path)return original(input,options);
+          const cursor=url.searchParams.get('cursor'),reject=armed&&cursor!==null;
+          if(reject){armed=false;url.searchParams.set('cursor','invalid-history-cursor');}
+          const response=await original(url,options);
+          if(reject)state.rejectedStatus=response.status;
+          else if(cursor===null&&state.rejectedStatus===400&&response.ok)state.latestCursor=(await response.clone().json()).next_cursor;
+          else if(cursor!==null&&cursor===state.latestCursor)state.historyStatus=response.status;
+          return response;
+        };
+      })()`);
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');
-      trace.historyClickSucceeded=true;
-      trace.topicPhase('wait-history');
-      await trace.waitForHistory(browser,"document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
+      await browser.waitFor("globalThis.__historyRecovery.rejectedStatus===400&&Boolean(globalThis.__historyRecovery.latestCursor)&&Boolean(document.querySelector('.inbox-new-direct'))&&document.querySelector('.inbox-topic-pages')?.textContent.includes('更多主题与窗口')");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.inbox-topic-navigation [role=alert]'))||globalThis.__historyRecovery.sawAlert"),false,'cursor recovery never renders a navigation alert');
+      assert.equal(await browser.evaluate("document.querySelector('.inbox-topic-pages').textContent.includes('返回最新主题')"),false);
+      assert.equal(await browser.evaluate('globalThis.__historyRecovery.sawBack'),false,'a rejected history cursor never renders the back-to-latest control');
+      await clickWorkbenchControl(browser,'.inbox-topic-pages button');
+      await browser.waitFor("document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
+      await browser.waitFor("globalThis.__historyRecovery.historyStatus===200");
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+group.id,'history paging keeps the current Session');
       trace.topicPhase('back');cursorTrace.samplePage(browser,'back-start',sampleBinding);
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))");
