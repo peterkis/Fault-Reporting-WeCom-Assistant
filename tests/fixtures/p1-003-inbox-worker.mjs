@@ -1,3 +1,4 @@
+import {checkedLoopbackDatabaseUrl} from '../../app/server/src/platform/loopback-database.mjs';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 import { adaptWeComSdkFrame } from '../../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import { createChannelMessageInbox } from '../../app/server/src/p1-003-channel-message-inbox.mjs';
@@ -21,7 +22,7 @@ if (!['first', 'replay'].includes(mode) || !/^p1-003-restart-[a-f0-9-]{36}$/.tes
   }, { receivedAt: new Date().toISOString() });
 
   const pool = createPostgresPool({
-    connectionString: process.env.PILOT_DATABASE_URL,
+    connectionString: checkedLoopbackDatabaseUrl(process.env.PILOT_DATABASE_URL),
     max: 2,
     connectionTimeoutMillis: 2_000,
   });

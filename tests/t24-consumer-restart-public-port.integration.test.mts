@@ -36,8 +36,10 @@ test('fresh consumer and an independent connection recover a committed staff nod
   const closed=await http.detail(id);assert.equal(closed.status,'COMPLETED');
   assert.deepEqual(await physical(context.pool),beforeIds,'committed staff completion is not itself a physical Delivery append');
   // Recreate public consumer with new RAM cursor and a real independent connection; not an App/process restart claim.
-  const freshPool=createPostgresPool({connectionString:context.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t24_draft_fresh_consumer'});
+  const freshPool=createPostgresPool({...context.databaseConnection,max:1,connectionTimeoutMillis:5000,application_name:'t24_draft_fresh_consumer'});
   try{
+   const endpoint='SELECT current_database() AS db,inet_server_addr()::text AS address,inet_server_port() AS port';
+   assert.deepEqual((await freshPool.query(endpoint)).rows,(await context.pool.query(endpoint)).rows);
    const fresh=createTicketRoundNotifications({pool:freshPool,enabled:true,botId:'bot-test',reporterAccess:context.runtime.reporterAccess});
    await fresh.runOnce();await fresh.runOnce();
   }finally{await freshPool.end();assert.equal(freshPool.totalCount,0);}

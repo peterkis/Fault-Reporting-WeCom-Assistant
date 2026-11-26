@@ -29,6 +29,23 @@ test('P1-011 parses only explicit backup drill modes and keeps credentials out o
   ]);
 });
 
+test('backup retains the caller’s IPv6 host address and native localhost resolution',()=>{
+  const previous=process.env.PGHOSTADDR;
+  try{
+    process.env.PGHOSTADDR='::1';
+    const connection=buildPgConnectionArgs('postgresql://pilot:synthetic@localhost:5432/pilot');
+    for(const args of [connection.args,connection.common_args,connection.argsForDatabase('restored')])
+      assert.equal(args[args.indexOf('--host')+1],'localhost');
+    const env=connection.environmentFor({PGHOST:'localhost',PGHOSTADDR:'::1',PGSSLMODE:'verify-full'});
+    assert.equal(env.PGHOST,'localhost');assert.equal(env.PGHOSTADDR,'::1');assert.equal(env.PGSSLMODE,'verify-full');
+    assert.equal(connection.environmentFor({}).PGHOSTADDR,undefined);
+    const options=connection.poolConfigFor('restored');
+    assert.equal(options.host,'localhost');assert.ok(!Object.hasOwn(options,'stream'));
+  }finally{
+    if(previous===undefined)delete process.env.PGHOSTADDR;else process.env.PGHOSTADDR=previous;
+  }
+});
+
 test('P1-011 backup check validates controls without writing credential or encryption-key values', () => {
   const backupKey = randomBytes(32).toString('base64');
   const result = spawnSync(process.execPath, [script, '--check'], {

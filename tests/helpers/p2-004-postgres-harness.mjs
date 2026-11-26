@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl, loopbackFixtureTarget, withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
@@ -32,7 +33,8 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
   assert.ok(databaseName.length <= 63);
   createdDatabases.add(databaseName);
   const quotedName = `"${databaseName}"`;
-  const adminPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('admin') });
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
+  const adminPool = createPostgresPool({ ...connection, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('admin') });
   const disconnects = new Set();
   let pool;
   let result;
@@ -41,15 +43,15 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
   try {
     await adminPool.query(`CREATE DATABASE ${quotedName} TEMPLATE template0`);
     activeDatabases.add(databaseName);
-    const isolated = new URL(databaseUrl);
+    const isolated = new URL(fixtureUrl);
     isolated.pathname = `/${databaseName}`;
-    pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: applicationName(purpose) });
+    pool = createPostgresPool({ ...connection, database:databaseName, max, connectionTimeoutMillis: 2_000, application_name: applicationName(purpose) });
     pool.on('connect', client => {
       const disconnected = new Promise(resolve => client.once('end', resolve));
       disconnects.add(disconnected);
       disconnected.then(() => disconnects.delete(disconnected));
     });
-    result = await run({ pool, databaseName, databaseUrl: isolated.toString() });
+    result = await withFixtureMigrations(isolated.toString(), () => run({ pool, databaseName, databaseUrl: isolated.toString() }));
   } catch (error) {
     runError = error;
   } finally {
@@ -73,7 +75,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
 }
 
 export async function assertNoP2004Residual({ databaseUrl }) {
-  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('residual') });
+  const pool = createPostgresPool({ ...assertLoopbackDatabaseUrl(databaseUrl), max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('residual') });
   try {
     const result = await pool.query(
       `SELECT

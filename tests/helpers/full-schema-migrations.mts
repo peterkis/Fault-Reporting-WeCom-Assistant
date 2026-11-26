@@ -1,3 +1,4 @@
+import {migrationConnection} from '../../app/server/scripts/migration-database.mjs';
 import { readFile } from 'node:fs/promises';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 import { migrateCurrentBaselineWithYxx } from '../../app/server/scripts/migrate-current-baseline.mjs';
@@ -31,6 +32,7 @@ import { migrateServiceClosure } from '../../app/server/scripts/service-closure-
 import { migrateCompletionDismissal } from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import { migrateNotificationVocabulary } from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import { migrateSystemClosureRestore } from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import { migrateTicketTerminalAt } from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import { migrateFkIndexes } from '../../app/server/scripts/fk-indexes-migrate.mjs';
 import { migrateRetentionTimeContract } from '../../app/server/scripts/retention-and-time-contract-migrate.mjs';
 
@@ -52,7 +54,7 @@ const RAW_MEDIA_SQL_FILES = [
 
 async function applyRawMediaMigrationsWithout036(databaseUrl: string): Promise<void> {
   const pool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...migrationConnection(databaseUrl),
     max: 1,
     application_name: 'full_schema_raw_media_helper',
   });
@@ -134,11 +136,12 @@ export async function applyCard42cMigrations(databaseUrl: string): Promise<void>
   await migrateRetentionTimeContract(apply);
 }
 
-/** Shared full-schema setup through Card 42C (001..074, 076, 077). */
+/** Shared full-schema setup through Card 42C (001..077). */
 export async function applyFullSchemaThrough077(
   databaseUrl: string,
   options: FullSchemaMigrationOptions = {},
 ): Promise<void> {
   await applyFullSchemaThrough074(databaseUrl, options);
+  await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
   await applyCard42cMigrations(databaseUrl);
 }

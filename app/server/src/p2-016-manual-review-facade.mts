@@ -1,3 +1,4 @@
+import {FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,withFinalStatementClock} from './workbench-card-projections.mjs';
 import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
 import type { WorkbenchPrincipal } from './p2-006-workbench-authorization.mjs';
 import type { ManualReviewStore, ReviewRow, ReviewResolutionCode, ReviewPriority, ReviewStatus } from './p2-015-manual-review.mjs';
@@ -31,7 +32,7 @@ import { safeHash } from './p2-015-domain-contracts.mjs';
 import {readManualReportSource} from './workbench-manual-report-source.mjs';
 import { projectContactJourney,projectDecision } from './p2-015-projections.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
-import { createP2016TicketQuery,ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
+import { createP2016TicketQuery,ticketPredicateP2016,ticketReadSql,liveReader,currentItemReaderSql,currentReviewRouteSql,readableReviewJourneysSql,REVIEW_JOURNEY_SCOPE_LIMIT } from './p2-016-ticket-query.mjs';
 import { failP2016,guardP2016,exactP2016,uuidP2016,codeP2016,limitP2016,publicP2016,stampP2016,cursorP2016,decodeCursorP2016,textHashP2016,localP2016,transactionP2016 } from './p2-016-domain-contracts.mjs';
 import {normalizeClosureInput,intakeClosureSnapshot} from './service-closure-records.mjs';
 const ACTIONS: Readonly<Record<FacadeResolutionCode, SafeActionType[]>>=Object.freeze({
@@ -77,12 +78,12 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
   if(typeof manualSourceEnabled!=='boolean')failP2016();
   const ledger=createP2016CommandLedger({pool}),decisions=createDecisionStore(),core=createPilotTicketCore({pool});
   function storeFor(principal: WorkbenchPrincipal,transaction: PostgresTransaction=pool) {
-    const predicate=ticketPredicateP2016(principal);
     return createManualReviewStore({manualSource:manualSourceEnabled,authorizer:{authorizedJourneyIds:async()=>{
-      const q=await transaction.query<{ id: string }>(`SELECT j.id::text FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
-        WHERE ${predicate.sql} ORDER BY j.id LIMIT 10001`,predicate.values);
-      if(q.rows.length>10000)failP2016('REVIEW_SCOPE_TOO_LARGE',503);
-      return q.rows.map(r=>r.id);
+      const q=await transaction.query<{ id: string|null }>(`SELECT allowed.id FROM (${currentItemReaderSql('$1::uuid')}) reader
+        LEFT JOIN LATERAL (${readableReviewJourneysSql(ticketReadSql('t',liveReader))}) allowed ON TRUE`,[principal.principal_id]);
+      if(!q.rows.length)failP2016('FORBIDDEN',403);
+      if(q.rows.length>REVIEW_JOURNEY_SCOPE_LIMIT)failP2016('REVIEW_SCOPE_TOO_LARGE',503);
+      return q.rows.flatMap(row=>row.id===null?[]:[row.id]);
     }}});
   }
   async function detail({authContext,reviewId,transaction=pool}: DetailInput) {
@@ -97,22 +98,12 @@ export function createP2016ManualReviewFacade({pool,enabled=false,workspaceEnabl
   async function canonicalItem(input:DetailInput):Promise<CanonicalItem>{
     const transaction=input.transaction??pool,context=await detail(input);
     await materialFor(context,transaction);
-    const {review,principal}=context,predicate=ticketPredicateP2016(principal,2);
-    const ticket=await transaction.query<{id:string}>(`SELECT t.id::text FROM pilot_ticket.ticket t
-      JOIN intake.manual_review_item r ON r.id=$1::uuid JOIN intake.contact_journey j ON j.id=r.journey_id
-      WHERE (t.source_intake_id=r.service_intake_id OR t.id=r.linked_ticket_id OR t.id=j.linked_ticket_id)
-        AND ${predicate.sql} ORDER BY CASE WHEN t.id=j.linked_ticket_id THEN 0 ELSE 1 END,t.id LIMIT 1`,[review.id,...predicate.values]);
-    const actual=ticket.rows[0];if(actual)return {kind:'ticket',id:actual.id};
-    const pending=await transaction.query<{id:string}>(`SELECT r.id::text FROM intake.manual_review_item r
-      JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
-      JOIN intake.service_intake i ON i.id=r.service_intake_id WHERE r.service_intake_id=$1::uuid AND r.status='PENDING'
-        AND ${predicate.sql} AND i.retention_until>platform.local_now() AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
-        AND NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket actual
-          WHERE actual.source_intake_id=r.service_intake_id OR actual.id=r.linked_ticket_id OR actual.id=j.linked_ticket_id)
-        AND NOT EXISTS (SELECT 1 FROM intake.manual_review_item earlier WHERE earlier.service_intake_id=r.service_intake_id AND earlier.status='PENDING'
-          AND (earlier.created_at,earlier.id)<(r.created_at,r.id))
-      ORDER BY r.created_at,r.id LIMIT 1`,[review.service_intake_id,...predicate.values]);
-    return pending.rows[0]?{kind:'review',id:pending.rows[0].id}:{kind:'intake',id:review.service_intake_id};
+    const {review,principal}=context;
+    const route=currentReviewRouteSql('$1::uuid','$2::uuid',FINAL_EPOCH_SQL,FINAL_LOCAL_SQL);
+    const current=await transaction.query<CanonicalItem>(withFinalStatementClock(`SELECT kind,id::text FROM (${route}) target`),[review.id,principal.principal_id]);
+    if(current.rows[0])return current.rows[0];
+    await query.principal(input.authContext,transaction);
+    failP2016('NOT_FOUND',404);
   }
   function normalizeResolution(reviewId:unknown,body:unknown){
       guardP2016(enabled);const v=exactP2016(body,['client_command_id','expected_row_version','resolution_code','resolution_reason_code','target_journey_id','expected_material_basis','reason_code','secondary_reason_code','note','duplicate_of_ref','notify_reporter'],

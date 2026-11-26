@@ -37,7 +37,7 @@ export function createWorkbenchPersonalRead({pool,query,reviews,manualReviewEnab
     const scopedQuery={...query,principal:(authContext:unknown,transaction:PostgresTransaction=tx)=>query.principal(authContext,transaction)};
     const scopedReviews={canonicalItem:(value:Parameters<typeof reviews.canonicalItem>[0])=>reviews.canonicalItem({...value,transaction:tx})};
     const workbench=createWeb01WorkbenchQuery({pool:tx,query:scopedQuery,manualReviewEnabled,reviews:manualReviewEnabled?scopedReviews:null});
-    const item=await workbench.authorizedItem(input.authContext,kind,id);
+    const item=await workbench.authorizedIdentity(input.authContext,kind,id);
     let intakeId=item.intake_id;
     if(kind==='review'){
       // The original Review must still be authorized before following its canonical navigation.

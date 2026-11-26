@@ -123,7 +123,7 @@ test('39C C1 owner truncation and C2 follow-ups in Chrome',{timeout:220000},t=>w
     [nestedOwnerTicket,zhouPrincipal,'IN_PROGRESS','门诊六楼（合成）'],
   ] as const){
     await f.pool.query(
-      'UPDATE pilot_ticket.ticket SET status=$2,assignee_id=$3,reported_location_text=$4,updated_at=platform.local_now() WHERE id=$1::uuid',
+      'UPDATE pilot_ticket.ticket SET status=$2,assignee_id=$3,reported_location_text=$4,updated_at=platform.local_now(),terminal_at=NULL,terminal_epoch_ms=NULL WHERE id=$1::uuid',
       [ticketId,status,principalId,location],
     );
   }

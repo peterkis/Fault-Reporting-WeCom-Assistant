@@ -16,6 +16,8 @@ import {requireServiceClosureSchema,SERVICE_CLOSURE_MIGRATION_ID} from '../app/s
 import {COMPLETION_DISMISSAL_MIGRATION_ID} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {NOTIFICATION_VOCABULARY_MIGRATION_ID} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {SYSTEM_CLOSURE_RESTORE_MIGRATION_ID} from '../app/server/scripts/system-closure-restore-migrate.mjs';
+import type {CatalogSnapshot} from '../app/server/src/platform/postgres-catalog.mjs';
+import {TICKET_TERMINAL_AT_MIGRATION_ID,type TicketTerminalCatalogRow} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {FK_INDEXES_MIGRATION_ID,FK_INDEX_TARGETS} from '../app/server/scripts/fk-indexes-migrate.mjs';
 import {RETENTION_TIME_CONTRACT_MIGRATION_ID,RETENTION_INDEX_TARGETS} from '../app/server/scripts/retention-and-time-contract-migrate.mjs';
 
@@ -24,8 +26,8 @@ const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,Y
   YIXIAOXIU_H5_FFMPEG_PATH:join(tmpdir(),'ffmpeg.exe'),YIXIAOXIU_H5_FFPROBE_PATH:join(tmpdir(),'ffprobe.exe')};
 const pool=()=>createPostgresPool({connectionString:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_h5_no_connection',max:1,connectionTimeoutMillis:100});
 
-interface SchemaRow {migration_id?:string;checksum_sha256?:string;record?:boolean;termination?:boolean;baseline?:boolean;column?:boolean;structural_match_count?:number;retention_index_count?:number;local_now_ok?:boolean;physical_epoch_ok?:boolean;legacy_expiry_absent?:boolean;epoch_expiry_valid?:boolean}
-interface SchemaDatabase {query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:SchemaRow[]}>}
+interface SchemaRow {migration_id?:string;checksum_sha256?:string;record?:boolean;termination?:boolean;baseline?:boolean;column?:boolean;ready?:boolean;structural_match_count?:number;retention_index_count?:number;local_now_ok?:boolean;physical_epoch_ok?:boolean;legacy_expiry_absent?:boolean;epoch_expiry_valid?:boolean}
+interface SchemaDatabase {query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:(SchemaRow|CatalogSnapshot<TicketTerminalCatalogRow>)[]}>}
 const moduleData=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
 /** Preserve compiled business imports; replace only named process/DB launch leaves. */
 async function importRole(moduleName:string,overrides:Readonly<Record<string,string>>,processUrl:string){
@@ -65,7 +67,7 @@ async function workerBeforeReady(h5:NodeJS.ProcessEnv){
   return roleBeforeReady('human-workbench-role','worker',{WORKBENCH_RUNTIME_PROFILE:'human-v1',WORKBENCH_ROLE_SETTINGS:JSON.stringify({role:'WORKER',transportEnabled:false,botId:'synthetic-worker-bot'}),
     PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-worker-identity-key',P2_016_REPORTER_HMAC_SECRET:'synthetic-worker-reporter-secret'.repeat(2),...h5});
 }
-function schemaPool(migrations:ReadonlySet<string>,catalog:{record?:boolean;termination?:boolean;checksum?:string;completionChecksum?:string;baseline?:boolean;vocabularyChecksum?:string;vocabularyBaseline?:boolean;restoreChecksum?:string;restoreColumn?:boolean;fkChecksum?:string;fkMatchCount?:number;retentionChecksum?:string;retentionIndexCount?:number;localNowOk?:boolean;physicalEpochOk?:boolean;legacyExpiryAbsent?:boolean;epochExpiryValid?:boolean}={}){
+function schemaPool(migrations:ReadonlySet<string>,catalog:{record?:boolean;termination?:boolean;checksum?:string;completionChecksum?:string;baseline?:boolean;vocabularyChecksum?:string;vocabularyBaseline?:boolean;restoreChecksum?:string;restoreColumn?:boolean;terminalChecksum?:string;terminalColumns?:boolean;terminalConstraint?:boolean;terminalIndex?:boolean;fkChecksum?:string;fkMatchCount?:number;retentionChecksum?:string;retentionIndexCount?:number;localNowOk?:boolean;physicalEpochOk?:boolean;legacyExpiryAbsent?:boolean;epochExpiryValid?:boolean}={}){
   const queried:string[][]=[];
   return {queried,query:async(sql:string,values?:readonly unknown[])=>{
     if(values?.[0]===SERVICE_CLOSURE_MIGRATION_ID){
@@ -95,6 +97,13 @@ function schemaPool(migrations:ReadonlySet<string>,catalog:{record?:boolean;term
       const checksum=createHash('sha256').update(await readFile(new URL('../database/migrations/074_system_closure_restore.sql',import.meta.url))).digest('hex');
       const rows:SchemaRow[]=migrations.has(SYSTEM_CLOSURE_RESTORE_MIGRATION_ID)?[{checksum_sha256:catalog.restoreChecksum??checksum,column:catalog.restoreColumn??true}]:[];
       return {rowCount:rows.length,rows};
+    }
+    if(values?.[0]===TICKET_TERMINAL_AT_MIGRATION_ID){
+      assert.match(sql,/^\s*WITH caller_path AS MATERIALIZED/u);assert.match(sql,/FROM rendered\s+WHERE pg_catalog\.set_config/u);assert.match(sql,/FROM \(WITH cons AS/u);assert.match(sql,/ticket_terminal_status_check/u);assert.match(sql,/AS ready/u);
+      queried.push([TICKET_TERMINAL_AT_MIGRATION_ID]);
+      const checksum=createHash('sha256').update(await readFile(new URL('../database/migrations/075_ticket_terminal_at.sql',import.meta.url))).digest('hex');
+      const snapshot=migrations.has(TICKET_TERMINAL_AT_MIGRATION_ID)?{checksum_sha256:catalog.terminalChecksum??checksum,ready:catalog.terminalColumns!==false&&catalog.terminalConstraint!==false&&catalog.terminalIndex!==false}:null;
+      return {rowCount:1,rows:[{snapshot} satisfies CatalogSnapshot<TicketTerminalCatalogRow>]};
     }
     if(values?.[1]===FK_INDEXES_MIGRATION_ID){
       assert.match(sql,/^\s*SELECT/u);assert.match(sql,/jsonb_to_recordset/u);
@@ -152,10 +161,10 @@ test('performance Worker refuses readiness before 066 and accepts the same datab
   const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
   try{
     const ready=await workerBeforeReady({...h5Env,YIXIAOXIU_H5_PERFORMANCE_ENABLED:'true'});
-    const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+    const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,TICKET_TERMINAL_AT_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
     await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});
     migrations.add('066_yixiaoxiu_h5_media_previews');await ready(database);
-    assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);
+    assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media','066_yixiaoxiu_h5_media_previews'],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[TICKET_TERMINAL_AT_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);
     assert.equal(fetch.mock.callCount(),0);
   }finally{fetch.mock.restore();}
 });
@@ -165,8 +174,8 @@ test('nonperformance Worker keeps the 064/065 requirement without requiring 066'
   try{
     for(const performance of [undefined,'false']){
       const ready=await workerBeforeReady({...h5Env,...(performance===undefined?{}:{YIXIAOXIU_H5_PERFORMANCE_ENABLED:performance})});
-      const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
-      await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media'],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);
+      const migrations=new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,TICKET_TERMINAL_AT_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID,'064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']),database=schemaPool(migrations);
+      await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media'],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[TICKET_TERMINAL_AT_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);
       for(const missing of ['064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media']){
         migrations.delete(missing);await assert.rejects(ready(database),{message:'HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema'});migrations.add(missing);
       }
@@ -178,7 +187,7 @@ test('nonperformance Worker keeps the 064/065 requirement without requiring 066'
 test('disabled H5 Worker readiness does not query schema or call a Provider',async()=>{
   const fetch=mock.method(globalThis,'fetch',async()=>{throw Error('UNEXPECTED_PROVIDER_CALL');});
   // U3/U4 closure is a current runtime dependency even when optional H5 is off.
-  try{const ready=await workerBeforeReady({}),database=schemaPool(new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID]));await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);assert.equal(fetch.mock.callCount(),0);}finally{fetch.mock.restore();}
+  try{const ready=await workerBeforeReady({}),database=schemaPool(new Set([SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,TICKET_TERMINAL_AT_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID]));await ready(database);assert.deepEqual(database.queried,[[SERVICE_CLOSURE_MIGRATION_ID],[COMPLETION_DISMISSAL_MIGRATION_ID],[NOTIFICATION_VOCABULARY_MIGRATION_ID],[SYSTEM_CLOSURE_RESTORE_MIGRATION_ID],[TICKET_TERMINAL_AT_MIGRATION_ID],[FK_INDEXES_MIGRATION_ID],[RETENTION_TIME_CONTRACT_MIGRATION_ID]]);assert.equal(fetch.mock.callCount(),0);}finally{fetch.mock.restore();}
 });
 
 test('current Human and P2016 Worker/Gateway require 071-077 before startup even with H5 disabled',async()=>{
@@ -197,17 +206,19 @@ test('current Human and P2016 Worker/Gateway require 071-077 before startup even
       migrations.add(SERVICE_CLOSURE_MIGRATION_ID);await assert.rejects(guard(database),{message:'COMPLETION_DISMISSAL_SCHEMA_REQUIRED'});
       migrations.add(COMPLETION_DISMISSAL_MIGRATION_ID);await assert.rejects(guard(database),{message:'NOTIFICATION_VOCABULARY_SCHEMA_REQUIRED'});
       migrations.add(NOTIFICATION_VOCABULARY_MIGRATION_ID);await assert.rejects(guard(database),{message:'SYSTEM_CLOSURE_RESTORE_SCHEMA_REQUIRED'});
+      migrations.add(SYSTEM_CLOSURE_RESTORE_MIGRATION_ID);await assert.rejects(guard(database),{message:'TICKET_TERMINAL_AT_SCHEMA_REQUIRED'});
       const schemaRequired=profile+'_SCHEMA_REQUIRED:';
-      migrations.add(SYSTEM_CLOSURE_RESTORE_MIGRATION_ID);await assert.rejects(guard(database),{message:schemaRequired+'fk_indexes_schema,retention_time_contract_schema'});
+      migrations.add(TICKET_TERMINAL_AT_MIGRATION_ID);await assert.rejects(guard(database),{message:schemaRequired+'fk_indexes_schema,retention_time_contract_schema'});
       migrations.add(FK_INDEXES_MIGRATION_ID);await assert.rejects(guard(database),{message:schemaRequired+'retention_time_contract_schema'});
       migrations.add(RETENTION_TIME_CONTRACT_MIGRATION_ID);await guard(database);
       for(const catalog of [{record:false},{termination:false},{checksum:'0'.repeat(64)}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
       for(const catalog of [{completionChecksum:'0'.repeat(64)},{baseline:false}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'COMPLETION_DISMISSAL_SCHEMA_REQUIRED'});
       for(const catalog of [{vocabularyChecksum:'0'.repeat(64)},{vocabularyBaseline:false}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'NOTIFICATION_VOCABULARY_SCHEMA_REQUIRED'});
       for(const catalog of [{restoreChecksum:'0'.repeat(64)},{restoreColumn:false}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'SYSTEM_CLOSURE_RESTORE_SCHEMA_REQUIRED'});
+      for(const catalog of [{terminalChecksum:'0'.repeat(64)},{terminalColumns:false},{terminalConstraint:false},{terminalIndex:false}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:'TICKET_TERMINAL_AT_SCHEMA_REQUIRED'});
       for(const catalog of [{fkChecksum:'0'.repeat(64)},{fkMatchCount:FK_INDEX_TARGETS.length-1}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:schemaRequired+'fk_indexes_schema'});
       for(const catalog of [{retentionChecksum:'0'.repeat(64)},{retentionIndexCount:RETENTION_INDEX_TARGETS.length-1},{localNowOk:false},{physicalEpochOk:false},{legacyExpiryAbsent:false},{epochExpiryValid:false}])await assert.rejects(guard(schemaPool(migrations,catalog)),{message:schemaRequired+'retention_time_contract_schema'});
-      assert.ok(database.queried.every(ids=>ids.length===1&&[SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID].includes(ids[0]??'')),'disabled H5 does not gain any optional schema dependency');
+      assert.ok(database.queried.every(ids=>ids.length===1&&[SERVICE_CLOSURE_MIGRATION_ID,COMPLETION_DISMISSAL_MIGRATION_ID,NOTIFICATION_VOCABULARY_MIGRATION_ID,SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,TICKET_TERMINAL_AT_MIGRATION_ID,FK_INDEXES_MIGRATION_ID,RETENTION_TIME_CONTRACT_MIGRATION_ID].includes(ids[0]??'')),'disabled H5 does not gain any optional schema dependency');
     }
     await assert.rejects(requireServiceClosureSchema({pool:{query:async()=>{throw Error('SYNTHETIC_DATABASE_UNAVAILABLE');}}}),{message:'SERVICE_CLOSURE_SCHEMA_REQUIRED'});
     assert.equal(fetch.mock.callCount(),0);
@@ -427,10 +438,10 @@ test('App H5 readiness requires the directory schema while a media-only Worker d
 
 test('H5-enabled P2016 readiness checks reminder tables even when follow-up actions are disabled',async()=>{
   const database=pool(),directory=await mkdtemp(join(tmpdir(),'yxx-h5-runtime-reminders-ready-'));
-  const scheduleId='049_workbench_follow_up_schedules',dueId='053_workbench_follow_up_due_signals',closureId='071_unified_service_closure',completionId=COMPLETION_DISMISSAL_MIGRATION_ID,vocabularyId=NOTIFICATION_VOCABULARY_MIGRATION_ID,restoreId=SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,fkId=FK_INDEXES_MIGRATION_ID,retId=RETENTION_TIME_CONTRACT_MIGRATION_ID;
+  const scheduleId='049_workbench_follow_up_schedules',dueId='053_workbench_follow_up_due_signals',closureId='071_unified_service_closure',completionId=COMPLETION_DISMISSAL_MIGRATION_ID,vocabularyId=NOTIFICATION_VOCABULARY_MIGRATION_ID,restoreId=SYSTEM_CLOSURE_RESTORE_MIGRATION_ID,terminalId=TICKET_TERMINAL_AT_MIGRATION_ID,fkId=FK_INDEXES_MIGRATION_ID,retId=RETENTION_TIME_CONTRACT_MIGRATION_ID;
   const checksum=async(id:string)=>createHash('sha256').update(await readFile(new URL('../database/migrations/'+id+'.sql',import.meta.url))).digest('hex');
-  const checksums=new Map([[scheduleId,await checksum(scheduleId)],[dueId,await checksum(dueId)],[closureId,await checksum(closureId)],[completionId,await checksum('072_ticket_completion_dismissal')],[vocabularyId,await checksum('073_notification_vocabulary')],[restoreId,await checksum('074_system_closure_restore')],[fkId,await checksum('076_fk_indexes')],[retId,await checksum('077_retention_and_time_contract')]]);
-  const migrations=new Set(['031_p2_016_ticket_lifecycle_workbench_notifications','033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check','036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',closureId,completionId,vocabularyId,restoreId,fkId,retId]);
+  const checksums=new Map([[scheduleId,await checksum(scheduleId)],[dueId,await checksum(dueId)],[closureId,await checksum(closureId)],[completionId,await checksum('072_ticket_completion_dismissal')],[vocabularyId,await checksum('073_notification_vocabulary')],[restoreId,await checksum('074_system_closure_restore')],[terminalId,await checksum('075_ticket_terminal_at')],[fkId,await checksum('076_fk_indexes')],[retId,await checksum('077_retention_and_time_contract')]]);
+  const migrations=new Set(['031_p2_016_ticket_lifecycle_workbench_notifications','033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check','036_p2_007_third_party_staff_directory','064_yixiaoxiu_h5_member_service','065_yixiaoxiu_h5_web_media',closureId,completionId,vocabularyId,restoreId,terminalId,fkId,retId]);
   let validCatalog=true,fkMatchCount=FK_INDEX_TARGETS.length,localNowOk=true;const queriedIds:string[]=[];
   const query=mock.method(database,'query',async(sql:string,values?:readonly unknown[])=>{
     const id=values?.[0];
@@ -438,6 +449,10 @@ test('H5-enabled P2016 readiness checks reminder tables even when follow-up acti
     if(id===completionId){const rows=migrations.has(completionId)?[{checksum_sha256:checksums.get(completionId),baseline:true}]:[];return {rows,rowCount:rows.length};}
     if(id===vocabularyId){const rows=migrations.has(vocabularyId)?[{checksum_sha256:checksums.get(vocabularyId),baseline:true}]:[];return {rows,rowCount:rows.length};}
     if(id===restoreId){const rows=migrations.has(restoreId)?[{checksum_sha256:checksums.get(restoreId),column:true}]:[];return {rows,rowCount:rows.length};}
+    if(id===terminalId){
+      const checksum=checksums.get(terminalId);assert.ok(checksum);
+      return {rowCount:1,rows:[{snapshot:migrations.has(terminalId)?{checksum_sha256:checksum,ready:true}:null} satisfies CatalogSnapshot<TicketTerminalCatalogRow>]};
+    }
     if(values?.[1]===fkId){const rows=migrations.has(fkId)?[{checksum_sha256:checksums.get(fkId),structural_match_count:fkMatchCount}]:[];return {rows,rowCount:rows.length};}
     if(values?.[2]===retId){const rows=migrations.has(retId)?[{checksum_sha256:checksums.get(retId),retention_index_count:11,local_now_ok:localNowOk,physical_epoch_ok:true,legacy_expiry_absent:true,epoch_expiry_valid:true}]:[];return {rows,rowCount:rows.length};}
     if(typeof id==='string'&&[scheduleId,dueId].includes(id)){

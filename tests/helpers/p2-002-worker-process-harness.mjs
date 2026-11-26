@@ -1,3 +1,4 @@
+import {loopbackFixtureUrl} from '../../app/server/src/platform/loopback-database.mjs';
 import { fork } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -21,14 +22,14 @@ const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
 
 function childEnvironment(values) {
   const databaseUrl = process.env.PILOT_DATABASE_URL;
-  if (!databaseUrl || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname)) throw new Error('P2_002_ISOLATED_LOCAL_DATABASE_REQUIRED');
+  if (!databaseUrl || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname.toLowerCase())) throw new Error('P2_002_ISOLATED_LOCAL_DATABASE_REQUIRED');
   const environment = Object.create(null);
   for (const key of SAFE_INHERITED_ENVIRONMENT_KEYS) {
     if (typeof process.env[key] === 'string') {
       environment[key] = process.env[key];
     }
   }
-  return { ...environment, ...values };
+  return { ...environment, ...values,PILOT_DATABASE_URL:loopbackFixtureUrl(databaseUrl) };
 }
 
 function timeoutFailure(label) {

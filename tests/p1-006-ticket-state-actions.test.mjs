@@ -1,7 +1,7 @@
+import {applyTicketTerminalAtSql} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import {isolatedTicketTests} from './helpers/p1-ticket-database.mjs';
 import { shanghaiLocalToEpochMs } from '../app/server/src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
@@ -22,15 +22,6 @@ import {
   createTicketActionService,
 } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 
-const databaseUrl = process.env.PILOT_DATABASE_URL;
-const integrationTest = databaseUrl ? test : test.skip;
-const messageIds = new Set();
-const intakeIds = new Set();
-const ticketIds = new Set();
-const pool = databaseUrl
-  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
-  : null;
-
 function messageFor(msgId) {
   const adapted = adaptWeComSdkFrame({
     cmd: 'aibot_msg_callback',
@@ -46,11 +37,10 @@ function messageFor(msgId) {
     },
   }, { receivedAt: '2026-08-29 09:00:00' });
   assert.equal(adapted.ok, true);
-  messageIds.add(msgId);
   return adapted.message;
 }
 
-async function seedTicket() {
+async function seedTicket(pool) {
   const message = messageFor(`p1-006-${randomUUID()}`);
   const ticketCore = createPilotTicketCore({ pool });
   const processor = createPilotTicketProcessor({
@@ -65,49 +55,19 @@ async function seedTicket() {
     retentionUntilEpochMs: shanghaiLocalToEpochMs('2026-09-05 09:00:00'),
   }, processor);
   assert.equal(result.ok, true);
-  intakeIds.add(result.result.intake.id);
-  ticketIds.add(result.result.ticket.id);
   return result.result.ticket;
 }
 
-before(async () => {
-  if (!pool) {
-    return;
-  }
+const integrationTest=isolatedTicketTests('p1006',async pool=>{
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
   await applyTicketStateActionMigration({ pool });
+  await applyTicketTerminalAtSql(pool);
 });
 
-after(async () => {
-  if (!pool) {
-    return;
-  }
-  if (ticketIds.size > 0) {
-    await pool.query(
-      `UPDATE intake.service_intake
-          SET pilot_ticket_id = NULL,
-              status = CASE WHEN status = 'TICKET_CREATED' THEN 'RECEIVED' ELSE status END
-        WHERE pilot_ticket_id = ANY($1::uuid[])`,
-      [[...ticketIds]],
-    );
-    await pool.query('DELETE FROM pilot_ticket.ticket WHERE id = ANY($1::uuid[])', [[...ticketIds]]);
-  }
-  if (intakeIds.size > 0) {
-    await pool.query('DELETE FROM intake.service_intake WHERE id = ANY($1::uuid[])', [[...intakeIds]]);
-  }
-  if (messageIds.size > 0) {
-    await pool.query(
-      'DELETE FROM channel.message_inbox WHERE provider = $1 AND msg_id = ANY($2::text[])',
-      ['WECOM_AIBOT', [...messageIds]],
-    );
-  }
-  await pool.end();
-});
-
-integrationTest('explicit Ticket Actions enforce legal transitions, versions, and an ordered audit timeline', async () => {
-  const ticket = await seedTicket();
+integrationTest('explicit Ticket Actions enforce legal transitions, versions, and an ordered audit timeline', async (pool) => {
+  const ticket = await seedTicket(pool);
   const actions = createTicketActionService({ pool });
   const handlerId = randomUUID();
 
@@ -205,8 +165,8 @@ integrationTest('explicit Ticket Actions enforce legal transitions, versions, an
   ]);
 });
 
-integrationTest('concurrent handlers cannot both accept the same queued Ticket', async () => {
-  const ticket = await seedTicket();
+integrationTest('concurrent handlers cannot both accept the same queued Ticket', async (pool) => {
+  const ticket = await seedTicket(pool);
   const actions = createTicketActionService({ pool });
   const results = await Promise.all([
     actions.perform({
@@ -232,8 +192,8 @@ integrationTest('concurrent handlers cannot both accept the same queued Ticket',
   );
 });
 
-integrationTest('Phase 1 rejects an Incident-link action until the Phase 2 Incident fact exists', async () => {
-  const ticket = await seedTicket();
+integrationTest('Phase 1 rejects an Incident-link action until the Phase 2 Incident fact exists', async (pool) => {
+  const ticket = await seedTicket(pool);
   const actions = createTicketActionService({ pool });
   const actor = { type: 'PILOT_USER', id: randomUUID() };
 

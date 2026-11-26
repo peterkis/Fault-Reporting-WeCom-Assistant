@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -16,7 +17,7 @@ export async function migrateWorkbenchAuth({ databaseUrl, mode = 'apply', PoolFa
   const body = /^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
   if (!body) fail('WORKBENCH_AUTH_MIGRATION_FILE_INVALID');
   const checksum = sha(sql);
-  const pool = PoolFactory({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5000,
+  const pool = PoolFactory({ ...migrationConnection(databaseUrl), max: 1, connectionTimeoutMillis: 5000,
     application_name: 'p2_016_workbench_auth_migrator' });
   let client;
   try {

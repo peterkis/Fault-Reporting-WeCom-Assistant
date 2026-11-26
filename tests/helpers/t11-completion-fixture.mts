@@ -1,3 +1,4 @@
+import type {LocalMigrationDatabase} from '../../app/server/src/platform/loopback-database.mjs';
 import {withWeb01Fixture,seedWeb01NoConversationIntake} from './web01-workbench-fixture.mjs';
 import {createP2016Runtime} from '../../app/server/src/p2-016-runtime.mjs';
 import type {P2016EnabledRuntime} from '../../app/server/src/p2-016-runtime.mjs';
@@ -18,15 +19,15 @@ export async function t11NewTicket(context:T11Fixture){
   return created.ticket.id;
 }
 
-export interface T11Fixture {pool:PostgresPool;databaseUrl:string;tickets:{ticket:{id:string};intake:{intakeId:string;requestRef?:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string;cookies:string[];browserCookies:readonly {name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number}[]}
-export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{fullSchema=false,completionEnabled=true,installCompletionSchema=true,notesEnabled=true,recoveryEnabled=true,conversationHandlingEnabled=false,boardActionsEnabled=false,reopenEnabled=false,waitingEnabled=false,assignmentEnabled=false}:{fullSchema?:boolean;completionEnabled?:boolean;installCompletionSchema?:boolean;notesEnabled?:boolean;recoveryEnabled?:boolean;conversationHandlingEnabled?:boolean;boardActionsEnabled?:boolean;reopenEnabled?:boolean;waitingEnabled?:boolean;assignmentEnabled?:boolean}={}){
+export interface T11Fixture {pool:PostgresPool;databaseUrl:string;databaseConnection:LocalMigrationDatabase;tickets:{ticket:{id:string};intake:{intakeId:string;requestRef?:string}}[];principals:{id:string}[];outsider:{id:string};runtime:P2016EnabledRuntime;origin:string;cookies:string[];browserCookies:readonly {name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number}[]}
+export async function withT11Fixture(run:(context:T11Fixture)=>Promise<void>,{namespace='p2_015',fullSchema=false,completionEnabled=true,installCompletionSchema=true,notesEnabled=true,recoveryEnabled=true,conversationHandlingEnabled=false,boardActionsEnabled=false,reopenEnabled=false,waitingEnabled=false,assignmentEnabled=false}:{namespace?:'p2_015'|'ticket_card42a';fullSchema?:boolean;completionEnabled?:boolean;installCompletionSchema?:boolean;notesEnabled?:boolean;recoveryEnabled?:boolean;conversationHandlingEnabled?:boolean;boardActionsEnabled?:boolean;reopenEnabled?:boolean;waitingEnabled?:boolean;assignmentEnabled?:boolean}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();
     const options={pool:f.pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true as const},publicOrigin:f.origin,listenPort:Number(new URL(f.origin).port),principalIds:[f.principals[0]?.id??'',f.outsider.id,f.principals[1]?.id??''],externalSendEnabled:false,ticketSelfHandlingEnabled:true,ticketConversationSelfHandlingEnabled:conversationHandlingEnabled,ticketStaffCompletionEnabled:completionEnabled,ticketReopenRoundsEnabled:reopenEnabled,ticketWaitingActionsEnabled:waitingEnabled,ticketAssignmentEnabled:assignmentEnabled,workbenchInternalNotesEnabled:notesEnabled,workbenchDraftRecoveryEnabled:recoveryEnabled,workbenchBoardActionsEnabled:boardActionsEnabled};
     const runtime=createP2016Runtime(options);
     try{const started=await runtime.start();if(!started.cookies)throw Error('T11_AUTH_REQUIRED');await run({...f,runtime,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});}
     finally{await runtime.stop();if(runtime.server.listening)throw Error('T11_HTTP_RESIDUAL');}
-  },{ticketSelfHandlingEnabled:true,partialSchemaOnly:!fullSchema,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  },{namespace,ticketSelfHandlingEnabled:true,partialSchemaOnly:!fullSchema,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     if(!fullSchema&&completionEnabled&&installCompletionSchema){await migrateTicketStaffCompletion({databaseUrl,mode:'apply'});await migrateTicketReopenRounds({databaseUrl,mode:'apply'});await migrateBotReporterFeedback({databaseUrl,mode:'apply'});}
   }});
 }

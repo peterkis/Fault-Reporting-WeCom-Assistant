@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -32,7 +33,7 @@ export async function migrateThirdPartyStaffDirectory({ databaseUrl, mode = 'app
   const body = /^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
   if (!body) fail('THIRD_STAFF_DIRECTORY_MIGRATION_FILE_INVALID');
   const checksum = sha(sql);
-  const pool = PoolFactory({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000,
+  const pool = PoolFactory({ ...migrationConnection(databaseUrl), max: 1, connectionTimeoutMillis: 5_000,
     application_name: 'p2_007_staff_directory_migrator' });
   let client;
   try {

@@ -1,3 +1,4 @@
+import type {LocalMigrationDatabase} from '../app/server/src/platform/loopback-database.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -8,7 +9,7 @@ import type {PilotPrincipal} from '../app/server/src/p1-009-pilot-access-workben
 import type {ManualReportCommand} from '../contracts/workbench_manual_report_contracts.js';
 import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
-interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;databaseUrl:string;principals:PilotPrincipal[];cookies:string[];sessionId:string}
+interface Fixture {origin:string;backendOrigin:string;pool:PostgresPool;databaseUrl:string;databaseConnection:LocalMigrationDatabase;principals:PilotPrincipal[];cookies:string[];sessionId:string}
 function object(value:unknown):Record<string,unknown>{assert.ok(value!==null&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
 function string(value:unknown):string{assert.equal(typeof value,'string');assert.ok(value);return value as string;}
 function command(description='合成电话报修：打印机无法打印'):ManualReportCommand{return {schema_version:1,client_command_id:randomUUID(),source:'PHONE',description,location:{text:null,unknown:true},reporter:{verification:'UNVERIFIED',name:'合成实际报修人',contact:'人工联系4455',department:null}};}
@@ -91,7 +92,7 @@ test('manual admission rechecks creation authority after the final Session share
     // The four-connection application pool contains both blockers, the command
     // and its scheduled worker. Observation and fixture authority changes must
     // not queue behind the command whose wait this test is trying to inspect.
-    const control=createPostgresPool({connectionString:fixture.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t17_owned_lock_observer'});
+    const control=createPostgresPool({...fixture.databaseConnection,max:1,connectionTimeoutMillis:5000,application_name:'t17_owned_lock_observer'});
     try{
       await intakeLock.query('BEGIN');const intakePid=(await intakeLock.query<{pid:number}>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;assert.ok(intakePid);
       await intakeLock.query('LOCK TABLE intake.service_intake IN SHARE MODE');pending=post(fixture,token,body);

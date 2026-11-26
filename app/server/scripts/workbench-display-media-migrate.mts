@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -17,7 +18,7 @@ export async function migrateWorkbenchDisplayMedia({databaseUrl,expectedDatabase
   if(!databaseUrl||!expectedDatabase||!Object.hasOwn(targets,target)||!['check','apply'].includes(mode))throw Error('DISPLAY_MEDIA_MIGRATION_INVALID');
   const selected=targets[target],sql=await readFile(new URL('../../../database/migrations/'+selected.id+'.sql',import.meta.url),'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
   if(!body)throw Error('DISPLAY_MEDIA_MIGRATION_INVALID');const checksum=createHash('sha256').update(sql).digest('hex');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'workbench_display_media_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'workbench_display_media_migrator'});
   try{return await transactionP2016(pool,async tx=>{
     await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='30s'");
     if((await tx.query<{name:string}>('SELECT current_database() AS name')).rows[0]?.name!==expectedDatabase)throw Error('DISPLAY_MEDIA_DATABASE_MISMATCH');

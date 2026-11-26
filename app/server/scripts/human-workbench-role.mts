@@ -34,6 +34,7 @@ import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
 import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
 import {requireSystemClosureRestoreSchema} from './system-closure-restore-migrate.mjs';
+import {requireTicketTerminalAtSchema} from './ticket-terminal-at-migrate.mjs';
 import {requireWorkbenchSchemas,workbenchReleaseSchemaChecks} from '../src/workbench-schema-readiness.mjs';
 
 // Explicit recipe for this entry only. Unlisted Runtime options retain their defaults.
@@ -105,7 +106,7 @@ export async function main(argv=process.argv.slice(2),boundaries:WorkbenchExtern
  const memberAdmission=s.botInboundEnabled?createWorkbenchBotMemberAdmission({botId:s.botId,accessTokenProvider:tokenProvider,fetchImpl}):null;
  return runGateway({
   beforeReady:async input=>{
-   await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);
+   await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);await requireTicketTerminalAtSchema(input);
    requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(input.pool),'HUMAN_WORKBENCH');
   },
   intakeFactory:({pool})=>{
@@ -149,7 +150,7 @@ function runHumanWorkbenchWorker(s:WorkerRoleSettings,identityHmacKey:string,rep
   if((await pool.query('SELECT migration_id FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[migrations])).rowCount!==migrations.length)throw new Error('HUMAN_WORKBENCH_SCHEMA_REQUIRED:yxx_h5_schema');
   })();
   await requireCompletionDismissalSchema({pool});
-  await requireNotificationVocabularySchema({pool});await requireSystemClosureRestoreSchema({pool});
+  await requireNotificationVocabularySchema({pool});await requireSystemClosureRestoreSchema({pool});await requireTicketTerminalAtSchema({pool});
   requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(pool),'HUMAN_WORKBENCH');
  },extensionFactory:({pool})=>{
   const avatars=s.actorAvatars?.rootRef?createWorkbenchActorAvatarWorker({pool,keyProvider:()=>process.env.THIRD_STAFF_INFO_SYNC_KEY??'',rootRef:s.actorAvatars?.rootRef,fetchImpl,enabled:true}):null;

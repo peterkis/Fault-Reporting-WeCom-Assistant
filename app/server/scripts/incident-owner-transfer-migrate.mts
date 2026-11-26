@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
@@ -5,11 +6,11 @@ import {publicProgressSchemaInventory,publicProgressSchemaHash,PUBLIC_PROGRESS_S
 import {OWNER_TRANSFER_MIGRATION_ID,ownerTransferMigrationInputs,ownerTransferSchemaInventory,ownerTransferSchemaHash,ownerTransferCatalogReady,ownerTransferSchemaReady} from '../src/p2-012-owner-transfer-schema.mjs';
 import {transaction,fail} from '../src/p2-012-domain-contracts.mjs';
 export {OWNER_TRANSFER_MIGRATION_ID};
-export async function migrateIncidentOwnerTransfer({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'apply'|'check'|'status'}){
+export async function migrateIncidentOwnerTransfer({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'apply'|'check'|'status'}){
  if(!databaseUrl||!['apply','check','status'].includes(mode))fail();
  const inputs=await ownerTransferMigrationInputs(),own=inputs.find(input=>input.id===OWNER_TRANSFER_MIGRATION_ID);if(!own)fail();
  const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(own.sql)?.[1];if(!body)fail();
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'incident_owner_transfer_migrator'});
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'incident_owner_transfer_migrator'});
  try{return await transaction(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('P2_012_MIGRATION'))");
   await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_012_COMMAND',0))");

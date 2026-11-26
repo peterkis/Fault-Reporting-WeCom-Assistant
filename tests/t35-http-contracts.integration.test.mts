@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {withT35Fixture} from './helpers/t35-read-fixture.mjs';
 import {assertP2016Schema} from './helpers/p2-016-schema-assert.mjs';
+import {observeWorkbenchRequest,fullTicketCardSql} from './helpers/card42a-sql-observer.mjs';
 import {personalReadCommand,personalReadRevision} from '../app/server/src/workbench-personal-read.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 
@@ -17,7 +18,17 @@ test('T35 public personal-read contracts stay closed, bounded, private, currentl
     await assertP2016Schema('workbench_personal_read_command',command);
     const page=await f.get(path);assert.equal(page.status,200);await assertP2016Schema('workbench_personal_read_page',await page.json());
     const unknown=await f.get(path+'/commands/'+command.client_command_id);assert.equal(unknown.status,200);const unknownBody=await unknown.json();assert.deepEqual(unknownBody,{client_command_id:command.client_command_id,state:'UNKNOWN'});await assertP2016Schema('workbench_personal_read_receipt',unknownBody);
-    const ack=await f.post(path,command);assert.equal(ack.status,200);const ackBody=await ack.json();await assertP2016Schema('workbench_personal_read_acknowledgement',ackBody);
+    const {value:ack,sql}=await observeWorkbenchRequest(f.pool,()=>f.post(path,command));assert.equal(ack.status,200);const ackBody=await ack.json();await assertP2016Schema('workbench_personal_read_acknowledgement',ackBody);
+    const identities=sql.flatMap((q,index)=>q.includes('SELECT t.id,t.source_intake_id AS intake_id')?[index]:[]);
+    const lock=sql.findIndex(q=>q.includes('ticket_command_receipt')&&q.includes('FOR UPDATE'));
+    const position=sql.findIndex(q=>q.includes('INSERT INTO pilot_ticket.personal_material_read_position'));
+    assert.equal(sql.filter(q=>fullTicketCardSql.test(q)).length,0);
+    assert.equal(identities.length,3);const [before,after,final]=identities;assert.ok(before!==undefined&&after!==undefined&&final!==undefined&&before<lock&&lock<after&&after<position&&position<final);
+    const materialReads=sql.flatMap((q,index)=>q.includes('FOR SHARE OF i,rel,m')?[index]:[]);
+    assert.equal(materialReads.length,3);
+    const [initialMaterial,lockedMaterial,finalMaterial]=materialReads;
+    assert.ok(initialMaterial!==undefined&&lockedMaterial!==undefined&&finalMaterial!==undefined);
+    assert.ok(before<initialMaterial&&initialMaterial<lock&&after<lockedMaterial&&lockedMaterial<position&&final<finalMaterial);
     const receipt=await f.get(path+'/commands/'+command.client_command_id);assert.equal(receipt.status,200);await assertP2016Schema('workbench_personal_read_receipt',await receipt.json());
     for(const query of ['?actor='+randomUUID(),'?limit=101','?limit=1&limit=2','?cursor=bad'])assert.equal((await f.get(path+query)).status,400);
     assert.equal((await f.post(path,{...command,client_command_id:randomUUID(),source_ref:await source(other.intake.intakeId)})).status,404);

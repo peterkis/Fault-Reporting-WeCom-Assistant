@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -16,12 +17,12 @@ export async function personalReadSchemaReady(tx:PostgresTransaction):Promise<bo
     AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket_command_receipt' AND column_name='source_intake_id' AND data_type='uuid') AS ready`,[PERSONAL_READ_MIGRATION_ID])).rows[0];
   return row?.ready===true;
 }
-export async function migrateWorkbenchPersonalRead({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}){
+export async function migrateWorkbenchPersonalRead({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}){
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
   const sql=await readFile(new URL('../../../database/migrations/'+PERSONAL_READ_MIGRATION_ID+'.sql',import.meta.url),'utf8');
   const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
   const checksum=createHash('sha256').update(sql).digest('hex');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'workbench_personal_read_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'workbench_personal_read_migrator'});
   const tx=await pool.connect();
   try{
     await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='60s'");

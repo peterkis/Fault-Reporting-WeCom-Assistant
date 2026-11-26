@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -13,7 +14,7 @@ export async function migrateTicketReporterProfiles({databaseUrl,expectedDatabas
  const sql=await readFile(new URL('../../../database/migrations/'+TICKET_REPORTER_PROFILES_MIGRATION_ID+'.sql',import.meta.url),'utf8');
  const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)invalid();
  const checksum=createHash('sha256').update(sql).digest('hex');
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'ticket_reporter_profiles_migrator'});
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'ticket_reporter_profiles_migrator'});
  try{return await transactionP2016(pool,async tx=>{
   await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='30s'");
   if((await tx.query<{name:string}>('SELECT current_database() AS name')).rows[0]?.name!==expectedDatabase)invalid();

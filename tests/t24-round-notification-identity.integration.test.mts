@@ -32,7 +32,7 @@ test('same-round handoffs, command replay and a fresh consumer with a new templa
     }
     assert.equal((await http.post(id,'take-and-start',startCommand)).status,200);
     const useFreshConsumer=async(templateVersion:string)=>{
-      const pool=createPostgresPool({connectionString:context.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t24_identity_new_consumer'});
+      const pool=createPostgresPool({...context.databaseConnection,max:1,connectionTimeoutMillis:5000,application_name:'t24_identity_new_consumer'});
       try{
         const consumer=createTicketRoundNotifications({pool,enabled:true,botId:'bot-test',templateVersion,
           reporterAccess:createP2016ReporterAccess({pool,enabled:true,hmacSecret:entryKey})});

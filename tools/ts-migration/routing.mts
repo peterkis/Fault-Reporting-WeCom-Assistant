@@ -120,7 +120,7 @@ export function testEnvironment(root: string, entries: Entry[], input: NodeJS.Pr
     const raw = input.PILOT_DATABASE_URL;
     if (input.TS_MIGRATION_TEST_DB_ISOLATED !== '1' || !raw) throw new Error('MIGRATION_ISOLATED_DATABASE_REQUIRED');
     const url = new URL(raw);
-    if (!['postgres:', 'postgresql:'].includes(url.protocol) || !['127.0.0.1','localhost','[::1]'].includes(url.hostname)
+    if (!['postgres:', 'postgresql:'].includes(url.protocol) || !['127.0.0.1','localhost','[::1]'].includes(url.hostname.toLowerCase())
       || !url.pathname || url.search || url.hash) throw new Error('MIGRATION_TEST_DATABASE_NOT_LOOPBACK');
     result.PILOT_DATABASE_URL = raw;
   }

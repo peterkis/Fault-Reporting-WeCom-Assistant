@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -308,7 +309,7 @@ export async function migrateFkIndexes({
   if (!databaseUrl || !['check', 'apply', 'rollback'].includes(mode)) failP2016();
   const { body, checksum } = await source();
   const pool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...migrationConnection(databaseUrl),
     max: 1,
     application_name: 'fk_indexes_migrator',
   });
@@ -380,3 +381,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exitCode = 1;
   }
 }
+
+export {projectPredecessorIndexes as projectPredecessorIndexRows};

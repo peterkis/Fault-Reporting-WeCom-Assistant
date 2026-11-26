@@ -128,7 +128,7 @@ test('Card 32D-L dismissal and restoration notices bind TICKET_DISMISSED and TIC
 
 test('Card 32D-L a reopened completed Ticket persists a TICKET_REOPENED binding through the current notification projector',{timeout:300000},async()=>withT24Fixture(async f=>{
  const subject=await seedSubject(f,'TICKET');
- const reopened=(await f.pool.query<{status:string;version:number}>("UPDATE pilot_ticket.ticket SET status='REOPENED',version=version+1 WHERE id=$1::uuid RETURNING *",[subject.id])).rows[0];assert.ok(reopened);
+ const reopened=(await f.pool.query<{status:string;version:number}>("UPDATE pilot_ticket.ticket SET status='REOPENED',version=version+1,terminal_at=NULL,terminal_epoch_ms=NULL WHERE id=$1::uuid RETURNING *",[subject.id])).rows[0];assert.ok(reopened);
  // Same synthetic writer as the closure cases: the reopen fact of a completed Ticket, then the real projector and binding table.
  await appendTicketEvent({transaction:f.pool,ticket:reopened as never,eventType:'ticket.reopened',oldStatus:'COMPLETED',actor:{type:'SYSTEM',id:null},traceId:'c32dl-reopened'});
  const eventId=String((await f.pool.query<{id:string}>("SELECT event_id::text AS id FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.reopened'",[subject.id])).rows[0]?.id);

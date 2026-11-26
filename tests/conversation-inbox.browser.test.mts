@@ -8,6 +8,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {withT22Fixture,appendT22LiveItem} from './helpers/wbint-t22-fixture.mjs';
 import type {T22Fixture} from './helpers/wbint-t22-fixture.mjs';
 import {conversationPost,freshCommand,addInboxSession,attachInboxJourney,seedCard25bConversation,seedCard26Conversation} from './helpers/conversation-inbox-fixture.mjs';
+import {TopicCursorDiagnostics} from './helpers/topic-cursor-diagnostics.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {clickWorkbenchControl,assertWorkbenchPrimaryLabelContrast} from './helpers/heroui-workbench-controls.mjs';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
@@ -225,24 +226,31 @@ test('ended inbox preserves historical neutral labels and the selected Session r
   },{inbox:true,personalRead:false,recovery:false});
 });
 
-test('topic history and same-topic direct navigation remain separate, readable and reachable together',async()=>{
+test('topic history and same-topic direct navigation remain separate, readable and reachable together',()=>withInboxDiagnostics('CONVERSATION_TOPIC_HISTORY',async trace=>{
+  const cursorTrace=new TopicCursorDiagnostics();
+  trace.topicCursor=cursorTrace;
   await withT22Fixture(async f=>{
-    for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
-    const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
-    const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
-    const related=await (await fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})).json() as ConversationRelatedPage;
-    assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
+    const stopObserving=cursorTrace.attach(f);
     const writes:string[]=[];const observe=(request:import('node:http').IncomingMessage)=>{if(request.method==='POST')writes.push(new URL(request.url??'/',f.origin).pathname);};
-    f.runtime.server.on('request',observe);let browser:Browser|undefined,failure:unknown;
+    let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      for(let index=0;index<51;index++)await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-history-'+index,text:'历史主题 '+index});
+      const group=await addInboxSession(f.pool,{reporter:'card14-paging-person',group:'card14-paging-group',text:'当前服务主题'}),journeyId=await attachInboxJourney(f.pool,group);
+      const direct=await addInboxSession(f.pool,{reporter:group.reporter,group:null,text:'本主题私聊补充'});await attachInboxJourney(f.pool,direct,{journeyId});
+      const related=await trace.topicPreflight(()=>fetch(f.origin+'/api/workbench/conversations/'+group.id+'/related-sessions?limit=50',{headers:{cookie:f.cookie}})) as ConversationRelatedPage;
+      assert.ok(related.next_cursor);assert.ok(related.items.some(row=>row.session.session_id===direct.id));
+      f.runtime.server.on('request',observe);
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+group.id,width:1440,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[group.id,direct.id])});assert.ok(browser);
+      trace.topicBrowser=browser;await trace.bind(browser);
       await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))&&Boolean(document.querySelector('.inbox-topic-pages button'))");
       await clickWorkbenchControl(browser,'.inbox-more-actions [data-action=open-detail-actions]');
+      trace.topicPhase('layout-widths');
       for(const width of [1920,1440,1280,900]){
         await browser.command('Emulation.setDeviceMetricsOverride',{width,height:1080,deviceScaleFactor:1,mobile:false});await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
         const sample=await browser.evaluate("(()=>{const a=document.querySelector('.inbox-topic-pages button'),b=document.querySelector('.inbox-new-direct'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect(),label=b.querySelector('.ds-button-label');const hit=node=>{const r=node.getBoundingClientRect();return node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));};return {overlap:Math.min(x.right,y.right)>Math.max(x.left,y.left)&&Math.min(x.bottom,y.bottom)>Math.max(x.top,y.top),clipped:b.scrollWidth>b.clientWidth||label.scrollWidth>label.clientWidth,reachable:hit(a)&&hit(b)};})()") as {overlap:boolean;clipped:boolean;reachable:boolean};
         assert.equal(sample.overlap,false,'navigation overlap at '+width);assert.equal(sample.clipped,false,'direct navigation text clipping at '+width);assert.equal(sample.reachable,true,'both navigation targets at '+width);
       }
+      trace.topicPhase('click-history');
       await browser.evaluate(`(()=>{
         const path=${JSON.stringify('/api/workbench/conversations/'+group.id+'/related-sessions')},original=globalThis.fetch;
         const state=globalThis.__historyRecovery={rejectedStatus:null,latestCursor:null,historyStatus:null,sawAlert:false,sawBack:false};
@@ -275,13 +283,19 @@ test('topic history and same-topic direct navigation remain separate, readable a
       await browser.waitFor("document.querySelector('.inbox-topic-pages')?.textContent.includes('返回最新主题')");
       await browser.waitFor("globalThis.__historyRecovery.historyStatus===200");
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+group.id,'history paging keeps the current Session');
+      trace.topicPhase('back');cursorTrace.samplePage(browser,'back-start',sampleBinding);
       await clickWorkbenchControl(browser,'.inbox-topic-pages button');await browser.waitFor("Boolean(document.querySelector('.inbox-new-direct'))");
+      trace.topicPhase('direct-nav');
       await clickWorkbenchControl(browser,'.inbox-new-direct');await browser.waitFor(`location.pathname==='/workbench/app/conversations/${direct.id}'&&Boolean(document.querySelector('[data-conversation-ready]'))`);
       assert.equal(await browser.evaluate('location.pathname'),'/workbench/app/conversations/'+direct.id);
       assert.deepEqual(writes,[],'topic history and direct-window navigation remain read-only');
-    }catch(error){failure=error;}finally{f.runtime.server.off('request',observe);await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
-  },{inbox:true,personalRead:false,recovery:false});
-});
+    }catch(error){failure=error;}finally{
+      f.runtime.server.off('request',observe);await stopObserving();
+      if(failure)trace.report('failed');
+      await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
+    }
+  },{inbox:true,personalRead:false,recovery:false,observeRuntimePool:p=>cursorTrace.runtimePool(p)});
+}));
 
 test('ticket detail and conversation summary keep independent cache shapes across both client-side navigation directions',async()=>{
   await withT22Fixture(async f=>{
@@ -429,7 +443,259 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
   },{inbox:true,realtime:true,personalRead:true});
 });
 
-test('returning to an inactive revoked chat cannot render cached messages while the current REST denial is delayed',async()=>{
+type RequestTiming=[startMs:number,status:number|null,finishMs:number|null,failed?:boolean,cursor?:boolean];
+const cdpSignals=new Set(['Page.javascriptDialogOpening','Inspector.targetCrashed','Target.detachedFromTarget','Inspector.detached','Runtime.exceptionThrown']);
+const publicRouteParts=new Set(['summary','items','deliveries','related-sessions','read-cursor','eligible-principals']);
+const isRecord=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
+const sampleBinding='__inboxBrowserTestSample';
+const captureAlert=`(el,poll,matched)=>globalThis.${sampleBinding}?.(JSON.stringify({
+  poll,matched,tag:el?.localName??null,classes:el?Array.from(el.classList):[]
+}))`;
+
+// Live regions and console arguments may contain conversation data. Keep UI copy
+// and diagnostic wording, never arbitrary payloads, variable substitutions or object previews.
+const topicUiCopy=/返回最新主题|更多主题与窗口|服务请求失败（[1-5]\d{2}），请重试。|连接失败，暂时无法读取服务端数据。|资料已被其他人修改，请重新读取后再保存。|会话已失效，请重新进入工作台。|当前账号无法执行此操作。|找不到这条事项，或您目前无法查看。|事项资料已变化，请重新提交搜索或点击刷新。|无法查看这段会话|选择其他会话继续处理。|正在加载会话…|比平时慢，仍在读取…|已重新连接，内容已更新|连接已断开，正在重新连接…|显示的是 \d{1,3} 分钟前的内容|手动刷新|正在连接|实时更新中|连接已断开，正在重试|实时暂不可用，定时重读|连接失败，显示最近已确认资料|会话需要重新核验|重试/gu;
+function topicUiText(value:unknown){
+  if(typeof value!=='string')return null;
+  const copy=value.trim().replace(/\s+/gu,' ');if(!copy)return '';
+  let end=0,safe='';
+  for(const match of copy.matchAll(topicUiCopy)){
+    if(copy.slice(end,match.index).trim())safe+='[redacted]';
+    safe+=match[0];end=match.index+match[0].length;
+  }
+  return (safe+(copy.slice(end).trim()?'[redacted]':'')).slice(0,80);
+}
+function topicConsoleText(params:Record<string,unknown>){
+  const first=Array.isArray(params.args)?params.args[0]:null;
+  if(!isRecord(first))return '[redacted]';
+  const text=first.type==='string'?first.value:first.subtype==='error'?first.description:null;
+  if(typeof text!=='string')return '[redacted]';
+  // Keep diagnostic words in the first format string; subsequent arguments, quoted
+  // values, URLs, response bodies, headers and stack lines can carry identifiers.
+  const line=(text.split(/[\r\n]/u,1)[0]??'')
+    .replace(/^\[(Violation|React Aria|TanStack Query)\]/iu,'$1:')
+    .replace(/(?:\b(?:headers?|cookie|set-cookie|authorization|bearer|body|payload|token|cursor|[\w-]*id)\s*[:=]\s*|[<{[]).*$/iu,' [redacted]')
+    .replace(/(?:https?:\/\/|\/)[^\s]+|[“"'`][^“"'`]*[”"'`]|\b[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}\b/giu,' [redacted] ');
+  const words=/^(?:aborted|access|action|added|aria|avoid|button|changing|click|completed|connection|cursor|disconnected|does|event|fetching|focused|invalidated|load|loading|loop|navigation|notifications|observer|out|passive|press|promise|properties|react|recognize|remove|render|rendering|ResizeObserver|retry|route|timed|timeout|uncaught|undelivered|violation|a|an|and|are|as|at|because|before|by|can|cannot|component|console|could|detected|did|disabled|during|element|error|exception|expected|failed|fetch|focus|focused|for|found|from|function|has|hidden|history|in|invalid|is|its|key|listener|missing|network|not|null|of|on|or|page|pending|property|read|reading|request|resource|response|returned|script|server|set|should|state|status|target|the|this|to|type|undefined|unexpected|use|was|while|with|warning|react|aria-hidden|accessibility|ancestor|blocked|descendant|retained|TypeError|ReferenceError|AbortError|NetworkError|WORKBENCH_CURSOR_INVALID|[45]\d{2})$/iu;
+  return line.replace(/\[redacted\]|[\p{L}\p{N}_%-]+/gu,word=>words.test(word)?word:'[redacted]')
+    .replace(/(?:\[redacted\][\s.:/-]*){2,}/gu,'[redacted] ').trim().slice(0,200);
+}
+const safeHitToken=(token:unknown):token is string=>typeof token==='string'&&token.length<=64&&/^[a-z][a-z_-]*$/iu.test(token)&&!/[a-f0-9]{8}-[a-f0-9]{4}/iu.test(token);
+const topicPollSample=`(()=>{
+  const pages=document.querySelector('.inbox-topic-pages'),buttons=Array.from(pages?.querySelectorAll('button')??[]),button=buttons[0];
+  const rect=button?.getBoundingClientRect(),hit=rect?document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2):null;
+  const notice=role=>{
+    const visible=Array.from(document.querySelectorAll('[role='+role+']')).find(node=>node.checkVisibility({visibilityProperty:true,opacityProperty:true}));
+    return visible?(visible.textContent??'').slice(0,80):null;
+  };
+  return {kind:'poll',text:pages?.textContent?.slice(0,80)??null,buttons:buttons.map(b=>({disabled:b.disabled,ariaDisabled:b.getAttribute('aria-disabled'),busy:b.getAttribute('aria-busy')})),
+    alert:notice('alert'),status:notice('status'),visibility:document.visibilityState,focus:document.hasFocus(),
+    box:rect?[rect.x,rect.y,rect.width,rect.height]:null,hitTag:hit?.localName??null,hitClasses:Array.from(hit?.classList??[]),onButton:!!hit&&button.contains(hit)};
+})()`;
+
+function hitElement(tag:unknown,classes:unknown){
+  return {tag:safeHitToken(tag)?tag:null,class:Array.isArray(classes)?classes.filter(safeHitToken).join(' ').slice(0,160):null};
+}
+function historyState(value:Record<string,unknown>){
+  const aria=(v:unknown)=>v==='true'||v==='false'?v:null;
+  const buttons=Array.isArray(value.buttons)?value.buttons.filter(isRecord):[];
+  return {text:topicUiText(value.text),buttonCount:buttons.length,
+    buttons:buttons.map(b=>({disabled:b.disabled===true,ariaDisabled:aria(b.ariaDisabled),ariaBusy:aria(b.busy)})),
+    alertVisible:typeof value.alert==='string',alert:topicUiText(value.alert),statusVisible:typeof value.status==='string',status:topicUiText(value.status),
+    visibilityState:value.visibility==='visible'||value.visibility==='hidden'?value.visibility:null,hasFocus:value.focus===true,
+    box:Array.isArray(value.box)&&value.box.length===4&&value.box.every(n=>typeof n==='number'&&Number.isFinite(n))?value.box.map(n=>Math.round(n*10)/10):null,
+    hit:hitElement(value.hitTag,value.hitClasses),
+    hitOnButton:value.onButton===true};
+}
+
+class InboxBrowserDiagnostics {
+  private readonly start=performance.now();
+  private readonly signals:{ms:number;event:string;phase:string}[]=[];
+  private readonly requests=new Map<string,RequestTiming[]>();
+  private readonly pending=new Map<string,RequestTiming>();
+  private networkClockOffset:number|null=null;
+  private readonly unavailable:string[]=[];
+  private cursorPosts=0;
+  private logged=false;
+  private alertPolls=0;
+  private alert:{tag:string;class:string;omittedClasses:number;matched:boolean}|null=null;
+  private foreground:{wait:string;ms:number;visibilityState:string;hasFocus:boolean;cursorPosts:number}|null=null;
+  private readonly topicPhases:{phase:string;ms:number}[]=[];
+  private readonly consoleMessages:{phase:string;level:string;message:string;ms:number;count:number}[]=[];
+  private readonly historySamples:{ms:number;lastMs:number;polls:number;state:ReturnType<typeof historyState>}[]=[];
+  private historyPolls=0;
+  historyClickSucceeded:boolean|null=null;
+  topicCursor?:TopicCursorDiagnostics;
+  topicBrowser?:Browser;
+  private clickTarget:{ms:number;trusted:boolean;onButton:boolean;hit:ReturnType<typeof hitElement>}|null=null;
+  phase='setup';
+  proof:Record<string,unknown>={};
+  constructor(private readonly label:string){
+    if(label==='CONVERSATION_TOPIC_HISTORY')this.topicPhase('setup');
+  }
+  topicPhase(phase:string){
+    this.phase=phase;this.topicPhases.push({phase,ms:this.ms()});
+  }
+  async topicPreflight(fetchPage:()=>Promise<Response>):Promise<unknown>{
+    const timing:RequestTiming=[this.ms(),null,null,false,false];
+    this.requests.set('fixture GET /api/workbench/conversations/:a/related-sessions',[timing]);
+    try{
+      const response=await fetchPage();timing[1]=response.status;
+      return await response.json();
+    }catch(error){timing[3]=true;throw error;}
+    finally{timing[2]=this.ms();}
+  }
+
+  // CDP request IDs join the lifecycle events in memory. Only route templates,
+  // HTTP status and relative times leave the recorder.
+  observer(origin:string,sessions:readonly string[]){
+    return (event:string,params:unknown)=>{
+      if(cdpSignals.has(event)){
+        this.signals.push({ms:this.ms(),event,phase:this.phase});return;
+      }
+      if(this.label==='CONVERSATION_TOPIC_HISTORY'&&event==='Runtime.consoleAPICalled'&&isRecord(params)&&(params.type==='error'||params.type==='warning')){
+        const message=topicConsoleText(params),last=this.consoleMessages.at(-1);
+        if(last&&last.phase===this.phase&&last.level===params.type&&last.message===message)last.count++;
+        else this.consoleMessages.push({phase:this.phase,level:params.type,message,ms:this.ms(),count:1});
+        return;
+      }
+      if(event==='Inspector.enableFailed'){this.unavailable.push('Inspector');return;}
+      if(event==='Runtime.bindingCalled'&&isRecord(params)&&params.name===sampleBinding&&typeof params.payload==='string'){
+        this.recordSample(params.payload);return;
+      }
+      if(!event.startsWith('Network.')||!isRecord(params)||typeof params.requestId!=='string')return;
+      const id=params.requestId,existing=this.pending.get(id);
+      if(existing){
+        const response=event==='Network.requestWillBeSent'?params.redirectResponse:params.response;
+        if(isRecord(response)&&typeof response.status==='number')existing[1]=response.status;
+        if(event==='Network.loadingFinished'||event==='Network.loadingFailed'||event==='Network.requestWillBeSent'){
+          existing[2]=this.networkMs(params);if(event==='Network.loadingFailed')existing[3]=true;
+          if(event==='Network.loadingFinished'&&existing[1]===400&&this.topicBrowser)this.topicCursor?.samplePage(this.topicBrowser,'after-400');
+          this.pending.delete(id);
+        }
+      }
+      if(event!=='Network.requestWillBeSent'||!isRecord(params.request))return;
+      const {method,url}=params.request;
+      if(typeof url!=='string'||!url.startsWith(origin+'/api/'))return;
+      const path=url.slice(origin.length).split(/[?#]/u,1)[0]??'';
+      const route=/^(\/api\/(?:workbench\/)?conversations)(?:\/(.*))?$/u.exec(path);
+      if(!route||!(method==='GET'||method==='POST'&&path.endsWith('/read-cursor')))return;
+      const topic=this.label==='CONVERSATION_TOPIC_HISTORY';
+      if(topic&&(method!=='GET'||!/^\/api\/workbench\/conversations\/[^/]+\/related-sessions$/u.test(path)))return;
+      if(method==='POST')this.cursorPosts++;
+      const parts=(route[2]??'').split('/').filter(Boolean).map(part=>{
+        const session=sessions.indexOf(part);
+        return session===0?':a':session===1?':b':publicRouteParts.has(part)?part:':id';
+      });
+      const key=method+' '+[route[1],...parts].join('/'),timing:RequestTiming=[this.networkMs(params),null,null];
+      if(topic){
+        timing[3]=false;timing[4]=URL.parse(url)?.searchParams.has('cursor')===true;
+      }
+      const records=this.requests.get(key)??[];
+      records.push(timing);this.requests.set(key,records);this.pending.set(id,timing);
+    };
+  }
+  private ms(){return Math.round(performance.now()-this.start);}
+  private networkMs(params:Record<string,unknown>){
+    if(typeof params.timestamp!=='number')return this.ms();
+    // CDP pairs monotonic seconds with wall time on requestWillBeSent. Later
+    // lifecycle events then retain browser timing even if delivery is delayed.
+    if(this.networkClockOffset===null&&typeof params.wallTime==='number')
+      this.networkClockOffset=params.wallTime*1000-params.timestamp*1000-(performance.timeOrigin+this.start);
+    return this.networkClockOffset===null?this.ms():Math.round(params.timestamp*1000+this.networkClockOffset);
+  }
+
+  async bind(browser:Browser){
+    try{await browser.command('Runtime.addBinding',{name:sampleBinding});}
+    catch{this.unavailable.push('DOM samples');}
+  }
+  private recordSample(payload:string){
+    let value:unknown;
+    try{value=JSON.parse(payload);}catch{return;}
+    if(!isRecord(value))return;
+    if(this.label==='CONVERSATION_TOPIC_HISTORY'){
+      if(value.kind==='back-click'){this.topicCursor?.recordPager('back-click',value);return;}
+      if(value.kind==='click'){
+        if(this.phase!=='click-history'&&this.phase!=='wait-history')return;
+        this.clickTarget={ms:this.ms(),trusted:value.trusted===true,onButton:value.onButton===true,hit:hitElement(value.tag,value.classes)};return;
+      }
+      if(value.kind!=='poll')return;
+      const state=historyState(value),ms=this.ms(),last=this.historySamples.at(-1);this.historyPolls++;
+      if(last&&JSON.stringify(last.state)===JSON.stringify(state)){last.lastMs=ms;last.polls++;}
+      else{
+        // Keep the first state and the most recent changes within a single CI line.
+        if(this.historySamples.length===8)this.historySamples.splice(1,1);
+        this.historySamples.push({ms,lastMs:ms,polls:1,state});
+      }
+      return;
+    }
+    if(this.label==='CONVERSATION_SUMMARY_FOREGROUND'){
+      if((value.visibilityState==='visible'||value.visibilityState==='hidden')&&typeof value.hasFocus==='boolean'){
+        this.foreground={wait:this.phase,ms:this.ms(),visibilityState:value.visibilityState,hasFocus:value.hasFocus,cursorPosts:this.cursorPosts};
+      }
+      return;
+    }
+    if(value.poll===true)this.alertPolls++;
+    if(this.alert&&value.matched!==true)return;
+    if(typeof value.tag!=='string'||!Array.isArray(value.classes)||typeof value.matched!=='boolean')return;
+    const safeToken=(token:unknown):token is string=>typeof token==='string'&&token.length<=64&&/^[a-z][a-z_-]*(?:-\d{1,2})?$/iu.test(token)&&!/[a-f0-9]{8}-[a-f0-9]{4}/iu.test(token);
+    const classes=value.classes.filter(safeToken);
+    this.alert={tag:safeToken(value.tag)?value.tag:'(redacted)',class:classes.join(' '),omittedClasses:value.classes.length-classes.length,matched:value.matched};
+  }
+  async releaseRevokedRead(browser:Browser){
+    // Capture an alert even if no subsequent poll can reach the renderer.
+    await browser.evaluate(`(()=>{try{const capture=${captureAlert};const inspect=()=>{
+      const el=document.querySelector('[role=alert]');if(el){observer.disconnect();capture(el,false,false);}
+    };const observer=new MutationObserver(inspect);
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['role']});inspect();
+    }catch{/* The optional observer must still let the REST response through. */}
+    globalThis.__releaseRevoked();})()`);
+  }
+  async waitForDeniedAlert(browser:Browser,expression:string){
+    this.phase='denied-alert';
+    await browser.waitFor(`(()=>{const result=(${expression});
+      (${captureAlert})(document.querySelector('[role=alert]'),true,Boolean(result));return result;})()`);
+  }
+  async observeHistoryClick(browser:Browser){
+    try{
+      await browser.evaluate(`document.addEventListener('click',event=>{
+        const target=event.target,button=document.querySelector('.inbox-topic-pages button');
+        globalThis.${sampleBinding}?.(JSON.stringify({kind:'click',trusted:event.isTrusted,tag:target?.localName,classes:Array.from(target?.classList??[]),onButton:button?.contains(target)===true}));
+      },{once:true,capture:true,passive:true})`);
+    }catch{this.unavailable.push('click target');}
+  }
+  async waitForHistory(browser:Browser,expression:string){
+    await browser.waitFor(`(()=>{try{globalThis.${sampleBinding}?.(JSON.stringify(${topicPollSample}));}
+      catch{/* Optional sampling cannot decide the wait. */}return (${expression});})()`);
+  }
+  foregroundBrowser(browser:Browser):Browser{
+    return {...browser,waitFor:(expression,options)=>{
+      // Emit before the predicate's fetch or animation frame can stall.
+      this.foreground=null;
+      return browser.waitFor(`(()=>{globalThis.${sampleBinding}?.(JSON.stringify({
+        visibilityState:document.visibilityState,hasFocus:document.hasFocus()}));return (${expression});})()`,options);
+    }};
+  }
+  report(outcome:'passed'|'failed'){
+    if(this.logged)return;this.logged=true;
+    if(this.label==='CONVERSATION_TOPIC_HISTORY'){
+      console.log(this.label+' '+JSON.stringify({outcome,phase:this.phase,phases:this.topicPhases,elapsedMs:this.ms(),
+        ...this.topicCursor?.receipt(),clickSucceeded:this.historyClickSucceeded,clickTarget:this.clickTarget,signals:this.signals,console:this.consoleMessages,unavailable:this.unavailable,
+        requestColumns:['startMs','status','finishMs','failed','hasCursor'],requests:Object.fromEntries(this.requests),
+        polls:this.historyPolls,samples:this.historySamples}));return;
+    }
+    console.log(this.label+' '+JSON.stringify({...this.proof,outcome,phase:this.phase,elapsedMs:this.ms(),unavailable:this.unavailable,signals:this.signals,
+      requestColumns:['startMs','status','finishMs','failed?'],requests:Object.fromEntries(this.requests),cursorPosts:this.cursorPosts,
+      ...(this.label==='CONVERSATION_INACTIVE_REVOCATION'?{alertPolls:this.alertPolls,alert:this.alert}:{foreground:this.foreground})}));
+  }
+}
+async function withInboxDiagnostics(label:'CONVERSATION_INACTIVE_REVOCATION'|'CONVERSATION_SUMMARY_FOREGROUND'|'CONVERSATION_TOPIC_HISTORY',run:(trace:InboxBrowserDiagnostics)=>Promise<void>){
+  const trace=new InboxBrowserDiagnostics(label);
+  try{await run(trace);}catch(error){trace.report('failed');throw error;}
+  trace.report('passed');
+}
+
+test('returning to an inactive revoked chat cannot render cached messages while the current REST denial is delayed',()=>withInboxDiagnostics('CONVERSATION_INACTIVE_REVOCATION',async trace=>{
   await withT22Fixture(async f=>{
     const a=f.sessions[0],b=f.sessions[1],handler=f.principals[1],admin=f.principals[0],recipient=f.principals[2],cookie=f.runtime.authenticate.browserCookies?.()[2];assert.ok(a&&b&&handler&&admin&&recipient&&cookie);
     const actor=(await f.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[handler.id])).rows[0];assert.ok(actor);
@@ -439,8 +705,10 @@ test('returning to an inactive revoked chat cannot render cached messages while 
     assert.equal((await conversationPost(f.origin,f.handlerCookie,a.id,'internal-notes',{...freshCommand(),text:canary})).status,201);await f.runtime.coordinator.runOnce();
     let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+a.id,width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+')');
+      trace.phase='open-a';
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+a.id,width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[a.id,b.id])});assert.ok(browser);await trace.bind(browser);await browser.waitFor(ready);await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+')');
       await browser.waitFor(`Boolean(document.querySelector('a[href*="/conversations/${b.id}"]'))`);await browser.evaluate(`document.querySelector('a[href*="/conversations/${b.id}"]').click()`);await browser.waitFor(ready+`&&location.pathname.endsWith('${b.id}')&&!document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)})`);
+      trace.phase='transfer';
       const entry=await (await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).json() as ConversationChatEntry;
       const transferred=await conversationPost(f.origin,f.cookie,a.id,'transfer',{...freshCommand(entry.session.row_version),target_principal_id:recipient.id,force:true,reason_code:'SYNTHETIC_READ_REVOCATION'});assert.equal(transferred.status,200,JSON.stringify(await transferred.json()));
       assert.equal((await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).status,404);
@@ -448,10 +716,12 @@ test('returning to an inactive revoked chat cannot render cached messages while 
         const method=options?.method??(url instanceof Request?url.method:'GET');
         if(method.toUpperCase()==='GET'&&new URL(url instanceof Request?url.url:url,document.baseURI).pathname==='/api/workbench/conversations/summary')globalThis.__revokedSummaryReads++;
         if(String(url).startsWith(${JSON.stringify(path)})&&(!options?.method||options.method==='GET')){globalThis.__revokedReadStarted=true;return original(url,options).then(async response=>{globalThis.__revokedResponses++;await gate;return response;});}return original(url,options);};new MutationObserver(()=>{if(document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)}))globalThis.__revokedLeak=true;}).observe(document.body,{childList:true,subtree:true,characterData:true});history.pushState({},'',${JSON.stringify('/workbench/app/conversations/'+a.id)});dispatchEvent(new PopStateEvent('popstate'));})()`);
+      trace.phase='held-read';
       await browser.waitFor('globalThis.__revokedReadStarted');assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+'))||globalThis.__revokedLeak'),false,'an inactive chat must not expose cached internal notes before its current read completes');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-ready]'))"),false);
-      await browser.waitFor('globalThis.__revokedResponses>0');await browser.evaluate('globalThis.__releaseRevoked()');
-      await browser.waitFor("document.querySelector('.inbox-empty .ds-empty-state[role=status]')?.textContent.includes('无法查看这段会话')&&!document.querySelector('[data-conversation-ready]')");
+      await browser.waitFor('globalThis.__revokedResponses>0');
+      trace.phase='release';await trace.releaseRevokedRead(browser);
+      await trace.waitForDeniedAlert(browser,"document.querySelector('.inbox-empty .ds-empty-state[role=status]')?.textContent.includes('无法查看这段会话')&&!document.querySelector('[data-conversation-ready]')");
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[role=alert]'))"),false,'no error alert after a revoked chat settles');
       assert.equal(await browser.evaluate('globalThis.__revokedLeak'),false);
       await delay(1500);
@@ -461,39 +731,49 @@ test('returning to an inactive revoked chat cannot render cached messages while 
       await delay(500);
       const later=await browser.evaluate('globalThis.__revokedSummaryReads');
       assert.ok(typeof later==='number'&&later-summaryReads<=1,'expected at most one realtime summary GET in 500 ms, count went from '+summaryReads+' to '+later);
-      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false,summary_reads_after_revoke:summaryReads,summary_reads_after_settle:later,denial_panel:'status'}));
-    }catch(error){failure=error;}
-    await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate('globalThis.__releaseRevoked?.()');await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}}],failure);
+      trace.proof={same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false,summary_reads_after_revoke:summaryReads,summary_reads_after_settle:later,denial_panel:'status'};
+    }catch(error){failure=error;trace.report('failed');}
+    trace.phase='cleanup';
+    await closeBrowserTestResources([
+      async()=>{await browser?.evaluate('globalThis.__releaseRevoked?.()');},
+      async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+    ],failure);
   },{inbox:true,realtime:true});
-});
-test('summary drawer blocks covered conversation cursor writes and closing re-observes visible text',async()=>{
+}));
+test('summary drawer blocks covered conversation cursor writes and closing re-observes visible text',()=>withInboxDiagnostics('CONVERSATION_SUMMARY_FOREGROUND',async trace=>{
   await withT22Fixture(async f=>{
     const session=f.sessions[0];assert.ok(session);const cursor=async()=>Number((await f.pool.query<{last:string}>('SELECT last_read_sequence::text AS last FROM conversation.read_cursor WHERE session_id=$1::uuid AND principal_id=$2::uuid',[session.id,f.principals[0]?.id])).rows[0]?.last??'0');
     let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      trace.phase='launch';
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[session.id])});assert.ok(browser);
+      await trace.bind(browser);browser=trace.foregroundBrowser(browser);
       await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});
-      await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      trace.phase='chat-live';await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
       await browser.evaluate(`(()=>{globalThis.__summaryReads={armed:false,gets:0,posts:0};const original=fetch;globalThis.fetch=(path,options)=>{const name=new URL(String(path),location.origin).pathname,t=globalThis.__summaryReads;if(t.armed){if(name===${JSON.stringify('/api/conversations/'+session.id)})t.gets++;if(options?.method==='POST'&&name===${JSON.stringify('/api/conversations/'+session.id+'/read-cursor')})t.posts++;}return original(path,options);};window.dispatchEvent(new Event('focus'));})()`);
       const initial=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(Number.isSafeInteger(initial)&&initial>0);
-      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${initial};})()`);
-      await clickWorkbenchControl(browser,'.inbox-business .inbox-mini-ticket a');await browser.waitFor("document.querySelector('[role=dialog].detail-dialog.ds-drawer')?.checkVisibility()===true");
+      trace.phase='initial-cursor';await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${initial};})()`);
+      trace.phase='open-drawer-control';await clickWorkbenchControl(browser,'.inbox-business .inbox-mini-ticket a');
+      trace.phase='drawer-open';await browser.waitFor("document.querySelector('[role=dialog].detail-dialog.ds-drawer')?.checkVisibility()===true");
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
       const before=await cursor();await browser.evaluate('globalThis.__summaryReads.armed=true');
       const entry=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
       assert.equal((await conversationPost(f.origin,f.cookie,session.id,'internal-notes',{...freshCommand(entry.session.row_version),text:'合成摘要遮挡期间的新正文'})).status,201);await f.runtime.coordinator.runOnce();
-      await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes('合成摘要遮挡期间的新正文')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      trace.phase='covered-material';await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes('合成摘要遮挡期间的新正文')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
       const newest=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(newest>before);
       const covered=await browser.evaluate("(()=>{window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('resize'));const node=document.querySelector('.inbox-timeline');node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));return {gets:globalThis.__summaryReads.gets,posts:globalThis.__summaryReads.posts};})()") as {gets:number;posts:number};
       assert.deepEqual(covered,{gets:0,posts:0},'covered material does not start a Cursor intent or its authority GET');assert.equal(await cursor(),before,'unseen text never advances the durable cursor');
       await browser.evaluate('globalThis.__summaryReads.armed=false');
-      await clickWorkbenchControl(browser,'[role=dialog].ds-drawer button[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('.inbox-associated-detail')");
-      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${newest};})()`);
+      trace.phase='close-drawer-control';await clickWorkbenchControl(browser,'[role=dialog].ds-drawer button[aria-label="关闭详情"]');
+      trace.phase='drawer-closed';await browser.waitFor("!document.querySelector('.inbox-associated-detail')");
+      trace.phase='resumed-cursor';await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${newest};})()`);
       assert.ok(await cursor()>=newest,'closing the drawer re-observes actually visible text without a synthetic scroll');
-      console.log('CONVERSATION_SUMMARY_FOREGROUND '+JSON.stringify({before,covered,after:await cursor(),newest,real_http_pg:true}));
-    }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+      trace.proof={before,covered,after:await cursor(),newest,real_http_pg:true};
+    }catch(error){failure=error;trace.report('failed');}
+    trace.phase='cleanup';
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   },{inbox:true,realtime:true,personalRead:true,recovery:false});
-});
+}));
 
 test('an uncertain personal Cursor remains GET-only across foreground observations and new projected material',async()=>{
   await withT22Fixture(async f=>{

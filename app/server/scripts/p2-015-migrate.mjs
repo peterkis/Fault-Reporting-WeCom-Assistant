@@ -1,3 +1,4 @@
+import {isMigrationDatabase,migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -76,11 +77,11 @@ export async function validateP2015Catalog(pool) {
 }
 
 export async function migrateP2015({ databaseUrl, mode = 'apply', PoolFactory = createPostgresPool } = {}) {
-  if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw failure('P2_015_DATABASE_URL_REQUIRED');
+  if (!isMigrationDatabase(databaseUrl)) throw failure('P2_015_DATABASE_URL_REQUIRED');
   if (!['apply','check','status'].includes(mode)) throw failure('P2_015_MIGRATION_MODE_INVALID');
   const sql = await readFile(MIGRATION_URL, 'utf8');
   const checksum = createHash('sha256').update(sql).digest('hex');
-  const pool = PoolFactory({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000,
+  const pool = PoolFactory({ ...migrationConnection(databaseUrl), max: 1, connectionTimeoutMillis: 5_000,
     allowExitOnIdle: true, application_name: 'p2_015_migrator' });
   try {
     const arch = await pool.query(`SELECT count(*)::integer AS count FROM platform.schema_migration

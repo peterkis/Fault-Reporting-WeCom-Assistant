@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
@@ -259,7 +260,7 @@ if (options === null) {
   process.exitCode = 1;
 } else {
   const pool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...migrationConnection(databaseUrl),
     max: 1,
     connectionTimeoutMillis: 2_000,
   });

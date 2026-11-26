@@ -102,6 +102,7 @@ import {serviceClosureSchemaReady} from '../scripts/service-closure-migrate.mjs'
 import {completionDismissalSchemaReady} from '../scripts/completion-dismissal-migrate.mjs';
 import {notificationVocabularySchemaReady} from '../scripts/notification-vocabulary-migrate.mjs';
 import {systemClosureRestoreSchemaReady} from '../scripts/system-closure-restore-migrate.mjs';
+import {ticketTerminalAtSchemaReady} from '../scripts/ticket-terminal-at-migrate.mjs';
 import {workbenchReleaseSchemaChecks} from './workbench-schema-readiness.mjs';
 import { appendP2016Realtime,lockP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { createP2016OrchestrationWorker } from './p2-016-orchestration-adapters.mjs';
@@ -290,16 +291,16 @@ function assembleRuntime({pool,flags={},mvpNotificationsEnabled=false,workbenchM
             const session=await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()",[sessionId,principal.principal_id]);
             if(session.rowCount!==1)failP2016('FORBIDDEN',403);
           }
-          const item=await workbenchQuery.authorizedItem(authContext,target.kind,target.id);
+          const item=await workbenchQuery.authorizedIdentity(authContext,target.kind,target.id);
           if(item.kind!==target.kind||item.id!==target.id)failP2016('NOT_FOUND',404);
           if(field!==null){
             if(field==='manual-review'){
               if(!workbenchManualReviewEnabled)failP2016('FORBIDDEN',403);
               // Editing is a field of the currently displayed canonical Item.
               // A readable Item alone grants no permission to edit a Review.
-              const detail=await workbenchQuery.detail({authContext,kind:target.kind,id:target.id,cursor:null,limit:'1'});
+              const refs=await workbenchQuery.activityReviewReferences(authContext,item);
               let allowed=false;
-              for(const ref of detail.review_refs??[]){
+              for(const ref of refs){
                 if(ref.status!=='PENDING')continue;
                 const review=await (reviews as ReviewFacade).getManualReviewDetail({authContext,reviewId:ref.id});
                 const canonical=await (reviews as ReviewFacade).canonicalItem({authContext,reviewId:ref.id});
@@ -398,7 +399,7 @@ function assembleRuntime({pool,flags={},mvpNotificationsEnabled=false,workbenchM
           const reporterProfilesReady=!workbenchReporterProfilesEnabled||await ticketReporterProfilesSchemaReady(pool);
           const actorAvatarsReady=!workbenchActorAvatarsEnabled||await actorAvatarSchemaReady(pool);
           // ADR-0058: the closure vocabulary (COMPLETED / DISMISSED) is part of the same closure schema readiness; so is the ADR-0056 system restoration rule (074).
-          const closureReady=await serviceClosureSchemaReady(pool)&&await completionDismissalSchemaReady(pool)&&await notificationVocabularySchemaReady(pool)&&await systemClosureRestoreSchemaReady(pool);
+          const closureReady=await serviceClosureSchemaReady(pool)&&await completionDismissalSchemaReady(pool)&&await notificationVocabularySchemaReady(pool)&&await systemClosureRestoreSchemaReady(pool)&&await ticketTerminalAtSchemaReady(pool);
           const releaseChecks=await checkSchema(pool);
           const ready=Object.values(releaseChecks).every(Boolean)&&closureReady&&actorAvatarsReady&&reporterProfilesReady&&h5Ready&&mvpSchemaReady&&personalReadReady&&supplementReady&&followReady&&followUpReady&&roundNotificationsReady&&botFeedbackReady&&reopenReady&&returnToDispatchReady&&unassignReady&&manualReportsReady&&staffCompletionReady&&selfHandlingReady&&base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,

@@ -1,3 +1,4 @@
+import {FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,withFinalStatementClock} from './workbench-card-projections.mjs';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {createWeb01WorkbenchQuery} from './web01-workbench-query.mjs';
 import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
@@ -8,44 +9,22 @@ import {once} from 'node:events';
 import type {createWeComWorkbenchAuthentication} from './p2-016-workbench-wecom-auth.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
-import {workbenchSearchCardsSql} from './web01-workbench-query.mjs';
+import {buildSingleItemReadableSql} from './web01-workbench-query.mjs';
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
-type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
+type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedIdentity']>>;
 const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[],truncated:false};
 const LIMIT=20;
 function sameRegistration(first:StoredAttachment,current:Readonly<StoredAttachment>):void {if(JSON.stringify(first)!==JSON.stringify(current))throw new AttachmentError('ATTACHMENT_INTEGRITY_FAILED');}
 function visible(asset:StoredAttachment,reason:AttachmentReason|null):AttachmentMetadata {return {ref:asset.ref,display_name:asset.mime_type==='image/png'?'报修附件.png':asset.mime_type==='image/jpeg'?'报修附件.jpg':'报修附件',mime_type:asset.mime_type,byte_size:asset.byte_size,available:reason===null,reason};}
-export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false,metadataOnly=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean;metadataOnly?:boolean}) {
-  const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
-  const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
-  async function requireSession(authContext:Context['authContext'],kind:string,id:string){
-    const item=await query.authorizedItem(authContext,kind,id),principal=await authorization.resolvePrincipal(authContext);
-    if(!principal)failP2016('NOT_FOUND',404);
-    const scope=ticketPredicateP2016(principal);let predicate:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
-    if(!currentSessionPredicate){
-      if(!localTestProfile||'session_id' in authContext)throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
-    }else predicate=currentSessionPredicate(authContext,authContext.principal_id,9);
-    // Reuse the exact card READ predicate; its current role/team basis and the
-    // official Session are consumed in the same last statement after all waits.
-    const current=await pool.query<{readable:boolean;current:boolean}>(workbenchSearchCardsSql(true)+` SELECT
-      EXISTS(SELECT 1 FROM cards WHERE kind=$4 AND id=$5) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
-        WHERE actor.id=$2::uuid AND actor.is_active
-        AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=$6::text[]
-        AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
-      ($8::bigint>platform.physical_epoch_ms() AND ${predicate.sql}) AS current`,
-    [...scope.values,item.kind,item.id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,...predicate.values]);
-    if(current.rows[0]?.current!==true)throw new AttachmentError('ATTACHMENT_AUTH_REVOKED',401);
-    if(current.rows[0]?.readable!==true)failP2016('NOT_FOUND',404);
-  }
-  async function sources(item:Item,assets:readonly StoredAttachment[]) {
-    if(!assets.length)return new Map<string,{fresh:boolean;trusted:boolean}>();
-    const rows=await pool.query<{ref:string;fresh:boolean;trusted:boolean}>(`SELECT a.ref,
-      i.retention_until>platform.local_now() AND m.retention_until>platform.local_now()
-      AND NOT EXISTS(SELECT 1 FROM intake.contact_journey original WHERE original.retention_until_epoch_ms<=platform.physical_epoch_ms()
+interface AttachmentSource {ref:string;fresh:boolean;trusted:boolean}
+function sourceSql(epochSql:string,localSql:string){
+  return `SELECT a.ref,
+      i.retention_until>${localSql} AND m.retention_until>${localSql}
+      AND NOT EXISTS(SELECT 1 FROM intake.contact_journey original WHERE original.retention_until_epoch_ms<=${epochSql}
         AND (original.origin_intake_id=i.id OR $5='ticket' AND original.linked_ticket_id=$6::uuid AND EXISTS(
           SELECT 1 FROM intake.channel_leg own_leg WHERE own_leg.journey_id=original.id AND own_leg.source_intake_id=i.id)))
       AND (i.id=$4::uuid OR EXISTS(SELECT 1 FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
-        WHERE j.linked_ticket_id=$6::uuid AND l.source_intake_id=i.id AND j.retention_until_epoch_ms>platform.physical_epoch_ms())) AS fresh,
+        WHERE j.linked_ticket_id=$6::uuid AND l.source_intake_id=i.id AND j.retention_until_epoch_ms>${epochSql})) AS fresh,
       i.privacy_class IN ('INTERNAL','SENSITIVE_INTERNAL') AND m.privacy_class IN ('INTERNAL','SENSITIVE_INTERNAL') AS trusted
       FROM unnest($1::uuid[],$2::bigint[],$3::text[],$7::text[]) a(intake_id,message_id,media_ref,ref)
       JOIN intake.service_intake_message rel ON rel.intake_id=a.intake_id AND rel.channel_message_id=a.message_id
@@ -54,34 +33,106 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null,
       WHERE (i.id=$4::uuid OR $5='ticket' AND EXISTS(SELECT 1 FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
         WHERE j.linked_ticket_id=$6::uuid AND l.source_intake_id=i.id))
       AND EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(m.normalized_message->'content')='array' THEN m.normalized_message->'content' ELSE '[]'::jsonb END) body
-        WHERE body->>'kind'='media' AND body->'media'->>'download_ref'=a.media_ref)`,
-      [assets.map(a=>a.source_intake_id),assets.map(a=>a.source_message_id),assets.map(a=>a.media_ref),item.intake_id,item.kind,item.id,assets.map(a=>a.ref)]);
-    return new Map(rows.rows.map(r=>[r.ref,{fresh:r.fresh,trusted:r.trusted}]));
+        WHERE body->>'kind'='media' AND body->'media'->>'download_ref'=a.media_ref)`;
+}
+function sourceValues(item:Item,assets:readonly StoredAttachment[]){
+  return [assets.map(a=>a.source_intake_id),assets.map(a=>a.source_message_id),assets.map(a=>a.media_ref),
+    item.intake_id,item.kind,item.id,assets.map(a=>a.ref)];
+}
+export function createWorkbenchAttachments({pool,query,enabled=false,store=null,currentSessionPredicate,localTestProfile=false,metadataOnly=false}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate']|undefined;localTestProfile?:boolean;metadataOnly?:boolean}) {
+  const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
+  const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
+  async function currentSources(authContext:Context['authContext'],kind:string,id:string,assets:readonly StoredAttachment[]){
+    const item=await query.authorizedIdentity(authContext,kind,id),principal=await authorization.resolvePrincipal(authContext);
+    if(!principal)failP2016('NOT_FOUND',404);
+    const scope=ticketPredicateP2016(principal);
+    const values:unknown[]=sourceValues(item,assets);
+    const param=(value:unknown,cast:string)=>{values.push(value);return `$${values.length}::${cast}`;};
+    const isAdminParam=param(scope.values[0],'boolean'),principalParam=param(scope.values[1],'uuid');
+    const teamIdsParam=item.kind==='intake'?'ARRAY[]::text[]':param(scope.values[2],'text[]');
+    const idParam='$6::uuid';
+
+    const rolesParam=param([...principal.roles],'text[]'),teamsParam=param([...principal.team_ids],'text[]');
+    const expiresParam=param(authContext.expires_epoch_ms,'bigint');
+    let predicate:{sql:string;values:unknown[]}={sql:'TRUE',values:[]};
+    if(!currentSessionPredicate){
+      if(!localTestProfile||'session_id' in authContext)throw new AttachmentError('ATTACHMENT_AUTH_UNAVAILABLE',503);
+    }else predicate=currentSessionPredicate(authContext,authContext.principal_id,values.length+1);
+    values.push(...predicate.values);
+    // Reuse the exact card READ predicate; its current role/team basis and the
+    // official Session are consumed in the same last statement after all waits.
+    const readableSql=buildSingleItemReadableSql(item.kind,idParam,'$4::uuid',FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,{isAdmin:isAdminParam,principalId:principalParam,teamIds:teamIdsParam});
+    const current=await pool.query<{readable:boolean;current:boolean;sources:AttachmentSource[]}>(withFinalStatementClock(`SELECT
+      EXISTS(${readableSql}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal actor
+        WHERE actor.id=${principalParam} AND actor.is_active
+        AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=actor.id ORDER BY role COLLATE "C")=${rolesParam}
+        AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=actor.id ORDER BY team_id COLLATE "C")=${teamsParam}) AS readable,
+      (${expiresParam}>${FINAL_EPOCH_SQL} AND ${predicate.sql}) AS current,
+      COALESCE((SELECT jsonb_agg(to_jsonb(source)) FROM (${sourceSql(FINAL_EPOCH_SQL,FINAL_LOCAL_SQL)}) source),'[]'::jsonb) AS sources`),
+    values);
+    if(current.rows[0]?.current!==true)throw new AttachmentError('ATTACHMENT_AUTH_REVOKED',401);
+    if(current.rows[0]?.readable!==true)failP2016('NOT_FOUND',404);
+    return new Map(current.rows[0].sources.map(source=>[source.ref,source]));
   }
   async function authorize(authContext:Context['authContext'],kind:string,id:string,ref:string) {
-    const item=await query.authorizedItem(authContext,kind,id);
+    const item=await query.authorizedIdentity(authContext,kind,id);
     if(!enabled||!store||stopped)throw new AttachmentError('ATTACHMENT_STORAGE_UNAVAILABLE',503);
     const asset=(await store.entries()).find(a=>a.ref===ref);if(!asset)throw new AttachmentError('ATTACHMENT_NOT_FOUND',404);
-    const source=(await sources(item,[asset])).get(ref);if(!source)throw new AttachmentError('ATTACHMENT_NOT_FOUND',404);
+    const first=await readSources(item,[asset]);
+    verifyAsset(asset,first.get(ref));
+    verifyAsset(asset,(await currentSources(authContext,kind,id,[asset])).get(ref));
+    return asset;
+  }
+  async function readSources(item:Item,assets:readonly StoredAttachment[]){
+    if(!assets.length)return new Map<string,AttachmentSource>();
+    const query=sourceSql('platform.physical_epoch_ms()','platform.local_now()');
+    const result=await pool.query<AttachmentSource>(query,sourceValues(item,assets));
+    return new Map(result.rows.map(source=>[source.ref,source]));
+  }
+  function verifyAsset(asset:StoredAttachment,source:AttachmentSource|undefined){
+    if(!source)throw new AttachmentError('ATTACHMENT_NOT_FOUND',404);
     if(!source.fresh)throw new AttachmentError('ATTACHMENT_EXPIRED',410);
     if(!source.trusted)throw new AttachmentError('ATTACHMENT_UNTRUSTED');
     const reason=attachmentReason(asset);if(reason)throw new AttachmentError('ATTACHMENT_'+reason,reason==='EXPIRED'?410:422);
-    // The final check follows every source/READ wait, including each subsequent chunk.
-    await requireSession(authContext,kind,id);
-    return asset;
   }
   async function list(authContext:Context['authContext'],kind:string,id:string,signal:AbortSignal):Promise<AttachmentPage> {
-    const item=await query.authorizedItem(authContext,kind,id);if(!enabled||!store||stopped)return EMPTY;
+    const item=await query.authorizedIdentity(authContext,kind,id);if(!enabled||!store||stopped)return EMPTY;
     let assets:readonly StoredAttachment[];try{assets=await store.entries();}catch{return EMPTY;}
-    const allowed=await sources(item,assets),selected=assets.filter(a=>allowed.has(a.ref)).slice(0,LIMIT+1),items:AttachmentMetadata[]=[];
-    for(const asset of selected.slice(0,LIMIT)){
-      signal.throwIfAborted();const source=allowed.get(asset.ref);let reason:AttachmentReason|null=source?.fresh===false?'EXPIRED':source?.trusted===false?'UNTRUSTED':attachmentReason(asset);
-      // Server-side validation is bounded and serial; no attachment content is sent or prefetched by the browser.
-      if(!reason&&!metadataOnly){try{const lease=await store.open(asset.ref,signal);try{sameRegistration(asset,lease.asset);}finally{await lease.close();}}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
-      items.push(visible(asset,reason));
+    function selectPage(entries:readonly StoredAttachment[],sources:ReadonlyMap<string,AttachmentSource>){
+      const page:{asset:StoredAttachment;reason:AttachmentReason|null}[]=[];
+      for(const asset of entries){
+        const source=sources.get(asset.ref);if(!source)continue;
+        page.push({asset,reason:!source.fresh?'EXPIRED':!source.trusted?'UNTRUSTED':attachmentReason(asset)});
+        if(page.length>LIMIT)break;
+      }
+      return page;
     }
-    await requireSession(authContext,kind,id);
-    return {available:true,reason:null,items,truncated:selected.length>LIMIT};
+    const checkedFiles=new Map<string,AttachmentReason|null>();
+    let page=selectPage(assets,await readSources(item,assets));
+    for(;;){
+      for(const {asset,reason} of page.slice(0,LIMIT)){
+        signal.throwIfAborted();
+        if(reason||metadataOnly||checkedFiles.has(asset.ref))continue;
+        let fileReason:AttachmentReason|null=null;
+        try{
+          const lease=await store.open(asset.ref,signal);
+          try{sameRegistration(asset,lease.asset);}finally{await lease.close();}
+        }catch(error){
+          const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';
+          fileReason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';
+        }
+        checkedFiles.set(asset.ref,fileReason);
+      }
+      // The same final source snapshot determines both the public prefix and its sentinel.
+      // Only a newly visible file can require another validation pass. Each manifest ref opens at most once.
+      page=selectPage(assets,await currentSources(authContext,kind,id,assets));
+      signal.throwIfAborted();
+      const prefix=page.slice(0,LIMIT);
+      if(metadataOnly||prefix.every(({asset,reason})=>reason!==null||checkedFiles.has(asset.ref))){
+        return {available:true,reason:null,items:prefix.map(({asset,reason})=>visible(asset,reason??checkedFiles.get(asset.ref)??null)),
+          truncated:page.length>LIMIT};
+      }
+    }
   }
   return Object.freeze({
     async handler(context:Context) {

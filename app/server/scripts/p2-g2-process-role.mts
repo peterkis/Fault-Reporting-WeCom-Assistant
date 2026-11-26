@@ -1,3 +1,4 @@
+import {requireTicketTerminalAtSchema} from './ticket-terminal-at-migrate.mjs';
 export interface SyntheticG2ProviderResult {errcode:0;headers:{req_id:string}}
 import type { G2Manifest, G2Role, CandidateFingerprint } from '../src/p2-g2-validation-config.mjs';
 import type { PostgresPool } from '../src/platform/postgres-pool.mjs';
@@ -67,7 +68,7 @@ export async function main(argv = process.argv.slice(2)) {
     incidentBackgroundMaintenance: false, communicationAppend: appendG2Communication,ticketNotificationAdditionalEvents:c.ticketNotificationAdditionalEvents,
     reporterOrigin: (manifest as G2Manifest).reporter_origin, reporterHmacSecret: c.reporterHmacSecret,
     allowedHosts: [new URL((manifest as G2Manifest).reporter_origin).host], allowLocalHttp: (manifest as G2Manifest).mode==='synthetic', personDestinationAuthorizer: authorizer(options.pool) }) });
-  if (role === 'WORKER') return runWorker({ reportCycleHealth: true,
+  if (role === 'WORKER') return runWorker({ reportCycleHealth: true,beforeReady:requireTicketTerminalAtSchema,
     extensionFactory: ({ pool }) => createP2012WorkerExtension({ pool, reporterAccess: access(pool),
       identityHashKey: c.identityHashKey, personDestinationAuthorizer: authorizer(pool), testLabel: false, communicationAppend: appendG2Communication,
       directoryPort:createWeComMemberDirectory({enabled:c.liveApproved&&c.memberDirectoryEnabled,botId:c.botId,

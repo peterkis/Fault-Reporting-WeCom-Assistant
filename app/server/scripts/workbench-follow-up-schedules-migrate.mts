@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -20,11 +21,11 @@ export async function followUpSchemaReady(queryable:PostgresTransaction):Promise
   const row=result.rows[0];return row?.checksum_sha256===checksum&&row.current_table==='pilot_ticket.follow_up_schedule'&&row.revision_table==='pilot_ticket.follow_up_schedule_revision'
     &&row.current_time_pair===true&&row.revision_time_pair===true;
 }
-export async function migrateWorkbenchFollowUpSchedules({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}){
+export async function migrateWorkbenchFollowUpSchedules({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}){
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
   const sql=await readFile(file,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
   const checksum=createHash('sha256').update(sql).digest('hex');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'follow_up_schedule_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'follow_up_schedule_migrator'});
   try{return await transactionP2016(pool,async transaction=>{
     await transaction.query("SELECT pg_advisory_xact_lock(hashtext('FOLLOW_UP_SCHEDULE_MIGRATION'))");
     if((await transaction.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount!==1)failP2016('FOLLOW_UP_UNAVAILABLE',503);

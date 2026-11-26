@@ -7043,6 +7043,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/ticket-terminal-at-migration.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/fk-indexes-migration.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7302,6 +7311,33 @@
       "node_flags": [],
       "requires_database": true,
       "requires_browser": true,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/card42a-sql-contract.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": false,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/card42a-board-query-parity.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
+      "path": "tests/card42a-reminder-grant.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
       "requires_powershell": false,
       "requires_pyyaml": false
     }
@@ -9326,7 +9362,8 @@
       "tests/wbint-t22-realtime-tracer.browser.test.mts",
       "tests/pc-admin-legacy-retirement.browser.test.mts",
       "tests/visual-regression.test.mts",
-      "tests/pc-admin-card35c-states.browser.test.mts"
+      "tests/pc-admin-card35c-states.browser.test.mts",
+      "tests/card42a-sql-contract.test.mts"
     ],
     "pr-core": [
       "tests/p2-016-ticket-lifecycle.integration.test.mjs",

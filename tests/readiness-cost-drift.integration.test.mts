@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { p2016CatalogInventory } from '../app/server/scripts/p2-016-migrate.mjs';
-import { FOLLOW_MIGRATION_ID, followReceiptSchemaReady, followSchemaReady } from '../app/server/scripts/workbench-follow-migrate.mjs';
-import { supplementFollowUpSchemaReady } from '../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
-import { workbenchReadinessCatalog } from '../app/server/scripts/workbench-readiness-catalog.mjs';
-import { conversationDeliveryReceiptCatalog, conversationDeliveryReceiptSchemaShape } from '../app/server/src/p2-006-delivery-command-schema.mjs';
+import { migrateServiceClosure } from '../app/server/scripts/service-closure-migrate.mjs';
+import { ticketTerminalAtSchemaReady } from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
+import { fkIndexesSchemaReady } from '../app/server/scripts/fk-indexes-migrate.mjs';
+import { retentionTimeContractSchemaReady } from '../app/server/scripts/retention-and-time-contract-migrate.mjs';
+import { FOLLOW_MIGRATION_ID, readReadyFollowReceipt, followReceiptSchemaReady, followSchemaReady } from '../app/server/scripts/workbench-follow-migrate.mjs';
+import { supplementFollowUpCatalog, supplementFollowUpSchemaReady } from '../app/server/scripts/workbench-supplement-follow-up-migrate.mjs';
+import { projectWorkbenchCatalog, readWorkbenchCatalog, workbenchReadinessCatalog } from '../app/server/scripts/workbench-readiness-catalog.mjs';
+import { readWorkbenchRelationCatalog, normalizeServiceClosureReceiptCatalog, conversationDeliveryReceiptCatalog, conversationDeliveryReceiptSchemaShape } from '../app/server/src/p2-006-delivery-command-schema.mjs';
 import type { PostgresPool, PostgresQueryRow, PostgresTransaction } from '../app/server/src/platform/postgres-pool.mjs';
 import { applyFullSchemaThrough077 } from './helpers/full-schema-migrations.mjs';
 import { withP2016IsolatedDatabase } from './helpers/p2-016-postgres-harness.mjs';
@@ -20,12 +25,118 @@ const index = 'ticket_command_receipt_source_intake_fk_idx';
 const dropIndex = 'DROP INDEX pilot_ticket.' + index;
 const wrongChecksum = "UPDATE platform.schema_migration SET checksum_sha256=repeat('0',64) WHERE migration_id=";
 
+async function useRegistryReader(client: PostgresTransaction) {
+  const role = 'ticket_card42a_r20_' + randomUUID().replaceAll('-', '');
+  await client.query('CREATE ROLE ' + role + ' NOLOGIN');
+  await client.query('GRANT ' + role + ' TO CURRENT_USER');
+  await client.query('GRANT USAGE ON SCHEMA platform TO ' + role);
+  await client.query('GRANT SELECT ON platform.schema_migration TO ' + role);
+  await client.query('SET LOCAL ROLE ' + role);
+  assert.equal((await client.query("SELECT has_schema_privilege('pilot_ticket','USAGE') AS allowed")).rows[0]?.allowed, false);
+  return role;
+}
+
 test('full 077 readiness checks see rolled-back and newly introduced drift on the same connection', { timeout: 240_000 }, t =>
   withP2016IsolatedDatabase({
     databaseUrl: process.env.PILOT_DATABASE_URL,
-    purpose: 'readycost',
+    purpose: 'readycost', namespace: 'ticket_card42a',
     run: async ({ pool, databaseUrl }: { pool: PostgresPool; databaseUrl: string }) => {
-      await applyFullSchemaThrough077(databaseUrl);
+      await applyFullSchemaThrough077(databaseUrl, {beforeClosureMigration: async () => {
+        await t.test('pre-071 receipt readiness rejects a registry reader without pilot_ticket USAGE and preserves its transaction', async t => {
+          const client = await pool.connect();
+          try {
+            await client.query('BEGIN');
+            const reads = t.mock.method(client, 'query');
+            try {
+              for (const [name, ready] of Object.entries(checks)) {
+                reads.mock.resetCalls();
+                assert.equal(await ready(client), true, name);
+                const count = reads.mock.callCount();
+                assert.ok(count > 0 && count <= (ceiling[name] ?? 0), name + ' used ' + count + ' statements');
+              }
+            } finally { reads.mock.restore(); }
+            const role = await useRegistryReader(client);
+            assert.equal((await client.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read'")).rowCount, 1);
+            for (const ready of [followReceiptSchemaReady, followSchemaReady, supplementFollowUpSchemaReady]) {
+              assert.equal(await ready(client), false, ready.name);
+              assert.equal((await client.query('SELECT 1 AS ok')).rows[0]?.ok, 1);
+            }
+            await client.query('RESET ROLE');
+            await client.query('GRANT USAGE ON SCHEMA pilot_ticket TO ' + role);
+            await client.query('SET LOCAL ROLE ' + role);
+            assert.equal(await followReceiptSchemaReady(client), true);
+          } finally {
+            try { await client.query('ROLLBACK'); } finally { client.release(); }
+          }
+        });
+        await t.test('pre-071 exported index projection checks the current 076 marker', async () => {
+          const client = await pool.connect();
+          try {
+            await client.query('BEGIN');
+            await client.query(`INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
+              SELECT '076_fk_indexes',repeat('0',64),platform.local_from_epoch_ms(epoch),epoch
+                FROM (SELECT platform.physical_epoch_ms() AS epoch) stamp`);
+            const ready = await readReadyFollowReceipt(client);
+            assert.ok(ready);
+            const indexes = projectWorkbenchCatalog(ready.catalog, [receipt], 'receipt').indexes;
+            assert.equal(await ready.priorIndexes([receipt], indexes), null);
+          } finally {
+            try { await client.query('ROLLBACK'); } finally { client.release(); }
+          }
+        });
+        // Commit the real migration on a different connection just after the
+        // reader's registry query. The receipt is healthy on either side of it.
+        async function cross071<T>(mode: 'apply' | 'rollback', check: (tx: PostgresTransaction) => Promise<T>) {
+          let changed = false;
+          const result = await check({
+            async query<R extends PostgresQueryRow>(sql: string, values?: unknown[]) {
+              const read = await pool.query<R>(sql, values);
+              if (!changed && sql.includes('platform.schema_migration')
+                && values?.some(value => Array.isArray(value) && value.includes('061_workbench_conversation_delivery_commands'))) {
+                const transition = await migrateServiceClosure({databaseUrl, mode});
+                assert.equal(transition.status, mode === 'apply' ? 'APPLIED' : 'ROLLED_BACK');
+                changed = true;
+              }
+              return read;
+            },
+          });
+          assert.ok(changed, '071 must commit between the registry and catalog reads');
+          return result;
+        }
+        await t.test('live BOT receipt remains ready across a committed 071 installation', async () => {
+          assert.equal(await conversationDeliveryReceiptSchemaShape(pool), 'BOT');
+          assert.equal(await cross071('apply', conversationDeliveryReceiptSchemaShape), 'BOT');
+          assert.equal(await conversationDeliveryReceiptSchemaShape(pool), 'BOT');
+        });
+        await t.test('062 readiness returns a boolean and preserves the caller transaction across a committed 071 rollback', async () => {
+          await migrateServiceClosure({databaseUrl, mode:'apply'});
+          assert.equal(await supplementFollowUpSchemaReady(pool), true);
+          const caller = await pool.connect();
+          try {
+            await caller.query('BEGIN ISOLATION LEVEL READ COMMITTED');
+            let rolledBack = false;
+            const result = await supplementFollowUpSchemaReady({
+              async query<R extends PostgresQueryRow>(sql: string, values?: unknown[]) {
+                const read = await caller.query<R>(sql, values);
+                if (!rolledBack && sql.includes('platform.schema_migration')
+                  && values?.some(value => Array.isArray(value) && value.includes('061_workbench_conversation_delivery_commands'))) {
+                  const transition = await migrateServiceClosure({databaseUrl, mode:'rollback'});
+                  assert.equal(transition.status, 'ROLLED_BACK');
+                  rolledBack = true;
+                }
+                return read;
+              },
+            });
+            assert.ok(rolledBack, '071 must commit between the registry and catalog reads');
+            // On main b20ea1cc the spanning call can return false while both committed states are ready.
+            assert.equal(typeof result, 'boolean');
+            assert.equal((await caller.query('SELECT 1 AS ok')).rows[0]?.ok, 1);
+            assert.equal(await supplementFollowUpSchemaReady(caller), true);
+          } finally {
+            try { await caller.query('ROLLBACK'); } finally { caller.release(); }
+          }
+        });
+      }});
       const client = await pool.connect();
       let statements = 0;
       const counted: PostgresTransaction = {
@@ -44,6 +155,14 @@ test('full 077 readiness checks see rolled-back and newly introduced drift on th
           assert.ok(statements > 0 && statements <= (ceiling[name] ?? 0), name + ' used ' + statements + ' statements');
         }
         t.diagnostic(label + ' statements/call ' + JSON.stringify(counts));
+      }
+      const releaseChecks = {terminal: ticketTerminalAtSchemaReady, fk: fkIndexesSchemaReady, time: retentionTimeContractSchemaReady};
+      async function assertReleaseReadiness(label: string, rejected?: keyof typeof releaseChecks) {
+        for (const [name, ready] of Object.entries(releaseChecks)) {
+          statements = 0;
+          assert.equal(await ready(counted), name !== rejected, label + ': ' + name);
+          assert.equal(statements, 1, label + ': ' + name + ' must use one statement');
+        }
       }
       async function rolledBack(run: () => Promise<void>) {
         await client.query('BEGIN');
@@ -76,6 +195,204 @@ test('full 077 readiness checks see rolled-back and newly introduced drift on th
           assert.equal(JSON.stringify(await conversationDeliveryReceiptCatalog(client)), JSON.stringify(projected));
           await assertReadiness('full 077', []);
         });
+        const combinedRelations = [receipt, 'pilot_ticket.workbench_supplement_disposition', 'pilot_ticket.workbench_supplement_reply_binding'];
+        const readers = {
+          supplementFollowUpCatalog,
+          readWorkbenchCatalog: (tx: PostgresTransaction) => readWorkbenchCatalog(tx, combinedRelations, true, true),
+        };
+        for (const [name, read] of Object.entries(readers)) {
+          await t.test(name + ' preserves the default catalog bytes and caller settings in one statement', () => rolledBack(async () => {
+            const expected = await read(client);
+            assert.ok(expected.columns.some(column => column.default_expression !== null));
+            assert.ok(expected.constraints.length > 0 && expected.indexes.length > 0);
+            await client.query('SET LOCAL search_path=platform,pilot_ticket,intake,public');
+            await client.query('SET LOCAL quote_all_identifiers=on');
+            const settingsSql = "SELECT pg_catalog.current_setting('search_path') AS path, pg_catalog.current_setting('quote_all_identifiers') AS quoting";
+            const original = (await client.query(settingsSql)).rows;
+            statements = 0;
+            const actual = await read(counted);
+            assert.equal(statements, 1, name);
+            assert.deepEqual((await client.query(settingsSql)).rows, original);
+            assert.equal(JSON.stringify(actual), JSON.stringify(expected), name + ' catalog bytes');
+          }));
+        }
+        await assertReleaseReadiness('075/076/077 installed');
+        const releaseDrift: ReadonlyArray<readonly [keyof typeof releaseChecks, string]> = [
+          ['terminal', wrongChecksum + "'075_ticket_terminal_at'"],
+          ['terminal', 'ALTER TABLE pilot_ticket.ticket RENAME COLUMN terminal_at TO hidden_terminal_at'],
+          ['terminal', 'ALTER TABLE pilot_ticket.ticket DROP CONSTRAINT ticket_terminal_status_check'],
+          ['terminal', 'ALTER TABLE pilot_ticket.ticket DISABLE TRIGGER USER'],
+          ['terminal', 'DROP INDEX pilot_ticket.ticket_terminal_idx'],
+          ['terminal', 'DROP INDEX pilot_ticket.ticket_resolved_terminal_idx'],
+          ['terminal', 'DROP INDEX pilot_ticket.ticket_open_updated_idx'],
+          ['fk', dropIndex],
+          ['time', wrongChecksum + "'077_retention_and_time_contract'"],
+          ['time', "ALTER FUNCTION platform.local_now() SET search_path TO pg_catalog, platform"],
+        ];
+        for (const [gate, ddl] of releaseDrift) {
+          await rolledBack(async () => {
+            await client.query(ddl);
+            await assertReleaseReadiness(ddl, gate);
+          });
+        }
+        await assertReleaseReadiness('075/076/077 restored');
+        await t.test('release checks reject missing structural targets and preserve the caller transaction', () => rolledBack(async () => {
+          await client.query('ALTER TABLE pilot_ticket.ticket RENAME TO hidden_ticket');
+          assert.equal(await ticketTerminalAtSchemaReady(client),false);
+          await client.query('ALTER SCHEMA intake RENAME TO hidden_intake');
+          assert.equal(await fkIndexesSchemaReady(client),false);
+          await client.query('ALTER SCHEMA conversation RENAME TO hidden_conversation');
+          assert.equal(await retentionTimeContractSchemaReady(client),false);
+          assert.equal((await client.query('SELECT 1 AS ok')).rows[0]?.ok,1);
+        }));
+        await t.test('075 rejects an inaccessible ticket schema without aborting the caller transaction', () => rolledBack(async () => {
+          await useRegistryReader(client);
+          assert.equal(await ticketTerminalAtSchemaReady(client),false);
+          assert.equal((await client.query('SELECT 1 AS ok')).rows[0]?.ok,1);
+        }));
+        await t.test('missing 047 rejects before resolving closure or receipt relations', () => rolledBack(async () => {
+          assert.equal((await client.query("DELETE FROM platform.schema_migration WHERE migration_id='047_workbench_personal_read'")).rowCount, 1);
+          await useRegistryReader(client);
+          for (const ready of [followReceiptSchemaReady, followSchemaReady, supplementFollowUpSchemaReady]) {
+            assert.equal(await ready(client), false, ready.name);
+          }
+          assert.equal(await conversationDeliveryReceiptSchemaShape(client), null);
+        }));
+        await t.test('qualified relation catalog resolves quoted names and retains the requested spelling', async () => {
+          const quoted = '"pilot_ticket"."ticket_command_receipt"';
+          const expected = await readWorkbenchRelationCatalog(client, [receipt]);
+          assert.ok(expected.columns.length > 0);
+          const actual = await readWorkbenchRelationCatalog(client, [quoted]);
+          for (const category of ['relations','columns','constraints','indexes','triggers'] as const) {
+            assert.deepEqual(actual[category], expected[category].map(row => ({...row, relation:quoted})), category);
+          }
+        });
+        await t.test('qualified relation catalog checks schema USAGE even for a missing table', () => rolledBack(async () => {
+          const absent = 'pilot_ticket.r20_absent_relation';
+          assert.deepEqual((await readWorkbenchRelationCatalog(client, [absent])).relations, []);
+          await useRegistryReader(client);
+          await expectSqlError(tx => readWorkbenchRelationCatalog(tx, [absent]), '42501');
+        }));
+        await t.test('missing 062 stops before resolving closure tables', () => rolledBack(async () => {
+          assert.equal((await client.query("DELETE FROM platform.schema_migration WHERE migration_id='062_workbench_supplement_follow_up'")).rowCount, 1);
+          await useRegistryReader(client);
+          assert.equal(await supplementFollowUpSchemaReady(client), false);
+        }));
+        await t.test('receipt, follow and supplement use plain SQL without SQL/XML', async () => {
+          const plain: PostgresTransaction = {
+            query<R extends PostgresQueryRow>(sql: string, values?: unknown[]) {
+              assert.doesNotMatch(sql, /\b(?:query_to_xml|table_to_xml|xmltable|xpath)\b/i);
+              return client.query<R>(sql, values);
+            },
+          };
+          for (const check of Object.values(checks)) assert.equal(await check(plain), true);
+          assert.equal(await conversationDeliveryReceiptSchemaShape(plain), 'BOT');
+        });
+        await t.test('a missing closure FK rejects before the renamed baseline can abort the transaction', () => rolledBack(async () => {
+          await client.query('ALTER TABLE pilot_ticket.ticket_command_receipt DROP CONSTRAINT ticket_command_receipt_closure_intake_id_fkey');
+          await client.query('ALTER TABLE pilot_ticket.closure_migration_baseline RENAME TO hidden_closure_baseline');
+          for (const check of Object.values(checks)) assert.equal(await check(client), false);
+          assert.equal((await client.query('SELECT 1 AS ok')).rows[0]?.ok, 1);
+        }));
+        await t.test('closure decision consumes final table presence after a committed drift swap', async () => {
+          const closureTable = 'pilot_ticket.closure_supplement_termination';
+          await pool.query('ALTER TABLE ' + receipt + ' ADD COLUMN r20_receipt_drift integer');
+          let swapped = false;
+          try {
+            assert.equal(await followReceiptSchemaReady(client), false, 'before the swap the receipt is invalid');
+            const changing: PostgresTransaction = {
+              async query<R extends PostgresQueryRow>(sql: string, values?: unknown[]) {
+                if (!swapped && sql.includes('pg_attribute') && values?.some(value => Array.isArray(value) && value.includes(receipt))) {
+                  await pool.query('ALTER TABLE ' + receipt + ' DROP COLUMN r20_receipt_drift; ALTER TABLE ' + closureTable + ' RENAME TO r20_hidden_termination');
+                  swapped = true;
+                }
+                return client.query<R>(sql, values);
+              },
+            };
+            const ready = await followReceiptSchemaReady(changing);
+            assert.equal(swapped, true);
+            assert.equal(await followReceiptSchemaReady(client), false, 'after the swap the closure table is missing');
+            assert.equal(ready, false, 'the guard saw the table but the decisive snapshot did not');
+          } finally {
+            await pool.query(swapped ? 'ALTER TABLE pilot_ticket.r20_hidden_termination RENAME TO closure_supplement_termination'
+              : 'ALTER TABLE ' + receipt + ' DROP COLUMN r20_receipt_drift');
+          }
+        });
+        await t.test('a committed swap cannot splice receipt and supplement inventories', async () => {
+          // Neither committed state is ready. Swap the bad column between tables
+          // on a second connection immediately after the receipt baseline read.
+          const supplementTable = 'pilot_ticket.workbench_supplement_disposition';
+          const column = 'dev34_snapshot_drift';
+          await pool.query('ALTER TABLE ' + supplementTable + ' ADD COLUMN ' + column + ' integer');
+          let swapped = false;
+          try {
+            assert.equal(await supplementFollowUpSchemaReady(client), false, 'before the swap');
+            const swapping: PostgresTransaction = {
+              async query<R extends PostgresQueryRow>(sql: string, values?: unknown[]) {
+                const result = await client.query<R>(sql, values);
+                if (!swapped && sql.includes('FROM pilot_ticket.closure_migration_baseline')) {
+                  await pool.query('ALTER TABLE ' + supplementTable + ' DROP COLUMN ' + column + '; ALTER TABLE ' + receipt + ' ADD COLUMN ' + column + ' integer');
+                  swapped = true;
+                }
+                return result;
+              },
+            };
+            const ready = await supplementFollowUpSchemaReady(swapping);
+            assert.equal(swapped, true);
+            assert.equal(await supplementFollowUpSchemaReady(client), false, 'after the swap');
+            assert.equal(ready, false, 'the two inventories cannot describe different commits');
+          } finally {
+            await pool.query('ALTER TABLE ' + (swapped ? receipt : supplementTable) + ' DROP COLUMN ' + column);
+          }
+        });
+        await t.test('live 071 and scoped 076 proofs retain their paired reads', async () => {
+          const trace: {sql:string; values:unknown[]}[] = [];
+          const traced: PostgresTransaction = {
+            query<R extends PostgresQueryRow>(sql:string,values:unknown[] = []) {
+              trace.push({sql,values});
+              return client.query<R>(sql,values);
+            },
+          };
+          assert.equal(await conversationDeliveryReceiptSchemaShape(traced),'BOT');
+          assert.ok(trace.some(({sql,values}) => values.includes('071_unified_service_closure') && sql.includes('checksum_sha256')
+            && sql.includes('pilot_ticket.closure_record') && sql.includes('pilot_ticket.closure_supplement_termination')));
+          assert.ok(trace.some(({sql,values}) => values.includes('076_fk_indexes') && sql.includes('checksum_sha256')
+            && sql.includes('pg_index') && sql.includes('indkey') && values.some(value=> typeof value==='string' && value.includes(index))));
+        });
+        await t.test('follow and supplement collect their receipt and closure objects in one catalog read', async () => {
+          for (const check of [followReceiptSchemaReady,followSchemaReady,supplementFollowUpSchemaReady]) {
+            let sharedCatalog = false;
+            const names = check === supplementFollowUpSchemaReady
+              ? [receipt,'pilot_ticket.workbench_supplement_disposition','pilot_ticket.workbench_supplement_reply_binding'] : [receipt];
+            assert.equal(await check({
+              query<R extends PostgresQueryRow>(sql:string,values?:unknown[]) {
+                if (values?.some(value => Array.isArray(value) && names.every(name=>value.includes(name)))
+                  && values.includes(true) && ['pg_attribute','pg_constraint','pg_index','pg_trigger','pilot_ticket.closure_record','pilot_ticket.closure_supplement_termination'].every(name=>sql.includes(name))) sharedCatalog=true;
+                return client.query<R>(sql,values);
+              },
+            }),true);
+            assert.ok(sharedCatalog,check.name);
+          }
+        });
+        await t.test('the public normalizer honors the caller closure veto', async () => {
+          const catalog=await conversationDeliveryReceiptCatalog(client);
+          await assert.rejects(normalizeServiceClosureReceiptCatalog(client,catalog,true,{
+            closureReady:async()=>false,
+            priorIndexes:async rows=>rows,
+          }), {message:'SERVICE_CLOSURE_SCHEMA_DRIFT'});
+        });
+        await t.test('a bad receipt rejects before 044 reads information_schema.columns', () => rolledBack(async () => {
+          await client.query('ALTER TABLE pilot_ticket.ticket_command_receipt ADD COLUMN r21_extra integer');
+          await client.query('REVOKE SELECT ON information_schema.columns FROM PUBLIC');
+          const role='ticket_card42a_r21_'+randomUUID().replaceAll('-', '');
+          await client.query('CREATE ROLE '+role+' NOLOGIN');
+          await client.query('GRANT '+role+' TO CURRENT_USER');
+          await client.query('GRANT USAGE ON SCHEMA pilot_ticket,platform TO '+role);
+          await client.query('GRANT SELECT ON platform.schema_migration,pilot_ticket.closure_migration_baseline TO '+role);
+          await client.query('SET LOCAL ROLE '+role);
+          assert.equal((await client.query("SELECT has_table_privilege('information_schema.columns','SELECT') AS allowed")).rows[0]?.allowed,false);
+          assert.equal(await followSchemaReady(client),false);
+        }));
         const cases: ReadonlyArray<readonly [string, string, readonly string[]]> = [
           ['062 checksum', wrongChecksum + "'062_workbench_supplement_follow_up'", supplement],
           ['071 checksum', wrongChecksum + "'071_unified_service_closure'", all],

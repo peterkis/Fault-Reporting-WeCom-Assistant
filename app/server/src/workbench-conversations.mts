@@ -39,7 +39,7 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
       const label=labels.rows.find(row=>row.session_id===entry.session.session_id);let canonical:ConversationCanonicalItem|null=null;
       for(const [kind,id]of [['ticket',label?.ticket_id],['review',label?.review_id],['intake',label?.intake_id]] as const){
         if(!id)continue;
-        try{const item=await itemQuery.authorizedItem(authContext,kind,id);canonical={kind:item.kind,id:item.id,number:item.number,title:item.title};break;}
+        try{canonical=await itemQuery.authorizedSummary(authContext,kind,id);break;}
         catch(error){if(!error||typeof error!=='object'||!('status' in error)||error.status!==404)throw error;}
       }
       result.push({session:entry.session,participant_label:label?.participant_label?.trim()||'报修人（资料未提供）',topic:canonical?.title??label?.topic?.slice(0,512)??'服务主题资料不可用',channel_label:label?.chat_type==='group'?'群来源 · 回复通过私聊':'Bot 私聊',canonical_item:canonical,
@@ -61,7 +61,7 @@ export function createWorkbenchConversations({pool,query,itemQuery,commands,enab
     const [entry]=await enrich(authContext,[value]);if(!entry)invalid(404);return entry;
   }
   async function itemLinks(authContext:WorkbenchAuthContext,kind:string,id:string){
-    const item=await itemQuery.authorizedItem(authContext,kind,id);
+    const item=await itemQuery.authorizedIdentity(authContext,kind,id);
     const rows=await pool.query<{session_id:string}>(`SELECT s.id::text AS session_id FROM conversation.session s
       WHERE s.service_intake_id=$1::uuid OR ($2='ticket' AND EXISTS(
         SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id

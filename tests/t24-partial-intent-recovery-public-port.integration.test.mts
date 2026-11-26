@@ -40,7 +40,7 @@ test('an actual append interrupted before round binding rolls back all physical 
   await assert.rejects(interrupted.runOnce(),/T24_SYNTHETIC_INTERRUPTED_AFTER_REAL_APPEND/u);assert.equal(actualAppends,1,'fault must be after real Message/Outbox/Delivery SQL in caller transaction');
   assert.deepEqual(await physical(context.pool),before,'no partial public_ref/Message/Outbox/Delivery/031/041/grant may survive rollback');
   assert.deepEqual(await deliveryFacts(http,id),[]);assert.deepEqual(await http.detail(id),committed);
-  const freshPool=createPostgresPool({connectionString:context.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t24_draft_partial_recovery'});
+  const freshPool=createPostgresPool({...context.databaseConnection,max:1,connectionTimeoutMillis:5000,application_name:'t24_draft_partial_recovery'});
   try{const recovered=createTicketRoundNotifications({pool:freshPool,enabled:true,botId:'bot-test',reporterAccess:context.runtime.reporterAccess});await recovered.runOnce();await recovered.runOnce();}
   finally{await freshPool.end();assert.equal(freshPool.totalCount,0);}
   const recovered=await deliveryFacts(http,id);assert.equal(recovered.length,1);assert.equal(recovered[0]?.node,'FIRST_RESPONSIBILITY');

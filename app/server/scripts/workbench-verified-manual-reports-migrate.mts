@@ -1,17 +1,18 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {transactionP2016,failP2016} from '../src/p2-016-domain-contracts.mjs';
 export const VERIFIED_MANUAL_REPORT_MIGRATION_ID='045_workbench_verified_manual_reports';
 const required=[VERIFIED_MANUAL_REPORT_MIGRATION_ID,'051_workbench_verified_manual_report_candidate_ref_check'];
-export async function migrateWorkbenchVerifiedManualReports({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}){
+export async function migrateWorkbenchVerifiedManualReports({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}){
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
   const migrations=await Promise.all(required.map(async id=>{
     const sql=await readFile(new URL('../../../database/migrations/'+id+'.sql',import.meta.url),'utf8');
     const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
     return {id,body,checksum:createHash('sha256').update(sql).digest('hex')};
   }));
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'verified_manual_reports_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'verified_manual_reports_migrator'});
   try{return await transactionP2016(pool,async tx=>{
     await tx.query("SELECT pg_advisory_xact_lock(hashtext('VERIFIED_MANUAL_REPORTS_MIGRATION'))");
     if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='042_workbench_manual_reports'")).rowCount!==1)failP2016('ACTION_FAILED',409);

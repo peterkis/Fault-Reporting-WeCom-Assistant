@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -8,10 +9,10 @@ import {transaction,fail} from '../src/p2-012-domain-contracts.mjs';
 export const INTERNAL_NOTE_MIGRATION_ID='055_workbench_incident_internal_notes';
 const BASELINE_SHA256='96397e885abf2892b09c5981bfd34de334045f5932780bd375fc5c687edbc203';
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
-export async function migrateIncidentInternalNotes({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'apply'|'check'|'status'}){
+export async function migrateIncidentInternalNotes({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'apply'|'check'|'status'}){
   if(!databaseUrl||!['apply','check','status'].includes(mode))fail();
   const sql=await readFile(new URL('../../../database/migrations/'+INTERNAL_NOTE_MIGRATION_ID+'.sql',import.meta.url),'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)fail();
-  const previousSql=await readFile(new URL('../../../database/migrations/032_p2_012_human_confirmed_incident.sql',import.meta.url),'utf8'),checksum=sha(sql),pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'incident_internal_note_migrator'});
+  const previousSql=await readFile(new URL('../../../database/migrations/032_p2_012_human_confirmed_incident.sql',import.meta.url),'utf8'),checksum=sha(sql),pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'incident_internal_note_migrator'});
   try{return await transaction(pool,async tx=>{
     await tx.query("SELECT pg_advisory_xact_lock(hashtext('P2_012_MIGRATION'))");
     await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_012_COMMAND',0))");

@@ -1,3 +1,4 @@
+import {migrationConnection} from './migration-database.mjs';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -280,7 +281,7 @@ export async function migrateRetentionTimeContract({
   if (!databaseUrl || !['check', 'apply', 'rollback'].includes(mode)) failP2016();
   const { body, checksum } = await source();
   const pool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...migrationConnection(databaseUrl),
     max: 1,
     application_name: 'retention_time_contract_migrator',
   });

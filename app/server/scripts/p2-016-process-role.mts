@@ -20,6 +20,7 @@ import {requireServiceClosureSchema} from './service-closure-migrate.mjs';
 import {requireCompletionDismissalSchema} from './completion-dismissal-migrate.mjs';
 import {requireNotificationVocabularySchema} from './notification-vocabulary-migrate.mjs';
 import {requireSystemClosureRestoreSchema} from './system-closure-restore-migrate.mjs';
+import {requireTicketTerminalAtSchema} from './ticket-terminal-at-migrate.mjs';
 import {requireWorkbenchSchemas,workbenchReleaseSchemaChecks} from '../src/workbench-schema-readiness.mjs';
 
 const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET as string});
@@ -45,7 +46,7 @@ export async function main(argv=process.argv.slice(2)){
   }
   if(argv[0]==='--role=gateway')return runGateway({
     beforeReady:async input=>{
-      await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);
+      await requireServiceClosureSchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);await requireTicketTerminalAtSchema(input);
       requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(input.pool),'P2_016');
     },
     intakeFactory:({pool,identityHashKey})=>{
@@ -57,7 +58,7 @@ export async function main(argv=process.argv.slice(2)){
       origin:process.env.P2_016_REPORTER_ORIGIN as string,allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
   return runWorker({beforeReady:async input=>{
-    await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);
+    await requireServiceClosureSchema(input);await requireStaffDirectorySchema(input);await requireCompletionDismissalSchema(input);await requireNotificationVocabularySchema(input);await requireSystemClosureRestoreSchema(input);await requireTicketTerminalAtSchema(input);
     requireWorkbenchSchemas(await workbenchReleaseSchemaChecks(input.pool),'P2_016');
   },extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});

@@ -1,3 +1,4 @@
+import {checkedLoopbackDatabaseUrl} from '../app/server/src/platform/loopback-database.mjs';
 import { migrateCurrentBaseline } from '../app/server/scripts/migrate-current-baseline.mjs';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -14,7 +15,7 @@ import {
   createChannelMessageInbox,
 } from '../app/server/src/p1-003-channel-message-inbox.mjs';
 
-const databaseUrl = process.env.PILOT_DATABASE_URL;
+const databaseUrl = process.env.PILOT_DATABASE_URL && checkedLoopbackDatabaseUrl(process.env.PILOT_DATABASE_URL);
 const execFileAsync = promisify(execFile);
 const restartWorkerPath = fileURLToPath(new URL('fixtures/p1-003-inbox-worker.mjs', import.meta.url));
 const integrationTest = databaseUrl ? test : test.skip;

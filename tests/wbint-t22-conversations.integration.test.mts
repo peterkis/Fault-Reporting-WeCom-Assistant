@@ -2,6 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createCommunicationDeliveryWorker} from '../app/server/src/p2-004-communication-delivery-worker.mjs';
+import {object,rows} from './helpers/t41-search-risk-fixture.mjs';
+import {observeWorkbenchRequest,fullTicketCardSql} from './helpers/card42a-sql-observer.mjs';
 import {withT22Fixture,appendT22Item} from './helpers/wbint-t22-fixture.mjs';
 import type {ConversationMessageResult,ConversationCommandReceipt} from '../contracts/workbench_conversation_workspace_contracts.js';
 
@@ -14,6 +16,31 @@ test('the authorized conversation workspace keeps same-group participants and to
     assert.equal((await fetch(origin+'/api/workbench/conversations',{headers:{cookie:outsiderCookie}})).status,200);
     const hidden=await fetch(origin+'/api/workbench/conversations/'+sessions[0]?.id,{headers:{cookie:outsiderCookie}});assert.equal(hidden.status,404);
   });
+});
+
+for(const follow of [false,true])test('conversation labels recheck current handler membership during the label read, Follow='+follow,async()=>{
+  await withT22Fixture(async({pool,origin,handlerCookie,sessions,principals,databaseUrl})=>{
+    assert.match(new URL(databaseUrl).pathname,/^\/ticket_card42a_web01_/u);
+    const session=sessions[0],handler=principals[1];assert.ok(session&&handler);
+    const ticket=(await pool.query<{ticket_no:string;title:string}>(`UPDATE pilot_ticket.ticket SET assignee_id=NULL,title='仅工单可见的合成标题'
+      WHERE id=$1 RETURNING ticket_no,title`,[session.ticketId])).rows[0];assert.ok(ticket);
+    const get=()=>fetch(origin+'/api/workbench/conversations/'+session.id,{headers:{cookie:handlerCookie}});
+    const before=await get();assert.equal(before.status,200);assert.deepEqual(object(await before.json()).canonical_item,
+      {kind:'ticket',id:session.ticketId,number:ticket.ticket_no,title:ticket.title});
+    const original=pool.query;let removed=false;
+    pool.query=new Proxy(original,{apply(query,owner,args){
+      if(removed||typeof args[0]!=='string'||!args[0].includes('AS intake_id,t.ticket_no AS number,t.title FROM pilot_ticket.ticket'))
+        return Reflect.apply(query,owner,args);
+      removed=true;
+      return pool.query("DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1 AND team_id='PILOT_IT'",[handler.id])
+        .then(result=>{assert.equal(result.rowCount,1);return Reflect.apply(query,owner,args);});
+    }});
+    try{
+      const after=await get();assert.ok(removed);assert.equal(after.status,200);
+      const body=object(await after.json());assert.equal(body.canonical_item,null);
+      assert.ok(!JSON.stringify(body).includes(ticket.ticket_no));assert.ok(!JSON.stringify(body).includes(ticket.title));
+    }finally{pool.query=original;}
+  },{namespace:'ticket_card42a',follow});
 });
 
 test('sequence pagination retains delayed material without dropping lower sequences and expires sensitive items',async()=>{
@@ -53,7 +80,14 @@ test('the concentrated workspace offers lawful communication controls, notes wit
     const controlled=await (await get()).json() as {session:{row_version:number};assignment:{assigned_to_me:boolean};capabilities:string[]};assert.equal(controlled.assignment.assigned_to_me,true);assert.equal(controlled.capabilities.includes('TAKEOVER'),false);
     const note=await post('internal-notes',{client_command_id:randomUUID(),expected_row_version:controlled.session.row_version,text:'T22 private internal note'});assert.equal(note.status,201);const result=await note.json() as ConversationMessageResult;assert.equal(result.outbox_id,null);assert.deepEqual(result.delivery_ids,[]);
     const own=await (await get('/items')).json() as {items:{text:string|null}[]};assert.ok(own.items.some(item=>item.text==='参与者甲的打印机主题'));assert.equal(own.items.some(item=>item.text==='参与者乙的护理主题'),false);
-    const links=await fetch(origin+'/api/workbench/items/ticket/'+session.ticketId+'/conversations',{headers:{cookie}});assert.equal(links.status,200);assert.deepEqual((await links.json() as {items:{session:{session_id:string}}[]}).items.map(item=>item.session.session_id),[session.id]);
+    const observed=await observeWorkbenchRequest(pool,()=>fetch(origin+'/api/workbench/items/ticket/'+session.ticketId+'/conversations',{headers:{cookie}}));
+    assert.equal(observed.value.status,200);
+    const expected=(await pool.query<{number:string;title:string}>('SELECT ticket_no AS number,title FROM pilot_ticket.ticket WHERE id=$1',[session.ticketId])).rows[0];assert.ok(expected);
+    const links=rows(object(await observed.value.json()).items);
+    assert.deepEqual(links.map(link=>object(link.session).session_id),[session.id]);
+    assert.deepEqual(links[0]?.canonical_item,{kind:'ticket',id:session.ticketId,...expected});
+    assert.equal(observed.sql.filter(sql=>fullTicketCardSql.test(sql)).length,0);
+    assert.equal(observed.sql.filter(sql=>sql.includes('AS intake_id,t.ticket_no AS number,t.title FROM pilot_ticket.ticket')).length,1);
     const empty=await fetch(origin+'/api/workbench/items/ticket/'+unbound.ticket.id+'/conversations',{headers:{cookie}});assert.equal(empty.status,200);assert.deepEqual((await empty.json() as {items:unknown[]}).items,[]);
     assert.equal((await post('messages',{client_command_id:randomUUID(),expected_row_version:controlled.session.row_version,text:'quote must not cross sessions',reply_to_item_id:await appendT22Item(pool,other.id,2,'other-participant canary')})).status,400);
     const transfer=await post('transfer',{client_command_id:randomUUID(),expected_row_version:controlled.session.row_version,target_principal_id:principals[1]?.id});assert.equal(transfer.status,200);

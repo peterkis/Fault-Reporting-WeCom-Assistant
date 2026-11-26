@@ -1,50 +1,32 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import {test} from 'node:test';
+import {isolatedTicketTests,prepareCurrentTicketSchema} from './helpers/p1-ticket-database.mjs';
 import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
-  applyChannelMessageInboxMigration,
   createChannelMessageInbox,
 } from '../app/server/src/p1-003-channel-message-inbox.mjs';
 import {
-  applyServiceIntakeMigration,
   createServiceIntakeProcessor,
 } from '../app/server/src/p1-004-service-intake.mjs';
 import {
-  applyPilotTicketCoreMigration,
   createPilotTicketCore,
   createPilotTicketProcessor,
 } from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {
-  applyTicketStateActionMigration,
   createTicketActionService,
 } from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {
-  applyNotificationOutboxMigration,
   createNotificationOutbox,
 } from '../app/server/src/p1-007-notification-outbox.mjs';
 import {
-  applyPilotAccessMigration,
   createPilotAccessService,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {
-  applyTicketClosureMigration,
   createTicketClosureService,
   createTicketLifecycleProcessor,
 } from '../app/server/src/p1-010-ticket-auto-completion.mjs';
-import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
-
-const databaseUrl = process.env.PILOT_DATABASE_URL;
-const integrationTest = databaseUrl ? test : test.skip;
-const messageIds = new Set();
-const intakeIds = new Set();
-const ticketIds = new Set();
-const principalIds = new Set();
-const pool = databaseUrl
-  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
-  : null;
 
 function normalizedMessage(msgId, {
   text = 'HIS 登录失败，提示权限错误',
@@ -65,7 +47,6 @@ function normalizedMessage(msgId, {
     },
   }, { receivedAt: new Date().toISOString() });
   assert.equal(adapted.ok, true);
-  messageIds.add(msgId);
   return adapted.message;
 }
 
@@ -80,7 +61,7 @@ function request(message) {
   };
 }
 
-async function seedTicket({ chatId, reporterWeComUserId }) {
+async function seedTicket(pool, { chatId, reporterWeComUserId }) {
   const message = normalizedMessage(`p1-010-seed-${randomUUID()}`, { chatId, reporterWeComUserId });
   const processor = createPilotTicketProcessor({
     serviceIntakeProcessor: createServiceIntakeProcessor(),
@@ -88,12 +69,10 @@ async function seedTicket({ chatId, reporterWeComUserId }) {
   });
   const result = await createChannelMessageInbox({ pool }).accept(request(message), processor);
   assert.equal(result.ok, true);
-  intakeIds.add(result.result.intake.id);
-  ticketIds.add(result.result.ticket.id);
   return result.result.ticket;
 }
 
-async function createActors(reporterWeComUserId) {
+async function createActors(pool, reporterWeComUserId) {
   const access = createPilotAccessService({ pool });
   const reporter = await access.upsertPrincipal({
     wecomUserId: reporterWeComUserId,
@@ -106,56 +85,10 @@ async function createActors(reporterWeComUserId) {
     roles: ['HANDLER'],
     resolverTeamIds: ['PILOT_IT'],
   });
-  [reporter, handler].forEach((principal) => principalIds.add(principal.id));
   return { access, reporter, handler };
 }
 
-before(async () => {
-  if (!pool) {
-    return;
-  }
-  // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
-  await releaseCompletionDismissal(pool);
-  await applyChannelMessageInboxMigration({ pool });
-  await applyServiceIntakeMigration({ pool });
-  await applyPilotTicketCoreMigration({ pool });
-  await applyTicketStateActionMigration({ pool });
-  await applyNotificationOutboxMigration({ pool });
-  await applyPilotAccessMigration({ pool });
-  await applyTicketClosureMigration({ pool });
-  await ensureCompletionDismissal(pool);
-});
-
-after(async () => {
-  if (!pool) {
-    return;
-  }
-  if (ticketIds.size > 0) {
-    await pool.query(
-      `UPDATE intake.service_intake
-          SET pilot_ticket_id = NULL,
-              status = CASE WHEN status = 'TICKET_CREATED' THEN 'RECEIVED' ELSE status END
-        WHERE pilot_ticket_id = ANY($1::uuid[])`,
-      [[...ticketIds]],
-    );
-    await pool.query('DELETE FROM pilot_ticket.ticket WHERE id = ANY($1::uuid[])', [[...ticketIds]]);
-  }
-  if (principalIds.size > 0) {
-    await pool.query('DELETE FROM pilot_ticket.pilot_principal WHERE id = ANY($1::uuid[])', [[...principalIds]]);
-  }
-  if (intakeIds.size > 0) {
-    await pool.query('DELETE FROM intake.service_intake WHERE id = ANY($1::uuid[])', [[...intakeIds]]);
-  }
-  if (messageIds.size > 0) {
-    await pool.query(
-      'DELETE FROM channel.message_inbox WHERE provider = $1 AND msg_id = ANY($2::text[])',
-      ['WECOM_AIBOT', [...messageIds]],
-    );
-  }
-  // Restore the shared database's original vocabulary once this file's own rows are gone.
-  await releaseCompletionDismissal(pool);
-  await pool.end();
-});
+const integrationTest=isolatedTicketTests('p1010',prepareCurrentTicketSchema);
 
 test('runAutoComplete without input preserves the explicit action-service validation error', async () => {
   const closure = createTicketClosureService({ resolveReporterActor: () => null });
@@ -165,12 +98,12 @@ test('runAutoComplete without input preserves the explicit action-service valida
   );
 });
 
-integrationTest('supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle', async () => {
+integrationTest('supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle', async (pool) => {
   let clock = Date.now() + 1_000;
   const reporterWeComUserId = `reporter-p1-010-${randomUUID()}-${'x'.repeat(140)}`;
   const chatId = `group-p1-010-${randomUUID()}`;
-  const ticket = await seedTicket({ chatId, reporterWeComUserId });
-  const { access, reporter, handler } = await createActors(reporterWeComUserId);
+  const ticket = await seedTicket(pool, { chatId, reporterWeComUserId });
+  const { access, reporter, handler } = await createActors(pool, reporterWeComUserId);
   const closure = createTicketClosureService({
     pool,
     outbox: createNotificationOutbox(),
@@ -315,9 +248,9 @@ integrationTest('supplement, card confirmation, duplicate card protection, close
   assert.equal(reporter.id.length, 36);
 });
 
-integrationTest('the complete lifecycle processor exposes created delivery ids for post-commit acknowledgement', async () => {
+integrationTest('the complete lifecycle processor exposes created delivery ids for post-commit acknowledgement', async (pool) => {
   const reporterWeComUserId = `reporter-p1-010-created-${randomUUID()}`;
-  const { access } = await createActors(reporterWeComUserId);
+  const { access } = await createActors(pool, reporterWeComUserId);
   const closure = createTicketClosureService({
     pool,
     outbox: createNotificationOutbox(),
@@ -333,18 +266,16 @@ integrationTest('the complete lifecycle processor exposes created delivery ids f
   });
 
   const accepted = await createChannelMessageInbox({ pool }).accept(request(message), lifecycleProcessor);
-  intakeIds.add(accepted.result.intake.id);
-  ticketIds.add(accepted.result.ticket.id);
   assert.equal(accepted.ok, true);
   assert.equal(accepted.result.lifecycle.created, true);
   assert.equal(accepted.result.lifecycle.delivery_ids.length, 2);
 });
 
-integrationTest('expired cards do not mutate Tickets and resolved Tickets close automatically with an explicit non-user reason', async () => {
+integrationTest('expired cards do not mutate Tickets and resolved Tickets close automatically with an explicit non-user reason', async (pool) => {
   let clock = Date.now() + 1_000;
   const reporterWeComUserId = `reporter-p1-010-auto-${randomUUID()}`;
-  const ticket = await seedTicket({ chatId: `group-p1-010-auto-${randomUUID()}`, reporterWeComUserId });
-  const { access, handler } = await createActors(reporterWeComUserId);
+  const ticket = await seedTicket(pool, { chatId: `group-p1-010-auto-${randomUUID()}`, reporterWeComUserId });
+  const { access, handler } = await createActors(pool, reporterWeComUserId);
   const closure = createTicketClosureService({
     pool,
     outbox: createNotificationOutbox(),

@@ -73,3 +73,42 @@ export async function conversationDeliveryBaseCatalogReady(tx:PostgresTransactio
  const expected=kind==='031'?'3e4fba12dec754ac16b2ea551e610020a69b4d45823cf99f66481cea66cabf87':'39afb4e28e84e2d2e26531a13c312117fc721dcf9ac029a82436c64c1764de83';
  return sha(JSON.stringify(inventory))===expected&&await conversationDeliveryReceiptSchemaShape(tx)==='BASE';
 }
+
+import {readCatalogRow} from './platform/postgres-catalog.mjs';
+export {followReceiptSchemaReady} from '../scripts/workbench-follow-migrate.mjs';
+type CatalogRow=Record<string,unknown>;
+type Catalog=Record<'relations'|'columns'|'constraints'|'indexes'|'triggers',CatalogRow[]>;
+
+/** One current catalog snapshot. JSON preserves the original field order used by the frozen hashes. */
+export async function readWorkbenchRelationCatalog(tx:PostgresTransaction,names:readonly string[]):Promise<Catalog>{
+ const catalog=await readCatalogRow<Catalog>(tx,`WITH targets AS MATERIALIZED (
+   SELECT c.oid,requested.relation,c.relkind,c.relpersistence,c.relispartition,c.relrowsecurity,c.relforcerowsecurity
+   FROM pg_catalog.unnest($1::text[]) requested(relation) JOIN pg_catalog.pg_class c ON c.oid=pg_catalog.to_regclass(requested.relation)
+ ), relations AS (
+   SELECT relation,relkind,relpersistence,relispartition,relrowsecurity,relforcerowsecurity FROM targets
+ ), columns AS (
+   SELECT t.relation,a.attname AS name,a.attnum AS ordinal,pg_catalog.format_type(a.atttypid,a.atttypmod) AS type,
+     a.attnotnull AS not_null,a.attidentity AS identity,a.attgenerated AS generated,pg_catalog.pg_get_expr(d.adbin,d.adrelid) AS default_expression
+   FROM targets t JOIN pg_catalog.pg_attribute a ON a.attrelid=t.oid LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
+   WHERE a.attnum>0 AND NOT a.attisdropped
+ ), constraints AS (
+   SELECT t.relation,c.conname AS name,c.contype AS type,c.convalidated AS validated,c.condeferrable AS deferrable,
+     c.condeferred AS deferred,pg_catalog.pg_get_constraintdef(c.oid,true) AS definition
+   FROM targets t JOIN pg_catalog.pg_constraint c ON c.conrelid=t.oid
+ ), indexes AS (
+   SELECT t.relation,c.relname AS name,i.indisvalid AS valid,i.indisready AS ready,i.indisunique AS unique,i.indisprimary AS primary,
+     pg_catalog.pg_get_indexdef(c.oid) AS definition
+   FROM targets t JOIN pg_catalog.pg_index i ON i.indrelid=t.oid JOIN pg_catalog.pg_class c ON c.oid=i.indexrelid
+ ), triggers AS (
+   SELECT t.relation,g.tgname AS name FROM targets t JOIN pg_catalog.pg_trigger g ON g.tgrelid=t.oid WHERE NOT g.tgisinternal
+ )
+ SELECT COALESCE((SELECT pg_catalog.json_agg(r ORDER BY relation) FROM relations r),'[]'::json) AS relations,
+   COALESCE((SELECT pg_catalog.json_agg(c ORDER BY relation,ordinal) FROM columns c),'[]'::json) AS columns,
+   COALESCE((SELECT pg_catalog.json_agg(c ORDER BY relation,name) FROM constraints c),'[]'::json) AS constraints,
+   COALESCE((SELECT pg_catalog.json_agg(i ORDER BY relation,name) FROM indexes i),'[]'::json) AS indexes,
+   COALESCE((SELECT pg_catalog.json_agg(t ORDER BY relation,name) FROM triggers t),'[]'::json) AS triggers`,[[...names]]);
+ if(!catalog||!(['relations','columns','constraints','indexes','triggers'] as const).every(key=>{
+   const rows:unknown=catalog[key];return Array.isArray(rows)&&rows.every(record);
+ }))throw Error('CONVERSATION_DELIVERY_CATALOG_INVALID');
+ return catalog;
+}

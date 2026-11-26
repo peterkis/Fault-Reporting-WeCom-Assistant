@@ -602,7 +602,7 @@ test('37B R8 X gives the same unavailable hint on the converted review URL and c
     assert.ok(converted.kind === 'ticket' && typeof converted.id === 'string');
     // Set the terminal fixture state after the real review conversion. Both
     // drawer routes must now reject X for precisely the same canonical ticket.
-    await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED',version=version+1 WHERE id=$1::uuid", [converted.id]);
+    await f.pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED',version=version+1,terminal_at=platform.local_now(),terminal_epoch_ms=NULL WHERE id=$1::uuid", [converted.id]);
     const canonical = 'ticket/' + converted.id;
     const url = f.origin + '/workbench/app/items/';
     const sessionCookie = f.browserCookies[0];

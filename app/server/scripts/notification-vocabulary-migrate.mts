@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
@@ -65,9 +66,9 @@ export async function restoreNotificationVocabularyBaseline(tx:Pick<PostgresTran
  await tx.query('DROP TABLE pilot_ticket.notification_vocabulary_baseline');
 }
 
-export async function migrateNotificationVocabulary({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'rollback'}){
+export async function migrateNotificationVocabulary({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'rollback'}){
  if(!databaseUrl||!['check','apply','rollback'].includes(mode))failP2016();
- const {body,checksum}=await source(),pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'notification_vocabulary_migrator'});
+ const {body,checksum}=await source(),pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'notification_vocabulary_migrator'});
  try{return await transactionP2016(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('NOTIFICATION_VOCABULARY_MIGRATION'))");
   const existing=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[NOTIFICATION_VOCABULARY_MIGRATION_ID])).rows[0];

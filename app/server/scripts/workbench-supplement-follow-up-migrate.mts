@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readReadyFollowReceipt} from './workbench-follow-migrate.mjs';
 import {projectWorkbenchCatalog,workbenchReadinessCatalog} from './workbench-readiness-catalog.mjs';
@@ -27,10 +28,10 @@ export async function supplementFollowUpSchemaReady(tx:PostgresTransaction):Prom
  const indexes=await receipt.priorIndexes(RELATIONS,catalog.indexes);
  return indexes!==null&&sha(JSON.stringify({...catalog,indexes}))===SUPPLEMENT_CATALOG_SHA256;
 }
-export async function migrateWorkbenchSupplementFollowUp({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){
+export async function migrateWorkbenchSupplementFollowUp({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'status'}){
  if(!databaseUrl||!['check','apply','status'].includes(mode))failP2016();
  const sql=await readFile(FILE,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'workbench_supplement_follow_up_migrator'}),tx=await pool.connect();
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'workbench_supplement_follow_up_migrator'}),tx=await pool.connect();
  try{
   await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='60s'");await tx.query("SELECT pg_advisory_xact_lock(hashtext('WORKBENCH_SUPPLEMENT_FOLLOW_UP_MIGRATION'))");
   if((await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount!==1)failP2016('ACTION_FAILED',409);

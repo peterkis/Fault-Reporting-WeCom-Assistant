@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl,loopbackFixtureUrl} from '../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
@@ -14,7 +15,7 @@ import {
   mapConversationStorageError,
 } from '../app/server/src/p2-001-conversation-contracts.mjs';
 
-const databaseUrl = process.env.PILOT_DATABASE_URL;
+const databaseUrl = process.env.PILOT_DATABASE_URL && loopbackFixtureUrl(process.env.PILOT_DATABASE_URL);
 const integrationTest = databaseUrl ? test : test.skip;
 const conversationEnabled = { CONVERSATION_CENTER_ENABLED: true };
 
@@ -85,7 +86,7 @@ async function insertSession(pool, {
 
 integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail closed', async () => {
   const adminPool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...assertLoopbackDatabaseUrl(databaseUrl),
     max: 1,
     connectionTimeoutMillis: 2_000,
   });
@@ -96,7 +97,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
     isolatedPool = createPostgresPool({
-      connectionString: databaseUrlFor(databaseName),
+      ...assertLoopbackDatabaseUrl(databaseUrlFor(databaseName)),
       max: 1,
       connectionTimeoutMillis: 2_000,
     });

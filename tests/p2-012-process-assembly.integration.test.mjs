@@ -4,14 +4,15 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { createP2012LiveCluster } from '../app/server/src/p2-012-live-cluster.mjs';
 import { textHashP2016 } from '../app/server/src/p2-016-domain-contracts.mjs';
-import { migrateP2012 } from '../app/server/scripts/p2-012-migrate.mjs';
-import { withP2012Database,applyThrough031,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
+import { applyFullSchemaThrough077 } from './helpers/full-schema-migrations.mjs';
+import { withP2012Database,fixtureP2012,assertNoP2012Residual } from './helpers/p2-012-postgres-harness.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 
 test('P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools',{timeout:120000},async t=>{
   const databaseUrl=process.env.PILOT_DATABASE_URL;
   await withP2012Database({databaseUrl,purpose:'p2012roles',run:async({pool,databaseUrl})=>{
-    await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});const f=await fixtureP2012(pool,{reporters:2});const candidate=await f.newCandidate();
+    await applyFullSchemaThrough077(databaseUrl);
+    const f=await fixtureP2012(pool,{reporters:2});const candidate=await f.newCandidate();
     await pool.query(`WITH clock AS MATERIALIZED(SELECT platform.physical_epoch_ms()-1000 AS expiry)
       UPDATE incident.candidate_review SET created_at=platform.local_now()-interval '2 days',expires_epoch_ms=clock.expiry,
         expires_at=platform.local_from_epoch_ms(clock.expiry) FROM clock WHERE id=$1::uuid`,[candidate.id]);

@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl, loopbackFixtureTarget, loopbackFixtureUrl, withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -34,7 +35,7 @@ export function createP2003DatabaseName(purpose) {
 export function databaseUrlForP2003Database(databaseUrl, databaseName) {
   assertDatabaseUrl(databaseUrl);
   assert.match(databaseName, P2003_DATABASE_NAME_PATTERN);
-  const isolatedUrl = new URL(databaseUrl);
+  const isolatedUrl = new URL(loopbackFixtureUrl(databaseUrl));
   isolatedUrl.pathname = `/${databaseName}`;
   return isolatedUrl.toString();
 }
@@ -92,8 +93,9 @@ export async function withP2003IsolatedDatabase({
   const databaseName = createP2003DatabaseName(purpose);
   const quotedDatabaseName = `"${databaseName}"`;
   const applicationName = createApplicationName(purpose);
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
   const adminPool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...connection,
     max: 1,
     connectionTimeoutMillis: 2_000,
     application_name: createApplicationName('admin'),
@@ -107,9 +109,9 @@ export async function withP2003IsolatedDatabase({
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
     activeDatabaseNames.add(databaseName);
-    const isolatedDatabaseUrl = databaseUrlForP2003Database(databaseUrl, databaseName);
+    const isolatedDatabaseUrl = databaseUrlForP2003Database(fixtureUrl, databaseName);
     isolatedPool = createPostgresPool({
-      connectionString: isolatedDatabaseUrl,
+      ...connection, database:databaseName,
       max,
       connectionTimeoutMillis: 2_000,
       application_name: applicationName,
@@ -119,12 +121,12 @@ export async function withP2003IsolatedDatabase({
       disconnects.add(disconnected);
       disconnected.then(() => disconnects.delete(disconnected));
     });
-    result = await run({
+    result = await withFixtureMigrations(isolatedDatabaseUrl, () => run({
       pool: isolatedPool,
       databaseName,
       databaseUrl: isolatedDatabaseUrl,
       applicationName,
-    });
+    }));
   } catch (error) {
     runFailure = error;
   } finally {
@@ -181,7 +183,7 @@ export async function withP2003IsolatedDatabase({
 export async function assertNoP2003OwnedDatabaseResidual({ databaseUrl }) {
   assertDatabaseUrl(databaseUrl);
   const adminPool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...assertLoopbackDatabaseUrl(databaseUrl),
     max: 1,
     connectionTimeoutMillis: 2_000,
     application_name: createApplicationName('residual'),

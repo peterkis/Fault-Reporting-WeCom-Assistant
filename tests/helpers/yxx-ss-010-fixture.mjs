@@ -9,6 +9,7 @@ import {migrateServiceClosure} from '../../app/server/scripts/service-closure-mi
 import {migrateCompletionDismissal} from '../../app/server/scripts/completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from '../../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from '../../app/server/scripts/system-closure-restore-migrate.mjs';
+import {migrateTicketTerminalAt} from '../../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {config,secret} from './yxx-ss-009-http-fixture.mjs';
 import {browser} from './yxx-ss-009-http-fixture.mjs';
 
@@ -31,7 +32,7 @@ export async function runtimeFixture({pool,databaseUrl,reporterAliases=['A','B']
   else{
     await migrateCurrentBaselineWithYxx({databaseUrl});
     // The limited runtime starts the current roles, which require 071 and the 072 completion / dismissal vocabulary.
-    await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});
+    await migrateServiceClosure({databaseUrl,mode:'apply'});await migrateCompletionDismissal({databaseUrl,mode:'apply'});await migrateNotificationVocabulary({databaseUrl,mode:'apply'});await migrateSystemClosureRestore({databaseUrl,mode:'apply'});await migrateTicketTerminalAt({databaseUrl,mode:'apply'});
   }
   const manifest=manifestFixture({databaseUrl,oid:(await pool.query('SELECT oid::text FROM pg_database WHERE datname=current_database()')).rows[0].oid,port:await freePort()});
   manifest.reporter_aliases=[...reporterAliases];

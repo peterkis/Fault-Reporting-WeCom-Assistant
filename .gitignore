@@ -14,6 +14,7 @@ __pycache__/
 venv/
 .DS_Store
 *.log
+!/docs/db/evidence/v232-card42/42a-migration-075.log
 tmp/
 data/
 minio-data/

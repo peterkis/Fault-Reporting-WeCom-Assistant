@@ -1,0 +1,50 @@
+-- run_id=739bb6b8-b998-4e91-8845-0fd775b273cc
+Run: ticket_card42a_perf_board_e7e3d968_8e7d_4c5a_9e63_cbc421dec2bf | Gated outcome: PASS
+PostgreSQL Version: PostgreSQL 18.6 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+Read profile: HUMAN_WORKBENCH_OPTIONS, search enabled, synthetic session, personalRead=true; features={"manual":true,"manualReview":true,"supplements":true,"sourceGroups":true,"follow":false,"schedules":false}
+Dataset (synthetic 「（合成）」, actual row counts): service_intake=56000, ticket=50400 (COMPLETED=46667, DISMISSED=3356, IN_PROGRESS=25, QUEUED=35, RESOLVED=317), ticket_event=302235, closure_record=3356, journeys=56000, origin_legs=56000, resolved_profiles=56000, reviews=11200, pending_reviews=22, linked_reviews=10068, seed_ms=18942.9
+Warmup=3, Iterations=100, jit=off (database setting, verified on the timed connections), search principals rotated=16
+
+Scenario                     Rows   Min(ms)   P50(ms)   P95(ms)   Max(ms)
+pending_p1                     50     26.58     29.19     30.76     32.67
+active_p1                      25     17.78     19.75     20.56     24.95
+handled_recent_p1              50     39.12     40.96     42.56     44.89
+handled_all_p1                 50     53.79     55.25     57.47     59.32
+handled_all_p2                 50     53.85     55.58     57.41     59.53
+item_ticket                     1       6.3      7.76      8.82     10.72
+search_handled_recent          50     50.32     53.11     54.66     55.67
+search_text_recent             50     68.63     71.21     72.81     73.94
+Informational (not asserted):
+search_text_all                50    555.41    563.92    576.18    578.03
+
+Informational plan findings (not asserted): search_text_all-stmt-17: PERF_BOARD_HIGH_LOOPS:search_text_all-stmt-17:Aggregate::loops=56000
+Single-pass ticket scans (1 loop; allowed): search_text_recent-stmt-17:examined=50400, search_text_all-stmt-17:examined=50400
+pending_p1 max reads/request=16
+pending_p1 P95 request dominant read: 9.05ms pending_p1-stmt-03 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: pending_p1-stmt-01=0.015ms, pending_p1-stmt-02=0.01ms, pending_p1-stmt-03=7.954ms, pending_p1-stmt-04=0.26ms, pending_p1-stmt-05=0.002ms, pending_p1-stmt-06=0.015ms, pending_p1-stmt-07=0.684ms, pending_p1-stmt-08=0.002ms, pending_p1-stmt-09=0.004ms, pending_p1-stmt-10=0.013ms, pending_p1-stmt-11=0.466ms, pending_p1-stmt-12=0.003ms, pending_p1-stmt-13=0.012ms, pending_p1-stmt-14=2.481ms, pending_p1-stmt-15=0.011ms, pending_p1-stmt-16=3.355ms
+active_p1 max reads/request=16
+active_p1 P95 request dominant read: 4.66ms active_p1-stmt-16 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: active_p1-stmt-01=0.015ms, active_p1-stmt-02=0.01ms, active_p1-stmt-03=0.736ms, active_p1-stmt-04=0.147ms, active_p1-stmt-05=0.002ms, active_p1-stmt-06=0.014ms, active_p1-stmt-07=0.684ms, active_p1-stmt-08=0.002ms, active_p1-stmt-09=0.004ms, active_p1-stmt-10=0.012ms, active_p1-stmt-11=0.345ms, active_p1-stmt-12=0.002ms, active_p1-stmt-13=0.012ms, active_p1-stmt-14=1.685ms, active_p1-stmt-15=0.012ms, active_p1-stmt-16=2.194ms
+handled_recent_p1 max reads/request=16
+handled_recent_p1 P95 request dominant read: 15.09ms handled_recent_p1-stmt-16 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: handled_recent_p1-stmt-01=0.013ms, handled_recent_p1-stmt-02=0.009ms, handled_recent_p1-stmt-03=8.637ms, handled_recent_p1-stmt-04=0.285ms, handled_recent_p1-stmt-05=0.002ms, handled_recent_p1-stmt-06=0.014ms, handled_recent_p1-stmt-07=0.666ms, handled_recent_p1-stmt-08=0.002ms, handled_recent_p1-stmt-09=0.004ms, handled_recent_p1-stmt-10=0.013ms, handled_recent_p1-stmt-11=0.692ms, handled_recent_p1-stmt-12=0.002ms, handled_recent_p1-stmt-13=0.011ms, handled_recent_p1-stmt-14=3.133ms, handled_recent_p1-stmt-15=0.013ms, handled_recent_p1-stmt-16=9.854ms
+handled_all_p1 max reads/request=16
+handled_all_p1 P95 request dominant read: 33.29ms handled_all_p1-stmt-16 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: handled_all_p1-stmt-01=0.015ms, handled_all_p1-stmt-02=0.009ms, handled_all_p1-stmt-03=2.243ms, handled_all_p1-stmt-04=0.278ms, handled_all_p1-stmt-05=0.002ms, handled_all_p1-stmt-06=0.015ms, handled_all_p1-stmt-07=0.676ms, handled_all_p1-stmt-08=0.002ms, handled_all_p1-stmt-09=0.004ms, handled_all_p1-stmt-10=0.012ms, handled_all_p1-stmt-11=0.685ms, handled_all_p1-stmt-12=0.002ms, handled_all_p1-stmt-13=0.012ms, handled_all_p1-stmt-14=2.985ms, handled_all_p1-stmt-15=0.011ms, handled_all_p1-stmt-16=34.463ms
+handled_all_p2 max reads/request=16
+handled_all_p2 P95 request dominant read: 35.28ms handled_all_p2-stmt-16 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: handled_all_p2-stmt-01=0.015ms, handled_all_p2-stmt-02=0.01ms, handled_all_p2-stmt-03=2.57ms, handled_all_p2-stmt-04=0.288ms, handled_all_p2-stmt-05=0.002ms, handled_all_p2-stmt-06=0.021ms, handled_all_p2-stmt-07=0.698ms, handled_all_p2-stmt-08=0.002ms, handled_all_p2-stmt-09=0.006ms, handled_all_p2-stmt-10=0.012ms, handled_all_p2-stmt-11=0.702ms, handled_all_p2-stmt-12=0.002ms, handled_all_p2-stmt-13=0.012ms, handled_all_p2-stmt-14=3.041ms, handled_all_p2-stmt-15=0.012ms, handled_all_p2-stmt-16=32.919ms
+item_ticket max reads/request=10
+item_ticket P95 request dominant read: 1.89ms item_ticket-stmt-10 SELECT t.id::text,summary.pending AS has_pending_supplements FROM jsonb_to_recordset($1::jsonb)
+  EXPLAIN execution: item_ticket-stmt-01=0.015ms, item_ticket-stmt-02=0.117ms, item_ticket-stmt-03=0.045ms, item_ticket-stmt-04=0.003ms, item_ticket-stmt-05=0.016ms, item_ticket-stmt-06=0.692ms, item_ticket-stmt-07=0.003ms, item_ticket-stmt-08=0.004ms, item_ticket-stmt-09=0.012ms, item_ticket-stmt-10=0.072ms
+search_handled_recent max reads/request=29
+search_handled_recent P95 request dominant read: 14.14ms search_handled_recent-stmt-39 WITH final_clock AS MATERIALIZED ( SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS n
+  EXPLAIN execution: search_handled_recent-stmt-01=0.012ms, search_handled_recent-stmt-07=0.009ms, search_handled_recent-stmt-08=0.003ms, search_handled_recent-stmt-09=0.003ms, search_handled_recent-stmt-10=0.007ms, search_handled_recent-stmt-11=0.002ms, search_handled_recent-stmt-12=0.001ms, search_handled_recent-stmt-13=0.012ms, search_handled_recent-stmt-14=0.615ms, search_handled_recent-stmt-15=0.002ms, search_handled_recent-stmt-16=0.004ms, search_handled_recent-stmt-17=3.677ms, search_handled_recent-stmt-18=1.495ms, search_handled_recent-stmt-20=0.278ms, search_handled_recent-stmt-21=0.002ms, search_handled_recent-stmt-22=0.014ms, search_handled_recent-stmt-23=0.666ms, search_handled_recent-stmt-24=0.002ms, search_handled_recent-stmt-25=0.003ms, search_handled_recent-stmt-26=0.016ms, search_handled_recent-stmt-27=0.65ms, search_handled_recent-stmt-28=0.002ms, search_handled_recent-stmt-29=0.012ms, search_handled_recent-stmt-30=3.025ms, search_handled_recent-stmt-31=0.014ms, search_handled_recent-stmt-32=3.423ms, search_handled_recent-stmt-37=0.012ms, search_handled_recent-stmt-38=0.003ms, search_handled_recent-stmt-39=3.263ms
+search_text_recent max reads/request=29
+search_text_recent P95 request dominant read: 24.35ms search_text_recent-stmt-17 WITH candidate_keys AS ( (SELECT 'ticket'::text AS kind,t.id,t.source_intake_id AS intake_id,t.t
+  EXPLAIN execution: search_text_recent-stmt-01=0.014ms, search_text_recent-stmt-07=0.012ms, search_text_recent-stmt-08=0.004ms, search_text_recent-stmt-09=0.004ms, search_text_recent-stmt-10=0.007ms, search_text_recent-stmt-11=0.003ms, search_text_recent-stmt-12=0.001ms, search_text_recent-stmt-13=0.015ms, search_text_recent-stmt-14=0.686ms, search_text_recent-stmt-15=0.002ms, search_text_recent-stmt-16=0.004ms, search_text_recent-stmt-17=19.758ms, search_text_recent-stmt-18=1.397ms, search_text_recent-stmt-20=0.3ms, search_text_recent-stmt-21=0.002ms, search_text_recent-stmt-22=0.015ms, search_text_recent-stmt-23=0.681ms, search_text_recent-stmt-24=0.002ms, search_text_recent-stmt-25=0.004ms, search_text_recent-stmt-26=0.014ms, search_text_recent-stmt-27=0.641ms, search_text_recent-stmt-28=0.002ms, search_text_recent-stmt-29=0.013ms, search_text_recent-stmt-30=3.407ms, search_text_recent-stmt-31=0.014ms, search_text_recent-stmt-32=3.526ms, search_text_recent-stmt-37=0.012ms, search_text_recent-stmt-38=0.004ms, search_text_recent-stmt-39=3.453ms
+search_text_all max reads/request=29
+search_text_all P95 request dominant read: 525.33ms search_text_all-stmt-17 WITH candidate_keys AS ( (SELECT 'ticket'::text AS kind,t.id,t.source_intake_id AS intake_id,t.t
+  EXPLAIN execution: search_text_all-stmt-01=0.015ms, search_text_all-stmt-07=0.009ms, search_text_all-stmt-08=0.004ms, search_text_all-stmt-09=0.004ms, search_text_all-stmt-10=0.007ms, search_text_all-stmt-11=0.002ms, search_text_all-stmt-12=0.001ms, search_text_all-stmt-13=0.014ms, search_text_all-stmt-14=0.695ms, search_text_all-stmt-15=0.002ms, search_text_all-stmt-16=0.004ms, search_text_all-stmt-17=576.576ms, search_text_all-stmt-18=1.52ms, search_text_all-stmt-20=0.301ms, search_text_all-stmt-21=0.002ms, search_text_all-stmt-22=0.023ms, search_text_all-stmt-23=0.693ms, search_text_all-stmt-24=0.003ms, search_text_all-stmt-25=0.004ms, search_text_all-stmt-26=0.014ms, search_text_all-stmt-27=0.688ms, search_text_all-stmt-28=0.002ms, search_text_all-stmt-29=0.013ms, search_text_all-stmt-30=3.639ms, search_text_all-stmt-31=0.013ms, search_text_all-stmt-32=3.713ms, search_text_all-stmt-37=0.011ms, search_text_all-stmt-38=0.004ms, search_text_all-stmt-39=3.542ms
+Gated failures: none
+Assertions: every asserted P95 < 100ms and at most 75ms for margin; no repeated ticket Seq Scan; no ticket node with >= 1000 loops; no node with >= 50000 loops; ZERO JIT functions.

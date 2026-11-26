@@ -69,6 +69,10 @@ export async function withVisualFixture(
           [closed.historical],
         );
         await original.pool.query(
+          "UPDATE pilot_ticket.ticket SET terminal_at='2026-11-13 10:00:00' WHERE status='DISMISSED' AND id IS DISTINCT FROM $1::uuid",
+          [closed.historical],
+        );
+        await original.pool.query(
           'UPDATE pilot_ticket.ticket SET assignee_id=$2::uuid WHERE id=$1::uuid',
           [p.ticket.id, original.principals[0]?.id],
         );

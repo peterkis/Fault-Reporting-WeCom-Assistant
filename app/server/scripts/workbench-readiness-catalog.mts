@@ -1,3 +1,4 @@
+import {readCatalogRow} from '../src/platform/postgres-catalog.mjs';
 import type { PostgresTransaction } from '../src/platform/postgres-pool.mjs';
 import {FK_INDEX_TARGETS, type WorkbenchIndexRow} from './fk-indexes-migrate.mjs';
 
@@ -89,23 +90,23 @@ export async function readWorkbenchCatalog(tx: PostgresTransaction, targets: rea
   }
 
   // Standalone digest readers do not require access to the 076 proof catalogs.
-  const fkFacts = fkNames.length === 0 ? 'NULL::json' : `CASE WHEN c.relname=ANY($4::name[]) THEN json_build_object(
+  const fkFacts = fkNames.length === 0 ? 'NULL::json' : `CASE WHEN c.relname=ANY($4::name[]) THEN pg_catalog.json_build_object(
                'eligible', c.relnamespace=r.relnamespace AND c.relkind='i' AND c.relpersistence='p'
-                 AND c.relam=(SELECT oid FROM pg_am WHERE amname='btree')
+                 AND c.relam=(SELECT oid FROM pg_catalog.pg_am WHERE amname='btree')
                  AND i.indislive AND i.indimmediate AND NOT i.indisunique AND i.indpred IS NULL AND i.indexprs IS NULL
                  AND i.indnatts=i.indnkeyatts,
                'key_count', i.indnkeyatts,
-               'columns', ARRAY(SELECT a.attname::text FROM unnest(i.indkey::smallint[]) WITH ORDINALITY AS k(num,pos)
-                                JOIN pg_attribute a ON a.attrelid=i.indrelid AND a.attnum=k.num ORDER BY k.pos)
+               'columns', ARRAY(SELECT a.attname::text FROM pg_catalog.unnest(i.indkey::smallint[]) WITH ORDINALITY AS k(num,pos)
+                                JOIN pg_catalog.pg_attribute a ON a.attrelid=i.indrelid AND a.attnum=k.num ORDER BY k.pos)
              ) END`;
 
   // json (not jsonb) preserves SELECT-list key order in the hashed rows.
-  const row = (await tx.query(`
+  const row = await readCatalogRow<CatalogRow>(tx, `
     WITH targets AS MATERIALIZED (
       SELECT c.oid, c.relnamespace, n.nspname||'.'||c.relname AS relation,
              c.relkind, c.relpersistence,
              c.relispartition, c.relrowsecurity, c.relforcerowsecurity
-        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
        WHERE c.relname = ANY($2::name[]) AND n.nspname||'.'||c.relname = ANY($1::text[])
     ), relations AS (
       SELECT relation, relkind, relpersistence, relispartition,
@@ -113,36 +114,36 @@ export async function readWorkbenchCatalog(tx: PostgresTransaction, targets: rea
         FROM targets
     ), columns AS (
       SELECT r.relation, a.attname AS name, a.attnum AS ordinal,
-             format_type(a.atttypid,a.atttypmod) AS type, a.attnotnull AS not_null,
+             pg_catalog.format_type(a.atttypid,a.atttypmod) AS type, a.attnotnull AS not_null,
              a.attidentity AS identity, a.attgenerated AS generated,
-             pg_get_expr(d.adbin,d.adrelid) AS default_expression
-        FROM targets r JOIN pg_attribute a ON a.attrelid = r.oid
-        LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+             pg_catalog.pg_get_expr(d.adbin,d.adrelid) AS default_expression
+        FROM targets r JOIN pg_catalog.pg_attribute a ON a.attrelid = r.oid
+        LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
        WHERE a.attnum > 0 AND NOT a.attisdropped
     ), constraints AS (
       SELECT r.relation, c.conname AS name, c.contype AS type, c.convalidated AS validated,
              c.condeferrable AS deferrable, c.condeferred AS deferred,
-             pg_get_constraintdef(c.oid,true) AS definition
-        FROM targets r JOIN pg_constraint c ON c.conrelid = r.oid
+             pg_catalog.pg_get_constraintdef(c.oid,true) AS definition
+        FROM targets r JOIN pg_catalog.pg_constraint c ON c.conrelid = r.oid
     ), indexes AS (
       SELECT r.relation, c.relname AS name, i.indisvalid AS valid, i.indisready AS ready,
              i.indisunique AS unique, i.indisprimary AS primary,
-             pg_get_indexdef(c.oid) AS definition,
+             pg_catalog.pg_get_indexdef(c.oid) AS definition,
              ${fkFacts} AS fk
-        FROM targets r JOIN pg_index i ON i.indrelid = r.oid JOIN pg_class c ON c.oid = i.indexrelid
+        FROM targets r JOIN pg_catalog.pg_index i ON i.indrelid = r.oid JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
     ), triggers AS (
       SELECT r.relation, t.tgname AS name
-        FROM targets r JOIN pg_trigger t ON t.tgrelid = r.oid WHERE NOT t.tgisinternal
+        FROM targets r JOIN pg_catalog.pg_trigger t ON t.tgrelid = r.oid WHERE NOT t.tgisinternal
     )
     SELECT
-      CASE WHEN $3::boolean THEN to_regclass('pilot_ticket.closure_record') IS NOT NULL
-        AND to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL ELSE false END AS closure_present,
-      (SELECT COALESCE(json_agg(r ORDER BY r.relation), '[]')::text FROM relations r) AS relations,
-      (SELECT COALESCE(json_agg(c ORDER BY c.relation, c.ordinal), '[]')::text FROM columns c) AS columns,
-      (SELECT COALESCE(json_agg(c ORDER BY c.relation, c.name), '[]')::text FROM constraints c) AS constraints,
-      (SELECT COALESCE(json_agg(i ORDER BY i.relation, i.name), '[]')::text FROM indexes i) AS indexes,
-      (SELECT COALESCE(json_agg(t ORDER BY t.relation, t.name), '[]')::text FROM triggers t) AS triggers
-  `, fkNames.length > 0 ? [targets, [...suffixes], checkClosure, fkNames] : [targets, [...suffixes], checkClosure])).rows[0];
+      CASE WHEN $3::boolean THEN pg_catalog.to_regclass('pilot_ticket.closure_record') IS NOT NULL
+        AND pg_catalog.to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL ELSE false END AS closure_present,
+      (SELECT COALESCE(pg_catalog.json_agg(r ORDER BY r.relation), '[]')::text FROM relations r) AS relations,
+      (SELECT COALESCE(pg_catalog.json_agg(c ORDER BY c.relation, c.ordinal), '[]')::text FROM columns c) AS columns,
+      (SELECT COALESCE(pg_catalog.json_agg(c ORDER BY c.relation, c.name), '[]')::text FROM constraints c) AS constraints,
+      (SELECT COALESCE(pg_catalog.json_agg(i ORDER BY i.relation, i.name), '[]')::text FROM indexes i) AS indexes,
+      (SELECT COALESCE(pg_catalog.json_agg(t ORDER BY t.relation, t.name), '[]')::text FROM triggers t) AS triggers
+  `, fkNames.length > 0 ? [targets, [...suffixes], checkClosure, fkNames] : [targets, [...suffixes], checkClosure]);
   if (typeof row?.closure_present !== 'boolean') throw Error('CONVERSATION_DELIVERY_CATALOG_INVALID');
   return {
     relations: parseRows(row.relations, relationRow),

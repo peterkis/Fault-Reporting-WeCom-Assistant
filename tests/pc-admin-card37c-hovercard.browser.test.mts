@@ -67,6 +67,7 @@ test('37C hover-card C4 browser acceptance',{timeout:600000},t=>withWeb01Fixture
   await f.pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$1 WHERE id=$2',[other.id,offline.id]);
   const completed=f.tickets[9]?.ticket;assert.ok(completed);
   await f.pool.query("UPDATE pilot_ticket.ticket_event SET created_at=platform.local_now() WHERE ticket_id=$1 AND event_type='ticket.completed'",[completed.id]);
+  await f.pool.query("UPDATE pilot_ticket.ticket SET terminal_at=platform.local_now() WHERE id=$1 AND status='COMPLETED'",[completed.id]);
   const cookie=f.cookies[0],actor=f.browserCookies[0];assert.ok(cookie&&actor);
   const result=await fetch(f.origin+'/api/workbench/items/ticket/'+target.id+'?limit=50',{headers:{cookie}});
   assert.equal(result.status,200);

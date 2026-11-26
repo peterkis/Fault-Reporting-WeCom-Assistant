@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {CONVERSATION_DELIVERY_MIGRATION_ID,matchesReceiptShape,normalizeServiceClosureReceiptCatalog} from '../src/p2-006-delivery-command-schema.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
@@ -96,6 +97,13 @@ export async function readReadyFollowReceipt(tx: PostgresTransaction, request: R
     }
     if (!matchesReceiptShape(digest, bot ? 'BOT' : 'INTAKE', 'after')) return null;
   }
+  // Before 071, the catalog inventory can see the receipt without schema USAGE.
+  if (!closure) {
+    const access = await tx.query<{allowed: boolean | null}>(
+      "SELECT pg_catalog.has_schema_privilege(pg_catalog.to_regnamespace('pilot_ticket'), 'USAGE') AS allowed",
+    );
+    if (access.rows[0]?.allowed !== true) return null;
+  }
   return {catalog, priorIndexes};
 }
 
@@ -138,10 +146,10 @@ export async function followSchemaReady(tx:PostgresTransaction):Promise<boolean>
     FROM pg_class f WHERE f.oid=to_regclass('pilot_ticket.workbench_item_follow')`,[...fk.values,FOLLOW_MIGRATION_ID,checksum])).rows[0];
   return row?.ready===true;
 }
-export async function migrateWorkbenchFollow({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){
+export async function migrateWorkbenchFollow({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'status'}){
   if(!databaseUrl||!['check','apply','status'].includes(mode))failP2016();
   const sql=await readFile(SQL_URL,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
-  const checksum=createHash('sha256').update(sql).digest('hex'),pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'workbench_follow_migrator'}),tx=await pool.connect();
+  const checksum=createHash('sha256').update(sql).digest('hex'),pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'workbench_follow_migrator'}),tx=await pool.connect();
   try{
     await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='60s'");
     await tx.query("SELECT pg_advisory_xact_lock(hashtext('WORKBENCH_FOLLOW_MIGRATION'))");

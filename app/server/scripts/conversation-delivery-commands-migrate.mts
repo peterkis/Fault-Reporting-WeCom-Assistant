@@ -1,14 +1,15 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {CONVERSATION_DELIVERY_MIGRATION_ID,conversationDeliveryReceiptSchemaShape} from '../src/p2-006-delivery-command-schema.mjs';
-export async function migrateConversationDeliveryCommands({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){
+export async function migrateConversationDeliveryCommands({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'status'}){
  if(!databaseUrl||!['check','apply','status'].includes(mode))throw Error('CONVERSATION_DELIVERY_MIGRATION_INPUT_INVALID');
  const sql=await readFile(new URL('../../../database/migrations/'+CONVERSATION_DELIVERY_MIGRATION_ID+'.sql',import.meta.url),'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
  if(!body)throw Error('CONVERSATION_DELIVERY_MIGRATION_FILE_INVALID');const checksum=createHash('sha256').update(sql).digest('hex');
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'conversation_delivery_commands_migrator'}),tx=await pool.connect();
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'conversation_delivery_commands_migrator'}),tx=await pool.connect();
  try{
   await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='60s'");
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('P2_016_MIGRATION'))");await tx.query("SELECT pg_advisory_xact_lock(hashtext('CONVERSATION_DELIVERY_MIGRATION'))");

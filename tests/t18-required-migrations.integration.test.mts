@@ -49,6 +49,8 @@ test('the public T18 migration entry checks without writes, applies 045 then 051
   },{partialSchemaOnly:true,workbenchManualReportsEnabled:true,workbenchReporterCandidatesEnabled:false});
   await withWeb01Fixture(async({pool,databaseUrl}:Fixture)=>{
     const before=await ledger(pool);
+    assert.deepEqual(before.map(row=>row.migration_id).filter(id=>/^(075|076|077)_/u.test(id)),
+      ['075_ticket_terminal_at','076_fk_indexes','077_retention_and_time_contract']);
     for(const id of chain)assert.equal(before.find(row=>row.migration_id===id)?.checksum_sha256,checksums.get(id));
     assert.equal((await verificationColumn(pool)).length,1);
     assert.equal((await migrateWorkbenchVerifiedManualReports({databaseUrl,mode:'check'})).status,'NOOP_ALREADY_APPLIED');
