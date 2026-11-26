@@ -67,8 +67,8 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
-/** @param {{url:string,width:number,height:number,nativeDpr2?:boolean,graphics?:boolean,fullRaster?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
-export async function launchSystemBrowser({url,width,height,nativeDpr2=false,graphics=false,fullRaster=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
+/** @param {{url:string,width:number,height:number,nativeDpr2?:boolean,graphics?:boolean,fullRaster?:boolean,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket,onCdpEvent?:(method:string,params:unknown)=>void}} options */
+export async function launchSystemBrowser({url,width,height,nativeDpr2=false,graphics=false,fullRaster=false,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address),onCdpEvent}){
   signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
@@ -195,6 +195,7 @@ export async function launchSystemBrowser({url,width,height,nativeDpr2=false,gra
     });
     socket.addEventListener('message',event=>{
       const message=JSON.parse(String(event.data));
+      if(message.method)onCdpEvent?.(message.method,message.params);
       if(message.method)for(const [id,request] of pending)if(request.eventMethod===message.method){pending.delete(id);clearTimeout(request.timer);request.resolve(message.params);}
       if(!message.id||!pending.has(message.id))return;
       const request=pending.get(message.id);pending.delete(message.id);clearTimeout(request.timer);
@@ -203,6 +204,7 @@ export async function launchSystemBrowser({url,width,height,nativeDpr2=false,gra
     });
     await command('Page.enable');
     await command('Runtime.enable');
+    if(onCdpEvent)await command('Inspector.enable').catch(()=>onCdpEvent('Inspector.enableFailed',{}));
     if(cookies.length){
       assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
       await command('Network.enable');await command('Network.setCookies',{cookies});

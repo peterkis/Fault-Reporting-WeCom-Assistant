@@ -400,7 +400,135 @@ test('production inbox keeps one real SSE stream, exact delivery and draft scope
   },{inbox:true,realtime:true,personalRead:true});
 });
 
-test('returning to an inactive revoked chat cannot render cached messages while the current REST denial is delayed',async()=>{
+type RequestTiming=[startMs:number,status:number|null,finishMs:number|null,failed?:boolean];
+const cdpSignals=new Set(['Page.javascriptDialogOpening','Inspector.targetCrashed','Target.detachedFromTarget','Inspector.detached','Runtime.exceptionThrown']);
+const publicRouteParts=new Set(['summary','items','deliveries','related-sessions','read-cursor','eligible-principals']);
+const isRecord=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
+const sampleBinding='__inboxBrowserTestSample';
+const captureAlert=`(el,poll,matched)=>globalThis.${sampleBinding}?.(JSON.stringify({
+  poll,matched,tag:el?.localName??null,classes:el?Array.from(el.classList):[]
+}))`;
+
+class InboxBrowserDiagnostics {
+  private readonly start=performance.now();
+  private readonly signals:{ms:number;event:string;phase:string}[]=[];
+  private readonly requests=new Map<string,RequestTiming[]>();
+  private readonly pending=new Map<string,RequestTiming>();
+  private networkClockOffset:number|null=null;
+  private readonly unavailable:string[]=[];
+  private cursorPosts=0;
+  private logged=false;
+  private alertPolls=0;
+  private alert:{tag:string;class:string;omittedClasses:number;matched:boolean}|null=null;
+  private foreground:{wait:string;ms:number;visibilityState:string;hasFocus:boolean;cursorPosts:number}|null=null;
+  phase='setup';
+  proof:Record<string,unknown>={};
+  constructor(private readonly label:string){}
+
+  // CDP request IDs join the lifecycle events in memory. Only route templates,
+  // HTTP status and relative times leave the recorder.
+  observer(origin:string,sessions:readonly string[]){
+    return (event:string,params:unknown)=>{
+      if(cdpSignals.has(event)){
+        this.signals.push({ms:this.ms(),event,phase:this.phase});return;
+      }
+      if(event==='Inspector.enableFailed'){this.unavailable.push('Inspector');return;}
+      if(event==='Runtime.bindingCalled'&&isRecord(params)&&params.name===sampleBinding&&typeof params.payload==='string'){
+        this.recordSample(params.payload);return;
+      }
+      if(!event.startsWith('Network.')||!isRecord(params)||typeof params.requestId!=='string')return;
+      const id=params.requestId,existing=this.pending.get(id);
+      if(existing){
+        const response=event==='Network.requestWillBeSent'?params.redirectResponse:params.response;
+        if(isRecord(response)&&typeof response.status==='number')existing[1]=response.status;
+        if(event==='Network.loadingFinished'||event==='Network.loadingFailed'||event==='Network.requestWillBeSent'){
+          existing[2]=this.networkMs(params);if(event==='Network.loadingFailed')existing[3]=true;
+          this.pending.delete(id);
+        }
+      }
+      if(event!=='Network.requestWillBeSent'||!isRecord(params.request))return;
+      const {method,url}=params.request;
+      if(typeof url!=='string'||!url.startsWith(origin+'/api/'))return;
+      const path=url.slice(origin.length).split(/[?#]/u,1)[0]??'';
+      const route=/^(\/api\/(?:workbench\/)?conversations)(?:\/(.*))?$/u.exec(path);
+      if(!route||!(method==='GET'||method==='POST'&&path.endsWith('/read-cursor')))return;
+      if(method==='POST')this.cursorPosts++;
+      const parts=(route[2]??'').split('/').filter(Boolean).map(part=>{
+        const session=sessions.indexOf(part);
+        return session===0?':a':session===1?':b':publicRouteParts.has(part)?part:':id';
+      });
+      const key=method+' '+[route[1],...parts].join('/'),timing:RequestTiming=[this.networkMs(params),null,null];
+      const records=this.requests.get(key)??[];
+      records.push(timing);this.requests.set(key,records);this.pending.set(id,timing);
+    };
+  }
+  private ms(){return Math.round(performance.now()-this.start);}
+  private networkMs(params:Record<string,unknown>){
+    if(typeof params.timestamp!=='number')return this.ms();
+    // CDP pairs monotonic seconds with wall time on requestWillBeSent. Later
+    // lifecycle events then retain browser timing even if delivery is delayed.
+    if(this.networkClockOffset===null&&typeof params.wallTime==='number')
+      this.networkClockOffset=params.wallTime*1000-params.timestamp*1000-(performance.timeOrigin+this.start);
+    return this.networkClockOffset===null?this.ms():Math.round(params.timestamp*1000+this.networkClockOffset);
+  }
+
+  async bind(browser:Browser){
+    try{await browser.command('Runtime.addBinding',{name:sampleBinding});}
+    catch{this.unavailable.push('DOM samples');}
+  }
+  private recordSample(payload:string){
+    let value:unknown;
+    try{value=JSON.parse(payload);}catch{return;}
+    if(!isRecord(value))return;
+    if(this.label==='CONVERSATION_SUMMARY_FOREGROUND'){
+      if((value.visibilityState==='visible'||value.visibilityState==='hidden')&&typeof value.hasFocus==='boolean'){
+        this.foreground={wait:this.phase,ms:this.ms(),visibilityState:value.visibilityState,hasFocus:value.hasFocus,cursorPosts:this.cursorPosts};
+      }
+      return;
+    }
+    if(value.poll===true)this.alertPolls++;
+    if(this.alert&&value.matched!==true)return;
+    if(typeof value.tag!=='string'||!Array.isArray(value.classes)||typeof value.matched!=='boolean')return;
+    const safeToken=(token:unknown):token is string=>typeof token==='string'&&token.length<=64&&/^[a-z][a-z_-]*(?:-\d{1,2})?$/iu.test(token)&&!/[a-f0-9]{8}-[a-f0-9]{4}/iu.test(token);
+    const classes=value.classes.filter(safeToken);
+    this.alert={tag:safeToken(value.tag)?value.tag:'(redacted)',class:classes.join(' '),omittedClasses:value.classes.length-classes.length,matched:value.matched};
+  }
+  async releaseRevokedRead(browser:Browser){
+    // Capture an alert even if no subsequent poll can reach the renderer.
+    await browser.evaluate(`(()=>{try{const capture=${captureAlert};const inspect=()=>{
+      const el=document.querySelector('[role=alert]');if(el){observer.disconnect();capture(el,false,false);}
+    };const observer=new MutationObserver(inspect);
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['role']});inspect();
+    }catch{/* The optional observer must still let the REST response through. */}
+    globalThis.__releaseRevoked();})()`);
+  }
+  async waitForDeniedAlert(browser:Browser,expression:string){
+    this.phase='denied-alert';
+    await browser.waitFor(`(()=>{const result=(${expression});
+      (${captureAlert})(document.querySelector('[role=alert]'),true,Boolean(result));return result;})()`);
+  }
+  foregroundBrowser(browser:Browser):Browser{
+    return {...browser,waitFor:(expression,options)=>{
+      // Emit before the predicate's fetch or animation frame can stall.
+      this.foreground=null;
+      return browser.waitFor(`(()=>{globalThis.${sampleBinding}?.(JSON.stringify({
+        visibilityState:document.visibilityState,hasFocus:document.hasFocus()}));return (${expression});})()`,options);
+    }};
+  }
+  report(outcome:'passed'|'failed'){
+    if(this.logged)return;this.logged=true;
+    console.log(this.label+' '+JSON.stringify({...this.proof,outcome,phase:this.phase,elapsedMs:this.ms(),unavailable:this.unavailable,signals:this.signals,
+      requestColumns:['startMs','status','finishMs','failed?'],requests:Object.fromEntries(this.requests),cursorPosts:this.cursorPosts,
+      ...(this.label==='CONVERSATION_INACTIVE_REVOCATION'?{alertPolls:this.alertPolls,alert:this.alert}:{foreground:this.foreground})}));
+  }
+}
+async function withInboxDiagnostics(label:'CONVERSATION_INACTIVE_REVOCATION'|'CONVERSATION_SUMMARY_FOREGROUND',run:(trace:InboxBrowserDiagnostics)=>Promise<void>){
+  const trace=new InboxBrowserDiagnostics(label);
+  try{await run(trace);}catch(error){trace.report('failed');throw error;}
+  trace.report('passed');
+}
+
+test('returning to an inactive revoked chat cannot render cached messages while the current REST denial is delayed',()=>withInboxDiagnostics('CONVERSATION_INACTIVE_REVOCATION',async trace=>{
   await withT22Fixture(async f=>{
     const a=f.sessions[0],b=f.sessions[1],handler=f.principals[1],admin=f.principals[0],recipient=f.principals[2],cookie=f.runtime.authenticate.browserCookies?.()[2];assert.ok(a&&b&&handler&&admin&&recipient&&cookie);
     const actor=(await f.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[handler.id])).rows[0];assert.ok(actor);
@@ -410,49 +538,63 @@ test('returning to an inactive revoked chat cannot render cached messages while 
     assert.equal((await conversationPost(f.origin,f.handlerCookie,a.id,'internal-notes',{...freshCommand(),text:canary})).status,201);await f.runtime.coordinator.runOnce();
     let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+a.id,width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}]});assert.ok(browser);await browser.waitFor(ready);await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+')');
+      trace.phase='open-a';
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+a.id,width:1440,height:1080,cookies:[{...cookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[a.id,b.id])});assert.ok(browser);await trace.bind(browser);await browser.waitFor(ready);await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+')');
       await browser.waitFor(`Boolean(document.querySelector('a[href*="/conversations/${b.id}"]'))`);await browser.evaluate(`document.querySelector('a[href*="/conversations/${b.id}"]').click()`);await browser.waitFor(ready+`&&location.pathname.endsWith('${b.id}')&&!document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)})`);
+      trace.phase='transfer';
       const entry=await (await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).json() as ConversationChatEntry;
       const transferred=await conversationPost(f.origin,f.cookie,a.id,'transfer',{...freshCommand(entry.session.row_version),target_principal_id:recipient.id,force:true,reason_code:'SYNTHETIC_READ_REVOCATION'});assert.equal(transferred.status,200,JSON.stringify(await transferred.json()));
       assert.equal((await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).status,404);
       await browser.evaluate(`(()=>{globalThis.__revokedReadStarted=false;globalThis.__revokedLeak=false;globalThis.__revokedResponses=0;const gate=new Promise(resolve=>globalThis.__releaseRevoked=resolve),original=fetch;globalThis.fetch=(url,options)=>{if(String(url).startsWith(${JSON.stringify(path)})&&(!options?.method||options.method==='GET')){globalThis.__revokedReadStarted=true;return original(url,options).then(async response=>{globalThis.__revokedResponses++;await gate;return response;});}return original(url,options);};new MutationObserver(()=>{if(document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)}))globalThis.__revokedLeak=true;}).observe(document.body,{childList:true,subtree:true,characterData:true});history.pushState({},'',${JSON.stringify('/workbench/app/conversations/'+a.id)});dispatchEvent(new PopStateEvent('popstate'));})()`);
+      trace.phase='held-read';
       await browser.waitFor('globalThis.__revokedReadStarted');assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+'))||globalThis.__revokedLeak'),false,'an inactive chat must not expose cached internal notes before its current read completes');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-ready]'))"),false);
-      await browser.waitFor('globalThis.__revokedResponses>0');await browser.evaluate('globalThis.__releaseRevoked()');
-      await browser.waitFor("document.querySelector('[role=alert]')&&!document.querySelector('[data-conversation-ready]')");assert.equal(await browser.evaluate('globalThis.__revokedLeak'),false);
-      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false}));
-    }catch(error){failure=error;}
-    await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate('globalThis.__releaseRevoked?.()');await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}}],failure);
+      await browser.waitFor('globalThis.__revokedResponses>0');
+      trace.phase='release';await trace.releaseRevokedRead(browser);
+      await trace.waitForDeniedAlert(browser,"document.querySelector('[role=alert]')&&!document.querySelector('[data-conversation-ready]')");assert.equal(await browser.evaluate('globalThis.__revokedLeak'),false);
+      trace.proof={same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false};
+    }catch(error){failure=error;trace.report('failed');}
+    trace.phase='cleanup';
+    await closeBrowserTestResources([
+      async()=>{await browser?.evaluate('globalThis.__releaseRevoked?.()');},
+      async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});},
+    ],failure);
   },{inbox:true,realtime:true});
-});
-test('summary drawer blocks covered conversation cursor writes and closing re-observes visible text',async()=>{
+}));
+test('summary drawer blocks covered conversation cursor writes and closing re-observes visible text',()=>withInboxDiagnostics('CONVERSATION_SUMMARY_FOREGROUND',async trace=>{
   await withT22Fixture(async f=>{
     const session=f.sessions[0];assert.ok(session);const cursor=async()=>Number((await f.pool.query<{last:string}>('SELECT last_read_sequence::text AS last FROM conversation.read_cursor WHERE session_id=$1::uuid AND principal_id=$2::uuid',[session.id,f.principals[0]?.id])).rows[0]?.last??'0');
     let browser:Browser|undefined,failure:unknown;
     try{
-      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}]});assert.ok(browser);
+      trace.phase='launch';
+      browser=await launchSystemBrowser({url:f.origin+'/workbench/app/conversations/'+session.id,width:1920,height:1080,cookies:[{...f.browserCookie,url:f.origin+'/'}],onCdpEvent:trace.observer(f.origin,[session.id])});assert.ok(browser);
+      await trace.bind(browser);browser=trace.foregroundBrowser(browser);
       await browser.command('Emulation.setFocusEmulationEnabled',{enabled:true});
-      await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      trace.phase='chat-live';await browser.waitFor("Boolean(document.querySelector('[data-conversation-ready]'))&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
       await browser.evaluate(`(()=>{globalThis.__summaryReads={armed:false,gets:0,posts:0};const original=fetch;globalThis.fetch=(path,options)=>{const name=new URL(String(path),location.origin).pathname,t=globalThis.__summaryReads;if(t.armed){if(name===${JSON.stringify('/api/conversations/'+session.id)})t.gets++;if(options?.method==='POST'&&name===${JSON.stringify('/api/conversations/'+session.id+'/read-cursor')})t.posts++;}return original(path,options);};window.dispatchEvent(new Event('focus'));})()`);
       const initial=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(Number.isSafeInteger(initial)&&initial>0);
-      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${initial};})()`);
-      await clickWorkbenchControl(browser,'.inbox-business .inbox-mini-ticket a');await browser.waitFor("document.querySelector('[role=dialog].detail-dialog.ds-drawer')?.checkVisibility()===true");
+      trace.phase='initial-cursor';await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${initial};})()`);
+      trace.phase='open-drawer-control';await clickWorkbenchControl(browser,'.inbox-business .inbox-mini-ticket a');
+      trace.phase='drawer-open';await browser.waitFor("document.querySelector('[role=dialog].detail-dialog.ds-drawer')?.checkVisibility()===true");
       await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
       const before=await cursor();await browser.evaluate('globalThis.__summaryReads.armed=true');
       const entry=await (await fetch(f.origin+'/api/workbench/conversations/'+session.id+'?view=chat',{headers:{cookie:f.cookie}})).json() as ConversationChatEntry;
       assert.equal((await conversationPost(f.origin,f.cookie,session.id,'internal-notes',{...freshCommand(entry.session.row_version),text:'合成摘要遮挡期间的新正文'})).status,201);await f.runtime.coordinator.runOnce();
-      await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes('合成摘要遮挡期间的新正文')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
+      trace.phase='covered-material';await browser.waitFor("document.querySelector('[data-conversation-timeline]')?.textContent.includes('合成摘要遮挡期间的新正文')&&document.querySelector('[data-realtime-status]')?.dataset.realtimeStatus==='live'");
       const newest=await browser.evaluate("Math.max(...[...document.querySelectorAll('[data-conversation-timeline] p[data-session-read-sequence]')].map(node=>Number(node.dataset.sessionReadSequence)))") as number;assert.ok(newest>before);
       const covered=await browser.evaluate("(()=>{window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('resize'));const node=document.querySelector('.inbox-timeline');node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));return {gets:globalThis.__summaryReads.gets,posts:globalThis.__summaryReads.posts};})()") as {gets:number;posts:number};
       assert.deepEqual(covered,{gets:0,posts:0},'covered material does not start a Cursor intent or its authority GET');assert.equal(await cursor(),before,'unseen text never advances the durable cursor');
       await browser.evaluate('globalThis.__summaryReads.armed=false');
-      await clickWorkbenchControl(browser,'[role=dialog].ds-drawer button[aria-label="关闭详情"]');await browser.waitFor("!document.querySelector('.inbox-associated-detail')");
-      await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${newest};})()`);
+      trace.phase='close-drawer-control';await clickWorkbenchControl(browser,'[role=dialog].ds-drawer button[aria-label="关闭详情"]');
+      trace.phase='drawer-closed';await browser.waitFor("!document.querySelector('.inbox-associated-detail')");
+      trace.phase='resumed-cursor';await browser.waitFor(`(async()=>{const result=await (await fetch(${JSON.stringify('/api/conversations/'+session.id)},{cache:'no-store',headers:{accept:'application/json'}})).json();return Number(result.read_cursor.last_read_sequence)>=${newest};})()`);
       assert.ok(await cursor()>=newest,'closing the drawer re-observes actually visible text without a synthetic scroll');
-      console.log('CONVERSATION_SUMMARY_FOREGROUND '+JSON.stringify({before,covered,after:await cursor(),newest,real_http_pg:true}));
-    }catch(error){failure=error;}finally{await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);}
+      trace.proof={before,covered,after:await cursor(),newest,real_http_pg:true};
+    }catch(error){failure=error;trace.report('failed');}
+    trace.phase='cleanup';
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],failure);
   },{inbox:true,realtime:true,personalRead:true,recovery:false});
-});
+}));
 
 test('an uncertain personal Cursor remains GET-only across foreground observations and new projected material',async()=>{
   await withT22Fixture(async f=>{
