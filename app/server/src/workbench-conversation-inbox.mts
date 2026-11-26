@@ -18,7 +18,7 @@ interface SessionRow extends Identity {session_id:string;status:string;control_m
 interface InboxRow extends Identity {anchor_session_id:string;participant_label:string;department_label:string|null;latest_activity_at:string;waiting_since:string|null;matching_topic_count:number;unread_count:number;last_item:ConversationInboxEntry['last_item_preview'];sources:ConversationSourceBadge[];source_count:number;owner_count:number;mine_count:number;assigned_count:number;session_count:number;owner_name:string|null;has_delivery_exception:boolean}
 interface Cursor {v:2;binding:string;criteria:string;scope:string;at:string;anchor:string}
 type Params={sourceGroups:boolean;values:unknown[];add(value:unknown,cast?:string):string};
-interface ReadQuery {prefix:string;sql:string;anchor?:string;cursor?:string;scope?:boolean;cursorScope?:string}
+interface ReadQuery {prefix:string;sql:string;anchor?:string;cursor?:string;scope?:true|'contact_sessions';cursorScope?:string}
 function invalid(code:string=WORKBENCH_ERROR_CODES.requestInvalid,status=400):never{throw new WorkbenchError(code,status);}
 function integer(v:string|null,fallback:number,max:number):number{if(v===null)return fallback;if(!/^[1-9][0-9]*$/u.test(v)||!Number.isSafeInteger(Number(v))||Number(v)>max)invalid();return Number(v);}
 function keys(url:URL,allowed:readonly string[]){const names=[...url.searchParams.keys()];if(names.some(k=>!allowed.includes(k))||new Set(names).size!==names.length)invalid();}
@@ -64,7 +64,8 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
       // Replacing it leaves an untyped parameter hole under PostgreSQL Parse.
       if(currentSessionPredicate){const s=currentSessionPredicate(auth,p.principal_id,params.values.length+1);params.values.push(...s.values);sessionSql='('+sessionSql+') AND ('+s.sql+')';}
       const spec=body(p,params);
-      const scopeSql=spec.scope?"(SELECT encode(sha256(convert_to(COALESCE(string_agg(session_id,',' ORDER BY session_id),''),'UTF8')),'hex') FROM eligible)":"''::text";
+      const scopeRelation=spec.scope===true?'eligible':spec.scope;
+      const scopeSql=scopeRelation?`(SELECT encode(sha256(convert_to(COALESCE(string_agg(session_id,',' ORDER BY session_id),''),'UTF8')),'hex') FROM ${scopeRelation})`:"''::text";
       const cursorSql=spec.cursorScope===undefined?(spec.cursor??'TRUE'):`(${spec.cursor??'TRUE'}) AND ${scopeSql}=${params.add(spec.cursorScope)}`;
       // Current auth/role/team facts and the returned material share this final READ snapshot.
       const proof=(await tx.query<{authenticated:boolean;scope_valid:boolean;anchor_valid:boolean;cursor_valid:boolean;readable_scope:string;items:T[]}>(`${spec.prefix} SELECT (${sessionSql}) AS authenticated,
@@ -206,14 +207,20 @@ export function createConversationInbox({pool,authorization,enabled=false,identi
     guard();keys(url,['cursor','limit','include_waiting_since']);const includeWaiting=includeWaitingSince(url),limit=integer(url.searchParams.get('limit'),50,100),cursor=decode(url.searchParams.get('cursor')),criteria=digest(['related',id,limit],'RELATED_FILTER_V1');
     const result=await read<SessionRow>(auth,(p,v)=>{
       if(cursor&&(cursor.binding!==binding(auth,p)||cursor.criteria!==criteria))invalid(WORKBENCH_ERROR_CODES.cursorInvalid);
-      const base=relation(p,v),anchorId=v.add(id),boundary=cursor?` AND (r.last_activity_at,r.session_id)<(${v.add(cursor.at)},${v.add(cursor.anchor)})`:'';
+      const base=relation(p,v),anchorId=v.add(id);
       const anchor=`EXISTS(SELECT 1 FROM eligible WHERE session_id=${anchorId})`;
-      const valid=cursor?`EXISTS(SELECT 1 FROM eligible c JOIN eligible a ON a.session_id=${anchorId}
-        AND (c.provider,c.channel_account_id,c.participant_key)=(a.provider,a.channel_account_id,a.participant_key)
-        WHERE c.session_id=${v.add(cursor.anchor)} AND c.last_activity_at=${v.add(cursor.at)})`:'TRUE';
-      return {prefix:base,anchor,cursor:valid,scope:true,...(cursor?{cursorScope:cursor.scope}:{}),sql:`SELECT r.* FROM eligible r JOIN eligible anchor ON anchor.session_id=${anchorId}
-        AND (r.provider,r.channel_account_id,r.participant_key)=(anchor.provider,anchor.channel_account_id,anchor.participant_key)
-        WHERE TRUE ${boundary} ORDER BY r.last_activity_at DESC,r.session_id DESC LIMIT ${v.add(limit+1)}`};
+      // History pages cover one contact, so other contacts' new sessions must not invalidate their cursors.
+      const prefix=base+`, contact_sessions AS (SELECT r.* FROM eligible r JOIN eligible a
+        ON (r.provider,r.channel_account_id,r.participant_key)=(a.provider,a.channel_account_id,a.participant_key)
+        WHERE a.session_id=${anchorId})`;
+      let valid='TRUE',boundary='';
+      if(cursor){
+        const at=v.add(cursor.at),session=v.add(cursor.anchor);
+        valid=`EXISTS(SELECT 1 FROM contact_sessions WHERE session_id=${session} AND last_activity_at=${at})`;
+        boundary=`WHERE (last_activity_at,session_id)<(${at},${session})`;
+      }
+      return {prefix,anchor,cursor:valid,scope:'contact_sessions',...(cursor?{cursorScope:cursor.scope}:{}),sql:`SELECT * FROM contact_sessions
+        ${boundary} ORDER BY last_activity_at DESC,session_id DESC LIMIT ${v.add(limit+1)}`};
     });
     const rows=result.rows.slice(0,limit),last=rows.at(-1);
     return {items:rows.map(r=>entry(r,result.principal,includeWaiting)),next_cursor:result.rows.length>limit&&last?encode({v:2,binding:binding(auth,result.principal),criteria,scope:result.scope,at:last.last_activity_at,anchor:last.session_id}):null};
