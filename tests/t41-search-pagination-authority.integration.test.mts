@@ -99,7 +99,7 @@ test('T41 bounded Card28 dismissal and unassigned searches survive session JIT w
     return new Proxy(client,{get(value,key){
      if(key==='query')return new Proxy(client.query,{apply:async(execute,_this,queryArgs:unknown[])=>{
       const sql=typeof queryArgs[0]==='string'?queryArgs[0].trim():'';
-      if(sql.startsWith('WITH cards AS MATERIALIZED')&&sql.includes('matched AS MATERIALIZED')){
+      if(sql.includes('candidate_keys AS (')&&(sql.includes('AS safety_signature FROM matched')||sql.includes('AS session_valid'))){
        readQuery=true;observed.push({query:currentQuery,phase:sql.includes('AS session_valid')?'final':'prepare',guc:await searchJitSettings(client)});
       }
       const result:unknown=await Reflect.apply(execute,client,queryArgs);

@@ -28,9 +28,9 @@ async function drain(pool){
 
 async function capacity(profile,t){
   const fingerprint=g2CandidateInventory().fingerprint,receipts=[];
-  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2ss009cap',max:1,run:async({pool:control,databaseUrl,observeResource})=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2ss009cap',max:1,run:async({pool:control,databaseUrl,databaseConnection,observeResource})=>{
     await migrateSS009RuntimeDatabase({databaseUrl});
-    const pool=createPostgresPool({connectionString:databaseUrl,max:4,application_name:'ss009_capacity_app'});
+    const pool=createPostgresPool({...databaseConnection,max:4,application_name:'ss009_capacity_app'});
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss009-admin',displayName:'Synthetic capacity',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const identityMapping=await mapping(),options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret};
     const staffRuntime=createYxxProfile({...options,profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',principalId:principal.id,

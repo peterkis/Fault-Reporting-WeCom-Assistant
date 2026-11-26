@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -6,12 +7,12 @@ import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {transactionP2016,failP2016} from '../src/p2-016-domain-contracts.mjs';
 
 export const SOURCE_GROUP_MIGRATION_ID='037_workbench_source_group_names';
-export async function migrateWorkbenchSourceGroups({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}) {
+export async function migrateWorkbenchSourceGroups({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}) {
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
   const sql=await readFile(new URL('../../../database/migrations/'+SOURCE_GROUP_MIGRATION_ID+'.sql',import.meta.url),'utf8');
   const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
   const checksum=createHash('sha256').update(sql).digest('hex');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'workbench_source_groups_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'workbench_source_groups_migrator'});
   try{return await transactionP2016(pool,async tx=>{
     await tx.query("SELECT pg_advisory_xact_lock(hashtext('WORKBENCH_SOURCE_GROUP_MIGRATION'))");
     const previous=await tx.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'");

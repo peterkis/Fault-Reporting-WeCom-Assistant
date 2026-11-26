@@ -1,3 +1,4 @@
+import {isMigrationDatabase,migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -43,12 +44,12 @@ export async function validateP2012Catalog(tx,{catalogProfile='LEGACY'}={}){
   else if(catalogProfile!=='LEGACY'||p2012CatalogHash(inventory)!==EXPECTED_CATALOG_SHA256&&!await (await import('../src/p2-006-delivery-command-schema.mjs')).conversationDeliveryBaseCatalogReady(tx,inventory,'032'))fail('P2_012_SCHEMA_DRIFT');
   return inventory;
 }
-/** @param {{databaseUrl?: string, mode?: string, PoolFactory?: typeof createPostgresPool, catalogProfile?: 'LEGACY'|'CURRENT_V2_49'}} [options] */
+/** @param {{databaseUrl?: import("./migration-database.mjs").MigrationDatabase, mode?: string, PoolFactory?: typeof createPostgresPool, catalogProfile?: 'LEGACY'|'CURRENT_V2_49'}} [options] */
 export async function migrateP2012({databaseUrl,mode='apply',PoolFactory=createPostgresPool,catalogProfile='LEGACY'}={}){
-  if(typeof databaseUrl!=='string'||!databaseUrl||!['apply','check','status'].includes(mode)||!['LEGACY','CURRENT_V2_49'].includes(catalogProfile))fail('P2_012_MIGRATION_INPUT_INVALID');
+  if(!isMigrationDatabase(databaseUrl)||!['apply','check','status'].includes(mode)||!['LEGACY','CURRENT_V2_49'].includes(catalogProfile))fail('P2_012_MIGRATION_INPUT_INVALID');
   const sql=await readFile(FILE,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
   if(!body)fail('P2_012_MIGRATION_FILE_INVALID');
-  const checksum=sha(sql),pool=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'p2_012_migrator'});
+  const checksum=sha(sql),pool=PoolFactory({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'p2_012_migrator'});
   let tx;
   try{
     tx=await pool.connect();await tx.query('BEGIN');await tx.query("SET LOCAL lock_timeout='5s'");await tx.query("SET LOCAL statement_timeout='60s'");

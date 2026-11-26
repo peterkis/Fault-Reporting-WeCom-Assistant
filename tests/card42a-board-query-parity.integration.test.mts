@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import {spyPool,fullTicketCardSql,isFullCardProjection} from './helpers/card42a-sql-observer.mjs';
 import {randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withWeb01Fixture, seedCard28Board, seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
 import {createWeb01WorkbenchQuery} from '../app/server/src/web01-workbench-query.mjs';
+import {createPerfBoardReads,PERF_BOARD_READ_LIMITS,perfReadCount} from '../app/server/scripts/perf-board.mjs';
 import {createWorkbenchSearch} from '../app/server/src/workbench-search.mjs';
 import {createWorkbenchFollow} from '../app/server/src/workbench-follow.mjs';
 import {createWorkbenchReminders} from '../app/server/src/workbench-reminders.mjs';
@@ -28,6 +30,7 @@ import type {P2016EnabledRuntime} from '../app/server/src/p2-016-runtime.mjs';
 import type {BoardColumn, BoardCompletionRange, BoardPage, WorkbenchCard} from '../contracts/web01_workbench_contracts.js';
 import type {WorkbenchSearchCriteria, WorkbenchSearchPage} from '../contracts/workbench_search_contracts.js';
 // Pre-42A stack: verbatim copies of the main 5bc972fb modules (see tests/fixtures/card42a-legacy/).
+import {createP2016ManualReviewFacade as createLegacyReviewFacade} from './fixtures/card42a-legacy/p2-016-manual-review-facade.mjs';
 import {createWeb01WorkbenchQuery as createLegacyWorkbenchQuery} from './fixtures/card42a-legacy/web01-workbench-query.mjs';
 import {createWorkbenchSearch as createLegacyWorkbenchSearch} from './fixtures/card42a-legacy/workbench-search.mjs';
 import {createWorkbenchFollow as createLegacyWorkbenchFollow} from './fixtures/card42a-legacy/workbench-follow.mjs';
@@ -36,41 +39,13 @@ import {createWorkbenchSourceGroups as createLegacyWorkbenchSourceGroups} from '
 import {createWorkbenchSupplementFollowUp as createLegacyWorkbenchSupplementFollowUp} from './fixtures/card42a-legacy/workbench-supplement-follow-up.mjs';
 
 interface Web01Context {
+  processReviewIntake:(id:string)=>Promise<unknown>;
   pool: PostgresPool;
   databaseUrl: string;
   tickets: {ticket: {id: string; ticket_no: string; status: string}; intake: {intakeId: string; receivedAt: string}}[];
   principals: {id: string; display_name: string}[];
   outsider: {id: string};
   runtime: P2016EnabledRuntime;
-}
-
-function spyPool(pool: PostgresPool) {
-  const queries: string[] = [];
-  const wrapQuery = (target: object, queryFn: (...args: unknown[]) => unknown) => (...args: unknown[]) => {
-    const [sql] = args;
-    if (typeof sql === 'string') queries.push(sql);
-    return Reflect.apply(queryFn, target, args);
-  };
-  const wrapped = new Proxy(pool, {
-    get(target, prop, receiver) {
-      if (prop === 'query') return wrapQuery(target, target.query);
-      if (prop === 'connect') {
-        return async () => {
-          const client = await target.connect();
-          return new Proxy(client, {
-            get(clientTarget, clientProp, clientReceiver) {
-              if (clientProp === 'query') return wrapQuery(clientTarget, clientTarget.query);
-              const val = Reflect.get(clientTarget, clientProp, clientReceiver);
-              return typeof val === 'function' ? val.bind(clientTarget) : val;
-            },
-          });
-        };
-      }
-      const val = Reflect.get(target, prop, receiver);
-      return typeof val === 'function' ? val.bind(target) : val;
-    },
-  });
-  return {pool: wrapped, queries};
 }
 
 function createAuth(principalId: string) {
@@ -84,6 +59,7 @@ function createAuth(principalId: string) {
 
 test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, search, and single card query execution match legacy SQL', {timeout: 180000}, async () => {
   await withWeb01Fixture(async (f: Web01Context) => {
+    assert.match(new URL(f.databaseUrl).pathname,/^\/ticket_card42a_web01_/u);
     // Same order as T41: the follow receipt inventory is only current after the closure-chain migrations.
     await migrateWorkbenchPersonalRead({databaseUrl: f.databaseUrl, mode: 'apply'});
     await migrateWorkbenchFollow({databaseUrl: f.databaseUrl, mode: 'apply'});
@@ -91,6 +67,18 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
     await migrateWorkbenchFollowUpSchedules({databaseUrl: f.databaseUrl, mode: 'apply'});
     await migrateWorkbenchFollowUpDueSignals({databaseUrl: f.databaseUrl, mode: 'apply'});
     const seeded = await seedCard28Board(f);
+    const fixtureTicketIds=f.tickets.map(({ticket})=>ticket.id);
+    const inconsistent=await f.pool.query(`SELECT t.id FROM pilot_ticket.ticket t
+      LEFT JOIN LATERAL (SELECT e.event_id,e.created_at FROM pilot_ticket.ticket_event e
+        WHERE e.ticket_id=t.id AND e.new_status=t.status AND e.old_status IS DISTINCT FROM e.new_status
+          AND e.event_type IN ('ticket.resolved','ticket.completed','ticket.dismissed')
+        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) last_event ON true
+      LEFT JOIN pilot_ticket.closure_record c ON c.ticket_id=t.id AND c.restored_at IS NULL
+      WHERE t.id=ANY($1::uuid[]) AND t.status IN ('RESOLVED','COMPLETED','DISMISSED')
+        AND (t.terminal_at IS DISTINCT FROM last_event.created_at
+          OR t.terminal_epoch_ms IS DISTINCT FROM floor(extract(epoch FROM (last_event.created_at AT TIME ZONE 'Asia/Shanghai'))*1000)::bigint
+          OR (t.status='DISMISSED' AND c.ended_at IS DISTINCT FROM t.terminal_at))`,[fixtureTicketIds]);
+    assert.deepEqual(inconsistent.rows,[],'Card 27/28 adjustments preserve the terminal event, pair and active dismissal time');
     const adminId = f.principals[0]?.id;
     const handlerId = f.principals[1]?.id;
     assert.ok(adminId && handlerId);
@@ -134,16 +122,20 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
     );
 
     const catalog = await loadServiceCatalog();
-    const authorization = createPilotWorkbenchAuthorizationAdapter({pool: f.pool});
-    const ticketQuery = createP2016TicketQuery({pool: f.pool, enabled: true, authorization, ticketStaffCompletionEnabled: true, ticketReopenRoundsEnabled: true});
-    const reviews = createP2016ManualReviewFacade({pool: f.pool, query: ticketQuery, enabled: true});
+    let beforeCardRead:((sql:string)=>Promise<void>|undefined)|undefined;
+    const spy = spyPool(f.pool,sql=>beforeCardRead?.(sql));
+    function ticketReads(pool:PostgresPool,createReviews:typeof createP2016ManualReviewFacade) {
+      const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
+      const query=createP2016TicketQuery({pool,enabled:true,authorization,ticketStaffCompletionEnabled:true,ticketReopenRoundsEnabled:true});
+      return {query,reviews:createReviews({pool,query,enabled:true}),
+        schedules:createWorkbenchFollowUpSchedules({pool,query,enabled:true})};
+    }
+    const {query:ticketQuery,reviews,schedules:followUpSchedules}=ticketReads(spy.pool,createP2016ManualReviewFacade);
+    const legacy=ticketReads(f.pool,createLegacyReviewFacade);
+    const sourceGroups=createWorkbenchSourceGroups({pool:spy.pool,query:ticketQuery});
+    const supplementFollowUp=createWorkbenchSupplementFollowUp({pool:spy.pool,query:ticketQuery,enabled:true});
+    const follow=createWorkbenchFollow({pool:spy.pool,query:ticketQuery,reviews,manualReviewEnabled:true,manualReportsEnabled:false,enabled:true});
 
-    const sourceGroups = createWorkbenchSourceGroups({pool: f.pool, query: ticketQuery});
-    const followUpSchedules = createWorkbenchFollowUpSchedules({pool: f.pool, query: ticketQuery, enabled: true});
-    const supplementFollowUp = createWorkbenchSupplementFollowUp({pool: f.pool, query: ticketQuery, enabled: true});
-    const follow = createWorkbenchFollow({pool: f.pool, query: ticketQuery, reviews, manualReviewEnabled: true, manualReportsEnabled: false, enabled: true});
-
-    const spy = spyPool(f.pool);
     const newQuery = createWeb01WorkbenchQuery({
       pool: spy.pool,
       query: ticketQuery,
@@ -157,19 +149,19 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
       supplementFollowUp,
       serviceCatalog: catalog,
     });
-    const legacySourceGroups = createLegacyWorkbenchSourceGroups({pool: f.pool, query: ticketQuery});
-    const legacySupplementFollowUp = createLegacyWorkbenchSupplementFollowUp({pool: f.pool, query: ticketQuery, enabled: true});
-    const legacyFollow = createLegacyWorkbenchFollow({pool: f.pool, query: ticketQuery, reviews, manualReviewEnabled: true, manualReportsEnabled: false, enabled: true});
+    const legacySourceGroups = createLegacyWorkbenchSourceGroups({pool: f.pool, query: legacy.query});
+    const legacySupplementFollowUp = createLegacyWorkbenchSupplementFollowUp({pool: f.pool, query: legacy.query, enabled: true});
+    const legacyFollow = createLegacyWorkbenchFollow({pool: f.pool, query: legacy.query, reviews:legacy.reviews, manualReviewEnabled: true, manualReportsEnabled: false, enabled: true});
     const legacyQuery = createLegacyWorkbenchQuery({
       pool: f.pool,
-      query: ticketQuery,
+      query: legacy.query,
       sourceGroups: legacySourceGroups,
       workbenchFollowEnabled: true,
       follow: legacyFollow,
-      followUpSchedules,
+      followUpSchedules:legacy.schedules,
       manualReviewEnabled: true,
       manualReportsEnabled: false,
-      reviews,
+      reviews:legacy.reviews,
       supplementFollowUp: legacySupplementFollowUp,
       serviceCatalog: catalog,
     });
@@ -184,7 +176,7 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
     });
     const legacySearch = createLegacyWorkbenchSearch({
       pool: f.pool,
-      query: ticketQuery,
+      query: legacy.query,
       cards: legacyQuery,
       enabled: true,
       localTestProfile: true,
@@ -194,6 +186,21 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
     const adminAuth = createAuth(adminId);
     const handlerAuth = createAuth(handlerId);
     const outsiderAuth = createAuth(f.outsider.id);
+
+    // Exercise the assembled human-role decorators through their normal entry points at two page sizes.
+    const human=createPerfBoardReads(spy.pool,catalog);
+    for(const limit of ['1','50']){
+      spy.queries.length=0;
+      const page=await human.web01.list({authContext:adminAuth,column:'active',range:'recent',cursor:null,limit});
+      assert.ok(page.items.length>0);assert.ok(page.items.every(item=>Object.hasOwn(item,'supplement_follow_up')));
+      const manualRead=Number(page.items.some(item=>item.source==='MANUAL'));
+      assert.ok(perfReadCount(spy.queries)<=PERF_BOARD_READ_LIMITS.page+manualRead,`assembled board limit=${limit}: ${spy.queries.length} reads`);
+      assert.equal(spy.queries.filter(sql=>sql.includes('summary.pending AS has_pending_supplements')).length,1);
+    }
+    spy.queries.length=0;
+    const single=await human.web01.authorizedItem(adminAuth,'ticket',extraTicket.id);
+    assert.ok(Object.hasOwn(single,'supplement_follow_up'));
+    assert.ok(perfReadCount(spy.queries)<=PERF_BOARD_READ_LIMITS.item);
 
     // 1. Compare paginated list() across all columns, ranges, scopes, and personas + single-execution count
     const listCombos: {auth: ReturnType<typeof createAuth>; column: BoardColumn; range: BoardCompletionRange; scope: 'team' | 'related'; handledFrom?: string; handledTo?: string}[] = [
@@ -239,7 +246,7 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
           limit: '3',
         });
 
-        const pageKeyQueries = spy.queries.filter(q => q.includes('WITH page_keys AS'));
+        const pageKeyQueries = spy.queries.filter(q => q.includes('page_keys AS ('));
         assert.equal(pageKeyQueries.length, 1, `list(${combo.column}/${combo.scope}) p${pageIndex} must execute 1 page_keys query`);
         assert.equal(spy.queries.some(q => q.includes('WITH cards AS')), false, 'new list() must not execute legacy full WITH cards scan');
 
@@ -284,16 +291,35 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
       ['ticket', extraTicket.id],
       ['ticket', seeded.manual],
       ['review', pendingReviewRow.id],
+      ['intake', seeded.failedIntake],
       ['intake', closedIntakeRow.id],
     ] as const) {
+      spy.queries.length=0;
       const [newItem, oldItem] = await Promise.all([
         newQuery.authorizedItem(adminAuth, kind, id),
         legacyQuery.authorizedItem(adminAuth, kind, id),
       ]);
       assert.deepEqual(newItem, oldItem, `authorizedItem parity failed for ${kind}:${id}`);
+      assert.equal(spy.queries.filter(isFullCardProjection).length,1,`item ${kind}:${id}`);
+      spy.queries.length=0;
+      const input={authContext:adminAuth,kind,id,cursor:null,limit:20};
+      const current=await newQuery.detail(input);
+      assert.equal(JSON.stringify(current),JSON.stringify(await legacyQuery.detail(input)),`detail bytes ${kind}:${id}`);
+      assert.equal(spy.queries.filter(isFullCardProjection).length,1,`detail ${kind}:${id}`);
     }
     await assert.rejects(newQuery.authorizedItem(outsiderAuth, 'ticket', extraTicket.id), /NOT_FOUND/u);
     await assert.rejects(legacyQuery.authorizedItem(outsiderAuth, 'ticket', extraTicket.id), /NOT_FOUND/u);
+
+    spy.queries.length=0;
+    const detailInput={authContext:adminAuth,kind:'ticket',id:extraTicket.id,cursor:null,limit:20};
+    const detail=await newQuery.detail(detailInput);
+    const legacyDetail=await legacyQuery.detail(detailInput);
+    assert.deepEqual(detail,legacyDetail);
+    assert.equal(JSON.stringify(detail),JSON.stringify(legacyDetail),'detail JSON bytes match main');
+
+    assert.equal(spy.queries.filter(sql=>fullTicketCardSql.test(sql)).length,1,'Follow-enabled detail hydrates the ticket once');
+    assert.ok(spy.queries.filter(sql=>sql.includes('SELECT i.id::text,COALESCE(f.following')).length>=2,
+      'the recorder observes Follow attention and the final Follow READ');
 
     // 3. Follow attentionMany parity
     const samplePage = await newQuery.list({authContext: adminAuth, column: 'pending', range: 'recent', scope: 'team', cursor: null, limit: '10'});
@@ -309,8 +335,8 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
     // Actions publish their ticket events through the runtime's own realtime projector, as the HTTP handlers do.
     const projectedActions = createTicketActionService({pool: f.pool, authorize: access.authorizeAction,
       afterAction: async ({transaction, ticket, event}) => f.runtime.realtimeProjector.ticket({transaction, ticket, event})});
-    const reminders = createWorkbenchReminders({pool: f.pool, query: ticketQuery, enabled: true, followEnabled: true});
-    const legacyReminders = createLegacyWorkbenchReminders({pool: f.pool, query: ticketQuery, enabled: true, followEnabled: true});
+    const reminders = createWorkbenchReminders({pool: spy.pool, query: ticketQuery, enabled: true, followEnabled: true});
+    const legacyReminders = createLegacyWorkbenchReminders({pool: f.pool, query: legacy.query, enabled: true, followEnabled: true});
     await f.pool.query(`INSERT INTO pilot_ticket.workbench_item_follow(principal_id, source_intake_id, following)
        SELECT $1::uuid, source_intake_id, true FROM pilot_ticket.ticket WHERE id=$2::uuid
        ON CONFLICT(principal_id, source_intake_id) DO UPDATE SET following=true`, [adminId, extraTicket.id]);
@@ -356,6 +382,10 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
       resolver_team_id: null, assignee_id: null, sources: [], source_group_ref: null,
       statuses: [], supplement: 'any', schedule: 'any', ...patch,
     });
+    spy.queries.length=0;
+    const humanSearch=await human.search.search({authContext:adminAuth,request:{criteria:fullCriteria({q:extraTicket.ticket_no}),cursor:null,limit:50}});
+    assert.ok(humanSearch.items.some(item=>item.id===extraTicket.id));
+    assert.ok(perfReadCount(spy.queries)<=PERF_BOARD_READ_LIMITS.search+Number(humanSearch.items.some(item=>item.source==='MANUAL')));
     const searchCases: WorkbenchSearchCriteria[] = [
       fullCriteria({column: 'all', range: 'recent', q: ''}),
       fullCriteria({column: 'pending', range: 'recent', q: '合成'}),
@@ -389,6 +419,143 @@ test('Card 42A parity: board list/item, multi-page cursors, follow, reminders, s
         oCursor = oPage.next_cursor;
       } while (nCursor !== null || oCursor !== null);
     }
-  }, {precisionV212: true, serviceCatalog: loadServiceCatalog(), ticketSelfHandlingEnabled: true, workbenchBoardActionsEnabled: true, workbenchSearchEnabled: true, workbenchFollowEnabled: true, workbenchManualReviewEnabled: true, sourceGroupDirectoryEnabled: true, workbenchRealtimeEnabled: true});
+    // This Intake has a readable Ticket, so even the retained closed-Intake path must refuse it.
+    for(const reader of [newQuery,legacyQuery]){
+      const stale={...detailInput,kind:'intake',id:extraIntake.intakeId};
+      for(const request of [()=>reader.authorizedItem(adminAuth,stale.kind,stale.id),()=>reader.detail(stale)]){
+        spy.queries.length=0;
+        await assert.rejects(request(),{status:404,code:'P2_016_NOT_FOUND'});
+        if(reader===newQuery)assert.equal(spy.queries.filter(isFullCardProjection).length,1);
+      }
+    }
+
+    // Commit the conversion on a separate connection immediately before the first
+    // full projection. A reader that already chose a Review key here would miss the Ticket.
+    let linked=false;
+    beforeCardRead=sql=>{
+      if(!isFullCardProjection(sql))return;
+      beforeCardRead=undefined;
+      return f.pool.query(`UPDATE intake.contact_journey SET linked_ticket_id=$2,status='TICKET_LINKED'
+        WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1)`,[pendingReviewRow.id,extraTicket.id])
+        .then(result=>{assert.equal(result.rowCount,1);linked=true;});
+    };
+    const aliasInput={...detailInput,kind:'review',id:pendingReviewRow.id};
+    spy.queries.length=0;
+    const alias=await newQuery.detail(aliasInput);
+    assert.ok(linked);
+    assert.equal(alias.item.kind,'ticket');assert.equal(alias.item.id,extraTicket.id);
+    assert.equal(JSON.stringify(alias),JSON.stringify(await legacyQuery.detail(aliasInput)));
+    const projections=spy.queries.filter(isFullCardProjection);
+    assert.equal(projections.length,1);
+    assert.ok(spy.queries.filter(sql=>sql.includes('SELECT i.id::text,COALESCE(f.following')).length>=2);
+    const statement=projections[0];assert.ok(statement);
+    // PostgreSQL reports each correlated CASE arm as a SubPlan of the route scan.
+    // Check executions, since the SQL text necessarily contains all three alternatives.
+    interface ArmPlan {'Parent Relationship':string;'Actual Loops':number}
+    const explain=await f.pool.query<{'QUERY PLAN':{Plan:{Alias:string;Plans:ArmPlan[]}}[]}>(
+      'EXPLAIN (ANALYZE,FORMAT JSON) '+statement,[adminId,aliasInput.id]);
+    const plan=explain.rows[0]?.['QUERY PLAN'][0]?.Plan;assert.ok(plan);
+    assert.equal(plan.Alias,'route');
+    assert.deepEqual(plan.Plans.filter(node=>node['Parent Relationship']==='SubPlan').map(node=>node['Actual Loops']),[1,0,0],
+      'the Review alias executes the Ticket projection once and both other arms zero times');
+    spy.queries.length=0;
+    assert.deepEqual(await newQuery.authorizedItem(adminAuth,'review',aliasInput.id),await legacyQuery.authorizedItem(adminAuth,'review',aliasInput.id));
+    assert.equal(spy.queries.filter(isFullCardProjection).length,1);
+    // Change the real grant after scope() and before the atomic Review projection.
+    await f.pool.query("UPDATE pilot_ticket.ticket SET assignee_id=NULL,resolver_team_id='PILOT_IT' WHERE id=$1",[extraTicket.id]);
+    const removed=await f.pool.query("DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1 AND team_id='PILOT_IT'",[handlerId]);
+    assert.equal(removed.rowCount,1);
+    const handlerRequest={...aliasInput,authContext:handlerAuth};
+    await assert.rejects(newQuery.detail(handlerRequest),{status:404,code:'P2_016_NOT_FOUND'});
+    let joined=false;
+    beforeCardRead=sql=>{
+      if(!isFullCardProjection(sql))return;
+      beforeCardRead=undefined;
+      return f.pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES ($1,'PILOT_IT')",[handlerId]).then(()=>{joined=true;});
+    };
+    const granted=await newQuery.detail(handlerRequest);
+    assert.ok(joined);assert.equal(granted.item.id,extraTicket.id);
+    assert.equal(JSON.stringify(granted),JSON.stringify(await legacyQuery.detail(handlerRequest)));
+
+    // The requested Review remains readable via its Journey; a second pending Review
+    // on the Ticket's source Intake belongs to a Journey with no readable Ticket.
+    const version=(await f.pool.query<{v:string}>('SELECT row_version::text AS v FROM intake.manual_review_item WHERE id=$1',[pendingReviewRow.id])).rows[0];
+    assert.ok(version);
+    const cancelled=await reviews.resolveManualReview({authContext:adminAuth,reviewId:pendingReviewRow.id,body:{
+      client_command_id:randomUUID(),expected_row_version:version.v,resolution_code:'CANCEL_REVIEW',resolution_reason_code:'EXPLICIT_RETIREMENT'}});
+    assert.ok(cancelled.ok);
+    const hiddenSource=await seedPersistedIntake({pool:f.pool,text:'审核原因仅对有权限的人员可见（合成）',requestType:'INCIDENT',status:'RECEIVED'});
+    const assigned=(await core.createForIntake({intakeId:hiddenSource.intakeId,occurredAt:assertLocalDateTime(hiddenSource.receivedAt),traceId:'42a-reason-scope'})).ticket;
+    assert.ok(assigned);
+    await f.processReviewIntake(hiddenSource.intakeId);
+    const isolatedJourney=await f.pool.query("UPDATE intake.contact_journey SET linked_ticket_id=NULL,status='WAITING_REVIEW',ended_at=NULL WHERE origin_intake_id=$1",[hiddenSource.intakeId]);
+    assert.equal(isolatedJourney.rowCount,1);
+    await f.pool.query('UPDATE pilot_ticket.ticket SET assignee_id=$2 WHERE id=$1',[assigned.id,adminId]);
+    await f.pool.query("UPDATE intake.contact_journey SET linked_ticket_id=$2,status='TICKET_LINKED' WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1)",[pendingReviewRow.id,assigned.id]);
+    const hidden=(await f.pool.query<{id:string;reason:string}>(`SELECT r.id,r.review_reason_code AS reason FROM intake.manual_review_item r
+      JOIN intake.contact_journey j ON j.id=r.journey_id WHERE r.service_intake_id=$1 AND r.status='PENDING' AND j.linked_ticket_id IS NULL`,[hiddenSource.intakeId])).rows[0];
+    assert.ok(hidden);
+    assert.equal((await newQuery.detail(aliasInput)).item.review_reason,hidden.reason);
+    let downgraded=false;
+    beforeCardRead=sql=>{
+      if(!isFullCardProjection(sql))return;
+      beforeCardRead=undefined;
+      return f.pool.query("UPDATE pilot_ticket.pilot_principal_role SET role='HANDLER' WHERE principal_id=$1 AND role='ADMIN'",[adminId])
+        .then(result=>{assert.equal(result.rowCount,1);downgraded=true;});
+    };
+    const restricted=await newQuery.detail(aliasInput);
+    assert.ok(downgraded);assert.equal(restricted.item.id,assigned.id);
+    assert.equal(restricted.item.review_reason,null);
+    assert.ok(!restricted.review_refs?.some(ref=>ref.id===hidden.id));
+    assert.equal(JSON.stringify(restricted),JSON.stringify(await legacyQuery.detail(aliasInput)));
+
+    // Two readable Tickets compete for this Review. Its own Intake belongs to X;
+    // the Journey was subsequently linked to Y. Compare independent resolvers.
+    const laterSource=await seedWeb01NoConversationIntake({pool:f.pool,text:'复核旅程目标（合成）',location:'一楼（合成）'});
+    const journeyTicket=(await core.createForIntake({intakeId:laterSource.intakeId,occurredAt:assertLocalDateTime(laterSource.receivedAt),traceId:'42a-journey-target'})).ticket;
+    assert.ok(journeyTicket);assert.notEqual(journeyTicket.id,assigned.id);
+    const relinked=await f.pool.query("UPDATE intake.contact_journey SET linked_ticket_id=$2,status='TICKET_LINKED' WHERE id=(SELECT journey_id FROM intake.manual_review_item WHERE id=$1)",[hidden.id,journeyTicket.id]);
+    assert.equal(relinked.rowCount,1);
+    for(const facade of [reviews,legacy.reviews]){
+      assert.deepEqual(await facade.canonicalItem({authContext:handlerAuth,reviewId:hidden.id}),{kind:'ticket',id:journeyTicket.id});
+    }
+    const competing={...aliasInput,authContext:handlerAuth,id:hidden.id};
+    for(const reader of [newQuery,legacyQuery]){
+      assert.equal((await reader.authorizedItem(handlerAuth,'ticket',assigned.id)).id,assigned.id);
+      assert.equal((await reader.authorizedItem(handlerAuth,'review',hidden.id)).id,journeyTicket.id);
+    }
+    assert.equal(JSON.stringify(await newQuery.detail(competing)),JSON.stringify(await legacyQuery.detail(competing)));
+  }, {namespace: 'ticket_card42a', precisionV212: true, serviceCatalog: loadServiceCatalog(), ticketSelfHandlingEnabled: true, workbenchBoardActionsEnabled: true, workbenchSearchEnabled: true, workbenchFollowEnabled: true, workbenchManualReviewEnabled: true, sourceGroupDirectoryEnabled: true, workbenchRealtimeEnabled: true});
 });
 
+test('42A active board preserves revoked page keys ahead of a readable Ticket',async()=>{
+  await withWeb01Fixture(async(f:Web01Context)=>{
+    const ids=f.tickets.filter(({ticket})=>['IN_PROGRESS','WAITING_VENDOR','WAITING_REQUESTER'].includes(ticket.status)).slice(0,3).map(({ticket})=>ticket.id);
+    assert.equal(ids.length,3);
+    await f.pool.query("INSERT INTO pilot_ticket.resolver_team(team_id,display_name) VALUES ('R15_A','A（合成）'),('R15_B','B（合成）')");
+    const changed=await f.pool.query(`UPDATE pilot_ticket.ticket t SET resolver_team_id=CASE WHEN k.ordinal<=2 THEN 'R15_A' ELSE 'R15_B' END,
+      updated_at=platform.local_now()+((3-k.ordinal)*interval '1 second') FROM unnest($1::uuid[]) WITH ORDINALITY k(id,ordinal) WHERE t.id=k.id`,[ids]);
+    assert.equal(changed.rowCount,3);
+    await f.pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES ($1,'R15_B')",[f.outsider.id]);
+    const input={authContext:createAuth(f.outsider.id),column:'active',limit:'1',range:'all',cursor:null};
+    for(const createReader of [createLegacyWorkbenchQuery,createWeb01WorkbenchQuery]){
+      await f.pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES ($1,'R15_A')",[f.outsider.id]);
+      let revokeTeam:string|null=null;
+      const spy=spyPool(f.pool,sql=>{
+        if(!revokeTeam||!(sql.includes('FROM page_keys')||sql.includes('ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT')))return;
+        const team=revokeTeam;revokeTeam=null;
+        return f.pool.query('DELETE FROM pilot_ticket.pilot_team_member WHERE principal_id=$1 AND team_id=$2',[f.outsider.id,team])
+          .then(result=>{assert.equal(result.rowCount,1);});
+      });
+      const reader=createReader({pool:spy.pool,query:createP2016TicketQuery({pool:spy.pool,enabled:true})});
+      assert.deepEqual((await reader.list({...input,limit:'3'})).items.map(item=>item.id),ids);
+      revokeTeam='R15_B';
+      const sentinel=await reader.list({...input,limit:'2'});assert.equal(revokeTeam,null);
+      assert.deepEqual(sentinel.items.map(item=>item.id),ids.slice(0,2));assert.ok(sentinel.next_cursor);
+      await f.pool.query("INSERT INTO pilot_ticket.pilot_team_member(principal_id,team_id) VALUES ($1,'R15_B')",[f.outsider.id]);
+      revokeTeam='R15_A';
+      await assert.rejects(reader.list(input),{status:404,code:'P2_016_NOT_FOUND'});assert.equal(revokeTeam,null);
+      const fresh=await reader.list(input);assert.deepEqual(fresh.items.map(item=>item.id),[ids[2]]);assert.equal(fresh.next_cursor,null);
+    }
+  },{namespace:'ticket_card42a'});
+});

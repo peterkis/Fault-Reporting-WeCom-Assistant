@@ -1,3 +1,5 @@
+import {readCatalogRow} from '../src/platform/postgres-catalog.mjs';
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
@@ -7,12 +9,16 @@ import type {PostgresTransaction} from '../src/platform/postgres-pool.mjs';
 import {transactionP2016,failP2016} from '../src/p2-016-domain-contracts.mjs';
 export const SERVICE_CLOSURE_MIGRATION_ID='071_unified_service_closure';
 const file=new URL('../../../database/migrations/071_unified_service_closure.sql',import.meta.url);
-export async function serviceClosureSchemaReady(tx:PostgresTransaction):Promise<boolean>{
- const checksum=createHash('sha256').update(await readFile(file)).digest('hex');
+export async function serviceClosureSchemaStatus(tx:PostgresTransaction):Promise<'absent'|'ready'|'drift'>{
  const row=(await tx.query<{checksum_sha256:string;record:boolean;termination:boolean}>(`SELECT checksum_sha256,
   to_regclass('pilot_ticket.closure_record') IS NOT NULL AS record,to_regclass('pilot_ticket.closure_supplement_termination') IS NOT NULL AS termination
   FROM platform.schema_migration WHERE migration_id=$1`,[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
- return row?.checksum_sha256===checksum&&row.record&&row.termination;
+ if(!row)return 'absent';
+ const checksum=createHash('sha256').update(await readFile(file)).digest('hex');
+ return row.checksum_sha256===checksum&&row.record&&row.termination?'ready':'drift';
+}
+export async function serviceClosureSchemaReady(tx:PostgresTransaction):Promise<boolean>{
+ return await serviceClosureSchemaStatus(tx)==='ready';
 }
 /** Current closure-enabled roles must fail before timers, intake or network startup. */
 export async function requireServiceClosureSchema({pool}:{pool:PostgresTransaction}):Promise<void>{
@@ -20,10 +26,10 @@ export async function requireServiceClosureSchema({pool}:{pool:PostgresTransacti
  try{ready=await serviceClosureSchemaReady(pool);}catch{ /* Missing base schema or unavailable DB is not ready. */ }
  if(!ready)throw new Error('SERVICE_CLOSURE_SCHEMA_REQUIRED');
 }
-export async function migrateServiceClosure({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'rollback'}){
+export async function migrateServiceClosure({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'|'rollback'}){
  if(!databaseUrl||!['check','apply','rollback'].includes(mode))failP2016();
  const sql=await readFile(file,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
- const checksum=createHash('sha256').update(sql).digest('hex'),pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'service_closure_migrator'});
+ const checksum=createHash('sha256').update(sql).digest('hex'),pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'service_closure_migrator'});
  try{return await transactionP2016(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('SERVICE_CLOSURE_MIGRATION'))");
   const existing=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[SERVICE_CLOSURE_MIGRATION_ID])).rows[0];
@@ -48,10 +54,10 @@ export async function migrateServiceClosure({databaseUrl,mode='check'}:{database
   }
   if(mode==='rollback')return {status:'NOT_APPLIED',migration_id:SERVICE_CLOSURE_MIGRATION_ID};
   if(mode==='check')return {status:'PENDING',migration_id:SERVICE_CLOSURE_MIGRATION_ID};
-  const before=(await tx.query<{ticket:string;intake:string;resource:string}>(`SELECT
-   (SELECT pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid='pilot_ticket.ticket_event'::regclass AND conname='ticket_event_type_check') AS ticket,
-   (SELECT pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid='intake.service_intake_event'::regclass AND conname='service_intake_event_type_check') AS intake,
-   (SELECT pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid='pilot_ticket.ticket_command_receipt'::regclass AND conname='p2016_command_resource') AS resource`)).rows[0];
+  const before=await readCatalogRow<{ticket:string;intake:string;resource:string}>(tx,`SELECT
+   (SELECT pg_catalog.pg_get_constraintdef(oid,true) FROM pg_catalog.pg_constraint WHERE conrelid='pilot_ticket.ticket_event'::regclass AND conname='ticket_event_type_check') AS ticket,
+   (SELECT pg_catalog.pg_get_constraintdef(oid,true) FROM pg_catalog.pg_constraint WHERE conrelid='intake.service_intake_event'::regclass AND conname='service_intake_event_type_check') AS intake,
+   (SELECT pg_catalog.pg_get_constraintdef(oid,true) FROM pg_catalog.pg_constraint WHERE conrelid='pilot_ticket.ticket_command_receipt'::regclass AND conname='p2016_command_resource') AS resource`,[]);
   if(!before?.ticket||!before.intake||!before.resource)throw Error('SERVICE_CLOSURE_BASELINE_REQUIRED');
   await tx.query(body);
   await tx.query('CREATE TABLE pilot_ticket.closure_migration_baseline(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),ticket_event_check text NOT NULL,intake_event_check text NOT NULL,command_resource_check text NOT NULL)');

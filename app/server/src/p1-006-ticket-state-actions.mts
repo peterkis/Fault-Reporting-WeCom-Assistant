@@ -617,18 +617,21 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
     const isEnteringTerminal = !isSameStatus && TERMINAL_TICKET_STATUSES.has(nextStatus);
     // Only an actual terminal -> open transition (reopen / restore / undo) clears the pair; ordinary open moves never name it.
     const isLeavingTerminal = !isSameStatus && TERMINAL_TICKET_STATUSES.has(current.status) && !TERMINAL_TICKET_STATUSES.has(nextStatus);
+    // Dismissal day follows the closure's wall clock; other status events retain their transaction timestamp.
+    const terminalStamp=request.action==='dismiss'?'stamp.dismissed_at':'stamp.now_local';
     const terminalUpdateSql = isEnteringTerminal
       ? `,
-              terminal_at = stamp.now_local,
-              terminal_epoch_ms = floor(extract(epoch FROM (stamp.now_local AT TIME ZONE 'Asia/Shanghai')) * 1000)::bigint`
+              terminal_at = ${terminalStamp},
+              terminal_epoch_ms = floor(extract(epoch FROM (${terminalStamp} AT TIME ZONE 'Asia/Shanghai')) * 1000)::bigint`
       : isLeavingTerminal
         ? `,
               terminal_at = NULL,
               terminal_epoch_ms = NULL`
         : '';
-    const updated = await transaction.query<PilotTicketRow>(
+    const updated = await transaction.query<PilotTicketRow & {dismissed_at?:string}>(
       `WITH stamp AS (
          SELECT date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')::timestamp without time zone AS now_local
+           ${request.action==='dismiss'?",date_trunc('second',clock_timestamp() AT TIME ZONE 'Asia/Shanghai') AS dismissed_at":''}
        )
        UPDATE pilot_ticket.ticket
           SET status = $2,
@@ -642,7 +645,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
               )${terminalUpdateSql}
          FROM stamp
         WHERE id = $1::uuid AND version = $6
-        RETURNING ${ticketFields('pilot_ticket.ticket')}`,
+        RETURNING ${ticketFields('pilot_ticket.ticket')}${request.action==='dismiss'?",to_char(terminal_at,'YYYY-MM-DD HH24:MI:SS') AS dismissed_at":''}`,
       [current.id, nextStatus, assigneeId, externalResult, closureReason, request.expectedVersion],
     );
     if (updated.rowCount !== 1) {
@@ -665,10 +668,11 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
       traceId: request.traceId,
     });
     if(request.closure){
+      if(!updatedRow.dismissed_at)throw new Error('TICKET_DISMISSAL_TIME_REQUIRED');
       const snapshot=(await transaction.query<{cycle_id:string|null}>('SELECT to_jsonb(t)->>\'current_handling_cycle_id\' AS cycle_id FROM pilot_ticket.ticket t WHERE id=$1::uuid',[current.id])).rows[0];
       const record=await insertClosureRecord({transaction,subjectType:'TICKET',subjectId:current.id,beforeStatus:current.status,beforeAssignee:current.assignee_id,beforeTeam:current.resolver_team_id,
         beforeVersion:current.version,beforeCycle:snapshot?.cycle_id??null,beforeSnapshot:{status:current.status,assignee_id:current.assignee_id,resolver_team_id:current.resolver_team_id,version:current.version,cycle_id:snapshot?.cycle_id??null},
-        actor:request.actor.id,source:request.actor.type==='SYSTEM'?'SYSTEM':'MANUAL',input:request.closure,ticketEventId:event.event_id,endedAt:event.created_at});
+        actor:request.actor.id,source:request.actor.type==='SYSTEM'?'SYSTEM':'MANUAL',input:request.closure,ticketEventId:event.event_id,endedAt:updatedRow.dismissed_at});
       await terminateClosureFollowUps(transaction,record,current.source_intake_id);
       if(record.before_cycle_id){
         const aborted=await appendTicketEvent({transaction,ticket,eventType:'ticket.handling_aborted',oldStatus:nextStatus,newStatus:nextStatus,actor:request.actor,

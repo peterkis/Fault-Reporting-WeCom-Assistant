@@ -11,6 +11,7 @@ import {createWeComWorkbenchAuthentication} from '../app/server/src/p2-016-workb
 import type {PostgresTransaction,PostgresQueryRow} from '../app/server/src/platform/postgres-pool.mjs';
 import type {WorkbenchHttpAuthContext} from '../app/server/src/p2-006-workbench-http.mjs';
 import {withDetailRestructureFixture} from './helpers/detail-restructure-fixture.mjs';
+import {observeWorkbenchRequest,fullTicketCardSql} from './helpers/card42a-sql-observer.mjs';
 import {T16_PNG} from './helpers/wbint-t16-fixture.mjs';
 
 const digest=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex');
@@ -89,9 +90,14 @@ test('actor cache, original Ticket READ, official Session and bounded Worker beh
         assert.equal(image.identity_hash,digest(person.wecom_user_id));assert.equal(image.avatar_sha256,digest(image.avatar_bytes));assert.ok(image.avatar_bytes.length<=32768);
         const metadata=await sharp(image.avatar_bytes).metadata();assert.equal(metadata.format,'webp');assert.equal(metadata.width,64);assert.equal(metadata.height,64);
         assert.deepEqual(await worker.runOnce(),{processed:false});assert.deepEqual(calls,{tree:1,detail:1,image:1});
-        const response=await fetch(f.origin+path,{headers:{cookie}});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/webp');
+        const hit=await observeWorkbenchRequest(f.pool,()=>fetch(f.origin+path,{headers:{cookie}}));const response=hit.value;assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/webp');
         assert.equal(response.headers.get('cache-control'),'private, no-store');assert.equal(response.headers.get('x-content-type-options'),'nosniff');assert.deepEqual(Buffer.from(await response.arrayBuffer()),image.avatar_bytes);
-        const stranger=await fetch(f.origin+path.replace(actor.id,f.outsider.id),{headers:{cookie}});assert.equal(stranger.status,204);assert.equal((await stranger.arrayBuffer()).byteLength,0);
+        const miss=await observeWorkbenchRequest(f.pool,()=>fetch(f.origin+path.replace(actor.id,f.outsider.id),{headers:{cookie}}));const stranger=miss.value;assert.equal(stranger.status,204);assert.equal((await stranger.arrayBuffer()).byteLength,0);
+        for(const {sql} of [hit,miss]){
+          assert.equal(sql.filter(q=>fullTicketCardSql.test(q)).length,0);
+          assert.equal(sql.filter(q=>q.includes('SELECT t.id,t.source_intake_id AS intake_id')&&!q.includes(' AS session_current')).length,2);
+          assert.ok(sql.some(q=>q.includes(' AS session_current')&&q.includes('workbench.actor_avatar_cache')));
+        }
       }finally{await worker.close();}
       const restarted=createWorkbenchActorAvatarWorker(workerOptions);try{assert.deepEqual(await restarted.runOnce(),{processed:false});assert.deepEqual(calls,{tree:1,detail:1,image:1});}finally{await restarted.close();}
     });
@@ -108,19 +114,19 @@ test('actor cache, original Ticket READ, official Session and bounded Worker beh
         SELECT $1,$2,$3,$4,$5,'ACTIVE',platform.local_from_epoch_ms(epoch),epoch,platform.local_from_epoch_ms(epoch),epoch,platform.local_from_epoch_ms($6),$6 FROM stamp`,
       [sessionId,digest('session-'+sessionId),digest('csrf-'+sessionId),actor.id,digest(person.wecom_user_id),expires]);
       const authContext={principal_id:actor.id,auth_method:'COOKIE' as const,session_id:sessionId,expires_epoch_ms:expires};
-      const make=(query:Pick<typeof cards,'authorizedItem'>=cards,pool:PostgresTransaction=f.pool)=>createWorkbenchActorAvatarHttp({pool,query,enabled:true,currentSessionPredicate:auth.currentSessionPredicate});
+      const make=(query:Pick<typeof cards,'authorizedIdentity'>=cards,pool:PostgresTransaction=f.pool)=>createWorkbenchActorAvatarHttp({pool,query,enabled:true,currentSessionPredicate:auth.currentSessionPredicate});
 
       await t.test('non-Ticket aliases fail before resolving a canonical Ticket',async()=>{
-        const handler=make({authorizedItem:async()=>{throw Error('ALIAS_MUST_NOT_RESOLVE');}});
+        const handler=make({authorizedIdentity:async()=>{throw Error('ALIAS_MUST_NOT_RESOLVE');}});
         for(const kind of ['review','intake'])await assert.rejects(invoke(handler,authContext,path.replace('/ticket/','/'+kind+'/')),statusIs(404));
       });
       await t.test('a session revoked during the last item wait cannot disclose cached bytes',async()=>{
-        let reads=0;const handler=make({authorizedItem:async(...args)=>{const item=await cards.authorizedItem(...args);if(++reads===2)await f.pool.query("WITH stamp AS MATERIALIZED(SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=stamp.epoch,revoked_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE session_id=$1",[sessionId]);return item;}});
+        let reads=0;const handler=make({authorizedIdentity:async(...args)=>{const item=await cards.authorizedIdentity(...args);if(++reads===2)await f.pool.query("WITH stamp AS MATERIALIZED(SELECT platform.physical_epoch_ms() AS epoch) UPDATE pilot_ticket.workbench_auth_session SET state='REVOKED',revoked_epoch_ms=stamp.epoch,revoked_at=platform.local_from_epoch_ms(stamp.epoch) FROM stamp WHERE session_id=$1",[sessionId]);return item;}});
         try{await assert.rejects(invoke(handler,authContext,path),statusIs(401));assert.equal(reads,2);}
         finally{await f.pool.query("UPDATE pilot_ticket.workbench_auth_session SET state='ACTIVE',revoked_at=NULL,revoked_epoch_ms=NULL WHERE session_id=$1",[sessionId]);}
       });
       await t.test('an actor identity changed during the last item wait cannot inherit the old photograph',async()=>{
-        let reads=0;const handler=make({authorizedItem:async(...args)=>{const item=await cards.authorizedItem(...args);if(++reads===2)await f.pool.query('UPDATE pilot_ticket.pilot_principal SET wecom_user_id=$2 WHERE id=$1',[actor.id,'synthetic-new-owner']);return item;}});
+        let reads=0;const handler=make({authorizedIdentity:async(...args)=>{const item=await cards.authorizedIdentity(...args);if(++reads===2)await f.pool.query('UPDATE pilot_ticket.pilot_principal SET wecom_user_id=$2 WHERE id=$1',[actor.id,'synthetic-new-owner']);return item;}});
         try{const response=await invoke(handler,authContext,path);assert.equal(response.status,204);assert.equal(response.bytes,null);}
         finally{await f.pool.query('UPDATE pilot_ticket.pilot_principal SET wecom_user_id=$2 WHERE id=$1',[actor.id,person.wecom_user_id]);}
       });

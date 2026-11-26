@@ -5,7 +5,7 @@ import {CommunicationError,COMMUNICATION_ERROR_CODES} from './p2-004-communicati
 import type {WorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
-import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
+import {currentItemReaderSql,liveReader,ticketReadSql} from './p2-016-ticket-query.mjs';
 import type {WorkbenchHttpOptions} from './p2-006-workbench-http.mjs';
 import type {SupplementFollowUpCommand,SupplementFollowUpPage,SupplementFollowUpResult,SupplementFollowUpReceipt} from '../../../contracts/workbench_supplement_follow_up_contracts.js';
 import {createP2016CommandLedger} from './p2-016-ticket-command-ledger.mjs';
@@ -21,9 +21,11 @@ function dispositionResult(value:unknown):SupplementFollowUpResult{const v=exact
 interface Input {authContext:unknown;ticketId:unknown}
 export function supplementMaterialsSql(intakeExpr='$1::uuid',ticketExpr='$2::uuid',nowEpochParam='platform.physical_epoch_ms()'):string{
   return `WITH readable AS (
-  SELECT i.id FROM intake.service_intake i WHERE i.retention_until_epoch_ms>${nowEpochParam} AND (i.id=${intakeExpr} OR EXISTS(
-   SELECT 1 FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=i.id AND j.linked_ticket_id=${ticketExpr}
-    AND j.retention_until_epoch_ms>${nowEpochParam}))
+  SELECT i.id FROM (
+   SELECT ${intakeExpr} AS id
+   UNION SELECT l.source_intake_id FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id
+    WHERE j.linked_ticket_id=${ticketExpr} AND j.retention_until_epoch_ms>${nowEpochParam}
+  ) candidate JOIN intake.service_intake i ON i.id=candidate.id WHERE i.retention_until_epoch_ms>${nowEpochParam}
  ), materials AS (
   SELECT i.id AS source_intake_id,'WEB'::text AS source_kind,'web:'||s.id::text AS source_ref,s.input_revision AS revision,s.received_at AS at,s.input_revision AS ordinal,s.id::text AS source_id
    FROM readable r JOIN intake.service_intake i ON i.id=r.id JOIN intake.web_request_binding b ON b.intake_id=i.id JOIN intake.web_submission s ON s.intake_id=i.id
@@ -126,7 +128,7 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    if(!enabled)failP2016('NOT_FOUND',404);if(items.length>100)failP2016();
    if(!items.length)return new Map();
    if(!await supplementFollowUpSchemaReady(pool))failP2016('DISABLED',503);
-   const p=ticketPredicateP2016(await query.principal(authContext),2);
+   const principal=await query.principal(authContext);
    // Reuse the exact retained-material and delivered-reply proof predicates,
    // correlated to a bounded authorized page instead of issuing one Tx per card.
    const materialSql=SUPPLEMENT_MATERIALS_SQL.replaceAll('$1::uuid','t.source_intake_id').replaceAll('$2::uuid','t.id');
@@ -134,8 +136,10 @@ export function createWorkbenchSupplementFollowUp({pool,query,enabled=false}:{po
    const rows=(await pool.query<{id:string;has_pending_supplements:boolean}>(`SELECT t.id::text,summary.pending AS has_pending_supplements
     FROM jsonb_to_recordset($1::jsonb) AS page(id uuid,intake_id uuid)
     JOIN pilot_ticket.ticket t ON t.id=page.id AND t.source_intake_id=page.intake_id
+    CROSS JOIN (${currentItemReaderSql('$2::uuid')}) reader
     CROSS JOIN LATERAL (${materialSql} SELECT EXISTS(SELECT 1 FROM materials m WHERE NOT EXISTS(${resolutionSql})) AS pending) summary
-    WHERE ${p.sql}`,[JSON.stringify(items),...p.values])).rows;
+    WHERE ${ticketReadSql('t',liveReader)}`,[JSON.stringify(items),principal.principal_id])).rows;
+   if(!rows.length)await query.principal(authContext);
    if(rows.length!==items.length)failP2016('NOT_FOUND',404);
    return new Map(rows.map(row=>[row.id,{has_pending_supplements:row.has_pending_supplements}]));
   },

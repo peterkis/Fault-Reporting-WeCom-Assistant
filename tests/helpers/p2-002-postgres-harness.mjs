@@ -1,3 +1,4 @@
+import {loopbackFixtureTarget, loopbackFixtureUrl, withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
@@ -14,7 +15,7 @@ export function createP2002DatabaseName(purpose) {
 
 export function databaseUrlForP2002Database(databaseUrl, databaseName) {
   assert.match(databaseName, DATABASE_NAME_PATTERN);
-  const isolatedUrl = new URL(databaseUrl);
+  const isolatedUrl = new URL(loopbackFixtureUrl(databaseUrl));
   isolatedUrl.pathname = `/${databaseName}`;
   return isolatedUrl.toString();
 }
@@ -27,8 +28,9 @@ export async function withP2002IsolatedDatabase({
 }) {
   const databaseName = createP2002DatabaseName(purpose);
   const quotedDatabaseName = `"${databaseName}"`;
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
   const adminPool = createPostgresPool({
-    connectionString: databaseUrl,
+    ...connection,
     max: 1,
     connectionTimeoutMillis: 2_000,
   });
@@ -39,7 +41,7 @@ export async function withP2002IsolatedDatabase({
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
     isolatedPool = createPostgresPool({
-      connectionString: databaseUrlForP2002Database(databaseUrl, databaseName),
+      ...connection, database:databaseName,
       max,
       connectionTimeoutMillis: 2_000,
     });
@@ -48,7 +50,7 @@ export async function withP2002IsolatedDatabase({
       disconnects.add(disconnected);
       disconnected.then(() => disconnects.delete(disconnected));
     });
-    return await run({ pool: isolatedPool, databaseName });
+    return await withFixtureMigrations(databaseUrlForP2002Database(fixtureUrl,databaseName), () => run({ pool: isolatedPool, databaseName }));
   } catch (error) {
     runFailure = error;
     throw error;

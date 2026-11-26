@@ -1,8 +1,8 @@
 import type {WorkbenchSessionPredicate} from './p2-016-workbench-wecom-auth.mjs';
 import {WorkbenchError,WORKBENCH_ERROR_CODES} from './p2-006-workbench-query.mjs';
-import type {WorkbenchCard, WorkbenchService, WorkbenchServiceCatalog} from '../../../contracts/web01_workbench_contracts.js';
+import type {WorkbenchCard, WorkbenchRecord, WorkbenchService, WorkbenchServiceCatalog} from '../../../contracts/web01_workbench_contracts.js';
 import type {WorkbenchPrincipal} from './p2-006-workbench-authorization.mjs';
-import {ticketActionAllowedP2016} from './p2-016-ticket-query.mjs';
+import {boundReader,ticketReviewReasonSql,ticketActionAllowedP2016} from './p2-016-ticket-query.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {failP2016, localP2016} from './p2-016-domain-contracts.mjs';
@@ -121,20 +121,33 @@ export function projectWorkbenchService(evidence: readonly ServiceEvidence[], ca
   }catch{return null;}
 }
 
-interface ProjectionRow {kind:string;id:string;status:string;evidence:ServiceEvidence[];safety_signature:string}
+export interface ProjectionRow {kind:string;id:string;status:string;evidence:ServiceEvidence[];safety_signature:string}
 export interface WorkbenchClock {nowEpoch:string;nowLocal:string}
 export interface WorkbenchReadAuthority {values:unknown[];roles:readonly string[];teams:readonly string[];principal?:WorkbenchPrincipal}
+interface DetailSource {
+  description:string|null;
+  reported_at:string|null;
+  records:(WorkbenchRecord&{material_source_ref:string|null;material_revision:string|null})[];
+}
+export function orderedHandledPageSql(pageKeysSql:string):string {
+  return `COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',page.kind,'id',page.id::text,'order_group',page.order_group,'order_at',to_char(page.order_at,'YYYY-MM-DD HH24:MI:SS'))
+      ORDER BY page.order_group DESC,page.order_at DESC,page.kind DESC,page.id DESC)
+      FROM (${pageKeysSql}) page),'[]'::jsonb)`;
+}
 export interface WorkbenchReadAccess {
+  detailSource?:{sql:string;values:unknown[];value:DetailSource|null;reviewIds?:string[]};
   authority:()=>Promise<WorkbenchReadAuthority>;
   session?:(start:number)=>WorkbenchSessionPredicate;
+  searchRoute?:(item:WorkbenchCard)=>Promise<Pick<WorkbenchCard,'kind'|'id'>>;
   finalRouteCheck?:()=>Promise<void>;
   clock?:WorkbenchClock;
   /** PK-targeted card CTE (uses $1..$3 authority, $4 nowEpoch, $5 nowLocal, $6 requested jsonb). */
   targetedCardsSql?:string;
   /** Same final snapshot as card READ; parameters after authority ($1..$3) and clock ($4..$5). */
-  groupCounts?:{countsSql:string;pageKeysSql:string;values:unknown[];expectedPage:{kind:string;id:string;order_group:number;order_at:string}[];value:{completed:number;dismissed:number}|null};
+  groupCounts?:{completedIntakesSql:string;countsSql:string;pageKeysSql:string;values:unknown[];expectedPage:{kind:string;id:string;order_group:number;order_at:string}[];value:{completed:number;dismissed:number}|null};
 }
 interface ReadProof {principal_valid:boolean;scope_valid:boolean;session_valid:boolean}
+export type ProjectionProof=ReadProof&{detail_source?:DetailSource;review_source_valid?:boolean;group_counts?:{completed:number;dismissed:number};page_matches?:boolean;items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string;closure_evidence:ClosureEvidence|null;review_reason?:string|null}[]};
 function proofColumns(roles:number,teams:number,session:string,principal=2):string {
   return `EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=$${principal}::uuid AND p.is_active) AS principal_valid,
     EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p
@@ -158,22 +171,33 @@ export async function verifyWorkbenchReadAccess(pool:PostgresTransaction,access:
   const proof=(await pool.query<ReadProof>('SELECT '+proofColumns(2,3,session.sql,1),[scope.values[1],[...scope.roles],[...scope.teams],...session.values])).rows[0];
   checkReadProof(proof);
 }
-const REQUEST_EPOCH_PARAM='$4::bigint',REQUEST_LOCAL_PARAM='$5::timestamp without time zone';
-/**
- * Final-proof freshness. Selection and enrichment bind the request-start clock ($4/$5), so a page is
- * selected against one stable instant. The last READ statement must instead judge retention at the
- * moment it runs, exactly like the session expiry predicate. One materialized single-row CTE takes
- * that instant; every $4/$5 reference in the statement is redirected to it. $4/$5 stay bound (as
- * the lower bound the fresh instant can never precede) so the parameter list is unchanged.
- */
-export function withFinalStatementClock(sql:string):string{
-  if(!sql.startsWith('WITH '))failP2016('ACTION_FAILED',503);
-  const body=sql.slice('WITH '.length).split(REQUEST_EPOCH_PARAM).join('(SELECT now_epoch FROM final_clock)')
-    .split(REQUEST_LOCAL_PARAM).join('(SELECT now_local FROM final_clock)');
-  if(/\$[45](?![0-9])/u.test(body))failP2016('ACTION_FAILED',503);
-  return `WITH final_clock AS MATERIALIZED (SELECT GREATEST(platform.physical_epoch_ms(),${REQUEST_EPOCH_PARAM}) AS now_epoch,
-    GREATEST(platform.local_now(),${REQUEST_LOCAL_PARAM}) AS now_local), `+body;
+export const FINAL_EPOCH_SQL='(SELECT now_epoch FROM final_clock)';
+export const FINAL_LOCAL_SQL='(SELECT now_local FROM final_clock)';
+
+/** Sample once, inside the protected statement and after it obtains its table locks. */
+export function withFinalStatementClock(sql:string):string {
+  const clock=`WITH final_clock AS MATERIALIZED (
+    SELECT now_epoch,platform.local_from_epoch_ms(now_epoch) AS now_local
+    FROM (SELECT platform.physical_epoch_ms() AS now_epoch) instant)`;
+  return sql.startsWith('WITH ')?clock+', '+sql.slice(5):clock+' '+sql;
 }
+
+/** Reuse the selection SQL at final READ, replacing the two request-clock bind slots. */
+export function finalCardReadSql(sql:string):string {
+  const body=sql.replaceAll('$4::bigint',FINAL_EPOCH_SQL).replaceAll('$5::timestamp without time zone',FINAL_LOCAL_SQL);
+  return withFinalStatementClock(body.replace(/\$(\d+)/gu,(token,index:string)=>{
+    const slot=Number(index);
+    if(slot===4||slot===5)failP2016('ACTION_FAILED',503);
+    return slot>5?'$'+(slot-2):token;
+  }));
+}
+
+// A Journey can be reached by both its origin and its channel leg. Probe each indexed key and return the distinct IDs.
+export function intakeJourneyIdsSql(intakeId:string):string{
+  return `SELECT origin.id FROM intake.contact_journey origin WHERE origin.origin_intake_id=${intakeId}
+    UNION SELECT leg.journey_id FROM intake.channel_leg leg WHERE leg.source_intake_id=${intakeId}`;
+}
+
 /** One page-wide source read, joined to the current authorized canonical relation. */
 export async function readWorkbenchCardProjections(pool:PostgresTransaction,authorizedCardsSql:string,access:WorkbenchReadAccess,items:WorkbenchCard[],catalog:ServiceCatalog|null,manualReportsEnabled:boolean,finalRouteCheck?:()=>Promise<void>):Promise<WorkbenchCard[]> {
   if(!items.length&&!access.groupCounts){await verifyWorkbenchReadAccess(pool,access);return items;}
@@ -191,17 +215,16 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
   const webCurrent=web?`b.intake_id IS NOT NULL AND to_jsonb(d)->>'basis_input_revision'=b.input_revision::text`:'false';
   const currentAuthority=await access.authority();
   const baseCardsSql=access.targetedCardsSql??authorizedCardsSql;
+  // Each bounded source survives the LEFT review join at least once. Cap again after expansion so
+  // multiple reviews for one decision retain the original 100-row limit plus overflow sentinel.
   const projectionSql=baseCardsSql+`, selected AS (
     SELECT c.* FROM cards c JOIN jsonb_to_recordset($6::jsonb) AS requested(kind text,id text,intake_id text)
       ON c.kind=requested.kind AND c.id=requested.id AND c.intake_id=requested.intake_id
-  ), projected_sources AS (SELECT c.kind,c.id,c.status,
-    COALESCE(material.evidence,'[]'::jsonb) AS evidence,encode(sha256(convert_to(COALESCE(material.evidence,'[]'::jsonb)::text,'UTF8')),'hex') AS safety_signature
-  FROM selected c
-  LEFT JOIN LATERAL (
-    SELECT jsonb_agg(jsonb_build_object('source_intake_id',source.source_intake_id,'decision_id',source.decision_id,'web_revision',source.web_revision,'submission_id',source.submission_id,'explicit_code',source.explicit_code,'safe_result',source.safe_result,
-      'current',source.current,'journey_id',source.journey_id,'decision_status',source.decision_status,'resolved_by',source.resolved_by)) AS evidence
-    FROM (
-      SELECT i.id::text AS source_intake_id,d.id::text AS decision_id,${web?'b.input_revision::text':'NULL::text'} AS web_revision,${web?'initial.submission_id':'NULL::text'} AS submission_id,${web?"CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN initial.code END":'NULL::text'} AS explicit_code,
+  ), page_material AS MATERIALIZED (
+    SELECT c.kind,c.id,c.intake_id,source.*
+    FROM (SELECT DISTINCT kind,id,intake_id FROM selected) c
+    CROSS JOIN LATERAL (
+      SELECT i.id AS source_intake_id,d.id AS decision_id,d.journey_id AS decision_journey_id,${web?'b.input_revision::text':'NULL::text'} AS web_revision,${web?'initial.submission_id':'NULL::text'} AS submission_id,${web?"CASE WHEN i.source_provider='YIXIAOXIU_WEB' THEN initial.code END":'NULL::text'} AS explicit_code,
         CASE WHEN d.id IS NOT NULL THEN jsonb_build_object(
           'known_fields',jsonb_build_object('selected_service_code',d.safe_result->'known_fields'->'selected_service_code'),
           'human_override',jsonb_build_object('principal_id',d.safe_result->'human_override'->'principal_id'),
@@ -212,10 +235,10 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
           'conflicts',CASE WHEN jsonb_typeof(d.safe_result->'conflicts') IS DISTINCT FROM 'array' THEN 'null'::jsonb
             WHEN EXISTS(SELECT 1 FROM jsonb_array_elements(d.safe_result->'conflicts') conflict
               WHERE jsonb_typeof(conflict->'field_path') IS DISTINCT FROM 'string' OR conflict->>'field_path' LIKE 'service.%') THEN '[{}]'::jsonb ELSE '[]'::jsonb END
-        ) END AS safe_result,d.status AS decision_status,r.resolved_by_principal_id::text AS resolved_by,
+        ) END AS safe_result,d.status AS decision_status,
         COALESCE(d.journey_id::text,(SELECT CASE WHEN count(DISTINCT j.id)=1 THEN min(j.id::text) END
-          FROM intake.contact_journey j WHERE j.retention_until_epoch_ms>${nowEpoch}
-            AND (j.origin_intake_id=i.id OR EXISTS(SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=i.id)))) AS journey_id,
+          FROM (${intakeJourneyIdsSql('i.id')}) candidate JOIN intake.contact_journey j ON j.id=candidate.id
+          WHERE j.retention_until_epoch_ms>${nowEpoch})) AS journey_id,
         CASE WHEN d.id IS NULL THEN true
           WHEN to_jsonb(d)->>'source_kind'='WEB' THEN ${webCurrent}
           WHEN to_jsonb(d)->>'source_kind'='MANUAL' THEN $7::boolean
@@ -229,7 +252,6 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
           AND NOT EXISTS(SELECT 1 FROM intake.deterministic_decision newer
             WHERE newer.journey_id=decision.journey_id AND newer.decision_ordinal>decision.decision_ordinal)
         ORDER BY decision.journey_id,decision.decision_ordinal DESC) d ON TRUE
-      LEFT JOIN intake.manual_review_item r ON r.resolution_decision_id=d.id AND r.status='RESOLVED'
       LEFT JOIN LATERAL (SELECT min(rel.sequence_no) AS first,max(rel.sequence_no) AS last,count(*)::integer AS count,
         bool_and(m.retention_until>${nowLocal}) AS retained
         FROM intake.service_intake_message rel JOIN channel.message_inbox m ON m.id=rel.channel_message_id
@@ -243,7 +265,24 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
         AND NOT EXISTS(SELECT 1 FROM pilot_ticket.ticket other WHERE other.source_intake_id=i.id AND (c.kind<>'ticket' OR other.id<>c.id::uuid))
       ORDER BY i.id,d.journey_id,d.id LIMIT 101
     ) source
-  ) material ON TRUE)`;
+  ), page_reviews AS MATERIALIZED (
+    -- Test membership against the whole page before joining reviewers back to individual cards.
+    SELECT r.resolution_decision_id,r.id,r.resolved_by_principal_id
+    FROM intake.manual_review_item r WHERE r.status='RESOLVED'
+      AND (r.resolution_decision_id IN (SELECT decision_id FROM page_material WHERE decision_id IS NOT NULL)) IS TRUE
+  ), reviewed_material AS (
+    SELECT m.*,r.resolved_by_principal_id::text AS resolved_by,
+      row_number() OVER (PARTITION BY m.kind,m.id,m.intake_id
+        ORDER BY m.source_intake_id,m.decision_journey_id,m.decision_id,r.id) AS ordinal
+    FROM page_material m LEFT JOIN page_reviews r ON r.resolution_decision_id=m.decision_id
+  ), page_evidence AS MATERIALIZED (
+    SELECT source.kind,source.id,source.intake_id,jsonb_agg(jsonb_build_object('source_intake_id',source.source_intake_id,'decision_id',source.decision_id,'web_revision',source.web_revision,'submission_id',source.submission_id,'explicit_code',source.explicit_code,'safe_result',source.safe_result,
+      'current',source.current,'journey_id',source.journey_id,'decision_status',source.decision_status,'resolved_by',source.resolved_by) ORDER BY source.ordinal) AS evidence
+    FROM reviewed_material source WHERE source.ordinal<=101 GROUP BY source.kind,source.id,source.intake_id
+  ), projected_sources AS (
+    SELECT c.kind,c.id,c.status,COALESCE(material.evidence,'[]'::jsonb) AS evidence,
+      encode(sha256(convert_to(COALESCE(material.evidence,'[]'::jsonb)::text,'UTF8')),'hex') AS safety_signature
+    FROM selected c LEFT JOIN page_evidence material USING (kind,id,intake_id))`;
   const requested=JSON.stringify(items.map(({kind,id,intake_id})=>({kind,id,intake_id})));
   const result=await pool.query<ProjectionRow>(projectionSql+' SELECT * FROM projected_sources',[...currentAuthority.values,clock.nowEpoch,clock.nowLocal,requested,manualReportsEnabled]);
   await access.finalRouteCheck?.();
@@ -252,37 +291,64 @@ export async function readWorkbenchCardProjections(pool:PostgresTransaction,auth
   const counts=access.groupCounts;
   const shiftPageParameters=(sql:string)=>sql.replace(/\$(\d+)/gu,(token,index:string)=>Number(index)<=5?token:'$'+(10+session.values.length+Number(index)-6));
   const expectedPageParameter=10+session.values.length+(counts?.values.length??0);
+  const completedCte=counts?`, handled_completed_intakes AS MATERIALIZED (${shiftPageParameters(counts.completedIntakesSql)})`:'';
   const countsSql=counts?`,(${shiftPageParameters(counts.countsSql)}) AS group_counts,
-    COALESCE((SELECT jsonb_agg(jsonb_build_object('kind',page.kind,'id',page.id,'order_group',page.order_group,'order_at',page.order_at)
-      ORDER BY page.order_group DESC,page.order_at DESC,page.kind DESC,page.id DESC)
-      FROM (${shiftPageParameters(counts.pageKeysSql)}) page),'[]'::jsonb)=$${expectedPageParameter}::jsonb AS page_matches`:'';
+    ${orderedHandledPageSql(shiftPageParameters(counts.pageKeysSql))}=$${expectedPageParameter}::jsonb AS page_matches`:'';
+  const detail=access.detailSource;
+  const detailOffset=expectedPageParameter+(counts?1:0)-1;
+  const detailSql=detail?',('+detail.sql.replace(/\$(\d+)/gu,(_token,index:string)=>'$'+(detailOffset+Number(index)))+') AS detail_source':'';
+  // Read Web binding revocation and expiry in the same final snapshot as the private detail payload.
+  const reviewSourceSql=detail?.reviewIds?`,NOT EXISTS (
+    SELECT 1 FROM unnest($${detailOffset+detail.values.length+1}::uuid[]) wanted(id)
+    WHERE NOT EXISTS (SELECT 1 FROM intake.manual_review_item review JOIN intake.deterministic_decision d ON d.id=review.decision_id
+      WHERE review.id=wanted.id AND (COALESCE(to_jsonb(d)->>'source_kind','BOT')<>'WEB' OR
+        ${web?`EXISTS (SELECT 1 FROM intake.web_request_binding b WHERE b.intake_id=review.service_intake_id AND b.revoked_at IS NULL AND b.retention_until>${FINAL_LOCAL_SQL})`:'FALSE'}))) AS review_source_valid`:'';
   // Current session, role/team snapshot and canonical item READ share the last
   // statement, after all source and detail-route waits. Nothing async follows.
   // Retention in this final READ uses a fresh instant taken inside the statement
   // (Codex 42A r1 H1), not the request-start clock used for selection.
-  const proof=(await pool.query<ReadProof&{group_counts?:{completed:number;dismissed:number};page_matches?:boolean;items:{kind:string;id:string;status:string;stage_entered_at:string|null;safety_signature:string;closure_evidence:ClosureEvidence|null}[]}>(withFinalStatementClock(projectionSql+`
+  const recheckReason=!access.searchRoute&&items.some(item=>item.kind==='ticket'&&item.review_reason!==null);
+  const reasonField=recheckReason?`,'review_reason',CASE WHEN c.kind='ticket' THEN (${ticketReviewReasonSql('c.id::uuid','selected.intake_id::uuid',FINAL_EPOCH_SQL,boundReader)}) END`:'';
+  const proof=(await pool.query<ProjectionProof>(finalCardReadSql(projectionSql+completedCte+`
     SELECT ${proofColumns(8,9,session.sql)},COALESCE((SELECT jsonb_agg(jsonb_build_object(
       'kind',c.kind,'id',c.id,'status',c.status,'safety_signature',c.safety_signature,'closure_evidence',selected.closure_evidence,'stage_entered_at',
-      CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END))
+      CASE WHEN state.new_status=c.status THEN to_char(state.created_at,'YYYY-MM-DD HH24:MI:SS') END${reasonField}))
       FROM projected_sources c JOIN selected ON selected.kind=c.kind AND selected.id=c.id
       LEFT JOIN LATERAL(SELECT e.new_status,e.created_at FROM pilot_ticket.ticket_event e
         WHERE c.kind='ticket' AND e.ticket_id=c.id::uuid AND e.old_status IS DISTINCT FROM e.new_status
-        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items${countsSql}`),
-  [...current.values,clock.nowEpoch,clock.nowLocal,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values,...(counts?.values??[]),...(counts?[JSON.stringify(counts.expectedPage)]:[])])).rows[0];
+        ORDER BY e.aggregate_version DESC,e.event_ordinal DESC LIMIT 1) state ON TRUE),'[]'::jsonb) AS items${countsSql}${detailSql}${reviewSourceSql}`),
+  [...current.values,requested,manualReportsEnabled,[...current.roles],[...current.teams],...session.values,...(counts?.values??[]),...(counts?[JSON.stringify(counts.expectedPage)]:[]),...(detail?.values??[]),...(detail?.reviewIds?[detail.reviewIds]:[])])).rows[0];
   checkReadProof(proof);
+  if(detail?.reviewIds&&proof.review_source_valid!==true)failP2016('NOT_FOUND',404);
   const visible=new Map(proof.items.map(row=>[row.kind+':'+row.id,row]));
   const byId=new Map(result.rows.map(row=>[row.kind+':'+row.id,row]));
+  if(access.searchRoute){
+    for(const item of items){
+      if(item.kind!=='review'||byId.has(item.kind+':'+item.id))continue;
+      const route=await access.searchRoute(item);
+      if(route.kind!==item.kind||route.id!==item.id)failP2016('CURSOR_INVALID');
+      failP2016('NOT_FOUND',404);
+    }
+  }
   const projected=items.map(item=>{
     const row=byId.get(item.kind+':'+item.id),live=visible.get(item.kind+':'+item.id);
     if(!row||!live)failP2016('NOT_FOUND',404);
-    if(row.status!==item.status||live.status!==item.status)failP2016('VERSION_CONFLICT',409);
-    return {...item,closure:projectWorkbenchClosure(item.status,live.closure_evidence,workbenchCanRestore(item.kind,item.status,live.closure_evidence,current.principal)),
+    if(live.status!==row.status)failP2016('VERSION_CONFLICT',409);
+    if(row.status!==item.status){
+      if(access.searchRoute)failP2016('CURSOR_INVALID');
+      failP2016('VERSION_CONFLICT',409);
+    }
+    return {...item,...(recheckReason&&item.kind==='ticket'&&item.review_reason!==null?{review_reason:live.review_reason??null}:{}),closure:projectWorkbenchClosure(item.status,live.closure_evidence,workbenchCanRestore(item.kind,item.status,live.closure_evidence,current.principal)),
       service:row.safety_signature===live.safety_signature?projectWorkbenchService(row.evidence,catalog):null,stage_entered_at:live.stage_entered_at===null?null:localP2016(live.stage_entered_at)};
   });
   if(counts){
     if(!proof.group_counts)failP2016('ACTION_FAILED',503);
     if(proof.page_matches!==true)failP2016('VERSION_CONFLICT',409);
     counts.value=proof.group_counts;
+  }
+  if(detail){
+    if(!proof.detail_source)failP2016('ACTION_FAILED',503);
+    detail.value=proof.detail_source;
   }
   return projected;
 }

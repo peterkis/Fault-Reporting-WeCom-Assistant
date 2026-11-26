@@ -271,16 +271,16 @@ export function createP2016Runtime({pool,flags={},mvpNotificationsEnabled=false,
             const session=await pool.query("SELECT 1 FROM pilot_ticket.workbench_auth_session WHERE session_id=$1::uuid AND principal_id=$2::uuid AND state='ACTIVE' AND expires_epoch_ms>platform.physical_epoch_ms()",[sessionId,principal.principal_id]);
             if(session.rowCount!==1)failP2016('FORBIDDEN',403);
           }
-          const item=await workbenchQuery.authorizedItem(authContext,target.kind,target.id);
+          const item=await workbenchQuery.authorizedIdentity(authContext,target.kind,target.id);
           if(item.kind!==target.kind||item.id!==target.id)failP2016('NOT_FOUND',404);
           if(field!==null){
             if(field==='manual-review'){
               if(!workbenchManualReviewEnabled)failP2016('FORBIDDEN',403);
               // Editing is a field of the currently displayed canonical Item.
               // A readable Item alone grants no permission to edit a Review.
-              const detail=await workbenchQuery.detail({authContext,kind:target.kind,id:target.id,cursor:null,limit:'1'});
+              const refs=await workbenchQuery.activityReviewReferences(authContext,item);
               let allowed=false;
-              for(const ref of detail.review_refs??[]){
+              for(const ref of refs){
                 if(ref.status!=='PENDING')continue;
                 const review=await (reviews as ReviewFacade).getManualReviewDetail({authContext,reviewId:ref.id});
                 const canonical=await (reviews as ReviewFacade).canonicalItem({authContext,reviewId:ref.id});

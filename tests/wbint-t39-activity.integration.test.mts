@@ -4,14 +4,18 @@ import {randomUUID} from 'node:crypto';
 import type {WorkbenchActivityCommand} from '../contracts/workbench_activity_contracts.js';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 
+import {observeWorkbenchRequest,fullTicketCardSql} from './helpers/card42a-sql-observer.mjs';
+import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+
 interface ActivityFixture {
+  pool:PostgresPool;
   origin: string;
   cookies: string[];
   tickets: {ticket: {id: string}}[];
 }
 
 test('a currently authorized visible viewing lease is shown to another authorized colleague through real staff HTTP',async()=>{
-  await withWeb01Fixture(async({origin,cookies,tickets}:ActivityFixture)=>{
+  await withWeb01Fixture(async({origin,cookies,tickets,pool}:ActivityFixture)=>{
     const ticket=tickets[0]?.ticket;
     assert.ok(ticket);
     const actorCookie=cookies[0],colleagueCookie=cookies[2];
@@ -24,6 +28,10 @@ test('a currently authorized visible viewing lease is shown to another authorize
       await detail.arrayBuffer();
       assert.equal(detail.status,200,'the activity scenario must begin with two currently authorized real detail reads');
     }
+    const empty=await observeWorkbenchRequest(pool,()=>fetch(origin+detailPath+'/activity',{headers:{cookie:colleagueCookie}}));
+    assert.equal(empty.value.status,200);assert.deepEqual(await empty.value.json(),{schema_version:1,people:[]});
+    assert.equal(empty.sql.filter(q=>fullTicketCardSql.test(q)).length,0);
+    assert.equal(empty.sql.filter(q=>q.includes('SELECT t.id,t.source_intake_id AS intake_id FROM pilot_ticket.ticket')).length,2);
     const bootstrapResponse=await fetch(origin+'/api/lifecycle/bootstrap',{headers:{cookie:actorCookie}});
     const bootstrap:unknown=await bootstrapResponse.json();
     assert.equal(bootstrapResponse.status,200);

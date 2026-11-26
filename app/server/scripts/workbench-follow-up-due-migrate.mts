@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -49,11 +50,11 @@ export async function followUpDueSchemaReady(queryable:PostgresTransaction):Prom
   return catalog.rows[0]?.ready===true;
 }
 
-export async function migrateWorkbenchFollowUpDueSignals({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}){
+export async function migrateWorkbenchFollowUpDueSignals({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}){
   if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
   const sql=await readFile(file,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];if(!body)failP2016();
   const checksum=createHash('sha256').update(sql).digest('hex');
-  const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'follow_up_due_migrator'});
+  const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'follow_up_due_migrator'});
   try{return await transactionP2016(pool,async transaction=>{
     await transaction.query("SELECT pg_advisory_xact_lock(hashtext('FOLLOW_UP_DUE_SIGNAL_MIGRATION'))");
     if(!await followUpSchemaReady(transaction))failP2016('FOLLOW_UP_UNAVAILABLE',503);

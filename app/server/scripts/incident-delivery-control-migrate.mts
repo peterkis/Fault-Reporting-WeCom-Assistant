@@ -1,14 +1,15 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import {transaction,fail} from '../src/p2-012-domain-contracts.mjs';
 import {ownerTransferSchemaReady} from '../src/p2-012-owner-transfer-schema.mjs';
 import {INCIDENT_DELIVERY_CONTROL_MIGRATION_ID,incidentDeliveryControlMigrationInputs,incidentDeliveryControlCatalogReady,incidentDeliveryControlSchemaReady,incidentDeliveryControlSchemaInventory,incidentDeliveryControlSchemaHash} from '../src/p2-012-incident-delivery-schema.mjs';
-export async function migrateIncidentDeliveryControl({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'apply'|'check'|'status'}){
+export async function migrateIncidentDeliveryControl({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'apply'|'check'|'status'}){
  if(!databaseUrl||!['apply','check','status'].includes(mode))fail();
  const inputs=await incidentDeliveryControlMigrationInputs(),own=inputs.find(i=>i.id===INCIDENT_DELIVERY_CONTROL_MIGRATION_ID);if(!own)fail();
  const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(own.sql)?.[1];if(!body)fail();
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'incident_delivery_control_migrator'});
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'incident_delivery_control_migrator'});
  try{return await transaction(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('P2_012_MIGRATION'))");
   await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_012_COMMAND',0))");

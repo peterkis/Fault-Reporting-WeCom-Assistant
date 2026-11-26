@@ -164,7 +164,7 @@ test('Reporter-safe and actual H5 owner projections show only confirmed summary 
     assert.ok(web.items.some(item=>item.summary.includes(command.external_summary)));assert.equal(JSON.stringify(web).includes('INTERNAL_T11_CANARY'),false);
     await assert.rejects(readWeb('other'));
     await context.runtime.stop();
-    const freshPool=createPostgresPool({connectionString:context.databaseUrl,max:1,application_name:'t11_restart_reader'});
+    const freshPool=createPostgresPool({...context.databaseConnection,max:1,application_name:'t11_restart_reader'});
     try{
       const fresh=createTicketStaffCompletionService({pool:freshPool,query:createP2016TicketQuery({pool:freshPool,enabled:true}),enabled:true});
       const found=await fresh.readCommittedStaffCompletions({limit:20});

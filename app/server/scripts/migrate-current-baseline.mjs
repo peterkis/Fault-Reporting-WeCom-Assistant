@@ -1,3 +1,4 @@
+import {isMigrationDatabase,migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -16,7 +17,7 @@ export async function migrateCurrentBaselineWithYxx(options={}) {
 }
 
 async function p2016Tail({databaseUrl,mode,PoolFactory,p2015,catalogProfile}) {
-  const probe=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'p2_012_baseline_probe'});
+  const probe=PoolFactory({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'p2_012_baseline_probe'});
   let successor=false;try{successor=(await probe.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}finally{await probe.end();}
   if(successor){const result=await migrateP2012({databaseUrl,mode,PoolFactory,catalogProfile});return Object.freeze({status:'NOOP_ALREADY_APPLIED',mode,successor:'032',catalog_sha256:p2012CatalogHash(result.inventory)});}
   if(['READY_FOR_030','CHECK_ROLLBACK_SUCCEEDED'].includes(p2015.status))
@@ -150,14 +151,14 @@ export async function migrateCurrentBaseline({
   PoolFactory = createPostgresPool,
   catalogProfile = 'LEGACY',
 } = {}) {
-  if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw failure('ARCH_005_DATABASE_URL_REQUIRED');
+  if (!isMigrationDatabase(databaseUrl)) throw failure('ARCH_005_DATABASE_URL_REQUIRED');
   if (!['apply', 'check', 'status'].includes(mode)) throw failure('ARCH_005_MIGRATION_MODE_INVALID');
   if(!['LEGACY','CURRENT_V2_49'].includes(catalogProfile))throw failure('ARCH_005_CATALOG_PROFILE_INVALID');
 
   const migrationSql = await readFile(ARCH005_URL, 'utf8');
   const checksum = createHash('sha256').update(migrationSql).digest('hex');
   const pool = PoolFactory({
-    connectionString: databaseUrl,
+    ...migrationConnection(databaseUrl),
     max: 1,
     connectionTimeoutMillis: 5_000,
     allowExitOnIdle: true,

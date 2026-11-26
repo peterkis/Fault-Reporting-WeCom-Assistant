@@ -10,6 +10,8 @@ DECLARE
   has_local_from_epoch boolean := false;
   missing_count bigint := 0;
   missing_sample text;
+  missing_evidence boolean;
+  dismissal_time text := 'NULL::timestamp';
   sync_trigger text := 'arch005_sync_' || substr(md5('pilot_ticket.ticket.terminal_epoch_ms'), 1, 16);
 BEGIN
   IF to_regclass('pilot_ticket.ticket') IS NULL THEN
@@ -18,6 +20,12 @@ BEGIN
 
   ALTER TABLE pilot_ticket.ticket ADD COLUMN IF NOT EXISTS terminal_at TIMESTAMP WITHOUT TIME ZONE;
   ALTER TABLE pilot_ticket.ticket ADD COLUMN IF NOT EXISTS terminal_epoch_ms BIGINT;
+
+  -- Ticket Core omits both fields for QUEUED. Reject inherited defaults before any backfill or ledger insert.
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='pilot_ticket' AND table_name='ticket'
+      AND column_name IN ('terminal_at','terminal_epoch_ms') AND column_default IS NOT NULL) THEN
+    RAISE EXCEPTION 'TICKET_TERMINAL_AT_SCHEMA_DRIFT';
+  END IF;
 
   UPDATE pilot_ticket.ticket
      SET terminal_at = NULL,
@@ -35,51 +43,43 @@ BEGIN
     ) INTO has_closure_ended_at;
   END IF;
 
-  -- Backfill only from the evidence the pre-075 board already displayed; never invent a time.
-  -- DISMISSED: the active closure record's ended_at (the old completed_at / closure ended_at).
+  -- Validate supplied values as well as absent ones before registering the migration.
+  -- Some isolated partial chains have no closure table yet.
   IF has_closure AND has_closure_ended_at THEN
-    UPDATE pilot_ticket.ticket t
-       SET terminal_at = date_trunc('second', c.ended_at),
-           terminal_epoch_ms = floor(extract(epoch FROM (date_trunc('second', c.ended_at) AT TIME ZONE 'Asia/Shanghai')) * 1000)::bigint
-      FROM pilot_ticket.closure_record c
-     WHERE c.ticket_id = t.id
-       AND c.restored_at IS NULL
-       AND t.status = 'DISMISSED'
-       AND (t.terminal_at IS NULL OR t.terminal_epoch_ms IS NULL);
+    dismissal_time := '(SELECT c.ended_at FROM pilot_ticket.closure_record c WHERE c.ticket_id=t.id AND c.closure_ticket_event_id=e.event_id AND c.restored_at IS NULL)';
   END IF;
-
-  -- RESOLVED / COMPLETED: the latest status-changing ticket.resolved / ticket.completed event (the old ended LATERAL).
-  UPDATE pilot_ticket.ticket t
-     SET terminal_at = v.chosen_at,
-         terminal_epoch_ms = floor(extract(epoch FROM (v.chosen_at AT TIME ZONE 'Asia/Shanghai')) * 1000)::bigint
-    FROM (
-      SELECT t2.id,
-             date_trunc('second', (SELECT e.created_at
-                  FROM pilot_ticket.ticket_event e
-                 WHERE e.ticket_id = t2.id
-                   AND e.new_status = t2.status
-                   AND e.old_status IS DISTINCT FROM e.new_status
-                   AND e.event_type IN ('ticket.resolved', 'ticket.completed')
-                 ORDER BY e.aggregate_version DESC, e.event_ordinal DESC
-                 LIMIT 1)) AS chosen_at
-        FROM pilot_ticket.ticket t2
-       WHERE t2.status IN ('RESOLVED', 'COMPLETED')
-         AND (t2.terminal_at IS NULL OR t2.terminal_epoch_ms IS NULL)
-    ) v
-   WHERE t.id = v.id AND v.chosen_at IS NOT NULL;
-
-  -- Rows without evidence are surfaced for explicit repair instead of receiving a guessed time.
-  SELECT count(*), string_agg(id::text || ':' || status, ', ' ORDER BY id) FILTER (WHERE rn <= 20)
-    INTO missing_count, missing_sample
-    FROM (SELECT t.id, t.status, row_number() OVER (ORDER BY t.id) AS rn
-            FROM pilot_ticket.ticket t
-           WHERE t.status IN ('RESOLVED', 'COMPLETED', 'DISMISSED') AND t.terminal_at IS NULL) missing;
+  EXECUTE format($backfill$
+    WITH evidence AS MATERIALIZED (
+      SELECT t.id,t.status,t.terminal_at,t.terminal_epoch_ms,date_trunc('second',
+        CASE WHEN e.new_status=t.status THEN CASE
+          WHEN t.status='DISMISSED' AND e.event_type='ticket.dismissed' THEN %s
+          WHEN t.status='RESOLVED' AND e.event_type='ticket.resolved' THEN e.created_at
+          WHEN t.status='COMPLETED' AND e.event_type='ticket.completed' THEN e.created_at
+        END END) AS chosen_at
+      FROM pilot_ticket.ticket t LEFT JOIN LATERAL (
+        SELECT event_id,new_status,event_type,created_at FROM pilot_ticket.ticket_event
+        WHERE ticket_id=t.id AND old_status IS DISTINCT FROM new_status
+        ORDER BY aggregate_version DESC,event_ordinal DESC LIMIT 1
+      ) e ON TRUE
+      WHERE t.status IN ('RESOLVED','COMPLETED','DISMISSED')
+    ), expected AS (
+      SELECT *,floor(extract(epoch FROM (chosen_at AT TIME ZONE 'Asia/Shanghai'))*1000)::bigint AS chosen_epoch FROM evidence
+    ), invalid AS (
+      SELECT *,row_number() OVER (ORDER BY id) AS rn FROM expected
+      WHERE chosen_at IS NULL OR terminal_at IS NOT NULL AND terminal_at<>chosen_at
+        OR terminal_epoch_ms IS NOT NULL AND terminal_epoch_ms<>chosen_epoch
+    ), filled AS (
+      UPDATE pilot_ticket.ticket t SET terminal_at=e.chosen_at,terminal_epoch_ms=e.chosen_epoch
+        FROM expected e WHERE t.id=e.id AND (e.terminal_at IS NULL OR e.terminal_epoch_ms IS NULL)
+          AND NOT EXISTS (SELECT 1 FROM invalid)
+    )
+    SELECT count(*),bool_or(chosen_at IS NULL),string_agg(id::text||':'||status,', ' ORDER BY id) FILTER (WHERE rn<=20)
+      FROM invalid
+  $backfill$,dismissal_time) INTO missing_count,missing_evidence,missing_sample;
   IF missing_count > 0 THEN
-    RAISE EXCEPTION USING
-      ERRCODE = '23514',
-      MESSAGE = 'TICKET_TERMINAL_AT_BACKFILL_EVIDENCE_MISSING',
-      DETAIL = format('count=%s sample=%s', missing_count, missing_sample),
-      HINT = 'Repair the terminal event or active closure record of these tickets, then re-run 075.';
+    RAISE EXCEPTION USING ERRCODE='23514',
+      MESSAGE=CASE WHEN missing_evidence THEN 'TICKET_TERMINAL_AT_BACKFILL_EVIDENCE_MISSING' ELSE 'TICKET_TERMINAL_AT_BACKFILL_EVIDENCE_MISMATCH' END,
+      DETAIL=format('count=%s sample=%s',missing_count,missing_sample);
   END IF;
 
   -- The rewritten board selects dismissed Intakes through their active closure record. A DISMISSED Intake

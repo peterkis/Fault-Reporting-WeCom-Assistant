@@ -1,8 +1,13 @@
-import {mkdirSync, writeFileSync} from 'node:fs';
+import type {LocalMigrationDatabase} from './migration-database.mjs';
+import {checkEvidenceGeneration,publishPerfEvidence,type PerfEvidencePlan} from './perf-evidence-publication.mjs';
+export {publishPerfEvidence};
+import {mkdirSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {assertLoopbackDatabaseUrl} from '../src/platform/loopback-database.mjs';
+export {assertLoopbackDatabaseUrl};
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import {migrateCurrentBaselineWithYxx} from './migrate-current-baseline.mjs';
@@ -31,11 +36,16 @@ import {migrateCompletionDismissal} from './completion-dismissal-migrate.mjs';
 import {migrateNotificationVocabulary} from './notification-vocabulary-migrate.mjs';
 import {migrateSystemClosureRestore} from './system-closure-restore-migrate.mjs';
 import {migrateTicketTerminalAt} from './ticket-terminal-at-migrate.mjs';
+import {seedCapacityDataset} from '../../../tests/helpers/capacity-dataset.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from '../src/p2-006-workbench-authorization.mjs';
 import {createP2016TicketQuery} from '../src/p2-016-ticket-query.mjs';
-import {loadServiceCatalog} from '../src/p2-007-service-catalog.mjs';
+import {loadServiceCatalog,type ServiceCatalog} from '../src/p2-007-service-catalog.mjs';
 import {createWeb01WorkbenchQuery} from '../src/web01-workbench-query.mjs';
+import {HUMAN_WORKBENCH_OPTIONS} from './human-workbench-role.mjs';
+import {createWorkbenchSourceGroups} from '../src/workbench-source-groups.mjs';
+import {createWorkbenchSupplementFollowUp} from '../src/workbench-supplement-follow-up.mjs';
+import {createP2016ManualReviewFacade} from '../src/p2-016-manual-review-facade.mjs';
 import {createWorkbenchSearch} from '../src/workbench-search.mjs';
 import type {WorkbenchSearchCriteria} from '../../../contracts/workbench_search_contracts.js';
 
@@ -70,15 +80,6 @@ interface LatencyStats {
   p95Ms: number;
   maxMs: number;
   rowCount: number;
-}
-
-function assertLoopbackDatabaseUrl(raw: string): URL {
-  const parsed = new URL(raw);
-  const host = parsed.hostname.replace(/^\[|\]$/gu, '').toLowerCase();
-  if (!['127.0.0.1', 'localhost', '::1'].includes(host)) {
-    throw new Error(`PERF_BOARD_REQUIRES_LOOPBACK_DATABASE:${host}`);
-  }
-  return parsed;
 }
 
 function computeStats(name: string, samples: readonly number[], rowCount: number): LatencyStats {
@@ -123,51 +124,79 @@ function assertPlanNodeSafe(label: string, node: PlanNode, singlePass: string[])
     assertPlanNodeSafe(label, child, singlePass);
   }
 }
-const singlePassTicketScans: string[] = [];
+interface RecordedRead {sql: string; values: readonly unknown[]; elapsedMs: number}
+interface StatementPlan {text: string; root: ExplainJsonRoot}
 
-async function explainQuery(
-  pool: PostgresPool,
-  label: string,
-  sql: string,
-  values: readonly unknown[],
-  diagDir: string | null = null,
-  guard = true,
-): Promise<{text: string; executionMs: number}> {
+// Count every application statement except the transaction controls that have no query plan.
+const transactionControl=/^\s*(?:BEGIN|COMMIT|ROLLBACK|SET TRANSACTION READ ONLY|SET TRANSACTION ISOLATION LEVEL REPEATABLE READ|SET LOCAL statement_timeout='2000ms'|SET LOCAL jit=off)\s*$/iu;
+export function perfReadCount(statements:readonly string[]):number{
+  return statements.filter(sql=>!transactionControl.test(sql)).length;
+}
+export const PERF_BOARD_READ_LIMITS={page:18,item:13,search:33} as const;
+export async function inspectPerfScenario(
+  scenario: string, statements: readonly RecordedRead[], primary: (sql: string) => boolean,
+  explain: (label: string, statement: RecordedRead, primary: boolean) => Promise<StatementPlan>,
+  representativeLength = statements.length,
+) {
+  const failures: string[] = [], explainErrors:string[]=[], singlePass: string[] = [], timings: string[] = [];
+  let primaryText: string | undefined, dominant: {label:string; elapsedMs:number} | undefined;
+  for (const [index, statement] of statements.entries()) {
+    // Transaction controls have no query plan. Every other statement must yield one.
+    if (transactionControl.test(statement.sql)) continue;
+    const label = scenario + '-stmt-' + String(index + 1).padStart(2, '0');
+    const isPrimary = primary(statement.sql);
+    const description = statement.sql.trim().replace(/\s+/gu,' ').slice(0,96).trimEnd();
+    if (index < representativeLength && (!dominant || statement.elapsedMs > dominant.elapsedMs)) dominant = {label:label+' '+description,elapsedMs:statement.elapsedMs};
+    let obtainedPlan=false;
+    try {
+      const {root,text} = await explain(label,statement,isPrimary);
+      if (!root.Plan?.['Node Type']) throw new Error('PERF_BOARD_EXPLAIN_EMPTY');
+      if(isPrimary){
+        if(!text.trim())throw new Error('PERF_BOARD_PRIMARY_EXPLAIN_EMPTY');
+        if(index<representativeLength)primaryText??=text;
+      }
+      timings.push(label+'='+root['Execution Time']+'ms');
+      obtainedPlan=true;
+      if ((root.JIT?.Functions ?? 0) > 0) throw new Error('PERF_BOARD_JIT_USED:functions='+root.JIT?.Functions);
+      assertPlanNodeSafe(label,root.Plan,singlePass);
+    } catch (error) {
+      const failure=label+': '+(error instanceof Error ? error.message : String(error));
+      failures.push(failure);
+      if(!obtainedPlan)explainErrors.push(failure);
+    }
+  }
+  if (primaryText === undefined) failures.push('PERF_BOARD_STATEMENT_NOT_CAPTURED:'+scenario);
+  return {failures,explainErrors,singlePass,primaryText,timings,dominant};
+}
+
+async function explainQuery(pool:PostgresPool,label:string,statement:RecordedRead,primary:boolean,diagDir:string|null):Promise<StatementPlan> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN READ ONLY');
-    const jsonRes = await client.query<{'QUERY PLAN': ExplainJsonRoot[]}>(
-      `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`,
-      [...values],
-    );
-    const root = jsonRes.rows[0]?.['QUERY PLAN']?.[0];
-    if (!root?.Plan) throw new Error(`PERF_BOARD_EXPLAIN_EMPTY:${label}`);
-    if (diagDir) {
-      const diagText = await client.query<{'QUERY PLAN': string}>(`EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) ${sql}`, [...values]);
-      mkdirSync(diagDir, {recursive: true});
-      writeFileSync(path.join(diagDir, `${label}.txt`), diagText.rows.map(r => r['QUERY PLAN']).join('\n') + '\n', 'utf8');
+    const values = [...statement.values];
+    const json = await client.query<{'QUERY PLAN':ExplainJsonRoot[]}>('EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) '+statement.sql,values);
+    const root = json.rows[0]?.['QUERY PLAN']?.[0];
+    if (!root) throw new Error('PERF_BOARD_EXPLAIN_EMPTY:'+label);
+    let text = '';
+    if (primary || diagDir) {
+      const result = await client.query<{'QUERY PLAN':string}>('EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) '+statement.sql,values);
+      text = result.rows.map(row=>row['QUERY PLAN']).join('\n');
+      if (diagDir) {
+        mkdirSync(diagDir,{recursive:true});
+        writeFileSync(path.join(diagDir,label+'.txt'),text+'\n','utf8');
+      }
     }
-    if ((root.JIT?.Functions ?? 0) > 0) {
-      throw new Error(`PERF_BOARD_JIT_USED:${label}:functions=${root.JIT?.Functions}`);
-    }
-    if (guard) assertPlanNodeSafe(label, root.Plan, singlePassTicketScans);
-
-    const textRes = await client.query<{'QUERY PLAN': string}>(
-      `EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) ${sql}`,
-      [...values],
-    );
     await client.query('COMMIT');
-    const text = textRes.rows.map(r => r['QUERY PLAN']).join('\n');
-    return {text, executionMs: Number((root['Execution Time'] ?? 0).toFixed(2))};
+    return {root,text};
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => undefined);
+    await client.query('ROLLBACK');
     throw error;
   } finally {
     client.release();
   }
 }
 
-async function applyAllMigrations(databaseUrl: string): Promise<void> {
+async function applyAllMigrations(databaseUrl: LocalMigrationDatabase): Promise<void> {
   await migrateCurrentBaselineWithYxx({databaseUrl});
   const migrators = [
     migrateTicketSelfHandling,
@@ -201,147 +230,9 @@ async function applyAllMigrations(databaseUrl: string): Promise<void> {
   }
 }
 
-interface SeedResult {sampleTicketId: string; sampleHandledTicketId: string}
-/**
- * Set-based synthesis following the construction rules of the existing capacity fixture
- * (tests/helpers/p2-015-postgres-harness.mjs seedCapacityDataset) and of the Ticket core:
- * every WeCom intake has its primary channel message, intake.received event and PRIMARY relation;
- * every ticket is paired with its intake inside one transaction (the pair triggers are deferred to commit);
- * every DISMISSED ticket has its ticket.dismissed event and an active closure record linked to that event,
- * honouring the reason/notify matrix. All visible text carries 「（合成）」.
- */
-async function seedSyntheticDataset(pool: PostgresPool, adminId: string, handlerId: string): Promise<SeedResult> {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('SET CONSTRAINTS ALL DEFERRED');
-    const epoch = (await client.query<{epoch: string}>('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0]?.epoch;
-    if (!epoch) throw new Error('PERF_BOARD_CLOCK_UNAVAILABLE');
-    // 56,000 primary messages, one per intake, spread over one year.
-    await client.query(
-      `INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,
-         chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,
-         processing_status,response_snapshot,privacy_class,trace_id,retention_until,completed_at)
-       SELECT 1,'WECOM_AIBOT','perf-'||g,'WECOM_AIBOT:perf-'||g,'req-perf-'||g,'bot-perf',
-         CASE WHEN g % 3 = 0 THEN 'group' ELSE 'single' END,CASE WHEN g % 3 = 0 THEN 'group-perf-'||(g % 40) END,
-         'reporter-'||((g - 1) % 200 + 1),'text',
-         platform.local_from_epoch_ms($1::bigint) - ((g % 360)||' days')::interval - ((g % 80000)||' seconds')::interval,
-         '临床工作站网络波动（合成） #'||g,'临床工作站网络波动（合成） #'||g,
-         jsonb_build_object('msgtype','text','bot_mentioned',g % 3 = 0),
-         'COMPLETED','{}'::jsonb,'INTERNAL','trace-perf-'||g,
-         platform.local_from_epoch_ms($1::bigint) + interval '400 days',
-         platform.local_from_epoch_ms($1::bigint) - ((g % 360)||' days')::interval - ((g % 80000)||' seconds')::interval
-       FROM generate_series(1,56000) g`,
-      [epoch],
-    );
-    // 56,000 intakes: 50,400 will be paired with a ticket, 5,550 completed without a ticket, 50 awaiting triage.
-    await client.query(
-      `INSERT INTO intake.service_intake(id,intake_no,source_channel,source_provider,source_bot_id,source_chat_type,
-         source_chat_id,reporter_wecom_userid,privacy_class,retention_until,request_type,summary,reported_location_text,status,
-         primary_message_id,message_count,last_message_at,version,created_at,updated_at)
-       SELECT ('00000000-0000-4000-8000-'||lpad(to_hex(g),12,'0'))::uuid,
-         'INT-20261125-'||lpad(g::text,6,'0'),
-         CASE WHEN g % 3 = 0 THEN 'WECOM_GROUP' ELSE 'WECOM_DIRECT' END,'WECOM_AIBOT','bot-perf',m.chat_type,m.chat_id,
-         m.sender_user_id,'INTERNAL',m.retention_until,
-         CASE WHEN g <= 50400 THEN 'INCIDENT' ELSE 'CHATTER' END,
-         CASE WHEN g % 10 = 0 THEN '打印机故障排查（合成） #'||g ELSE '临床工作站网络波动（合成） #'||g END,
-         '门诊大楼'||((g % 8) + 1)||'层（合成）',
-         CASE WHEN g <= 50400 THEN 'WAITING_TRIAGE' WHEN g <= 55950 THEN 'COMPLETED' ELSE 'WAITING_TRIAGE' END,
-         m.id,1,m.received_at,1,m.received_at,m.received_at
-       FROM generate_series(1,56000) g JOIN channel.message_inbox m ON m.msg_id='perf-'||g`,
-    );
-    await client.query(
-      `INSERT INTO intake.service_intake_message(intake_id,channel_message_id,relation_type,sequence_no,linked_at,trace_id)
-       SELECT i.id,i.primary_message_id,'PRIMARY',1,i.created_at,'trace-perf-msg-'||i.intake_no FROM intake.service_intake i WHERE i.source_bot_id='bot-perf'`,
-    );
-    await client.query(
-      `INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
-       SELECT 'intake.received','intake',i.id,1,1,i.created_at,'trace-perf-intake-'||i.intake_no,jsonb_build_object('status',i.status)
-         FROM intake.service_intake i WHERE i.source_bot_id='bot-perf'`,
-    );
-    // 50,400 tickets matching the Card 42 §1 ratio: COMPLETED 46,667 / DISMISSED 3,356 / RESOLVED 317 / open 60.
-    // Terminal times are whole seconds (075 CHECK); 200 of them fall inside today's handled range.
-    await client.query(
-      `WITH rows AS (
-         SELECT g,('10000000-0000-4000-8000-'||lpad(to_hex(g),12,'0'))::uuid AS ticket_id,
-                ('00000000-0000-4000-8000-'||lpad(to_hex(g),12,'0'))::uuid AS intake_id,
-                CASE WHEN g <= 35 THEN 'QUEUED' WHEN g <= 60 THEN 'IN_PROGRESS' WHEN g <= 377 THEN 'RESOLVED'
-                     WHEN g <= 3733 THEN 'DISMISSED' ELSE 'COMPLETED' END AS status,
-                CASE WHEN g <= 60 THEN NULL::timestamp
-                     WHEN g <= 260 THEN date_trunc('second',platform.local_from_epoch_ms($2::bigint)) - ((g % 18)||' hours')::interval - ((g % 60)||' minutes')::interval
-                     ELSE date_trunc('second',platform.local_from_epoch_ms($2::bigint)) - ((2 + (g % 350))||' days')::interval - ((g % 80000)||' seconds')::interval END AS term_at
-           FROM generate_series(1,50400) g)
-       INSERT INTO pilot_ticket.ticket(id,ticket_no,source_intake_id,title,request_type,status,priority,resolver_team_id,
-         assignee_id,reported_location_text,version,created_at,updated_at,terminal_at)
-       SELECT r.ticket_id,'IT-20261125-'||lpad(r.g::text,6,'0'),r.intake_id,
-         CASE WHEN r.g % 10 = 0 THEN '打印机脱机故障（合成） #'||r.g ELSE '系统终端异常处理（合成） #'||r.g END,
-         'INCIDENT',r.status,CASE WHEN r.g % 5 = 0 THEN 'HIGH' ELSE 'NORMAL' END,'PILOT_IT',
-         CASE WHEN r.status='QUEUED' THEN NULL::uuid ELSE $1::uuid END,
-         '住院部'||((r.g % 12) + 1)||'病区（合成）',
-         CASE WHEN r.status='QUEUED' THEN 2 ELSE 6 END,
-         i.created_at,
-         CASE WHEN r.term_at IS NULL THEN GREATEST(i.created_at,date_trunc('second',platform.local_from_epoch_ms($2::bigint)) - ((r.g % 12)||' minutes')::interval)
-              ELSE GREATEST(i.created_at,r.term_at) END,
-         CASE WHEN r.term_at IS NULL THEN NULL ELSE GREATEST(date_trunc('second',i.created_at),r.term_at) END
-       FROM rows r JOIN intake.service_intake i ON i.id=r.intake_id`,
-      [handlerId, epoch],
-    );
-    await client.query(
-      `UPDATE intake.service_intake i SET pilot_ticket_id=t.id,status='TICKET_CREATED',version=2
-         FROM pilot_ticket.ticket t WHERE t.source_intake_id=i.id AND t.ticket_no LIKE 'IT-20261125-%'`,
-    );
-    // Six events per ticket (two for QUEUED); the last one is the terminal transition at terminal_at.
-    await client.query(
-      `INSERT INTO pilot_ticket.ticket_event(event_id,ticket_id,event_type,old_status,new_status,aggregate_version,event_ordinal,
-         operator_type,operator_id,internal_note,trace_id,created_at)
-       SELECT uuidv7(),t.id,
-         CASE ord WHEN 1 THEN 'ticket.created' WHEN 2 THEN 'ticket.queued' WHEN 3 THEN 'ticket.accepted' WHEN 4 THEN 'ticket.started'
-           WHEN 5 THEN 'ticket.note_added'
-           ELSE CASE t.status WHEN 'RESOLVED' THEN 'ticket.resolved' WHEN 'DISMISSED' THEN 'ticket.dismissed' WHEN 'COMPLETED' THEN 'ticket.completed' ELSE 'ticket.note_added' END END,
-         CASE ord WHEN 1 THEN NULL WHEN 2 THEN 'NEW' WHEN 3 THEN 'QUEUED' WHEN 4 THEN 'ACCEPTED' WHEN 5 THEN 'IN_PROGRESS'
-           ELSE 'IN_PROGRESS' END,
-         CASE ord WHEN 1 THEN 'NEW' WHEN 2 THEN 'QUEUED' WHEN 3 THEN 'ACCEPTED' WHEN 4 THEN 'IN_PROGRESS' WHEN 5 THEN 'IN_PROGRESS'
-           ELSE CASE WHEN t.status IN ('RESOLVED','COMPLETED','DISMISSED') THEN t.status ELSE 'IN_PROGRESS' END END,
-         CASE WHEN ord = 1 THEN 1 ELSE ord END,ord,
-         CASE WHEN ord <= 2 THEN 'SYSTEM' ELSE 'PILOT_USER' END,CASE WHEN ord <= 2 THEN NULL ELSE $1 END,
-         CASE WHEN ord = 5 THEN '合成排查记录（合成）' WHEN ord = 6 AND t.status IN ('RESOLVED','COMPLETED') THEN '合成排查完成说明（合成）' END,
-         'perf-seed:'||t.ticket_no||':'||ord,
-         CASE WHEN ord = 6 AND t.terminal_at IS NOT NULL THEN t.terminal_at
-              ELSE LEAST(t.created_at + (ord||' minutes')::interval,COALESCE(t.terminal_at,t.updated_at)) END
-       FROM pilot_ticket.ticket t CROSS JOIN generate_series(1,6) ord
-       WHERE t.ticket_no LIKE 'IT-20261125-%' AND (t.status <> 'QUEUED' OR ord <= 2) AND (t.status <> 'IN_PROGRESS' OR ord <= 5)`,
-      [handlerId],
-    );
-    // Active closure records for every DISMISSED ticket, linked to its ticket.dismissed event (071 closure_subject).
-    await client.query(
-      `INSERT INTO pilot_ticket.closure_record(subject_type,ticket_id,reason_code,note,duplicate_of_ref,notify_reporter,
-         before_status,before_team_id,before_version,before_snapshot,ended_by,source,ended_at,closure_ticket_event_id)
-       SELECT 'TICKET',t.id,reason.code,NULL,NULL,reason.code<>'FALSE_REPORT_OR_TEST',
-         'IN_PROGRESS','PILOT_IT',5,'{}'::jsonb,$1,'MANUAL',t.terminal_at,e.event_id
-         FROM pilot_ticket.ticket t
-         JOIN pilot_ticket.ticket_event e ON e.ticket_id=t.id AND e.event_type='ticket.dismissed'
-         CROSS JOIN LATERAL (SELECT CASE WHEN right(t.ticket_no,1) IN ('0','3','6') THEN 'FALSE_REPORT_OR_TEST' ELSE 'REPORTER_WITHDREW' END AS code) reason
-        WHERE t.status='DISMISSED' AND t.ticket_no LIKE 'IT-20261125-%'`,
-      [adminId],
-    );
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK').catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
-  await pool.query('ANALYZE');
-  return {
-    sampleTicketId: '10000000-0000-4000-8000-' + (400).toString(16).padStart(12, '0'),
-    sampleHandledTicketId: '10000000-0000-4000-8000-' + (100).toString(16).padStart(12, '0'),
-  };
-}
-
-function parseCliArgs(argv: readonly string[]): {writeEvidenceDir: string | null; diagDir: string | null; allowOlderPg: boolean; warmup: number; iterations: number} {
+function parseCliArgs(argv: readonly string[]): {writeEvidenceDir: string | null; diagDir: string | null; warmup: number; iterations: number} {
   let writeEvidenceDir: string | null = null;
   let diagDir: string | null = null;
-  let allowOlderPg = false;
   let warmup = 3;
   let iterations = 30;
   for (let i = 0; i < argv.length; i++) {
@@ -355,90 +246,175 @@ function parseCliArgs(argv: readonly string[]): {writeEvidenceDir: string | null
       writeEvidenceDir = arg.slice('--write-evidence='.length);
     } else if (arg?.startsWith('--diag-dir=')) {
       diagDir = arg.slice('--diag-dir='.length);
-    } else if (arg === '--allow-older-pg') {
-      allowOlderPg = true;
     } else if (arg === '--iterations' && argv[i + 1]) {
       iterations = Number(argv[i + 1]);
       i++;
     } else if (arg === '--warmup' && argv[i + 1]) {
       warmup = Number(argv[i + 1]);
       i++;
-    }
+    } else throw new Error('PERF_BOARD_ARGUMENT_INVALID');
   }
   if (!Number.isSafeInteger(iterations) || iterations < 1 || !Number.isSafeInteger(warmup) || warmup < 0) throw new Error('PERF_BOARD_ITERATIONS_INVALID');
   // Evidence is only written for a full PG18 run (Codex 42A r1): no older-server override, at least 30 samples.
-  if (writeEvidenceDir && (allowOlderPg || iterations < 30)) throw new Error('PERF_BOARD_EVIDENCE_REQUIRES_PG18_AND_30_ITERATIONS');
-  return {writeEvidenceDir, diagDir, allowOlderPg, warmup, iterations};
+  if (writeEvidenceDir && iterations < 30) throw new Error('PERF_BOARD_EVIDENCE_REQUIRES_PG18_AND_30_ITERATIONS');
+  return {writeEvidenceDir, diagDir, warmup, iterations};
+}
+
+export function isPerfItemProjection(sql:string):boolean {
+  return sql.includes("SELECT 'ticket'::text AS kind")&&sql.includes('t.ticket_no AS number,t.title')&&
+    sql.includes('p.display_name AS assignee_name')&&sql.includes('FROM pilot_ticket.ticket t')&&/WHERE t\.id=\$[246]::uuid/u.test(sql);
+}
+
+export function assertPerfBoardVersion(versionNumber:number,version:string,evidence:boolean):void {
+  const major=Math.floor(versionNumber/10000);
+  if(!Number.isSafeInteger(versionNumber)||major<18||evidence&&major!==18)throw new Error(`PERF_BOARD_REQUIRES_PG18:found=${version}`);
+}
+
+export function perfSearchPrincipalCount(warmup:number,iterations:number):number {
+  return Math.ceil(3*(warmup+iterations)/20);
+}
+
+export async function measurePerfScenario<T>(name:string,warmup:number,iterations:number,expectedCount:number,
+  fn:()=>Promise<{count:number;value?:T}>,record:(reads:RecordedRead[]|null)=>void){
+  const requests:RecordedRead[][]=[], samples:{ms:number;reads:RecordedRead[]}[]=[];
+  let count=0, last:T|undefined, error:string|undefined;
+  try {
+    for(let i=-warmup;i<iterations;i++) {
+      const reads:RecordedRead[]=[];
+      requests.push(reads);
+      record(reads);
+      const start=performance.now();
+      const result=await fn();
+      if(result.count!==expectedCount)throw Error(`PERF_BOARD_ROW_COUNT:expected=${expectedCount}:actual=${result.count}`);
+      if(i>=0) samples.push({ms:performance.now()-start,reads});
+      count=result.count;
+      last=result.value;
+    }
+  } catch(cause) {
+    error=name+': '+(cause instanceof Error?cause.message:String(cause));
+  } finally {
+    record(null);
+  }
+  const stats=samples.length===iterations?computeStats(name,samples.map(sample=>sample.ms),count):null;
+  const p95=[...samples].sort((a,b)=>a.ms-b.ms)[Math.ceil(samples.length*0.95)-1];
+  const representative=(error?requests.at(-1):p95?.reads)??[];
+  // Explain each position of the actual P95 request (or failed request), plus any SQL shape
+  // observed at that position in another request. Keep that occurrence's own parameters.
+  const statements=[...representative];
+  const seen=representative.map(read=>new Set([read.sql]));
+  for(const request of requests) for(const [position,read] of request.entries()){
+    const shapes=seen[position]??=new Set<string>();
+    if(!shapes.has(read.sql)){shapes.add(read.sql);statements.push(read);}
+  }
+  const maxReads=requests.reduce((max,request)=>Math.max(max,perfReadCount(request.map(read=>read.sql))),0);
+  return {name,stats,last,statements,error,maxReads,representativeLength:representative.length};
+}
+
+export function createPerfBoardReads(pool:PostgresPool,catalog:ServiceCatalog){
+  const role = HUMAN_WORKBENCH_OPTIONS;
+  const features = {manual:role.workbenchManualReportsEnabled,manualReview:role.workbenchManualReviewEnabled,
+    supplements:role.workbenchSupplementFollowUpEnabled,sourceGroups:role.sourceGroupDirectoryEnabled,
+    follow:false,schedules:false}; // Follow is opt-in at role startup. Schedules use the runtime default.
+  const authorization = createPilotWorkbenchAuthorizationAdapter({pool});
+  const ticketQuery = createP2016TicketQuery({...role,pool,enabled:true,authorization});
+  const reviews = createP2016ManualReviewFacade({pool,query:ticketQuery,enabled:true,
+    workspaceEnabled:features.manualReview,manualSourceEnabled:features.manual});
+  const web01 = createWeb01WorkbenchQuery({pool,query:ticketQuery,serviceCatalog:catalog,
+    sourceGroups:features.sourceGroups?createWorkbenchSourceGroups({pool,query:ticketQuery}):null,
+    supplementFollowUp:features.supplements?createWorkbenchSupplementFollowUp({pool,query:ticketQuery,enabled:true}):null,
+    manualReviewEnabled:features.manualReview,manualReportsEnabled:features.manual,personalReadEnabled:role.workbenchPersonalReadEnabled,reviews});
+  const search = createWorkbenchSearch({pool,query:ticketQuery,cards:web01,enabled:true,localTestProfile:true,features});
+  return {web01,search,features};
 }
 
 export async function runPerfBoard(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
-  const databaseUrl = process.env.PILOT_DATABASE_URL;
-  if (!databaseUrl) throw new Error('PERF_BOARD_PILOT_DATABASE_URL_REQUIRED');
-  assertLoopbackDatabaseUrl(databaseUrl);
-  const {writeEvidenceDir, diagDir, allowOlderPg, warmup, iterations} = parseCliArgs(argv);
+  if (argv[0] === '--check-evidence') {
+    const directory = argv[1];
+    if (argv.length !== 2 || !directory || directory.startsWith('--')) throw Error('PERF_BOARD_CHECK_EVIDENCE_DIR_REQUIRED');
+    console.log('PERF_BOARD_EVIDENCE_VERIFIED run_id=' + checkEvidenceGeneration(directory));
+    return;
+  }
+  const databaseUrl=process.env.PILOT_DATABASE_URL;
+  if(!databaseUrl)throw new Error('PERF_BOARD_PILOT_DATABASE_URL_REQUIRED');
+  const adminDatabase=assertLoopbackDatabaseUrl(databaseUrl);
+  const {writeEvidenceDir, diagDir, warmup, iterations} = parseCliArgs(argv);
 
   const dbName = `ticket_card42a_perf_board_${randomUUID().replaceAll('-', '_')}`;
   const quoted = `"${dbName}"`;
-  const adminPool = createPostgresPool({connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10_000, application_name: 'perf_board_admin'});
+  const isolatedDatabase={...adminDatabase,database:dbName};
+  const adminPool = createPostgresPool({...adminDatabase, max: 1, connectionTimeoutMillis: 10_000, application_name: 'perf_board_admin'});
+  let created = false;
   let pool: PostgresPool | null = null;
   let runError: unknown = null;
   let cleanupError: unknown = null;
+  const evidence:PerfEvidencePlan[]=[];
+  let evidenceSummary='',serverVersion='';
 
   try {
     const versionRow = (await adminPool.query<{version: string; ver_num: number}>(
       `SELECT version() AS version, current_setting('server_version_num')::integer AS ver_num`,
     )).rows[0];
     if (!versionRow) throw new Error('PERF_BOARD_VERSION_CHECK_FAILED');
-    if (!allowOlderPg && versionRow.ver_num < 180000) {
-      throw new Error(`PERF_BOARD_REQUIRES_PG18:found=${versionRow.version}`);
-    }
+    assertPerfBoardVersion(versionRow.ver_num,versionRow.version,writeEvidenceDir!==null);
 
     await adminPool.query(`CREATE DATABASE ${quoted} TEMPLATE template0`);
-    const isolatedUrl = new URL(databaseUrl);
-    isolatedUrl.pathname = `/${dbName}`;
-    await applyAllMigrations(isolatedUrl.toString());
+    created = true;
+    await applyAllMigrations(isolatedDatabase);
     // 42A-7 in miniature: the deployment sets jit=off on the application role (db-role-settings). This throwaway
     // database gets the same setting at database level, so no cluster-wide role is touched by a benchmark.
     await adminPool.query(`ALTER DATABASE ${quoted} SET jit = off`);
 
-    pool = createPostgresPool({connectionString: isolatedUrl.toString(), max: 2, connectionTimeoutMillis: 10_000, application_name: 'perf_board_runner'});
+    pool = createPostgresPool({...isolatedDatabase, max: 2, connectionTimeoutMillis: 10_000, application_name: 'perf_board_runner'});
     const access = createPilotAccessService({pool});
     const adminPrincipal = await access.upsertPrincipal({wecomUserId: 'perf-admin', displayName: '压测管理员（合成）', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT']});
     const handlerPrincipal = await access.upsertPrincipal({wecomUserId: 'perf-handler', displayName: '压测处理人（合成）', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT']});
 
     const tSeed0 = performance.now();
-    const {sampleTicketId, sampleHandledTicketId} = await seedSyntheticDataset(pool, adminPrincipal.id, handlerPrincipal.id);
+    const {sampleTicketId, sampleHandledTicketId} = await seedCapacityDataset({profile:'annual-board',pool,adminId:adminPrincipal.id,handlerId:handlerPrincipal.id});
     const seedMs = Number((performance.now() - tSeed0).toFixed(1));
 
-    const counts = (await pool.query<{intakes: string; tickets: string; events: string; closures: string; by_status: Record<string, number>}>(
+    const counts = (await pool.query<{intakes: string; tickets: string; events: string; closures: string; journeys:number; legs:number; profiles:number; reviews:number; pending_reviews:number; linked_reviews:number; by_status: Record<string, number>}>(
       `SELECT (SELECT count(*) FROM intake.service_intake)::text AS intakes,(SELECT count(*) FROM pilot_ticket.ticket)::text AS tickets,
               (SELECT count(*) FROM pilot_ticket.ticket_event)::text AS events,(SELECT count(*) FROM pilot_ticket.closure_record)::text AS closures,
+              (SELECT count(*)::int FROM intake.contact_journey) AS journeys,(SELECT count(*)::int FROM intake.channel_leg) AS legs,
+              (SELECT count(*)::int FROM intake.contact_journey j JOIN intake.channel_leg l ON l.journey_id=j.id AND l.source_intake_id=j.origin_intake_id
+                WHERE l.reporter_identity_hash=j.reporter_identity_hash AND j.profile_resolution_status='RESOLVED'
+                  AND j.profile_snapshot->'contact'->>'name' LIKE '%（合成）%') AS profiles,
+              (SELECT count(*)::int FROM intake.manual_review_item) AS reviews,
+              (SELECT count(*)::int FROM intake.manual_review_item WHERE status='PENDING') AS pending_reviews,
+              (SELECT count(*)::int FROM intake.manual_review_item r JOIN pilot_ticket.ticket t ON t.id=r.linked_ticket_id AND t.source_intake_id=r.service_intake_id
+                JOIN intake.deterministic_decision h ON h.id=r.resolution_decision_id AND h.journey_id=r.journey_id WHERE r.status='RESOLVED') AS linked_reviews,
               (SELECT jsonb_object_agg(status,n) FROM (SELECT status,count(*)::integer AS n FROM pilot_ticket.ticket GROUP BY status) s) AS by_status`,
     )).rows[0];
-    if (!counts) throw new Error('PERF_BOARD_COUNTS_FAILED');
+    if (!counts || counts.intakes!=='56000' || counts.tickets!=='50400' || counts.journeys!==56000 || counts.legs!==56000 ||
+        counts.profiles!==56000 || counts.reviews!==11200 || counts.pending_reviews!==22 || counts.linked_reviews!==10068)
+      throw new Error('PERF_BOARD_COUNTS_FAILED:'+JSON.stringify(counts));
     const jitRows = await Promise.all([pool.query<{jit: string}>('SHOW jit'), pool.query<{jit: string}>('SHOW jit')]);
     const effectiveJit = [...new Set(jitRows.map(r => r.rows[0]?.jit ?? 'unknown'))].join(',');
     if (effectiveJit !== 'off') throw new Error(`PERF_BOARD_JIT_NOT_OFF:${effectiveJit}`);
 
     const catalog = await loadServiceCatalog();
-    const authorization = createPilotWorkbenchAuthorizationAdapter({pool});
-    const ticketQuery = createP2016TicketQuery({pool, enabled: true, authorization, ticketStaffCompletionEnabled: true, ticketReopenRoundsEnabled: true});
-    // Every statement any scenario sends is recorded so EXPLAIN runs on the exact production SQL and values.
-    let recording: {sql: string; values: readonly unknown[]}[] | null = null;
-    const record = (args: unknown[]) => {
-      const [sql, values] = args;
-      if (recording && typeof sql === 'string') recording.push({sql, values: Array.isArray(values) ? values : []});
-    };
+    // Record pool queries and transaction queries, including those made by authorization and decorators.
+    let recording: RecordedRead[] | null = null;
+    function observedQuery(target:object,queryFn:(...args:unknown[])=>unknown,args:unknown[]) {
+      if (!recording) return Reflect.apply(queryFn,target,args);
+      const [sql,values] = args;
+      if (typeof sql !== 'string') throw new Error('PERF_BOARD_UNRECORDED_SQL');
+      const statement = {sql,values:Array.isArray(values)?values:[],elapsedMs:0};
+      recording.push(statement);
+      const start = performance.now();
+      return Promise.resolve(Reflect.apply(queryFn,target,args)).finally(()=>{statement.elapsedMs=performance.now()-start;});
+    }
     const timedPool = pool;
     const recordingPool = new Proxy(timedPool, {
       get(target, prop, receiver) {
-        if (prop === 'query') return (...args: unknown[]) => { record(args); return Reflect.apply(target.query, target, args); };
+        if (prop === 'query') return (...args: unknown[]) => observedQuery(target,target.query,args);
         if (prop === 'connect') {
           return async () => {
             const client = await target.connect();
             return new Proxy(client, {
               get(clientTarget, clientProp, clientReceiver) {
-                if (clientProp === 'query') return (...args: unknown[]) => { record(args); return Reflect.apply(clientTarget.query, clientTarget, args); };
+                if (clientProp === 'query') return (...args: unknown[]) => observedQuery(clientTarget,clientTarget.query,args);
                 const val = Reflect.get(clientTarget, clientProp, clientReceiver);
                 return typeof val === 'function' ? val.bind(clientTarget) : val;
               },
@@ -449,17 +425,14 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
         return typeof val === 'function' ? val.bind(target) : val;
       },
     });
-    const web01 = createWeb01WorkbenchQuery({pool: recordingPool, query: ticketQuery, serviceCatalog: catalog});
-    const search = createWorkbenchSearch({
-      pool: recordingPool, query: ticketQuery, cards: web01, enabled: true, localTestProfile: true,
-      features: {follow: false, supplements: false, schedules: false, manual: false, manualReview: false, sourceGroups: false},
-    });
+    const {web01,search,features} = createPerfBoardReads(recordingPool,catalog);
     const authFor = (principalId: string) => ({principal_id: principalId, auth_method: 'TEST', csrf_token: 'perf-board-csrf-token-' + principalId.slice(0, 8), expires_epoch_ms: String(Date.now() + 3_600_000)});
     const auth = authFor(adminPrincipal.id);
     // The production search limiter (20 calls / minute / principal) stays in force; search samples rotate over
     // equivalently authorized synthetic admins so every timed call is a real, admitted request.
     const searchAdmins: ReturnType<typeof authFor>[] = [];
-    for (let n = 0; n < Math.ceil((warmup + iterations) * 2 / 15) + 1; n++) {
+    const principalCount = perfSearchPrincipalCount(warmup,iterations);
+    for (let n = 0; n < principalCount; n++) {
       const principal = await access.upsertPrincipal({wecomUserId: 'perf-search-admin-' + n, displayName: '压测检索管理员' + n + '（合成）', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT']});
       searchAdmins.push(authFor(principal.id));
     }
@@ -470,124 +443,100 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
       return value;
     };
 
-    const measure = async <T,>(name: string, fn: () => Promise<{count: number; value?: T}>): Promise<{stats: LatencyStats; last?: T; statements: {sql: string; values: readonly unknown[]}[]}> => {
-      recording = [];
-      await fn();
-      const statements = recording;
-      recording = null;
-      for (let w = 1; w < warmup; w++) await fn();
-      const samples: number[] = [];
-      let count = 0;
-      let last: T | undefined;
-      for (let i = 0; i < iterations; i++) {
-        const t0 = performance.now();
-        const r = await fn();
-        samples.push(performance.now() - t0);
-        count = r.count;
-        last = r.value;
-      }
-      return {stats: computeStats(name, samples, count), statements, ...(last !== undefined ? {last} : {})};
-    };
-    const mainStatement = (label: string, statements: readonly {sql: string; values: readonly unknown[]}[], pick: (sql: string) => boolean) => {
-      const found = statements.find(statement => pick(statement.sql));
-      if (!found) throw new Error('PERF_BOARD_STATEMENT_NOT_CAPTURED:' + label);
-      return found;
-    };
-
-    const pendingRes = await measure('pending_p1', async () => {
+    const measure=<T,>(name:string,expectedCount:number,fn:()=>Promise<{count:number;value?:T}>)=>
+      measurePerfScenario(name,warmup,iterations,expectedCount,fn,reads=>{recording=reads;});
+    const pendingRes = await measure('pending_p1', 50, async () => {
       const p = await web01.list({authContext: auth, column: 'pending', range: 'recent', cursor: null, limit: '50'});
       return {count: p.items.length, value: p};
     });
-    const activeRes = await measure('active_p1', async () => {
+    const activeRes = await measure('active_p1', 25, async () => {
       const p = await web01.list({authContext: auth, column: 'active', range: 'recent', cursor: null, limit: '50'});
       return {count: p.items.length};
     });
-    const handledP1 = await measure('handled_recent_p1', async () => {
+    const handledP1 = await measure('handled_recent_p1', 50, async () => {
       const p = await web01.list({authContext: auth, column: 'handled', range: 'recent', cursor: null, limit: '50'});
       return {count: p.items.length, value: p};
     });
-    const handledAllP1 = await measure('handled_all_p1', async () => {
+    const handledAllP1 = await measure('handled_all_p1', 50, async () => {
       const p = await web01.list({authContext: auth, column: 'handled', range: 'all', cursor: null, limit: '50'});
       return {count: p.items.length, value: p};
     });
     const handledCursor = handledAllP1.last?.next_cursor ?? null;
-    if (!handledCursor) throw new Error('PERF_BOARD_EXPECTED_HANDLED_CURSOR');
-    const handledP2 = await measure('handled_all_p2', async () => {
+    const handledP2 = await measure('handled_all_p2', 50, async () => {
+      if (!handledCursor) throw new Error('PERF_BOARD_EXPECTED_HANDLED_CURSOR');
       const p = await web01.list({authContext: auth, column: 'handled', range: 'all', cursor: handledCursor, limit: '50'});
       return {count: p.items.length};
     });
-    const itemRes = await measure('item_ticket', async () => {
-      await web01.authorizedItem(auth, 'ticket', sampleHandledTicketId);
-      return {count: 1};
+    const itemRes = await measure('item_ticket', 1, async () => {
+      const item=await web01.authorizedItem(auth,'ticket',sampleHandledTicketId);
+      return {count:Number(item?.kind==='ticket'&&item.id===sampleHandledTicketId)};
     });
-    const searchHandled = await measure('search_handled_recent', async () => {
+    const searchHandled = await measure('search_handled_recent', 50, async () => {
       const p = await search.search({authContext: nextSearchAuth(), request: {criteria: fullSearchCriteria({column: 'handled', range: 'recent', q: ''}), cursor: null, limit: 50}});
       return {count: p.items.length};
     });
-    const searchTextRecent = await measure('search_text_recent', async () => {
+    const searchTextRecent = await measure('search_text_recent', 50, async () => {
       const p = await search.search({authContext: nextSearchAuth(), request: {criteria: fullSearchCriteria({column: 'all', range: 'recent', q: '打印机'}), cursor: null, limit: 50}});
       return {count: p.items.length};
     });
-    const searchText = await measure('search_text_all', async () => {
+    const searchText = await measure('search_text_all', 50, async () => {
       const p = await search.search({authContext: nextSearchAuth(), request: {criteria: fullSearchCriteria({column: 'all', range: 'all', q: '打印机'}), cursor: null, limit: 50}});
       return {count: p.items.length};
     });
     void sampleTicketId;
 
-    const allStats = [pendingRes.stats, activeRes.stats, handledP1.stats, handledAllP1.stats, handledP2.stats, itemRes.stats, searchHandled.stats, searchTextRecent.stats];
-    // Informational, not part of the card's acceptance set: a substring search over the whole year must examine
-    // every ticket's text; it is reported so the budget question stays visible (see 42a-README open questions).
-    const informationalStats = [searchText.stats];
-    // Collect every failure; plans are still captured so a failing run explains itself.
-    const failures = allStats.filter(s => s.p95Ms >= 100).map(s => `PERF_BOARD_P95_EXCEEDED:${s.name}:p95=${s.p95Ms}ms`);
+    const isPage = (sql:string) => sql.includes('page_keys AS (');
+    const isSearchPage = (sql:string) => sql.includes('candidate_keys') && sql.includes('AS safety_signature FROM matched');
+    const isItem = isPerfItemProjection;
+    const scenarios = [
+      ['pending',pendingRes,isPage],['active',activeRes,isPage],['handled',handledP1,isPage],
+      ['handled-all',handledAllP1,isPage],['handled-page2',handledP2,isPage],['item',itemRes,isItem],
+      ['search',searchHandled,isSearchPage],['search-text',searchTextRecent,isSearchPage],['search-text-all',searchText,isSearchPage],
+    ] as const;
+    const allStats:LatencyStats[]=[], informationalStats:LatencyStats[]=[];
+    const failures:string[]=[], informationalFindings:string[]=[], singlePassTicketScans:string[]=[], planSummary:string[]=[];
 
-    // EXPLAIN (ANALYZE, BUFFERS) on the exact statements each scenario sent (captured above).
-    const isPage = (sql: string) => sql.includes('WITH page_keys AS');
-    const isSearchPage = (sql: string) => sql.includes('candidate_keys') && sql.includes('AS safety_signature FROM matched');
-    const isItem = (sql: string) => sql.includes('FROM pilot_ticket.ticket t') && sql.includes('WHERE t.id=$6::uuid');
-    const explains: [string, string, {sql: string; values: readonly unknown[]}][] = [
-      ['pending', 'pending_p1', mainStatement('pending', pendingRes.statements, isPage)],
-      ['active', 'active_p1', mainStatement('active', activeRes.statements, isPage)],
-      ['handled', 'handled_recent_p1', mainStatement('handled', handledP1.statements, isPage)],
-      ['handled-all', 'handled_all_p1', mainStatement('handled-all', handledAllP1.statements, isPage)],
-      ['handled-page2', 'handled_all_p2', mainStatement('handled-page2', handledP2.statements, isPage)],
-      ['item', 'item_ticket', mainStatement('item', itemRes.statements, isItem)],
-      ['search', 'search_handled_recent', mainStatement('search', searchHandled.statements, isSearchPage)],
-      ['search-text', 'search_text_recent', mainStatement('search-text', searchTextRecent.statements, isSearchPage)],
-      ['search-text-all', 'search_text_all', mainStatement('search-text-all', searchText.statements, isSearchPage)],
-    ];
-    const explained: {file: string; scenario: string; text: string; executionMs: number}[] = [];
-    const informationalFindings: string[] = [];
-    for (const [file, scenario, statement] of explains) {
-      try {
-        const result = await explainQuery(pool, file, statement.sql, statement.values, diagDir);
-        explained.push({file, scenario, ...result});
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (informationalStats.some(stat => stat.name === scenario)) {
-          // Keep the plan text for the record even though its guard is reported, not asserted.
-          const result = await explainQuery(pool, file, statement.sql, statement.values, diagDir, false);
-          explained.push({file, scenario, ...result});
-          informationalFindings.push(message);
-        } else failures.push(message);
-      }
-    }
-
-    if (diagDir) {
-      // Diagnostics: plan every read statement of each over-budget scenario, not only its main one.
-      for (const [scenario, statements] of [['pending_p1', pendingRes.statements], ['active_p1', activeRes.statements], ['handled_recent_p1', handledP1.statements], ['handled_all_p2', handledP2.statements], ['item_ticket', itemRes.statements], ['search_text_all', searchText.statements]] as const) {
-        let n = 0;
-        for (const statement of statements) {
-          n++;
-          if (!/^\s*(SELECT|WITH)/iu.test(statement.sql)) continue;
-          try { await explainQuery(pool, `${scenario}-stmt-${String(n).padStart(2, '0')}`, statement.sql, statement.values, diagDir); } catch { /* guard failures are reported by the main plans */ }
+    for (const [file,run,primary] of scenarios) {
+      const informational=run===searchText;
+      const findings=informational?informationalFindings:failures;
+      if(run.error) findings.push(run.error);
+      const readLimit=primary===isPage?PERF_BOARD_READ_LIMITS.page:primary===isItem?PERF_BOARD_READ_LIMITS.item:PERF_BOARD_READ_LIMITS.search;
+      if(!informational && run.maxReads>readLimit) failures.push('PERF_BOARD_TOO_MANY_READS:'+run.name+':'+run.maxReads+'>'+readLimit);
+      planSummary.push(run.name+' max reads/request='+run.maxReads);
+      // Both fixture pages contain tickets. Verify the configured services actually issued their reads.
+      if(run===activeRes || run===searchHandled) {
+        for(const marker of ['workbench.source_group_name n','summary.pending AS has_pending_supplements']) {
+          if(!run.statements.some(read=>read.sql.includes(marker))) failures.push('PERF_BOARD_DECORATOR_NOT_CAPTURED:'+run.name+':'+marker);
         }
       }
+      if(run.stats) {
+        (informational?informationalStats:allStats).push(run.stats);
+        if(!informational && run.stats.p95Ms>=100) failures.push('PERF_BOARD_P95_EXCEEDED:'+run.name+':p95='+run.stats.p95Ms+'ms');
+        else if(!informational && run.stats.p95Ms>75) failures.push('PERF_BOARD_MARGIN_MISSED:'+run.name+':p95='+run.stats.p95Ms+'ms');
+      }
+      const inspected=await inspectPerfScenario(run.name,run.statements,primary,
+        (label,statement,isPrimary)=>explainQuery(timedPool,label,statement,isPrimary,diagDir),run.representativeLength);
+      findings.push(...inspected.failures);
+      singlePassTicketScans.push(...inspected.singlePass);
+      const primaryText=inspected.primaryText??'EXPLAIN unavailable: '+findings.join(' | ');
+      const plan={file,scenario:run.name,complete:run.error===undefined&&run.stats!==null&&inspected.explainErrors.length===0,text:inspected.primaryText};
+      evidence.push(plan);
+      if(writeEvidenceDir&&(!plan.complete||!plan.text))
+        failures.push('PERF_BOARD_INCOMPLETE_EVIDENCE:'+run.name);
+      if(diagDir) {
+        mkdirSync(diagDir,{recursive:true});
+        writeFileSync(path.join(diagDir,file+'.txt'),primaryText+'\n','utf8');
+      }
+      const slow=inspected.dominant;
+      planSummary.push(run.name+(run.error?' failed request':' P95 request')+' dominant read: '+(slow?slow.elapsedMs.toFixed(2)+'ms '+slow.label:'none'),
+        '  EXPLAIN execution: '+inspected.timings.join(', '));
     }
     const byStatus = Object.entries(counts.by_status ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join(', ');
     const summaryLines = [
+      `Run: ${dbName} | Gated outcome: ${failures.length?'FAIL':'PASS'}`,
       `PostgreSQL Version: ${versionRow.version}`,
-      `Dataset (synthetic 「（合成）」, actual row counts): service_intake=${counts.intakes}, ticket=${counts.tickets} (${byStatus}), ticket_event=${counts.events}, closure_record=${counts.closures}, seed_ms=${seedMs}`,
+      'Read profile: HUMAN_WORKBENCH_OPTIONS, search enabled, synthetic session, personalRead='+HUMAN_WORKBENCH_OPTIONS.workbenchPersonalReadEnabled+'; features='+JSON.stringify(features),
+      `Dataset (synthetic 「（合成）」, actual row counts): service_intake=${counts.intakes}, ticket=${counts.tickets} (${byStatus}), ticket_event=${counts.events}, closure_record=${counts.closures}, journeys=${counts.journeys}, origin_legs=${counts.legs}, resolved_profiles=${counts.profiles}, reviews=${counts.reviews}, pending_reviews=${counts.pending_reviews}, linked_reviews=${counts.linked_reviews}, seed_ms=${seedMs}`,
       `Warmup=${warmup}, Iterations=${iterations}, jit=${effectiveJit} (database setting, verified on the timed connections), search principals rotated=${searchAdmins.length}`,
       '',
       'Scenario                     Rows   Min(ms)   P50(ms)   P95(ms)   Max(ms)',
@@ -596,28 +545,26 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
       ...informationalStats.map(s => `${s.name.padEnd(28)} ${String(s.rowCount).padStart(4)}   ${String(s.minMs).padStart(7)}   ${String(s.p50Ms).padStart(7)}   ${String(s.p95Ms).padStart(7)}   ${String(s.maxMs).padStart(7)}`),
       '',
       'Informational plan findings (not asserted): ' + (informationalFindings.join(', ') || 'none'),
-      'Single-pass ticket scans (1 loop; allowed): ' + (singlePassTicketScans.filter(x => !x.includes('-stmt-')).join(', ') || 'none'),
-      'EXPLAIN Execution Times (ms): ' + explained.map(e => `${e.file}=${e.executionMs}`).join(', '),
-      'Assertions: every asserted P95 < 100ms; no repeated ticket Seq Scan; no ticket node with >= 1000 loops; no node with >= 50000 loops; ZERO JIT functions.',
+      'Single-pass ticket scans (1 loop; allowed): ' + (singlePassTicketScans.join(', ') || 'none'),
+      ...planSummary,
+      'Gated failures: '+(failures.join(' | ') || 'none'),
+      'Assertions: every asserted P95 < 100ms and at most 75ms for margin; no repeated ticket Seq Scan; no ticket node with >= 1000 loops; no node with >= 50000 loops; ZERO JIT functions.',
     ];
     const summary = summaryLines.join('\n');
     console.log(summary);
 
     if (failures.length) throw new Error(failures.join('\n'));
-    if (writeEvidenceDir) {
-      mkdirSync(writeEvidenceDir, {recursive: true});
-      writeFileSync(path.join(writeEvidenceDir, '42a-perf-board.txt'), summary + '\n', 'utf8');
-      for (const e of explained) {
-        writeFileSync(path.join(writeEvidenceDir, `42a-explain-${e.file}.txt`), `-- scenario ${e.scenario}; EXPLAIN (ANALYZE, BUFFERS) of the exact statement it sent; ${versionRow.version}\n` + e.text + '\n', 'utf8');
-      }
-    }
+    evidenceSummary=summary;
+    serverVersion=versionRow.version;
   } catch (error) {
     runError = error;
   } finally {
     try {
       await pool?.end();
-      await adminPool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [dbName]);
-      await adminPool.query(`DROP DATABASE IF EXISTS ${quoted}`);
+      if (created) {
+        await adminPool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [dbName]);
+        await adminPool.query(`DROP DATABASE IF EXISTS ${quoted}`);
+      }
     } catch (error) {
       cleanupError = error;
     } finally {
@@ -630,6 +577,7 @@ export async function runPerfBoard(argv: readonly string[] = process.argv.slice(
   if (runError && cleanupError) throw new AggregateError([runError, cleanupError]);
   if (runError) throw runError;
   if (cleanupError) throw cleanupError;
+  if(writeEvidenceDir)publishPerfEvidence(writeEvidenceDir,evidenceSummary,serverVersion,evidence);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

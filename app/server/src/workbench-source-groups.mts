@@ -1,3 +1,4 @@
+import {FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,intakeJourneyIdsSql,withFinalStatementClock} from './workbench-card-projections.mjs';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
 import type {WorkbenchCard,SourceGroupDisplay,SourceGroupPage,SourceGroupNameResult} from '../../../contracts/web01_workbench_contracts.js';
@@ -12,10 +13,10 @@ export function validGroupSql(nowLocalParam='platform.local_now()'):string{
 export function sourceGroupOriginBindingSql(nowEpochParam='platform.physical_epoch_ms()'):string{
   return `          SELECT count(DISTINCT j.origin_intake_id)::integer AS count,min(j.origin_intake_id::text) AS origin,
             bool_and(j.retention_until_epoch_ms>${nowEpochParam}) AS retained
-          FROM intake.contact_journey j
-          WHERE j.origin_intake_id=r.intake_id::uuid
-            OR EXISTS (SELECT 1 FROM intake.channel_leg l WHERE l.journey_id=j.id AND l.source_intake_id=r.intake_id::uuid)
-            OR (r.kind='review' AND EXISTS (SELECT 1 FROM intake.manual_review_item rev WHERE rev.id=r.id::uuid AND rev.journey_id=j.id))`;
+          FROM (
+            ${intakeJourneyIdsSql('r.intake_id::uuid')}
+            UNION SELECT rev.journey_id FROM intake.manual_review_item rev WHERE r.kind='review' AND rev.id=r.id::uuid
+          ) candidate JOIN intake.contact_journey j ON j.id=candidate.id`;
 }
 const VALID_GROUP_SQL=validGroupSql();
 export const SOURCE_GROUP_ORIGIN_BINDING_SQL=sourceGroupOriginBindingSql();
@@ -52,15 +53,13 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
     if(!principal.roles.includes('ADMIN'))failP2016('FORBIDDEN',403);return principal;
   }
   return Object.freeze({
-    async decorate(cards:WorkbenchCard[],clock?:{nowEpoch:string;nowLocal:string}):Promise<WorkbenchCard[]> {
+    async decorate(cards:WorkbenchCard[]):Promise<WorkbenchCard[]> {
       if(!cards.length)return cards;
       // The input cards have already passed Workbench scope filtering and pagination.
       // A retained Journey owns the origin; a conflicting/expired origin cannot fall back to a later leg.
-      const nowEpochParam=clock?'$2::bigint':'platform.physical_epoch_ms()';
-      const nowLocalParam=clock?'$3::timestamp without time zone':'platform.local_now()';
-      const validGroup=validGroupSql(nowLocalParam);
-      const originBinding=sourceGroupOriginBindingSql(nowEpochParam);
-      const result=await pool.query<SourceRow>(`WITH requested AS (
+      const validGroup=validGroupSql(FINAL_LOCAL_SQL);
+      const originBinding=sourceGroupOriginBindingSql(FINAL_EPOCH_SQL);
+      const result=await pool.query<SourceRow>(withFinalStatementClock(`WITH requested AS (
         SELECT * FROM jsonb_to_recordset($1::jsonb) AS r(id text,kind text,intake_id text)
       ), origins AS (
         SELECT r.*,CASE WHEN binding.count=0 THEN r.intake_id::uuid
@@ -71,9 +70,14 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
       ) SELECT r.id,r.kind,i.source_channel AS source,
         CASE WHEN ${validGroup} THEN ${GROUP_REF_SQL} ELSE NULL END AS ref,
         n.display_name,COALESCE(n.row_version,0)::text AS row_version
-      FROM origins r LEFT JOIN intake.service_intake i ON i.id=r.origin_intake_id AND i.retention_until>${nowLocalParam}
-      LEFT JOIN workbench.source_group_name n ON ${validGroup} AND n.ref=${GROUP_REF_SQL}`,
-      [JSON.stringify(cards.map(({id,kind,intake_id})=>({id,kind,intake_id}))),...(clock?[clock.nowEpoch,clock.nowLocal]:[])]);
+      FROM origins r LEFT JOIN LATERAL (
+        SELECT origin.source_channel,origin.source_chat_type,origin.source_provider,
+          origin.source_bot_id,origin.source_chat_id,origin.retention_until
+        FROM intake.service_intake origin
+        WHERE origin.id=r.origin_intake_id AND origin.retention_until>${FINAL_LOCAL_SQL} LIMIT 1
+      ) i ON TRUE
+      LEFT JOIN workbench.source_group_name n ON ${validGroup} AND n.ref=${GROUP_REF_SQL}`),
+      [JSON.stringify(cards.map(({id,kind,intake_id})=>({id,kind,intake_id})))]);
       const rows=new Map(result.rows.map(row=>[row.kind+':'+row.id,row]));
       return cards.map(card=>{
         const row=rows.get(card.kind+':'+card.id),source=row?.source??'未提供';

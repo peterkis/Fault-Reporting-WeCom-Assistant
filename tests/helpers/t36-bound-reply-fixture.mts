@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import type {SupplementFollowUpPage,SupplementFollowUpTarget,SupplementFollowUpReplyCommand} from '../../contracts/workbench_supplement_follow_up_contracts.js';
-import {withT35Fixture} from './t35-read-fixture.mjs';
+import {withT35Fixture,type T35Fixture} from './t35-read-fixture.mjs';
 import {ownedHttp} from './t36-supplement-fixture.mjs';
 import type {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
@@ -26,7 +26,7 @@ export interface T36BoundReplyFixture {
  setActorRoles(roles:PilotRole[]):Promise<void>;
  expire(target:SupplementFollowUpTarget):Promise<void>;
  disableEntry():Promise<void>;
- pool:PostgresPool;databaseUrl:string;sessionId:string;ticketId:string;actorId:string;reporterId:string;
+ pool:PostgresPool;databaseUrl:string;databaseConnection:T35Fixture['databaseConnection'];sessionId:string;ticketId:string;actorId:string;reporterId:string;
  r2:SupplementFollowUpTarget;rowVersion:number;internalCanary:string;
  postReply(body:SupplementFollowUpReplyCommand):Promise<Response>;
  page():Promise<SupplementFollowUpPage>;
@@ -87,7 +87,7 @@ export function withT36BoundReplyFixture(run:(f:T36BoundReplyFixture)=>Promise<v
   const page=()=>read<SupplementFollowUpPage>(followPath);assert.equal((await page()).items.find(x=>x.source_ref===r2.source_ref)?.follow_up_state,'PENDING','read and internal note do not clear a supplement');
   const postReply=(body:SupplementFollowUpReplyCommand)=>ownedHttp(base.origin+sessionPath+'/messages',{method:'POST',headers:{cookie:cookieHeader,
    origin:base.origin,'content-type':'application/json','idempotency-key':body.client_command_id,'x-csrf-token':csrf,'if-match':'"'+body.expected_row_version+'"'},body:JSON.stringify(body)});
-  await run({setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER',pool:base.pool,databaseUrl:base.databaseUrl,sessionId,ticketId,actorId:admin.id,reporterId,r2,rowVersion,internalCanary,
+  await run({setup_mode:'REAL_BOT_INGRESS_SINGLE_APP_MANUAL_ORIGINAL_WORKER',pool:base.pool,databaseConnection:base.databaseConnection,databaseUrl:base.databaseUrl,sessionId,ticketId,actorId:admin.id,reporterId,r2,rowVersion,internalCanary,
    setActorRoles:async roles=>{const actor=(await base.pool.query<{wecom_user_id:string;display_name:string}>('SELECT wecom_user_id,display_name FROM pilot_ticket.pilot_principal WHERE id=$1::uuid',[admin.id])).rows[0];assert.ok(actor);const changed=await createPilotAccessService({pool:base.pool}).upsertPrincipal({wecomUserId:actor.wecom_user_id,displayName:actor.display_name,roles,resolverTeamIds:[]});assert.equal(changed.id,admin.id);},
    takeoverSelf:async()=>{const current=await currentSession(),command={client_command_id:randomUUID(),expected_row_version:current.session.row_version};return ownedHttp(base.origin+sessionPath+'/takeover',{method:'POST',headers:{cookie:cookieHeader,origin:base.origin,'content-type':'application/json','idempotency-key':command.client_command_id,'x-csrf-token':csrf,'if-match':'\"'+command.expected_row_version+'\"'},body:JSON.stringify(command)});},
    origin:base.origin,browserCookie:{name:cookie.name,value:cookie.value,url:base.origin+'/',httpOnly:true,secure:false,sameSite:'Strict'},

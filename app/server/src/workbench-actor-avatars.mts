@@ -1,3 +1,4 @@
+import {FINAL_EPOCH_SQL,withFinalStatementClock} from './workbench-card-projections.mjs';
 import {createHash} from 'node:crypto';
 import type {PostgresTransaction} from './platform/postgres-pool.mjs';
 import {createThirdPartyStaffDirectoryAdapter} from './p2-007-third-party-staff-directory-adapter.mjs';
@@ -10,7 +11,7 @@ import {uuidP2016,failP2016} from './p2-016-domain-contracts.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
 import {createPilotWorkbenchAuthorizationAdapter} from './p2-006-workbench-authorization.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
-import {buildSingleItemReadableSql,readWorkbenchClock} from './web01-workbench-query.mjs';
+import {buildSingleItemReadableSql} from './web01-workbench-query.mjs';
 
 const digest=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex');
 const hosts=new Set(['wx.qlogo.cn','wework.qlogo.cn','p.qlogo.cn','shp.qpic.cn','wework.qpic.cn']);
@@ -95,7 +96,7 @@ export function createWorkbenchActorAvatarWorker({pool,keyProvider,rootRef,fetch
 
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 /** Every image is scoped to an existing actor on an item the current staff session can read. */
-export function createWorkbenchActorAvatarHttp({pool,query,enabled=false,currentSessionPredicate,localTestProfile=false}:{pool:PostgresTransaction;query:Pick<ReturnType<typeof createWeb01WorkbenchQuery>,'authorizedItem'>;enabled?:boolean;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate'];localTestProfile?:boolean}){
+export function createWorkbenchActorAvatarHttp({pool,query,enabled=false,currentSessionPredicate,localTestProfile=false}:{pool:PostgresTransaction;query:Pick<ReturnType<typeof createWeb01WorkbenchQuery>,'authorizedIdentity'>;enabled?:boolean;currentSessionPredicate?:ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate'];localTestProfile?:boolean}){
   const authorization=createPilotWorkbenchAuthorizationAdapter({pool});
   return async({request,response,url,authContext}:Context)=>{
     const match=/^\/api\/workbench\/items\/(ticket|review|intake)\/([0-9a-f-]{36})\/actor-avatars\/([0-9a-f-]{36})$/iu.exec(url.pathname);
@@ -104,29 +105,28 @@ export function createWorkbenchActorAvatarHttp({pool,query,enabled=false,current
     // Only Ticket events expose actor_ref. Refuse aliases whose review-to-ticket
     // relation could change independently while this image request is waiting.
     if(kind!=='ticket')failP2016('NOT_FOUND',404);
-    const item=await query.authorizedItem(authContext,kind,id,false);if(item.kind!=='ticket')failP2016('NOT_FOUND',404);
-    const final=await query.authorizedItem(authContext,kind,id,false);
+    const item=await query.authorizedIdentity(authContext,kind,id);if(item.kind!=='ticket')failP2016('NOT_FOUND',404);
+    const final=await query.authorizedIdentity(authContext,kind,id);
     if(final.kind!==item.kind||final.id!==item.id||final.intake_id!==item.intake_id)failP2016('NOT_FOUND',404);
     const principal=await authorization.resolvePrincipal(authContext);if(!principal)failP2016('NOT_FOUND',404);
-    const clock=await readWorkbenchClock(pool);
-    const scope=ticketPredicateP2016(principal),guard=currentSessionPredicate?.(authContext,authContext.principal_id,11);
+    const scope=ticketPredicateP2016(principal),guard=currentSessionPredicate?.(authContext,authContext.principal_id,10);
     if(!guard&&(!localTestProfile||'session_id' in authContext))failP2016('ACTION_FAILED',503);
     // The final statement checks current READ, the same original item, current
     // session and current avatar identity together. No projection wait follows it.
-    const result=await pool.query<{identity_hash:string|null;wecom_user_id:string|null;avatar_bytes:Buffer|null;avatar_sha256:string|null;readable:boolean;session_current:boolean}>(`SELECT
-      EXISTS(${buildSingleItemReadableSql('ticket','$4::uuid','$5::uuid','$10::bigint','$10::timestamp without time zone')}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal reader
+    const result=await pool.query<{identity_hash:string|null;wecom_user_id:string|null;avatar_bytes:Buffer|null;avatar_sha256:string|null;readable:boolean;session_current:boolean}>(withFinalStatementClock(`SELECT
+      EXISTS(${buildSingleItemReadableSql('ticket','$4::uuid','$5::uuid')}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal reader
         WHERE reader.id=$2::uuid AND reader.is_active
           AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=reader.id ORDER BY role COLLATE "C")=$6::text[]
           AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=reader.id ORDER BY team_id COLLATE "C")=$7::text[]) AS readable,
-      ($8::bigint>platform.physical_epoch_ms() AND ${guard?.sql??'TRUE'}) AS session_current,
+      ($8::bigint>${FINAL_EPOCH_SQL} AND ${guard?.sql??'TRUE'}) AS session_current,
       cached.identity_hash,cached.wecom_user_id,cached.avatar_bytes,cached.avatar_sha256
       FROM (SELECT 1) one LEFT JOIN LATERAL(
         SELECT c.identity_hash,p.wecom_user_id,c.avatar_bytes,c.avatar_sha256 FROM pilot_ticket.pilot_principal p
-        JOIN workbench.actor_avatar_cache c ON c.principal_id=p.id AND c.status='READY' AND c.expires_epoch_ms>$10::bigint
+        JOIN workbench.actor_avatar_cache c ON c.principal_id=p.id AND c.status='READY' AND c.expires_epoch_ms>${FINAL_EPOCH_SQL}
         WHERE p.id=$9::uuid AND p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r
           WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER'))
           AND EXISTS(SELECT 1 FROM pilot_ticket.ticket_event e WHERE e.ticket_id=$4::uuid AND e.operator_id=p.id::text)
-      ) cached ON TRUE`,[...scope.values,item.id,item.intake_id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,actor,clock.nowEpoch,...(guard?.values??[])]);
+      ) cached ON TRUE`),[...scope.values,item.id,item.intake_id,[...principal.roles],[...principal.team_ids],authContext.expires_epoch_ms,actor,...(guard?.values??[])]);
     const cached=result.rows[0];
     if(cached?.session_current!==true)throw new WorkbenchError('WORKBENCH_UNAUTHENTICATED',401);
     if(!cached.readable)failP2016('NOT_FOUND',404);

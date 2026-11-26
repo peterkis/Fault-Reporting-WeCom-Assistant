@@ -46,6 +46,76 @@ export function ticketPredicateP2016(principal: WorkbenchPrincipal,start=1) {
   return {sql:`($${start}::boolean OR t.assignee_id=$${start+1}::uuid OR t.resolver_team_id=ANY($${start+2}::text[]))`,
     values:[BROAD(principal),principal.principal_id,principal.roles.includes('HANDLER')?principal.team_ids:[]]};
 }
+interface CardReaderSql {broad:string;id:string;teams:string}
+export const boundReader:CardReaderSql={broad:'$1::boolean',id:'$2::uuid',teams:'$3::text[]'};
+export const liveReader:CardReaderSql={broad:'reader.broad',id:'reader.id',teams:'reader.teams'};
+export function ticketReadSql(ticket:string,reader:CardReaderSql):string {
+  return `(${reader.broad} OR ${ticket}.assignee_id=${reader.id} OR ${ticket}.resolver_team_id=ANY(${reader.teams}))`;
+}
+export function ticketReviewReasonSql(ticketId:string,sourceIntakeId:string,nowEpochParam:string,reader:CardReaderSql):string {
+  return `SELECT r.review_reason_code FROM intake.manual_review_item r
+   JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket jt ON jt.id=j.linked_ticket_id
+   WHERE r.status='PENDING' AND (r.linked_ticket_id=${ticketId} OR r.service_intake_id=${sourceIntakeId} OR j.linked_ticket_id=${ticketId})
+     AND j.retention_until_epoch_ms>${nowEpochParam}
+     AND ${ticketReadSql('jt',reader)}
+   ORDER BY r.created_at,r.id LIMIT 1`;
+}
+
+export function currentItemReaderSql(principalId:string):string {
+  return `SELECT p.id,array_agg(r.role::text ORDER BY r.role) AS roles,pg_catalog.bool_or(r.role IN ('ADMIN','DISPATCHER')) AS broad,
+        CASE WHEN pg_catalog.bool_or(r.role='HANDLER') THEN ARRAY(SELECT m.team_id FROM pilot_ticket.pilot_team_member m WHERE m.principal_id=p.id)
+          ELSE ARRAY[]::text[] END AS teams
+      FROM pilot_ticket.pilot_principal p JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
+      WHERE p.id=${principalId} AND p.is_active AND r.role IN ('ADMIN','DISPATCHER','HANDLER') GROUP BY p.id`;
+}
+
+// Fixed card templates bind broad, principal ID and handler teams in slots 1–3.
+// Replace these with one statement-local reader; the caller binds only the ID.
+export function withCurrentCardReader(sql:string):string {
+  const fields=['(SELECT broad FROM card_reader)','(SELECT id FROM card_reader)','(SELECT teams FROM card_reader)'];
+  const body=sql.replace(/\$(\d+)/gu,(_token,digits:string)=>fields[Number(digits)-1]??'$'+(Number(digits)-2));
+  const reader=`WITH card_reader AS MATERIALIZED (${currentItemReaderSql('$1::uuid')})`;
+  return body.startsWith('WITH ')?reader+', '+body.slice(5):reader+' '+body;
+}
+
+export function canonicalReviewTicketSql(reviewId:string,ticketRead:string):string {
+  return `SELECT t.id::text FROM pilot_ticket.ticket t
+      JOIN intake.manual_review_item r ON r.id=${reviewId} JOIN intake.contact_journey j ON j.id=r.journey_id
+      WHERE (t.source_intake_id=r.service_intake_id OR t.id=r.linked_ticket_id OR t.id=j.linked_ticket_id)
+        AND ${ticketRead} ORDER BY CASE WHEN t.id=j.linked_ticket_id THEN 0 ELSE 1 END,t.id LIMIT 1`;
+}
+
+export function canonicalPendingReviewSql(intakeId:string,ticketRead:string,nowEpoch:string,nowLocal:string):string {
+  return `SELECT r.id::text FROM intake.manual_review_item r
+      JOIN intake.contact_journey j ON j.id=r.journey_id LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
+      JOIN intake.service_intake i ON i.id=r.service_intake_id WHERE r.service_intake_id=${intakeId} AND r.status='PENDING'
+        AND ${ticketRead} AND i.retention_until>${nowLocal} AND j.retention_until_epoch_ms>${nowEpoch}
+        AND NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket actual
+          WHERE actual.source_intake_id=r.service_intake_id OR actual.id=r.linked_ticket_id OR actual.id=j.linked_ticket_id)
+        AND NOT EXISTS (SELECT 1 FROM intake.manual_review_item earlier WHERE earlier.service_intake_id=r.service_intake_id AND earlier.status='PENDING'
+          AND (earlier.created_at,earlier.id)<(r.created_at,r.id))
+      ORDER BY r.created_at,r.id LIMIT 1`;
+}
+
+export function currentReviewRouteSql(reviewId:string,principalId:string,nowEpoch:string,nowLocal:string):string {
+  const ticketRead=ticketReadSql('t',liveReader);
+  return `SELECT CASE WHEN ticket.id IS NOT NULL THEN 'ticket' WHEN pending.id IS NOT NULL THEN 'review' ELSE 'intake' END AS kind,
+      COALESCE(ticket.id,pending.id,requested.service_intake_id::text)::uuid AS id,reader.id AS reader_id,reader.broad,reader.roles,reader.teams
+    FROM (${currentItemReaderSql(principalId)}) reader CROSS JOIN intake.manual_review_item requested
+    JOIN intake.service_intake original ON original.id=requested.service_intake_id
+    JOIN intake.contact_journey origin_journey ON origin_journey.id=requested.journey_id
+    LEFT JOIN pilot_ticket.ticket t ON t.id=origin_journey.linked_ticket_id
+    LEFT JOIN LATERAL (${canonicalReviewTicketSql('requested.id',ticketRead)}) ticket ON true
+    LEFT JOIN LATERAL (${canonicalPendingReviewSql('requested.service_intake_id',ticketRead,nowEpoch,nowLocal)}) pending ON ticket.id IS NULL
+    WHERE requested.id=${reviewId} AND ${ticketRead}
+      AND original.retention_until>${nowLocal} AND origin_journey.retention_until_epoch_ms>${nowEpoch}`;
+}
+
+export const REVIEW_JOURNEY_SCOPE_LIMIT=10_000;
+export function readableReviewJourneysSql(ticketPredicate:string):string {
+  return `SELECT j.id::text FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
+    WHERE ${ticketPredicate} ORDER BY j.id LIMIT ${REVIEW_JOURNEY_SCOPE_LIMIT+1}`;
+}
 export function ticketActionAllowedP2016(principal: WorkbenchPrincipal | null | undefined,ticket: { resolver_team_id: string; assignee_id: string | null;status?:string },action: string) {
   if(!principal?.is_active)return false;
   if(action==='transfer-assignment'&&['RESOLVED','COMPLETED','DISMISSED'].includes(ticket.status??''))return false;

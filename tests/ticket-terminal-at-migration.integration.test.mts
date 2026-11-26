@@ -1,5 +1,6 @@
+import {releaseCompletionDismissal} from './helpers/completion-dismissal.mjs';
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {test} from 'node:test';
 import {withP2016IsolatedDatabase, applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
@@ -15,6 +16,7 @@ import {
 } from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 import {withT11Fixture, t11Http, t11NewTicket} from './helpers/t11-completion-fixture.mjs';
 import {withT24Fixture} from './helpers/t24-round-notification-fixture.mjs';
+import {checkRoleSettings} from '../app/server/scripts/db-role-settings.mjs';
 import {createPilotAccessService} from '../app/server/src/p1-009-pilot-access-workbench.mjs';
 import {appendTicketEvent, createTicketActionService} from '../app/server/src/p1-006-ticket-state-actions.mjs';
 import {createTicketClosureService} from '../app/server/src/p1-010-ticket-auto-completion.mjs';
@@ -23,7 +25,8 @@ import {currentClosure, insertClosureRecord, normalizeClosureInput, restoreIntak
 import {transactionP2016} from '../app/server/src/p2-016-domain-contracts.mjs';
 import {createPilotTicketCore} from '../app/server/src/p1-005-pilot-ticket-core.mjs';
 import {assertLocalDateTime, shanghaiLocalToEpochMs} from '../app/server/src/platform/time-contract.mjs';
-import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {createPostgresClient,type PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
+import {assertLoopbackDatabaseUrl} from '../app/server/src/platform/loopback-database.mjs';
 
 interface TicketStampRow {
   status: string;
@@ -46,25 +49,26 @@ async function readTicketStamp(pool: PostgresPool, ticketId: string): Promise<Ti
 }
 
 async function latestStatusEventTime(pool: PostgresPool, ticketId: string, newStatus: string): Promise<string> {
-  const row = (await pool.query<{at: string}>(
-    `SELECT to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS at
+  const row = (await pool.query<{at: string;new_status:string}>(
+    `SELECT new_status,to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS at
        FROM pilot_ticket.ticket_event
       WHERE ticket_id = $1::uuid
-        AND new_status = $2
         AND old_status IS DISTINCT FROM new_status
       ORDER BY aggregate_version DESC, event_ordinal DESC
       LIMIT 1`,
-    [ticketId, newStatus],
+    [ticketId],
   )).rows[0];
   assert.ok(row?.at, `expected status transition event for ${ticketId} -> ${newStatus}`);
+  assert.equal(row.new_status,newStatus);
   return row.at;
 }
 
 test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, enforces CHECK constraints & sync trigger, and supports rollback/re-apply', {timeout: 180000}, () =>
   withP2016IsolatedDatabase({
     databaseUrl: process.env.PILOT_DATABASE_URL,
-    purpose: 'term075',
+    purpose: 'term075', namespace: 'ticket_card42a',
     run: async ({pool, databaseUrl}: {pool: PostgresPool; databaseUrl: string}) => {
+      assert.match(new URL(databaseUrl).pathname,/^\/ticket_card42a_term075_/u);
       await applyThrough030({pool, databaseUrl});
       const p2016Opts = {databaseUrl, mode: 'apply'};
       await migrateP2016(p2016Opts);
@@ -73,6 +77,35 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
       await migrateNotificationVocabulary({databaseUrl, mode: 'apply'});
       await migrateSystemClosureRestore({databaseUrl, mode: 'apply'});
 
+      // On an empty table a pre-existing NOT NULL column can survive the entire migration body.
+      for(const [column,type] of [['terminal_at','timestamp without time zone'],['terminal_epoch_ms','bigint']]){
+        await pool.query(`ALTER TABLE pilot_ticket.ticket ADD COLUMN ${column} ${type} NOT NULL`);
+        await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/TICKET_TERMINAL_AT_SCHEMA_DRIFT/u);
+        assert.deepEqual(await migrateTicketTerminalAt({databaseUrl,mode:'check'}),{status:'PENDING',migration_id:TICKET_TERMINAL_AT_MIGRATION_ID});
+        const columns=await pool.query(`SELECT column_name,is_nullable FROM information_schema.columns
+          WHERE table_schema='pilot_ticket' AND table_name='ticket' AND column_name IN ('terminal_at','terminal_epoch_ms')`);
+        assert.deepEqual(columns.rows,[{column_name:column,is_nullable:'NO'}]);
+        await pool.query(`ALTER TABLE pilot_ticket.ticket DROP COLUMN ${column}`);
+      }
+      for(const [column,definition] of [['terminal_at','timestamp DEFAULT platform.local_now()'],['terminal_epoch_ms','bigint DEFAULT 0']]){
+        await pool.query(`ALTER TABLE pilot_ticket.ticket ADD COLUMN ${column} ${definition}`);
+        await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/TICKET_TERMINAL_AT_SCHEMA_DRIFT/u);
+        assert.equal((await migrateTicketTerminalAt({databaseUrl,mode:'check'})).status,'PENDING');
+        await pool.query(`ALTER TABLE pilot_ticket.ticket DROP COLUMN ${column}`);
+      }
+      // Catalog edits roll back without changing any application's connection defaults.
+      await transactionP2016(pool,async tx=>{
+        const who=(await tx.query<{role:string;db:string}>('SELECT current_user AS role,quote_ident(current_database()) AS db')).rows[0];
+        assert.ok(who);
+        await tx.query('SAVEPOINT role_settings');
+        await tx.query('ALTER ROLE CURRENT_USER SET jit=off');
+        await tx.query('ALTER ROLE CURRENT_USER IN DATABASE '+who.db+' SET jit=on');
+        const state=await checkRoleSettings(tx,who.role);
+        assert.equal(state.ok,false);assert.equal(state.current.jit,'on');
+        await tx.query('ALTER ROLE CURRENT_USER IN DATABASE '+who.db+' RESET jit');
+        assert.equal((await checkRoleSettings(tx,who.role)).ok,true);
+        await tx.query('ROLLBACK TO SAVEPOINT role_settings');
+      });
       const queuedIntake = await seedPersistedIntake({pool, text: '排队工单（合成）', requestType: 'INCIDENT', status: 'RECEIVED'});
       const activeIntake = await seedPersistedIntake({pool, text: '处理中工单（合成）', requestType: 'INCIDENT', status: 'RECEIVED'});
       const resolvedIntake = await seedPersistedIntake({pool, text: '待确认工单（合成）', requestType: 'INCIDENT', status: 'RECEIVED'});
@@ -104,8 +137,8 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
       const activeClosureEndedAt = '2026-11-23 16:40:10';
 
       // Pre-075 events through the existing event writer, then pinned to fixed historical times.
-      const seedEvent = async (ticketId: string, eventType: 'ticket.resolved' | 'ticket.completed' | 'ticket.dismissed' | 'ticket.restored',
-        oldStatus: 'IN_PROGRESS' | 'RESOLVED' | 'QUEUED' | 'DISMISSED', newStatus: 'RESOLVED' | 'COMPLETED' | 'DISMISSED' | 'QUEUED', version: number, at: string) => {
+      const seedEvent = async (ticketId: string, eventType: 'ticket.resolved' | 'ticket.completed' | 'ticket.dismissed' | 'ticket.restored' | 'ticket.reopened',
+        oldStatus: 'IN_PROGRESS' | 'RESOLVED' | 'QUEUED' | 'DISMISSED' | 'COMPLETED', newStatus: 'RESOLVED' | 'COMPLETED' | 'DISMISSED' | 'QUEUED' | 'REOPENED', version: number, at: string) => {
         const event = await appendTicketEvent({
           transaction: pool, ticket: {id: ticketId, status: newStatus, version}, eventType, oldStatus, newStatus,
           actor: {type: 'SYSTEM', id: null}, traceId: '42a-backfill-seed',
@@ -161,8 +194,44 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
       const unprovenId = await insertTicket(unprovenIntake.intakeId, 'T-075-X', 'COMPLETED', 4);
       await assert.rejects(migrateTicketTerminalAt({databaseUrl, mode: 'apply'}), /TICKET_TERMINAL_AT_BACKFILL_EVIDENCE_MISSING/u);
       assert.deepEqual(await migrateTicketTerminalAt({databaseUrl, mode: 'check'}), {status: 'PENDING', migration_id: TICKET_TERMINAL_AT_MIGRATION_ID});
-      const unprovenAt = '2026-11-22 08:00:07';
+      await pool.query('ALTER TABLE pilot_ticket.ticket ADD COLUMN terminal_at timestamp, ADD COLUMN terminal_epoch_ms bigint');
+      const preset=(ticketId:string,at:string)=>pool.query('UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp,terminal_epoch_ms=$3::bigint WHERE id=$1::uuid',
+        [ticketId,at,shanghaiLocalToEpochMs(at)]);
+      await preset(unprovenId,completedAt);
+      await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/BACKFILL_EVIDENCE_MISSING/u);
+      await seedEvent(unprovenId,'ticket.completed','RESOLVED','COMPLETED',2,completedAt);
+      await seedEvent(unprovenId,'ticket.reopened','COMPLETED','REOPENED',3,'2026-11-22 15:00:00');
+      await pool.query("UPDATE pilot_ticket.ticket SET status='REOPENED',version=3 WHERE id=$1",[unprovenId]);
+      await pool.query("UPDATE pilot_ticket.ticket SET status='COMPLETED',version=4 WHERE id=$1",[unprovenId]);
+      await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/TICKET_TERMINAL_AT_BACKFILL_EVIDENCE_MISSING/u);
+      assert.equal((await migrateTicketTerminalAt({databaseUrl,mode:'check'})).status,'PENDING');
+      const unprovenAt = '2026-11-22 16:00:07';
       await seedEvent(unprovenId, 'ticket.completed', 'RESOLVED', 'COMPLETED', 4, unprovenAt);
+      // An existing same-name index survives CREATE INDEX IF NOT EXISTS. APPLY must roll back its own DDL and ledger row.
+      await preset(unprovenId,unprovenAt);
+      for(const [id,actual] of [[completedId,completedAt],[dismissedId,activeClosureEndedAt]] as const){
+        await preset(id,'2025-01-01 01:23:45');
+        await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/BACKFILL_EVIDENCE_MISMATCH/u);
+        assert.equal((await migrateTicketTerminalAt({databaseUrl,mode:'check'})).status,'PENDING');
+        assert.equal((await readTicketStamp(pool,id)).terminal_at,'2025-01-01 01:23:45');
+        await preset(id,actual);
+      }
+      await pool.query('ALTER TABLE pilot_ticket.ticket DROP COLUMN terminal_epoch_ms, DROP COLUMN terminal_at');
+      await pool.query("CREATE INDEX ticket_open_updated_idx ON pilot_ticket.ticket(updated_at DESC,id DESC) WHERE status='RESOLVED'");
+      // Vocabulary cleanup has no ownership of this partial, unregistered 075 or its data.
+      await pool.query('ALTER TABLE pilot_ticket.ticket ADD COLUMN terminal_at timestamp without time zone');
+      await pool.query("UPDATE pilot_ticket.ticket SET terminal_at=timestamp '2026-11-20 12:34:56' WHERE id=$1::uuid",[queuedId]);
+      const originalIndex=(await pool.query("SELECT 'pilot_ticket.ticket_open_updated_idx'::regclass::oid AS oid")).rows[0];
+      await releaseCompletionDismissal(pool);
+      assert.deepEqual((await pool.query("SELECT 'pilot_ticket.ticket_open_updated_idx'::regclass::oid AS oid")).rows[0],originalIndex);
+      assert.equal((await pool.query("SELECT terminal_at::text AS stamp FROM pilot_ticket.ticket WHERE id=$1::uuid",[queuedId])).rows[0]?.stamp,'2026-11-20 12:34:56');
+      await pool.query('ALTER TABLE pilot_ticket.ticket DROP COLUMN terminal_at');
+      await assert.rejects(migrateTicketTerminalAt({databaseUrl,mode:'apply'}),/TICKET_TERMINAL_AT_SCHEMA_DRIFT/u);
+      assert.deepEqual(await migrateTicketTerminalAt({databaseUrl,mode:'check'}),{status:'PENDING',migration_id:TICKET_TERMINAL_AT_MIGRATION_ID});
+      const objects=await pool.query(`SELECT to_regclass('pilot_ticket.ticket_open_updated_idx') IS NOT NULL AS original_index,
+        EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='pilot_ticket.ticket'::regclass AND attname='terminal_at' AND NOT attisdropped) AS terminal_column`);
+      assert.deepEqual(objects.rows,[{original_index:true,terminal_column:false}]);
+      await pool.query('DROP INDEX pilot_ticket.ticket_open_updated_idx');
       assert.deepEqual(await migrateTicketTerminalAt({databaseUrl, mode: 'apply'}), {
         status: 'APPLIED',
         migration_id: TICKET_TERMINAL_AT_MIGRATION_ID,
@@ -188,6 +257,11 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
         status: 'DISMISSED', version: 3, terminal_at: activeClosureEndedAt, terminal_epoch_ms: shanghaiLocalToEpochMs(activeClosureEndedAt),
       });
 
+      const fresh=await seedPersistedIntake({pool,text:'验证默认排队工单（合成）',requestType:'INCIDENT',status:'RECEIVED'});
+      const created=await core.createForIntake({intakeId:fresh.intakeId,occurredAt:assertLocalDateTime('2026-11-25 12:00:00'),traceId:'42a-default-insert'});
+      assert.ok(created.ticket);
+      const stamp=await readTicketStamp(pool,created.ticket.id);
+      assert.equal(stamp.status,'QUEUED');assert.equal(stamp.terminal_at,null);assert.equal(stamp.terminal_epoch_ms,null);
       const indexes = (await pool.query<{indexname: string}>(
         `SELECT indexname FROM pg_indexes WHERE schemaname = 'pilot_ticket' AND tablename = 'ticket'
           AND indexname IN ('ticket_terminal_idx', 'ticket_resolved_terminal_idx', 'ticket_open_updated_idx')
@@ -224,13 +298,44 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
         status: 'NOT_APPLIED',
         migration_id: TICKET_TERMINAL_AT_MIGRATION_ID,
       });
-      assert.deepEqual(await migrateTicketTerminalAt({databaseUrl, mode: 'apply'}), {
+      const customPath=new URL(databaseUrl);
+      customPath.searchParams.set('options','-c search_path=platform,public');
+      const quotedPath=new URL(customPath);
+      quotedPath.searchParams.set('options','-c search_path=platform,public -c quote_all_identifiers=on');
+      assert.equal((await migrateTicketTerminalAt({databaseUrl:customPath.href,mode:'check'})).status,'PENDING');
+      assert.deepEqual(await migrateTicketTerminalAt({databaseUrl:quotedPath.href, mode: 'apply'}), {
         status: 'APPLIED',
         migration_id: TICKET_TERMINAL_AT_MIGRATION_ID,
       });
       assert.equal((await readTicketStamp(pool, unprovenId)).terminal_at, unprovenAt);
+      for(const url of [databaseUrl,customPath.href,quotedPath.href]){
+        assert.equal((await migrateTicketTerminalAt({databaseUrl:url,mode:'check'})).status,'NOOP_ALREADY_APPLIED');
+        assert.equal((await migrateTicketTerminalAt({databaseUrl:url,mode:'apply'})).status,'NOOP_ALREADY_APPLIED');
+      }
       // Physical drift with an unchanged registry checksum is reported, not treated as already applied.
       assert.equal(await ticketTerminalAtSchemaReady(pool), true);
+      // Roll back each perturbation so the next failure has exactly one cause.
+      const trigger='arch005_sync_'+createHash('md5').update('pilot_ticket.ticket.terminal_epoch_ms').digest('hex').slice(0,16);
+      for(const ddl of [
+        ['ALTER TABLE pilot_ticket.ticket ALTER COLUMN terminal_at SET DEFAULT platform.local_now()'],
+        ['ALTER TABLE pilot_ticket.ticket ALTER COLUMN terminal_epoch_ms SET DEFAULT 0'],
+        [`ALTER TABLE pilot_ticket.ticket ENABLE REPLICA TRIGGER ${trigger}`],
+        [`DROP TRIGGER ${trigger} ON pilot_ticket.ticket`,
+         `CREATE TRIGGER ${trigger} BEFORE INSERT OR UPDATE OF terminal_at,terminal_epoch_ms ON pilot_ticket.ticket
+            FOR EACH ROW EXECUTE FUNCTION platform.sync_local_epoch_pair('terminal_epoch_ms','terminal_at')`],
+        ['DROP INDEX pilot_ticket.ticket_open_updated_idx',
+         "CREATE INDEX ticket_open_updated_idx ON pilot_ticket.ticket(updated_at DESC,id DESC) WHERE status<>'RESOLVED'"],
+        ['ALTER TABLE pilot_ticket.ticket DROP CONSTRAINT ticket_terminal_status_check',
+         "ALTER TABLE pilot_ticket.ticket ADD CONSTRAINT ticket_terminal_status_check CHECK ((status IN ('RESOLVED','COMPLETED','DISMISSED')) = (terminal_at IS NOT NULL) OR version>0)"],
+      ]){
+        const client=await pool.connect();
+        try{
+          await client.query('BEGIN');
+          for(const statement of ddl)await client.query(statement);
+          assert.equal(await ticketTerminalAtSchemaReady(client),false,ddl.join(' / '));
+        }finally{try{await client.query('ROLLBACK');}finally{client.release();}}
+        assert.equal(await ticketTerminalAtSchemaReady(pool),true);
+      }
       await pool.query('ALTER TABLE pilot_ticket.ticket DROP CONSTRAINT ticket_terminal_epoch_check');
       assert.equal(await ticketTerminalAtSchemaReady(pool), false);
       await assert.rejects(migrateTicketTerminalAt({databaseUrl, mode: 'apply'}), /TICKET_TERMINAL_AT_SCHEMA_DRIFT/u);
@@ -241,6 +346,7 @@ test('075 ticket terminal_at migration backfills RESOLVED/COMPLETED/DISMISSED, e
 
 test('Card 42A-3: every ticket status write path atomically sets or clears terminal_at and 074 intake restore leaves tickets untouched', {timeout: 180000}, async () => {
   await withT11Fixture(async context => {
+    assert.match(new URL(context.databaseUrl).pathname,/^\/ticket_card42a_web01_/u);
     const http = await t11Http(context, 0, {closeConnections: true});
     const staffHttp = await t11Http(context, 2, {closeConnections: true});
     const principalId = context.principals[0]?.id;
@@ -268,6 +374,16 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
     assert.ok(resolvedStamp.terminal_at);
     assert.equal(resolvedStamp.terminal_epoch_ms, shanghaiLocalToEpochMs(resolvedStamp.terminal_at));
 
+    const priorResolution='2025-11-01 12:00:00';
+    async function pinResolution(id:string){
+      await transactionP2016(context.pool,async tx=>{
+        assert.equal((await tx.query("UPDATE pilot_ticket.ticket_event SET created_at=$2::timestamp WHERE ticket_id=$1 AND event_type='ticket.resolved'",[id,priorResolution])).rowCount,1);
+        assert.equal((await tx.query("UPDATE pilot_ticket.ticket SET terminal_at=$2::timestamp WHERE id=$1 AND status='RESOLVED'",[id,priorResolution])).rowCount,1);
+      });
+      const prior=await readTicketStamp(context.pool,id);
+      assert.equal(prior.terminal_at,priorResolution);assert.equal(prior.terminal_epoch_ms,shanghaiLocalToEpochMs(priorResolution));
+    }
+    await pinResolution(tResolveId);
     // 2. confirm (RESOLVED -> COMPLETED)
     const confirmResp = await http.post(tResolveId, 'confirm', {
       client_command_id: randomUUID(),
@@ -278,7 +394,7 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
     const confirmedStamp = await readTicketStamp(context.pool, tResolveId);
     assert.equal(confirmedStamp.status, 'COMPLETED');
     assert.equal(confirmedStamp.terminal_at, await latestStatusEventTime(context.pool, tResolveId, 'COMPLETED'));
-    assert.ok(confirmedStamp.terminal_at);
+    assert.ok(confirmedStamp.terminal_at);assert.notEqual(confirmedStamp.terminal_at,priorResolution);
     assert.equal(confirmedStamp.terminal_epoch_ms, shanghaiLocalToEpochMs(confirmedStamp.terminal_at));
 
     // 3. reopen from COMPLETED (COMPLETED -> REOPENED) clears terminal_at
@@ -333,6 +449,7 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
       reasonCode: 'SOLVED',
     });
     assert.equal(tAutoResolved.ok, true);
+    await pinResolution(tAutoId);
     await context.pool.query(
       `UPDATE pilot_ticket.ticket
           SET auto_complete_at = '2026-11-20 00:00:00',
@@ -348,6 +465,9 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
     const autoClosedStamp = await readTicketStamp(context.pool, tAutoId);
     assert.equal(autoClosedStamp.status, 'COMPLETED');
     assert.equal(autoClosedStamp.terminal_at, await latestStatusEventTime(context.pool, tAutoId, 'COMPLETED'));
+
+    assert.ok(autoClosedStamp.terminal_at);assert.notEqual(autoClosedStamp.terminal_at,priorResolution);
+    assert.equal(autoClosedStamp.terminal_epoch_ms,shanghaiLocalToEpochMs(autoClosedStamp.terminal_at));
 
     const tReopenResId = await t11NewTicket(context);
     const tReopenResActive = await http.start(tReopenResId);
@@ -413,19 +533,42 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
       });
     });
     assert.deepEqual(await readTicketStamp(context.pool, tCompleteId), afterNoteStamp);
-  }, {reopenEnabled: true});
+  }, {namespace: 'ticket_card42a', reopenEnabled: true});
 
-  // 7. dismiss + restore + 37A undo within closure window
+  // 7. dismiss + restore. The 37A undo of a dismissal is this same restore action, sent inside the notification undo window (pc-admin undo-actions.ts).
   await withT24Fixture(async f => {
+    assert.match(new URL(f.databaseUrl).pathname,/^\/ticket_card42a_web01_/u);
     const http = await t11Http(f, 0, {closeConnections: true});
     const detail = await http.detail(f.ticketId);
-    const dismissed = await http.post(f.ticketId, 'dismiss', {
-      client_command_id: randomUUID(),
-      expected_version: detail.version,
-      reason_code: 'REPORTER_WITHDREW',
-      notify_reporter: true,
-    });
-    assert.equal(dismissed.status, 200, await dismissed.clone().text());
+    const gate=createPostgresClient({...assertLoopbackDatabaseUrl(f.databaseUrl),connectionTimeoutMillis:5000,application_name:'ticket_card42a_dismiss_gate'});
+    let pending:Promise<Response>|undefined,unlockTime:string|undefined;
+    try{
+      await gate.connect();
+      await gate.query('BEGIN');
+      const locked=await gate.query('SELECT id FROM pilot_ticket.ticket WHERE id=$1 FOR UPDATE',[f.ticketId]);
+      assert.equal(locked.rowCount,1);
+      pending=http.post(f.ticketId,'dismiss',{client_command_id:randomUUID(),expected_version:detail.version,reason_code:'REPORTER_WITHDREW',notify_reporter:true});
+      void pending.catch(()=>undefined);
+      const timeout=Date.now()+5000;
+      for(;;){
+        // Keep the row lock, but refresh the backend list so a newly connected HTTP writer can be observed.
+        await gate.query('SELECT pg_catalog.pg_stat_clear_snapshot()');
+        const waiter=await gate.query(`SELECT 1 FROM pg_stat_activity a WHERE a.datname=current_database()
+          AND a.wait_event_type='Lock' AND pg_backend_pid()=ANY(pg_blocking_pids(a.pid))`);
+        if(waiter.rowCount)break;
+        assert.ok(Date.now()<timeout,'dismissal must actually wait for the held ticket row');
+        await new Promise(resolve=>setTimeout(resolve,20));
+      }
+      // Cross a whole-second boundary so a transaction-start sample cannot equal the closure time.
+      await gate.query('SELECT pg_sleep(1.05)');
+      unlockTime=(await gate.query<{at:string}>("SELECT to_char(clock_timestamp() AT TIME ZONE 'Asia/Shanghai','YYYY-MM-DD HH24:MI:SS') AS at")).rows[0]?.at;
+      await gate.query('COMMIT');
+    }finally{
+      // Disconnect also releases the row lock if an assertion failed before COMMIT.
+      try{await gate.end();}finally{await pending?.catch(()=>undefined);}
+    }
+    assert.ok(pending);assert.ok(unlockTime);
+    const dismissed=await pending;assert.equal(dismissed.status,200,await dismissed.clone().text());
     const dismissedStamp = await readTicketStamp(f.pool, f.ticketId);
     const eventTime = await latestStatusEventTime(f.pool, f.ticketId, 'DISMISSED');
     const closureRow = (await f.pool.query<{ended_at: string; notification_message_id: string | null}>(
@@ -435,9 +578,10 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
       [f.ticketId],
     )).rows[0];
     assert.equal(dismissedStamp.status, 'DISMISSED');
-    assert.equal(dismissedStamp.terminal_at, eventTime);
-    assert.equal(closureRow?.ended_at, eventTime);
-    assert.equal(dismissedStamp.terminal_epoch_ms, shanghaiLocalToEpochMs(eventTime));
+    assert.ok(closureRow&&closureRow.ended_at>=unlockTime);
+    assert.ok(eventTime<unlockTime,'the unchanged dismissal event records transaction start before the lock release');
+    assert.equal(dismissedStamp.terminal_at,closureRow.ended_at);
+    assert.equal(dismissedStamp.terminal_epoch_ms,shanghaiLocalToEpochMs(closureRow.ended_at));
     assert.ok(closureRow?.notification_message_id);
 
     const afterDismiss = await http.detail(f.ticketId);
@@ -453,5 +597,5 @@ test('Card 42A-3: every ticket status write path atomically sets or clears termi
       terminal_at: null,
       terminal_epoch_ms: null,
     });
-  }, {closureNotificationUndoWindowMs: 20_000});
+  }, {namespace: 'ticket_card42a', closureNotificationUndoWindowMs: 20_000});
 });

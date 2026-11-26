@@ -1,5 +1,5 @@
 import type { JsonValue } from './p2-007-domain-utils.mjs';
-import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import { createHash } from 'node:crypto';
 import { assertPlainJson, deepFreeze } from './p2-007-domain-utils.mjs';
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
@@ -67,7 +67,7 @@ export function decodeCursorP2016(value: unknown,keys: readonly string[]) {
   catch { failP2016('CURSOR_INVALID'); }
 }
 export const localP2016: (value: unknown) => ReturnType<typeof assertLocalDateTime>=value=>assertLocalDateTime(value);
-export async function transactionP2016<T>(pool: Pick<PostgresPool, 'connect'>,run: (transaction: PostgresTransaction) => Promise<T>): Promise<T> {
+export async function transactionP2016<T>(pool: {connect():Promise<PostgresTransaction & {release(destroy:boolean):void}>},run: (transaction: PostgresTransaction) => Promise<T>): Promise<T> {
   const tx=await pool.connect();let destroy=false;
   try { await tx.query('BEGIN');const result=await run(tx);await tx.query('COMMIT');return result; }
   catch(error){try{await tx.query('ROLLBACK');}catch{destroy=true;}throw error;}

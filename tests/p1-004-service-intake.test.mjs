@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl,loopbackFixtureUrl} from '../app/server/src/platform/loopback-database.mjs';
 import { sourceFile } from './helpers/migration-roots.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -23,7 +24,7 @@ import { migrateNotificationVocabulary } from '../app/server/scripts/notificatio
 import {migrateSystemClosureRestore} from '../app/server/scripts/system-closure-restore-migrate.mjs';
 import {migrateTicketTerminalAt} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 
-const databaseUrl = process.env.PILOT_DATABASE_URL;
+const databaseUrl = process.env.PILOT_DATABASE_URL && loopbackFixtureUrl(process.env.PILOT_DATABASE_URL);
 const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const testIntakeIds = new Set();
@@ -125,19 +126,20 @@ before(async () => {
   if (!databaseUrl) {
     return;
   }
-  admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000 });
+  admin = createPostgresPool({ ...assertLoopbackDatabaseUrl(databaseUrl), max: 1, connectionTimeoutMillis: 5_000 });
   await admin.query(`CREATE DATABASE "${isolatedName}" TEMPLATE template0`);
   const isolated = new URL(databaseUrl);
   isolated.pathname = `/${isolatedName}`;
   const isolatedUrl = isolated.toString();
-  pool = createPostgresPool({ connectionString: isolatedUrl, max: 8, connectionTimeoutMillis: 2_000 });
+  pool = createPostgresPool({ ...assertLoopbackDatabaseUrl(isolatedUrl), max: 8, connectionTimeoutMillis: 2_000 });
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
-  await migrateCurrentBaseline({ databaseUrl: isolatedUrl });
+  const migrationDatabase = assertLoopbackDatabaseUrl(isolatedUrl);
+  await migrateCurrentBaseline({ databaseUrl: migrationDatabase });
   // Intake dismissal writes intake.dismissed: the 071 event vocabulary as renamed by 072.
-  await migrateServiceClosure({ databaseUrl: isolatedUrl, mode: 'apply' });
-  await migrateCompletionDismissal({ databaseUrl: isolatedUrl, mode: 'apply' });await migrateNotificationVocabulary({ databaseUrl: isolatedUrl, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: isolatedUrl, mode: 'apply' });await migrateTicketTerminalAt({ databaseUrl: isolatedUrl, mode: 'apply' });
+  await migrateServiceClosure({ databaseUrl: migrationDatabase, mode: 'apply' });
+  await migrateCompletionDismissal({ databaseUrl: migrationDatabase, mode: 'apply' });await migrateNotificationVocabulary({ databaseUrl: migrationDatabase, mode: 'apply' });await migrateSystemClosureRestore({ databaseUrl: migrationDatabase, mode: 'apply' });await migrateTicketTerminalAt({ databaseUrl: migrationDatabase, mode: 'apply' });
 });
 
 after(async () => {

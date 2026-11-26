@@ -1,301 +1,415 @@
+-- run_id=4e2a2ec6-8bfd-4094-8ea7-5ab2453eadcd
 -- scenario handled_recent_p1; EXPLAIN (ANALYZE, BUFFERS) of the exact statement it sent; PostgreSQL 18.6 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
-Nested Loop  (cost=479.00..5437.14 rows=153 width=620) (actual time=0.084..0.780 rows=51.00 loops=1)
-  Buffers: shared hit=912
-  ->  Limit  (cost=477.50..477.63 rows=51 width=108) (actual time=0.053..0.057 rows=51.00 loops=1)
-        Buffers: shared hit=107
-        ->  Sort  (cost=477.50..477.76 rows=104 width=108) (actual time=0.053..0.055 rows=51.00 loops=1)
-              Sort Key: "*SELECT* 1".order_group DESC, "*SELECT* 1".order_at DESC, "*SELECT* 1".kind DESC, "*SELECT* 1".id DESC
-              Sort Method: quicksort  Memory: 32kB
-              Buffers: shared hit=107
-              ->  Result  (cost=0.29..474.03 rows=104 width=108) (actual time=0.005..0.041 rows=102.00 loops=1)
-                    Buffers: shared hit=107
-                    ->  Append  (cost=0.29..472.99 rows=104 width=60) (actual time=0.005..0.037 rows=102.00 loops=1)
-                          Buffers: shared hit=107
-                          ->  Subquery Scan on "*SELECT* 1"  (cost=0.29..187.28 rows=51 width=60) (actual time=0.005..0.020 rows=51.00 loops=1)
-                                Buffers: shared hit=53
-                                ->  Limit  (cost=0.29..186.77 rows=51 width=108) (actual time=0.004..0.018 rows=51.00 loops=1)
+Nested Loop Left Join  (cost=5267.35..25067.19 rows=153 width=634) (actual time=7.620..9.019 rows=51.00 loops=1)
+  Buffers: shared hit=9110
+  CTE final_clock
+    ->  Subquery Scan on instant  (cost=0.00..0.51 rows=1 width=16) (actual time=0.008..0.009 rows=1.00 loops=1)
+          ->  Result  (cost=0.00..0.26 rows=1 width=8) (actual time=0.004..0.005 rows=1.00 loops=1)
+  ->  Nested Loop Left Join  (cost=5038.42..5042.82 rows=51 width=109) (actual time=7.565..7.578 rows=51.00 loops=1)
+        Buffers: shared hit=4225
+        ->  Limit  (cost=5038.42..5038.54 rows=51 width=108) (actual time=7.559..7.565 rows=51.00 loops=1)
+              Buffers: shared hit=4223
+              ->  Sort  (cost=5038.42..5038.68 rows=104 width=108) (actual time=7.559..7.564 rows=51.00 loops=1)
+                    Sort Key: "*SELECT* 1".order_group DESC, "*SELECT* 1".order_at DESC, "*SELECT* 1".kind DESC, "*SELECT* 1".id DESC
+                    Sort Method: top-N heapsort  Memory: 30kB
+                    Buffers: shared hit=4223
+                    ->  Result  (cost=0.29..5034.95 rows=104 width=108) (actual time=0.006..7.549 rows=117.00 loops=1)
+                          Buffers: shared hit=4223
+                          ->  Append  (cost=0.29..5033.91 rows=104 width=60) (actual time=0.005..7.545 rows=117.00 loops=1)
+                                Buffers: shared hit=4223
+                                ->  Subquery Scan on "*SELECT* 1"  (cost=0.29..189.20 rows=51 width=60) (actual time=0.005..0.017 rows=51.00 loops=1)
                                       Buffers: shared hit=53
-                                      ->  Index Only Scan using ticket_terminal_idx on ticket t  (cost=0.29..1291.05 rows=353 width=108) (actual time=0.004..0.016 rows=51.00 loops=1)
-                                            Index Cond: ((terminal_at >= '2026-11-24 00:00:00'::timestamp without time zone) AND (terminal_at < '2026-11-26 00:00:00'::timestamp without time zone))
-                                            Heap Fetches: 51
-                                            Index Searches: 1
+                                      ->  Limit  (cost=0.29..188.69 rows=51 width=108) (actual time=0.005..0.015 rows=51.00 loops=1)
                                             Buffers: shared hit=53
-                          ->  Subquery Scan on "*SELECT* 2"  (cost=0.27..190.98 rows=51 width=60) (actual time=0.002..0.011 rows=51.00 loops=1)
-                                Buffers: shared hit=53
-                                ->  Limit  (cost=0.27..190.47 rows=51 width=108) (actual time=0.002..0.009 rows=51.00 loops=1)
+                                            ->  Index Only Scan using ticket_terminal_idx on ticket t  (cost=0.29..1182.39 rows=320 width=108) (actual time=0.005..0.014 rows=51.00 loops=1)
+                                                  Index Cond: ((terminal_at >= '2026-11-25 00:00:00'::timestamp without time zone) AND (terminal_at < '2026-11-27 00:00:00'::timestamp without time zone))
+                                                  Heap Fetches: 51
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=53
+                                ->  Subquery Scan on "*SELECT* 2"  (cost=0.27..191.31 rows=51 width=60) (actual time=0.002..0.010 rows=51.00 loops=1)
                                       Buffers: shared hit=53
-                                      ->  Index Only Scan using ticket_resolved_terminal_idx on ticket t_1  (cost=0.27..1152.64 rows=309 width=108) (actual time=0.002..0.007 rows=51.00 loops=1)
-                                            Heap Fetches: 51
-                                            Index Searches: 1
+                                      ->  Limit  (cost=0.27..190.80 rows=51 width=108) (actual time=0.002..0.008 rows=51.00 loops=1)
                                             Buffers: shared hit=53
-                          ->  Subquery Scan on "*SELECT* 3"  (cost=57.90..57.91 rows=1 width=60) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                Buffers: shared hit=1
-                                ->  Limit  (cost=57.90..57.90 rows=1 width=108) (actual time=0.001..0.001 rows=0.00 loops=1)
+                                            ->  Index Only Scan using ticket_resolved_terminal_idx on ticket t_1  (cost=0.27..1128.52 rows=302 width=108) (actual time=0.002..0.006 rows=51.00 loops=1)
+                                                  Heap Fetches: 51
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=53
+                                ->  Subquery Scan on "*SELECT* 3"  (cost=72.39..72.40 rows=1 width=60) (actual time=0.001..0.002 rows=0.00 loops=1)
                                       Buffers: shared hit=1
-                                      ->  Sort  (cost=57.90..57.90 rows=1 width=108) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                            Sort Key: (date_trunc('second'::text, intake_closure.ended_at)) DESC, i.id DESC
-                                            Sort Method: quicksort  Memory: 25kB
+                                      ->  Limit  (cost=72.39..72.39 rows=1 width=108) (actual time=0.001..0.002 rows=0.00 loops=1)
                                             Buffers: shared hit=1
-                                            ->  Nested Loop Anti Join  (cost=1.12..57.89 rows=1 width=108) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                  Join Filter: (r.service_intake_id = i.id)
+                                            InitPlan 2
+                                              ->  CTE Scan on final_clock  (cost=0.00..0.02 rows=1 width=8) (never executed)
+                                                    Storage: Memory  Maximum Storage: 17kB
+                                            ->  Sort  (cost=72.37..72.37 rows=1 width=108) (actual time=0.001..0.002 rows=0.00 loops=1)
+                                                  Sort Key: (date_trunc('second'::text, intake_closure.ended_at)) DESC, i.id DESC
+                                                  Sort Method: quicksort  Memory: 25kB
                                                   Buffers: shared hit=1
-                                                  ->  Nested Loop Anti Join  (cost=1.12..57.87 rows=1 width=24) (actual time=0.000..0.001 rows=0.00 loops=1)
+                                                  ->  Nested Loop Anti Join  (cost=1.67..72.36 rows=1 width=108) (actual time=0.000..0.001 rows=0.00 loops=1)
+                                                        Join Filter: (r.service_intake_id = i.id)
                                                         Buffers: shared hit=1
-                                                        ->  Nested Loop Anti Join  (cost=0.83..49.56 rows=1 width=24) (actual time=0.000..0.001 rows=0.00 loops=1)
-                                                              Join Filter: (l.source_intake_id = i.id)
+                                                        ->  Nested Loop Anti Join  (cost=1.54..58.61 rows=1 width=24) (actual time=0.000..0.001 rows=0.00 loops=1)
                                                               Buffers: shared hit=1
-                                                              ->  Nested Loop  (cost=0.54..41.22 rows=1 width=24) (actual time=0.000..0.000 rows=0.00 loops=1)
+                                                              ->  Nested Loop Anti Join  (cost=1.25..50.30 rows=1 width=24) (actual time=0.000..0.001 rows=0.00 loops=1)
                                                                     Buffers: shared hit=1
-                                                                    ->  Index Scan Backward using closure_intake_version_idx on closure_record intake_closure  (cost=0.12..8.15 rows=1 width=24) (actual time=0.000..0.000 rows=0.00 loops=1)
-                                                                          Filter: ((restored_at IS NULL) AND (ended_at >= '2026-11-24 00:00:00'::timestamp without time zone) AND (ended_at < '2026-11-26 00:00:00'::timestamp without time zone) AND (subject_type = 'INTAKE'::text))
-                                                                          Index Searches: 1
+                                                                    ->  Nested Loop  (cost=0.54..41.22 rows=1 width=24) (actual time=0.000..0.001 rows=0.00 loops=1)
                                                                           Buffers: shared hit=1
-                                                                    ->  Index Scan using service_intake_pkey on service_intake i  (cost=0.41..16.74 rows=1 width=16) (never executed)
-                                                                          Index Cond: (id = intake_closure.intake_id)
-                                                                          Filter: ((retention_until > '2026-11-25 11:33:06'::timestamp without time zone) AND (status = 'DISMISSED'::text) AND ((pilot_ticket_id IS NULL) OR (NOT EXISTS(SubPlan 1))))
-                                                                          Index Searches: 0
-                                                                          SubPlan 1
-                                                                            ->  Index Only Scan using ticket_pkey on ticket actual_4  (cost=0.29..8.31 rows=1 width=0) (never executed)
-                                                                                  Index Cond: (id = i.pilot_ticket_id)
-                                                                                  Heap Fetches: 0
-                                                                                  Index Searches: 0
-                                                              ->  Nested Loop  (cost=0.29..8.32 rows=1 width=16) (never executed)
-                                                                    ->  Nested Loop  (cost=0.00..0.01 rows=1 width=32) (never executed)
-                                                                          Join Filter: (j.id = l.journey_id)
-                                                                          ->  Seq Scan on channel_leg l  (cost=0.00..0.00 rows=1 width=32) (never executed)
-                                                                          ->  Seq Scan on contact_journey j  (cost=0.00..0.00 rows=1 width=32) (never executed)
-                                                                    ->  Index Only Scan using ticket_pkey on ticket actual_1  (cost=0.29..8.31 rows=1 width=16) (never executed)
-                                                                          Index Cond: (id = j.linked_ticket_id)
-                                                                          Heap Fetches: 0
-                                                                          Index Searches: 0
-                                                        ->  Index Only Scan using ticket_source_intake_id_key on ticket actual  (cost=0.29..8.31 rows=1 width=16) (never executed)
-                                                              Index Cond: (source_intake_id = i.id)
-                                                              Heap Fetches: 0
+                                                                          ->  Index Scan Backward using closure_intake_version_idx on closure_record intake_closure  (cost=0.12..8.15 rows=1 width=24) (actual time=0.000..0.000 rows=0.00 loops=1)
+                                                                                Filter: ((restored_at IS NULL) AND (ended_at >= '2026-11-25 00:00:00'::timestamp without time zone) AND (ended_at < '2026-11-27 00:00:00'::timestamp without time zone) AND (subject_type = 'INTAKE'::text))
+                                                                                Index Searches: 1
+                                                                                Buffers: shared hit=1
+                                                                          ->  Index Scan using service_intake_pkey on service_intake i  (cost=0.41..16.74 rows=1 width=16) (never executed)
+                                                                                Index Cond: (id = intake_closure.intake_id)
+                                                                                Filter: ((retention_until > (InitPlan 2).col1) AND (status = 'DISMISSED'::text) AND ((pilot_ticket_id IS NULL) OR (NOT EXISTS(SubPlan 3))))
+                                                                                Index Searches: 0
+                                                                                SubPlan 3
+                                                                                  ->  Index Only Scan using ticket_pkey on ticket actual_1  (cost=0.29..8.31 rows=1 width=0) (never executed)
+                                                                                        Index Cond: (id = i.pilot_ticket_id)
+                                                                                        Heap Fetches: 0
+                                                                                        Index Searches: 0
+                                                                    ->  Nested Loop  (cost=0.70..9.06 rows=1 width=16) (never executed)
+                                                                          ->  Index Scan using channel_leg_source_intake_id_key on channel_leg l  (cost=0.41..8.43 rows=1 width=32) (never executed)
+                                                                                Index Cond: (source_intake_id = i.id)
+                                                                                Index Searches: 0
+                                                                          ->  Index Scan using contact_journey_pkey on contact_journey j  (cost=0.29..0.63 rows=1 width=16) (never executed)
+                                                                                Index Cond: (id = l.journey_id)
+                                                                                Filter: (linked_ticket_id IS NOT NULL)
+                                                                                Index Searches: 0
+                                                              ->  Index Only Scan using ticket_source_intake_id_key on ticket actual  (cost=0.29..8.31 rows=1 width=16) (never executed)
+                                                                    Index Cond: (source_intake_id = i.id)
+                                                                    Heap Fetches: 0
+                                                                    Index Searches: 0
+                                                        ->  Index Scan using manual_review_one_pending_per_decision_idx on manual_review_item r  (cost=0.14..13.47 rows=22 width=16) (never executed)
                                                               Index Searches: 0
-                                                  ->  Seq Scan on manual_review_item r  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                        Filter: (status = 'PENDING'::text)
-                          ->  Subquery Scan on "*SELECT* 4"  (cost=36.28..36.29 rows=1 width=60) (actual time=0.002..0.002 rows=0.00 loops=1)
-                                ->  Limit  (cost=36.28..36.28 rows=1 width=108) (actual time=0.002..0.002 rows=0.00 loops=1)
-                                      ->  Sort  (cost=36.28..36.28 rows=1 width=108) (actual time=0.002..0.002 rows=0.00 loops=1)
-                                            Sort Key: (CASE WHEN (closing_review.id IS NOT NULL) THEN 1 ELSE 0 END) DESC, (date_trunc('second'::text, COALESCE(closing_review.resolved_at, i_1.updated_at))) DESC, i_1.id DESC
-                                            Sort Method: quicksort  Memory: 25kB
-                                            ->  Nested Loop Anti Join  (cost=9.46..36.27 rows=1 width=108) (actual time=0.001..0.002 rows=0.00 loops=1)
-                                                  Join Filter: (r_1.service_intake_id = i_1.id)
-                                                  ->  Nested Loop Anti Join  (cost=9.46..36.25 rows=1 width=48) (actual time=0.001..0.002 rows=0.00 loops=1)
-                                                        Join Filter: (l_1.source_intake_id = i_1.id)
-                                                        ->  Nested Loop Anti Join  (cost=9.17..27.92 rows=1 width=48) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                              ->  Nested Loop Left Join  (cost=8.88..25.32 rows=1 width=48) (actual time=0.001..0.001 rows=0.00 loops=1)
+                                ->  Subquery Scan on "*SELECT* 4"  (cost=4580.46..4580.47 rows=1 width=60) (actual time=7.509..7.512 rows=15.00 loops=1)
+                                      Buffers: shared hit=4116
+                                      ->  Limit  (cost=4580.46..4580.46 rows=1 width=108) (actual time=7.509..7.511 rows=15.00 loops=1)
+                                            Buffers: shared hit=4116
+                                            InitPlan 5
+                                              ->  CTE Scan on final_clock final_clock_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1.00 loops=1)
+                                                    Storage: Memory  Maximum Storage: 17kB
+                                            InitPlan 6
+                                              ->  CTE Scan on final_clock final_clock_2  (cost=0.00..0.02 rows=1 width=8) (actual time=0.009..0.009 rows=1.00 loops=1)
+                                                    Storage: Memory  Maximum Storage: 17kB
+                                            ->  Sort  (cost=4580.42..4580.42 rows=1 width=108) (actual time=7.509..7.510 rows=15.00 loops=1)
+                                                  Sort Key: (CASE WHEN (closing_review.id IS NOT NULL) THEN 1 ELSE 0 END) DESC, (date_trunc('second'::text, COALESCE(closing_review.resolved_at, i_1.updated_at))) DESC, i_1.id DESC
+                                                  Sort Method: quicksort  Memory: 26kB
+                                                  Buffers: shared hit=4116
+                                                  ->  Nested Loop Anti Join  (cost=2942.11..4580.41 rows=1 width=108) (actual time=6.481..7.508 rows=15.00 loops=1)
+                                                        Join Filter: (r_1.service_intake_id = i_1.id)
+                                                        Rows Removed by Join Filter: 330
+                                                        Buffers: shared hit=4116
+                                                        ->  Nested Loop  (cost=2941.97..4566.66 rows=1 width=48) (actual time=6.478..7.479 rows=15.00 loops=1)
+                                                              Buffers: shared hit=4071
+                                                              ->  Nested Loop Left Join  (cost=2941.68..4564.73 rows=1 width=80) (actual time=6.476..7.470 rows=15.00 loops=1)
                                                                     Filter: (closing_decision.id = CASE WHEN ((e.payload ->> 'decision_id'::text) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text) THEN ((e.payload ->> 'decision_id'::text))::uuid ELSE NULL::uuid END)
-                                                                    ->  Nested Loop  (cost=0.41..16.80 rows=1 width=94) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                                          Join Filter: ((retained.id = closing_review.journey_id) AND (closing_review.resolution_decision_id = closing_decision.id) AND (closing_decision.service_intake_id = closing_review.service_intake_id) AND ((closing_review.resolved_by_principal_id)::text = (closing_decision.safe_result #>> '{human_override,principal_id}'::text[])))
-                                                                          ->  Nested Loop  (cost=0.41..16.77 rows=1 width=134) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                                                Join Filter: (closing_decision.journey_id = retained.id)
-                                                                                ->  Nested Loop  (cost=0.41..16.76 rows=1 width=118) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                                                      ->  Seq Scan on deterministic_decision closing_decision  (cost=0.00..0.00 rows=1 width=80) (actual time=0.001..0.001 rows=0.00 loops=1)
-                                                                                            Filter: (status = 'HUMAN_OVERRIDDEN'::text)
-                                                                                      ->  Index Scan using service_intake_pkey on service_intake i_1  (cost=0.41..16.74 rows=1 width=38) (never executed)
-                                                                                            Index Cond: (id = closing_decision.service_intake_id)
-                                                                                            Filter: ((retention_until > '2026-11-25 11:33:06'::timestamp without time zone) AND (status = 'COMPLETED'::text) AND ((pilot_ticket_id IS NULL) OR (NOT EXISTS(SubPlan 3))))
-                                                                                            Index Searches: 0
-                                                                                            SubPlan 3
-                                                                                              ->  Index Only Scan using ticket_pkey on ticket actual_5  (cost=0.29..8.31 rows=1 width=0) (never executed)
-                                                                                                    Index Cond: (id = i_1.pilot_ticket_id)
-                                                                                                    Heap Fetches: 0
-                                                                                                    Index Searches: 0
-                                                                                ->  Seq Scan on contact_journey retained  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                                                      Filter: (retention_until_epoch_ms > '1795577586864'::bigint)
-                                                                          ->  Seq Scan on manual_review_item closing_review  (cost=0.00..0.00 rows=1 width=88) (never executed)
-                                                                                Filter: ((resolved_at >= '2026-11-24 00:00:00'::timestamp without time zone) AND (resolved_at < '2026-11-26 00:00:00'::timestamp without time zone) AND (status = 'RESOLVED'::text))
-                                                                    ->  Limit  (cost=8.47..8.49 rows=1 width=80) (never executed)
-                                                                          ->  Incremental Sort  (cost=8.47..8.51 rows=2 width=80) (never executed)
+                                                                    Buffers: shared hit=4026
+                                                                    ->  Nested Loop Anti Join  (cost=2206.41..3829.40 rows=1 width=126) (actual time=5.319..6.256 rows=15.00 loops=1)
+                                                                          Buffers: shared hit=3396
+                                                                          ->  Nested Loop  (cost=2205.70..3822.33 rows=1 width=126) (actual time=5.315..6.222 rows=15.00 loops=1)
+                                                                                Buffers: shared hit=3291
+                                                                                ->  Nested Loop  (cost=0.29..1606.89 rows=1 width=120) (actual time=0.008..0.721 rows=155.00 loops=1)
+                                                                                      Buffers: shared hit=1020
+                                                                                      ->  Seq Scan on manual_review_item closing_review  (cost=0.00..751.00 rows=132 width=88) (actual time=0.005..0.525 rows=155.00 loops=1)
+                                                                                            Filter: ((resolved_at >= '2026-11-25 00:00:00'::timestamp without time zone) AND (resolved_at < '2026-11-27 00:00:00'::timestamp without time zone) AND (status = 'RESOLVED'::text))
+                                                                                            Rows Removed by Filter: 11045
+                                                                                            Buffers: shared hit=555
+                                                                                      ->  Index Scan using deterministic_decision_pkey on deterministic_decision closing_decision  (cost=0.29..6.47 rows=1 width=94) (actual time=0.001..0.001 rows=1.00 loops=155)
+                                                                                            Index Cond: (id = closing_review.resolution_decision_id)
+                                                                                            Filter: ((status = 'HUMAN_OVERRIDDEN'::text) AND (closing_review.journey_id = journey_id) AND (service_intake_id = closing_review.service_intake_id) AND ((closing_review.resolved_by_principal_id)::text = (safe_result #>> '{human_override,principal_id}'::text[])))
+                                                                                            Index Searches: 155
+                                                                                            Buffers: shared hit=465
+                                                                                ->  Index Scan using service_intake_pkey on service_intake i_1  (cost=2205.41..2215.40 rows=1 width=38) (actual time=0.035..0.035 rows=0.10 loops=155)
+                                                                                      Index Cond: (id = closing_decision.service_intake_id)
+                                                                                      Filter: ((retention_until > (InitPlan 6).col1) AND (NOT (ANY (id = (hashed SubPlan 7).col1))) AND (status = 'COMPLETED'::text) AND ((pilot_ticket_id IS NULL) OR (NOT EXISTS(SubPlan 8))))
+                                                                                      Rows Removed by Filter: 1
+                                                                                      Index Searches: 155
+                                                                                      Buffers: shared hit=2257
+                                                                                      SubPlan 7
+                                                                                        ->  Seq Scan on ticket actual_2  (cost=0.00..2079.00 rows=50400 width=16) (actual time=0.001..2.415 rows=50400.00 loops=1)
+                                                                                              Buffers: shared hit=1575
+                                                                                      SubPlan 8
+                                                                                        ->  Index Only Scan using ticket_pkey on ticket actual_3  (cost=0.29..8.31 rows=1 width=0) (never executed)
+                                                                                              Index Cond: (id = i_1.pilot_ticket_id)
+                                                                                              Heap Fetches: 0
+                                                                                              Index Searches: 0
+                                                                          ->  Nested Loop  (cost=0.70..7.07 rows=1 width=16) (actual time=0.002..0.002 rows=0.00 loops=15)
+                                                                                Buffers: shared hit=105
+                                                                                ->  Index Scan using channel_leg_source_intake_id_key on channel_leg l_1  (cost=0.41..6.44 rows=1 width=32) (actual time=0.001..0.001 rows=1.00 loops=15)
+                                                                                      Index Cond: (source_intake_id = i_1.id)
+                                                                                      Index Searches: 15
+                                                                                      Buffers: shared hit=60
+                                                                                ->  Index Scan using contact_journey_pkey on contact_journey j_1  (cost=0.29..0.63 rows=1 width=16) (actual time=0.001..0.001 rows=0.00 loops=15)
+                                                                                      Index Cond: (id = l_1.journey_id)
+                                                                                      Filter: (linked_ticket_id IS NOT NULL)
+                                                                                      Rows Removed by Filter: 1
+                                                                                      Index Searches: 15
+                                                                                      Buffers: shared hit=45
+                                                                    ->  Limit  (cost=735.27..735.29 rows=1 width=155) (actual time=0.079..0.079 rows=1.00 loops=15)
+                                                                          Buffers: shared hit=630
+                                                                          ->  Incremental Sort  (cost=735.27..735.32 rows=2 width=155) (actual time=0.078..0.079 rows=1.00 loops=15)
                                                                                 Sort Key: e.aggregate_version DESC, e.event_ordinal DESC
                                                                                 Presorted Key: e.aggregate_version
-                                                                                ->  Result  (cost=0.41..8.46 rows=1 width=80) (never executed)
+                                                                                Full-sort Groups: 15  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                                                                                Buffers: shared hit=630
+                                                                                ->  Result  (cost=723.37..735.26 rows=1 width=155) (actual time=0.078..0.078 rows=1.00 loops=15)
                                                                                       One-Time Filter: (i_1.status = 'COMPLETED'::text)
-                                                                                      ->  Index Scan Backward using service_intake_event_intake_version_idx on service_intake_event e  (cost=0.41..8.46 rows=1 width=40) (never executed)
-                                                                                            Index Cond: (intake_id = i_1.id)
+                                                                                      Buffers: shared hit=630
+                                                                                      ->  Index Scan Backward using service_intake_event_intake_version_idx on service_intake_event e  (cost=723.37..735.26 rows=1 width=115) (actual time=0.001..0.002 rows=1.00 loops=15)
+                                                                                            Index Cond: (intake_id = CASE WHEN (ANY (i_1.id = (hashed SubPlan 10).col1)) THEN i_1.id ELSE NULL::uuid END)
                                                                                             Filter: (((event_type = 'intake.rule_decision_applied'::text) AND ((payload ->> 'new_status'::text) = i_1.status) AND ((payload ->> 'old_status'::text) IS DISTINCT FROM (payload ->> 'new_status'::text))) OR ((event_type = 'intake.received'::text) AND ((payload ->> 'status'::text) = i_1.status)))
-                                                                                            Index Searches: 0
-                                                              ->  Index Only Scan using ticket_source_intake_id_key on ticket actual_2  (cost=0.29..2.59 rows=1 width=16) (never executed)
-                                                                    Index Cond: (source_intake_id = i_1.id)
-                                                                    Heap Fetches: 0
-                                                                    Index Searches: 0
-                                                        ->  Nested Loop  (cost=0.29..8.32 rows=1 width=16) (never executed)
-                                                              ->  Nested Loop  (cost=0.00..0.01 rows=1 width=32) (never executed)
-                                                                    Join Filter: (j_1.id = l_1.journey_id)
-                                                                    ->  Seq Scan on channel_leg l_1  (cost=0.00..0.00 rows=1 width=32) (never executed)
-                                                                    ->  Seq Scan on contact_journey j_1  (cost=0.00..0.00 rows=1 width=32) (never executed)
-                                                              ->  Index Only Scan using ticket_pkey on ticket actual_3  (cost=0.29..8.31 rows=1 width=16) (never executed)
-                                                                    Index Cond: (id = j_1.linked_ticket_id)
-                                                                    Heap Fetches: 0
-                                                                    Index Searches: 0
-                                                  ->  Seq Scan on manual_review_item r_1  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                        Filter: (status = 'PENDING'::text)
-  ->  Append  (cost=1.50..97.20 rows=3 width=527) (actual time=0.013..0.014 rows=1.00 loops=51)
-        Buffers: shared hit=805
-        ->  Result  (cost=1.50..58.22 rows=1 width=518) (actual time=0.013..0.014 rows=1.00 loops=51)
+                                                                                            Rows Removed by Filter: 1
+                                                                                            Index Searches: 15
+                                                                                            Buffers: shared hit=75
+                                                                                            SubPlan 10
+                                                                                              ->  Seq Scan on manual_review_item r_5  (cost=0.00..695.00 rows=11178 width=16) (actual time=0.002..0.660 rows=11178.00 loops=1)
+                                                                                                    Filter: (status = 'RESOLVED'::text)
+                                                                                                    Rows Removed by Filter: 22
+                                                                                                    Buffers: shared hit=555
+                                                              ->  Index Scan using contact_journey_pkey on contact_journey retained  (cost=0.29..1.93 rows=1 width=16) (actual time=0.001..0.001 rows=1.00 loops=15)
+                                                                    Index Cond: (id = closing_decision.journey_id)
+                                                                    Filter: (retention_until_epoch_ms > (InitPlan 5).col1)
+                                                                    Index Searches: 15
+                                                                    Buffers: shared hit=45
+                                                        ->  Index Scan using manual_review_one_pending_per_decision_idx on manual_review_item r_1  (cost=0.14..13.47 rows=22 width=16) (actual time=0.000..0.001 rows=22.00 loops=15)
+                                                              Index Searches: 15
+                                                              Buffers: shared hit=45
+        ->  Materialize  (cost=0.00..3.13 rows=1 width=49) (actual time=0.000..0.000 rows=1.00 loops=51)
+              Storage: Memory  Maximum Storage: 17kB
+              Buffers: shared hit=2
+              ->  Subquery Scan on reader  (cost=0.00..3.12 rows=1 width=49) (actual time=0.005..0.005 rows=1.00 loops=1)
+                    Buffers: shared hit=2
+                    ->  GroupAggregate  (cost=0.00..3.11 rows=1 width=81) (actual time=0.005..0.005 rows=1.00 loops=1)
+                          Buffers: shared hit=2
+                          ->  Nested Loop  (cost=0.00..2.07 rows=1 width=23) (actual time=0.003..0.003 rows=1.00 loops=1)
+                                Buffers: shared hit=2
+                                ->  Seq Scan on pilot_principal p  (cost=0.00..1.02 rows=1 width=16) (actual time=0.001..0.002 rows=1.00 loops=1)
+                                      Filter: (is_active AND (id = '01a21555-2df3-714a-9752-9ea4337b281b'::uuid))
+                                      Rows Removed by Filter: 6
+                                      Buffers: shared hit=1
+                                ->  Seq Scan on pilot_principal_role r_2  (cost=0.00..1.03 rows=1 width=23) (actual time=0.001..0.001 rows=1.00 loops=1)
+                                      Filter: ((principal_id = '01a21555-2df3-714a-9752-9ea4337b281b'::uuid) AND (role = ANY ('{ADMIN,DISPATCHER,HANDLER}'::text[])))
+                                      Rows Removed by Filter: 6
+                                      Buffers: shared hit=1
+                          SubPlan 11
+                            ->  Seq Scan on pilot_team_member m  (cost=0.00..1.02 rows=1 width=9) (never executed)
+                                  Filter: (principal_id = p.id)
+  ->  Append  (cost=228.42..392.57 rows=3 width=508) (actual time=0.027..0.028 rows=1.00 loops=51)
+        Buffers: shared hit=4885
+        ->  Result  (cost=228.42..274.24 rows=1 width=502) (actual time=0.027..0.028 rows=1.00 loops=51)
               One-Time Filter: ("*SELECT* 1".kind = 'ticket'::text)
-              Buffers: shared hit=805
-              ->  Nested Loop Left Join  (cost=1.50..58.16 rows=1 width=566) (actual time=0.011..0.011 rows=1.00 loops=51)
-                    Buffers: shared hit=805
-                    ->  Nested Loop Left Join  (cost=1.47..58.11 rows=1 width=534) (actual time=0.010..0.010 rows=1.00 loops=51)
+              Buffers: shared hit=4885
+              InitPlan 12
+                ->  CTE Scan on final_clock final_clock_3  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1.00 loops=1)
+                      Storage: Memory  Maximum Storage: 17kB
+              ->  Nested Loop Left Join  (cost=228.40..274.16 rows=1 width=550) (actual time=0.025..0.025 rows=1.00 loops=51)
+                    Buffers: shared hit=4885
+                    ->  Nested Loop Left Join  (cost=34.98..80.72 rows=1 width=534) (actual time=0.013..0.014 rows=1.00 loops=51)
                           Join Filter: ((e_1.operator_type = 'PILOT_USER'::text) AND (closing_actor.id = CASE WHEN (e_1.operator_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text) THEN (e_1.operator_id)::uuid ELSE NULL::uuid END))
                           Rows Removed by Join Filter: 2
-                          Buffers: shared hit=805
-                          ->  Nested Loop Left Join  (cost=1.47..57.04 rows=1 width=543) (actual time=0.006..0.007 rows=1.00 loops=51)
-                                Buffers: shared hit=754
-                                ->  Nested Loop Left Join  (cost=1.05..28.78 rows=1 width=464) (actual time=0.005..0.005 rows=1.00 loops=51)
+                          Buffers: shared hit=1366
+                          ->  Nested Loop Left Join  (cost=34.98..79.65 rows=1 width=543) (actual time=0.010..0.010 rows=1.00 loops=51)
+                                Buffers: shared hit=1315
+                                ->  Nested Loop Left Join  (cost=34.56..62.31 rows=1 width=464) (actual time=0.008..0.009 rows=1.00 loops=51)
                                       Join Filter: ((ticket_closing_actor.id)::text = ticket_closure.ended_by)
-                                      Rows Removed by Join Filter: 8
-                                      Buffers: shared hit=586
-                                      ->  Nested Loop Left Join  (cost=1.05..27.73 rows=1 width=473) (actual time=0.004..0.005 rows=1.00 loops=51)
-                                            Buffers: shared hit=535
-                                            ->  Nested Loop Left Join  (cost=0.77..19.42 rows=1 width=291) (actual time=0.004..0.004 rows=1.00 loops=51)
-                                                  Buffers: shared hit=424
-                                                  ->  Nested Loop Left Join  (cost=0.70..17.79 rows=1 width=243) (actual time=0.002..0.002 rows=1.00 loops=51)
-                                                        Join Filter: (p.id = t_2.assignee_id)
+                                      Rows Removed by Join Filter: 7
+                                      Buffers: shared hit=1147
+                                      ->  Nested Loop Left Join  (cost=34.56..61.26 rows=1 width=473) (actual time=0.007..0.008 rows=1.00 loops=51)
+                                            Buffers: shared hit=1096
+                                            ->  Nested Loop Left Join  (cost=34.28..52.95 rows=1 width=291) (actual time=0.007..0.007 rows=1.00 loops=51)
+                                                  Buffers: shared hit=985
+                                                  ->  Nested Loop Left Join  (cost=0.70..17.80 rows=1 width=243) (actual time=0.002..0.002 rows=1.00 loops=51)
+                                                        Join Filter: (p_1.id = t_2.assignee_id)
                                                         Rows Removed by Join Filter: 1
                                                         Buffers: shared hit=424
-                                                        ->  Nested Loop Left Join  (cost=0.70..16.74 rows=1 width=215) (actual time=0.002..0.002 rows=1.00 loops=51)
+                                                        ->  Nested Loop Left Join  (cost=0.70..16.76 rows=1 width=215) (actual time=0.002..0.002 rows=1.00 loops=51)
                                                               Buffers: shared hit=373
-                                                              ->  Index Scan using ticket_pkey on ticket t_2  (cost=0.29..8.31 rows=1 width=187) (actual time=0.001..0.001 rows=1.00 loops=51)
+                                                              ->  Index Scan using ticket_pkey on ticket t_2  (cost=0.29..8.32 rows=1 width=187) (actual time=0.001..0.001 rows=1.00 loops=51)
                                                                     Index Cond: (id = "*SELECT* 1".id)
+                                                                    Filter: (reader.broad OR (assignee_id = reader.id) OR (resolver_team_id = ANY (reader.teams)))
                                                                     Index Searches: 51
                                                                     Buffers: shared hit=153
                                                               ->  Index Scan using service_intake_pkey on service_intake i_2  (cost=0.41..8.43 rows=1 width=28) (actual time=0.001..0.001 rows=1.00 loops=51)
                                                                     Index Cond: (id = t_2.source_intake_id)
-                                                                    Filter: (retention_until > '2026-11-25 11:33:06'::timestamp without time zone)
+                                                                    Filter: (retention_until > (InitPlan 12).col1)
                                                                     Index Searches: 51
                                                                     Buffers: shared hit=212
-                                                        ->  Seq Scan on pilot_principal p  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=2.00 loops=51)
+                                                        ->  Seq Scan on pilot_principal p_1  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=2.00 loops=51)
                                                               Buffers: shared hit=51
-                                                  ->  Limit  (cost=0.07..1.61 rows=1 width=89) (actual time=0.001..0.001 rows=0.00 loops=51)
-                                                        ->  Result  (cost=0.07..1.61 rows=1 width=89) (actual time=0.001..0.001 rows=0.00 loops=51)
-                                                              ->  Sort  (cost=0.07..0.07 rows=1 width=89) (actual time=0.001..0.001 rows=0.00 loops=51)
+                                                  ->  Limit  (cost=33.58..35.12 rows=1 width=89) (actual time=0.005..0.005 rows=1.00 loops=51)
+                                                        Buffers: shared hit=561
+                                                        InitPlan 14
+                                                          ->  CTE Scan on final_clock final_clock_4  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1.00 loops=1)
+                                                                Storage: Memory  Maximum Storage: 17kB
+                                                        ->  Result  (cost=33.56..35.10 rows=1 width=89) (actual time=0.004..0.004 rows=1.00 loops=51)
+                                                              Buffers: shared hit=561
+                                                              ->  Sort  (cost=33.56..33.56 rows=1 width=241) (actual time=0.004..0.004 rows=1.00 loops=51)
                                                                     Sort Key: ((j_2.origin_intake_id = i_2.id)) DESC, j_2.reported_at, j_2.id
                                                                     Sort Method: quicksort  Memory: 25kB
-                                                                    ->  Result  (cost=0.03..0.06 rows=1 width=89) (actual time=0.001..0.001 rows=0.00 loops=51)
+                                                                    Buffers: shared hit=561
+                                                                    ->  Result  (cost=17.18..33.55 rows=1 width=241) (actual time=0.003..0.003 rows=1.00 loops=51)
                                                                           One-Time Filter: (i_2.id IS NOT NULL)
-                                                                          ->  Hash Join  (cost=0.03..0.05 rows=1 width=72) (actual time=0.001..0.001 rows=0.00 loops=51)
-                                                                                Hash Cond: (origin.id = j_2.id)
-                                                                                ->  Unique  (cost=0.02..0.03 rows=2 width=16) (actual time=0.001..0.001 rows=0.00 loops=50)
-                                                                                      ->  Sort  (cost=0.02..0.03 rows=2 width=16) (actual time=0.001..0.001 rows=0.00 loops=50)
+                                                                          Buffers: shared hit=561
+                                                                          ->  Nested Loop  (cost=17.18..33.54 rows=1 width=224) (actual time=0.003..0.003 rows=1.00 loops=51)
+                                                                                Buffers: shared hit=561
+                                                                                ->  Unique  (cost=16.89..16.89 rows=2 width=16) (actual time=0.002..0.002 rows=1.00 loops=51)
+                                                                                      Buffers: shared hit=408
+                                                                                      ->  Sort  (cost=16.89..16.89 rows=2 width=16) (actual time=0.002..0.002 rows=2.00 loops=51)
                                                                                             Sort Key: origin.id
                                                                                             Sort Method: quicksort  Memory: 25kB
-                                                                                            ->  Append  (cost=0.00..0.01 rows=2 width=16) (actual time=0.001..0.001 rows=0.00 loops=50)
-                                                                                                  ->  Seq Scan on contact_journey origin  (cost=0.00..0.00 rows=1 width=16) (actual time=0.000..0.000 rows=0.00 loops=50)
-                                                                                                        Filter: (origin_intake_id = i_2.id)
-                                                                                                  ->  Seq Scan on channel_leg leg  (cost=0.00..0.00 rows=1 width=16) (actual time=0.000..0.000 rows=0.00 loops=50)
-                                                                                                        Filter: (source_intake_id = i_2.id)
-                                                                                ->  Hash  (cost=0.00..0.00 rows=1 width=72) (actual time=0.000..0.000 rows=0.00 loops=1)
-                                                                                      Buckets: 1024  Batches: 1  Memory Usage: 8kB
-                                                                                      ->  Seq Scan on contact_journey j_2  (cost=0.00..0.00 rows=1 width=72) (actual time=0.000..0.000 rows=0.00 loops=1)
-                                                                                            Filter: ((retention_until_epoch_ms > '1795577586864'::bigint) AND (profile_resolution_status = 'RESOLVED'::text))
-                                                              SubPlan 5
-                                                                ->  Aggregate  (cost=1.51..1.52 rows=1 width=32) (never executed)
-                                                                      ->  Function Scan on jsonb_array_elements members  (cost=0.01..1.01 rows=100 width=40) (never executed)
+                                                                                            Buffers: shared hit=408
+                                                                                            ->  Append  (cost=0.41..16.88 rows=2 width=16) (actual time=0.001..0.002 rows=2.00 loops=51)
+                                                                                                  Buffers: shared hit=408
+                                                                                                  ->  Index Scan using contact_journey_origin_intake_idx on contact_journey origin  (cost=0.41..8.43 rows=1 width=16) (actual time=0.001..0.001 rows=1.00 loops=51)
+                                                                                                        Index Cond: (origin_intake_id = i_2.id)
+                                                                                                        Index Searches: 51
+                                                                                                        Buffers: shared hit=204
+                                                                                                  ->  Index Scan using channel_leg_source_intake_id_key on channel_leg leg  (cost=0.41..8.43 rows=1 width=16) (actual time=0.001..0.001 rows=1.00 loops=51)
+                                                                                                        Index Cond: (source_intake_id = i_2.id)
+                                                                                                        Index Searches: 51
+                                                                                                        Buffers: shared hit=204
+                                                                                ->  Index Scan using contact_journey_pkey on contact_journey j_2  (cost=0.29..8.31 rows=1 width=224) (actual time=0.001..0.001 rows=1.00 loops=51)
+                                                                                      Index Cond: (id = origin.id)
+                                                                                      Filter: ((retention_until_epoch_ms > (InitPlan 14).col1) AND (profile_resolution_status = 'RESOLVED'::text))
+                                                                                      Index Searches: 51
+                                                                                      Buffers: shared hit=153
+                                                              SubPlan 13
+                                                                ->  Aggregate  (cost=1.51..1.52 rows=1 width=32) (actual time=0.001..0.001 rows=1.00 loops=51)
+                                                                      ->  Function Scan on jsonb_array_elements members  (cost=0.01..1.01 rows=100 width=40) (actual time=0.000..0.000 rows=1.00 loops=51)
                                             ->  Index Scan using closure_ticket_version_idx on closure_record ticket_closure  (cost=0.28..8.30 rows=1 width=198) (actual time=0.000..0.000 rows=0.18 loops=51)
                                                   Index Cond: (ticket_id = "*SELECT* 1".id)
                                                   Filter: (restored_at IS NULL)
                                                   Index Searches: 51
                                                   Buffers: shared hit=111
-                                      ->  Seq Scan on pilot_principal ticket_closing_actor  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=8.00 loops=51)
+                                      ->  Seq Scan on pilot_principal ticket_closing_actor  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=7.00 loops=51)
                                             Buffers: shared hit=51
-                                ->  Limit  (cost=0.42..28.24 rows=1 width=87) (actual time=0.001..0.001 rows=0.82 loops=51)
+                                ->  Limit  (cost=0.42..17.32 rows=1 width=87) (actual time=0.001..0.001 rows=0.82 loops=51)
                                       Buffers: shared hit=168
-                                      ->  Result  (cost=0.42..28.24 rows=1 width=87) (actual time=0.001..0.001 rows=0.82 loops=51)
+                                      ->  Result  (cost=0.42..17.32 rows=1 width=87) (actual time=0.001..0.001 rows=0.82 loops=51)
                                             One-Time Filter: (t_2.status = ANY ('{RESOLVED,COMPLETED}'::text[]))
                                             Buffers: shared hit=168
-                                            ->  Index Scan Backward using ticket_event_ticket_version_idx on ticket_event e_1  (cost=0.42..28.24 rows=1 width=87) (actual time=0.001..0.001 rows=1.00 loops=42)
+                                            ->  Index Scan Backward using ticket_event_ticket_version_idx on ticket_event e_1  (cost=0.42..17.32 rows=1 width=87) (actual time=0.001..0.001 rows=1.00 loops=42)
                                                   Index Cond: (ticket_id = t_2.id)
                                                   Filter: ((old_status IS DISTINCT FROM new_status) AND (event_type = ANY ('{ticket.resolved,ticket.completed}'::text[])) AND (new_status = t_2.status))
                                                   Index Searches: 42
                                                   Buffers: shared hit=168
-                          ->  Seq Scan on pilot_principal closing_actor  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=3.06 loops=51)
+                          ->  Seq Scan on pilot_principal closing_actor  (cost=0.00..1.02 rows=2 width=44) (actual time=0.000..0.000 rows=2.88 loops=51)
                                 Buffers: shared hit=51
-                    ->  Limit  (cost=0.03..0.03 rows=1 width=56) (actual time=0.001..0.001 rows=0.00 loops=51)
-                          ->  Sort  (cost=0.03..0.03 rows=1 width=56) (actual time=0.001..0.001 rows=0.00 loops=51)
-                                Sort Key: r_2.created_at, r_2.id
+                    ->  Limit  (cost=193.41..193.42 rows=1 width=40) (actual time=0.012..0.012 rows=0.00 loops=51)
+                          Buffers: shared hit=3519
+                          InitPlan 15
+                            ->  CTE Scan on final_clock final_clock_5  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1.00 loops=1)
+                                  Storage: Memory  Maximum Storage: 17kB
+                          ->  Sort  (cost=193.39..193.40 rows=1 width=40) (actual time=0.011..0.011 rows=0.00 loops=51)
+                                Sort Key: r_3.created_at, r_3.id
                                 Sort Method: quicksort  Memory: 25kB
-                                ->  Hash Join  (cost=0.01..0.02 rows=1 width=56) (actual time=0.000..0.000 rows=0.00 loops=51)
-                                      Hash Cond: (r_2.journey_id = j_3.id)
-                                      Join Filter: ((r_2.linked_ticket_id = t_2.id) OR (r_2.service_intake_id = t_2.source_intake_id) OR (j_3.linked_ticket_id = t_2.id))
-                                      ->  Seq Scan on manual_review_item r_2  (cost=0.00..0.00 rows=1 width=104) (actual time=0.000..0.000 rows=0.00 loops=50)
-                                            Filter: (status = 'PENDING'::text)
-                                      ->  Hash  (cost=0.00..0.00 rows=1 width=32) (actual time=0.000..0.001 rows=0.00 loops=1)
-                                            Buckets: 1024  Batches: 1  Memory Usage: 8kB
-                                            ->  Seq Scan on contact_journey j_3  (cost=0.00..0.00 rows=1 width=32) (actual time=0.000..0.000 rows=0.00 loops=1)
-                                                  Filter: (retention_until_epoch_ms > '1795577586864'::bigint)
-        ->  Result  (cost=0.42..10.00 rows=1 width=541) (actual time=0.000..0.000 rows=0.00 loops=51)
+                                Buffers: shared hit=3519
+                                ->  Nested Loop Left Join  (cost=0.72..193.38 rows=1 width=40) (actual time=0.011..0.011 rows=0.00 loops=51)
+                                      Filter: (reader.broad OR (jt.assignee_id = reader.id) OR (jt.resolver_team_id = ANY (reader.teams)))
+                                      Buffers: shared hit=3519
+                                      ->  Nested Loop  (cost=0.43..192.67 rows=1 width=56) (actual time=0.011..0.011 rows=0.00 loops=51)
+                                            Buffers: shared hit=3519
+                                            ->  Index Scan using manual_review_one_pending_per_decision_idx on manual_review_item r_3  (cost=0.14..13.47 rows=22 width=88) (actual time=0.000..0.001 rows=22.00 loops=51)
+                                                  Index Searches: 51
+                                                  Buffers: shared hit=153
+                                            ->  Index Scan using contact_journey_pkey on contact_journey j_3  (cost=0.29..8.14 rows=1 width=32) (actual time=0.000..0.000 rows=0.00 loops=1122)
+                                                  Index Cond: (id = r_3.journey_id)
+                                                  Filter: ((retention_until_epoch_ms > (InitPlan 15).col1) AND ((r_3.linked_ticket_id = t_2.id) OR (r_3.service_intake_id = t_2.source_intake_id) OR (linked_ticket_id = t_2.id)))
+                                                  Rows Removed by Filter: 1
+                                                  Index Searches: 1122
+                                                  Buffers: shared hit=3366
+                                      ->  Index Scan using ticket_pkey on ticket jt  (cost=0.29..0.69 rows=1 width=41) (never executed)
+                                            Index Cond: (id = j_3.linked_ticket_id)
+                                            Index Searches: 0
+        ->  Result  (cost=1.28..27.06 rows=1 width=500) (actual time=0.000..0.000 rows=0.00 loops=51)
               One-Time Filter: ("*SELECT* 1".kind = 'review'::text)
-              ->  Nested Loop  (cost=0.42..8.45 rows=1 width=283) (never executed)
-                    Join Filter: (j_4.id = r_3.journey_id)
-                    ->  Nested Loop  (cost=0.41..8.43 rows=1 width=235) (never executed)
-                          ->  Seq Scan on manual_review_item r_3  (cost=0.00..0.00 rows=1 width=128) (never executed)
-                                Filter: (id = "*SELECT* 1".id)
-                          ->  Index Scan using service_intake_pkey on service_intake i_3  (cost=0.41..8.43 rows=1 width=123) (never executed)
-                                Index Cond: (id = r_3.service_intake_id)
+              ->  Nested Loop Left Join  (cost=1.28..25.50 rows=1 width=371) (never executed)
+                    Filter: (reader.broad OR (t_3.assignee_id = reader.id) OR (t_3.resolver_team_id = ANY (reader.teams)))
+                    ->  Nested Loop  (cost=0.99..25.04 rows=1 width=387) (never executed)
+                          ->  Nested Loop  (cost=0.70..16.74 rows=1 width=194) (never executed)
+                                ->  Index Scan using manual_review_item_pkey on manual_review_item r_4  (cost=0.29..8.30 rows=1 width=87) (never executed)
+                                      Index Cond: (id = "*SELECT* 1".id)
+                                      Index Searches: 0
+                                ->  Index Scan using service_intake_pkey on service_intake i_3  (cost=0.41..8.43 rows=1 width=123) (never executed)
+                                      Index Cond: (id = r_4.service_intake_id)
+                                      Index Searches: 0
+                          ->  Index Scan using contact_journey_pkey on contact_journey j_4  (cost=0.29..8.31 rows=1 width=225) (never executed)
+                                Index Cond: (id = r_4.journey_id)
                                 Index Searches: 0
-                    ->  Seq Scan on contact_journey j_4  (cost=0.00..0.00 rows=1 width=96) (never executed)
-              SubPlan 6
+                    ->  Index Scan using ticket_pkey on ticket t_3  (cost=0.29..0.43 rows=1 width=41) (never executed)
+                          Index Cond: (id = j_4.linked_ticket_id)
+                          Index Searches: 0
+              SubPlan 16
                 ->  Aggregate  (cost=1.51..1.52 rows=1 width=32) (never executed)
                       ->  Function Scan on jsonb_array_elements members_1  (cost=0.01..1.01 rows=100 width=40) (never executed)
-        ->  Result  (cost=9.07..28.96 rows=1 width=523) (actual time=0.000..0.000 rows=0.00 loops=51)
-              One-Time Filter: ("*SELECT* 1".kind = 'intake'::text)
-              ->  Nested Loop Left Join  (cost=9.07..28.89 rows=1 width=562) (never executed)
+        ->  Result  (cost=47.34..91.26 rows=1 width=523) (actual time=0.000..0.000 rows=0.00 loops=51)
+              One-Time Filter: (("*SELECT* 1".kind = 'intake'::text) AND reader.broad)
+              InitPlan 17
+                ->  CTE Scan on final_clock final_clock_6  (cost=0.00..0.02 rows=1 width=8) (never executed)
+                      Storage: Memory  Maximum Storage: 17kB
+              ->  Nested Loop Left Join  (cost=47.32..91.17 rows=1 width=541) (never executed)
                     Join Filter: ((intake_closing_actor.id)::text = intake_closure_1.ended_by)
-                    ->  Nested Loop Left Join  (cost=9.07..27.84 rows=1 width=571) (never executed)
-                          ->  Nested Loop Left Join  (cost=8.95..19.68 rows=1 width=389) (never executed)
+                    ->  Nested Loop Left Join  (cost=47.32..90.12 rows=1 width=550) (never executed)
+                          ->  Nested Loop Left Join  (cost=47.19..81.96 rows=1 width=368) (never executed)
                                 Join Filter: (closing_actor_1.id = closing_review_1.resolved_by_principal_id)
-                                ->  Nested Loop Left Join  (cost=8.95..18.64 rows=1 width=377) (never executed)
-                                      Join Filter: ((closing_decision_1.status = 'HUMAN_OVERRIDDEN'::text) AND (closing_review_1.resolution_decision_id = closing_decision_1.id) AND (closing_review_1.journey_id = closing_decision_1.journey_id) AND ((closing_review_1.resolved_by_principal_id)::text = (closing_decision_1.safe_result #>> '{human_override,principal_id}'::text[])))
-                                      ->  Nested Loop Left Join  (cost=8.95..18.61 rows=1 width=369) (never executed)
-                                            Join Filter: (closing_decision_1.id = CASE WHEN ((e_2.payload ->> 'decision_id'::text) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text) THEN ((e_2.payload ->> 'decision_id'::text))::uuid ELSE NULL::uuid END)
-                                            ->  Nested Loop Left Join  (cost=8.95..18.57 rows=1 width=273) (never executed)
-                                                  ->  Nested Loop Left Join  (cost=0.48..10.07 rows=1 width=217) (never executed)
+                                ->  Nested Loop Left Join  (cost=47.19..80.92 rows=1 width=356) (never executed)
+                                      Join Filter: (closing_decision_1.status = 'HUMAN_OVERRIDDEN'::text)
+                                      ->  Nested Loop Left Join  (cost=46.91..72.59 rows=1 width=348) (never executed)
+                                            ->  Nested Loop Left Join  (cost=46.32..55.94 rows=1 width=350) (never executed)
+                                                  ->  Nested Loop Left Join  (cost=33.99..43.58 rows=1 width=217) (never executed)
                                                         ->  Index Scan using service_intake_pkey on service_intake i_4  (cost=0.41..8.43 rows=1 width=153) (never executed)
                                                               Index Cond: (id = "*SELECT* 1".id)
                                                               Index Searches: 0
-                                                        ->  Limit  (cost=0.07..1.61 rows=1 width=89) (never executed)
-                                                              ->  Result  (cost=0.07..1.61 rows=1 width=89) (never executed)
-                                                                    ->  Sort  (cost=0.07..0.07 rows=1 width=89) (never executed)
+                                                        ->  Limit  (cost=33.58..35.12 rows=1 width=89) (never executed)
+                                                              InitPlan 19
+                                                                ->  CTE Scan on final_clock final_clock_7  (cost=0.00..0.02 rows=1 width=8) (never executed)
+                                                                      Storage: Memory  Maximum Storage: 17kB
+                                                              ->  Result  (cost=33.56..35.10 rows=1 width=89) (never executed)
+                                                                    ->  Sort  (cost=33.56..33.56 rows=1 width=241) (never executed)
                                                                           Sort Key: ((j_5.origin_intake_id = i_4.id)) DESC, j_5.reported_at, j_5.id
-                                                                          ->  Result  (cost=0.03..0.06 rows=1 width=89) (never executed)
+                                                                          ->  Result  (cost=17.18..33.55 rows=1 width=241) (never executed)
                                                                                 One-Time Filter: (i_4.id IS NOT NULL)
-                                                                                ->  Hash Join  (cost=0.03..0.05 rows=1 width=72) (never executed)
-                                                                                      Hash Cond: (origin_1.id = j_5.id)
-                                                                                      ->  Unique  (cost=0.02..0.03 rows=2 width=16) (never executed)
-                                                                                            ->  Sort  (cost=0.02..0.03 rows=2 width=16) (never executed)
+                                                                                ->  Nested Loop  (cost=17.18..33.54 rows=1 width=224) (never executed)
+                                                                                      ->  Unique  (cost=16.89..16.89 rows=2 width=16) (never executed)
+                                                                                            ->  Sort  (cost=16.89..16.89 rows=2 width=16) (never executed)
                                                                                                   Sort Key: origin_1.id
-                                                                                                  ->  Append  (cost=0.00..0.01 rows=2 width=16) (never executed)
-                                                                                                        ->  Seq Scan on contact_journey origin_1  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                                                                              Filter: (origin_intake_id = i_4.id)
-                                                                                                        ->  Seq Scan on channel_leg leg_1  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                                                                              Filter: (source_intake_id = i_4.id)
-                                                                                      ->  Hash  (cost=0.00..0.00 rows=1 width=72) (never executed)
-                                                                                            ->  Seq Scan on contact_journey j_5  (cost=0.00..0.00 rows=1 width=72) (never executed)
-                                                                                                  Filter: ((retention_until_epoch_ms > '1795577586864'::bigint) AND (profile_resolution_status = 'RESOLVED'::text))
-                                                                    SubPlan 7
+                                                                                                  ->  Append  (cost=0.41..16.88 rows=2 width=16) (never executed)
+                                                                                                        ->  Index Scan using contact_journey_origin_intake_idx on contact_journey origin_1  (cost=0.41..8.43 rows=1 width=16) (never executed)
+                                                                                                              Index Cond: (origin_intake_id = i_4.id)
+                                                                                                              Index Searches: 0
+                                                                                                        ->  Index Scan using channel_leg_source_intake_id_key on channel_leg leg_1  (cost=0.41..8.43 rows=1 width=16) (never executed)
+                                                                                                              Index Cond: (source_intake_id = i_4.id)
+                                                                                                              Index Searches: 0
+                                                                                      ->  Index Scan using contact_journey_pkey on contact_journey j_5  (cost=0.29..8.31 rows=1 width=224) (never executed)
+                                                                                            Index Cond: (id = origin_1.id)
+                                                                                            Filter: ((retention_until_epoch_ms > (InitPlan 19).col1) AND (profile_resolution_status = 'RESOLVED'::text))
+                                                                                            Index Searches: 0
+                                                                    SubPlan 18
                                                                       ->  Aggregate  (cost=1.51..1.52 rows=1 width=32) (never executed)
                                                                             ->  Function Scan on jsonb_array_elements members_2  (cost=0.01..1.01 rows=100 width=40) (never executed)
-                                                  ->  Limit  (cost=8.47..8.49 rows=1 width=64) (never executed)
-                                                        ->  Incremental Sort  (cost=8.47..8.51 rows=2 width=64) (never executed)
+                                                  ->  Limit  (cost=12.32..12.35 rows=1 width=141) (never executed)
+                                                        ->  Incremental Sort  (cost=12.32..12.37 rows=2 width=141) (never executed)
                                                               Sort Key: e_2.aggregate_version DESC, e_2.event_ordinal DESC
                                                               Presorted Key: e_2.aggregate_version
-                                                              ->  Result  (cost=0.41..8.46 rows=1 width=64) (never executed)
+                                                              ->  Result  (cost=0.42..12.31 rows=1 width=141) (never executed)
                                                                     One-Time Filter: (i_4.status = 'COMPLETED'::text)
-                                                                    ->  Index Scan Backward using service_intake_event_intake_version_idx on service_intake_event e_2  (cost=0.41..8.46 rows=1 width=56) (never executed)
+                                                                    ->  Index Scan Backward using service_intake_event_intake_version_idx on service_intake_event e_2  (cost=0.42..12.31 rows=1 width=133) (never executed)
                                                                           Index Cond: (intake_id = i_4.id)
                                                                           Filter: (((event_type = 'intake.rule_decision_applied'::text) AND ((payload ->> 'new_status'::text) = i_4.status) AND ((payload ->> 'old_status'::text) IS DISTINCT FROM (payload ->> 'new_status'::text))) OR ((event_type = 'intake.received'::text) AND ((payload ->> 'status'::text) = i_4.status)))
                                                                           Index Searches: 0
-                                            ->  Nested Loop  (cost=0.00..0.01 rows=1 width=144) (never executed)
-                                                  Join Filter: (closing_decision_1.journey_id = retained_1.id)
-                                                  ->  Seq Scan on deterministic_decision closing_decision_1  (cost=0.00..0.00 rows=1 width=144) (never executed)
+                                            ->  Nested Loop  (cost=0.59..16.63 rows=1 width=121) (never executed)
+                                                  ->  Index Scan using deterministic_decision_pkey on deterministic_decision closing_decision_1  (cost=0.30..8.32 rows=1 width=121) (never executed)
+                                                        Index Cond: (id = CASE WHEN ((e_2.payload ->> 'decision_id'::text) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text) THEN ((e_2.payload ->> 'decision_id'::text))::uuid ELSE NULL::uuid END)
                                                         Filter: (service_intake_id = "*SELECT* 1".id)
-                                                  ->  Seq Scan on contact_journey retained_1  (cost=0.00..0.00 rows=1 width=16) (never executed)
-                                                        Filter: (retention_until_epoch_ms > '1795577586864'::bigint)
-                                      ->  Seq Scan on manual_review_item closing_review_1  (cost=0.00..0.00 rows=1 width=88) (never executed)
-                                            Filter: ((status = 'RESOLVED'::text) AND (service_intake_id = "*SELECT* 1".id))
+                                                        Index Searches: 0
+                                                  ->  Index Scan using contact_journey_pkey on contact_journey retained_1  (cost=0.29..8.31 rows=1 width=16) (never executed)
+                                                        Index Cond: (id = closing_decision_1.journey_id)
+                                                        Filter: (retention_until_epoch_ms > (InitPlan 17).col1)
+                                                        Index Searches: 0
+                                      ->  Index Scan using manual_review_ticket_journey_idx on manual_review_item closing_review_1  (cost=0.29..8.32 rows=1 width=88) (never executed)
+                                            Index Cond: (journey_id = closing_decision_1.journey_id)
+                                            Filter: ((status = 'RESOLVED'::text) AND (service_intake_id = "*SELECT* 1".id) AND (resolution_decision_id = closing_decision_1.id) AND ((resolved_by_principal_id)::text = (closing_decision_1.safe_result #>> '{human_override,principal_id}'::text[])))
+                                            Index Searches: 0
                                 ->  Seq Scan on pilot_principal closing_actor_1  (cost=0.00..1.02 rows=2 width=44) (never executed)
                           ->  Index Scan using closure_intake_version_idx on closure_record intake_closure_1  (cost=0.12..8.14 rows=1 width=198) (never executed)
                                 Index Cond: (intake_id = "*SELECT* 1".id)
@@ -303,6 +417,6 @@ Nested Loop  (cost=479.00..5437.14 rows=153 width=620) (actual time=0.084..0.780
                                 Index Searches: 0
                     ->  Seq Scan on pilot_principal intake_closing_actor  (cost=0.00..1.02 rows=2 width=44) (never executed)
 Planning:
-  Buffers: shared hit=238
-Planning Time: 1.834 ms
-Execution Time: 0.882 ms
+  Buffers: shared hit=387
+Planning Time: 2.353 ms
+Execution Time: 9.136 ms

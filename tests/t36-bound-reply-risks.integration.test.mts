@@ -27,7 +27,7 @@ for(const boundary of ['CURRENT_STAFF_ROLE','CURRENT_RETENTION'] as const)test('
 test('T36 a reply waiting on its original Thread leaves the original Session available and commits once after release',{timeout:240000},()=>withT36BoundReplyFixture(async f=>{
  const session=(await f.pool.query<{thread_id:string}>('SELECT thread_id::text FROM conversation.session WHERE id=$1::uuid',[f.sessionId])).rows[0];assert.ok(session);
  const command:SupplementFollowUpReplyCommand={client_command_id:randomUUID(),expected_row_version:f.rowVersion,text:'T36原Thread等待锁序核验',follow_up_target:{ticket_id:f.ticketId,...f.r2}};
- const observer=createPostgresPool({connectionString:f.databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'t36_communication_lock_observer'});
+ const observer=createPostgresPool({...f.databaseConnection,max:1,connectionTimeoutMillis:5000,application_name:'t36_communication_lock_observer'});
  try{
  const blocker=await observer.connect();let pending:Promise<Response>|undefined;
  try{

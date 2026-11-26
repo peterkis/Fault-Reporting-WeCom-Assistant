@@ -16,15 +16,16 @@ import {requireServiceClosureSchema,SERVICE_CLOSURE_MIGRATION_ID} from '../app/s
 import {COMPLETION_DISMISSAL_MIGRATION_ID} from '../app/server/scripts/completion-dismissal-migrate.mjs';
 import {NOTIFICATION_VOCABULARY_MIGRATION_ID} from '../app/server/scripts/notification-vocabulary-migrate.mjs';
 import {SYSTEM_CLOSURE_RESTORE_MIGRATION_ID} from '../app/server/scripts/system-closure-restore-migrate.mjs';
-import {TICKET_TERMINAL_AT_MIGRATION_ID} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
+import type {CatalogSnapshot} from '../app/server/src/platform/postgres-catalog.mjs';
+import {TICKET_TERMINAL_AT_MIGRATION_ID,type TicketTerminalCatalogRow} from '../app/server/scripts/ticket-terminal-at-migrate.mjs';
 
 const privatePath=join(tmpdir(),'yxx-h5-runtime-private');
 const h5Env={YIXIAOXIU_H5_ENABLED:'true',YIXIAOXIU_H5_PRIVATE_ROOT:privatePath,YIXIAOXIU_H5_MEDIA_KEY_HEX:'12'.repeat(32),
   YIXIAOXIU_H5_FFMPEG_PATH:join(tmpdir(),'ffmpeg.exe'),YIXIAOXIU_H5_FFPROBE_PATH:join(tmpdir(),'ffprobe.exe')};
 const pool=()=>createPostgresPool({connectionString:'postgres://synthetic:synthetic@127.0.0.1:9/p2_015_h5_no_connection',max:1,connectionTimeoutMillis:100});
 
-interface SchemaRow {migration_id?:string;checksum_sha256?:string;record?:boolean;termination?:boolean;baseline?:boolean;column?:boolean;columns?:boolean;constraint?:boolean;index?:boolean}
-interface SchemaDatabase {query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:SchemaRow[]}>}
+interface SchemaRow {migration_id?:string;checksum_sha256?:string;record?:boolean;termination?:boolean;baseline?:boolean;column?:boolean;ready?:boolean}
+interface SchemaDatabase {query:(sql:string,values?:readonly unknown[])=>Promise<{rowCount:number;rows:(SchemaRow|CatalogSnapshot<TicketTerminalCatalogRow>)[]}>}
 const moduleData=(body:string)=>'data:text/javascript;base64,'+Buffer.from(body).toString('base64');
 /** Preserve compiled business imports; replace only named process/DB launch leaves. */
 async function importRole(moduleName:string,overrides:Readonly<Record<string,string>>,processUrl:string){
@@ -96,11 +97,11 @@ function schemaPool(migrations:ReadonlySet<string>,catalog:{record?:boolean;term
       return {rowCount:rows.length,rows};
     }
     if(values?.[0]===TICKET_TERMINAL_AT_MIGRATION_ID){
-      assert.match(sql,/^SELECT checksum_sha256,/u);assert.match(sql,/ticket_terminal_status_check/u);
+      assert.match(sql,/^\s*WITH caller_path AS MATERIALIZED/u);assert.match(sql,/FROM rendered\s+WHERE pg_catalog\.set_config/u);assert.match(sql,/FROM \(WITH cons AS/u);assert.match(sql,/ticket_terminal_status_check/u);assert.match(sql,/AS ready/u);
       queried.push([TICKET_TERMINAL_AT_MIGRATION_ID]);
       const checksum=createHash('sha256').update(await readFile(new URL('../database/migrations/075_ticket_terminal_at.sql',import.meta.url))).digest('hex');
-      const rows:SchemaRow[]=migrations.has(TICKET_TERMINAL_AT_MIGRATION_ID)?[{checksum_sha256:catalog.terminalChecksum??checksum,columns:catalog.terminalColumns??true,constraint:catalog.terminalConstraint??true,index:catalog.terminalIndex??true}]:[];
-      return {rowCount:rows.length,rows};
+      const snapshot=migrations.has(TICKET_TERMINAL_AT_MIGRATION_ID)?{checksum_sha256:catalog.terminalChecksum??checksum,ready:catalog.terminalColumns!==false&&catalog.terminalConstraint!==false&&catalog.terminalIndex!==false}:null;
+      return {rowCount:1,rows:[{snapshot} satisfies CatalogSnapshot<TicketTerminalCatalogRow>]};
     }
     assert.match(sql,/^SELECT migration_id FROM platform\.schema_migration WHERE migration_id\s*(?:IN|=\s*ANY)/u);
     const parameter=values?.[0];
@@ -425,7 +426,10 @@ test('H5-enabled P2016 readiness checks reminder tables even when follow-up acti
     if(id===completionId){const rows=migrations.has(completionId)?[{checksum_sha256:checksums.get(completionId),baseline:true}]:[];return {rows,rowCount:rows.length};}
     if(id===vocabularyId){const rows=migrations.has(vocabularyId)?[{checksum_sha256:checksums.get(vocabularyId),baseline:true}]:[];return {rows,rowCount:rows.length};}
     if(id===restoreId){const rows=migrations.has(restoreId)?[{checksum_sha256:checksums.get(restoreId),column:true}]:[];return {rows,rowCount:rows.length};}
-    if(id===terminalId){const rows=migrations.has(terminalId)?[{checksum_sha256:checksums.get(terminalId),columns:true,constraint:true,index:true}]:[];return {rows,rowCount:rows.length};}
+    if(id===terminalId){
+      const checksum=checksums.get(terminalId);assert.ok(checksum);
+      return {rowCount:1,rows:[{snapshot:migrations.has(terminalId)?{checksum_sha256:checksum,ready:true}:null} satisfies CatalogSnapshot<TicketTerminalCatalogRow>]};
+    }
     if(typeof id==='string'&&[scheduleId,dueId].includes(id)){
       queriedIds.push(id);const rows=migrations.has(id)?[{checksum_sha256:checksums.get(id),current_table:'pilot_ticket.follow_up_schedule',revision_table:'pilot_ticket.follow_up_schedule_revision',current_time_pair:true,revision_time_pair:true}]:[];
       return {rows,rowCount:rows.length};

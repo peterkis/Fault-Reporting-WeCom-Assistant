@@ -42,6 +42,7 @@ test('T36 real production viewing reads a WEB supplement without clearing it; ex
   await browser.command('Page.navigate',{url:f.origin+'/workbench/app/items/ticket/'+f.ticketId+'?detail=page'});
   await browser.waitFor('Boolean(document.querySelector("#detail-title"))');await capture(browser,directory,'new-detail-1920.png');
   await browser.waitFor(`globalThis.__t36FollowGets.some(page=>page.items.some(item=>item.source_ref===${JSON.stringify(r2.source_ref)}&&item.revision==='2'&&item.follow_up_state==='PENDING'))`);
+  await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(row(r2.source_ref,'2'))}))`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(row(r2.source_ref,'2'))})?.getAttribute('data-follow-up-state')`),'PENDING','actual coordinated pending row, not a static legend');
   await browser.evaluate(`(()=>{const body=[...document.querySelectorAll('.activity-list .record-text[data-personal-read-ref]')].find(p=>p.textContent===${JSON.stringify(text)});if(!body)throw Error('ACTUAL_SUPPLEMENT_BODY_REQUIRED');body.scrollIntoView({block:'center'});globalThis.__t36Visible=true;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));})()`);
   await browser.waitFor("globalThis.__t36ReadAcks.some(ack=>ack.source_kind==='WEB'&&ack.last_read_position==='2')");
@@ -60,6 +61,8 @@ test('T36 real production viewing reads a WEB supplement without clearing it; ex
   // Personal read may legitimately advance through the real visibility seam; do not freeze it at0.
   const r3=await f.supplement('2','T36明确处置之后新补充仍待跟进');await browser.command('Page.reload');
   await browser.waitFor(`globalThis.__t36FollowGets.some(page=>page.items.some(item=>item.source_ref===${JSON.stringify(r3.source_ref)}&&item.revision==='3'&&item.follow_up_state==='PENDING'))`);
+  // The fetch observer sees the body before React commits either revision to the reloaded page.
+  await browser.waitFor(`Boolean(document.querySelector(${JSON.stringify(row(r2.source_ref,'2'))})&&document.querySelector(${JSON.stringify(row(r3.source_ref,'3'))}))`);
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(row(r2.source_ref,'2'))})?.getAttribute('data-follow-up-state')`),'FOLLOWED_UP');
   assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(row(r3.source_ref,'3'))})?.getAttribute('data-follow-up-state')`),'PENDING');
   const current=await f.page();assert.equal(current.has_pending_supplements,true);assert.equal(current.items.find(item=>item.source_ref===r3.source_ref)?.follow_up_state,'PENDING');

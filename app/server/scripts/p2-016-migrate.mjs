@@ -1,3 +1,4 @@
+import {isMigrationDatabase,migrationConnection} from './migration-database.mjs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -60,12 +61,12 @@ export async function validateP2016Catalog(tx) {
 }
 
 export async function migrateP2016({ databaseUrl, mode = 'apply', PoolFactory = createPostgresPool } = {}) {
-  if (typeof databaseUrl !== 'string' || !databaseUrl || !['apply','check','status'].includes(mode)) fail('P2_016_MIGRATION_INPUT_INVALID');
+  if (!isMigrationDatabase(databaseUrl) || !['apply','check','status'].includes(mode)) fail('P2_016_MIGRATION_INPUT_INVALID');
   const sql = await readFile(FILE, 'utf8');
   const body = /^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
   if (!body) fail('P2_016_MIGRATION_FILE_INVALID');
   const checksum = sha(sql);
-  const pool = PoolFactory({ connectionString: databaseUrl, max: 1,
+  const pool = PoolFactory({ ...migrationConnection(databaseUrl), max: 1,
     connectionTimeoutMillis: 5000, application_name: 'p2_016_migrator' });
   let client;
   try {

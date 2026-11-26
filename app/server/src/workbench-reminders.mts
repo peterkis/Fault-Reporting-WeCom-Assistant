@@ -1,3 +1,4 @@
+import {finalCardReadSql} from './workbench-card-projections.mjs';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
 import type {P2016TicketQuery} from './p2-016-ticket-query.mjs';
@@ -15,6 +16,7 @@ interface Baseline {s:string;f:string;e:number;b:string}
 interface Cursor {s:string;t:string;a:string;h:string;l:number;i:string;r:string}
 interface Fact {event_id:string;kind:'ticket'|'review'|'intake';id:string;reason:WorkbenchReminderReason;source_key:string;source_revision:string;occurred_at:string;reminder_id:string}
 interface Clock {high:string;floor:string;now:string;epoch:string;local_now:string}
+interface WindowRead {roles:string[];teams:string[];facts:Fact[]|null;reset_clock:Clock|null}
 
 /** Read projection only. Original facts, current authorization and canonical cards remain authoritative. */
 export function createWorkbenchReminders({pool,query,enabled=false,followEnabled=false,webReportsEnabled=false}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;followEnabled?:boolean;webReportsEnabled?:boolean}){
@@ -34,12 +36,15 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
     const supplied=Buffer.from(mac,'base64url');if(supplied.length!==expected.length||!timingSafeEqual(supplied,expected))return null;
     try{const parsed:unknown=JSON.parse(Buffer.from(body,'base64url').toString());return parsed!==null&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed as Record<string,unknown>:null;}catch{return null;}
   }
-  async function clock(tx:PostgresTransaction):Promise<Clock>{
-    const row=(await tx.query<Clock>(`SELECT COALESCE((SELECT max(event_id) FROM conversation.realtime_event WHERE stream_name=$1),0)::text AS high,
-      COALESCE((SELECT retention_floor_event_id FROM conversation.realtime_stream_state WHERE stream_name=$1),0)::text AS floor,
+  function clockSql(stream:string):string {
+    return `SELECT COALESCE((SELECT max(event_id) FROM conversation.realtime_event WHERE stream_name=${stream}),0)::text AS high,
+      COALESCE((SELECT retention_floor_event_id FROM conversation.realtime_stream_state WHERE stream_name=${stream}),0)::text AS floor,
       to_char(clock_timestamp() AT TIME ZONE 'Asia/Shanghai','YYYY-MM-DD HH24:MI:SS.US') AS now,
       platform.physical_epoch_ms()::text AS epoch,
-      to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS local_now`,[REALTIME_STREAM_NAME])).rows[0];
+      to_char(platform.local_now(),'YYYY-MM-DD HH24:MI:SS') AS local_now`;
+  }
+  async function clock(tx:PostgresTransaction):Promise<Clock>{
+    const row=(await tx.query<Clock>(clockSql('$1'),[REALTIME_STREAM_NAME])).rows[0];
     if(!row||!decimal(row.high)||!decimal(row.floor))failP2016('ACTION_FAILED',503);return row;
   }
   return Object.freeze({
@@ -81,13 +86,32 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         const high=next?String(next.h):current.high;
         // READ and the related union are evaluated in SQL before canonical deduplication, ordering and LIMIT.
         // No payload text, directory identity or communication target is projected.
-        const sql=buildLightweightCardsCteSql('$4::bigint','$5::timestamp without time zone')+`, window_events AS MATERIALIZED (
+        const sql=`WITH window_events AS MATERIALIZED (
           SELECT e.event_id,e.aggregate_type,e.aggregate_id,e.source_type,e.source_id,e.event_type,
             e.publisher_name,e.event_variant,e.authorization_scope_type,e.authorization_scope_id
           FROM conversation.realtime_event e
           WHERE e.stream_name=$7 AND e.visibility_scope='WORKBENCH' AND e.expires_epoch_ms>$4::bigint
             AND e.event_id>$8::bigint AND e.event_id<=$9::bigint
-        ), eligible AS (
+        ), window_messages AS (
+          SELECT ci.session_id,ci.source_id
+          FROM window_events e JOIN conversation.item ci
+            ON ci.id=CASE WHEN pg_input_is_valid(e.source_id,'uuid') THEN e.source_id::uuid END
+          WHERE e.source_type='CONVERSATION_ITEM' AND ci.item_type='USER_MESSAGE' AND ci.source_type='CHANNEL_MESSAGE'
+        ), window_intakes AS (
+          SELECT s.service_intake_id AS id FROM window_messages m JOIN conversation.session s ON s.id=m.session_id
+          UNION SELECT rel.intake_id FROM window_messages m JOIN intake.service_intake_message rel
+            ON rel.channel_message_id=CASE WHEN pg_input_is_valid(m.source_id,'bigint') THEN m.source_id::bigint END
+        ), window_targets AS (
+          SELECT 'ticket'::text AS kind,CASE WHEN pg_input_is_valid(e.aggregate_id,'uuid') THEN e.aggregate_id::uuid END AS id
+            FROM window_events e WHERE e.aggregate_type='TICKET' OR e.source_type='TICKET_EVENT' OR e.publisher_name='P2_016_FOLLOW_UP'
+          UNION SELECT 'review',CASE WHEN pg_input_is_valid(e.aggregate_id,'uuid') THEN e.aggregate_id::uuid END
+            FROM window_events e WHERE e.aggregate_type='MANUAL_REVIEW'
+          UNION SELECT 'intake',id FROM window_intakes
+          UNION SELECT 'review',r.id FROM window_intakes i JOIN intake.manual_review_item r ON r.service_intake_id=i.id
+          UNION SELECT 'ticket',t.id FROM window_intakes i JOIN pilot_ticket.ticket t ON t.source_intake_id=i.id
+          UNION SELECT 'ticket',j.linked_ticket_id FROM window_intakes i JOIN intake.channel_leg l ON l.source_intake_id=i.id
+            JOIN intake.contact_journey j ON j.id=l.journey_id WHERE j.linked_ticket_id IS NOT NULL
+        ), ${buildLightweightCardsCteSql()}, eligible AS (
           SELECT cards.*,(${RELATED_CARD_SQL}${followEnabled?` OR ${FOLLOW_CARD_SQL}`:''}) AS related FROM cards
         ), anchors AS (
           SELECT c.kind,c.id,c.intake_id,c.related,i.created_at AS initial_at,i.id AS original_id,i.source_provider,i.primary_web_submission_id,i.primary_message_id
@@ -95,12 +119,12 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
           WHERE i.source_provider<>'YIXIAOXIU_WEB' OR EXISTS(SELECT 1 FROM intake.web_request_binding binding
             WHERE binding.intake_id=i.id AND binding.revoked_at IS NULL AND binding.retention_until_epoch_ms>$4::bigint)
         ), readable_material AS (
-          SELECT a.*,material.id AS material_id FROM anchors a JOIN intake.service_intake material
-            ON material.id=a.original_id OR (a.kind='ticket' AND EXISTS(
-              SELECT 1 FROM intake.channel_leg leg JOIN intake.contact_journey journey ON journey.id=leg.journey_id
-              WHERE leg.source_intake_id=material.id AND journey.linked_ticket_id::text=a.id
-                AND journey.retention_until_epoch_ms>$4::bigint))
-          WHERE material.retention_until_epoch_ms>$4::bigint
+          SELECT a.*,material.id AS material_id FROM anchors a
+          CROSS JOIN LATERAL (
+            SELECT a.original_id AS id UNION
+            SELECT leg.source_intake_id FROM intake.contact_journey journey JOIN intake.channel_leg leg ON leg.journey_id=journey.id
+              WHERE a.kind='ticket' AND journey.linked_ticket_id=a.id::uuid AND journey.retention_until_epoch_ms>$4::bigint
+          ) source JOIN intake.service_intake material ON material.id=source.id AND material.retention_until_epoch_ms>$4::bigint
         ), facts AS (
           SELECT a.kind,a.id,'AUTHORIZED_TEAM_NEW_REPORT'::text AS reason,'intake:'||a.original_id::text AS source_identity,
             '1'::text AS source_revision,a.initial_at AS fact_at,e.event_id
@@ -189,16 +213,35 @@ export function createWorkbenchReminders({pool,query,enabled=false,followEnabled
         ) SELECT kind,id,reason,source_key,source_revision,event_id::text,reminder_id,to_char(fact_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at
           FROM identified WHERE ($10::bigint IS NULL OR (event_id,reminder_id)>($10::bigint,$11::text))
           ORDER BY event_id,reminder_id LIMIT $12`;
-        const read=()=>tx.query<Fact>(sql,[...scope.values,current.epoch,current.local_now,baseline.f,REALTIME_STREAM_NAME,after,high,next?.i??null,next?.r??null,limit+1]);
+        const windowValues=[baseline.f,REALTIME_STREAM_NAME,after,high,next?.i??null,next?.r??null,limit+1];
         // A table-lock wait may outlive a Cookie, membership or retention deadline.
         // Discard that statement snapshot, recheck the original session and principal, then reuse the same bounded projection in a fresh snapshot.
-        await read();
+        await tx.query(sql,[...scope.values,current.epoch,current.local_now,...windowValues]);
         if(await confirmCurrent()||baseline.e<=Date.now()||BigInt(after)<BigInt(current.floor))return empty(true);
-        const result=await read();
-        const rows=result.rows.slice(0,limit),last=rows.at(-1);
+        // The confirmed roles and full membership set belong to this token. Evaluate
+        // its bounded facts only if that same scope still holds in this snapshot.
+        const result=await tx.query<WindowRead>(`WITH reminder_reader AS MATERIALIZED (
+          SELECT ARRAY(SELECT r.role::text FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id) AS roles,
+            ARRAY(SELECT m.team_id::text FROM pilot_ticket.pilot_team_member m WHERE m.principal_id=p.id) AS teams
+          FROM pilot_ticket.pilot_principal p WHERE p.id=$2::uuid AND p.is_active
+        ), token_scope AS (
+          SELECT roles,teams,roles @> $11::text[] AND roles <@ $11::text[]
+            AND teams @> $12::text[] AND teams <@ $12::text[] AS matches FROM reminder_reader
+          WHERE roles && ARRAY['ADMIN','DISPATCHER','HANDLER']::text[]
+        ) SELECT roles,teams,CASE WHEN matches THEN (SELECT COALESCE(json_agg(page),'[]'::json)
+            FROM (${finalCardReadSql(sql)}) page) END AS facts,
+          CASE WHEN NOT matches THEN (SELECT row_to_json(stamp) FROM (${clockSql('$5')}) stamp) END AS reset_clock FROM token_scope`,
+          [...scope.values,...windowValues,principal.roles,principal.team_ids]);
+        const window=result.rows[0];if(!window)failP2016('FORBIDDEN',403);
+        if(window.facts===null){
+          if(!window.reset_clock||!decimal(window.reset_clock.high)||!decimal(window.reset_clock.floor))failP2016('ACTION_FAILED',503);
+          current=window.reset_clock;identity=digest([principal.principal_id,window.roles.sort(),window.teams.sort(),authContext]);
+          return empty(true);
+        }
+        const rows=window.facts.slice(0,limit),last=rows.at(-1);
         const items:WorkbenchReminderItem[]=rows.map(row=>({reminder_id:row.reminder_id,event_id:row.event_id,reason:row.reason,
           canonical_item:{kind:row.kind,id:uuidP2016(row.id)},source_key:row.source_key,source_revision:row.source_revision,occurred_at:assertLocalDateTime(row.occurred_at)}));
-        return {schema_version:1,items,as_of_event_id:high,baseline_token:token,next_cursor:result.rows.length>limit&&last?
+        return {schema_version:1,items,as_of_event_id:high,baseline_token:token,next_cursor:window.facts.length>limit&&last?
           seal({s:identity,t:digest(token),a:after,h:high,l:limit,i:last.event_id,r:last.reminder_id}):null,reset_required:false};
       });
     },

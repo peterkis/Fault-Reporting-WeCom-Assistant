@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {Readable} from 'node:stream';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID,randomBytes,createCipheriv} from 'node:crypto';
 import {writeFile,readFile,unlink,mkdtemp,rm} from 'node:fs/promises';
@@ -62,17 +63,67 @@ for(const seam of ['metadata-entries','metadata-open','content-final-source'] as
   },{decorateStore:store=>({...store,entries:async()=>{const result=await store.entries();entries++;if(seam==='metadata-entries'&&entries===1||seam==='content-final-source'&&entries===3)await gate();return result;},open:async(ref,signal)=>{const lease=await store.open(ref,signal);if(seam==='metadata-open')await gate();return lease;}})});
 });
 test('authorized staff read an existing source-bound attachment through real HTTP and saved encrypted bytes',async()=>{
-  await withT16Fixture(async({origin,cookie,tickets,asset})=>{
+  await withT16Fixture(async({origin,cookie,tickets,asset,pool})=>{
     const ticket=tickets[0];assert.ok(ticket);
     const metadata=await fetch(origin+'/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments',{headers:{cookie}});
     assert.equal(metadata.status,200);const page=await metadata.json() as AttachmentPage;assert.equal(page.available,true);assert.equal(page.items.length,1);assert.equal(page.items[0]?.ref,asset.ref);
     assert.equal(page.items[0]?.display_name,'报修附件.png');assert.equal(page.items[0]?.available,true);
     assert.equal(JSON.stringify(page).includes('source_message_id'),false);
-    const response=await fetch(origin+'/api/attachments/'+asset.ref+'?'+new URLSearchParams({kind:'ticket',id:ticket.ticket.id}),{headers:{cookie}});
-    assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');assert.equal(response.headers.get('content-disposition'),'attachment; filename="report-attachment.png"');
-    assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('x-content-type-options'),'nosniff');
-    const bytes=Buffer.from(await response.arrayBuffer());assert.deepEqual(bytes,T16_PNG);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);
-  });
+    const statements:string[]=[];
+    const original=pool.query;
+    pool.query=new Proxy(original,{apply(target,receiver,args:unknown[]){
+      if(typeof args[0]==='string')statements.push(args[0]);
+      return Reflect.apply(target,receiver,args);
+    }});
+    try{
+      const response=await fetch(origin+'/api/attachments/'+asset.ref+'?'+new URLSearchParams({kind:'ticket',id:ticket.ticket.id}),{headers:{cookie}});
+      assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');assert.equal(response.headers.get('content-disposition'),'attachment; filename="report-attachment.png"');
+      assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('x-content-type-options'),'nosniff');
+      const bytes=Buffer.from(await response.arrayBuffer());assert.deepEqual(bytes,T16_PNG);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);
+      assert.ok(statements.filter(sql=>sql.includes(' AS readable,')&&sql.includes(' AS sources')).length>=4,
+        'source and session checked before open, before headers and for each of two chunks');
+      assert.equal(statements.filter(sql=>sql.includes('t.ticket_no AS number')&&sql.includes('p.display_name AS assignee_name')).length,0);
+    }finally{pool.query=original;}
+  },{decorateStore:store=>({...store,open:async(ref,signal)=>{
+    const lease=await store.open(ref,signal);
+    async function* parts(){
+      for await(const chunk of lease.stream){
+        assert.ok(Buffer.isBuffer(chunk));const middle=Math.floor(chunk.length/2);
+        yield chunk.subarray(0,middle);yield chunk.subarray(middle);
+      }
+    }
+    return {...lease,stream:Readable.from(parts())};
+  }})});
+});
+for(const size of [21,22])test('42A metadata refills a page after its first source disappears with '+size+' registrations',async()=>{
+  let removeFirst:(()=>Promise<void>)|undefined;
+  await withT16Fixture(async f=>{
+    const ticket=f.tickets[0];assert.ok(ticket);
+    const assets=Array.from({length:size},(_,index)=>({...f.asset,ref:randomUUID(),media_ref:'wmr_'+index.toString(16).padStart(32,'0')}));
+    const setSources=async(entries:readonly StoredAttachment[])=>{
+      await f.pool.query(`UPDATE channel.message_inbox SET normalized_message=jsonb_set(normalized_message,'{content}',$2::jsonb)
+        WHERE id=$1::bigint`,[f.asset.source_message_id,JSON.stringify(entries.map((asset,index)=>({kind:'media',media:{type:'image',source_index:index,download_ref:asset.media_ref}})))]);
+    };
+    await f.save(assets);await setSources(assets);
+    const read=async()=>{const response=await fetch(f.origin+'/api/workbench/items/ticket/'+ticket.ticket.id+'/attachments',{headers:{cookie:f.cookie}});
+      assert.equal(response.status,200,await response.clone().text());
+      const body:unknown=await response.json();
+      assert.ok(body&&typeof body==='object'&&'truncated' in body&&typeof body.truncated==='boolean'&&'items' in body&&Array.isArray(body.items));
+      const items=body.items.map((item:unknown)=>{
+        assert.ok(item&&typeof item==='object'&&'ref' in item&&typeof item.ref==='string'&&'available' in item&&typeof item.available==='boolean');
+        return {ref:item.ref,available:item.available};
+      });
+      return {items,truncated:body.truncated};
+    };
+    const before=await read();assert.deepEqual(before.items.map(item=>item.ref),assets.slice(0,20).map(asset=>asset.ref));assert.equal(before.truncated,true);
+    removeFirst=()=>setSources(assets.slice(1));
+    const after=await read();assert.equal(removeFirst,undefined);
+    assert.deepEqual(after.items.map(item=>item.ref),assets.slice(1,21).map(asset=>asset.ref));
+    assert.ok(after.items.every(item=>item.available));assert.equal(after.truncated,size===22);
+  },{namespace:'ticket_card42a',decorateStore:store=>({...store,open:async(ref,signal)=>{
+    if(removeFirst){const remove=removeFirst;removeFirst=undefined;await remove();}
+    return store.open(ref,signal);
+  }})});
 });
 test('every read requires its current source association, original retention and current principal',async()=>{
   await withT16Fixture(async({origin,cookie,outsiderCookie,tickets,asset,pool,root,save,principals,store,reads})=>{

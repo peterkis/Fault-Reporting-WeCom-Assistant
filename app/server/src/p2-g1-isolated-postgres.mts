@@ -1,3 +1,4 @@
+import {loopbackFixtureTarget, withFixtureMigrations} from './platform/loopback-database.mjs';
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import { randomUUID } from 'node:crypto';
 import { createPostgresPool } from './platform/postgres-pool.mjs';
@@ -13,17 +14,19 @@ export async function withP2G1IsolatedPostgres<T>({ databaseUrl, purpose, run }:
   const databaseName = `p2_g1_isolated_${purpose}_${randomUUID().replaceAll('-', '').slice(0, 24)}`;
   if (!NAME.test(databaseName)) throw new Error('P2_G1_ISOLATED_DATABASE_NAME_INVALID');
   const quotedName = `"${databaseName}"`;
-  const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_isolated_admin' });
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
+  const admin = createPostgresPool({ ...connection, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_isolated_admin' });
   let isolatedPool: PostgresPool | null = null;
   let result: T | undefined;
   let failure: unknown;
   try {
     await admin.query(`CREATE DATABASE ${quotedName} TEMPLATE template0`);
-    const isolatedUrl = new URL(databaseUrl);
+    const isolatedUrl = new URL(fixtureUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     const isolatedDatabaseUrl = isolatedUrl.toString();
-    isolatedPool = createPostgresPool({ connectionString: isolatedDatabaseUrl, max: 4, connectionTimeoutMillis: 2_000, application_name: `p2_g1_${purpose}` });
-    result = await run({ pool: isolatedPool, databaseUrl: isolatedDatabaseUrl, databaseName });
+    isolatedPool = createPostgresPool({ ...connection, database:databaseName, max: 4, connectionTimeoutMillis: 2_000, application_name: `p2_g1_${purpose}` });
+    const fixture = {pool: isolatedPool, databaseUrl: isolatedDatabaseUrl, databaseName};
+    result = await withFixtureMigrations(isolatedDatabaseUrl, () => run(fixture));
   } catch (error) {
     failure = error;
   } finally {

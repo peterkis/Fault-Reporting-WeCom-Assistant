@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { after, before, test } from 'node:test';
-import { createPostgresPool } from '../app/server/src/platform/postgres-pool.mjs';
+import {isolatedTicketTests} from './helpers/p1-ticket-database.mjs';
 import { formatEpochMsToShanghaiLocal } from '../app/server/src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../app/server/src/p1-002-wecom-sdk-adapter.mjs';
 import {
@@ -28,17 +27,7 @@ import {
   createPilotWorkbenchServer,
   listenPilotWorkbenchServer,
 } from '../app/server/src/p1-009-pilot-access-workbench.mjs';
-import { ensureCompletionDismissal, releaseCompletionDismissal } from './helpers/completion-dismissal.mjs';
-
-const databaseUrl = process.env.PILOT_DATABASE_URL;
-const integrationTest = databaseUrl ? test : test.skip;
-const messageIds = new Set();
-const intakeIds = new Set();
-const ticketIds = new Set();
-const principalIds = new Set();
-const pool = databaseUrl
-  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
-  : null;
+import { ensureCompletionDismissal } from './helpers/completion-dismissal.mjs';
 
 function createMessage(msgId) {
   const reporterWeComUserId = `reporter-${msgId}`;
@@ -56,11 +45,10 @@ function createMessage(msgId) {
     },
   }, { receivedAt: new Date().toISOString() });
   assert.equal(adapted.ok, true);
-  messageIds.add(msgId);
   return { message: adapted.message, reporterWeComUserId };
 }
 
-async function seedTicket() {
+async function seedTicket(pool) {
   const source = createMessage(`p1-009-${randomUUID()}`);
   const retentionUntilEpochMs = String(BigInt(source.message.received_epoch_ms) + 86_400_000n);
   const processor = createPilotTicketProcessor({
@@ -75,17 +63,10 @@ async function seedTicket() {
     retentionUntilEpochMs,
   }, processor);
   assert.equal(result.ok, true);
-  intakeIds.add(result.result.intake.id);
-  ticketIds.add(result.result.ticket.id);
   return { ticket: result.result.ticket, reporterWeComUserId: source.reporterWeComUserId };
 }
 
-before(async () => {
-  if (!pool) {
-    return;
-  }
-  // This file migrates the shared PILOT_DATABASE_URL in place; recover an interrupted run's unregistered 072 first.
-  await releaseCompletionDismissal(pool);
+const integrationTest=isolatedTicketTests('p1009',async pool=>{
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
@@ -94,39 +75,8 @@ before(async () => {
   await ensureCompletionDismissal(pool);
 });
 
-after(async () => {
-  if (!pool) {
-    return;
-  }
-  if (ticketIds.size > 0) {
-    await pool.query(
-      `UPDATE intake.service_intake
-          SET pilot_ticket_id = NULL,
-              status = CASE WHEN status = 'TICKET_CREATED' THEN 'RECEIVED' ELSE status END
-        WHERE pilot_ticket_id = ANY($1::uuid[])`,
-      [[...ticketIds]],
-    );
-    await pool.query('DELETE FROM pilot_ticket.ticket WHERE id = ANY($1::uuid[])', [[...ticketIds]]);
-  }
-  if (principalIds.size > 0) {
-    await pool.query('DELETE FROM pilot_ticket.pilot_principal WHERE id = ANY($1::uuid[])', [[...principalIds]]);
-  }
-  if (intakeIds.size > 0) {
-    await pool.query('DELETE FROM intake.service_intake WHERE id = ANY($1::uuid[])', [[...intakeIds]]);
-  }
-  if (messageIds.size > 0) {
-    await pool.query(
-      'DELETE FROM channel.message_inbox WHERE provider = $1 AND msg_id = ANY($2::text[])',
-      ['WECOM_AIBOT', [...messageIds]],
-    );
-  }
-  // Restore the shared database's original vocabulary once this file's own rows are gone.
-  await releaseCompletionDismissal(pool);
-  await pool.end();
-});
-
-integrationTest('Pilot roles isolate teams, enable audited handling, and keep internal notes out of reporter views', async () => {
-  const { ticket, reporterWeComUserId } = await seedTicket();
+integrationTest('Pilot roles isolate teams, enable audited handling, and keep internal notes out of reporter views', async (pool) => {
+  const { ticket, reporterWeComUserId } = await seedTicket(pool);
   const access = createPilotAccessService({ pool });
   const reporter = await access.upsertPrincipal({
     wecomUserId: reporterWeComUserId,
@@ -144,7 +94,6 @@ integrationTest('Pilot roles isolate teams, enable audited handling, and keep in
     displayName: '跨组工程师',
     roles: ['HANDLER'],
   });
-  [reporter, handler, outsider].forEach((principal) => principalIds.add(principal.id));
 
   const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
   const unauthorized = await actions.perform({
@@ -224,8 +173,8 @@ integrationTest('Pilot roles isolate teams, enable audited handling, and keep in
   assert.equal(confirmed.ticket.status, 'COMPLETED');
 });
 
-integrationTest('the minimum local Pilot workbench exposes an injected authenticated mobile-friendly work view', async () => {
-  const { ticket, reporterWeComUserId } = await seedTicket();
+integrationTest('the minimum local Pilot workbench exposes an injected authenticated mobile-friendly work view', async (pool) => {
+  const { ticket, reporterWeComUserId } = await seedTicket(pool);
   const access = createPilotAccessService({ pool });
   const handler = await access.upsertPrincipal({
     wecomUserId: `handler-ui-${randomUUID()}`,
@@ -238,7 +187,6 @@ integrationTest('the minimum local Pilot workbench exposes an injected authentic
     displayName: '申报人',
     roles: ['REPORTER'],
   });
-  [handler, reporter].forEach((principal) => principalIds.add(principal.id));
   let actionCalls = 0;
   const server = createPilotWorkbenchServer({
     access,
@@ -274,11 +222,10 @@ integrationTest('the minimum local Pilot workbench exposes an injected authentic
   }
 });
 
-integrationTest('Pilot HTTP actions preserve authenticated ownership and reject malformed request bodies', async () => {
-  const { ticket } = await seedTicket();
+integrationTest('Pilot HTTP actions preserve authenticated ownership and reject malformed request bodies', async (pool) => {
+  const { ticket } = await seedTicket(pool);
   const access = createPilotAccessService({ pool });
   const handler = await access.upsertPrincipal({ wecomUserId: `handler-json-${randomUUID()}`, displayName: 'Synthetic handler', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
-  principalIds.add(handler.id);
   const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
   const server = createPilotWorkbenchServer({ access, actions: { perform: actions.performRaw }, authenticate: async () => ({ type: 'PILOT_USER', id: handler.id }) });
   const address = await listenPilotWorkbenchServer(server);
@@ -306,12 +253,11 @@ integrationTest('Pilot HTTP actions preserve authenticated ownership and reject 
   }
 });
 
-integrationTest('Pilot raw HTTP Action validation preserves rejection, permissions, and atomic rollback', async () => {
-  const { ticket } = await seedTicket();
+integrationTest('Pilot raw HTTP Action validation preserves rejection, permissions, and atomic rollback', async (pool) => {
+  const { ticket } = await seedTicket(pool);
   const access = createPilotAccessService({ pool });
   const handler = await access.upsertPrincipal({ wecomUserId: `handler-raw-${randomUUID()}`, displayName: 'Synthetic handler', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
   const outsider = await access.upsertPrincipal({ wecomUserId: `outsider-raw-${randomUUID()}`, displayName: 'Synthetic outsider', roles: ['HANDLER'] });
-  [handler, outsider].forEach(principal => principalIds.add(principal.id));
   const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
   const rollbackActions = createTicketActionService({ pool, authorize: access.authorizeAction, afterAction: async () => { throw new Error('SYNTHETIC_AFTER_ACTION_FAILURE'); } });
   let actorId = handler.id;

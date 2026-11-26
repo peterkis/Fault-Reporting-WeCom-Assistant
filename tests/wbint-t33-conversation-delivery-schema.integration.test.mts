@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {readCatalogRow} from '../app/server/src/platform/postgres-catalog.mjs';
 import type {PostgresPool} from '../app/server/src/platform/postgres-pool.mjs';
 import {withP2016IsolatedDatabase,applyThrough030} from './helpers/p2-016-postgres-harness.mjs';
 import {migrateP2016,p2016CatalogInventory,p2016CatalogHash} from '../app/server/scripts/p2-016-migrate.mjs';
@@ -13,13 +14,37 @@ import {migrateTicketReopenRounds} from '../app/server/scripts/ticket-reopen-rou
 import {migrateBotReporterFeedback} from '../app/server/scripts/bot-reporter-feedback-migrate.mjs';
 import {migrateWorkbenchFollow,followSchemaReady} from '../app/server/scripts/workbench-follow-migrate.mjs';
 import {migrateConversationDeliveryCommands} from '../app/server/scripts/conversation-delivery-commands-migrate.mjs';
-import {conversationDeliveryReceiptSchemaReady,conversationDeliveryReceiptSchemaShape} from '../app/server/src/p2-006-delivery-command-schema.mjs';
+import {conversationDeliveryReceiptCatalog,conversationDeliveryReceiptSchemaReady,conversationDeliveryReceiptSchemaShape} from '../app/server/src/p2-006-delivery-command-schema.mjs';
 
-test('T33 explicit 061 check rolls back and exact 031/032 consumers retain complete catalog guards',{timeout:120000},async()=>{
+test('T33 explicit 061 check rolls back and exact 031/032 consumers retain complete catalog guards',{timeout:120000},async t=>{
  assert.ok(process.env.PILOT_DATABASE_URL);
  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'t33schema61',max:2,run:async({pool,databaseUrl}:{pool:PostgresPool;databaseUrl:string})=>{
   const options={databaseUrl,mode:'apply'};
   await applyThrough030({pool,databaseUrl});await migrateP2016(options);const before=p2016CatalogHash(await p2016CatalogInventory(pool));
+  const inventory=await p2016CatalogInventory(pool);
+  const receipt=Object.fromEntries(Object.entries(inventory).map(([category,rows])=>{
+    assert.ok(Array.isArray(rows));
+    return [category,rows.filter(row=>row.relation==='pilot_ticket.ticket_command_receipt')];
+  }));
+  assert.equal(JSON.stringify(await conversationDeliveryReceiptCatalog(pool)),JSON.stringify(receipt),'targeted receipt catalog preserves the full inventory bytes');
+  const customPath=await pool.connect();
+  try{
+   await customPath.query('BEGIN');
+   await customPath.query('SET LOCAL search_path=platform,pilot_ticket,intake,public');
+   await customPath.query('SET LOCAL quote_all_identifiers=on');
+   const original=await customPath.query('SHOW search_path');
+   const reads=t.mock.method(customPath,'query');
+   try{
+     assert.equal(JSON.stringify(await conversationDeliveryReceiptCatalog(customPath)),JSON.stringify(receipt));
+     assert.equal(reads.mock.callCount(),1,'one inventory statement on the existing custom-path transaction');
+   }finally{reads.mock.restore();}
+   assert.deepEqual((await customPath.query('SHOW search_path')).rows,original.rows);
+   const pathSql="SELECT pg_catalog.current_setting('search_path') AS path WHERE $1::boolean";
+   assert.deepEqual(await readCatalogRow<{path:string}>(customPath,pathSql,[true]),{path:'pg_catalog, public, pg_temp'});
+   assert.equal(await readCatalogRow<{path:string}>(customPath,pathSql,[false]),undefined);
+   assert.equal((await customPath.query('SHOW quote_all_identifiers')).rows[0]?.quote_all_identifiers,'on');
+   assert.deepEqual((await customPath.query('SHOW search_path')).rows,original.rows);
+  }finally{try{await customPath.query('ROLLBACK');}finally{customPath.release();}}
   assert.equal(before,'5521c4fc34481ef22e46cab4e0f3e1fdea232c995cef2f823008d0ea9142fb20');
   assert.equal((await migrateConversationDeliveryCommands({databaseUrl,mode:'status'})).status,'PENDING');assert.equal((await migrateConversationDeliveryCommands({databaseUrl,mode:'check'})).status,'CHECK_ROLLBACK_SUCCEEDED');
   assert.equal(p2016CatalogHash(await p2016CatalogInventory(pool)),before);assert.equal((await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='061_workbench_conversation_delivery_commands'")).rows.length,0);

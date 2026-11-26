@@ -1,3 +1,4 @@
+import {FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,withFinalStatementClock} from './workbench-card-projections.mjs';
 import {once} from 'node:events';
 import {finished} from 'node:stream/promises';
 import type {Readable} from 'node:stream';
@@ -10,7 +11,7 @@ import type {WorkbenchWebReportView,WorkbenchWebUrge,WorkbenchWebMedia,Workbench
 import {failP2016,uuidP2016,versionP2016,exactP2016} from './p2-016-domain-contracts.mjs';
 import {WorkbenchError} from './p2-006-workbench-query.mjs';
 import {ticketPredicateP2016} from './p2-016-ticket-query.mjs';
-import {buildSingleItemReadableSql,readWorkbenchClock} from './web01-workbench-query.mjs';
+import {buildSingleItemReadableSql} from './web01-workbench-query.mjs';
 import {assertLocalDateTime} from './platform/time-contract.mjs';
 import {decodeWebMedia} from '../../../shared/workbench-web-report-browser-contracts.mjs';
 import {awaitYxxH5MediaRead} from './yxx-h5-media-budget.mjs';
@@ -18,7 +19,7 @@ import type {ApplicationMemberVerifier,VerifiedApplicationMember} from './wecom-
 import {applicationRecipientProof} from './yxx-application-member-auth.mjs';
 
 type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
-type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
+type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedIdentity']>>;
 type SessionPredicate=ReturnType<typeof createWeComWorkbenchAuthentication>['currentSessionPredicate'];
 export interface WorkbenchWebReportLifecyclePort {
  activeForAuthorizedTickets(ticketIds:readonly string[]):Promise<ReadonlyMap<string,WorkbenchWebUrge>>;
@@ -49,7 +50,7 @@ function externalError(error:unknown):never{
 
 /** Web source adapter. Bot manifest authorization remains independent and unchanged. */
 export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,media=null,enabled=false,progressEnabled=false,currentSessionPredicate,localTestProfile=false,reporterProfile=null}:{
- pool:PostgresPool;query:Pick<ReturnType<typeof createWeb01WorkbenchQuery>,'authorizedItem'>;ticketQuery:Pick<P2016TicketQuery,'principal'|'authorizedTicket'>;
+ pool:PostgresPool;query:Pick<ReturnType<typeof createWeb01WorkbenchQuery>,'authorizedItem'|'authorizedIdentity'>;ticketQuery:Pick<P2016TicketQuery,'principal'|'authorizedTicket'>;
  lifecycle?:WorkbenchWebReportLifecyclePort|null;media?:WorkbenchWebReportMediaPort|null;enabled?:boolean;progressEnabled?:boolean;currentSessionPredicate?:SessionPredicate|undefined;localTestProfile?:boolean;
  reporterProfile?:{read:ApplicationMemberVerifier;secret:string;corpId:string;agentId:string}|null;
 }){
@@ -100,27 +101,25 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
   if(current.rows[0]?.current!==true)throw new WorkbenchError('WORKBENCH_UNAUTHENTICATED',401);
  }
  async function verifyRead(auth:WorkbenchHttpAuthContext,item:Item,retainedTicket=false){
-  const principal=await ticketQuery.principal(auth),scope=ticketPredicateP2016(principal),clock=await readWorkbenchClock(pool);
+  const principal=await ticketQuery.principal(auth),scope=ticketPredicateP2016(principal);
   // Repeat the original canonical READ in the final statement, after any source/store wait.
   const values:unknown[]=[];
   const param=(value:unknown,cast:string)=>{values.push(value);return `$${values.length}::${cast}`;};
   const isAdminParam=param(scope.values[0],'boolean'),principalParam=param(scope.values[1],'uuid');
   const teamIdsParam=item.kind==='intake'?'ARRAY[]::text[]':param(scope.values[2],'text[]');
   const idParam=param(item.id,'uuid');
-  const nowEpochParam=item.kind==='review'||!retainedTicket?param(clock.nowEpoch,'bigint'):'$0::bigint';
-  const nowLocalParam=item.kind==='review'||item.kind==='intake'?param(clock.nowLocal,'timestamp without time zone'):'$0::timestamp without time zone';
   const rolesParam=param([...principal.roles],'text[]'),teamsParam=param([...principal.team_ids],'text[]');
   const expiresParam=param(auth.expires_epoch_ms,'bigint');
   let session={sql:'TRUE',values:[] as unknown[]};if(currentSessionPredicate)session=currentSessionPredicate(auth,principal.principal_id,values.length+1);else if(!localTestProfile||'session_id' in auth)failP2016('ACTION_FAILED',503);
   values.push(...session.values);
-  const readableSql=buildSingleItemReadableSql(item.kind,idParam,null,nowEpochParam,nowLocalParam,{isAdmin:isAdminParam,principalId:principalParam,teamIds:teamIdsParam});
-  const current=await pool.query<{readable:boolean;current:boolean}>(`SELECT EXISTS(SELECT 1 FROM (${readableSql}) c
+  const readableSql=buildSingleItemReadableSql(item.kind,idParam,null,FINAL_EPOCH_SQL,FINAL_LOCAL_SQL,{isAdmin:isAdminParam,principalId:principalParam,teamIds:teamIdsParam});
+  const current=await pool.query<{readable:boolean;current:boolean}>(withFinalStatementClock(`SELECT EXISTS(SELECT 1 FROM (${readableSql}) c
    ${retainedTicket?'':'JOIN intake.service_intake i ON i.id=c.intake_id JOIN intake.web_request_binding b ON b.intake_id=i.id'}
-   ${retainedTicket?'':`WHERE b.revoked_at IS NULL AND b.retention_until_epoch_ms>${nowEpochParam}
-    AND i.retention_until_epoch_ms>${nowEpochParam}`}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=${principalParam} AND p.is_active
+   ${retainedTicket?'':`WHERE b.revoked_at IS NULL AND b.retention_until_epoch_ms>${FINAL_EPOCH_SQL}
+    AND i.retention_until_epoch_ms>${FINAL_EPOCH_SQL}`}) AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal p WHERE p.id=${principalParam} AND p.is_active
     AND ARRAY(SELECT role FROM pilot_ticket.pilot_principal_role WHERE principal_id=p.id ORDER BY role COLLATE "C")=${rolesParam}
     AND ARRAY(SELECT team_id FROM pilot_ticket.pilot_team_member WHERE principal_id=p.id ORDER BY team_id COLLATE "C")=${teamsParam}) AS readable,
-    (${expiresParam}>platform.physical_epoch_ms() AND ${session.sql}) AS current`,
+    (${expiresParam}>${FINAL_EPOCH_SQL} AND ${session.sql}) AS current`),
    values);
   if(current.rows[0]?.current!==true)throw new WorkbenchError('WORKBENCH_UNAUTHENTICATED',401);if(current.rows[0]?.readable!==true)failP2016('NOT_FOUND',404);
  }
@@ -132,7 +131,7 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
     AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()`,[item.intake_id]);return result.rows[0]??null;
  }
  async function readView(auth:WorkbenchHttpAuthContext,kind:string,id:string):Promise<WorkbenchWebReportView>{
-  const item=await query.authorizedItem(auth,kind,id),web=await source(item),principal=await ticketQuery.principal(auth);
+  const item=await query.authorizedIdentity(auth,kind,id),web=await source(item),principal=await ticketQuery.principal(auth);
   await verifySession(auth,principal.principal_id);
   const base:WorkbenchWebReportView={schema_version:1,applicable:false,item:{kind:item.kind,id:item.id},ticket_id:null,ticket_version:null,contact_requested:false,can_publish_progress:false,public_progress:null,urge:EMPTY_URGE,evaluation:null,media_available:false,media:[]};
   if(!web)return base;
@@ -191,7 +190,7 @@ export function createWorkbenchWebReport({pool,query,ticketQuery,lifecycle=null,
     let lease:Awaited<ReturnType<WorkbenchWebReportMediaPort['readForIntake']>>|null=null;
     let outputSignal:AbortSignal|null=null;const stopOutput=()=>{response.destroy();};
     try{
-     const item=await awaitYxxH5MediaRead(controller.signal,()=>query.authorizedItem(authContext,kind,id));if(!await awaitYxxH5MediaRead(controller.signal,()=>source(item)))failP2016('NOT_FOUND',404);
+     const item=await awaitYxxH5MediaRead(controller.signal,()=>query.authorizedIdentity(authContext,kind,id));if(!await awaitYxxH5MediaRead(controller.signal,()=>source(item)))failP2016('NOT_FOUND',404);
      const verify=async()=>{controller.signal.throwIfAborted();await awaitYxxH5MediaRead(controller.signal,()=>verifyRead(authContext,item));controller.signal.throwIfAborted();};
      lease=await media.readForIntake({intakeId:item.intake_id,ref:uuidP2016(report[3]),variant,verifyCurrentRead:verify,signal:controller.signal});
      outputSignal=lease.signal?AbortSignal.any([controller.signal,lease.signal]):controller.signal;

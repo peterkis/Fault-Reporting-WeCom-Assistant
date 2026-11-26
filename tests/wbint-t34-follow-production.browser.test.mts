@@ -27,7 +27,10 @@ test('T34 formal production detail explicitly follows once and server related sc
    await browser.evaluate('document.querySelector("[data-action=toggle-item-follow]").click()');
    await browser.waitFor('document.querySelector("[data-action=toggle-item-follow]")?.getAttribute("aria-pressed")==="true"');
    const detail=await read(path),attention=(detail.item as {attention:{following:boolean;related_reasons:string[]}}).attention;assert.equal(attention.following,true);assert.deepEqual(attention.related_reasons,['FOLLOW']);
-   await browser.command('Page.reload');await browser.waitFor('document.querySelector("[data-action=toggle-item-follow]")?.getAttribute("aria-pressed")==="true"');
+   // aria-pressed is already true in the departing document. Wait for the replacement before capturing it.
+   const previousDocument=await browser.evaluate('performance.timeOrigin');
+   await browser.command('Page.reload');
+   await browser.waitFor(`performance.timeOrigin!==${previousDocument} && document.readyState==='complete' && document.querySelector("[data-action=toggle-item-follow]")?.getAttribute("aria-pressed")==="true"`);
    await image(browser,directory,'new-detail-page-1920.png');
    await browser.evaluate('document.querySelector("button[aria-label=关闭详情]").click()');await browser.waitFor('Boolean(document.querySelector("[data-action=related-scope]"))');
    await browser.evaluate('document.querySelector("[data-action=related-scope]").click()');

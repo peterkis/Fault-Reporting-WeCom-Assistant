@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl, loopbackFixtureTarget, withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -19,34 +20,42 @@ const migrations = [
 
 function app(purpose) { const value = `p2_015_${purpose}_${RUN}`.slice(0, 63); applicationNames.add(value); return value; }
 
-export async function withP2015IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
+export async function withP2015IsolatedDatabase({ databaseUrl, purpose, namespace = 'p2_015', max = 4, run }) {
   assert.equal(typeof databaseUrl, 'string'); assert.match(purpose, /^[a-z0-9]{1,12}$/u);
   assert.ok(Number.isInteger(max) && max >= 1 && max <= 4);
-  const name = `p2_015_${purpose}_${randomUUID().replaceAll('-', '_')}`;
-  databases.add(name);
+  assert.ok(namespace === 'p2_015' || namespace === 'ticket_card42a');
+  const suffix = randomUUID().replaceAll('-', namespace === 'p2_015' ? '_' : '');
+  const name = `${namespace}_${purpose}_${suffix}`;
   const quoted = `"${name}"`;
-  const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000, application_name: app('admin') });
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
+  const admin = createPostgresPool({ ...connection, max: 1, connectionTimeoutMillis: 5_000, application_name: app('admin') });
+  let created = false;
   let pool; let result; let runError; let cleanupError;
   try {
     await admin.query(`CREATE DATABASE ${quoted} TEMPLATE template0`);
-    const isolated = new URL(databaseUrl); isolated.pathname = `/${name}`;
-    pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 5_000, application_name: app(purpose) });
-    result = await run({ pool, databaseUrl: isolated.toString(), databaseName: name });
+    created = true;
+    databases.add(name);
+    const isolated = new URL(fixtureUrl); isolated.pathname = `/${name}`;
+    const databaseConnection={...connection,database:name};
+    pool = createPostgresPool({ ...databaseConnection, max, connectionTimeoutMillis: 5_000, application_name: app(purpose) });
+    result = await withFixtureMigrations(isolated.toString(), () => run({ pool, databaseConnection, databaseUrl: isolated.toString(), databaseName: name }));
   } catch (error) { runError = error; }
   finally {
     try {
       await pool?.end();
-      // Pool shutdown can return before PostgreSQL has observed socket closure.
-      // Do not race a normal disconnect with an administrator termination.
-      // The bounded grace period does not replace forced cleanup or residual checks.
-      for (let attempt = 0; attempt < 40; attempt += 1) {
-        const remaining = await admin.query('SELECT count(*)::integer AS count FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
-        if (remaining.rows[0].count === 0) break;
-        await new Promise(resolve => setTimeout(resolve, 25));
+      if (created) {
+        // Pool shutdown can return before PostgreSQL has observed socket closure.
+        // Do not race a normal disconnect with an administrator termination.
+        // The bounded grace period does not replace forced cleanup or residual checks.
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          const remaining = await admin.query('SELECT count(*)::integer AS count FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
+          if (remaining.rows[0].count === 0) break;
+          await new Promise(resolve => setTimeout(resolve, 25));
+        }
+        await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
+        await admin.query(`DROP DATABASE IF EXISTS ${quoted}`);
+        assert.equal((await admin.query('SELECT count(*)::integer AS count FROM pg_database WHERE datname=$1', [name])).rows[0].count, 0);
       }
-      await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
-      await admin.query(`DROP DATABASE IF EXISTS ${quoted}`);
-      assert.equal((await admin.query('SELECT count(*)::integer AS count FROM pg_database WHERE datname=$1', [name])).rows[0].count, 0);
     } catch (error) { cleanupError = error; }
     finally { await admin.end().catch((error) => { cleanupError ??= error; }); }
   }
@@ -102,58 +111,10 @@ export async function seedPersistedIntake({ pool, text, chatType = 'group', requ
   return Object.freeze({ intakeId: intake.rows[0].id, messageId: message.rows[0].id, receivedAt, retentionUntil });
 }
 
-export async function seedCapacityDataset({ pool, tag = randomUUID().slice(0, 8) }) {
-  const epoch = (await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch;
-  await pool.query(
-    `INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,
-      chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,
-      processing_status,response_snapshot,privacy_class,trace_id,retention_until,completed_at)
-     SELECT 1,'WECOM_AIBOT',format('cap-%s-%s-%s',$1::text,i,t),
-      'WECOM_AIBOT:'||format('cap-%s-%s-%s',$1::text,i,t),'req-'||format('cap-%s-%s-%s',$1::text,i,t),'bot-test',
-      CASE WHEN i BETWEEN 301 AND 400 THEN 'single' ELSE 'group' END,
-      CASE WHEN i BETWEEN 301 AND 400 THEN NULL ELSE format('group-cap-%s',i) END,
-      format('user-cap-%s',i),'text',
-      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+t)||' seconds')::interval,
-      CASE WHEN i<=100 THEN '需人工判断' WHEN i<=400 THEN '处方提交不了' ELSE '系统不行' END,
-      CASE WHEN i<=100 THEN '需人工判断' WHEN i<=400 THEN '处方提交不了' ELSE '系统不行' END,
-      jsonb_build_object('msgtype','text','bot_mentioned',NOT (i BETWEEN 301 AND 400)),
-      'COMPLETED','{}'::jsonb,'INTERNAL','trace-cap-'||i||'-'||t,
-      platform.local_from_epoch_ms($2::bigint + 2592000000),
-      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+t)||' seconds')::interval
-     FROM generate_series(1,500) i CROSS JOIN generate_series(1,4) t`, [tag, epoch],
-  );
-  await pool.query(
-    `INSERT INTO intake.service_intake(intake_no,source_channel,source_provider,source_bot_id,
-      source_chat_type,source_chat_id,reporter_wecom_userid,privacy_class,retention_until,
-      request_type,summary,status,primary_message_id,message_count,last_message_at,version)
-     SELECT 'INT-20260903-'||lpad(nextval('intake.service_intake_number_seq')::text,4,'0'),
-      CASE WHEN i BETWEEN 301 AND 400 THEN 'WECOM_DIRECT' ELSE 'WECOM_GROUP' END,
-      'WECOM_AIBOT','bot-test',CASE WHEN i BETWEEN 301 AND 400 THEN 'single' ELSE 'group' END,
-      CASE WHEN i BETWEEN 301 AND 400 THEN NULL ELSE format('group-cap-%s',i) END,
-      format('user-cap-%s',i),'INTERNAL',platform.local_from_epoch_ms($2::bigint + 2592000000),
-      'UNKNOWN',format('CAP:%s:%s',$1::text,i),'WAITING_TRIAGE',message.id,4,
-      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+4)||' seconds')::interval,1
-     FROM generate_series(1,500) i JOIN channel.message_inbox message
-       ON message.msg_id=format('cap-%s-%s-1',$1::text,i)`, [tag, epoch],
-  );
-  await pool.query(
-    `INSERT INTO intake.service_intake_message(intake_id,channel_message_id,relation_type,sequence_no,linked_at,trace_id)
-     SELECT intake.id,message.id,CASE WHEN t=1 THEN 'PRIMARY' ELSE 'SUPPLEMENT' END,t,
-       message.received_at,format('trace-rel-%s-%s',i,t)
-      FROM generate_series(1,500) i CROSS JOIN generate_series(1,4) t
-      JOIN intake.service_intake intake ON intake.summary=format('CAP:%s:%s',$1::text,i)
-      JOIN channel.message_inbox message ON message.msg_id=format('cap-%s-%s-%s',$1::text,i,t)`, [tag],
-  );
-  await pool.query(
-    `INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
-     SELECT 'intake.received','intake',id,1,1,created_at,'trace-cap-event-'||id,'{}'::jsonb
-       FROM intake.service_intake WHERE summary LIKE 'CAP:'||$1::text||':%'`, [tag],
-  );
-  return Object.freeze({ journeys: 500, turns: 2000, expectedReviews: 100 });
-}
+export {seedCapacityDataset} from './capacity-dataset.mjs';
 
 export async function assertNoP2015Residual({ databaseUrl }) {
-  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5_000, application_name: app('residual') });
+  const pool = createPostgresPool({ ...assertLoopbackDatabaseUrl(databaseUrl), max: 1, connectionTimeoutMillis: 5_000, application_name: app('residual') });
   try {
     const result = await pool.query(`SELECT
       (SELECT count(*)::integer FROM pg_database WHERE datname=ANY($1::text[])) AS database_count,

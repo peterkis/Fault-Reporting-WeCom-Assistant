@@ -7,7 +7,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
-import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {createYxxSelfServiceOrchestrator} from '../app/server/src/yxx-self-service-orchestrator.mjs';
+import {withWeb01Fixture,seedWeb01NoConversationIntake} from './helpers/web01-workbench-fixture.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '../app/server/src/p2-g1-inbound-projection-coordinator.mjs';
 import {createConversationControlService,createPilotConversationControlAuthorization} from '../app/server/src/p2-005-conversation-control.mjs';
@@ -615,6 +616,148 @@ test('Card 11 final statement rejects a revoked Principal after source, route or
   }
 });
 
+// Hold the actual source read across a physical deadline after earlier request clocks have been sampled.
+async function withJourneyExpiringAtRead(pool,journeyId,matches,read){
+  const original=pool.query,execute=original.bind(pool);let waited=false;
+  pool.query=async function(sql,values){
+    if(!waited&&typeof sql==='string'&&matches(sql)){
+      waited=true;
+      const deadline=(await execute(`WITH d AS (SELECT (platform.physical_epoch_ms()/1000+2)*1000 AS epoch)
+        UPDATE intake.contact_journey j SET retention_until_epoch_ms=d.epoch,retention_until=platform.local_from_epoch_ms(d.epoch)
+        FROM d WHERE j.id=$1::uuid RETURNING d.epoch::text AS epoch`,[journeyId])).rows[0]?.epoch;
+      assert.ok(deadline);
+      const bound=Date.now()+5000;
+      while(!(await execute('SELECT platform.physical_epoch_ms()>=$1::bigint AS expired',[deadline])).rows[0].expired){
+        assert.ok(Date.now()<bound);await new Promise(resolve=>setTimeout(resolve,20));
+      }
+    }
+    return execute(sql,values);
+  };
+  try{const result=await read();assert.ok(waited,'the request must reach the selected source read');return result;}
+  finally{pool.query=original;}
+}
+async function readExpiryFixture(f,path){
+  const response=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});
+  assert.equal(response.status,200,await response.clone().text());return response.json();
+}
+
+for(const precisionV212 of [false,true])for(const chronologicalTicketEvents of [false,true]){
+  test(`42A fixture terminal pairs match the stored transition (precision=${precisionV212}, chronological=${chronologicalTicketEvents})`,async()=>{
+    await withWeb01Fixture(async f=>{
+      const eventIds=f.tickets.map(({event})=>event.event_id);
+      const rows=(await f.pool.query(`SELECT t.id,t.status,t.terminal_at::text AS terminal,t.terminal_epoch_ms::text AS epoch,
+        e.created_at::text AS event_at,floor(extract(epoch FROM (e.created_at AT TIME ZONE 'Asia/Shanghai'))*1000)::bigint::text AS event_epoch
+        FROM pilot_ticket.ticket_event e JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=ANY($1::uuid[])`,[eventIds])).rows;
+      assert.equal(rows.length,f.tickets.length);
+      assert.ok(rows.some(row=>row.status==='RESOLVED'));assert.ok(rows.some(row=>row.status==='COMPLETED'));
+      for(const row of rows){
+        const terminal=['RESOLVED','COMPLETED','DISMISSED'].includes(row.status);
+        assert.equal(row.terminal,terminal?row.event_at:null,row.id);assert.equal(row.epoch,terminal?row.event_epoch:null,row.id);
+      }
+    },{namespace:'ticket_card42a',manualProjection:true,precisionV212,chronologicalTicketEvents});
+  });
+}
+
+test('42A source group expires between board selection and the registered group read',async()=>{
+  await withWeb01Fixture(async f=>{
+    const target=f.tickets[0],journey=(await f.pool.query('SELECT id FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[target.intake.intakeId])).rows[0];
+    assert.ok(journey);
+    const path='/api/workbench/board?column=pending',read=async()=>{
+      const page=await readExpiryFixture(f,path),item=page.items.find(card=>card.id===target.ticket.id);
+      assert.ok(item);return item;
+    };
+    const ref=(await read()).source_group.ref,name='来源保留期测试群（合成）';
+    await f.pool.query('INSERT INTO workbench.source_group_name(ref,display_name,row_version,updated_by) VALUES($1,$2,1,$3::uuid)',[ref,name,f.principals[0].id]);
+    const before=await read();assert.equal(before.source_group.ref,ref);assert.equal(before.source_group.display_name,name);
+    const after=await withJourneyExpiringAtRead(f.pool,journey.id,sql=>sql.includes('LEFT JOIN workbench.source_group_name n'),read);
+    assert.equal(after.id,target.ticket.id);assert.equal(after.source_group,null);assert.equal(after.source_label,'来源资料不可用');
+  },{namespace:'ticket_card42a',manualProjection:true,sourceGroupDirectoryEnabled:true});
+});
+
+for(const endpoint of ['board','detail'])test('42A Journey reporter expires before the '+endpoint+' card read',async()=>{
+  await withWeb01Fixture(async f=>{
+    const target=f.tickets[0],name='即将过期的报修人（合成）',department='科室（合成）';
+    const journey=(await f.pool.query(`UPDATE intake.contact_journey SET profile_resolution_status='RESOLVED',
+      profile_snapshot=jsonb_build_object('source','WECOM_DIRECTORY','version','42A','contact',jsonb_build_object('name',$2::text),
+        'memberships',jsonb_build_array(jsonb_build_object('name',$3::text))) WHERE origin_intake_id=$1::uuid RETURNING id`,
+      [target.intake.intakeId,name,department])).rows[0];
+    assert.ok(journey);
+    const read=async()=>{
+      const page=await readExpiryFixture(f,endpoint==='detail'?'/api/workbench/items/ticket/'+target.ticket.id:'/api/workbench/board?column=pending');
+      const item=endpoint==='detail'?page.item:page.items.find(card=>card.id===target.ticket.id);
+      assert.equal(item?.id,target.ticket.id);return [item.reporter_name,item.reporter_department];
+    };
+    assert.deepEqual(await read(),[name,department]);
+    const atCard=sql=>endpoint==='board'?sql.includes('FROM page_keys'):sql.includes("SELECT 'ticket'::text AS kind")&&sql.includes('WHERE t.id=$');
+    assert.deepEqual(await withJourneyExpiringAtRead(f.pool,journey.id,atCard,read),[null,null]);
+  },{namespace:'ticket_card42a',manualProjection:true});
+});
+
+test('42A detail reads bounded review references after the responsibility wait',async()=>{
+  await withWeb01Fixture(async f=>{
+    const target=f.tickets[0],review=(await f.pool.query('SELECT id,journey_id FROM intake.manual_review_item WHERE service_intake_id=$1',[target.intake.intakeId])).rows[0];
+    assert.ok(review);
+    const read=()=>readExpiryFixture(f,'/api/workbench/items/ticket/'+target.ticket.id);
+    assert.ok((await read()).review_refs.some(ref=>ref.id===review.id));
+    const after=await withJourneyExpiringAtRead(f.pool,review.journey_id,sql=>sql.includes('r.id::text,r.status,r.row_version::text'),read);
+    assert.equal(after.item.id,target.ticket.id);assert.ok(after.review_refs.every(ref=>ref.id!==review.id));
+  },{namespace:'ticket_card42a',manualProjection:true,workbenchManualReviewEnabled:true});
+});
+
+for(const phase of ['related selection','batch attention','single attention'])test('42A secondary follow anchor expires before '+phase,async()=>{
+  await withWeb01Fixture(async f=>{
+    const target=f.tickets[0],source=await seedPersistedIntake({pool:f.pool,text:'另一次报修（合成）'});
+    await f.processReviewIntake(source.intakeId);
+    const journey=(await f.pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$2 WHERE origin_intake_id=$1 RETURNING id',
+      [source.intakeId,target.ticket.id])).rows[0];assert.ok(journey);
+    await f.pool.query('INSERT INTO pilot_ticket.workbench_item_follow(principal_id,source_intake_id,following) VALUES($1,$2,true)',[f.principals[0].id,source.intakeId]);
+    const read=async()=>{
+      if(phase==='single attention')return (await readExpiryFixture(f,'/api/workbench/items/ticket/'+target.ticket.id)).item;
+      const page=await readExpiryFixture(f,'/api/workbench/board?column=pending&scope='+(phase==='related selection'?'related':'team'));
+      return page.items.find(card=>card.id===target.ticket.id);
+    };
+    const before=await read();assert.deepEqual(before?.attention.related_reasons,['FOLLOW']);
+    const atRead=sql=>phase==='related selection'?sql.includes('FROM page_keys'):
+      phase==='batch attention'?sql.includes('AS review_legs'):sql.includes('SELECT i.id::text,COALESCE(f.following')&&!sql.includes('AS review_legs');
+    const after=await withJourneyExpiringAtRead(f.pool,journey.id,atRead,read);
+    if(phase==='related selection')assert.equal(after,undefined);
+    else {assert.equal(after?.attention.following,false);assert.deepEqual(after.attention.related_reasons,[]);}
+  },{namespace:'ticket_card42a',manualProjection:true,workbenchFollowEnabled:true});
+});
+
+for(const expiredSource of ['intake','message','web'])test('Card 42A ticket detail revalidates '+expiredSource+' retention during the final read wait',async()=>{
+  await withWeb01Fixture(async f=>{
+    const target=f.tickets[0],path='/api/workbench/items/ticket/'+target.ticket.id;
+    const read=async()=>{const r=await fetch(f.origin+path,{headers:{cookie:f.cookies[0]}});assert.equal(r.status,200,await r.clone().text());return r.json();};
+    const before=await read();
+    const source=before.records.find(row=>row.id.startsWith(expiredSource==='web'?'web:':'message:'));
+    assert.ok(source?.text);assert.ok(before.reported_at);assert.ok(before.description);
+    const execute=f.pool.query.bind(f.pool),original=f.pool.query;
+    let waited=false;
+    f.pool.query=async function(sql,values){
+      if(!waited&&typeof sql==='string'&&sql.startsWith('WITH final_clock')&&sql.includes('AS detail_source')){
+        waited=true;
+        const deadline=(await execute(`SELECT (platform.physical_epoch_ms()/1000+2)*1000 AS epoch`)).rows[0].epoch;
+        const [table,id]=expiredSource==='intake'?['intake.service_intake',target.intake.intakeId]:
+          expiredSource==='web'?['intake.web_submission',source.id.slice(4)]:['channel.message_inbox',source.id.slice(8)];
+        await execute(`UPDATE ${table} SET retention_until=platform.local_from_epoch_ms($1::bigint),retention_until_epoch_ms=$1::bigint WHERE id=$2`,[deadline,id]);
+        const timeout=Date.now()+5000;
+        while(!(await execute('SELECT platform.physical_epoch_ms()>=$1::bigint AS expired',[deadline])).rows[0].expired){
+          assert.ok(Date.now()<timeout);await new Promise(resolve=>setTimeout(resolve,20));
+        }
+      }
+      return execute(sql,values);
+    };
+    try{
+      const after=await read();
+      assert.equal(waited,true);assert.equal(after.item.id,target.ticket.id);
+      assert.equal(after.description,expiredSource==='intake'?null:before.description);assert.equal(after.reported_at,null);
+      assert.ok(after.records.every(row=>row.id!==source.id));
+      assert.ok(after.records.some(row=>row.id.startsWith('event:')));
+    }finally{f.pool.query=original;}
+  },{namespace:'ticket_card42a',manualProjection:true,precisionV212:true,ticketSelfHandlingEnabled:expiredSource==='web'});
+});
+
 for(const endpoint of ['board','detail','catalog'])for(const invalidation of ['logout','physical-expiry'])test('Card 11 real Cookie '+endpoint+' rejects '+invalidation+' during its read wait',async()=>{
   const {setTimeout:delay}=await import('node:timers/promises');
   await withWeb01Fixture(async f=>{
@@ -650,4 +793,38 @@ for(const endpoint of ['board','detail','catalog'])for(const invalidation of ['l
       for(const key of ['items','item','categories','next_cursor'])assert.equal(Object.hasOwn(denied,key),false);
     }finally{f.pool.query=original;}
   },{realWorkbenchAuthentication:true});
+});
+
+for(const phase of ['projection','final proof'])test('42A Follow-enabled Web Review detail denies a binding revoked during '+phase,async()=>{
+  await withWeb01Fixture(async({pool,origin,cookies})=>{
+    const summary='合成待审网页报修';
+    const source=await seedWeb01NoConversationIntake({pool,text:summary});
+    const worker=createYxxSelfServiceOrchestrator({pool,profile:'MEMBER_SELF_SERVICE',
+      featureFlags:{YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true},
+      ruleEngine:{evaluate(){throw Error('fixture creates pending review');}}});
+    assert.equal((await worker.processOne({requestRef:source.requestRef})).processed,true);
+    const review=(await pool.query(`SELECT r.id FROM intake.manual_review_item r
+      JOIN intake.deterministic_decision d ON d.id=r.decision_id
+      WHERE r.service_intake_id=$1 AND r.status='PENDING' AND r.linked_ticket_id IS NULL AND d.source_kind='WEB'`,[source.intakeId])).rows[0];
+    assert.ok(review);
+    const read=()=>fetch(origin+'/api/workbench/items/review/'+review.id,{headers:{cookie:cookies[0]}});
+    const before=await read();assert.equal(before.status,200,await before.clone().text());
+    assert.equal((await before.json()).description,summary);
+    const original=pool.query,execute=original.bind(pool);
+    let revoked=false;
+    pool.query=async(sql,values)=>{
+      if(!revoked&&sql.includes(phase==='projection'?'SELECT * FROM projected_sources':' AS detail_source')){
+        const updated=await execute('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE intake_id=$1 AND revoked_at IS NULL',[source.intakeId]);
+        assert.equal(updated.rowCount,1);revoked=true;
+      }
+      return execute(sql,values);
+    };
+    try{
+      const after=await read();assert.equal(revoked,true);
+      assert.equal(after.status,404);
+      const denied=await after.json();assert.equal(denied.error.code,'P2_016_NOT_FOUND');
+      assert.ok(!Object.hasOwn(denied,'description'));assert.ok(!JSON.stringify(denied).includes(summary));
+    }finally{pool.query=original;}
+  },{namespace:'ticket_card42a',manualProjection:true,workbenchFollowEnabled:true,workbenchManualReviewEnabled:true,
+    ticketSelfHandlingEnabled:true,ticketSelfHandlingWebSource:false});
 });

@@ -1,3 +1,4 @@
+import type {LocalMigrationDatabase} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import type {PostgresPool} from '../../app/server/src/platform/postgres-pool.mjs';
 import {withWeb01Fixture} from './web01-workbench-fixture.mjs';
@@ -6,7 +7,7 @@ import {createPilotAccessService} from '../../app/server/src/p1-009-pilot-access
 import {migrateWorkbenchPersonalRead} from '../../app/server/scripts/workbench-personal-read-migrate.mjs';
 import {migrateTicketSelfHandling} from '../../app/server/scripts/ticket-self-handling-migrate.mjs';
 import {ensureCompletionDismissal} from './completion-dismissal.mjs';
-interface Base {origin:string;databaseUrl:string;pool:PostgresPool;runtime:{stop():Promise<unknown>};principals:{id:string}[];outsider:{id:string};tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
+interface Base {origin:string;databaseUrl:string;databaseConnection:LocalMigrationDatabase;pool:PostgresPool;runtime:{stop():Promise<unknown>};principals:{id:string}[];outsider:{id:string};tickets:{ticket:{id:string};intake:{intakeId:string}}[]}
 export interface T35Fixture extends Base {firstCookie:string;secondCookie:string;outsiderCookie:string;browserCookie:{name:string;value:string;url:string|undefined;httpOnly:true;secure:boolean;sameSite:'Strict';expires:number};get:(path:string,reader?:0|1)=>Promise<Response>;post:(path:string,body:Record<string,unknown>,reader?:0|1)=>Promise<Response>}
 export function withT35Fixture(run:(fixture:T35Fixture)=>Promise<void>,{enabled=true,migrate=true,waiting=false}:{enabled?:boolean;migrate?:boolean;waiting?:boolean}={}){
   return withWeb01Fixture(async(f:Base)=>{

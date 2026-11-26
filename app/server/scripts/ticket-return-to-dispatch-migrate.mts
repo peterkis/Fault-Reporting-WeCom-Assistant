@@ -1,3 +1,4 @@
+import {migrationConnection,type MigrationDatabase} from './migration-database.mjs';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -35,10 +36,10 @@ export async function returnToDispatchMigrationReady(tx:PostgresTransaction):Pro
     &&(id===RETURN_TO_DISPATCH_MIGRATION_ID||row.type_check.includes("'ticket.follow_up_scheduled'")&&row.type_check.includes("'ticket.follow_up_cancelled'"));
  }catch{return false;}
 }
-export async function migrateTicketReturnToDispatch({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'}) {
+export async function migrateTicketReturnToDispatch({databaseUrl,mode='check'}:{databaseUrl:MigrationDatabase;mode?:'check'|'apply'}) {
  if(!databaseUrl||!['check','apply'].includes(mode))failP2016();
  const legacy=await migrationSql(RETURN_TO_DISPATCH_MIGRATION_ID);
- const pool=createPostgresPool({connectionString:databaseUrl,max:1,application_name:'ticket_return_to_dispatch_migrator'});
+ const pool=createPostgresPool({...migrationConnection(databaseUrl),max:1,application_name:'ticket_return_to_dispatch_migrator'});
  try{return await transactionP2016(pool,async tx=>{
   await tx.query("SELECT pg_advisory_xact_lock(hashtext('TICKET_RETURN_TO_DISPATCH_MIGRATION'))");
   // Serialize the existing shared DDL before deciding whether 049 is committed.

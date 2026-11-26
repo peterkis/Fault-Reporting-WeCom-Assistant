@@ -20,7 +20,7 @@ export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketN
   assert.ok(Number.isInteger(reporterCount)&&reporterCount>=3&&reporterCount<=20);
   const databaseUrl = process.env.PILOT_DATABASE_URL;
   assert.ok(databaseUrl, 'P2_G2_LOCAL_DATABASE_REQUIRED');
-  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname));
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname.toLowerCase()));
   try {
     await withP2012Database({ databaseUrl, purpose: 'g2runtime', run: async ({ pool, databaseUrl: isolated }) => {
       if(webSchema)await migrateCurrentBaselineWithYxx({databaseUrl:isolated});

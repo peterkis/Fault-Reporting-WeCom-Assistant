@@ -1,3 +1,4 @@
+import {requireTicketTerminalAtSchema} from './ticket-terminal-at-migrate.mjs';
 import type { PostgresPool } from '../src/platform/postgres-pool.mjs';
 import type { P2016ClosureFactory, ClosureNotificationInput } from '../src/p2-016-runtime.mjs';
 import type { OrchestrationWorkerOptions } from '../src/p2-016-orchestration-adapters.mjs';
@@ -62,7 +63,7 @@ export async function main(argv=process.argv.slice(2)){
       botId:process.env.WECOM_BOT_ID,cardEnabled:true,reporterAccess:access(pool),origin:process.env.P2_012_REPORTER_ORIGIN as string,
       allowedHosts:(process.env.P2_012_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
-  return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
+  return runWorker({beforeReady:async input=>{await requireStaffDirectorySchema(input);await requireTicketTerminalAtSchema(input);},extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
     identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string,personDestinationAuthorizer:personAuthorizer(pool)})});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(()=>{

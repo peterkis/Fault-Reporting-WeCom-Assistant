@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl} from '../../app/server/src/platform/loopback-database.mjs';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
 import { takeCoverage } from 'node:v8';
 import {
@@ -102,7 +103,7 @@ try {
       ? { afterCommit: () => announceAndBlock('AFTER_COMMIT_BEFORE_ACK_BLOCKED') }
       : null;
   pool = createPostgresPool({
-    connectionString: isolatedDatabaseUrl(),
+    ...assertLoopbackDatabaseUrl(isolatedDatabaseUrl()),
     max: 1,
     connectionTimeoutMillis: 2_000,
     application_name: workerToken,

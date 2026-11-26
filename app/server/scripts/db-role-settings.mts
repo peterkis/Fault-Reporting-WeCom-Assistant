@@ -43,39 +43,48 @@ export function buildRoleSettingSql(role: string, mode: 'apply' | 'reset'): stri
   return ROLE_SETTINGS.map(setting => `ALTER ROLE ${quoted} SET ${setting.name} = ${setting.value}`);
 }
 
-export async function checkRoleSettings(
-  tx: Pick<PostgresTransaction, 'query'>,
-  role: string,
-): Promise<{ok: boolean; role: string; missing: string[]; current: Record<string, string | null>}> {
+export interface RoleSettingRow {exists:boolean;setconfig:string[]|null;database_config:string[]|null}
+
+async function readRoleSettings(tx:Pick<PostgresTransaction,'query'>,role:string) {
   const validRole = validateRoleName(role);
-  const row = (await tx.query<{exists: boolean; setconfig: string[] | null}>(
+  const row = (await tx.query<RoleSettingRow>(
     `SELECT r.oid IS NOT NULL AS exists,
-            s.setconfig
+            s.setconfig, d.setconfig AS database_config
        FROM (SELECT 1) one
        LEFT JOIN pg_roles r ON r.rolname = $1
-       LEFT JOIN pg_db_role_setting s ON s.setrole = r.oid AND s.setdatabase = 0`,
+       LEFT JOIN pg_db_role_setting s ON s.setrole = r.oid AND s.setdatabase = 0
+       LEFT JOIN pg_db_role_setting d ON d.setrole = r.oid
+         AND d.setdatabase=(SELECT oid FROM pg_database WHERE datname=current_database())`,
     [validRole],
   )).rows[0];
   if (!row || !row.exists) {
     throw new Error('DB_ROLE_NOT_FOUND');
   }
-  const configMap = new Map<string, string>();
-  for (const entry of row.setconfig ?? []) {
-    const eq = entry.indexOf('=');
-    if (eq > 0) {
-      configMap.set(entry.slice(0, eq), entry.slice(eq + 1));
+  function evaluate(entries:readonly string[]) {
+    const configMap=new Map<string,string>();
+    for(const entry of entries){
+      const eq=entry.indexOf('=');
+      if(eq>0)configMap.set(entry.slice(0,eq),entry.slice(eq+1));
     }
-  }
-  const current: Record<string, string | null> = {};
-  const missing: string[] = [];
-  for (const setting of ROLE_SETTINGS) {
-    const actual = configMap.get(setting.name) ?? null;
-    current[setting.name] = actual;
-    if (actual !== setting.value) {
-      missing.push(setting.name);
+    const current:Record<string,string|null>={};
+    const missing:string[]=[];
+    for(const setting of ROLE_SETTINGS){
+      current[setting.name]=configMap.get(setting.name)??null;
+      const actual=current[setting.name];
+      // PostgreSQL accepts unambiguous, case-insensitive prefixes for Boolean settings.
+      const matches=setting.name==='jit'&&setting.value==='off'
+        ?typeof actual==='string'&&['0','of','off','n','no','f','fa','fal','fals','false'].includes(actual.toLowerCase())
+        :actual===setting.value;
+      if(!matches)missing.push(setting.name);
     }
+    return {ok:missing.length===0,role:validRole,missing,current};
   }
-  return {ok: missing.length === 0, role: validRole, missing, current};
+  const wide=row.setconfig??[];
+  return {wide:evaluate(wide),effective:evaluate([...wide,...row.database_config??[]])};
+}
+
+export async function checkRoleSettings(tx:Pick<PostgresTransaction,'query'>,role:string) {
+  return (await readRoleSettings(tx,role)).effective;
 }
 
 export async function applyRoleSettings({
@@ -92,19 +101,20 @@ export async function applyRoleSettings({
   const validRole = validateRoleName(role);
   const pool = createPostgresPool({connectionString: databaseUrl, max: 1, application_name: 'db_role_settings'});
   try {
-    const before = await checkRoleSettings(pool, validRole);
+    const before = await readRoleSettings(pool, validRole);
     if (mode === 'check') {
-      return {status: before.ok ? 'READY' : 'PENDING', ...before};
+      return {status: before.effective.ok ? 'READY' : 'PENDING', ...before.effective};
     }
     if (mode === 'apply') {
-      if (before.ok) {
-        return {status: 'NOOP_ALREADY_APPLIED', ...before};
+      if(before.wide.ok) {
+        return {status:before.effective.ok?'NOOP_ALREADY_APPLIED':'PENDING',...before.effective};
       }
       for (const statement of buildRoleSettingSql(validRole, 'apply')) {
         await pool.query(statement);
       }
-      const after = await checkRoleSettings(pool, validRole);
-      return {status: 'APPLIED', ...after};
+      const after=await readRoleSettings(pool,validRole);
+      const missing=[...new Set([...after.wide.missing,...after.effective.missing])];
+      return {status:missing.length?'PENDING':'APPLIED',...after.effective,ok:missing.length===0,missing};
     }
     for (const statement of buildRoleSettingSql(validRole, 'reset')) {
       await pool.query(statement);
@@ -147,7 +157,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const {role, mode} = parseRoleSettingsArgs(process.argv.slice(2));
     const databaseUrl = process.env.PILOT_DATABASE_URL;
     if (!databaseUrl) throw new Error('DB_ROLE_SETTINGS_DATABASE_URL_REQUIRED');
-    console.log(JSON.stringify(await applyRoleSettings({databaseUrl, role, mode})));
+    const result=await applyRoleSettings({databaseUrl,role,mode});
+    console.log(JSON.stringify(result));
+    if(mode==='apply'&&!result.ok)process.exitCode=1;
   } catch (error) {
     console.error(JSON.stringify({
       ok: false,

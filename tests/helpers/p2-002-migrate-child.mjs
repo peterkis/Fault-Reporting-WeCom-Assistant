@@ -1,3 +1,4 @@
+import {withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { databaseUrlForP2002Database } from './p2-002-postgres-harness.mjs';
 
@@ -35,7 +36,7 @@ if (
   ];
 
   try {
-    await import(pathToFileURL(migrationScriptPath).href);
+    await withFixtureMigrations(process.env.PILOT_DATABASE_URL, () => import(pathToFileURL(migrationScriptPath).href));
   } catch {
     process.stdout.write(`${JSON.stringify({
       ok: false,

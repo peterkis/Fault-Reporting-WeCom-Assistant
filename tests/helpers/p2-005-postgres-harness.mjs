@@ -1,3 +1,4 @@
+import {assertLoopbackDatabaseUrl, loopbackFixtureTarget, withFixtureMigrations} from '../../app/server/src/platform/loopback-database.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createPostgresPool } from '../../app/server/src/platform/postgres-pool.mjs';
@@ -21,15 +22,16 @@ async function closeOwnedPool(pool, disconnects) {
 export async function withP2005IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
   assert.match(purpose, /^[a-z0-9]{1,12}$/u); assert.ok(max >= 1 && max <= 4);
   const name = `p2_005_${purpose}_${randomUUID().replaceAll('-', '_')}`; created.add(name); const quoted = `"${name}"`;
-  const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('admin') }); const disconnects = new Set(); let pool; let result; let failure;
+  const {connection,databaseUrl:fixtureUrl}=loopbackFixtureTarget(databaseUrl);
+  const admin = createPostgresPool({ ...connection, max: 1, connectionTimeoutMillis: 2_000, application_name: app('admin') }); const disconnects = new Set(); let pool; let result; let failure;
   try {
-    await admin.query(`CREATE DATABASE ${quoted} TEMPLATE template0`); const isolated = new URL(databaseUrl); isolated.pathname = `/${name}`;
-    pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: app(purpose) });
+    await admin.query(`CREATE DATABASE ${quoted} TEMPLATE template0`); const isolated = new URL(fixtureUrl); isolated.pathname = `/${name}`;
+    pool = createPostgresPool({ ...connection, database:name, max, connectionTimeoutMillis: 2_000, application_name: app(purpose) });
     pool.on('connect', client => {
       const disconnected = new Promise(resolve => client.once('end', resolve));
       disconnects.add(disconnected);
       disconnected.then(() => disconnects.delete(disconnected));
-    }); result = await run({ pool, databaseUrl: isolated.toString(), databaseName: name });
+    }); result = await withFixtureMigrations(isolated.toString(), () => run({ pool, databaseUrl: isolated.toString(), databaseName: name }));
   } catch (error) { failure = error; }
   finally {
     try { if (pool) await closeOwnedPool(pool, disconnects); await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]); await admin.query(`DROP DATABASE IF EXISTS ${quoted}`); }
@@ -40,7 +42,7 @@ export async function withP2005IsolatedDatabase({ databaseUrl, purpose, max = 4,
 }
 
 export async function assertNoP2005Residual({ databaseUrl }) {
-  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('residual') });
+  const pool = createPostgresPool({ ...assertLoopbackDatabaseUrl(databaseUrl), max: 1, connectionTimeoutMillis: 2_000, application_name: app('residual') });
   try { const q=await pool.query(`SELECT (SELECT count(*)::integer FROM pg_database WHERE datname=ANY($1::text[])) database_count,(SELECT count(*)::integer FROM pg_stat_activity WHERE application_name=ANY($2::text[]) AND pid<>pg_backend_pid()) backend_count`,[[...created],[...applications].filter(x=>!x.includes('_residual_'))]); assert.deepEqual(q.rows[0],{database_count:0,backend_count:0}); return q.rows[0]; }
   finally { await pool.end(); }
 }

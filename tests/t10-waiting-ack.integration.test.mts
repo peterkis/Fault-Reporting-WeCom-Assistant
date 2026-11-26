@@ -1,3 +1,4 @@
+import type {LocalMigrationDatabase} from '../app/server/src/platform/loopback-database.mjs';
 import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
@@ -123,7 +124,7 @@ async function observeClosureReadWait(pool:PostgresPool,pid:number,fragment:stri
 }
 
 interface ClosureCookieFixture {
-  pool:PostgresPool;databaseUrl:string;origin:string;backendOrigin?:string;cookies:string[];sessionId?:string;
+  pool:PostgresPool;databaseUrl:string;databaseConnection:LocalMigrationDatabase;origin:string;backendOrigin?:string;cookies:string[];sessionId?:string;
   principals:{id:string}[];tickets:{ticket:{id:string}}[];waiting:{intakeId:string};
 }
 function cookieObject(value:unknown):Record<string,unknown>{assert.ok(value&&typeof value==='object'&&!Array.isArray(value));return value as Record<string,unknown>;}
@@ -167,7 +168,7 @@ for(const purpose of ['ticket-restore','intake-close','intake-restore','intake-c
     const originalAuthority=await authority(),originalCounts=await counts();
     // Three independent real GET transactions use the fixture's four-slot pool;
     // the dedicated existing Client keeps one pool slot available for logout/observation.
-    const gate=createPostgresClient({connectionString:f.databaseUrl,connectionTimeoutMillis:5000,application_name:'p2_015_ack_cookie_gate'});
+    const gate=createPostgresClient({...f.databaseConnection,connectionTimeoutMillis:5000,application_name:'p2_015_ack_cookie_gate'});
     let held=false,primary:unknown;const pending:Promise<Response>[]=[];
     try{
       await gate.connect();await gate.query('BEGIN');held=true;

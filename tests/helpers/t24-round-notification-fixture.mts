@@ -13,7 +13,7 @@ import {migrateTicketUnassign} from '../../app/server/scripts/ticket-unassign-mi
 import {migrateTicketReopenRounds} from '../../app/server/scripts/ticket-reopen-rounds-migrate.mjs';
 import {migrateTicketReturnToDispatch} from '../../app/server/scripts/ticket-return-to-dispatch-migrate.mjs';
 
-export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,mvpNotificationsEnabled=false,groupNotificationTargets=[],manualRoundConsumption=false,roundNotificationsOff=false,externalSendEnabled=false,closureNotificationUndoWindowMs,claimNotificationUndoWindowMs}:{ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;mvpNotificationsEnabled?:boolean;groupNotificationTargets?:{botId:string;groupId:string}[];manualRoundConsumption?:boolean;roundNotificationsOff?:boolean;externalSendEnabled?:boolean;closureNotificationUndoWindowMs?:number;claimNotificationUndoWindowMs?:number}={}){
+export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string})=>Promise<void>,{namespace='p2_015',ticketReturnToDispatchEnabled=false,ticketAssignmentEnabled=false,ticketUnassignEnabled=false,ticketConversationSelfHandlingEnabled=false,ticketReopenRoundsEnabled=false,mvpNotificationsEnabled=false,groupNotificationTargets=[],manualRoundConsumption=false,roundNotificationsOff=false,externalSendEnabled=false,closureNotificationUndoWindowMs,claimNotificationUndoWindowMs}:{namespace?:'p2_015'|'ticket_card42a';ticketReturnToDispatchEnabled?:boolean;ticketAssignmentEnabled?:boolean;ticketUnassignEnabled?:boolean;ticketConversationSelfHandlingEnabled?:boolean;ticketReopenRoundsEnabled?:boolean;mvpNotificationsEnabled?:boolean;groupNotificationTargets?:{botId:string;groupId:string}[];manualRoundConsumption?:boolean;roundNotificationsOff?:boolean;externalSendEnabled?:boolean;closureNotificationUndoWindowMs?:number;claimNotificationUndoWindowMs?:number}={}){
   await withWeb01Fixture(async(f:T11Fixture)=>{
     await f.runtime.stop();
     const intake=await seedPersistedIntake({pool:f.pool,text:'合成Bot单聊报修',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
@@ -35,7 +35,7 @@ export async function withT24Fixture(run:(context:T11Fixture & {ticketId:string}
       assert.ok(started.cookies);await run({...f,runtime,ticketId:created.ticket.id,cookies:started.cookies.map(c=>c.name+'='+c.value),browserCookies:started.cookies});
     }
     finally{await runtime.stop();assert.equal(runtime.server.listening,false);}
-  },{ticketSelfHandlingEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
+  },{namespace,ticketSelfHandlingEnabled:true,beforeClosureMigration:async({databaseUrl}:{databaseUrl:string})=>{
     await migrateTicketStaffCompletion({databaseUrl:databaseUrl,mode:'apply'});await migrateTicketRoundNotifications({databaseUrl:databaseUrl,mode:'apply'});
     if(mvpNotificationsEnabled)await migrateMvpNotifications({databaseUrl:databaseUrl,mode:'apply'});
     if(ticketUnassignEnabled||ticketReturnToDispatchEnabled)await migrateTicketUnassign({databaseUrl:databaseUrl,mode:'apply'});

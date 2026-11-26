@@ -1,0 +1,51 @@
+# Card 42A · 075_ticket_terminal_at execution log (PostgreSQL 18, synthetic data 「（合成）」)
+# 2026-11-26 01:33:56 +0800 · server: PostgreSQL 18.6 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+# Database: throwaway ticket_card42a_miglog (full migration chain through 075; four tickets driven through the real action service: resolve / resolve+confirm / dismiss / open)
+
+## terminal_at written by the action-service write paths (before rollback)
+IT-20261126-0001 RESOLVED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0002 COMPLETED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0003 DISMISSED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0004 QUEUED terminal_at=NULL terminal_epoch_ms=NULL
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --check
+{"status":"NOOP_ALREADY_APPLIED","migration_id":"075_ticket_terminal_at"}
+exit=0
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --rollback
+{"status":"ROLLED_BACK","migration_id":"075_ticket_terminal_at"}
+exit=0
+columns after rollback: 0
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --check
+{"status":"PENDING","migration_id":"075_ticket_terminal_at"}
+exit=0
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --apply
+{"status":"APPLIED","migration_id":"075_ticket_terminal_at"}
+exit=0
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --apply
+{"status":"NOOP_ALREADY_APPLIED","migration_id":"075_ticket_terminal_at"}
+exit=0
+
+$ PILOT_DATABASE_URL=<ticket_card42a_miglog> node .build/runtime/app/server/scripts/ticket-terminal-at-migrate.mjs --check
+{"status":"NOOP_ALREADY_APPLIED","migration_id":"075_ticket_terminal_at"}
+exit=0
+
+## terminal_at backfilled by 075 from ticket_event / active closure_record (after re-apply)
+IT-20261126-0001 RESOLVED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0002 COMPLETED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0003 DISMISSED terminal_at=2026-11-26 01:33:56 terminal_epoch_ms=1795628036000
+IT-20261126-0004 QUEUED terminal_at=NULL terminal_epoch_ms=NULL
+
+## installed objects
+ticket_terminal_at_second_check: CHECK (((terminal_at IS NULL) OR (terminal_at = date_trunc('second'::text, terminal_at))))
+ticket_terminal_epoch_check: CHECK ((((terminal_at IS NULL) AND (terminal_epoch_ms IS NULL)) OR ((terminal_at IS NOT NULL) AND (terminal_epoch_ms IS NOT NULL) AND (terminal_epoch_ms >= 0) AND (terminal_at = platform.local_from_epoch_ms(terminal_epoch_ms)))))
+ticket_terminal_status_check: CHECK (((status = ANY (ARRAY['RESOLVED'::text, 'COMPLETED'::text, 'DISMISSED'::text])) = (terminal_at IS NOT NULL)))
+ticket_open_updated_idx: CREATE INDEX ticket_open_updated_idx ON pilot_ticket.ticket USING btree (updated_at DESC, id DESC) WHERE (status <> ALL (ARRAY['RESOLVED'::text, 'COMPLETED'::text, 'DISMISSED'::text]))
+ticket_resolved_terminal_idx: CREATE INDEX ticket_resolved_terminal_idx ON pilot_ticket.ticket USING btree (terminal_at DESC, id DESC) WHERE (status = 'RESOLVED'::text)
+ticket_terminal_idx: CREATE INDEX ticket_terminal_idx ON pilot_ticket.ticket USING btree (terminal_at DESC, id DESC) WHERE (status = ANY (ARRAY['COMPLETED'::text, 'DISMISSED'::text]))
+trigger arch005_sync_8e05619b042549e2 enabled=O: CREATE TRIGGER arch005_sync_8e05619b042549e2 BEFORE INSERT OR UPDATE OF terminal_at, terminal_epoch_ms ON pilot_ticket.ticket FOR EACH ROW EXECUTE FUNCTION platform.sync_local_epoch_pair('terminal_at', 'terminal_epoch_ms')
+column terminal_at timestamp without time zone nullable=YES default=NULL
+column terminal_epoch_ms bigint nullable=YES default=NULL

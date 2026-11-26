@@ -1,3 +1,4 @@
+import {isMigrationDatabase,migrationConnection} from './migration-database.mjs';
 import {readFileSync} from 'node:fs';
 import {isDeepStrictEqual} from 'node:util';
 import {createHash} from 'node:crypto';
@@ -84,14 +85,14 @@ async function insertMigrationMarker(client, migrationId, checksum) {
 }
 
 export async function migrateYxxSelfService({databaseUrl,mode='apply',PoolFactory=createPostgresPool,catalogProfile='LEGACY'}={}){
-  if(typeof databaseUrl!=='string'||!databaseUrl)fail('YXX_SELF_SERVICE_DATABASE_URL_REQUIRED');
+  if(!isMigrationDatabase(databaseUrl))fail('YXX_SELF_SERVICE_DATABASE_URL_REQUIRED');
   if(!['apply','check','status'].includes(mode))fail('YXX_SELF_SERVICE_MIGRATION_MODE_INVALID');
   if(!['LEGACY','CURRENT_V2_49'].includes(catalogProfile))fail('YXX_SELF_SERVICE_CATALOG_PROFILE_INVALID');
   const sql=await readFile(FILE,'utf8'),correctionSql=await readFile(CORRECTIVE_FILE,'utf8');
   const body=migrationBody(sql,'YXX_SELF_SERVICE_MIGRATION_FILE_INVALID');
   const correctionBody=migrationBody(correctionSql,'YXX_SELF_SERVICE_CORRECTION_FILE_INVALID');
   const checksum=sha(sql),correctionChecksum=sha(correctionSql);
-  const pool=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'yxx_self_service_migrator'});let client;
+  const pool=PoolFactory({...migrationConnection(databaseUrl),max:1,connectionTimeoutMillis:5000,application_name:'yxx_self_service_migrator'});let client;
   try{
     client=await pool.connect();await client.query('BEGIN');await client.query("SELECT pg_advisory_xact_lock(hashtext('YXX_SELF_SERVICE_MIGRATION'))");
     if((await client.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount!==1)fail('YXX_SELF_SERVICE_REQUIRES_032');
