@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
-import {followReceiptSchemaReady} from './workbench-follow-migrate.mjs';
-import {predecessorIndexRows} from './fk-indexes-migrate.mjs';
+import {readReadyFollowReceipt} from './workbench-follow-migrate.mjs';
+import {projectWorkbenchCatalog,workbenchReadinessCatalog} from './workbench-readiness-catalog.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
@@ -13,29 +13,18 @@ const RELATIONS=['pilot_ticket.workbench_supplement_disposition','pilot_ticket.w
 // Frozen after the actual isolated PG18 catalog-only preparation; never a business PASS.
 export const SUPPLEMENT_CATALOG_SHA256='b97aa3cf902bf60307de2500e0d1c3e547ca2ea4f142cf8def07f635a9a50c97';
 export async function supplementFollowUpCatalog(tx:PostgresTransaction){
- const relations=(await tx.query(`SELECT n.nspname||'.'||c.relname AS relation,c.relkind,c.relpersistence,c.relispartition,c.relrowsecurity,c.relforcerowsecurity
-  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname||'.'||c.relname=ANY($1::text[]) ORDER BY relation`,[RELATIONS])).rows;
- const columns=(await tx.query(`SELECT n.nspname||'.'||c.relname AS relation,a.attname AS name,a.attnum AS ordinal,format_type(a.atttypid,a.atttypmod) AS type,
-  a.attnotnull AS not_null,a.attidentity AS identity,a.attgenerated AS generated,pg_get_expr(d.adbin,d.adrelid) AS default_expression
-  FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
-  WHERE a.attnum>0 AND NOT a.attisdropped AND n.nspname||'.'||c.relname=ANY($1::text[]) ORDER BY relation,ordinal`,[RELATIONS])).rows;
- const constraints=(await tx.query(`SELECT n.nspname||'.'||r.relname AS relation,c.conname AS name,c.contype AS type,c.convalidated AS validated,c.condeferrable AS deferrable,
-  c.condeferred AS deferred,pg_get_constraintdef(c.oid,true) AS definition FROM pg_constraint c JOIN pg_class r ON r.oid=c.conrelid JOIN pg_namespace n ON n.oid=r.relnamespace
-  WHERE n.nspname||'.'||r.relname=ANY($1::text[]) ORDER BY relation,name`,[RELATIONS])).rows;
- const indexes=(await tx.query(`SELECT n.nspname||'.'||r.relname AS relation,c.relname AS name,i.indisvalid AS valid,i.indisready AS ready,i.indisunique AS unique,i.indisprimary AS primary,
-  pg_get_indexdef(c.oid) AS definition FROM pg_index i JOIN pg_class r ON r.oid=i.indrelid JOIN pg_class c ON c.oid=i.indexrelid JOIN pg_namespace n ON n.oid=r.relnamespace
-  WHERE n.nspname||'.'||r.relname=ANY($1::text[]) ORDER BY relation,name`,[RELATIONS])).rows;
- const triggers=(await tx.query(`SELECT n.nspname||'.'||r.relname AS relation,t.tgname AS name FROM pg_trigger t JOIN pg_class r ON r.oid=t.tgrelid JOIN pg_namespace n ON n.oid=r.relnamespace
-  WHERE NOT t.tgisinternal AND n.nspname||'.'||r.relname=ANY($1::text[]) ORDER BY relation,name`,[RELATIONS])).rows;
- return {relations,columns,constraints,indexes,triggers};
+ return workbenchReadinessCatalog(tx, RELATIONS, 'supplement');
 }
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
 export async function supplementFollowUpSchemaReady(tx:PostgresTransaction):Promise<boolean>{
  const present=(await tx.query<{present:boolean}>("SELECT to_regclass('platform.schema_migration') IS NOT NULL AS present")).rows[0];if(!present?.present)return false;
- const row=(await tx.query<{checksum_sha256:string}>('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[SUPPLEMENT_FOLLOW_UP_MIGRATION_ID])).rows[0];
- if(row?.checksum_sha256!==sha(await readFile(FILE,'utf8'))||!await followReceiptSchemaReady(tx))return false;
- const catalog=await supplementFollowUpCatalog(tx);
- const indexes=await predecessorIndexRows(tx,RELATIONS,catalog.indexes);
+ const receipt=await readReadyFollowReceipt(tx, {
+   prerequisite: {migrationId: SUPPLEMENT_FOLLOW_UP_MIGRATION_ID, checksum: async () => sha(await readFile(FILE,'utf8'))},
+   catalogRelations: RELATIONS,
+ });
+ if(!receipt)return false;
+ const catalog=projectWorkbenchCatalog(receipt.catalog, RELATIONS, 'supplement');
+ const indexes=await receipt.priorIndexes(RELATIONS,catalog.indexes);
  return indexes!==null&&sha(JSON.stringify({...catalog,indexes}))===SUPPLEMENT_CATALOG_SHA256;
 }
 export async function migrateWorkbenchSupplementFollowUp({databaseUrl,mode='check'}:{databaseUrl:string;mode?:'check'|'apply'|'status'}){

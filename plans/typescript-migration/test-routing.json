@@ -7034,6 +7034,15 @@
       "requires_pyyaml": false
     },
     {
+      "path": "tests/readiness-cost-drift.integration.test.mts",
+      "mode": "STAGED_RUNTIME",
+      "node_flags": [],
+      "requires_database": true,
+      "requires_browser": false,
+      "requires_powershell": false,
+      "requires_pyyaml": false
+    },
+    {
       "path": "tests/fk-indexes-migration.integration.test.mts",
       "mode": "STAGED_RUNTIME",
       "node_flags": [],
@@ -7962,6 +7971,9 @@
     }
   },
   "selections": {
+    "readiness-cost-drift": [
+      "tests/readiness-cost-drift.integration.test.mts"
+    ],
     "wbint-t36-bound-reply-first": [
       "tests/t36-bound-reply.integration.test.mts"
     ],
