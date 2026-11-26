@@ -47,8 +47,16 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
   await client.cancelQueries({predicate:query=>matches(query.queryKey)||(query.queryKey[0]==='ticket-hover-search'&&query.queryKey[1]===principal)},{revert:false});
   client.removeQueries({queryKey:['ticket-hover-search',principal]});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)})){
-    if(query.queryKey[0]==='personal-read-command')client.removeQueries({queryKey:query.queryKey,exact:true});
-    else query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
+    if(query.queryKey[0]==='personal-read-command'){
+      client.removeQueries({queryKey:query.queryKey,exact:true});
+      continue;
+    }
+    const {status,data,error:currentError}=query.state;
+    // Keep an equal denial's identity so effects watching query.error don't repeat
+    // clearItemAuthorization -> purgeDrafts -> subscriber -> clearItemView.
+    // A changed status must reach WorkbenchDetail, whose board-card fallback distinguishes 403 from 404.
+    if(status==='error'&&data===undefined&&currentError instanceof ApiError&&(currentError.status===403||currentError.status===404)&&currentError.status===error.status)continue;
+    query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
   }
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{
     const key=mutation.options.mutationKey;
