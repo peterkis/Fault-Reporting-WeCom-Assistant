@@ -198,6 +198,18 @@ async function assertActionBlocked(browser,selector,{mayBeAbsent=false}={}){
    return {blocked,activated};
  })()`);
  assert.deepEqual(result,{blocked:true,activated:false},selector);
+ // Card 35A keeps blocked actions focusable; real Enter and Space must not activate them either.
+ if(!await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.matches('[aria-disabled="true"]')===true`))return;
+ await browser.evaluate(`(()=>{const read=fetch;globalThis.__blockedActionPosts=0;globalThis.__restoreBlockedActionFetch=()=>{fetch=read;};fetch=(path,options)=>{if(String(options?.method??'GET').toUpperCase()==='POST')globalThis.__blockedActionPosts++;return read(path,options);};document.querySelector(${JSON.stringify(selector)}).focus();})()`);
+ try{
+  for(const [key,code,windowsVirtualKeyCode] of [['Enter','Enter',13],[' ','Space',32]]){
+   assert.equal(await browser.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(selector)})`),true,selector+' keeps focus');
+   for(const type of ['keyDown','keyUp'])await browser.command('Input.dispatchKeyEvent',{type,key,code,windowsVirtualKeyCode});
+  }
+  await browser.evaluate('new Promise(resolve=>setTimeout(resolve,200))');
+  assert.equal(await browser.evaluate('globalThis.__blockedActionPosts'),0,selector+' keyboard activation stays blocked');
+  assert.equal(await browser.evaluate(`document.querySelector(${JSON.stringify(selector)})?.matches('[aria-disabled="true"]')`),true,selector);
+ }finally{await browser.evaluate('globalThis.__restoreBlockedActionFetch?.()');}
 }
 
 for(const phase of ['before','after'])test('a temporary '+phase+'-save read failure preserves an independent choice',async()=>{
