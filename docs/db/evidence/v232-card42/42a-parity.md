@@ -6,7 +6,7 @@ dev8 后，编排方在 PostgreSQL 18.6 上用同一份合成数据（「（合�
 
 ## 旧实现从哪里来
 
-旧实现不是手写的“近似 SQL”，而是 `5bc972fb` 上这 10 个模块的原样拷贝：[tests/fixtures/card42a-legacy/](../../../../tests/fixtures/card42a-legacy/)。拷贝只改写了相对 import 路径，使其能在当前仓库里解析；每个文件头部都有说明。被拷贝的模块：
+旧实现不是手写的“近似 SQL”，而是 `5bc972fb` 上这 10 个模块的原样拷贝：[tests/fixtures/card42a-legacy/](../../../../tests/fixtures/card42a-legacy/)。拷贝只改写了相对 import 路径，使其能在当前仓库里解析；每个文件头部都有说明。这些模块在 `5bc972fb` 与当前合并基线 main `1dfcdb08` 之间没有改动（`git diff 5bc972fb 1dfcdb08` 为空），因此拷贝仍等同于 main 的现行实现。被拷贝的模块：
 
 - `web01-workbench-query`、`workbench-card-projections`、`workbench-search`、`workbench-follow`、`workbench-reminders`
 - `workbench-source-groups`、`workbench-supplement-follow-up`、`workbench-actor-avatars`、`workbench-attachments`、`workbench-web-report`
