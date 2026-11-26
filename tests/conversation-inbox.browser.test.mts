@@ -415,12 +415,23 @@ test('returning to an inactive revoked chat cannot render cached messages while 
       const entry=await (await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).json() as ConversationChatEntry;
       const transferred=await conversationPost(f.origin,f.cookie,a.id,'transfer',{...freshCommand(entry.session.row_version),target_principal_id:recipient.id,force:true,reason_code:'SYNTHETIC_READ_REVOCATION'});assert.equal(transferred.status,200,JSON.stringify(await transferred.json()));
       assert.equal((await fetch(f.origin+path+'?view=chat',{headers:{cookie:f.handlerCookie}})).status,404);
-      await browser.evaluate(`(()=>{globalThis.__revokedReadStarted=false;globalThis.__revokedLeak=false;globalThis.__revokedResponses=0;const gate=new Promise(resolve=>globalThis.__releaseRevoked=resolve),original=fetch;globalThis.fetch=(url,options)=>{if(String(url).startsWith(${JSON.stringify(path)})&&(!options?.method||options.method==='GET')){globalThis.__revokedReadStarted=true;return original(url,options).then(async response=>{globalThis.__revokedResponses++;await gate;return response;});}return original(url,options);};new MutationObserver(()=>{if(document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)}))globalThis.__revokedLeak=true;}).observe(document.body,{childList:true,subtree:true,characterData:true});history.pushState({},'',${JSON.stringify('/workbench/app/conversations/'+a.id)});dispatchEvent(new PopStateEvent('popstate'));})()`);
+      await browser.evaluate(`(()=>{globalThis.__revokedReadStarted=false;globalThis.__revokedLeak=false;globalThis.__revokedResponses=0;globalThis.__revokedSummaryReads=0;const gate=new Promise(resolve=>globalThis.__releaseRevoked=resolve),original=fetch;globalThis.fetch=(url,options)=>{
+        const method=options?.method??(url instanceof Request?url.method:'GET');
+        if(method.toUpperCase()==='GET'&&new URL(url instanceof Request?url.url:url,document.baseURI).pathname==='/api/workbench/conversations/summary')globalThis.__revokedSummaryReads++;
+        if(String(url).startsWith(${JSON.stringify(path)})&&(!options?.method||options.method==='GET')){globalThis.__revokedReadStarted=true;return original(url,options).then(async response=>{globalThis.__revokedResponses++;await gate;return response;});}return original(url,options);};new MutationObserver(()=>{if(document.querySelector('[data-conversation-timeline]')?.textContent.includes(${JSON.stringify(canary)}))globalThis.__revokedLeak=true;}).observe(document.body,{childList:true,subtree:true,characterData:true});history.pushState({},'',${JSON.stringify('/workbench/app/conversations/'+a.id)});dispatchEvent(new PopStateEvent('popstate'));})()`);
       await browser.waitFor('globalThis.__revokedReadStarted');assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-timeline]')?.textContent.includes("+JSON.stringify(canary)+'))||globalThis.__revokedLeak'),false,'an inactive chat must not expose cached internal notes before its current read completes');
       assert.equal(await browser.evaluate("Boolean(document.querySelector('[data-conversation-ready]'))"),false);
       await browser.waitFor('globalThis.__revokedResponses>0');await browser.evaluate('globalThis.__releaseRevoked()');
-      await browser.waitFor("document.querySelector('[role=alert]')&&!document.querySelector('[data-conversation-ready]')");assert.equal(await browser.evaluate('globalThis.__revokedLeak'),false);
-      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false}));
+      await browser.waitFor("document.querySelector('.inbox-empty .ds-empty-state[role=status]')?.textContent.includes('无法查看这段会话')&&!document.querySelector('[data-conversation-ready]')");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[role=alert]'))"),false,'no error alert after a revoked chat settles');
+      assert.equal(await browser.evaluate('globalThis.__revokedLeak'),false);
+      await delay(1500);
+      const summaryReads=await browser.evaluate('globalThis.__revokedSummaryReads');
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[role=alert]'))"),false,'no error alert after the 1500 ms settle delay');
+      assert.ok(typeof summaryReads==='number'&&summaryReads<=3,'revoked chat summary request storm: '+summaryReads+' GETs');
+      await delay(500);
+      assert.equal(await browser.evaluate('globalThis.__revokedSummaryReads'),summaryReads,'revoked chat summary GET count must stay stable');
+      console.log('CONVERSATION_INACTIVE_REVOCATION '+JSON.stringify({same_principal:true,role_team_unchanged:true,real_transfer:true,delayed_rest_denial:true,cached_material_rendered:false,summary_reads_after_revoke:summaryReads,denial_panel:'status'}));
     }catch(error){failure=error;}
     await closeBrowserTestResources([async()=>{if(browser){await browser.evaluate('globalThis.__releaseRevoked?.()');await browser.close();assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}}],failure);
   },{inbox:true,realtime:true});
