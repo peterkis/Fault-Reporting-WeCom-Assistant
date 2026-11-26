@@ -30,7 +30,15 @@ export async function card24Fonts(browser:Browser){
 
 export async function card24Kbd(browser:Browser,selector:string){
  const value=record(await browser.evaluate(`(()=>{const n=document.querySelector(${JSON.stringify(selector)}),s=getComputedStyle(n);return Object.fromEntries(['height','minWidth','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderTopColor','borderRadius','backgroundColor','fontSize','fontFamily','fontWeight','color'].map(k=>[k,s[k]]));})()`));
- assert.equal(value.height,'18px');assert.equal(value.minWidth,'18px');assert.equal(value.paddingRight,'4px');assert.equal(value.paddingLeft,'4px');assert.equal(value.borderTopWidth,'1px');assert.equal(value.borderRadius,'4px');assert.equal(value.fontSize,'12px');assert.equal(value.fontWeight,'500');assert.match(String(value.fontFamily),/^"?Inter Variable/u);
+ assert.equal(value.height,'20px');
+ assert.equal(value.minWidth,'20px');
+ assert.equal(value.paddingRight,'5px');
+ assert.equal(value.paddingLeft,'5px');
+ assert.equal(value.borderTopWidth,'0px');
+ assert.equal(value.borderRadius,'5px');
+ assert.equal(value.fontSize,'11px');
+ assert.equal(value.fontWeight,'500');
+ assert.match(String(value.fontFamily),/^"?Inter Variable/u);
  return value;
 }
 
