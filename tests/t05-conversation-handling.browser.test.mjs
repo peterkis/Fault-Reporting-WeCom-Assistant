@@ -26,6 +26,7 @@ async function browserScenario(run,options={}){
 
 test('the production detail names the sole conversation action without an extra selection and retains the 720px shell',async()=>{
   await browserScenario(async({browser,capture})=>{
+    await browser.waitFor('Boolean(document.querySelector(".ds-detail-view #detail-title"))');
     assert.equal(await browser.evaluate('Boolean(document.querySelector(".ticket-conversation-handling"))'),true);
     await browser.waitFor('document.querySelector("[data-action=take-and-start-with-conversations]")?.textContent==="领取并开始"');
     assert.equal(await browser.evaluate('[...document.querySelectorAll("[data-session-choice] input[type=checkbox]")].filter(e=>e.checkVisibility()).length'),0);
@@ -48,8 +49,11 @@ test('a temporary draft authorization failure does not trap a read-only detail w
     try{
       await tab.evaluate(`(()=>{const channel=new BroadcastChannel('wecom-workbench-drafts-v1');channel.postMessage({...${JSON.stringify(scope)},reason:'settled'});channel.close();})()`);
       await browser.waitFor('globalThis.__t05DraftBootstrapFailed===true');await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+      // The peer stays open. Return to the detail to exercise the user's Close action and drawer exit.
+      await browser.command('Page.bringToFront');
       assert.equal(await browser.evaluate('document.querySelector("[aria-label=关闭详情]")?.disabled'),false);
       await browser.evaluate('document.querySelector("[aria-label=关闭详情]").click()');await browser.waitFor('!document.querySelector("#detail-title")');
+      assert.match(await browser.evaluate('location.pathname'),/^\/workbench\/app\/?$/u);
     }finally{await tab.close();}
   },{workbenchDraftRecoveryEnabled:true});
 });
@@ -161,7 +165,7 @@ test('a real version conflict preserves the identified selection and its old ver
     const id=await browser.evaluate('document.querySelector("[data-session-choice]").dataset.sessionChoice');
     await pool.query('UPDATE conversation.session SET row_version=row_version+1 WHERE id=$1::uuid',[id]);
     await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]").click()');
-    await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已被他人更新")&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")');
+    await browser.waitFor(`[...document.querySelectorAll('.conversation-handling-state, [data-toast-source="ticket-conversation-handling"][data-toast-state="conflict"]')].some(message=>message.textContent.includes("已被他人更新"))&&document.querySelector(".conversation-choices")?.innerText.includes("内容已变化")`);
     assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]").checked'),true);const posts=await browser.evaluate('globalThis.__t05Posts');assert.equal(posts.length,1);assert.equal(posts[0].body.sessions[0].session_id,id);assert.equal(posts[0].body.sessions[0].expected_row_version,1);
     await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("草稿已保存")');await reload(browser);await browser.waitFor('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked===true');
     assert.ok(await browser.evaluate('document.querySelector(".conversation-choices").innerText.includes("内容已变化")'));
@@ -182,6 +186,20 @@ test('restore rejects an ended canonical choice and a fresh Ticket rejection cle
   },{workbenchDraftRecoveryEnabled:true});
 });
 
+async function assertActionBlocked(browser,selector,{mayBeAbsent=false}={}){
+ const result=await browser.evaluate(`(()=>{
+   const button=document.querySelector(${JSON.stringify(selector)});
+   if(!button)return {blocked:${mayBeAbsent},activated:false};
+   const blocked=button.disabled||button.matches('[aria-disabled="true"]');
+   let activated=false;
+   const onClick=()=>{activated=true;};
+   button.addEventListener('click',onClick);
+   try{button.click();}finally{button.removeEventListener('click',onClick);}
+   return {blocked,activated};
+ })()`);
+ assert.deepEqual(result,{blocked:true,activated:false},selector);
+}
+
 for(const phase of ['before','after'])test('a temporary '+phase+'-save read failure preserves an independent choice',async()=>{
  await browserScenario(async({browser,principals,tickets})=>{
   const ticketId=tickets[0].ticket.id,scope={principal:principals[0].id,kind:'ticket',id:ticketId,purpose:'ticket-conversation-handling'};
@@ -201,7 +219,9 @@ for(const phase of ['before','after'])test('a temporary '+phase+'-save read fail
    await browser.evaluate(`(()=>{const read=fetch;let used=false;fetch=(path,options)=>{if(!used&&String(path).includes(${JSON.stringify(phase==='before'?'/api/lifecycle/bootstrap':'/api/conversations/')})){used=true;return Promise.resolve(new Response('{}',{status:503,headers:{'content-type':'application/json'}}));}return read(path,options);};})()`);
    await browser.evaluate('globalThis.__restoreT05Timer()');await tab.evaluate('globalThis.__finishT05Peer()');
    await browser.waitFor('document.body.innerText.includes('+JSON.stringify(phase==='before'?'本页输入未保存':'草稿暂未恢复')+')');
-   assert.equal(await browser.evaluate('(()=>{const button=document.querySelector("[data-action=take-and-start-with-conversations]");return !button||button.disabled;})()'),true);
+   if(phase==='before')await browser.waitFor('document.querySelector("[data-conversation-draft-status]")?.textContent.includes("请先留在此页")');
+   await assertActionBlocked(browser,'[data-action=take-and-start-with-conversations]',{mayBeAbsent:true});
+   if(phase==='before')await assertActionBlocked(browser,'[data-action=confirm-conversation-handling]');
    const saved=await tab.evaluate('(async()=>{const store=await import('+JSON.stringify(recovery)+'),copy=await store.openDraft('+JSON.stringify(scope)+');return {value:copy.text===null?null:JSON.parse(copy.text),operation:copy.handle.operation};})()');
    assert.equal(saved.operation,null);
    if(phase==='before'){assert.equal(saved.value,null);assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);assert.equal(await browser.evaluate('document.body.innerText.includes("刷新页面后再试")'),false);}
@@ -248,9 +268,14 @@ test('checking a failed peer operation keeps the independent conversation select
    await tab.evaluate(`(async()=>{const store=await import(${JSON.stringify(recovery)}),copy=await store.openDraft(${JSON.stringify(scope)}),value=JSON.parse(copy.text);value.pending={action:'take-and-start-with-conversations',command:{client_command_id:${JSON.stringify(id)},expected_version:1,reason_code:'WORKBENCH_TAKE_AND_START',resolver_team_id:'PILOT_IT',communication_choice:value.choice,sessions:[]}};await store.saveDraft(copy.handle,JSON.stringify(value),{commandId:${JSON.stringify(id)}});})()`);
    await browser.waitFor('Boolean(document.querySelector("[data-action=check-expired-conversation-handling]"))');await browser.evaluate('globalThis.__restoreT05CheckTimer()');
    await browser.evaluate(`(()=>{const read=fetch;fetch=(path,options)=>String(path).endsWith('/conversation-handling-commands/${id}')?Promise.resolve(Response.json({state:'FAILED',error:{code:'P2_016_VERSION_CONFLICT',retryable:false}})):read(path,options);})()`);
+   await browser.evaluate(instrument);
    await browser.evaluate('document.querySelector("[data-action=check-expired-conversation-handling]").click()');
    await browser.waitFor('document.body.innerText.includes("本页输入未保存")');
+   await browser.waitFor('document.querySelector(".conversation-handling-state")?.textContent.includes("已核对原操作失败")&&document.querySelector("[data-conversation-draft-status]")?.textContent.includes("另一页面仍有草稿")');
    assert.equal(await browser.evaluate('document.querySelector("[data-session-choice] input[type=checkbox]")?.checked'),true);assert.equal(await browser.evaluate('Boolean(document.querySelector(".detail-accept-dialog"))'),true);assert.equal(await browser.evaluate('document.querySelector("[data-action=confirm-conversation-handling]")?.disabled'),true);
+   await assertActionBlocked(browser,'[data-action=confirm-conversation-handling]');
+   assert.deepEqual(await browser.evaluate('globalThis.__t05Acks'),['/api/tickets/'+ticketId+'/conversation-handling-commands/'+id]);
+   assert.deepEqual(await browser.evaluate('globalThis.__t05Posts'),[]);
   }finally{await browser.evaluate('globalThis.__restoreT05CheckTimer?.()');await tab.close();}
  },{workbenchDraftRecoveryEnabled:true});
 });
